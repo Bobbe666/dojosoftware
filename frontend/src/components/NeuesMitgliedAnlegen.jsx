@@ -443,6 +443,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   };
 
   const handleNext = () => {
+    // Validierung Schritt 1: Grunddaten
     if (currentStep === 1) {
       if (!memberData.vorname || !memberData.nachname || !memberData.geburtsdatum || !memberData.geschlecht) {
         setError("Bitte füllen Sie alle Felder aus");
@@ -450,6 +451,31 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }
       if (duplicateCheck?.isDuplicate && !showDuplicateDialog) {
         setShowDuplicateDialog(true);
+        return;
+      }
+    }
+
+    // Validierung Schritt 2: Kontaktdaten
+    if (currentStep === 2) {
+      if (!memberData.email || !memberData.telefon_mobil || !memberData.strasse || !memberData.hausnummer || !memberData.plz || !memberData.ort) {
+        setError("Bitte füllen Sie alle Pflichtfelder aus (E-Mail, Telefon Mobil, Straße, Hausnummer, PLZ, Ort)");
+        return;
+      }
+    }
+
+    // Validierung Schritt 3: Erziehungsberechtigte (nur für Minderjährige)
+    if (currentStep === 3 && isMinor()) {
+      if (!memberData.erziehungsberechtigt_vorname || !memberData.erziehungsberechtigt_nachname ||
+          !memberData.erziehungsberechtigt_telefon || !memberData.erziehungsberechtigt_email || !memberData.verhaeltnis) {
+        setError("Bitte füllen Sie alle Pflichtfelder der Erziehungsberechtigten aus");
+        return;
+      }
+    }
+
+    // Validierung Schritt 5: Zahlungsdaten
+    if (currentStep === 5) {
+      if (!memberData.kontoinhaber || !memberData.iban || !memberData.bic || !memberData.bankname) {
+        setError("Bitte füllen Sie alle Pflichtfelder der Zahlungsdaten aus (Kontoinhaber, IBAN, BIC, Bankname)");
         return;
       }
     }
@@ -857,7 +883,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       <h3>Schritt 2: Kontaktdaten</h3>
       <div className="input-container">
         <div className="input-group">
-          <label htmlFor="email" className="input-label">E-Mail</label>
+          <label htmlFor="email" className="input-label">E-Mail *</label>
           <input
             type="email"
             id="email"
@@ -865,9 +891,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.email}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
-        
+
         <div className="input-group">
           <label htmlFor="telefon" className="input-label">Telefon (Festnetz)</label>
           <input
@@ -879,9 +906,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             className="input-field"
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="telefon_mobil" className="input-label">Telefon (Mobil)</label>
+          <label htmlFor="telefon_mobil" className="input-label">Telefon (Mobil) *</label>
           <input
             type="tel"
             id="telefon_mobil"
@@ -889,11 +916,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.telefon_mobil}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="strasse" className="input-label">Straße</label>
+          <label htmlFor="strasse" className="input-label">Straße *</label>
           <input
             type="text"
             id="strasse"
@@ -901,11 +929,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.strasse}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="hausnummer" className="input-label">Hausnummer</label>
+          <label htmlFor="hausnummer" className="input-label">Hausnummer *</label>
           <input
             type="text"
             id="hausnummer"
@@ -913,11 +942,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.hausnummer}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="plz" className="input-label">PLZ</label>
+          <label htmlFor="plz" className="input-label">PLZ *</label>
           <input
             type="text"
             id="plz"
@@ -925,11 +955,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.plz}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="ort" className="input-label">Ort</label>
+          <label htmlFor="ort" className="input-label">Ort *</label>
           <input
             type="text"
             id="ort"
@@ -937,6 +968,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.ort}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
       </div>
@@ -951,10 +983,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <p>Da das Mitglied minderjährig ist, sind die Daten der Erziehungsberechtigten erforderlich.</p>
         </div>
       )}
-      
+
       <div className="input-container">
         <div className="input-group">
-          <label htmlFor="erziehungsberechtigt_vorname" className="input-label">Vorname</label>
+          <label htmlFor="erziehungsberechtigt_vorname" className="input-label">Vorname {isMinor() ? '*' : ''}</label>
           <input
             type="text"
             id="erziehungsberechtigt_vorname"
@@ -965,9 +997,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             required={isMinor()}
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="erziehungsberechtigt_nachname" className="input-label">Nachname</label>
+          <label htmlFor="erziehungsberechtigt_nachname" className="input-label">Nachname {isMinor() ? '*' : ''}</label>
           <input
             type="text"
             id="erziehungsberechtigt_nachname"
@@ -978,9 +1010,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             required={isMinor()}
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="erziehungsberechtigt_telefon" className="input-label">Telefon</label>
+          <label htmlFor="erziehungsberechtigt_telefon" className="input-label">Telefon {isMinor() ? '*' : ''}</label>
           <input
             type="tel"
             id="erziehungsberechtigt_telefon"
@@ -991,9 +1023,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             required={isMinor()}
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="erziehungsberechtigt_email" className="input-label">E-Mail</label>
+          <label htmlFor="erziehungsberechtigt_email" className="input-label">E-Mail {isMinor() ? '*' : ''}</label>
           <input
             type="email"
             id="erziehungsberechtigt_email"
@@ -1001,17 +1033,19 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.erziehungsberechtigt_email}
             onChange={handleChange}
             className="input-field"
+            required={isMinor()}
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="verhaeltnis" className="input-label">Verhältnis zum Mitglied</label>
+          <label htmlFor="verhaeltnis" className="input-label">Verhältnis zum Mitglied {isMinor() ? '*' : ''}</label>
           <select
             id="verhaeltnis"
             name="verhaeltnis"
             value={memberData.verhaeltnis}
             onChange={handleChange}
             className="input-field"
+            required={isMinor()}
           >
             <option value="">Bitte wählen</option>
             <option value="Vater">Vater</option>
@@ -1101,7 +1135,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       <h3>Schritt 5: Zahlungsdaten</h3>
       <div className="input-container">
         <div className="input-group">
-          <label htmlFor="kontoinhaber" className="input-label">Kontoinhaber</label>
+          <label htmlFor="kontoinhaber" className="input-label">Kontoinhaber *</label>
           <input
             type="text"
             id="kontoinhaber"
@@ -1109,11 +1143,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.kontoinhaber}
             onChange={handleChange}
             className="input-field"
+            required
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="iban" className="input-label">IBAN</label>
+          <label htmlFor="iban" className="input-label">IBAN *</label>
           <input
             type="text"
             id="iban"
@@ -1122,6 +1157,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             onChange={handleChange}
             className="input-field"
             placeholder="DE89 3704 0044 0532 0130 00"
+            required
           />
           {ibanValidation && (
             <div>
@@ -1130,9 +1166,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             </div>
           )}
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="bic" className="input-label">BIC</label>
+          <label htmlFor="bic" className="input-label">BIC *</label>
           <input
             type="text"
             id="bic"
@@ -1142,11 +1178,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             className="input-field"
             placeholder="COBADEFFXXX"
             readOnly={!!ibanValidation?.bic}
+            required
           />
         </div>
-        
+
         <div className="input-group">
-          <label htmlFor="bankname" className="input-label">Bankname</label>
+          <label htmlFor="bankname" className="input-label">Bankname *</label>
           <input
             type="text"
             id="bankname"
@@ -1165,8 +1202,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             className="input-field"
             readOnly={!!ibanValidation?.bankname}
             placeholder="Bank suchen oder eingeben..."
+            required
           />
-          
+
           {showBankSearch && bankSearchResults.length > 0 && (
             <div>
               {bankSearchResults.map((bank, index) => (
@@ -1177,7 +1215,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               ))}
             </div>
           )}
-          
+
           {showBankSearch && memberData.bankname.length >= 2 && bankSearchResults.length === 0 && (
             <div>Keine Banken gefunden</div>
           )}
