@@ -1,0 +1,66 @@
+/* 📁 Datei: AnwesenheitKalender.css */
+
+.kalender-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.kalender-container h2 {
+  text-align: center;
+  color: #800000;
+  margin-bottom: 2rem;
+}
+
+.react-calendar {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  background-color: #fff;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.kalender-punkt {
+  width: 8px;
+  height: 8px;
+  margin: 4px auto 0;
+  background-color: #4caf50;
+  border-radius: 50%;
+}
+
+.kalender-details {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  border-radius: 10px;
+}
+
+.kalender-details h3 {
+  color: #800000;
+  margin-bottom: 1rem;
+}
+
+.kalender-details ul {
+  padding-left: 1.2rem;
+  list-style: disc;
+  color: #333;
+}
+
+.kalender-details li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .kalender-container {
+    padding: 1rem;
+  }
+
+  .react-calendar {
+    font-size: 0.85rem;
+  }
+}

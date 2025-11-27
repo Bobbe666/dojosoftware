@@ -1,0 +1,37 @@
+{
+  "name": "dojosoftware-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@wojtekmaj/date-utils": "^2.0.1",
+    "axios": "^1.8.4",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.6.2",
+    "get-user-locale": "^3.0.0",
+    "grapesjs": "^0.22.13",
+    "grapesjs-preset-webpage": "^1.0.3",
+    "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.484.0",
+    "react": "^18.2.0",
+    "react-calendar": "^5.1.0",
+    "react-dom": "^18.2.0",
+    "react-router": "^7.4.0",
+    "react-router-dom": "^7.4.0",
+    "recharts": "^3.2.1",
+    "scheduler": "^0.25.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "terser": "^5.44.1",
+    "vite": "^6.2.3"
+  }
+}

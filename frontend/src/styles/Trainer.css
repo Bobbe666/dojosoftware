@@ -1,0 +1,93 @@
+.trainer-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: sans-serif;
+  color: #333;
+}
+
+/* ===== Tabelle ===== */
+.trainer-list {
+  margin-bottom: 2rem;
+}
+
+.trainer-table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.trainer-table th,
+.trainer-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.trainer-table thead {
+  background-color: #f5f5f5;
+}
+
+.trainer-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.trainer-table .no-data {
+  text-align: center;
+  font-style: italic;
+  color: #777;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  color: white;
+}
+
+/* ===== Formular ===== */
+.trainer-form h2 {
+  margin-bottom: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.form-grid input,
+.form-grid select {
+  margin-top: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-grid select {
+  height: 6rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}

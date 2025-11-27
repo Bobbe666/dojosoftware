@@ -1,0 +1,193 @@
+/* Motivation Quotes */
+.motivation-quotes {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.motivation-quotes::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ffd700, #ff6b35, #8B5CF6);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.motivation-quotes.compact {
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.motivation-quotes .quote-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.motivation-quotes .quote-icon {
+  color: #ffd700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.motivation-quotes h3 {
+  color: #ffd700;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.motivation-quotes.compact h3 {
+  font-size: 0.9rem;
+}
+
+.motivation-quotes .refresh-button {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  padding: 0.3rem;
+  color: #ffd700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.motivation-quotes .refresh-button:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.motivation-quotes .refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.motivation-quotes .spinning {
+  animation: spin 1s linear infinite;
+}
+
+.motivation-quotes .quote-content {
+  position: relative;
+}
+
+.motivation-quotes .quote-text {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0 0 0.8rem 0;
+  font-style: italic;
+  text-align: left;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.motivation-quotes.compact .quote-text {
+  font-size: 0.9rem;
+  margin-bottom: 0.6rem;
+}
+
+.motivation-quotes .quote-text::before {
+  content: '"';
+  position: absolute;
+  left: -0.2rem;
+  top: -0.2rem;
+  font-size: 2rem;
+  color: rgba(255, 215, 0, 0.3);
+  font-family: serif;
+  line-height: 1;
+}
+
+.motivation-quotes .quote-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.motivation-quotes .quote-author {
+  color: rgba(255, 255, 255, 0.8);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.motivation-quotes .quote-category {
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.motivation-quotes .quote-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.motivation-quotes .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-top: 2px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes shimmer {
+  0%, 100% { 
+    opacity: 0.5;
+    transform: translateX(-100%);
+  }
+  50% { 
+    opacity: 1;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Hover Effects */
+.motivation-quotes:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .motivation-quotes .quote-meta {
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: flex-start;
+  }
+  
+  .motivation-quotes .quote-text {
+    font-size: 0.9rem;
+  }
+  
+  .motivation-quotes.compact .quote-text {
+    font-size: 0.85rem;
+  }
+}

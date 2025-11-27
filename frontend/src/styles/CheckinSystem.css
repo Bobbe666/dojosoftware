@@ -1,0 +1,1889 @@
+/* =====================================================================================
+   CHECKIN-SYSTEM COMPONENT - DOJOSOFTWARE THEME
+   =====================================================================================
+   Angepasst an das DojoSoftware Design-System mit CSS-Variablen
+   ===================================================================================== */
+
+/* ============================================
+   CSS VARIABLES - DOJOSOFTWARE THEME
+   ============================================ */
+
+:root {
+  /* Hauptfarben - GOLDEN THEME */
+  --farbe-hauptfarbe: #ffd700;
+  --farbe-dunkel: #ff6b35;
+  --farbe-akzent: #ffd700;
+  --farbe-erfolg: #ffd700;
+  --farbe-fehler: #ef4444;
+  
+  /* Hintergrundfarben - GLASSMORPHISM */
+  --hintergrund-hauptfarbe: rgba(255, 255, 255, 0.08);
+  --hintergrund-verlauf: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  --hintergrund-hover: rgba(255, 255, 255, 0.15);
+  --hintergrund-erfolg: rgba(255, 215, 0, 0.1);
+  --hintergrund-fehler: rgba(239, 68, 68, 0.1);
+  
+  /* Textfarben - LIGHT ON DARK */
+  --text-hauptfarbe: #ffffff;
+  --text-sekundaer: rgba(255, 255, 255, 0.8);
+  
+  /* Transparente Farben */
+  --farbe-hauptfarbe-transparent: rgba(255, 215, 0, 0.2);
+  
+  /* Randfarben */
+  --rand-farbe: rgba(255, 215, 0, 0.2);
+  
+  /* Schriftarten */
+  --schriftart-haupt: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ============================================
+   BASE STYLES & RESET
+   ============================================ */
+
+.checkin-system {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #ffffff;
+}
+
+.checkin-system * {
+  box-sizing: border-box;
+}
+
+/* ============================================
+   HEADER STYLES - ULTRA KOMPAKT (15" Laptop)
+   ============================================ */
+
+.checkin-header {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 0 0 12px 12px;
+  margin-bottom: 0.5rem;
+}
+
+.checkin-header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.4rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.checkin-logo {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.checkin-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffd700;
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
+               0 0 4px rgba(255, 215, 0, 0.6);
+}
+
+.checkin-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 0.15rem;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ============================================
+   PROGRESS INDICATOR
+   ============================================ */
+
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-step {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.progress-step.completed {
+  background: #ffd700;
+  color: white;
+}
+
+.progress-step.active {
+  background: #ffd700;
+  color: #1a1a2e;
+}
+
+.progress-step.inactive {
+  background: #e5e7eb;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.progress-line {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  margin: 0 0.25rem;
+}
+
+.progress-line.completed {
+  background: #ffd700;
+}
+
+.progress-line.inactive {
+  background: #e5e7eb;
+}
+
+/* ============================================
+   STATS CONTAINER - ULTRA KOMPAKT (15" Laptop)
+   ============================================ */
+
+.stats-container {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 0.3rem 0.5rem;
+  margin: 0.3rem 0;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Stats Grid - Überschreibt components.css */
+.checkin-system .stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+  gap: 0.4rem !important;
+  margin-bottom: 1rem !important;
+  padding: 0 !important;
+}
+
+/* Stat Card - Überschreibt components.css */
+.checkin-system .stat-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 0.4rem !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  text-align: center;
+  min-height: 50px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.2rem !important;
+  transition: all 0.2s !important;
+  animation: none !important;
+  cursor: default;
+}
+
+.checkin-system .stat-card::before,
+.checkin-system .stat-card::after {
+  display: none !important;
+}
+
+.checkin-system .stat-card:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2) !important;
+  border-color: #ffd700 !important;
+}
+
+.checkin-system .stat-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.checkin-system .stat-icon {
+  font-size: 1rem !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.checkin-system .stat-icon-lucide {
+  color: #ffd700;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.checkin-system .stat-value {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #ffd700 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+}
+
+.checkin-system .stat-label {
+  font-size: 0.6rem !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 500 !important;
+  margin: 0 !important;
+  text-shadow: none !important;
+}
+
+.checkin-system .stat-info {
+  display: contents;
+}
+
+.checkin-system .stat-info h3 {
+  display: none;
+}
+
+/* ============================================
+   CONTAINER & LAYOUT - KOMPAKT MIT 2-SPALTEN
+   ============================================ */
+
+.checkin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0.5rem;
+}
+
+.checkin-container.compact {
+  padding-top: 0.3rem;
+}
+
+/* 2-Spalten Layout für Laptops */
+@media (min-width: 1024px) {
+  .checkin-main-layout {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .checkin-left-column {
+    /* Suche + Mitglieder */
+  }
+
+  .checkin-right-column {
+    /* Heutige Check-ins */
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+}
+
+/* ============================================
+   MESSAGES
+   ============================================ */
+
+.message {
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 2px solid;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.message.success {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+  color: #ffd700;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2);
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+}
+
+/* ============================================
+   SEARCH BAR - ULTRA KOMPAKT
+   ============================================ */
+
+.search-container {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.3rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0.3rem 0;
+}
+
+.search-container.compact {
+  margin-top: 0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.5rem 2.5rem;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input:focus {
+  background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px);
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.search-container:focus-within {
+  border-color: #ffd700;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 25px rgba(255, 215, 0, 0.2);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  font-size: 0.75rem;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.search-clear:hover {
+  color: #ffd700;
+}
+
+/* ============================================
+   SEARCH RESULTS
+   ============================================ */
+
+.search-results {
+  margin-top: 1.5rem;
+}
+
+/* ============================================
+   MEMBER GRID
+   ============================================ */
+
+.member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.member-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.member-card:hover {
+  border-color: #ffd700;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+
+.member-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.member-card.checked-in {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.2);
+}
+
+.member-card.clickable:hover {
+  cursor: pointer;
+}
+
+.member-card-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.member-avatar {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 auto 0.4rem;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.member-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+  color: #ffffff;
+}
+
+.member-surname {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.3rem;
+}
+
+.checkin-course-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.checkin-course-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: rgba(255, 215, 0, 0.12);
+  color: #fefce8;
+  font-size: 0.7rem;
+  text-transform: none;
+}
+
+.checkin-course-tag .zeit {
+  opacity: 0.8;
+  font-size: 0.65rem;
+}
+
+.member-belt {
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+/* Belt Colors - GLASSMORPHISM STYLE */
+.belt-weiss { background: rgba(243, 244, 246, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.belt-gelb { background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid #ffd700; }
+.belt-orange { background: rgba(255, 107, 53, 0.2); color: #ff6b35; border: 1px solid #ff6b35; }
+.belt-gruen { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+.belt-blau { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6; }
+.belt-braun { background: rgba(120, 53, 15, 0.3); color: #d97706; border: 1px solid #d97706; }
+.belt-schwarz { background: rgba(31, 41, 55, 0.8); color: #ffffff; border: 1px solid #ffffff; }
+.belt-rot { background: rgba(220, 38, 38, 0.2); color: #dc2626; border: 1px solid #dc2626; }
+
+/* ============================================
+   MEMBER ACTIONS & CHECKOUT
+   ============================================ */
+
+.member-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: auto;
+  width: 100%;
+}
+
+.member-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  justify-content: center;
+}
+
+.member-status.available {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid #ffd700;
+}
+
+.member-status.checked-in {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid #22c55e;
+}
+
+.member-status.checkout-status {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.member-status.checkout-status:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.member-status.checkout-status:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-checkout {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 36px;
+}
+
+.btn-checkout:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-checkout:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-checkout:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   CHECK-IN INFO CARDS
+   ============================================ */
+
+.checkin-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.checkin-time-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.checkin-duration-display {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+/* Button-Styles entfernt - werden von components.css übernommen */
+
+/* ============================================
+   STEP CONTAINERS - KOMPAKT (15" Laptop)
+   ============================================ */
+
+.step-container {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.step-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.step-info h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.15rem 0;
+}
+
+.step-info p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   COURSE CARDS - KOMPAKT (15" Laptop)
+   ============================================ */
+
+.course-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.course-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.course-card:hover {
+  border-color: #ffd700;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+
+.course-card.selected {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+  box-shadow: 0 12px 40px rgba(255, 215, 0, 0.3);
+}
+
+.course-card.full {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  cursor: not-allowed;
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+}
+
+.course-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.course-info {
+  flex: 1;
+}
+
+.course-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.3rem;
+}
+
+.course-details {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.4rem;
+}
+
+.course-time {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.course-capacity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.capacity-bar {
+  width: 100px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.capacity-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.capacity-fill.normal {
+  background: #ffd700;
+}
+
+.capacity-fill.full {
+  background: #ef4444;
+}
+
+.capacity-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.selection-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.selection-indicator.unselected {
+  border: 2px solid #d1d5db;
+  color: #d1d5db;
+}
+
+.selection-indicator.selected {
+  background: #ffd700;
+  color: white;
+}
+
+.selection-indicator.full {
+  background: #ef4444;
+  color: white;
+}
+
+.course-full-label {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 0.5rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  border: 1px solid #ef4444;
+}
+
+/* ============================================
+   ACTION BUTTONS & ADDITIONAL COMPONENTS
+   ============================================ */
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.action-buttons .btn {
+  flex: 1;
+}
+
+.course-summary-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.course-summary-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #ff6b35;
+}
+
+.course-summary-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.course-summary-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.course-summary-name {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.course-summary-details {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.search-results h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.step-container h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.6rem;
+}
+
+/* ============================================
+   CONFIRMATION SCREEN - KOMPAKT (15" Laptop)
+   ============================================ */
+
+.confirmation-container {
+  text-align: center;
+  padding: 0.75rem;
+}
+
+.confirmation-avatar {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 auto 0.75rem;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.confirmation-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.3rem;
+}
+
+.confirmation-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.course-summary {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.course-summary h3,
+.course-summary h4 {
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.course-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(20px);
+  border-radius: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.course-summary-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   CHECK-INS LIST - KOMPAKT
+   ============================================ */
+
+.checkins-list-container {
+  margin-top: 0;
+}
+
+.checkins-list-container h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.6rem;
+}
+
+.checkins-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.checkout-all-btn {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkout-all-btn:hover:not(:disabled) {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.checkout-all-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.loading-spinner-large {
+  width: 64px;
+  height: 64px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   EMPTY STATES
+   ============================================ */
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state-icon {
+  color: #d1d5db;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  color: #9ca3af;
+  font-size: 1.125rem;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .checkin-header-content {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .progress-indicator {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .checkin-container {
+    padding: 1rem;
+  }
+  
+  .step-container {
+    padding: 1.5rem;
+  }
+  
+  .member-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  
+  .member-card {
+    padding: 1.5rem 1rem;
+    min-height: 160px;
+  }
+  
+  .member-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.25rem;
+  }
+  
+  .member-name {
+    font-size: 1rem;
+  }
+  
+  .member-surname {
+    font-size: 0.875rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkin-header-content {
+    padding: 1rem;
+  }
+  
+  .checkin-title {
+    font-size: 1.5rem;
+  }
+  
+  .member-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .search-input {
+    padding: 1rem 3rem;
+    font-size: 1rem;
+  }
+  
+  .btn {
+    padding: 0.875rem 1.25rem;
+    font-size: 1rem;
+  }
+  
+  .btn-large {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.125rem;
+  }
+}
+
+/* ============================================
+   TOUCH OPTIMIZATIONS
+   ============================================ */
+
+@media (pointer: coarse) {
+  .btn {
+    min-height: 60px;
+    padding: 1.25rem 1.75rem;
+  }
+  
+  .member-card {
+    padding: 2.5rem 2rem;
+    min-height: 220px;
+  }
+  
+  .course-card {
+    padding: 2rem;
+  }
+  
+  .search-input {
+    padding: 1.75rem 4rem;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.btn:focus,
+.member-card:focus,
+.course-card:focus,
+.search-input:focus {
+  outline: 2px solid var(--farbe-hauptfarbe, #1a365d);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+  .member-card {
+    border: 2px solid #000;
+  }
+  
+  .btn {
+    border: 2px solid currentColor;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.checkout-btn-mini {
+  background-color: #dc2626; /* Rot */
+  border: none;
+  border-radius: 4px;
+  padding: 4px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkout-btn-mini:hover {
+  background-color: #b91c1c; /* Dunkleres Rot beim Hover */
+}
+.checkins-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.checkout-all-btn {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* ============================================
+   CHECK-IN MODAL/POPUP
+   ============================================ */
+
+.checkin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.checkin-modal {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 1rem;
+  max-width: 900px;
+  width: calc(100% - 2rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideDown 0.3s ease-out;
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 2rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.checkin-modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.checkin-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffd700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checkin-modal-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkin-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+.checkin-modal-body {
+  padding: 1rem;
+}
+
+/* ============================================
+   MEMBER CHECK-IN MODAL (Admin-Style) - Überschreibt components.css
+   ============================================ */
+
+.modal-overlay.member-checkin-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 1000 !important;
+  overflow: hidden !important;
+  animation: fadeIn 0.2s ease-out !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: 10vh !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+.modal-content.checkin-modal {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%) !important;
+  border: 2px solid rgba(255, 215, 0, 0.3) !important;
+  border-radius: 1rem !important;
+  max-width: 450px !important;
+  width: 450px !important;
+  max-height: calc(100vh - 4rem) !important;
+  height: auto !important;
+  overflow: visible !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+  animation: slideDown 0.3s ease-out !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+.modal-content.checkin-modal .modal-header {
+  padding: 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  position: relative !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  backdrop-filter: blur(10px) !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.modal-content.checkin-modal .modal-header h2 {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #ffd700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.modal-content.checkin-modal .close-button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0.5rem !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  padding: 0.4rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
+}
+
+.modal-content.checkin-modal .close-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: #ffd700 !important;
+  color: #ffd700 !important;
+}
+
+.modal-content.checkin-modal .modal-body {
+  padding: 0.75rem !important;
+  overflow: visible !important;
+}
+
+/* Course Selection Styles - Spezifisch für Member Check-in */
+.modal-content.checkin-modal .course-selection-step,
+.modal-content.checkin-modal .confirmation-step {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.modal-content.checkin-modal .step-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
+  padding: 0.5rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+}
+
+.modal-content.checkin-modal .step-icon {
+  background: linear-gradient(135deg, #ffd700, #ffed4e) !important;
+  border-radius: 0.4rem !important;
+  padding: 0.3rem !important;
+  color: #1a1a1a !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.modal-content.checkin-modal .step-header h3 {
+  color: #ffd700 !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 0.1rem 0 !important;
+}
+
+.modal-content.checkin-modal .step-header p {
+  color: rgba(255, 255, 255, 0.8) !important;
+  margin: 0 !important;
+  font-size: 0.7rem !important;
+}
+
+.modal-content.checkin-modal .courses-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.2rem !important;
+  margin-bottom: 0.4rem !important;
+}
+
+.modal-content.checkin-modal .course-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.3rem !important;
+  padding: 0.3rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.3rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.modal-content.checkin-modal .course-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+.modal-content.checkin-modal .course-item.selected {
+  background: rgba(255, 215, 0, 0.1) !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2) !important;
+}
+
+.modal-content.checkin-modal .course-item.unavailable {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.modal-content.checkin-modal .course-checkbox {
+  width: 14px !important;
+  height: 14px !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 0.2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
+  flex-shrink: 0 !important;
+}
+
+.modal-content.checkin-modal .course-item.selected .course-checkbox {
+  background: #ffd700 !important;
+  border-color: #ffd700 !important;
+  color: #1a1a1a !important;
+}
+
+.modal-content.checkin-modal .course-info {
+  flex: 1 !important;
+}
+
+.modal-content.checkin-modal .course-name {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  margin-bottom: 0.08rem !important;
+}
+
+.modal-content.checkin-modal .course-time {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.65rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.2rem !important;
+  margin-bottom: 0.08rem !important;
+}
+
+.modal-content.checkin-modal .course-trainer,
+.modal-content.checkin-modal .course-room {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 0.6rem !important;
+  margin-bottom: 0.08rem !important;
+}
+
+.course-status {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+.no-courses {
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.no-courses-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.no-courses h4 {
+  color: #ffd700;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.selected-courses {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.selected-course-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.selected-course-item:last-child {
+  margin-bottom: 0;
+}
+
+.selected-course-item .course-name {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.selected-course-item .course-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.modal-content.checkin-modal .action-buttons {
+  display: flex !important;
+  gap: 0.3rem !important;
+  justify-content: flex-end !important;
+  margin-top: 0.4rem !important;
+}
+
+.modal-content.checkin-modal .btn {
+  padding: 0.3rem 0.6rem !important;
+  border: none !important;
+  border-radius: 0.25rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  font-size: 0.65rem !important;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+}
+
+.btn-large {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+}
+
+.message {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   VERKAUFS-INTEGRATION STYLES
+   ============================================ */
+
+/* Member Actions Row für neue Button-Layout */
+.member-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.member-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.member-action-btn.checkin {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e;
+}
+
+.member-action-btn.checkin:hover:not(.disabled) {
+  background: linear-gradient(135deg, #ff6b35, #ffd700);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+}
+
+.member-action-btn.checkin.disabled {
+  background: rgba(255, 215, 0, 0.5);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.member-action-btn.verkauf {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid #ffd700;
+}
+
+.member-action-btn.verkauf:hover {
+  background: rgba(255, 215, 0, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+
+/* Compact Action Buttons für eingecheckte Personen */
+.member-action-buttons.compact {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.checkout-btn-mini.verkauf {
+  background: var(--farbe-akzent, #ffd700);
+  color: var(--farbe-hauptfarbe, #1a365d);
+  margin-right: 0.25rem;
+}
+
+.checkout-btn-mini.verkauf:hover {
+  background: #f5c842;
+  transform: translateY(-1px);
+}
+
+.checkout-btn-mini.checkout {
+  background: #dc2626;
+  color: white;
+}
+
+.checkout-btn-mini.checkout:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.checkout-btn-mini:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

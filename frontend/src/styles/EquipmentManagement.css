@@ -1,0 +1,441 @@
+/* Equipment Management */
+.equipment-management {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.equipment-management .equipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.equipment-management .header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.equipment-management .header-content svg {
+  color: #ffd700;
+}
+
+.equipment-management .header-content h2 {
+  color: #ffd700;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.equipment-management .header-content p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.equipment-management .add-button {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.equipment-management .add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.equipment-management .equipment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.equipment-management .equipment-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.equipment-management .equipment-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.equipment-management .equipment-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.equipment-management .equipment-info {
+  flex: 1;
+}
+
+.equipment-management .equipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.equipment-management .equipment-header h3 {
+  color: #ffffff;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.equipment-management .equipment-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.equipment-management .badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.equipment-management .badge.required {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.equipment-management .badge.category {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.equipment-management .equipment-description {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.equipment-management .assigned-courses {
+  margin-bottom: 0.5rem;
+}
+
+.equipment-management .assigned-courses strong {
+  color: #ffd700;
+  font-size: 0.8rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.equipment-management .course-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.equipment-management .course-tag {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.equipment-management .equipment-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.equipment-management .action-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.equipment-management .action-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.equipment-management .action-button.delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* Modal Styles */
+.equipment-management .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.equipment-management .modal-content {
+  background: linear-gradient(135deg, rgba(30, 30, 35, 0.95), rgba(45, 45, 50, 0.95));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+.equipment-management .modal-header {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #000;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.equipment-management .modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.equipment-management .close-button {
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem;
+  color: #000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.equipment-management .close-button:hover {
+  background: rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+}
+
+.equipment-management .modal-body {
+  padding: 1.5rem;
+  max-height: calc(80vh - 140px);
+  overflow-y: auto;
+}
+
+.equipment-management .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.equipment-management .form-group label {
+  display: block;
+  color: #ffd700;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.equipment-management .form-group input,
+.equipment-management .form-group select,
+.equipment-management .form-group textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.8rem;
+  color: #ffffff;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.equipment-management .form-group input:focus,
+.equipment-management .form-group select:focus,
+.equipment-management .form-group textarea:focus {
+  outline: none;
+  border-color: #ffd700;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+.equipment-management .form-group input::placeholder,
+.equipment-management .form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.equipment-management .form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  accent-color: #ffd700;
+}
+
+.equipment-management .course-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.equipment-management .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.equipment-management .checkbox-label:hover {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.equipment-management .modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.equipment-management .btn {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.equipment-management .btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.equipment-management .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.equipment-management .btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #000;
+}
+
+.equipment-management .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.equipment-management .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.equipment-management .loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 215, 0, 0.3);
+  border-top: 3px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .equipment-management {
+    padding: 1rem;
+  }
+  
+  .equipment-management .equipment-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .equipment-management .equipment-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .equipment-management .equipment-main {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .equipment-management .equipment-actions {
+    align-self: flex-end;
+  }
+  
+  .equipment-management .modal-content {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .equipment-management .course-checkboxes {
+    grid-template-columns: 1fr;
+  }
+}

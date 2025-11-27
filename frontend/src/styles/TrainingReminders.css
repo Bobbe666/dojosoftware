@@ -1,0 +1,335 @@
+/* Training Reminders */
+.training-reminders {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.training-reminders .reminders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.training-reminders .reminders-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.training-reminders .reminders-title h3 {
+  color: #ffd700;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.training-reminders .reminders-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  animation: pulse 2s infinite;
+}
+
+.training-reminders .settings-button {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem;
+  color: #ffd700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.training-reminders .settings-button:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.training-reminders .reminder-settings {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+.training-reminders .reminder-settings h4 {
+  color: #ffd700;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.training-reminders .setting-item {
+  margin-bottom: 0.8rem;
+}
+
+.training-reminders .setting-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.training-reminders .setting-item input[type="checkbox"] {
+  accent-color: #ffd700;
+}
+
+.training-reminders .setting-item input[type="range"] {
+  width: 100%;
+  margin-top: 0.3rem;
+  accent-color: #ffd700;
+}
+
+.training-reminders .active-reminders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.training-reminders .reminder-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  position: relative;
+  animation: slideIn 0.3s ease-out;
+}
+
+.training-reminders .reminder-card.active {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.training-reminders .reminder-icon {
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  animation: bellRing 1s ease-in-out infinite;
+}
+
+.training-reminders .reminder-content {
+  flex: 1;
+}
+
+.training-reminders .reminder-course h4 {
+  color: #ffffff;
+  margin: 0 0 0.2rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.training-reminders .reminder-trainer {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+}
+
+.training-reminders .reminder-time,
+.training-reminders .reminder-details {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.training-reminders .time-until {
+  color: #ef4444;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.training-reminders .dismiss-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.3rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.training-reminders .dismiss-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.training-reminders .no-reminders {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.training-reminders .no-reminders svg {
+  color: #10B981;
+  margin-bottom: 0.5rem;
+}
+
+.training-reminders .no-reminders p {
+  margin: 0 0 0.3rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.training-reminders .no-reminders span {
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.training-reminders .upcoming-courses {
+  margin-top: 1rem;
+}
+
+.training-reminders .upcoming-courses h4 {
+  color: #ffd700;
+  margin: 0 0 0.8rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.training-reminders .course-preview {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.6rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.training-reminders .course-preview:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.training-reminders .course-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.training-reminders .course-name {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.training-reminders .course-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+}
+
+.training-reminders .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-top: 2px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.training-reminders .reminders-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes bellRing {
+  0%, 100% { 
+    transform: rotate(0deg);
+  }
+  25% { 
+    transform: rotate(-10deg);
+  }
+  75% { 
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .training-reminders .reminder-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  
+  .training-reminders .dismiss-button {
+    align-self: flex-end;
+  }
+  
+  .training-reminders .course-preview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+}

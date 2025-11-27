@@ -1,0 +1,152 @@
+/* =====================================================================================
+   ARTIKEL-VERWALTUNG OVERRIDES
+   =====================================================================================
+   Diese Datei wird NACH components.css geladen um Styles zu überschreiben
+   ===================================================================================== */
+
+/* Modal Header - Icons nicht von Gradient überlagern */
+.artikel-modal .modal-header h2 {
+  color: #ffd700 !important;
+  background: none !important;
+  -webkit-text-fill-color: #ffd700 !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+  text-shadow: none !important;
+}
+
+/* Sub-Tabs Container - EXAKT wie in MitgliedDetailShared */
+.artikel-modal .sub-tabs {
+  display: flex !important;
+  gap: 0.5rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0.25rem !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  flex-wrap: wrap !important;
+}
+
+/* Sub-Tab Buttons - EXAKT wie in components.css */
+.artikel-modal .sub-tab-btn {
+  flex: 1 !important;
+  padding: 0.75rem 1.5rem !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  white-space: nowrap !important;
+}
+
+.artikel-modal .sub-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+}
+
+.artikel-modal .sub-tab-btn.active {
+  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  color: #1a1a2e !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Formularfelder - korrekte Höhe und Rahmen, KEINE grünen/roten Umrandungen */
+.tab-content-section .form-input,
+.tab-content-section .form-select,
+.tab-content-section .form-textarea {
+  padding: 0.5rem 0.75rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 0.95rem !important;
+  height: 42px !important;
+  font-family: var(--schriftart-haupt) !important;
+  box-shadow: none !important;
+}
+
+.tab-content-section .form-select {
+  cursor: pointer !important;
+}
+
+.tab-content-section .form-textarea {
+  height: auto !important;
+  min-height: 80px !important;
+  resize: vertical !important;
+  padding: 0.75rem !important;
+}
+
+.tab-content-section .form-input:focus,
+.tab-content-section .form-select:focus,
+.tab-content-section .form-textarea:focus {
+  outline: none !important;
+  border-color: #ffd700 !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  box-shadow: none !important;
+}
+
+/* WICHTIG: Keine Validierungs-Farben (grün/rot) */
+.tab-content-section .form-input:valid,
+.tab-content-section .form-select:valid,
+.tab-content-section .form-textarea:valid,
+.tab-content-section .form-input:invalid,
+.tab-content-section .form-select:invalid,
+.tab-content-section .form-textarea:invalid {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
+}
+
+.tab-content-section .form-input:focus:valid,
+.tab-content-section .form-select:focus:valid,
+.tab-content-section .form-textarea:focus:valid,
+.tab-content-section .form-input:focus:invalid,
+.tab-content-section .form-select:focus:invalid,
+.tab-content-section .form-textarea:focus:invalid {
+  border-color: #ffd700 !important;
+  box-shadow: none !important;
+}
+
+/* Checkbox Labels - nicht grell weiß */
+.tab-content-section .checkbox-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 1rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.95rem !important;
+}
+
+.tab-content-section .checkbox-label:hover {
+  background: rgba(255, 215, 0, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+}
+
+.tab-content-section .checkbox-label input[type="checkbox"] {
+  width: 20px !important;
+  height: 20px !important;
+  cursor: pointer !important;
+  accent-color: #ffd700 !important;
+}
+
+/* Modal Hintergrund - keine Transparenz */
+.modal-content.artikel-modal {
+  background: #1a1a2e !important;
+}
+
+.artikel-modal .modal-body {
+  background: #1a1a2e !important;
+}

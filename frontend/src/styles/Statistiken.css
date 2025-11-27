@@ -1,0 +1,334 @@
+/* ============================================================================
+   STATISTIKEN TAB - MODERNE VISUALISIERUNGEN
+   ============================================================================ */
+
+.statistiken-tab {
+  padding: 20px;
+  background: rgba(30, 30, 50, 0.5);
+  border-radius: 15px;
+  min-height: 600px;
+}
+
+.statistiken-tab .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.statistiken-tab .section-header h3 {
+  margin: 0;
+  font-size: 24px;
+  background: linear-gradient(135deg, #ffd700, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.loading-indicator {
+  color: rgba(255, 215, 0, 0.8);
+  font-size: 14px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+}
+
+/* Stats Container - Grid Layout */
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* Stat Cards */
+.stat-card {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.2);
+}
+
+.stat-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #FFD700;
+  font-weight: 600;
+}
+
+.stat-card .stat-description {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stat-card.full-width {
+  width: 100%;
+}
+
+.stat-card.half-width {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Stats Row - Flex Layout für nebeneinander */
+.stats-row {
+  display: flex;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+/* No Data Message in Cards */
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* ============================================================================
+   PRÜFUNGS-ERFOLGSRATE DISPLAY
+   ============================================================================ */
+
+.success-rate-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.rate-circle {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+  border: 3px solid rgba(255, 215, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.rate-value {
+  font-size: 42px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.rate-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
+}
+
+.rate-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.rate-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.rate-detail-item.success {
+  border-left-color: #32CD32;
+}
+
+.rate-detail-item.fail {
+  border-left-color: #DC143C;
+}
+
+.rate-detail-item.pending {
+  border-left-color: #FFA500;
+}
+
+.rate-detail-item .label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.rate-detail-item .value {
+  color: #FFD700;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ============================================================================
+   TRAININGSZEIT GRID
+   ============================================================================ */
+
+.training-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.training-time-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.training-time-card:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.kategorie-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFD700;
+  margin-bottom: 15px;
+  text-transform: capitalize;
+}
+
+.time-info {
+  display: flex;
+  justify-content: space-around;
+  margin: 15px 0;
+}
+
+.time-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-value .number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #FFFFFF;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.time-value .unit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 5px;
+}
+
+.graduierungen-count {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================================
+   ZUSAMMENFASSUNG CARD
+   ============================================================================ */
+
+.summary-card {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.summary-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.summary-value {
+  color: #FFD700;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .stats-row {
+    flex-direction: column;
+  }
+
+  .stat-card.half-width {
+    width: 100%;
+  }
+
+  .training-time-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .rate-circle {
+    width: 120px;
+    height: 120px;
+  }
+
+  .rate-value {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .statistiken-tab {
+    padding: 15px;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .training-time-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

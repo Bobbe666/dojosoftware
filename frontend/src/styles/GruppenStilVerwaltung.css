@@ -1,0 +1,101 @@
+.verwaltung-wrapper {
+  width: 100%;
+  padding: 2rem;
+  color: var(--farbe-text);
+}
+
+.verwaltung-titel {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--farbe-rot);
+}
+
+.verwaltung-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+.verwaltung-box {
+  flex: 1 1 400px;
+  background-color: var(--farbe-weiss);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--schatten-standard);
+}
+
+.verwaltung-box h3 {
+  color: var(--farbe-rot);
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+/* Liste */
+.verwaltung-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.verwaltung-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  color: var(--farbe-text);
+}
+
+.verwaltung-eintrag span {
+  flex: 1;
+}
+
+/* Formular */
+.verwaltung-formular {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.verwaltung-formular input,
+.verwaltung-bearbeiten-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  background-color: var(--farbe-weiss);
+  color: var(--farbe-text);
+}
+
+/* Buttons */
+.verwaltung-hinzufuegen,
+.verwaltung-loeschen,
+.verwaltung-bearbeiten,
+.verwaltung-speichern,
+.verwaltung-abbrechen {
+  background-color: var(--farbe-rot);
+  color: var(--farbe-weiss);
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.verwaltung-hinzufuegen:hover,
+.verwaltung-loeschen:hover,
+.verwaltung-bearbeiten:hover,
+.verwaltung-speichern:hover,
+.verwaltung-abbrechen:hover {
+  background-color: var(--farbe-rot-hell);
+}
+
+/* Responsives Layout */
+@media (max-width: 800px) {
+  .verwaltung-container {
+    flex-direction: column;
+  }
+}

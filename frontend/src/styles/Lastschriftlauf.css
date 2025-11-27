@@ -1,0 +1,427 @@
+/* ===== LASTSCHRIFTLAUF CSS ===== */
+
+.lastschriftlauf-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: #ffffff;
+  padding: 1.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ===== HEADER ===== */
+.lastschriftlauf-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.lastschriftlauf-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #10b981;
+  margin-bottom: 0.2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.lastschriftlauf-header p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+/* ===== INFO BOX ===== */
+.info-box {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.info-box svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+}
+
+.info-box h3 {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.info-box p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.info-box strong {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* ===== WARNING BOX ===== */
+.warning-box {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.warning-box svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.warning-box h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f59e0b;
+  margin: 0 0 0.5rem 0;
+}
+
+.warning-box p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+
+.warning-box strong {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.missing-mandates-list {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.missing-mandate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.missing-mandate-item:last-child {
+  border-bottom: none;
+}
+
+.missing-mandate-item .member-name {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.missing-mandate-item .contract-count {
+  font-size: 0.75rem;
+  color: rgba(245, 158, 11, 0.8);
+  background: rgba(245, 158, 11, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.missing-mandates-list .more-info {
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+/* ===== STATS GRID ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Lastschriftlauf verwendet jetzt die zentralen Styles aus components.css */
+/* Keine spezifischen !important Regeln mehr nötig */
+
+/* ===== EXPORT CONFIG CARD ===== */
+.export-config-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.export-config-card h2 {
+  color: #10b981;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.form-group label svg {
+  color: #10b981;
+  width: 16px;
+  height: 16px;
+}
+
+.form-select {
+  padding: 0.75rem;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.form-select:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.form-group small {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}
+
+.export-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-large {
+  padding: 0.85rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ===== PREVIEW CARD ===== */
+.preview-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview-card h2 {
+  color: #10b981;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.preview-table thead {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.preview-table th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #10b981;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+  white-space: nowrap;
+}
+
+.preview-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.preview-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.preview-table td {
+  padding: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.preview-table code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.preview-table small {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== BADGES ===== */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-info {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ===== HINTS CARD ===== */
+.hints-card {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.hints-card h3 {
+  color: #f59e0b;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.hints-card ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hints-card li {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+  font-size: 0.85rem;
+}
+
+.hints-card li:last-child {
+  margin-bottom: 0;
+}
+
+.hints-card strong {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .lastschriftlauf-container {
+    padding: 1rem;
+  }
+
+  .lastschriftlauf-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .export-actions {
+    flex-direction: column;
+  }
+
+  .btn-large {
+    width: 100%;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .preview-table {
+    min-width: 600px;
+  }
+}

@@ -1,0 +1,574 @@
+/*
+================================================================================
+STIL-VERWALTUNG OVERRIDES
+================================================================================
+Diese Datei überschreibt problematische !important Regeln aus StilVerwaltung.css
+und stellt sicher, dass zentrale Designs aus Buttons.css und components.css gelten.
+WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
+================================================================================
+*/
+
+/* ===== HAUPT-CONTAINER - Transparenter Hintergrund ===== */
+.stil-verwaltung {
+  background: transparent !important;
+}
+
+/* Detail-Ansicht, Tab-Navigation und Tab-Content transparent */
+.stil-detail {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.tab-navigation {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+}
+
+.tab-content {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  padding: 0 !important;
+  padding-top: 1rem !important;
+}
+
+/* ===== GRADUIERUNG MANAGER - Glassmorphism Design ===== */
+.graduierung-manager,
+.pruefungsinhalt-manager {
+  background: rgba(30, 30, 50, 0.7) !important;
+  backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 20px !important;
+  padding: 2rem !important;
+}
+
+/* Section Header innerhalb Graduierung Manager - KONSOLIDIERTE VERSION */
+.graduierung-manager .section-header,
+.pruefungsinhalt-manager .section-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background: rgba(20, 20, 35, 0.5) !important;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4) !important;
+  border-radius: 15px 15px 0 0 !important;
+  backdrop-filter: blur(10px) !important;
+  padding: 1.5rem !important;
+  margin-bottom: 2rem !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.graduierung-manager .section-header h3,
+.pruefungsinhalt-manager .section-header h3 {
+  color: #ffd700 !important;
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  letter-spacing: 0.5px !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 215, 0, 0.6) !important;
+  position: relative !important;
+  z-index: 100 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Header Buttons Container */
+.graduierung-manager .header-buttons,
+.pruefungsinhalt-manager .header-buttons {
+  display: flex !important;
+  gap: 0.75rem !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
+/* ===== INFO BOXES - Glassmorphism statt weiß ===== */
+.drag-drop-info {
+  background: rgba(30, 30, 50, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ===== BUTTONS - TAB DESIGN WIE IN SIDEBAR ===== */
+
+/* Alle Buttons - Tab-Design mit verbesserter Lesbarkeit */
+.graduierung-actions .btn,
+.header-buttons .btn,
+.graduierung-manager .section-header .btn,
+.graduierung-manager button[class*="btn"] {
+  background: rgba(20, 20, 35, 0.7) !important;
+  border: 1px solid rgba(255, 215, 0, 0.5) !important;
+  color: #ffffff !important;
+  padding: 12px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  min-width: 120px !important;
+}
+
+.graduierung-actions .btn:hover:not(:disabled),
+.header-buttons .btn:hover:not(:disabled),
+.graduierung-manager .section-header .btn:hover:not(:disabled),
+.graduierung-manager button[class*="btn"]:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 215, 0, 0.7) !important;
+  color: rgba(255, 255, 255, 1) !important;
+  transform: none !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2) !important;
+  background-image: none !important;
+}
+
+/* Danger Buttons (Löschen) */
+.graduierung-actions .btn-danger,
+.graduierung-manager .btn-danger {
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #ef4444 !important;
+}
+
+.graduierung-actions .btn-danger:hover:not(:disabled),
+.graduierung-manager .btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  color: #ef4444 !important;
+  box-shadow: none !important;
+}
+
+/* Info Buttons (Move Buttons) */
+.graduierung-actions .btn-info,
+.graduierung-actions .move-btn {
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  color: #3b82f6 !important;
+  min-width: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  font-size: 1.2rem !important;
+}
+
+.graduierung-actions .btn-info:hover:not(:disabled),
+.graduierung-actions .move-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  color: #3b82f6 !important;
+  box-shadow: none !important;
+}
+
+/* Disabled State */
+.graduierung-actions .btn:disabled,
+.header-buttons .btn:disabled,
+.graduierung-manager .btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* ===== ENSURE NO WHITE BACKGROUNDS ANYWHERE ===== */
+.graduierung-list {
+  background: transparent !important;
+}
+
+.graduierung-manager > * {
+  background-color: transparent;
+}
+
+/* Ensure section-header has no white background */
+.section-header {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Empty state should also be glassmorphism */
+.empty-state {
+  background: rgba(30, 30, 50, 0.5) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 15px !important;
+  padding: 3rem !important;
+}
+
+/* ===== Z-INDEX FIX - Text lesbar machen ===== */
+/* Bereits in konsolidierter Section Header Regel oben definiert */
+
+.graduierung-manager .header-buttons,
+.graduierung-manager .section-header .header-buttons {
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+.graduierung-manager .header-buttons .btn,
+.graduierung-manager .section-header button {
+  position: relative !important;
+  z-index: 101 !important;
+}
+
+/* Graduierung Items z-index */
+.graduierung-item {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.graduierung-header {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.graduierung-name,
+.graduierung-name strong {
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+.graduierung-actions {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* ===== TEXT READABILITY - Besserer Kontrast ===== */
+/* Section Header h3 bereits in konsolidierter Regel oben definiert */
+
+/* Info Box Text auch besser lesbar */
+.drag-drop-info {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.drag-drop-info strong {
+  color: #ffd700 !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6) !important;
+}
+
+/* Graduierung Namen besser lesbar */
+.graduierung-name strong {
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+  font-weight: 600 !important;
+}
+
+/* Button Text besser lesbar */
+.graduierung-manager button,
+.graduierung-manager .btn {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ===== FINAL TEXT FIX - KONSOLIDIERT ===== */
+/* Alle Section Header Styles bereits in konsolidierter Regel oben definiert */
+
+/* Button Text - kein Shadow wie Tab-Design */
+.graduierung-manager .section-header button,
+.graduierung-manager .header-buttons .btn {
+  color: rgba(255, 255, 255, 0.7) !important;
+  text-shadow: none !important;
+  font-weight: 600 !important;
+}
+
+.graduierung-manager .section-header button:hover,
+.graduierung-manager .header-buttons .btn:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Remove any pseudo-elements (Shimmer Effect) from Buttons.css */
+.graduierung-manager button[class*="btn"]::before,
+.graduierung-manager button[class*="btn"]::after,
+.header-buttons button[class*="btn"]::before,
+.header-buttons button[class*="btn"]::after {
+  display: none !important;
+}
+
+/* ===== MODAL FIXES - NUR FÜR STIL-VERWALTUNG ===== */
+/* HÖCHSTE SPEZIFITÄT mit body am Anfang! */
+
+/* Modal Content - Überschreibt StilVerwaltung.css body .modal-overlay Styles */
+html body .modal-overlay .modal-content.stil-modal,
+html body .modal-overlay .modal-content.belt-modal.stil-modal {
+  /* Layout */
+  display: block !important;
+  position: relative !important;
+
+  /* Größe */
+  max-width: 850px !important;
+  width: 90% !important;
+  max-height: 90vh !important;
+
+  /* Spacing - WICHTIG: padding darf NICHT 0 sein! */
+  margin: 0 auto !important;
+  padding: 2.5rem !important;
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+  padding-left: 2.5rem !important;
+  padding-right: 2.5rem !important;
+
+  /* Box Model */
+  box-sizing: border-box !important;
+
+  /* Overflow */
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+
+  /* Visuals */
+  background: rgba(26, 26, 46, 0.98) !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+
+  /* Text */
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Pseudo-Element entfernen */
+body .modal-overlay .modal-content.stil-modal::before {
+  display: none !important;
+}
+
+/* Modal Header - ALLE negativen Margins überschreiben! */
+html body .modal-overlay .modal-content.stil-modal .modal-header,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin: 0 !important;
+  margin-bottom: 1.5rem !important;
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
+  padding-bottom: 1rem !important;
+  padding-top: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+}
+
+/* Modal Actions - ALLE negativen Margins überschreiben! */
+html body .modal-overlay .modal-content.stil-modal .modal-actions,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
+  display: flex !important;
+  gap: 1rem !important;
+  justify-content: flex-end !important;
+  margin: 0 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ALLE Elemente im Modal */
+body .modal-overlay .modal-content.stil-modal * {
+  box-sizing: border-box !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* NUR modal-header und modal-actions ohne extra padding */
+body .modal-overlay .modal-content.stil-modal > .modal-header,
+body .modal-overlay .modal-content.stil-modal > .modal-actions {
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Alle anderen direkten Divs (belt-categories, etc.) BEHALTEN ihr Padding */
+body .modal-overlay .modal-content.stil-modal > div:not(.modal-header):not(.modal-actions) {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Form Groups auf volle Breite */
+body .modal-overlay .modal-content.stil-modal .form-group,
+body .modal-overlay .modal-content.stil-modal .form-row {
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Modal-Titel gold - nur Stil-Modal */
+.modal-overlay .modal-content.stil-modal .modal-title,
+.modal-overlay .modal-content.stil-modal h3,
+.modal-overlay .modal-content.stil-modal .category-title {
+  color: #ffd700 !important;
+}
+
+/* Form Labels - nur Stil-Modal */
+.modal-overlay .modal-content.stil-modal .form-label,
+.modal-overlay .modal-content.stil-modal label {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500 !important;
+}
+
+/* Belt Categories scrollbar - nur Stil-Modal */
+.modal-overlay .modal-content.stil-modal .belt-categories {
+  max-height: 50vh !important;
+  overflow-y: auto !important;
+  padding-right: 0.5rem !important;
+}
+
+/* Belt Grid - Mehr Platz - nur Stil-Modal */
+.modal-overlay .modal-content.stil-modal .belt-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 1rem !important;
+  margin-top: 1rem !important;
+}
+
+/* Belt Options - Bessere Lesbarkeit - nur Stil-Modal */
+.modal-overlay .modal-content.stil-modal .belt-option {
+  padding: 1rem 0.75rem !important;
+  min-height: 110px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Belt Name - Zeilenumbruch erlauben - nur Stil-Modal */
+.modal-overlay .modal-content.stil-modal .belt-name {
+  font-size: 0.85rem !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  margin-top: 0.5rem !important;
+  line-height: 1.3 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+}
+
+/* ===== CRITICAL FIX - ÜBERSCHREIBT components.css ===== */
+/* Modal Overlay - Sicherstellen dass Zentrierung funktioniert */
+html body .modal-overlay {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding: 2rem 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Für alle Bildschirmgrößen */
+html body .modal-overlay .modal-content.stil-modal,
+html body .modal-overlay .modal-content.belt-modal.stil-modal {
+  display: block !important;
+  padding: 2rem !important;
+  width: 90% !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  flex-shrink: 0 !important;
+}
+
+/* Alle direkten Kinder auf volle Breite */
+html body .modal-overlay .modal-content.stil-modal > *,
+html body .modal-overlay .modal-content.belt-modal.stil-modal > * {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .modal-header,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-header {
+  margin: 0 !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0 !important;
+  padding-bottom: 1rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .belt-categories {
+  margin: 1rem 0 !important;
+  padding-right: 0.5rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .belt-category {
+  margin-bottom: 1.5rem !important;
+  padding: 1rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .category-title {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 0 1rem 0 !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .belt-grid {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Diese Regel MUSS components.css media query überschreiben */
+@media (max-width: 768px) {
+  html body .modal-overlay {
+    padding: 1rem 0 !important;
+    align-items: flex-start !important;
+  }
+
+  html body .modal-overlay .modal-content.stil-modal,
+  html body .modal-overlay .modal-content.belt-modal.stil-modal {
+    padding: 1.5rem !important;
+    width: 95% !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+  }
+
+  html body .modal-overlay .modal-content.stil-modal .modal-header {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html body .modal-overlay .modal-content.stil-modal .belt-categories {
+    padding-left: 0 !important;
+    padding-right: 0.5rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html body .modal-overlay .modal-content.stil-modal .belt-grid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html body .modal-overlay .modal-content.stil-modal .belt-category {
+    padding: 0.75rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html body .modal-overlay .modal-content.stil-modal .modal-title {
+    font-size: 1.2rem !important;
+  }
+}

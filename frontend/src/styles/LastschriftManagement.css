@@ -1,0 +1,124 @@
+/* ===== LASTSCHRIFT MANAGEMENT CONTAINER ===== */
+.lastschrift-management-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ===== HEADER WITH TABS ===== */
+.management-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.management-header .btn {
+  flex-shrink: 0;
+}
+
+/* ===== TABS CONTAINER ===== */
+.tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+}
+
+.tab-button svg {
+  flex-shrink: 0;
+}
+
+.tab-button span {
+  white-space: nowrap;
+}
+
+/* ===== TAB CONTENT ===== */
+.tab-content {
+  /* Content nimmt vollen Platz, aber ohne eigenes Padding (wird von Child-Komponenten gehandhabt) */
+  min-height: calc(100vh - 90px);
+}
+
+/* Wenn embedded, entferne doppelte Header/Container */
+.tab-content .lastschriftlauf-container,
+.tab-content .zahllaeufe-container {
+  background: transparent;
+  min-height: auto;
+  padding-top: 0;
+}
+
+.tab-content .lastschriftlauf-header,
+.tab-content .zahllaeufe-header {
+  display: none; /* Header wird durch Tabs ersetzt */
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .management-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .tabs-container {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .tab-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tab-button.active::after {
+    bottom: 0;
+    height: 100%;
+    width: 3px;
+    left: -2px;
+    background: linear-gradient(180deg, transparent, #f59e0b, transparent);
+  }
+}

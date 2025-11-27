@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build Output
+dist/
+build/
+frontend/dist/
+backend/dist/
+
+# Environment Variables
+.env
+.env.local
+.env.production
+.env.development
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Uploads & User Data
+uploads/
+backend/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# PM2
+.pm2/

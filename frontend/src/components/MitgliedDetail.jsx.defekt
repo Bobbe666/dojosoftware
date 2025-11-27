@@ -1,0 +1,15 @@
+import React from 'react';
+
+const MitgliedDetail = () => {
+  return (
+    <div className="standard-card">
+      <div className="standard-card-content">
+        <h2>🔧 Mitglied Detail - Temporär deaktiviert</h2>
+        <p>Diese Komponente wird derzeit repariert...</p>
+        <p>Bitte verwenden Sie andere Funktionen der Anwendung.</p>
+      </div>
+    </div>
+  );
+};
+
+export default MitgliedDetail;

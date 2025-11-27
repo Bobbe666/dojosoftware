@@ -1,0 +1,680 @@
+/* ===== TARIFE & PREISE CSS - Maximale Spezifität für Überschreibungen ===== */
+
+/* Nur notwendige Animationen */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.tarife-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: #ffffff;
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* ===== HEADER ===== */
+.tarife-container .tarife-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.tarife-container .tarife-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
+               0 0 4px rgba(255, 215, 0, 0.6);
+  position: relative;
+  z-index: 2;
+}
+
+.tarife-container .tarife-header p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== LOADING STATE ===== */
+.tarife-container .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tarife-container .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top: 4px solid #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+/* ===== STATISTIK CARDS - FORCE OVERRIDE ===== */
+.tarife-container .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin-bottom: 3rem;
+}
+
+.tarife-container .stat-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 1rem;
+}
+
+.tarife-container .stat-card:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  transform: none !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.tarife-container .stat-icon {
+  background: rgba(255, 215, 0, 0.15) !important;
+  color: #ffd700 !important;
+  padding: 0.75rem !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  width: 48px !important;
+  height: 48px !important;
+  font-size: 1.5rem !important;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.tarife-container .stat-info {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.tarife-container .stat-info h3 {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1.2;
+}
+
+.tarife-container .stat-value {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.2rem 0;
+  line-height: 1.1;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.6);
+}
+
+.tarife-container .stat-trend {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.7rem;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1.2;
+}
+
+/* ===== SECTION HEADERS ===== */
+.tarife-container .section {
+  margin-bottom: 2.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.tarife-container .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  position: relative;
+  z-index: 2;
+}
+
+.tarife-container .section-header h2 {
+  color: #ffd700;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
+               0 0 4px rgba(255, 215, 0, 0.6);
+}
+
+/* ===== TARIFE GRID ===== */
+.tarife-container .tarife-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  padding: 0;
+  margin-bottom: 3rem;
+}
+
+.tarife-container .tarif-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tarife-container .tarif-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.tarife-container .tarif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tarife-container .tarif-header h3 {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.tarife-container .tarif-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin: 0.75rem 0;
+  text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.tarife-container .tarif-price .currency {
+  font-size: 1.2rem;
+  vertical-align: top;
+}
+
+.tarife-container .tarif-price .period {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ===== TARIF DETAILS - FORCED DARK THEME ===== */
+.tarife-container .tarif-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  margin-top: auto;
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tarife-container .detail-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  padding: 0.5rem;
+}
+
+.tarife-container .detail-item .label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+}
+
+.tarife-container .detail-item .value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  word-break: break-word;
+  max-width: 100%;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== BUTTONS - ZENTRAL ===== */
+.tarife-container .btn-primary {
+  background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  position: relative;
+  overflow: hidden;
+  min-width: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.tarife-container .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+.tarife-container .btn-primary:active {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e;
+  border-color: #ffd700;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* ===== ACTION BUTTONS ===== */
+.tarife-container .action-btn {
+  border-radius: 8px !important;
+  padding: 0.65rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+  z-index: 1010 !important;
+  position: relative !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+}
+
+.tarife-container .action-btn.edit {
+  color: #ffd700 !important;
+  border: 2px solid #ffd700 !important;
+  background: rgba(255, 215, 0, 0.25) !important;
+}
+
+.tarife-container .action-btn.edit:hover {
+  background: rgba(255, 215, 0, 0.45) !important;
+  border-color: #ffe166 !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5) !important;
+}
+
+.tarife-container .action-btn.delete {
+  color: #ef4444 !important;
+  border: 2px solid #ef4444 !important;
+  background: rgba(239, 68, 68, 0.25) !important;
+}
+
+.tarife-container .action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.45) !important;
+  border-color: #f87171 !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Größere Icons in den Action Buttons */
+.tarife-container .action-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* ===== STATUS BADGES - FORCE GREEN FOR ACTIVE ===== */
+.tarife-container .status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tarife-container .status-badge.active {
+  background: rgba(34, 197, 94, 0.25);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.tarife-container .status-badge.inactive {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== MODAL ===== */
+.tarife-container .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.tarife-container .modal {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.tarife-container .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.tarife-container .modal-header h3 {
+  color: #ffd700;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tarife-container .close-btn {
+  background: #ef4444;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tarife-container .close-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* ===== FORM ===== */
+.tarife-container .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.tarife-container .form-group label {
+  display: block;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.tarife-container .form-group input,
+.tarife-container .form-group textarea,
+.tarife-container .form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.tarife-container .form-group input:focus,
+.tarife-container .form-group textarea:focus,
+.tarife-container .form-group select:focus {
+  outline: none;
+  border-color: #ffd700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+}
+
+.tarife-container .form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.tarife-container .save-btn {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e;
+  border: 1px solid #ffd700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tarife-container .save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.tarife-container .cancel-btn {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tarife-container .cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ===== COLLAPSIBLE SECTION HEADERS ===== */
+.tarife-container .section-header.collapsible {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.tarife-container .section-header.collapsible:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.tarife-container .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.tarife-container .tarif-count {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.tarife-container .tarif-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.tarife-container .tarif-title h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.tarife-container .tarif-actions {
+  display: flex;
+  gap: 0.5rem;
+  pointer-events: auto;
+  z-index: 20;
+  position: relative;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.tarife-container .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.tarife-container .checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .tarife-container {
+    padding: 1rem;
+  }
+
+  .tarife-container .stats-grid,
+  .tarife-container .tarife-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .tarife-container .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .tarife-container .tarife-header h1 {
+    font-size: 2rem;
+  }
+
+  .tarife-container .modal {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .tarife-container .form-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .tarife-container .stat-card,
+  .tarife-container .tarif-card {
+    padding: 1.5rem;
+  }
+
+  .tarife-container .stat-icon {
+    min-width: 40px;
+    padding: 0.5rem;
+  }
+
+  .tarife-container .tarif-price {
+    font-size: 1.75rem;
+  }
+}

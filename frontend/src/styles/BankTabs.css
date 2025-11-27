@@ -1,0 +1,448 @@
+/* BankTabs.css - Styles für Bankverbindungs-Tabs */
+
+.bank-tabs-container {
+  width: 100%;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.message {
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.message.success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* Tab-Leiste */
+.tabs-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.3);
+  color: #ffffff;
+}
+
+.tab.active {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: #ffd700;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.tab.inactive {
+  opacity: 0.5;
+}
+
+.tab-add {
+  background: transparent;
+  border: 1px dashed rgba(255, 215, 0, 0.3);
+  color: #ffd700;
+}
+
+.tab-add:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+}
+
+/* Tab-Inhalt */
+.tabs-content {
+  padding: 16px;
+}
+
+.loading {
+  text-align: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}
+
+/* Formular */
+.bank-form {
+  max-width: 100%;
+}
+
+/* 3-Spalten Layout ohne separaten Hintergrund */
+.bank-form .form-section-three-column {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.bank-form h2 {
+  color: #ffd700;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+}
+
+.form-section {
+  margin-bottom: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.form-section h3 {
+  color: #ffd700;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  font-weight: 500;
+}
+
+/* Spezielle Styling für 3-Spalten Layout - normale Überschriften */
+.form-section-three-column .form-section h3 {
+  color: #ffd700;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  font-weight: 600;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+/* Spezielle Layouts für kompaktere Darstellung */
+.form-row-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* Side-by-side Layout für Allgemeine Infos und SEPA */
+.form-section-side-by-side {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.form-section-side-by-side .form-section {
+  margin-bottom: 0;
+  padding: 10px;
+}
+
+/* 3-Spalten Layout für Allgemeine Infos + SEPA + Notizen */
+.form-section-three-column {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.form-section-three-column .form-section {
+  margin-bottom: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+/* Kompaktere Textarea für Notizen */
+.form-section-three-column textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Für größere Bildschirme: 4 Spalten */
+@media (min-width: 1400px) {
+  .form-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .form-section-side-by-side {
+    grid-template-columns: 1fr 3fr;
+  }
+  
+  .form-section-three-column {
+    grid-template-columns: 1fr 2.5fr 1fr;
+    gap: 24px;
+  }
+}
+
+/* Für mittlere Bildschirme: 2-3 Spalten */
+@media (min-width: 768px) and (max-width: 1399px) {
+  .form-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .form-section-side-by-side {
+    grid-template-columns: 1fr 2fr;
+  }
+  
+  .form-section-three-column {
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 18px;
+  }
+}
+
+/* Für kleinere Bildschirme: 3-Spalten zu vertikal */
+@media (max-width: 1300px) {
+  .form-section-three-column {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .form-section-three-column .form-section {
+    padding: 0;
+  }
+}
+
+/* Für noch kleinere Bildschirme: Side-by-side deaktivieren */
+@media (max-width: 1024px) {
+  .form-section-side-by-side {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-group label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+
+/* Kompaktere Checkbox-Gruppen */
+.form-group.checkbox-group {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-group.checkbox-group label {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ffd700;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Checkbox-Gruppe */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-group label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checkbox-group span {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+}
+
+/* Aktionsbuttons */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #ffd700;
+  color: #1a1a2e;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #ffed4e;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tabs-header {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding: 8px;
+  }
+
+  .tab {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .tabs-content {
+    padding: 10px;
+  }
+
+  .form-section {
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+
+  .form-section h3 {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .form-group label {
+    font-size: 0.7rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+  }
+}
+
+/* Tablet-Ansicht */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .tabs-content {
+    padding: 14px;
+  }
+  
+  .form-section {
+    padding: 12px;
+  }
+}
+
