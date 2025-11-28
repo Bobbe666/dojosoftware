@@ -1,5 +1,7 @@
 import React, { useContext, useState } from "react";
 import axios from "axios";
+import "../styles/themes.css";
+import "../styles/components.css";
 import "../styles/GruppenStilVerwaltung.css";
 import { DatenContext } from "@shared/DatenContext.jsx";
 
@@ -105,13 +107,15 @@ const GruppenStilVerwaltung = () => {
   };
 
   return (
-    <div className="verwaltung-wrapper">
-      <h2 className="verwaltung-titel">Stile &amp; Gruppen verwalten</h2>
+    <div className="app-container">
+      <div className="page-header">
+        <h1 className="page-title">STILE & GRUPPEN VERWALTEN</h1>
+      </div>
 
       <div className="verwaltung-container">
         {/* Stilverwaltung */}
-        <div className="verwaltung-box">
-          <h3>Stile</h3>
+        <div className="glass-card">
+          <h3 className="card-title">STILE</h3>
           {stile.length === 0 && <p>Keine Stile vorhanden.</p>}
           <ul className="verwaltung-liste">
             {stile.map((stil) => (
@@ -175,8 +179,8 @@ const GruppenStilVerwaltung = () => {
         </div>
 
         {/* Gruppenverwaltung */}
-        <div className="verwaltung-box">
-          <h3>Gruppen</h3>
+        <div className="glass-card">
+          <h3 className="card-title">GRUPPEN</h3>
           {gruppen.length === 0 && <p>Keine Gruppen vorhanden.</p>}
           <ul className="verwaltung-liste">
             {gruppen.map((gruppe) => (
