@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Edit3, Trash2, Lock, Eye, EyeOff, Shield, Key, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
 import '../styles/AdminVerwaltung.css';
+import config from '../config/config.js';
 
 const AdminVerwaltung = () => {
   const [admins, setAdmins] = useState([]);
@@ -101,7 +102,7 @@ const AdminVerwaltung = () => {
   const loadAdmins = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/admins');
+      const response = await fetch(`${config.apiBaseUrl}/admins`);
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setAdmins(data);

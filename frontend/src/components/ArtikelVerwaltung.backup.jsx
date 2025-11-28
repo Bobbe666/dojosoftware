@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/components.css';
 import '../styles/ArtikelVerwaltung.css';
+import config from '../config/config.js';
 
 const ArtikelVerwaltung = () => {
   // =====================================================================================
@@ -113,7 +114,7 @@ const ArtikelVerwaltung = () => {
   // Artikelgruppen laden
   const loadArtikelgruppen = async () => {
     try {
-      const response = await fetch('/artikelgruppen');
+      const response = await fetch(`${config.apiBaseUrl}/artikelgruppen`);
       const data = await response.json();
       if (data.success) {
         setArtikelgruppen(data.data || []);

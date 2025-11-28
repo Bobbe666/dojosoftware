@@ -4,6 +4,7 @@ import MemberHeader from './MemberHeader.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/components.css';
 import '../styles/MemberStats.css';
+import config from '../config/config.js';
 
 const MemberStats = () => {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ const MemberStats = () => {
   // Lade Vergleichsdaten mit anderen Mitgliedern
   const loadComparisonData = async () => {
     try {
-      const response = await fetch('/mitglieder/comparison-stats', {
+      const response = await fetch(`${config.apiBaseUrl}/mitglieder/comparison-stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

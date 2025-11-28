@@ -4,6 +4,7 @@ import { Trophy, Award, Calendar, Clock, Target } from 'lucide-react';
 import MemberHeader from './MemberHeader.jsx';
 import '../styles/themes.css';
 import '../styles/MemberStyles.css';
+import config from '../config/config.js';
 
 const MemberStyles = () => {
   const { user } = useAuth();
@@ -43,7 +44,7 @@ const MemberStyles = () => {
 
   const loadStile = async () => {
     try {
-      const response = await fetch('/stile');
+      const response = await fetch(`${config.apiBaseUrl}/stile`);
       if (response.ok) {
         const data = await response.json();
         setStile(data);

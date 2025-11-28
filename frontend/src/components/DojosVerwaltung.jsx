@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import '../styles/DojosVerwaltung.css';
+import config from '../config/config.js';
 
 const DojosVerwaltung = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const DojosVerwaltung = () => {
   const loadDojos = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/dojos');
+      const response = await fetch(`${config.apiBaseUrl}/dojos`);
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const data = await response.json();
       setDojos(data);
@@ -32,7 +33,7 @@ const DojosVerwaltung = () => {
 
   const loadGesamtStatistiken = async () => {
     try {
-      const response = await fetch('/dojos/statistics/gesamt');
+      const response = await fetch(`${config.apiBaseUrl}/dojos/statistics/gesamt`);
       if (!response.ok) throw new Error('Fehler beim Laden der Statistiken');
       const data = await response.json();
       setStatistics(data);

@@ -4,6 +4,7 @@ import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Anwesenheit.css";
+import config from '../config/config.js';
 
 const Anwesenheit = () => {
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
@@ -268,7 +269,7 @@ const Anwesenheit = () => {
       };
 
       // Direkt in anwesenheit Tabelle speichern (nicht nur Protokoll)
-      const response = await fetch('/anwesenheit', {
+      const response = await fetch(`${config.apiBaseUrl}/anwesenheit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +290,7 @@ const Anwesenheit = () => {
               checkin_type: 'manual' // Kennzeichnen als manueller Check-in
             };
             
-            const checkinResponse = await fetch('/checkin', {
+            const checkinResponse = await fetch(`${config.apiBaseUrl}/checkin`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

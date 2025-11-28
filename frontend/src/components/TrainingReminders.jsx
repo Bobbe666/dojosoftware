@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Clock, Calendar, X, Settings, CheckCircle } from 'lucide-react';
+import config from '../config/config.js';
 
 const TrainingReminders = () => {
   const [reminders, setReminders] = useState([]);
@@ -48,7 +49,7 @@ const TrainingReminders = () => {
     setLoading(true);
     try {
       // Hier würde normalerweise die API aufgerufen werden
-      // const response = await fetch('/mitglieder/upcoming-courses');
+      // const response = await fetch(`${config.apiBaseUrl}/mitglieder/upcoming-courses`);
       
       // Simuliere API-Aufruf
       await new Promise(resolve => setTimeout(resolve, 1000));

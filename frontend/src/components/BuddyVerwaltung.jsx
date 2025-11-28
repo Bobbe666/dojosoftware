@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import config from '../config/config.js';
 
 const BuddyVerwaltung = () => {
     const { token } = useAuth();
@@ -35,7 +36,7 @@ const BuddyVerwaltung = () => {
             setLoading(true);
             setError('');
 
-            const response = await fetch('/buddy/groups', {
+            const response = await fetch(`${config.apiBaseUrl}/buddy/groups`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -88,7 +89,7 @@ const BuddyVerwaltung = () => {
         try {
             setActionLoading(true);
 
-            const response = await fetch('/buddy/send-invitations', {
+            const response = await fetch(`${config.apiBaseUrl}/buddy/send-invitations`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import config from '../config/config.js';
 
 const DojoContext = createContext();
 
@@ -55,7 +56,7 @@ export const DojoProvider = ({ children }) => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('/dojos', {
+      const response = await fetch(`${config.apiBaseUrl}/dojos`, {
         headers
       });
 

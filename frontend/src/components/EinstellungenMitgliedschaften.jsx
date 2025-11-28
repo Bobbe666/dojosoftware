@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../styles/EinstellungenMitgliedschaften.css";
 import {
+import config from '../config/config.js';
   Table,
   Button,
   Modal,
@@ -29,7 +30,7 @@ const EinstellungenMitgliedschaften = () => {
   const [current, setCurrent] = useState(null); // dto für neuen/zu bearbeitenden Tarif
 
   useEffect(() => {
-    fetch("/tarife")
+    fetch(`${config.apiBaseUrl}/tarife`)
       .then(r => r.json())
       .then(setTarife);
   }, []);

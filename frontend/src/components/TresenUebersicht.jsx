@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../styles/TresenUebersicht.css";
+import config from '../config/config.js';
 
 const aggregateAnwesendeByMitglied = (eintraege = []) => {
   const map = new Map();
@@ -161,7 +162,7 @@ const TresenUebersicht = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/checkin/tresen/batch-checkin', {
+      const response = await fetch(`${config.apiBaseUrl}/checkin/tresen/batch-checkin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

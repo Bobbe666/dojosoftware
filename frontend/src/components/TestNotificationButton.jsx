@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import config from '../config/config.js';
 
 const TestNotificationButton = () => {
   const [message, setMessage] = useState('');
@@ -9,7 +10,7 @@ const TestNotificationButton = () => {
     setMessage('');
 
     try {
-      const response = await fetch('/notifications/admin/test-registration', {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/admin/test-registration`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -35,7 +36,7 @@ const TestNotificationButton = () => {
     setMessage('');
 
     try {
-      const response = await fetch('/notifications/admin/debug');
+      const response = await fetch(`${config.apiBaseUrl}/notifications/admin/debug`);
       const data = await response.json();
 
       console.log('🔍 Debug Info:', data);
@@ -57,7 +58,7 @@ const TestNotificationButton = () => {
     setMessage('');
 
     try {
-      const response = await fetch('/notifications/admin/migrate', {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/admin/migrate`, {
         method: 'POST'
       });
 

@@ -7,6 +7,7 @@ import "../styles/EinstellungenDojo.css";
 import "../styles/designsystem.css";
 import "../styles/themes.css";
 import "../styles/components.css";
+import config from '../config/config.js';
 
 const EinstellungenDojo = () => {
   const [dojo, setDojo] = useState({
@@ -220,7 +221,7 @@ const EinstellungenDojo = () => {
     setMessage("");
     
     try {
-      const response = await fetch("/dojo");
+      const response = await fetch(`${config.apiBaseUrl}/dojo`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -289,7 +290,7 @@ const EinstellungenDojo = () => {
         finanzamt: dojo.finanzamt ? JSON.stringify(dojo.finanzamt) : null
       };
 
-      const response = await fetch("/dojo", {
+      const response = await fetch(`${config.apiBaseUrl}/dojo`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json"

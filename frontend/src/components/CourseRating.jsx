@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Send, CheckCircle, MessageSquare, Calendar, Clock, User } from 'lucide-react';
 import MemberHeader from './MemberHeader.jsx';
 import '../styles/CourseRating.css';
+import config from '../config/config.js';
 
 const CourseRating = () => {
   const [ratableCourses, setRatableCourses] = useState([]);
@@ -17,7 +18,7 @@ const CourseRating = () => {
   const loadRatableCourses = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/mitglieder/ratable-courses', {
+      const response = await fetch(`${config.apiBaseUrl}/mitglieder/ratable-courses`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -47,7 +48,7 @@ const CourseRating = () => {
 
     setSubmitting(true);
     try {
-      const response = await fetch('/mitglieder/submit-rating', {
+      const response = await fetch(`${config.apiBaseUrl}/mitglieder/submit-rating`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

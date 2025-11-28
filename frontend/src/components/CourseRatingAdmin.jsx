@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, MessageSquare, TrendingUp, Users, AlertCircle, CheckCircle } from 'lucide-react';
 import '../styles/CourseRatingAdmin.css';
+import config from '../config/config.js';
 
 const CourseRatingAdmin = () => {
   const [ratings, setRatings] = useState([]);
@@ -12,7 +13,7 @@ const CourseRatingAdmin = () => {
   // Lade Bewertungen
   const loadRatings = async () => {
     try {
-      const response = await fetch('/admin/course-ratings', {
+      const response = await fetch(`${config.apiBaseUrl}/admin/course-ratings`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -30,7 +31,7 @@ const CourseRatingAdmin = () => {
   // Lade Statistiken
   const loadStats = async () => {
     try {
-      const response = await fetch('/admin/rating-stats', {
+      const response = await fetch(`${config.apiBaseUrl}/admin/rating-stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

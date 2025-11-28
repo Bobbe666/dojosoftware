@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/ArtikelgruppenVerwaltung.css';
+import config from '../config/config.js';
 
 const ArtikelgruppenVerwaltung = () => {
   const [gruppen, setGruppen] = useState([]);
@@ -32,7 +33,7 @@ const ArtikelgruppenVerwaltung = () => {
   const loadGruppen = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/artikelgruppen');
+      const response = await fetch(`${config.apiBaseUrl}/artikelgruppen`);
       const data = await response.json();
       
       if (data.success) {

@@ -26,6 +26,7 @@ import '../styles/MemberNavigation.css';
 import '../styles/MotivationQuotes.css';
 import '../styles/WeatherWidget.css';
 import '../styles/TrainingReminders.css';
+import config from '../config/config.js';
 
 const MemberDashboard = () => {
   const { user } = useAuth();
@@ -346,7 +347,7 @@ const MemberDashboard = () => {
   // Lade alle verfügbaren Stile
   const loadStile = async () => {
     try {
-      const response = await fetch('/stile');
+      const response = await fetch(`${config.apiBaseUrl}/stile`);
       if (response.ok) {
         const data = await response.json();
         setStile(data);
