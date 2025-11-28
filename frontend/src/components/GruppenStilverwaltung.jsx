@@ -129,13 +129,13 @@ const GruppenStilVerwaltung = () => {
                       onChange={(e) => setEditingStilName(e.target.value)}
                     />
                     <button
-                      className="verwaltung-speichern"
+                      className="btn btn-success"
                       onClick={() => saveStil(stil.stil_id)}
                     >
                       Speichern
                     </button>
                     <button
-                      className="verwaltung-abbrechen"
+                      className="btn btn-secondary"
                       onClick={abbrechenStil}
                     >
                       Abbrechen
@@ -145,13 +145,13 @@ const GruppenStilVerwaltung = () => {
                   <>
                     <span>{stil.name}</span>
                     <button
-                      className="verwaltung-bearbeiten"
+                      className="btn btn-primary"
                       onClick={() => bearbeitenStil(stil)}
                     >
                       Bearbeiten
                     </button>
                     <button
-                      className="verwaltung-loeschen"
+                      className="btn btn-danger"
                       onClick={() => loeschen(stil.stil_id, "stil")}
                     >
                       Löschen
@@ -170,7 +170,7 @@ const GruppenStilVerwaltung = () => {
               onChange={(e) => setNeuerStil(e.target.value)}
             />
             <button
-              className="verwaltung-hinzufuegen"
+              className="btn btn-primary"
               onClick={() => hinzufuegen("stil")}
             >
               Hinzufügen
@@ -194,13 +194,13 @@ const GruppenStilVerwaltung = () => {
                       onChange={(e) => setEditingGruppeName(e.target.value)}
                     />
                     <button
-                      className="verwaltung-speichern"
+                      className="btn btn-success"
                       onClick={() => saveGruppe(gruppe.gruppen_id)}
                     >
                       Speichern
                     </button>
                     <button
-                      className="verwaltung-abbrechen"
+                      className="btn btn-secondary"
                       onClick={abbrechenGruppe}
                     >
                       Abbrechen
@@ -210,13 +210,13 @@ const GruppenStilVerwaltung = () => {
                   <>
                     <span>{gruppe.name}</span>
                     <button
-                      className="verwaltung-bearbeiten"
+                      className="btn btn-primary"
                       onClick={() => bearbeitenGruppe(gruppe)}
                     >
                       Bearbeiten
                     </button>
                     <button
-                      className="verwaltung-loeschen"
+                      className="btn btn-danger"
                       onClick={() => loeschen(gruppe.gruppen_id, "gruppe")}
                     >
                       Löschen
@@ -235,7 +235,7 @@ const GruppenStilVerwaltung = () => {
               onChange={(e) => setNeueGruppe(e.target.value)}
             />
             <button
-              className="verwaltung-hinzufuegen"
+              className="btn btn-primary"
               onClick={() => hinzufuegen("gruppe")}
             >
               Hinzufügen

@@ -90,60 +90,16 @@ Modernes Glassmorphism-Design mit Gold-Akzenten
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
-/* Buttons - Standard-Button-Styling aus components.css */
-.verwaltung-hinzufuegen,
-.verwaltung-loeschen,
-.verwaltung-bearbeiten,
-.verwaltung-speichern,
-.verwaltung-abbrechen {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-  color: var(--bg-primary);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  font-weight: 700;
+/* Buttons - Nutze zentrale Button-Styles aus Buttons.css */
+/* Anpassungen für besseres Layout in Listen-Einträgen */
+.verwaltung-eintrag .btn {
+  min-width: 100px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-.verwaltung-hinzufuegen:hover,
-.verwaltung-speichern:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-}
-
-.verwaltung-loeschen {
-  background: linear-gradient(135deg, #dc2626, #991b1b);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-.verwaltung-loeschen:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
-}
-
-.verwaltung-abbrechen {
-  background: linear-gradient(135deg, #6b7280, #4b5563);
-  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
-}
-
-.verwaltung-abbrechen:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4);
-}
-
-.verwaltung-bearbeiten {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.verwaltung-bearbeiten:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+.verwaltung-formular .btn {
+  min-width: 120px;
 }
 
 /* Leere-Zustand */
