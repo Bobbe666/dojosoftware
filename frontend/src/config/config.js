@@ -9,7 +9,7 @@ const isProduction = import.meta.env.MODE === 'production';
 // API-URLs für verschiedene Umgebungen
 const API_URLS = {
   development: 'http://localhost:3002',
-  production: import.meta.env.VITE_API_URL || 'https://dojo.tda-intl.org',
+  production: 'https://dojo.tda-intl.org/api',
   testing: 'http://localhost:3002'
 };
 
@@ -229,7 +229,7 @@ const axiosConfig = {
   withCredentials: false,
 };
 
-// API-Endpunkte (ohne /api Prefix, da axios.defaults.baseURL bereits /api enthält)
+// API-Endpunkte (Pfade relativ zur apiBaseUrl)
 const API_ENDPOINTS = {
   // Authentifizierung
   auth: {

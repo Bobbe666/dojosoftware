@@ -10,7 +10,7 @@ import axios from 'axios';
 import config from './config/config.js';
 
 // Axios-Basis-URL konfigurieren
-axios.defaults.baseURL = `${config.apiBaseUrl}/api`;
+axios.defaults.baseURL = config.apiBaseUrl;
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
