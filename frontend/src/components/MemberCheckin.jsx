@@ -33,7 +33,7 @@ const MemberCheckin = ({ onClose }) => {
       }
 
       // Lade Mitgliedsdaten
-      const memberResponse = await fetch(`/api/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
+      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
       if (!memberResponse.ok) {
         throw new Error(`Mitgliedsdaten nicht gefunden: ${memberResponse.statusText}`);
       }

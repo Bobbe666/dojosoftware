@@ -18,7 +18,7 @@ const DojosVerwaltung = () => {
   const loadDojos = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/dojos');
+      const response = await fetch('/dojos');
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const data = await response.json();
       setDojos(data);
@@ -32,7 +32,7 @@ const DojosVerwaltung = () => {
 
   const loadGesamtStatistiken = async () => {
     try {
-      const response = await fetch('/api/dojos/statistics/gesamt');
+      const response = await fetch('/dojos/statistics/gesamt');
       if (!response.ok) throw new Error('Fehler beim Laden der Statistiken');
       const data = await response.json();
       setStatistics(data);
@@ -45,7 +45,7 @@ const DojosVerwaltung = () => {
     if (!window.confirm('Möchten Sie dieses Dojo wirklich deaktivieren?')) return;
 
     try {
-      const response = await fetch(`/api/dojos/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/dojos/${id}`, { method: 'DELETE' });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error);

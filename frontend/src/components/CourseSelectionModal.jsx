@@ -131,7 +131,7 @@ const CourseSelectionCheckin = () => {
     try {
       // API Call für alle ausgewählten Kurse
       // await Promise.all(selectedCourses.map(course => 
-      //   axios.post('/api/checkin', {
+      //   axios.post('/checkin', {
       //     mitglied_id: selectedMember.id,
       //     kurs_id: course.id,
       //     checkin_method: mode === 'touch' ? 'touch' : 'qr_code'

@@ -55,7 +55,7 @@ export const DojoProvider = ({ children }) => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('/api/dojos', {
+      const response = await fetch('/dojos', {
         headers
       });
 

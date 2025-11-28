@@ -29,7 +29,7 @@ const BerichteDokumente = () => {
   const loadDocuments = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/dokumente?status=erstellt');
+      const response = await fetch('/dokumente?status=erstellt');
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Dokumente');
@@ -78,7 +78,7 @@ const BerichteDokumente = () => {
       const timestamp = new Date().toISOString().split('T')[0];
       const name = `${docType}_${timestamp}`;
 
-      const response = await fetch('/api/dokumente/generate', {
+      const response = await fetch('/dokumente/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ const BerichteDokumente = () => {
     setMessage(`📥 Download "${doc.name}" wird gestartet...`);
 
     try {
-      const response = await fetch(`/api/dokumente/${doc.id}/download`);
+      const response = await fetch(`/dokumente/${doc.id}/download`);
 
       if (!response.ok) {
         throw new Error('Download fehlgeschlagen');
@@ -152,7 +152,7 @@ const BerichteDokumente = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/dokumente/${docId}`, {
+      const response = await fetch(`/dokumente/${docId}`, {
         method: 'DELETE'
       });
 

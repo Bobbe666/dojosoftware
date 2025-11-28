@@ -175,7 +175,7 @@ const DojoEdit = () => {
   const loadDojo = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/dojos/${id}`);
+      const response = await fetch(`/dojos/${id}`);
       if (!response.ok) throw new Error('Fehler beim Laden des Dojos');
       const dojo = await response.json();
 
@@ -320,7 +320,7 @@ const DojoEdit = () => {
     setLoading(true);
 
     try {
-      const url = isNewDojo ? '/api/dojos' : `/api/dojos/${id}`;
+      const url = isNewDojo ? '/dojos' : `/dojos/${id}`;
       const method = isNewDojo ? 'POST' : 'PUT';
 
       // Setze USt-Satz basierend auf Steuer-Status

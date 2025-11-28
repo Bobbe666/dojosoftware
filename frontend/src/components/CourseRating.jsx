@@ -17,7 +17,7 @@ const CourseRating = () => {
   const loadRatableCourses = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/mitglieder/ratable-courses', {
+      const response = await fetch('/mitglieder/ratable-courses', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -47,7 +47,7 @@ const CourseRating = () => {
 
     setSubmitting(true);
     try {
-      const response = await fetch('/api/mitglieder/submit-rating', {
+      const response = await fetch('/mitglieder/submit-rating', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

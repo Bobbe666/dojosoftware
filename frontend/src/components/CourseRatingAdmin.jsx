@@ -12,7 +12,7 @@ const CourseRatingAdmin = () => {
   // Lade Bewertungen
   const loadRatings = async () => {
     try {
-      const response = await fetch('/api/admin/course-ratings', {
+      const response = await fetch('/admin/course-ratings', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -30,7 +30,7 @@ const CourseRatingAdmin = () => {
   // Lade Statistiken
   const loadStats = async () => {
     try {
-      const response = await fetch('/api/admin/rating-stats', {
+      const response = await fetch('/admin/rating-stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

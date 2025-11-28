@@ -33,7 +33,7 @@ const ArtikelgruppenVerwaltung = () => {
   const loadGruppen = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/artikelgruppen');
+      const response = await fetch('/artikelgruppen');
       const data = await response.json();
 
       if (data.success) {
@@ -134,8 +134,8 @@ const ArtikelgruppenVerwaltung = () => {
     
     try {
       const url = editingGroup 
-        ? `/api/artikelgruppen/${editingGroup.id}`
-        : '/api/artikelgruppen';
+        ? `/artikelgruppen/${editingGroup.id}`
+        : '/artikelgruppen';
       
       const method = editingGroup ? 'PUT' : 'POST';
       
@@ -170,7 +170,7 @@ const ArtikelgruppenVerwaltung = () => {
     }
     
     try {
-      const response = await fetch(`/api/artikelgruppen/${group.id}`, {
+      const response = await fetch(`/artikelgruppen/${group.id}`, {
         method: 'DELETE'
       });
       

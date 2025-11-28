@@ -64,7 +64,7 @@ const ArtikelVerwaltung = () => {
   
   const apiCall = async (endpoint, options = {}) => {
     try {
-      const response = await fetch(`/api/artikel${endpoint}`, {
+      const response = await fetch(`/artikel${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
@@ -113,7 +113,7 @@ const ArtikelVerwaltung = () => {
   // Artikelgruppen laden
   const loadArtikelgruppen = async () => {
     try {
-      const response = await fetch('/api/artikelgruppen');
+      const response = await fetch('/artikelgruppen');
       const data = await response.json();
       if (data.success) {
         setArtikelgruppen(data.data || []);

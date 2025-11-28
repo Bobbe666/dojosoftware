@@ -101,7 +101,7 @@ const AdminVerwaltung = () => {
   const loadAdmins = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admins');
+      const response = await fetch('/admins');
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setAdmins(data);
@@ -189,8 +189,8 @@ const AdminVerwaltung = () => {
 
     try {
       const url = editingAdmin
-        ? `/api/admins/${editingAdmin.id}`
-        : '/api/admins';
+        ? `/admins/${editingAdmin.id}`
+        : '/admins';
 
       const method = editingAdmin ? 'PUT' : 'POST';
 
@@ -232,7 +232,7 @@ const AdminVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/admins/${admin.id}`, {
+      const response = await fetch(`/admins/${admin.id}`, {
         method: 'DELETE'
       });
 
@@ -271,7 +271,7 @@ const AdminVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/admins/${passwordChangeAdmin.id}/password`, {
+      const response = await fetch(`/admins/${passwordChangeAdmin.id}/password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: passwordData.newPassword })

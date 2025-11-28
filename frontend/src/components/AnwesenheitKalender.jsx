@@ -12,7 +12,7 @@ const AnwesenheitKalender = () => {
   const [auswahl, setAuswahl] = useState([]);
 
   useEffect(() => {
-    axios.get("/api/anwesenheitProtokoll/uebersicht")
+    axios.get("/anwesenheitProtokoll/uebersicht")
       .then((res) => setEintraege(res.data))
       .catch(() => setEintraege([]));
   }, []);

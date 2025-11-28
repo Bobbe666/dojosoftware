@@ -12,7 +12,7 @@ const AdminRegistrationPopup = () => {
     const checkForNewRegistrations = async () => {
       try {
         console.log('🔍 Checking for new registrations...');
-        const response = await fetch('/api/notifications/admin/unread');
+        const response = await fetch('/notifications/admin/unread');
         console.log('📡 Response status:', response.status);
 
         const data = await response.json();
@@ -56,7 +56,7 @@ const AdminRegistrationPopup = () => {
     if (currentNotification) {
       try {
         // Markiere als gelesen
-        await fetch(`/api/notifications/admin/${currentNotification.id}/read`, {
+        await fetch(`/notifications/admin/${currentNotification.id}/read`, {
           method: 'PUT'
         });
 

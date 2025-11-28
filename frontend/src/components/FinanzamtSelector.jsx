@@ -69,7 +69,7 @@ const FinanzamtSelector = ({
   const loadFinanzaemter = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/finanzaemter');
+      const response = await axios.get('/finanzaemter');
       setFinanzaemter(response.data);
     } catch (error) {
       console.error('Fehler beim Laden der Finanzämter:', error);
@@ -80,7 +80,7 @@ const FinanzamtSelector = ({
 
   const loadBundeslaender = async () => {
     try {
-      const response = await axios.get('/api/finanzaemter/bundeslaender');
+      const response = await axios.get('/finanzaemter/bundeslaender');
       setBundeslaender(response.data);
     } catch (error) {
       console.error('Fehler beim Laden der Bundesländer:', error);
@@ -131,7 +131,7 @@ const FinanzamtSelector = ({
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await axios.post('/api/finanzaemter', newFinanzamt);
+      const response = await axios.post('/finanzaemter', newFinanzamt);
       
       // Neues Finanzamt zur Liste hinzufügen
       const createdFinanzamt = response.data.finanzamt;

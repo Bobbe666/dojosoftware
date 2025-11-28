@@ -69,7 +69,7 @@ const PublicRegistration = ({ onClose }) => {
 
   const fetchPublicTarife = async () => {
     try {
-      const response = await fetch('/api/public/tarife');
+      const response = await fetch('/public/tarife');
       const data = await response.json();
       if (data.success) {
         setAvailableTarife(data.data);
@@ -164,11 +164,11 @@ const PublicRegistration = ({ onClose }) => {
 
       switch (currentStep) {
         case 1:
-          endpoint = "/api/public/register/step1";
+          endpoint = "/public/register/step1";
           payload = { email: formData.email, password: formData.password };
           break;
         case 2:
-          endpoint = "/api/public/register/step2";
+          endpoint = "/public/register/step2";
           payload = {
             email: formData.email,
             vorname: formData.vorname,
@@ -183,7 +183,7 @@ const PublicRegistration = ({ onClose }) => {
           };
           break;
         case 3:
-          endpoint = "/api/public/register/step3";
+          endpoint = "/public/register/step3";
           payload = {
             email: formData.email,
             iban: formData.iban,
@@ -193,7 +193,7 @@ const PublicRegistration = ({ onClose }) => {
           };
           break;
         case 4:
-          endpoint = "/api/public/register/step4";
+          endpoint = "/public/register/step4";
           payload = {
             email: formData.email,
             tarif_id: formData.tarif_id,
@@ -208,14 +208,14 @@ const PublicRegistration = ({ onClose }) => {
           setLoading(false);
           return;
         case 6:
-          endpoint = "/api/public/register/step5";
+          endpoint = "/public/register/step5";
           payload = {
             email: formData.email,
             gesundheitsfragen: formData.gesundheitsfragen
           };
           break;
         case 7:
-          endpoint = "/api/public/register/step6";
+          endpoint = "/public/register/step6";
           payload = {
             email: formData.email,
             agb_accepted: formData.agb_accepted,

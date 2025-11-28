@@ -20,7 +20,7 @@ const MemberStats = () => {
       console.log(`Lade Monatsdetails für Monat ${month}/${year}, Mitglied-ID: ${mitgliedId}`);
 
       // Lade die Anwesenheitsdaten für das Mitglied
-      const response = await fetch(`/api/anwesenheit/${mitgliedId}`);
+      const response = await fetch(`/anwesenheit/${mitgliedId}`);
 
       if (response.ok) {
         const allData = await response.json();
@@ -48,7 +48,7 @@ const MemberStats = () => {
   // Lade Vergleichsdaten mit anderen Mitgliedern
   const loadComparisonData = async () => {
     try {
-      const response = await fetch('/api/mitglieder/comparison-stats', {
+      const response = await fetch('/mitglieder/comparison-stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -78,7 +78,7 @@ const MemberStats = () => {
       const userEmail = user?.email || 'tom@example.com';
       console.log('MemberStats: Lade Mitgliedsdaten für Email:', userEmail);
 
-      const memberResponse = await fetch(`/api/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
+      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
 
       if (!memberResponse.ok) {
         throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);
@@ -89,7 +89,7 @@ const MemberStats = () => {
       setMemberData(memberData);
 
       // Lade Anwesenheitsdaten
-      const attendanceResponse = await fetch(`/api/anwesenheit/${memberData.mitglied_id}`);
+      const attendanceResponse = await fetch(`/anwesenheit/${memberData.mitglied_id}`);
       let attendanceData = [];
       if (attendanceResponse.ok) {
         attendanceData = await attendanceResponse.json();
@@ -110,7 +110,7 @@ const MemberStats = () => {
       // Lade Ziele
       let ziele = [];
       try {
-        const zieleResponse = await fetch(`/api/fortschritt/mitglied/${memberData.mitglied_id}/ziele`);
+        const zieleResponse = await fetch(`/fortschritt/mitglied/${memberData.mitglied_id}/ziele`);
         if (zieleResponse.ok) {
           ziele = await zieleResponse.json();
         }

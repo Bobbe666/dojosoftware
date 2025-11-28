@@ -30,7 +30,7 @@ const MemberSchedule = () => {
       const userEmail = user?.email || 'tom@example.com';
       console.log('Lade Mitgliedsdaten für Email:', userEmail);
 
-      const memberResponse = await fetch(`/api/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
+      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
 
       if (!memberResponse.ok) {
         throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);

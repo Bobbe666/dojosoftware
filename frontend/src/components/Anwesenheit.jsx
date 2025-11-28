@@ -146,7 +146,7 @@ const Anwesenheit = () => {
 
       // Mitglieder basierend auf Check-ins laden
       const membersResponse = await fetch(
-        `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${showAllMembers ? '?show_all=true' : ''}`
+        `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${showAllMembers ? '?show_all=true' : ''}`
       );
       const membersData = await membersResponse.json();
       
@@ -192,7 +192,7 @@ const Anwesenheit = () => {
         try {
           setLoading(true);
           const membersResponse = await fetch(
-            `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${showAllMembers ? '?show_all=true' : ''}`
+            `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${showAllMembers ? '?show_all=true' : ''}`
           );
           const membersData = await membersResponse.json();
           
@@ -230,7 +230,7 @@ const Anwesenheit = () => {
   const loadAllMembersForSearch = async (stundenplan_id) => {
     try {
       const allMembersResponse = await fetch(
-        `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`
+        `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`
       );
       const allMembersData = await allMembersResponse.json();
       
@@ -268,7 +268,7 @@ const Anwesenheit = () => {
       };
 
       // Direkt in anwesenheit Tabelle speichern (nicht nur Protokoll)
-      const response = await fetch('/api/anwesenheit', {
+      const response = await fetch('/anwesenheit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +289,7 @@ const Anwesenheit = () => {
               checkin_type: 'manual' // Kennzeichnen als manueller Check-in
             };
             
-            const checkinResponse = await fetch('/api/checkin', {
+            const checkinResponse = await fetch('/checkin', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

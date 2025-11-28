@@ -94,7 +94,7 @@ const TresenUebersicht = () => {
       
       console.log(`📢 Lade Tresen-Daten für ${datum}...`);
       
-      const response = await fetch(`/api/checkin/tresen/${datum}`);
+      const response = await fetch(`/checkin/tresen/${datum}`);
       const data = await response.json();
       
       if (data.success) {
@@ -161,7 +161,7 @@ const TresenUebersicht = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/checkin/tresen/batch-checkin', {
+      const response = await fetch('/checkin/tresen/batch-checkin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

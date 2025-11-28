@@ -154,7 +154,7 @@ const MemberDashboard = () => {
   // Lade Push-Benachrichtigungen für dieses Mitglied
   const loadNotifications = async (email) => {
     try {
-      const response = await fetch(`/api/notifications/member/${encodeURIComponent(email)}`);
+      const response = await fetch(`/notifications/member/${encodeURIComponent(email)}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -170,7 +170,7 @@ const MemberDashboard = () => {
   // Lade zugelassene Prüfungen für dieses Mitglied
   const loadApprovedExams = async (memberId) => {
     try {
-      const response = await fetch(`/api/pruefungen?mitglied_id=${memberId}&status=geplant`);
+      const response = await fetch(`/pruefungen?mitglied_id=${memberId}&status=geplant`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.pruefungen) {
@@ -196,7 +196,7 @@ const MemberDashboard = () => {
   // Lade abgeschlossene Prüfungen (Ergebnisse)
   const loadExamResults = async (memberId) => {
     try {
-      const response = await fetch(`/api/pruefungen/mitglied/${memberId}/historie`);
+      const response = await fetch(`/pruefungen/mitglied/${memberId}/historie`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.historie) {
@@ -223,7 +223,7 @@ const MemberDashboard = () => {
 
         console.log('🔍 Lade Mitgliedsdaten für ID:', mitgliedId);
 
-        const memberResponse = await fetch(`/api/mitglieder/${mitgliedId}`);
+        const memberResponse = await fetch(`/mitglieder/${mitgliedId}`);
 
         if (!memberResponse.ok) {
           throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);
@@ -233,7 +233,7 @@ const MemberDashboard = () => {
         console.log('✅ Mitgliedsdaten empfangen:', memberData);
 
         // Anwesenheitsdaten laden (mit mitglied_id direkt)
-        const attendanceResponse = await fetch(`/api/anwesenheit/${memberData.mitglied_id}`);
+        const attendanceResponse = await fetch(`/anwesenheit/${memberData.mitglied_id}`);
 
         let attendanceData = [];
         if (attendanceResponse.ok) {
@@ -251,7 +251,7 @@ const MemberDashboard = () => {
         // Beitragsdaten laden - verwende den Mitgliederdetail-Endpoint
         // Da es keinen spezifischen Beitrags-Endpoint gibt, müssen wir diese Daten anders laden
         // Lass uns erstmal nur die Verträge des Mitglieds prüfen
-        const vertraegeResponse = await fetch(`/api/vertraege?mitglied_id=${memberData.mitglied_id}`);
+        const vertraegeResponse = await fetch(`/vertraege?mitglied_id=${memberData.mitglied_id}`);
 
         let vertraegeData = [];
         if (vertraegeResponse.ok) {
@@ -346,7 +346,7 @@ const MemberDashboard = () => {
   // Lade alle verfügbaren Stile
   const loadStile = async () => {
     try {
-      const response = await fetch('/api/stile');
+      const response = await fetch('/stile');
       if (response.ok) {
         const data = await response.json();
         setStile(data);
@@ -363,7 +363,7 @@ const MemberDashboard = () => {
       // Lade zuerst alle Stile
       await loadStile();
       
-      const response = await fetch(`/api/mitglieder/${memberId}/stile`);
+      const response = await fetch(`/mitglieder/${memberId}/stile`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.stile) {
@@ -385,7 +385,7 @@ const MemberDashboard = () => {
   // Lade stilspezifische Daten
   const loadStyleSpecificData = async (memberId, stilId) => {
     try {
-      const response = await fetch(`/api/mitglieder/${memberId}/stil/${stilId}/data`);
+      const response = await fetch(`/mitglieder/${memberId}/stil/${stilId}/data`);
       if (response.ok) {
         const result = await response.json();
         setStyleSpecificData(prev => ({
@@ -426,7 +426,7 @@ const MemberDashboard = () => {
     }
 
     try {
-      const response = await fetch(`/api/pruefungen/${selectedExam.pruefung_id}/teilnahme-bestaetigen`, {
+      const response = await fetch(`/pruefungen/${selectedExam.pruefung_id}/teilnahme-bestaetigen`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

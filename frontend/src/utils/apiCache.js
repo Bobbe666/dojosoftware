@@ -125,8 +125,8 @@ export const fetchWithCache = async (url, options = {}, cacheDuration = undefine
 // 🔒 TAX COMPLIANCE: Alle Dashboard-Funktionen unterstützen dojo_id Filterung
 export const fetchDashboardBatch = async (token, dojoFilterParam = '') => {
     const url = dojoFilterParam
-        ? `/api/dashboard/batch?${dojoFilterParam}`
-        : '/api/dashboard/batch';
+        ? `/dashboard/batch?${dojoFilterParam}`
+        : '/dashboard/batch';
     return fetchWithCache(url, {
         headers: {
             'Authorization': `Bearer ${token}`
@@ -136,8 +136,8 @@ export const fetchDashboardBatch = async (token, dojoFilterParam = '') => {
 
 export const fetchDashboardStats = async (token, dojoFilterParam = '') => {
     const url = dojoFilterParam
-        ? `/api/dashboard?${dojoFilterParam}`
-        : '/api/dashboard';
+        ? `/dashboard?${dojoFilterParam}`
+        : '/dashboard';
     return fetchWithCache(url, {
         headers: {
             'Authorization': `Bearer ${token}`
@@ -147,8 +147,8 @@ export const fetchDashboardStats = async (token, dojoFilterParam = '') => {
 
 export const fetchRecentActivities = async (token, dojoFilterParam = '') => {
     const url = dojoFilterParam
-        ? `/api/dashboard/recent?${dojoFilterParam}`
-        : '/api/dashboard/recent';
+        ? `/dashboard/recent?${dojoFilterParam}`
+        : '/dashboard/recent';
     return fetchWithCache(url, {
         headers: {
             'Authorization': `Bearer ${token}`
@@ -158,7 +158,7 @@ export const fetchRecentActivities = async (token, dojoFilterParam = '') => {
 
 // Tarife und Zahlungszyklen (länger cachen, da sich seltener ändern)
 export const fetchTarife = async (token) => {
-    return fetchWithCache('/api/tarife', {
+    return fetchWithCache('/tarife', {
         headers: {
             'Authorization': `Bearer ${token}`
         }
@@ -166,7 +166,7 @@ export const fetchTarife = async (token) => {
 };
 
 export const fetchZahlungszyklen = async (token) => {
-    return fetchWithCache('/api/zahlungszyklen', {
+    return fetchWithCache('/zahlungszyklen', {
         headers: {
             'Authorization': `Bearer ${token}`
         }

@@ -24,7 +24,7 @@ const MemberPayments = () => {
       // 1. Lade Mitgliedsdaten über Email
       const userEmail = user?.email || 'tom@example.com';
 
-      const memberResponse = await fetch(`/api/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
+      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
 
       if (!memberResponse.ok) {
         throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);

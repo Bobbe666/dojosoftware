@@ -12,7 +12,7 @@ export const useMultiCourseCheckin = () => {
   // Verfügbare Kurse für heute laden
   const loadCoursesToday = useCallback(async () => {
     try {
-      const response = await axios.get('/api/checkin/courses-today');
+      const response = await axios.get('/checkin/courses-today');
       setCoursesToday(response.data.courses);
       return response.data.courses;
     } catch (err) {
@@ -24,7 +24,7 @@ export const useMultiCourseCheckin = () => {
   // Heutige Check-ins laden
   const loadTodayCheckins = useCallback(async () => {
     try {
-      const response = await axios.get('/api/checkin/today');
+      const response = await axios.get('/checkin/today');
       
       // Gruppiere Check-ins nach Mitglied
       const groupedCheckins = response.data.checkins.reduce((acc, checkin) => {
@@ -75,7 +75,7 @@ export const useMultiCourseCheckin = () => {
     setError('');
 
     try {
-      const response = await axios.post('/api/checkin/multi-course', {
+      const response = await axios.post('/checkin/multi-course', {
         mitglied_id: memberData.id,
         kurs_ids: selectedCourses.map(c => c.id),
         checkin_method: method
@@ -130,7 +130,7 @@ export const useMultiCourseCheckin = () => {
   // Bereits angemeldete Kurse für Mitglied abrufen
   const getMemberRegisteredCourses = useCallback(async (memberId) => {
     try {
-      const response = await axios.get(`/api/checkin/member-courses/${memberId}`);
+      const response = await axios.get(`/checkin/member-courses/${memberId}`);
       return response.data.registered_courses;
     } catch (err) {
       return [];
@@ -140,7 +140,7 @@ export const useMultiCourseCheckin = () => {
   // Kurs-Anmeldung stornieren
   const cancelCourseRegistration = useCallback(async (checkinId) => {
     try {
-      const response = await axios.delete(`/api/checkin/course/${checkinId}`);
+      const response = await axios.delete(`/checkin/course/${checkinId}`);
       
       // Aktualisiere lokale History
       await loadTodayCheckins();
@@ -156,7 +156,7 @@ export const useMultiCourseCheckin = () => {
   // Tagesstatistiken laden
   const loadDayStats = useCallback(async () => {
     try {
-      const response = await axios.get('/api/checkin/stats/today');
+      const response = await axios.get('/checkin/stats/today');
       setStats(response.data.stats);
       return response.data.stats;
     } catch (err) {
@@ -177,7 +177,7 @@ export const useMultiCourseCheckin = () => {
       }
 
       // Mitglied-Daten abrufen
-      const memberResponse = await axios.get(`/api/mitglieder/${memberId}`);
+      const memberResponse = await axios.get(`/mitglieder/${memberId}`);
       const memberData = memberResponse.data;
 
       // Multi-Course Check-in durchführen
@@ -287,7 +287,7 @@ const MultiCourseCheckinSystem = () => {
 
   const loadMitglieder = async () => {
     try {
-      const response = await axios.get('/api/mitglieder?status=aktiv');
+      const response = await axios.get('/mitglieder?status=aktiv');
       setMitglieder(response.data);
     } catch (err) {
       console.error('Failed to load members');

@@ -25,7 +25,7 @@ const BuddyInviteRegistration = () => {
                 setLoading(true);
                 setError('');
 
-                const response = await fetch(`/api/buddy/invitation/${token}`);
+                const response = await fetch(`/buddy/invitation/${token}`);
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -64,7 +64,7 @@ const BuddyInviteRegistration = () => {
     const handleRegistrationComplete = async (registrationData) => {
         try {
             // Registrierung mit Buddy-Token verknüpfen
-            const response = await fetch(`/api/buddy/invitation/${token}/register`, {
+            const response = await fetch(`/buddy/invitation/${token}/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

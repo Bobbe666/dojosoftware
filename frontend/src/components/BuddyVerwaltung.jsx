@@ -35,7 +35,7 @@ const BuddyVerwaltung = () => {
             setLoading(true);
             setError('');
 
-            const response = await fetch('/api/buddy/groups', {
+            const response = await fetch('/buddy/groups', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -61,7 +61,7 @@ const BuddyVerwaltung = () => {
         try {
             setActionLoading(true);
 
-            const response = await fetch(`/api/buddy/groups/${groupId}`, {
+            const response = await fetch(`/buddy/groups/${groupId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -88,7 +88,7 @@ const BuddyVerwaltung = () => {
         try {
             setActionLoading(true);
 
-            const response = await fetch('/api/buddy/send-invitations', {
+            const response = await fetch('/buddy/send-invitations', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ const BuddyVerwaltung = () => {
         try {
             setActionLoading(true);
 
-            const response = await fetch(`/api/buddy/groups/${groupId}/resend-invitations`, {
+            const response = await fetch(`/buddy/groups/${groupId}/resend-invitations`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -167,7 +167,7 @@ const BuddyVerwaltung = () => {
         try {
             setActionLoading(true);
 
-            const response = await fetch(`/api/buddy/invitations/${invitationId}`, {
+            const response = await fetch(`/buddy/invitations/${invitationId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

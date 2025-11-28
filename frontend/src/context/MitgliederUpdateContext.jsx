@@ -23,14 +23,14 @@ export const MitgliederUpdateProvider = ({ children }) => {
       case 'member_deleted':
       case 'member_reactivated':
       case 'member_deactivated':
-        invalidateCache('/api/dashboard');
-        invalidateCache('/api/dashboard/batch');
-        invalidateCache('/api/dashboard/recent');
+        invalidateCache('/dashboard');
+        invalidateCache('/dashboard/batch');
+        invalidateCache('/dashboard/recent');
         break;
       case 'manual_refresh':
-        invalidateCache('/api/dashboard');
-        invalidateCache('/api/dashboard/batch');
-        invalidateCache('/api/dashboard/recent');
+        invalidateCache('/dashboard');
+        invalidateCache('/dashboard/batch');
+        invalidateCache('/dashboard/recent');
         break;
       default:
         break;

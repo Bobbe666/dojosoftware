@@ -20,7 +20,7 @@ const AnwesenheitGrid = () => {
   const [datumBis, setDatumBis] = useState("");
 
   useEffect(() => {
-    axios.get("/api/kurse")
+    axios.get("/kurse")
       .then((res) => setKurse(res.data))
       .catch(() => setKurse([]));
   }, []);
@@ -31,7 +31,7 @@ const AnwesenheitGrid = () => {
     if (datumVon) params.datum_von = datumVon;
     if (datumBis) params.datum_bis = datumBis;
 
-    axios.get("/api/anwesenheitProtokoll/uebersicht", { params })
+    axios.get("/anwesenheitProtokoll/uebersicht", { params })
       .then((res) => setDaten(res.data))
       .catch(() => setDaten([]));
   }, [filterKurs, datumVon, datumBis]);

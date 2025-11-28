@@ -220,7 +220,7 @@ const EinstellungenDojo = () => {
     setMessage("");
     
     try {
-      const response = await fetch("/api/dojo");
+      const response = await fetch("/dojo");
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -289,7 +289,7 @@ const EinstellungenDojo = () => {
         finanzamt: dojo.finanzamt ? JSON.stringify(dojo.finanzamt) : null
       };
 
-      const response = await fetch("/api/dojo", {
+      const response = await fetch("/dojo", {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json"

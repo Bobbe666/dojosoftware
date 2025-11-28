@@ -29,7 +29,7 @@ const EinstellungenMitgliedschaften = () => {
   const [current, setCurrent] = useState(null); // dto für neuen/zu bearbeitenden Tarif
 
   useEffect(() => {
-    fetch("/api/tarife")
+    fetch("/tarife")
       .then(r => r.json())
       .then(setTarife);
   }, []);
@@ -54,7 +54,7 @@ const EinstellungenMitgliedschaften = () => {
 
   const save = () => {
     const method = current.id ? "PUT" : "POST";
-    const url = current.id ? `/api/tarife/${current.id}` : "/api/tarife";
+    const url = current.id ? `/tarife/${current.id}` : "/tarife";
     fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -73,7 +73,7 @@ const EinstellungenMitgliedschaften = () => {
 
   const remove = (id) => {
     if (!window.confirm("Tarif wirklich löschen?")) return;
-    fetch(`/api/tarife/${id}`, { method: "DELETE" })
+    fetch(`/tarife/${id}`, { method: "DELETE" })
       .then(() => setTarife(ts => ts.filter(t => t.id !== id)));
   };
 
@@ -103,7 +103,7 @@ const EinstellungenMitgliedschaften = () => {
                 <Toggle 
                   checked={t.active} 
                   onChange={checked => {
-                    fetch(`/api/tarife/${t.id}/active`, {
+                    fetch(`/tarife/${t.id}/active`, {
                       method: "PATCH",
                       body: JSON.stringify({ active: checked })
                     }).then(() => setTarife(ts => 

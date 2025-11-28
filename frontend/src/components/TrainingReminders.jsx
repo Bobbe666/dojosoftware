@@ -48,7 +48,7 @@ const TrainingReminders = () => {
     setLoading(true);
     try {
       // Hier würde normalerweise die API aufgerufen werden
-      // const response = await fetch('/api/mitglieder/upcoming-courses');
+      // const response = await fetch('/mitglieder/upcoming-courses');
       
       // Simuliere API-Aufruf
       await new Promise(resolve => setTimeout(resolve, 1000));
