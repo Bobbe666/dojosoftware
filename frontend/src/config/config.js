@@ -162,9 +162,13 @@ const utils = {
   
   // URL-Validation
   isValidUrl: (url) => {
+    if (!url || typeof url !== 'string') return false;
+    // Erlaube localhost und production URLs
+    if (url.startsWith('http://localhost:')) return true;
+    if (url.startsWith('http://127.0.0.1:')) return true;
     try {
-      new URL(url);
-      return true;
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
     } catch {
       return false;
     }
@@ -288,23 +292,33 @@ const API_ENDPOINTS = {
 // Konfiguration validieren
 const validateConfig = () => {
   const errors = [];
-  
+
+  // Debug: Zeige was geladen wurde
+  console.log('🔍 Config Debug:', {
+    mode: import.meta.env.MODE,
+    apiBaseUrl: config.apiBaseUrl,
+    isDevelopment,
+    isProduction,
+    envViteApiUrl: import.meta.env.VITE_API_URL
+  });
+
   if (!config.apiBaseUrl) {
     errors.push('API Base URL ist nicht konfiguriert');
   }
-  
-  if (!utils.isValidUrl(config.apiBaseUrl)) {
-    errors.push('API Base URL ist ungültig');
+
+  if (config.apiBaseUrl && !utils.isValidUrl(config.apiBaseUrl)) {
+    errors.push(`API Base URL ist ungültig: "${config.apiBaseUrl}"`);
   }
-  
+
   if (config.apiTimeout < 1000) {
     errors.push('API Timeout ist zu niedrig (mindestens 1000ms)');
   }
-  
+
   if (errors.length > 0) {
     console.error('🚨 Konfigurationsfehler:', errors);
+    // In Production nur warnen, nicht abbrechen
     if (isProduction) {
-      throw new Error('Kritische Konfigurationsfehler gefunden');
+      console.warn('⚠️ Konfigurationsprobleme erkannt, fahre trotzdem fort');
     }
   }
 };
