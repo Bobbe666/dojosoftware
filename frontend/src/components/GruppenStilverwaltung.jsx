@@ -1,7 +1,9 @@
 import React, { useContext, useState } from "react";
 import axios from "axios";
+import config from '../config/config.js';
 import "../styles/themes.css";
 import "../styles/components.css";
+import "../styles/Buttons.css";
 import "../styles/GruppenStilVerwaltung.css";
 import { DatenContext } from "@shared/DatenContext.jsx";
 
@@ -27,7 +29,7 @@ const GruppenStilVerwaltung = () => {
     const wert = typ === "stil" ? neuerStil : neueGruppe;
     if (!wert.trim()) return;
 
-    const endpoint = typ === "stil" ? "/stile" : "/gruppen";
+    const endpoint = typ === "stil" ? `${config.apiBaseUrl}/stile` : `${config.apiBaseUrl}/gruppen`;
 
     try {
       await axios.post(endpoint, { name: wert.trim() });
@@ -43,7 +45,11 @@ const GruppenStilVerwaltung = () => {
   //   Löschen von Stil/Gruppe
   // -----------------------------
   const loeschen = async (id, typ) => {
-    const endpoint = typ === "stil" ? "/stile" : "/gruppen";
+    if (!confirm(`Möchten Sie diesen ${typ === "stil" ? "Stil" : "diese Gruppe"} wirklich löschen?`)) {
+      return;
+    }
+
+    const endpoint = typ === "stil" ? `${config.apiBaseUrl}/stile` : `${config.apiBaseUrl}/gruppen`;
 
     try {
       await axios.delete(`${endpoint}/${id}`);
@@ -71,7 +77,7 @@ const GruppenStilVerwaltung = () => {
     if (!editingStilName.trim()) return;
     try {
       // Update via PUT, da das Backend PUT /api/stile/:id erwartet
-      await axios.put(`/stile/${stilId}`, { name: editingStilName.trim() });
+      await axios.put(`${config.apiBaseUrl}/stile/${stilId}`, { name: editingStilName.trim() });
       abbrechenStil();
       ladeAlleDaten();
     } catch (err) {
@@ -97,7 +103,7 @@ const GruppenStilVerwaltung = () => {
     if (!editingGruppeName.trim()) return;
     try {
       // Update via PUT, damit es mit dem Backend (PUT /api/gruppen/:id) übereinstimmt
-      await axios.put(`/gruppen/${gruppeId}`, { name: editingGruppeName.trim() });
+      await axios.put(`${config.apiBaseUrl}/gruppen/${gruppeId}`, { name: editingGruppeName.trim() });
       abbrechenGruppe();
       ladeAlleDaten();
     } catch (err) {

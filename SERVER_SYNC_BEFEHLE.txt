@@ -1,0 +1,56 @@
+# ========================================
+# SERVER SYNCHRONISATIONS-BEFEHLE
+# ========================================
+# Kopiere diese Befehle nacheinander in deine SSH-Session
+# und schicke mir die Ausgabe von jedem Befehl
+
+# SCHRITT 1: Mit Server verbinden
+# --------------------------------
+ssh dojo@193.42.108.180
+# (Passwort eingeben)
+
+
+# SCHRITT 2: Ins Projektverzeichnis wechseln
+# -------------------------------------------
+cd /var/www/dojosoftware
+
+
+# SCHRITT 3: Git Status prüfen
+# -----------------------------
+git status
+
+# >>> KOPIERE MIR DIE AUSGABE VON "git status" <<<
+
+
+# SCHRITT 4: Geänderte Dateien anzeigen (falls welche da sind)
+# -------------------------------------------------------------
+git diff --name-only
+
+# >>> KOPIERE MIR DIE AUSGABE <<<
+
+
+# SCHRITT 5: Nicht getrackte Dateien anzeigen
+# --------------------------------------------
+git ls-files --others --exclude-standard
+
+# >>> KOPIERE MIR DIE AUSGABE <<<
+
+
+# SCHRITT 6: Aktuelle Branch prüfen
+# ----------------------------------
+git branch
+
+# >>> KOPIERE MIR DIE AUSGABE <<<
+
+
+# SCHRITT 7: Letzten Commit anzeigen
+# -----------------------------------
+git log --oneline -1
+
+# >>> KOPIERE MIR DIE AUSGABE <<<
+
+
+# ========================================
+# WARTE HIER - Schicke mir alle Ausgaben!
+# ========================================
+# Ich sage dir dann, welche weiteren Befehle du ausführen sollst
