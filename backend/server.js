@@ -91,6 +91,19 @@ try {
     });
 }
 
+// AGB & DATENSCHUTZ ROUTES mit Versionierung
+try {
+  const agbRoutes = require('./routes/agb');
+  app.use('/api/agb', (req, res, next) => { req.db = db; next(); }, agbRoutes);
+  logger.success('Route gemountet', { path: '/api/agb' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'agb',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 2. ARTIKEL ROUTES - VERKAUFSSYSTEM
 try {
   const artikelRoutes = require('./routes/artikel');
