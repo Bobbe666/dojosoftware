@@ -338,11 +338,42 @@ const MemberDashboard = () => {
         });
       }
     };
-    
+
+    // Geburtstags-Prüfung
+    const checkBirthday = async () => {
+      if (!user?.mitglied_id) return;
+
+      try {
+        const response = await fetch(`${config.apiBaseUrl}/mitglieder/${user.mitglied_id}/birthday-check`);
+        const data = await response.json();
+
+        if (data.hasBirthday) {
+          // Füge Geburtstags-Benachrichtigung hinzu
+          const birthdayNotification = {
+            id: `birthday-${Date.now()}`,
+            type: 'birthday',
+            title: '🎉 Herzlichen Glückwunsch!',
+            message: `Alles Gute zum ${data.mitglied.alter}. Geburtstag! Wir wünschen dir einen wundervollen Tag! 🎂`,
+            timestamp: new Date().toISOString(),
+            read: false,
+            priority: 'high'
+          };
+
+          setNotifications(prev => [birthdayNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+
+          console.log(`🎂 Geburtstag erkannt: ${data.mitglied.vorname} wird ${data.mitglied.alter} Jahre alt!`);
+        }
+      } catch (error) {
+        console.error('Fehler beim Geburtstags-Check:', error);
+      }
+    };
+
     if (user?.email) {
       loadMemberData();
+      checkBirthday();
     }
-  }, [user?.email]);
+  }, [user?.email, user?.mitglied_id]);
 
   // Lade alle verfügbaren Stile
   const loadStile = async () => {

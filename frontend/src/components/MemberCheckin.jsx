@@ -118,7 +118,21 @@ const MemberCheckin = ({ onClose }) => {
       }
       
       const result = await response.json();
-      const successMessage = result.message || `Check-in erfolgreich für ${memberData.vorname} ${memberData.nachname}!`;
+      let successMessage = result.message || `Check-in erfolgreich für ${memberData.vorname} ${memberData.nachname}!`;
+
+      // Prüfe ob Mitglied heute Geburtstag hat
+      try {
+        const birthdayResponse = await fetch(`${API_BASE}/mitglieder/${memberData.mitglied_id}/birthday-check`);
+        const birthdayData = await birthdayResponse.json();
+
+        if (birthdayData.hasBirthday) {
+          successMessage = `🎉 ${successMessage}\n\n🎂 Herzlichen Glückwunsch zum ${birthdayData.mitglied.alter}. Geburtstag, ${memberData.vorname}! 🎉`;
+        }
+      } catch (birthdayError) {
+        console.error('Fehler beim Geburtstags-Check:', birthdayError);
+        // Fahre fort, auch wenn Geburtstags-Check fehlschlägt
+      }
+
       setSuccess(`✅ ${successMessage}`);
 
       // Nach 3 Sekunden schließen und Parent neu laden

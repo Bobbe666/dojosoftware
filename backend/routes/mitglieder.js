@@ -2032,4 +2032,65 @@ router.put("/:id/graduierung", (req, res) => {
   });
 });
 
+// ============================================
+// GET /api/mitglieder/:id/birthday-check
+// Prüft ob das Mitglied heute Geburtstag hat
+// ============================================
+router.get('/:id/birthday-check', (req, res) => {
+  const mitgliedId = req.params.id;
+
+  const query = `
+    SELECT
+      mitglied_id,
+      vorname,
+      nachname,
+      geburtsdatum,
+      DAYOFMONTH(geburtsdatum) as geburtstag_tag,
+      MONTH(geburtsdatum) as geburtstag_monat,
+      DAYOFMONTH(CURDATE()) as heute_tag,
+      MONTH(CURDATE()) as heute_monat,
+      YEAR(CURDATE()) - YEAR(geburtsdatum) as alter,
+      CASE
+        WHEN DAYOFMONTH(geburtsdatum) = DAYOFMONTH(CURDATE())
+         AND MONTH(geburtsdatum) = MONTH(CURDATE())
+        THEN 1
+        ELSE 0
+      END as hat_heute_geburtstag
+    FROM mitglieder
+    WHERE mitglied_id = ?
+  `;
+
+  db.query(query, [mitgliedId], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Geburtstags-Check:', err);
+      return res.status(500).json({
+        error: 'Datenbankfehler',
+        hasBirthday: false
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        error: 'Mitglied nicht gefunden',
+        hasBirthday: false
+      });
+    }
+
+    const mitglied = results[0];
+    const hasBirthday = mitglied.hat_heute_geburtstag === 1;
+
+    res.json({
+      success: true,
+      hasBirthday: hasBirthday,
+      mitglied: {
+        id: mitglied.mitglied_id,
+        vorname: mitglied.vorname,
+        nachname: mitglied.nachname,
+        geburtsdatum: mitglied.geburtsdatum,
+        alter: hasBirthday ? mitglied.alter : null
+      }
+    });
+  });
+});
+
 module.exports = router;
