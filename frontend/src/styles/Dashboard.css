@@ -78,8 +78,8 @@
   backdrop-filter: blur(16px) !important;
 }
 
-/* Shimmer-Effekt für Header - DEAKTIVIERT (verursacht Flackern bei Re-Renders) */
-/* .dashboard-header::before {
+/* Shimmer-Effekt für Header */
+.dashboard-header::before {
   content: '';
   position: absolute;
   top: 0;
@@ -91,7 +91,7 @@
     rgba(255, 215, 0, 0.1),
     transparent);
   animation: shimmer 3s forwards;
-} */
+}
 
 .dashboard-header-left {
   display: flex !important;

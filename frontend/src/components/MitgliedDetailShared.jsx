@@ -1876,8 +1876,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 src={mitglied?.foto_pfad ? `/uploads/${mitglied.foto_pfad.replace('uploads/', '')}` : '/src/assets/default-avatar.png'}
                 alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                 className="avatar-image"
+                style={{
+                  opacity: 1,
+                  transition: 'opacity 0.3s ease-in-out'
+                }}
+                onLoad={(e) => {
+                  e.target.style.opacity = 1;
+                }}
                 onError={(e) => {
                   e.target.src = '/src/assets/default-avatar.png';
+                  e.target.style.opacity = 1;
                 }}
               />
             </div>

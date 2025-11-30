@@ -365,18 +365,24 @@ const MitgliederListe = () => {
                     gap: '0.5rem',
                     marginBottom: '0.3rem'
                   }}>
-                    <img 
-                      src={mitglied.foto_pfad ? `http://localhost:3002/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png'} 
+                    <img
+                      src={mitglied.foto_pfad ? `http://localhost:3002/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png'}
                       alt={`${mitglied.vorname} ${mitglied.nachname}`}
                       style={{
                         width: '40px',
                         height: '40px',
                         borderRadius: '50%',
                         objectFit: 'cover',
-                        border: '2px solid #e5e7eb'
+                        border: '2px solid #e5e7eb',
+                        opacity: 1,
+                        transition: 'opacity 0.2s ease-in-out'
+                      }}
+                      onLoad={(e) => {
+                        e.target.style.opacity = 1;
                       }}
                       onError={(e) => {
                         e.target.src = '/src/assets/default-avatar.png';
+                        e.target.style.opacity = 1;
                       }}
                     />
                     <h3 style={{
