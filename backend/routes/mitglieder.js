@@ -4,145 +4,12 @@ const SepaPdfGenerator = require("../utils/sepaPdfGenerator");
 const bcrypt = require("bcryptjs"); // Für Passwort-Hashing
 const router = express.Router();
 
-// Development mode check
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
-// ============================================
-// MOCK DATA FOR DEVELOPMENT
-// ============================================
-const MOCK_MITGLIEDER = [
-  {
-    mitglied_id: 1,
-    vorname: 'Max',
-    nachname: 'Mustermann',
-    geburtsdatum: '1990-05-15',
-    gurtfarbe: 'Braun',
-    email: 'max.mustermann@example.com',
-    telefon_mobil: '0176 12345678',
-    aktiv: 1,
-    eintrittsdatum: '2020-01-15',
-    dojo_id: 1,
-    allergien: null,
-    notfallkontakt_name: 'Maria Mustermann',
-    notfallkontakt_telefon: '0176 87654321',
-    naechste_pruefung_datum: null,
-    pruefungsgebuehr_bezahlt: 0,
-    hausordnung_akzeptiert: 1,
-    datenschutz_akzeptiert: 1,
-    foto_einverstaendnis: 1,
-    familien_id: null,
-    rabatt_prozent: 0,
-    trainingsstunden: 150,
-    stile: 'Karate, Kickboxen',
-    foto_pfad: null
-  },
-  {
-    mitglied_id: 2,
-    vorname: 'Lisa',
-    nachname: 'Schmidt',
-    geburtsdatum: '1995-08-22',
-    gurtfarbe: 'Schwarz',
-    email: 'lisa.schmidt@example.com',
-    telefon_mobil: '0151 23456789',
-    aktiv: 1,
-    eintrittsdatum: '2018-03-10',
-    dojo_id: 1,
-    allergien: null,
-    notfallkontakt_name: 'Thomas Schmidt',
-    notfallkontakt_telefon: '0151 98765432',
-    naechste_pruefung_datum: null,
-    pruefungsgebuehr_bezahlt: 0,
-    hausordnung_akzeptiert: 1,
-    datenschutz_akzeptiert: 1,
-    foto_einverstaendnis: 1,
-    familien_id: null,
-    rabatt_prozent: 0,
-    trainingsstunden: 320,
-    stile: 'Karate',
-    foto_pfad: null
-  },
-  {
-    mitglied_id: 3,
-    vorname: 'Anna',
-    nachname: 'Müller',
-    geburtsdatum: '2005-12-03',
-    gurtfarbe: 'Grün',
-    email: 'anna.mueller@example.com',
-    telefon_mobil: '0162 34567890',
-    aktiv: 1,
-    eintrittsdatum: '2022-09-01',
-    dojo_id: 1,
-    allergien: null,
-    notfallkontakt_name: 'Peter Müller',
-    notfallkontakt_telefon: '0162 09876543',
-    naechste_pruefung_datum: '2025-12-15',
-    pruefungsgebuehr_bezahlt: 1,
-    hausordnung_akzeptiert: 1,
-    datenschutz_akzeptiert: 1,
-    foto_einverstaendnis: 1,
-    familien_id: 1,
-    rabatt_prozent: 10,
-    trainingsstunden: 85,
-    stile: 'Kickboxen',
-    foto_pfad: null
-  },
-  {
-    mitglied_id: 4,
-    vorname: 'Tom',
-    nachname: 'Weber',
-    geburtsdatum: '1988-03-18',
-    gurtfarbe: 'Blau',
-    email: 'tom.weber@example.com',
-    telefon_mobil: '0173 45678901',
-    aktiv: 1,
-    eintrittsdatum: '2021-06-20',
-    dojo_id: 1,
-    allergien: 'Nussallergie',
-    notfallkontakt_name: 'Sarah Weber',
-    notfallkontakt_telefon: '0173 10987654',
-    naechste_pruefung_datum: null,
-    pruefungsgebuehr_bezahlt: 0,
-    hausordnung_akzeptiert: 1,
-    datenschutz_akzeptiert: 1,
-    foto_einverstaendnis: 0,
-    familien_id: null,
-    rabatt_prozent: 0,
-    trainingsstunden: 120,
-    stile: 'Karate',
-    foto_pfad: null
-  }
-];
+// Mock-Daten wurden entfernt - verwende immer echte Datenbank
 
 // ✅ NEU: API für Anwesenheit – aktive Mitglieder nach Stil filtern + DOJO-FILTER
 router.get("/", (req, res) => {
     const { stil, dojo_id } = req.query;
 
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-    if (isDevelopment) {
-        console.log('🔧 Development Mode: Verwende Mock-Mitglieder');
-        let filtered = MOCK_MITGLIEDER.filter(m => m.aktiv === 1);
-
-        // Stil-Filter
-        if (stil) {
-            filtered = filtered.filter(m => m.stile && m.stile.includes(stil));
-        }
-
-        // Dojo-Filter
-        if (dojo_id && dojo_id !== 'all') {
-            filtered = filtered.filter(m => m.dojo_id === parseInt(dojo_id));
-        }
-
-        // Nur relevante Felder zurückgeben
-        const result = filtered.map(m => ({
-            mitglied_id: m.mitglied_id,
-            vorname: m.vorname,
-            nachname: m.nachname
-        }));
-
-        return res.json(result);
-    }
-
-    // PRODUCTION MODE: Datenbank verwenden
     // 🔒 DOJO-FILTER: Baue WHERE-Bedingungen
     let whereConditions = ['m.aktiv = 1'];
     let queryParams = [];
@@ -202,20 +69,6 @@ router.get("/", (req, res) => {
 router.get("/all", (req, res) => {
     const { dojo_id } = req.query;
 
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-    if (isDevelopment) {
-        console.log('🔧 Development Mode: Verwende Mock-Mitglieder (all)');
-        let filtered = [...MOCK_MITGLIEDER];
-
-        // Dojo-Filter
-        if (dojo_id && dojo_id !== 'all') {
-            filtered = filtered.filter(m => m.dojo_id === parseInt(dojo_id));
-        }
-
-        return res.json(filtered);
-    }
-
-    // PRODUCTION MODE: Datenbank verwenden
     // 🔒 DOJO-FILTER: Baue WHERE-Clause
     let whereClause = '';
     let queryParams = [];
