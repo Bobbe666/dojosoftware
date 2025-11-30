@@ -8,9 +8,9 @@ const isProduction = import.meta.env.MODE === 'production';
 
 // API-URLs für verschiedene Umgebungen
 const API_URLS = {
-  development: 'http://localhost:3002',
+  development: 'http://localhost:3000/api',
   production: 'https://dojo.tda-intl.org/api',
-  testing: 'http://localhost:3002'
+  testing: 'http://localhost:3000/api'
 };
 
 // Basis-Konfiguration

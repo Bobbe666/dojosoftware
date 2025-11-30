@@ -127,7 +127,7 @@ const CheckinSystem = () => {
 
   const loadMembers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/mitglieder`);
+      const response = await fetch(`${API_BASE}/mitglieder`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -144,7 +144,7 @@ const CheckinSystem = () => {
 
   const loadCoursesToday = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/checkin/courses-today`);
+      const response = await fetch(`${API_BASE}/checkin/courses-today`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -162,7 +162,7 @@ const CheckinSystem = () => {
 
   const loadTodayCheckins = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/checkin/today`);
+      const response = await fetch(`${API_BASE}/checkin/today`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -184,7 +184,7 @@ const CheckinSystem = () => {
 
   const loadMemberCheckins = async (mitgliedId) => {
     try {
-      const response = await fetch(`${API_BASE}/api/checkin/today-member/${mitgliedId}`);
+      const response = await fetch(`${API_BASE}/checkin/today-member/${mitgliedId}`);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -293,7 +293,7 @@ const CheckinSystem = () => {
     try {
       // Alle Check-ins parallel auschecken
       const checkoutPromises = todayCheckins.map(checkin =>
-        fetch(`${API_BASE}/api/checkin/checkout`, {
+        fetch(`${API_BASE}/checkin/checkout`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -338,7 +338,7 @@ const CheckinSystem = () => {
     setLoading(true);
     
     try {
-      const response = await fetch(`${API_BASE}/api/checkin/checkout`, {
+      const response = await fetch(`${API_BASE}/checkin/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -392,7 +392,7 @@ const CheckinSystem = () => {
         checkin_method: 'touch'
       };
 
-      const response = await fetch(`${API_BASE}/api/checkin/multi-course`, {
+      const response = await fetch(`${API_BASE}/checkin/multi-course`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

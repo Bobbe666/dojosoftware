@@ -3918,6 +3918,113 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   )}
                 </div>
 
+                {/* VERTRAGSFREI STATUS */}
+                {isAdmin && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.1) 100%)',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    marginBottom: '2rem',
+                    border: '1px solid rgba(52, 152, 219, 0.3)',
+                    boxShadow: '0 4px 12px rgba(52, 152, 219, 0.1)'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem'
+                    }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: '#3498db',
+                        flex: 1
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={mitglied?.vertragsfrei || false}
+                          onChange={async (e) => {
+                            const isVertragsfrei = e.target.checked;
+                            const grund = isVertragsfrei
+                              ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
+                              : null;
+
+                            if (isVertragsfrei && !grund) {
+                              e.target.checked = false;
+                              return;
+                            }
+
+                            try {
+                              await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
+                                vertragsfrei: isVertragsfrei ? 1 : 0,
+                                vertragsfrei_grund: grund || null
+                              });
+
+                              setMitglied(prev => ({
+                                ...prev,
+                                vertragsfrei: isVertragsfrei ? 1 : 0,
+                                vertragsfrei_grund: grund || null
+                              }));
+
+                              alert(isVertragsfrei
+                                ? '✅ Mitglied wurde als vertragsfrei markiert'
+                                : '✅ Vertragsfreistellung wurde aufgehoben'
+                              );
+                            } catch (error) {
+                              console.error('Fehler beim Aktualisieren:', error);
+                              alert('❌ Fehler beim Speichern der Vertragsfreistellung');
+                              e.target.checked = !isVertragsfrei;
+                            }
+                          }}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            cursor: 'pointer',
+                            accentColor: '#3498db'
+                          }}
+                        />
+                        <span style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          🎖️ Mitglied ist vertragsfrei
+                        </span>
+                      </label>
+
+                      {mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
+                        <div style={{
+                          padding: '0.5rem 1rem',
+                          background: 'rgba(52, 152, 219, 0.15)',
+                          borderRadius: '8px',
+                          fontSize: '0.9rem',
+                          color: '#5dade2',
+                          border: '1px solid rgba(52, 152, 219, 0.3)'
+                        }}>
+                          <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
+                        </div>
+                      )}
+                    </div>
+
+                    {mitglied?.vertragsfrei && (
+                      <div style={{
+                        marginTop: '1rem',
+                        padding: '0.75rem',
+                        background: 'rgba(52, 152, 219, 0.05)',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        borderLeft: '3px solid #3498db'
+                      }}>
+                        ℹ️ <strong>Info:</strong> Vertragsfreie Mitglieder benötigen keinen aktiven Vertrag und sind von Beitragszahlungen befreit.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* CONTRACTS GRID */}
                 {verträge.length > 0 ? (
                   <div style={{

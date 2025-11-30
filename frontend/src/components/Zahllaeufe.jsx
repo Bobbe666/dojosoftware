@@ -45,7 +45,7 @@ const Zahllaeufe = ({ embedded = false }) => {
   const loadZahllaeufe = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/api/zahllaeufe`);
+      const response = await fetch(`${config.apiBaseUrl}/zahllaeufe`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Zahlläufe');

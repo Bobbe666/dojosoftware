@@ -11,8 +11,53 @@ export const useDojoContext = () => {
   return context;
 };
 
+// 🔧 Mock-Daten außerhalb der Komponente (konstante Referenz, wird nicht bei jedem Render neu erstellt)
+const INITIAL_MOCK_DOJOS = [
+  {
+    id: 1,
+    dojoname: 'Dojo Hamburg',
+    inhaber: 'Max Mustermann',
+    farbe: '#FFD700',
+    ist_hauptdojo: true,
+    steuer_status: 'kleinunternehmer',
+    kleinunternehmer_grenze: 22000,
+    jahresumsatz_aktuell: 15000,
+    ust_satz: 19,
+    rechtsform: 'e.V.',
+    strasse: 'Beispielstraße 123',
+    plz: '20095',
+    ort: 'Hamburg',
+    land: 'Deutschland',
+    telefon: '+49 40 12345678',
+    email: 'info@dojo-hamburg.de',
+    website: 'www.dojo-hamburg.de'
+  },
+  {
+    id: 2,
+    dojoname: 'Dojo Berlin',
+    inhaber: 'Anna Schmidt',
+    farbe: '#3B82F6',
+    ist_hauptdojo: false,
+    steuer_status: 'regelbesteuert',
+    kleinunternehmer_grenze: 22000,
+    jahresumsatz_aktuell: 35000,
+    ust_satz: 19,
+    rechtsform: 'GmbH',
+    strasse: 'Alexanderplatz 1',
+    plz: '10178',
+    ort: 'Berlin',
+    land: 'Deutschland',
+    telefon: '+49 30 98765432',
+    email: 'kontakt@dojo-berlin.de',
+    website: 'www.dojo-berlin.de'
+  }
+];
+
 export const DojoProvider = ({ children }) => {
-  const [dojos, setDojos] = useState([]);
+  // 🔧 DEVELOPMENT MODE: Mock-Daten für lokale Entwicklung
+  const isDevelopment = import.meta.env.MODE === 'development';
+
+  const [dojos, setDojos] = useState(isDevelopment ? [...INITIAL_MOCK_DOJOS] : []);
   const [activeDojo, setActiveDojo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'current', 'all', 'compare' - Standard: alle Dojos anzeigen
@@ -46,6 +91,13 @@ export const DojoProvider = ({ children }) => {
   }, [dojos, activeDojo]);
 
   const loadDojos = useCallback(async () => {
+    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden (nur beim initialen Laden)
+    if (isDevelopment) {
+      console.log('🔧 Development Mode: Mock-Dojos bereits geladen (keine Überschreibung)');
+      setLoading(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('dojo_auth_token');
       const headers = {
@@ -73,7 +125,7 @@ export const DojoProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isDevelopment]);
 
   const switchDojo = useCallback((dojo) => {
     setActiveDojo(dojo);
@@ -112,6 +164,61 @@ export const DojoProvider = ({ children }) => {
     }
   }, [filter, activeDojo]);
 
+  // Intelligente Dojo-Auswahl für neue Mitglieder
+  // Priorisiert Kleinunternehmer-Dojos, die noch nicht an der Grenze sind
+  const getBestDojoForNewMember = useCallback(() => {
+    if (dojos.length === 0) return null;
+
+    console.log('🏯 Wähle bestes Dojo für neues Mitglied...');
+
+    // 1. Priorisiere Kleinunternehmer-Dojos, die noch Platz haben
+    const kleinunternehmerDojos = dojos
+      .filter(d => d.steuer_status === 'kleinunternehmer')
+      .map(d => ({
+        ...d,
+        auslastung: (d.jahresumsatz_aktuell / d.kleinunternehmer_grenze) * 100
+      }))
+      .filter(d => d.auslastung < 100) // Nur Dojos unter der Grenze
+      .sort((a, b) => a.auslastung - b.auslastung); // Sortiere nach Auslastung (niedrigste zuerst)
+
+    if (kleinunternehmerDojos.length > 0) {
+      const selected = kleinunternehmerDojos[0];
+      console.log(`✅ Kleinunternehmer-Dojo gewählt: ${selected.dojoname} (${selected.auslastung.toFixed(1)}% ausgelastet)`);
+      return selected;
+    }
+
+    // 2. Falls alle Kleinunternehmer-Dojos voll sind, wähle regelbesteuertes Dojo
+    const regelbesteuerteDojos = dojos.filter(d => d.steuer_status === 'regelbesteuert');
+
+    if (regelbesteuerteDojos.length > 0) {
+      const selected = regelbesteuerteDojos[0];
+      console.log(`✅ Regelbesteuertes Dojo gewählt: ${selected.dojoname} (alle Kleinunternehmer-Dojos sind voll)`);
+      return selected;
+    }
+
+    // 3. Fallback: Haupt-Dojo oder erstes Dojo
+    const fallback = dojos.find(d => d.ist_hauptdojo) || dojos[0];
+    console.log(`⚠️ Fallback-Dojo gewählt: ${fallback.dojoname}`);
+    return fallback;
+  }, [dojos]);
+
+  // Update Dojo (für Mock-Daten im Development Mode)
+  const updateDojo = useCallback((id, updatedData) => {
+    console.log('🔄 DojoContext: Update Dojo', { id, updatedData });
+
+    setDojos(prevDojos =>
+      prevDojos.map(dojo =>
+        dojo.id === parseInt(id) ? { ...dojo, ...updatedData } : dojo
+      )
+    );
+
+    // Update activeDojo wenn es das bearbeitete Dojo ist
+    if (activeDojo && activeDojo.id === parseInt(id)) {
+      setActiveDojo(prev => ({ ...prev, ...updatedData }));
+      console.log('✅ DojoContext: Aktives Dojo aktualisiert');
+    }
+  }, [activeDojo]);
+
   const value = useMemo(() => ({
     dojos,
     activeDojo,
@@ -122,8 +229,10 @@ export const DojoProvider = ({ children }) => {
     getDojoById,
     getFilteredDojoIds,
     getDojoFilterParam,
+    getBestDojoForNewMember,
+    updateDojo,
     refreshDojos: loadDojos
-  }), [dojos, activeDojo, loading, filter, switchDojo, getDojoById, getFilteredDojoIds, getDojoFilterParam, loadDojos]);
+  }), [dojos, activeDojo, loading, filter, switchDojo, getDojoById, getFilteredDojoIds, getDojoFilterParam, getBestDojoForNewMember, updateDojo, loadDojos]);
 
   return <DojoContext.Provider value={value}>{children}</DojoContext.Provider>;
 };

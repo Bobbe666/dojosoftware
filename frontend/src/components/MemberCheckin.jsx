@@ -41,7 +41,7 @@ const MemberCheckin = ({ onClose }) => {
       setMemberData(member);
 
       // Lade heutige Kurse
-      const coursesResponse = await fetch(`${API_BASE}/api/checkin/courses-today`);
+      const coursesResponse = await fetch(`${API_BASE}/checkin/courses-today`);
       if (coursesResponse.ok) {
         const result = await coursesResponse.json();
         if (result.success) {
@@ -50,7 +50,7 @@ const MemberCheckin = ({ onClose }) => {
       }
 
       // Lade bereits eingecheckte Kurse für dieses Mitglied (ALLE Check-ins, auch completed)
-      const checkinsResponse = await fetch(`${API_BASE}/api/checkin/today-member/${member.mitglied_id}`);
+      const checkinsResponse = await fetch(`${API_BASE}/checkin/today-member/${member.mitglied_id}`);
       if (checkinsResponse.ok) {
         const checkinsResult = await checkinsResponse.json();
         if (checkinsResult.success) {
@@ -96,7 +96,7 @@ const MemberCheckin = ({ onClose }) => {
         checkin_method: 'touch'
       };
 
-      const response = await fetch(`${API_BASE}/api/checkin/multi-course`, {
+      const response = await fetch(`${API_BASE}/checkin/multi-course`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -37,7 +37,7 @@ const SepaMandateVerwaltung = () => {
   const loadMandate = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/api/sepa-mandate`);
+      const response = await fetch(`${config.apiBaseUrl}/sepa-mandate`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der SEPA-Mandate');
@@ -102,7 +102,7 @@ const SepaMandateVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/sepa-mandate/${mandat_id}`, {
+      const response = await fetch(`${config.apiBaseUrl}/sepa-mandate/${mandat_id}`, {
         method: 'DELETE'
       });
 

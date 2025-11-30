@@ -65,18 +65,18 @@ const ArtikelVerwaltung = () => {
   
   const apiCall = async (endpoint, options = {}) => {
     try {
-      const response = await fetch(`/artikel${endpoint}`, {
+      const response = await fetch(`${config.apiBaseUrl}/artikel${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
         },
         ...options
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('API Error:', error);

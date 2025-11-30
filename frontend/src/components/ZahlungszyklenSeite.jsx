@@ -40,7 +40,7 @@ const ZahlungszyklenSeite = () => {
   const loadZahlungszyklen = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/api/zahlungszyklen`);
+      const response = await fetch(`${config.apiBaseUrl}/zahlungszyklen`);
       
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Zahlungszyklen');
@@ -61,8 +61,8 @@ const ZahlungszyklenSeite = () => {
     try {
       const method = zyklus.zyklus_id ? 'PUT' : 'POST';
       const url = zyklus.zyklus_id
-        ? `${config.apiBaseUrl}/api/zahlungszyklen/${zyklus.zyklus_id}`
-        : `${config.apiBaseUrl}/api/zahlungszyklen`;
+        ? `${config.apiBaseUrl}/zahlungszyklen/${zyklus.zyklus_id}`
+        : `${config.apiBaseUrl}/zahlungszyklen`;
 
       const response = await fetch(url, {
         method,
@@ -97,7 +97,7 @@ const ZahlungszyklenSeite = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/zahlungszyklen/${id}`, {
+      const response = await fetch(`${config.apiBaseUrl}/zahlungszyklen/${id}`, {
         method: 'DELETE',
       });
 

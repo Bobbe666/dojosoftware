@@ -5,6 +5,69 @@ const path = require("path");
 const fs = require("fs");
 const router = express.Router();
 
+// Development mode check
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// Mock data - shared from mitglieder.js
+const MOCK_MITGLIEDER_DETAIL = {
+  1: {
+    mitglied_id: 1, id: 1,
+    vorname: 'Max', nachname: 'Mustermann',
+    geburtsdatum: '1990-05-15', geschlecht: 'männlich', gewicht: 75,
+    gurtfarbe: 'Braun', dojo_id: 1, trainingsstunden: 150,
+    email: 'max.mustermann@example.com', telefon: '0176 12345678', telefon_mobil: '0176 12345678',
+    strasse: 'Musterstraße 1', plz: '12345', ort: 'Musterstadt', land: 'Deutschland',
+    aktiv: 1, eintrittsdatum: '2020-01-15',
+    allergien: null, notfallkontakt_name: 'Maria Mustermann', notfallkontakt_telefon: '0176 87654321',
+    naechste_pruefung_datum: null, pruefungsgebuehr_bezahlt: 0,
+    hausordnung_akzeptiert: 1, datenschutz_akzeptiert: 1, foto_einverstaendnis: 1,
+    familien_id: null, rabatt_prozent: 0, foto_pfad: null,
+    vertragsfrei: 0, vertragsfrei_grund: null
+  },
+  2: {
+    mitglied_id: 2, id: 2,
+    vorname: 'Lisa', nachname: 'Schmidt',
+    geburtsdatum: '1995-08-22', geschlecht: 'weiblich', gewicht: 60,
+    gurtfarbe: 'Schwarz', dojo_id: 1, trainingsstunden: 320,
+    email: 'lisa.schmidt@example.com', telefon: '0151 23456789', telefon_mobil: '0151 23456789',
+    strasse: 'Beispielweg 5', plz: '54321', ort: 'Beispielstadt', land: 'Deutschland',
+    aktiv: 1, eintrittsdatum: '2018-03-10',
+    allergien: null, notfallkontakt_name: 'Thomas Schmidt', notfallkontakt_telefon: '0151 98765432',
+    naechste_pruefung_datum: null, pruefungsgebuehr_bezahlt: 0,
+    hausordnung_akzeptiert: 1, datenschutz_akzeptiert: 1, foto_einverstaendnis: 1,
+    familien_id: null, rabatt_prozent: 0, foto_pfad: null,
+    vertragsfrei: 1, vertragsfrei_grund: 'Ehrenmitglied - langjährige Verdienste um den Verein'
+  },
+  3: {
+    mitglied_id: 3, id: 3,
+    vorname: 'Anna', nachname: 'Müller',
+    geburtsdatum: '2005-12-03', geschlecht: 'weiblich', gewicht: 50,
+    gurtfarbe: 'Grün', dojo_id: 1, trainingsstunden: 85,
+    email: 'anna.mueller@example.com', telefon: '0162 34567890', telefon_mobil: '0162 34567890',
+    strasse: 'Teststraße 10', plz: '67890', ort: 'Testdorf', land: 'Deutschland',
+    aktiv: 1, eintrittsdatum: '2022-09-01',
+    allergien: null, notfallkontakt_name: 'Peter Müller', notfallkontakt_telefon: '0162 09876543',
+    naechste_pruefung_datum: '2025-12-15', pruefungsgebuehr_bezahlt: 1,
+    hausordnung_akzeptiert: 1, datenschutz_akzeptiert: 1, foto_einverstaendnis: 1,
+    familien_id: 1, rabatt_prozent: 10, foto_pfad: null,
+    vertragsfrei: 0, vertragsfrei_grund: null
+  },
+  4: {
+    mitglied_id: 4, id: 4,
+    vorname: 'Tom', nachname: 'Weber',
+    geburtsdatum: '1988-03-18', geschlecht: 'männlich', gewicht: 80,
+    gurtfarbe: 'Blau', dojo_id: 1, trainingsstunden: 120,
+    email: 'tom.weber@example.com', telefon: '0173 45678901', telefon_mobil: '0173 45678901',
+    strasse: 'Demoallee 20', plz: '11111', ort: 'Democity', land: 'Deutschland',
+    aktiv: 1, eintrittsdatum: '2021-06-20',
+    allergien: 'Nussallergie', notfallkontakt_name: 'Sarah Weber', notfallkontakt_telefon: '0173 10987654',
+    naechste_pruefung_datum: null, pruefungsgebuehr_bezahlt: 0,
+    hausordnung_akzeptiert: 1, datenschutz_akzeptiert: 1, foto_einverstaendnis: 0,
+    familien_id: null, rabatt_prozent: 0, foto_pfad: null,
+    vertragsfrei: 0, vertragsfrei_grund: null
+  }
+};
+
 // Multer-Konfiguration für Foto-Uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -48,6 +111,18 @@ const upload = multer({
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
+  // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
+  if (isDevelopment) {
+    console.log(`🔧 Development Mode: Verwende Mock-Mitglied-Detail für ID ${id}`);
+    const mockMitglied = MOCK_MITGLIEDER_DETAIL[id];
+    if (mockMitglied) {
+      return res.json(mockMitglied);
+    } else {
+      return res.status(404).json({ message: "Mitglied nicht gefunden." });
+    }
+  }
+
+  // PRODUCTION MODE: Datenbank verwenden
   const query = "SELECT *, mitglied_id AS id, trainingsstunden, foto_pfad FROM mitglieder WHERE mitglied_id = ?";
   db.query(query, [id], (err, results) => {
     if (err) {
@@ -75,7 +150,23 @@ router.put("/:id", (req, res) => {
   }
 
   console.log("Empfangene Felder:", Object.keys(data));
-  
+
+  // 🔧 DEVELOPMENT MODE: Mock-Daten aktualisieren
+  if (isDevelopment) {
+    console.log(`🔧 Development Mode: Aktualisiere Mock-Mitglied ${id}`);
+    const mockMitglied = MOCK_MITGLIEDER_DETAIL[id];
+    if (!mockMitglied) {
+      return res.status(404).json({ message: "Mitglied nicht gefunden." });
+    }
+
+    // Aktualisiere Mock-Daten im Speicher
+    Object.assign(MOCK_MITGLIEDER_DETAIL[id], data);
+
+    // Gebe die aktualisierten Daten zurück
+    return res.json(MOCK_MITGLIEDER_DETAIL[id]);
+  }
+
+  // PRODUCTION MODE: Datenbank verwenden
   const updateQuery = "UPDATE mitglieder SET ? WHERE mitglied_id = ?";
   db.query(updateQuery, [data, id], (err, result) => {
     if (err) {

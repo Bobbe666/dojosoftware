@@ -13,6 +13,43 @@ const db = require('../db');
 // const fs = require('fs');
 
 // =====================================================================================
+// DEVELOPMENT MODE CHECK
+// =====================================================================================
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// =====================================================================================
+// MOCK-DATEN FÜR DEVELOPMENT MODE
+// =====================================================================================
+const MOCK_KATEGORIEN = [
+  { kategorie_id: 1, name: 'Gi/Anzüge', beschreibung: 'Kampfsportanzüge', farbe_hex: '#3B82F6', icon: '👔', aktiv: true, reihenfolge: 1, anzahl_artikel: 5 },
+  { kategorie_id: 2, name: 'Waffen', beschreibung: 'Trainingswaffen', farbe_hex: '#EF4444', icon: '⚔️', aktiv: true, reihenfolge: 2, anzahl_artikel: 4 },
+  { kategorie_id: 3, name: 'Schutzausrüstung', beschreibung: 'Schutz für Training', farbe_hex: '#10B981', icon: '🛡️', aktiv: true, reihenfolge: 3, anzahl_artikel: 6 },
+  { kategorie_id: 4, name: 'Prüfungsmaterial', beschreibung: 'Material für Prüfungen', farbe_hex: '#F59E0B', icon: '📜', aktiv: true, reihenfolge: 4, anzahl_artikel: 3 }
+];
+
+const MOCK_ARTIKEL = [
+  // Gi/Anzüge
+  { artikel_id: 1, kategorie_id: 1, artikelgruppe_id: 1, name: 'Karate Gi Weiß Größe 160', beschreibung: 'Klassischer weißer Karate-Anzug', ean_code: '4250123456001', artikel_nummer: 'GI-KAR-W-160', einkaufspreis_cent: 2500, verkaufspreis_cent: 4990, mwst_prozent: 19, lagerbestand: 12, mindestbestand: 5, lager_tracking: true, farbe_hex: '#FFFFFF', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Gi/Anzüge', kategorie_farbe: '#3B82F6', kategorie_icon: '👔', artikelgruppe_name: 'Bekleidung', artikelgruppe_farbe: '#3b82f6', artikelgruppe_icon: '👕', artikelgruppe_vollstaendig: 'Bekleidung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 2, kategorie_id: 1, artikelgruppe_id: 1, name: 'Judo Gi Blau Größe 170', beschreibung: 'Blauer Judo-Anzug für Wettkämpfe', ean_code: '4250123456002', artikel_nummer: 'GI-JUD-B-170', einkaufspreis_cent: 3500, verkaufspreis_cent: 6990, mwst_prozent: 19, lagerbestand: 8, mindestbestand: 3, lager_tracking: true, farbe_hex: '#1E40AF', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Gi/Anzüge', kategorie_farbe: '#3B82F6', kategorie_icon: '👔', artikelgruppe_name: 'Bekleidung', artikelgruppe_farbe: '#3b82f6', artikelgruppe_icon: '👕', artikelgruppe_vollstaendig: 'Bekleidung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 3, kategorie_id: 1, artikelgruppe_id: 1, name: 'Taekwondo Dobok Weiß mit schwarzem Kragen', beschreibung: 'Traditioneller Taekwondo-Anzug', ean_code: '4250123456003', artikel_nummer: 'GI-TKD-W-180', einkaufspreis_cent: 2800, verkaufspreis_cent: 5490, mwst_prozent: 19, lagerbestand: 15, mindestbestand: 5, lager_tracking: true, farbe_hex: '#FFFFFF', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Gi/Anzüge', kategorie_farbe: '#3B82F6', kategorie_icon: '👔', artikelgruppe_name: 'Bekleidung', artikelgruppe_farbe: '#3b82f6', artikelgruppe_icon: '👕', artikelgruppe_vollstaendig: 'Bekleidung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+
+  // Waffen
+  { artikel_id: 4, kategorie_id: 2, artikelgruppe_id: 2, name: 'Bo Stab Eiche 180cm', beschreibung: 'Traditioneller Bo-Stab aus Eichenholz', ean_code: '4250123456101', artikel_nummer: 'WAF-BO-180', einkaufspreis_cent: 1500, verkaufspreis_cent: 2990, mwst_prozent: 19, lagerbestand: 20, mindestbestand: 10, lager_tracking: true, farbe_hex: '#92400E', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Waffen', kategorie_farbe: '#EF4444', kategorie_icon: '⚔️', artikelgruppe_name: 'Ausrüstung', artikelgruppe_farbe: '#ef4444', artikelgruppe_icon: '🥊', artikelgruppe_vollstaendig: 'Ausrüstung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 5, kategorie_id: 2, artikelgruppe_id: 2, name: 'Tonfa Paar Hartholz', beschreibung: 'Tonfa-Paar aus robustem Hartholz', ean_code: '4250123456102', artikel_nummer: 'WAF-TON-H', einkaufspreis_cent: 2200, verkaufspreis_cent: 4490, mwst_prozent: 19, lagerbestand: 6, mindestbestand: 4, lager_tracking: true, farbe_hex: '#78350F', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Waffen', kategorie_farbe: '#EF4444', kategorie_icon: '⚔️', artikelgruppe_name: 'Ausrüstung', artikelgruppe_farbe: '#ef4444', artikelgruppe_icon: '🥊', artikelgruppe_vollstaendig: 'Ausrüstung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 6, kategorie_id: 2, artikelgruppe_id: 2, name: 'Nunchaku Schaumstoff Training', beschreibung: 'Sicheres Training-Nunchaku', ean_code: '4250123456103', artikel_nummer: 'WAF-NUN-S', einkaufspreis_cent: 800, verkaufspreis_cent: 1590, mwst_prozent: 19, lagerbestand: 25, mindestbestand: 10, lager_tracking: true, farbe_hex: '#000000', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Waffen', kategorie_farbe: '#EF4444', kategorie_icon: '⚔️', artikelgruppe_name: 'Ausrüstung', artikelgruppe_farbe: '#ef4444', artikelgruppe_icon: '🥊', artikelgruppe_vollstaendig: 'Ausrüstung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+
+  // Schutzausrüstung
+  { artikel_id: 7, kategorie_id: 3, artikelgruppe_id: 2, name: 'Kopfschutz Größe L Rot', beschreibung: 'Kopfschutz für Sparring', ean_code: '4250123456201', artikel_nummer: 'SCH-KOP-L-R', einkaufspreis_cent: 1800, verkaufspreis_cent: 3490, mwst_prozent: 19, lagerbestand: 10, mindestbestand: 5, lager_tracking: true, farbe_hex: '#DC2626', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Schutzausrüstung', kategorie_farbe: '#10B981', kategorie_icon: '🛡️', artikelgruppe_name: 'Ausrüstung', artikelgruppe_farbe: '#ef4444', artikelgruppe_icon: '🥊', artikelgruppe_vollstaendig: 'Ausrüstung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 8, kategorie_id: 3, artikelgruppe_id: 2, name: 'Tiefschutz Größe M', beschreibung: 'Tiefschutz für Herren', ean_code: '4250123456202', artikel_nummer: 'SCH-TIE-M', einkaufspreis_cent: 1200, verkaufspreis_cent: 2290, mwst_prozent: 19, lagerbestand: 14, mindestbestand: 8, lager_tracking: true, farbe_hex: '#FFFFFF', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Schutzausrüstung', kategorie_farbe: '#10B981', kategorie_icon: '🛡️', artikelgruppe_name: 'Ausrüstung', artikelgruppe_farbe: '#ef4444', artikelgruppe_icon: '🥊', artikelgruppe_vollstaendig: 'Ausrüstung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 9, kategorie_id: 3, artikelgruppe_id: 2, name: 'Schienbeinschoner Größe L Blau', beschreibung: 'Schienbeinschutz für Wettkampf', ean_code: '4250123456203', artikel_nummer: 'SCH-SHI-L-B', einkaufspreis_cent: 1600, verkaufspreis_cent: 2990, mwst_prozent: 19, lagerbestand: 9, mindestbestand: 6, lager_tracking: true, farbe_hex: '#1E40AF', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Schutzausrüstung', kategorie_farbe: '#10B981', kategorie_icon: '🛡️', artikelgruppe_name: 'Ausrüstung', artikelgruppe_farbe: '#ef4444', artikelgruppe_icon: '🥊', artikelgruppe_vollstaendig: 'Ausrüstung', erstellt_am: new Date(), aktualisiert_am: new Date() },
+
+  // Prüfungsmaterial
+  { artikel_id: 10, kategorie_id: 4, artikelgruppe_id: 3, name: 'Prüfungsurkunde Karate', beschreibung: 'Offizielle Karate Prüfungsurkunde', ean_code: '4250123456301', artikel_nummer: 'PRÜ-URK-KAR', einkaufspreis_cent: 150, verkaufspreis_cent: 490, mwst_prozent: 19, lagerbestand: 100, mindestbestand: 50, lager_tracking: true, farbe_hex: '#FBBF24', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Prüfungsmaterial', kategorie_farbe: '#F59E0B', kategorie_icon: '📜', artikelgruppe_name: 'Prüfungsmaterial', artikelgruppe_farbe: '#f59e0b', artikelgruppe_icon: '🎓', artikelgruppe_vollstaendig: 'Prüfungsmaterial', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 11, kategorie_id: 4, artikelgruppe_id: 3, name: 'Bruchtest-Brett Holz 30x30cm', beschreibung: 'Bruchtest-Brett aus Kiefernholz', ean_code: '4250123456302', artikel_nummer: 'PRÜ-BRE-H-30', einkaufspreis_cent: 300, verkaufspreis_cent: 690, mwst_prozent: 19, lagerbestand: 40, mindestbestand: 20, lager_tracking: true, farbe_hex: '#92400E', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Prüfungsmaterial', kategorie_farbe: '#F59E0B', kategorie_icon: '📜', artikelgruppe_name: 'Prüfungsmaterial', artikelgruppe_farbe: '#f59e0b', artikelgruppe_icon: '🎓', artikelgruppe_vollstaendig: 'Prüfungsmaterial', erstellt_am: new Date(), aktualisiert_am: new Date() },
+  { artikel_id: 12, kategorie_id: 4, artikelgruppe_id: 3, name: 'Passfotos für Ausweis (10 Stück)', beschreibung: 'Passfoto-Set für Budopässe', ean_code: '4250123456303', artikel_nummer: 'PRÜ-PAS-10', einkaufspreis_cent: 500, verkaufspreis_cent: 990, mwst_prozent: 19, lagerbestand: 30, mindestbestand: 15, lager_tracking: true, farbe_hex: '#FFFFFF', aktiv: true, sichtbar_kasse: true, kategorie_name: 'Prüfungsmaterial', kategorie_farbe: '#F59E0B', kategorie_icon: '📜', artikelgruppe_name: 'Prüfungsmaterial', artikelgruppe_farbe: '#f59e0b', artikelgruppe_icon: '🎓', artikelgruppe_vollstaendig: 'Prüfungsmaterial', erstellt_am: new Date(), aktualisiert_am: new Date() }
+];
+
+// =====================================================================================
 // MIDDLEWARE & KONFIGURATION
 // =====================================================================================
 
@@ -52,8 +89,15 @@ const createLagerbewegung = (artikel_id, bewegungsart, menge, alter_bestand, neu
 
 // GET /api/artikel/kategorien - Alle Kategorien abrufen
 router.get('/kategorien', (req, res) => {
+  // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
+  if (isDevelopment) {
+    console.log('🔧 Development Mode: Verwende Mock-Kategorien');
+    return res.json({ success: true, data: MOCK_KATEGORIEN, _dev: true });
+  }
+
+  // PRODUCTION MODE: Datenbank verwenden
   const query = `
-    SELECT 
+    SELECT
       kategorie_id,
       name,
       beschreibung,
@@ -66,7 +110,7 @@ router.get('/kategorien', (req, res) => {
     WHERE aktiv = TRUE
     ORDER BY reihenfolge ASC, name ASC
   `;
-  
+
   db.query(query, (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Kategorien:', error);
@@ -113,9 +157,31 @@ router.post('/kategorien', (req, res) => {
 // GET /api/artikel - Alle Artikel abrufen (mit optionaler Kategorien-Filterung)
 router.get('/', (req, res) => {
   const { kategorie_id, aktiv, sichtbar_kasse } = req.query;
-  
+
+  // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
+  if (isDevelopment) {
+    console.log('🔧 Development Mode: Verwende Mock-Artikel');
+    let filtered = [...MOCK_ARTIKEL];
+
+    if (kategorie_id) {
+      filtered = filtered.filter(a => a.kategorie_id === parseInt(kategorie_id));
+    }
+
+    if (aktiv !== undefined) {
+      filtered = filtered.filter(a => a.aktiv === (aktiv === 'true'));
+    }
+
+    if (sichtbar_kasse !== undefined) {
+      filtered = filtered.filter(a => a.sichtbar_kasse === (sichtbar_kasse === 'true'));
+    }
+
+    const formattedResults = filtered.map(formatArtikel);
+    return res.json({ success: true, data: formattedResults, _dev: true });
+  }
+
+  // PRODUCTION MODE: Datenbank verwenden
   let query = `
-    SELECT 
+    SELECT
       a.*,
       ak.name as kategorie_name,
       ak.farbe_hex as kategorie_farbe,
@@ -123,7 +189,7 @@ router.get('/', (req, res) => {
       ag.name as artikelgruppe_name,
       ag.farbe as artikelgruppe_farbe,
       ag.icon as artikelgruppe_icon,
-      CASE 
+      CASE
         WHEN ag.parent_id IS NULL THEN ag.name
         ELSE CONCAT(pag.name, ' → ', ag.name)
       END AS artikelgruppe_vollstaendig
@@ -134,30 +200,30 @@ router.get('/', (req, res) => {
     WHERE 1=1
   `;
   const params = [];
-  
+
   if (kategorie_id) {
     query += ' AND a.kategorie_id = ?';
     params.push(kategorie_id);
   }
-  
+
   if (aktiv !== undefined) {
     query += ' AND a.aktiv = ?';
     params.push(aktiv === 'true');
   }
-  
+
   if (sichtbar_kasse !== undefined) {
     query += ' AND a.sichtbar_kasse = ?';
     params.push(sichtbar_kasse === 'true');
   }
-  
+
   query += ' ORDER BY ak.reihenfolge ASC, a.name ASC';
-  
+
   db.query(query, params, (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Artikel:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Artikel' });
     }
-    
+
     const formattedResults = results.map(formatArtikel);
     res.json({ success: true, data: formattedResults });
   });

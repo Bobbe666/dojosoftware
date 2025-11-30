@@ -29,7 +29,7 @@ const ZahlungsEinstellungen = () => {
   const loadCurrentSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/api/payment-provider/status`);
+      const response = await fetch(`${config.apiBaseUrl}/payment-provider/status`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Einstellungen');
@@ -79,7 +79,7 @@ const ZahlungsEinstellungen = () => {
         ...datevConfig
       };
 
-      const response = await fetch(`${config.apiBaseUrl}/api/payment-provider/configure`, {
+      const response = await fetch(`${config.apiBaseUrl}/payment-provider/configure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

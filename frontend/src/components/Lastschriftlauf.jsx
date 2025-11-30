@@ -30,7 +30,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
   const loadPreview = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/api/lastschriftlauf/preview`);
+      const response = await fetch(`${config.apiBaseUrl}/lastschriftlauf/preview`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Vorschau');
@@ -48,7 +48,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
 
   const loadMissingMandates = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/lastschriftlauf/missing-mandates`);
+      const response = await fetch(`${config.apiBaseUrl}/lastschriftlauf/missing-mandates`);
       if (response.ok) {
         const data = await response.json();
         setMissingMandates(data.members || []);
@@ -81,7 +81,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
     }
 
     if (selectedFormat === 'csv') {
-      window.open(`${config.apiBaseUrl}/api/lastschriftlauf`, '_blank');
+      window.open(`${config.apiBaseUrl}/lastschriftlauf`, '_blank');
     } else if (selectedFormat === 'xml') {
       alert('SEPA XML (pain.008) Export wird in Kürze verfügbar sein');
     }

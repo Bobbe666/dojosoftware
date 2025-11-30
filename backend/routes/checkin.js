@@ -4,6 +4,49 @@ const router = express.Router();
 const db = require('../db');
 const QRCode = require('qrcode');
 
+// Development mode check
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// ============================================
+// MOCK DATA FOR DEVELOPMENT
+// ============================================
+const MOCK_COURSES_TODAY = [
+  {
+    stundenplan_id: 1,
+    wochentag: 'Freitag',
+    uhrzeit_start: '18:00:00',
+    uhrzeit_ende: '19:30:00',
+    zeit: '18:00-19:30',
+    kurs_id: 1,
+    kurs_name: 'Karate Anfänger',
+    stil: 'Karate',
+    trainer_id: 1,
+    trainer: 'Max Mustermann',
+    trainer_stil: 'Karate',
+    max_teilnehmer: 20,
+    aktuelle_teilnehmer: 0,
+    verfuegbare_plaetze: 20,
+    is_full: 0
+  },
+  {
+    stundenplan_id: 2,
+    wochentag: 'Freitag',
+    uhrzeit_start: '19:30:00',
+    uhrzeit_ende: '21:00:00',
+    zeit: '19:30-21:00',
+    kurs_id: 2,
+    kurs_name: 'Kickboxen Fortgeschrittene',
+    stil: 'Kickboxen',
+    trainer_id: 2,
+    trainer: 'Lisa Schmidt',
+    trainer_stil: 'Kickboxen',
+    max_teilnehmer: 20,
+    aktuelle_teilnehmer: 0,
+    verfuegbare_plaetze: 20,
+    is_full: 0
+  }
+];
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -254,9 +297,22 @@ router.get('/courses-today', async (req, res) => {
     const today = new Date();
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     const todayName = dayNames[today.getDay()];
-    
+
+    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
+    if (isDevelopment) {
+      console.log('🔧 Development Mode: Verwende Mock-Kurse');
+      return res.json({
+        success: true,
+        date: today.toISOString().split('T')[0],
+        weekday: todayName,
+        courses: MOCK_COURSES_TODAY,
+        _dev: true
+      });
+    }
+
+    // PRODUCTION MODE: Datenbank verwenden
     const query = `
-      SELECT 
+      SELECT
         s.stundenplan_id,
         s.tag as wochentag,
         s.uhrzeit_start,
@@ -278,16 +334,16 @@ router.get('/courses-today', async (req, res) => {
       WHERE LOWER(s.tag) = LOWER(?) OR s.tag = ?
       ORDER BY s.uhrzeit_start
     `;
-    
+
     const courses = await queryAsync(query, [todayName, todayName]);
-    
+
     res.json({
       success: true,
       date: today.toISOString().split('T')[0],
       weekday: todayName,
       courses: courses
     });
-    
+
   } catch (error) {
     res.status(500).json({
       success: false,

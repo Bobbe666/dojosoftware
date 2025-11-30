@@ -186,7 +186,7 @@
   backdrop-filter: blur(20px);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-md);
-  padding: var(--abstand-lg);
+  padding: var(--abstand-md);
   margin-bottom: var(--abstand-lg);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   animation: fadeInUp 0.8s ease-out 0.2s both;
@@ -207,12 +207,12 @@
 
 .search-box input {
   width: 100%;
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  padding: 0.5rem 2.5rem 0.5rem 1rem;
   background: var(--hintergrund-hauptfarbe);
   backdrop-filter: blur(20px);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-sm);
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-hauptfarbe);
   transition: all 0.3s ease;
 }
@@ -238,16 +238,16 @@
 }
 
 .filter-select {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 1rem;
   background: var(--hintergrund-hauptfarbe);
   backdrop-filter: blur(20px);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-sm);
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-hauptfarbe);
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 200px;
+  min-width: 180px;
 }
 
 .filter-select:focus {
@@ -286,6 +286,8 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   animation: fadeInUp 0.6s ease-out;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .group-card:hover {
@@ -299,6 +301,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--abstand-md);
+  flex: 1;
 }
 
 .group-info {
@@ -357,14 +360,20 @@
 }
 
 .group-actions {
-  display: flex;
-  gap: var(--abstand-sm);
-  align-items: center;
-  flex-wrap: wrap;
+  display: flex !important;
+  gap: var(--abstand-sm) !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  margin-top: auto !important;
+  flex-direction: row !important;
 }
 
 .group-actions.sub-tabs {
   gap: 0.5rem;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* ============================================
@@ -385,9 +394,8 @@
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-sm);
   padding: var(--abstand-md);
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: flex !important;
+  flex-direction: column !important;
   gap: var(--abstand-md);
   transition: all 0.3s ease;
 }
@@ -441,14 +449,20 @@
 }
 
 .unterkategorie-actions {
-  display: flex;
-  gap: var(--abstand-sm);
-  align-items: center;
-  flex-wrap: wrap;
+  display: flex !important;
+  gap: var(--abstand-sm) !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  margin-top: auto !important;
+  flex-direction: row !important;
 }
 
 .unterkategorie-actions.sub-tabs {
   gap: 0.5rem;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* ============================================

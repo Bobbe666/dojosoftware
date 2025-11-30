@@ -245,39 +245,39 @@ const ArtikelgruppenVerwaltung = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="group-actions sub-tabs">
-            {hasUnterkategorien && (
-              <button
-                className="sub-tab-btn"
-                onClick={() => openGroupDetail(group)}
-                title="Details anzeigen"
-                style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
-              >
-                📋 Details
-              </button>
-            )}
-
+        <div className="group-actions sub-tabs">
+          {hasUnterkategorien && (
             <button
               className="sub-tab-btn"
-              onClick={() => openModal(group)}
-              title="Bearbeiten"
-              aria-label={`Gruppe ${group.name} bearbeiten`}
+              onClick={() => openGroupDetail(group)}
+              title="Details anzeigen"
               style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
             >
-              ✏️
+              📋 Details
             </button>
+          )}
 
-            <button
-              className="sub-tab-btn"
-              onClick={() => deleteGroup(group)}
-              title="Löschen"
-              aria-label={`Gruppe ${group.name} löschen`}
-              style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
-            >
-              🗑️
-            </button>
-          </div>
+          <button
+            className="sub-tab-btn"
+            onClick={() => openModal(group)}
+            title="Bearbeiten"
+            aria-label={`Gruppe ${group.name} bearbeiten`}
+            style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
+          >
+            ✏️
+          </button>
+
+          <button
+            className="sub-tab-btn"
+            onClick={() => deleteGroup(group)}
+            title="Löschen"
+            aria-label={`Gruppe ${group.name} löschen`}
+            style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
+          >
+            🗑️
+          </button>
         </div>
       </div>
     );

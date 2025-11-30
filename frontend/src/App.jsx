@@ -1,4 +1,4 @@
-// Frontend/src/App.jsx - VOLLSTÄNDIGE VERSION mit korrekten Routes
+// Frontend/src/App.jsx - VOLLSTï¿½NDIGE VERSION mit korrekten Routes
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -42,7 +42,7 @@ import BuddyInviteRegistration from "./components/BuddyInviteRegistration";
 // Homepage
 import Homepage from "./components/Homepage";
 
-// Tresen-Übersicht
+// Tresen-ï¿½bersicht
 import TresenUebersicht from "./components/TresenUebersicht";
 
 // Artikelverwaltung & Verkaufssystem
@@ -111,13 +111,20 @@ import DokumenteVerwaltung from "./components/DokumenteVerwaltung";
 // Newsletter & Benachrichtigungssystem
 import NotificationSystem from "./components/NotificationSystem";
 
-// Prüfungsverwaltung (Gurtprüfungen)
+// Prï¿½fungsverwaltung (Gurtprï¿½fungen)
 import PruefungsVerwaltung from "./components/PruefungsVerwaltung";
 import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
 
 // Protected Route Komponente mit AuthContext
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
+
+  // ðŸ”§ DEVELOPMENT BYPASS - Login umgehen wÃ¤hrend der Entwicklung
+  const isDevelopment = import.meta.env.MODE === 'development';
+  if (isDevelopment) {
+    console.log('ðŸ”§ Development Mode: Login-Bypass aktiv');
+    return children;
+  }
 
   if (loading) {
     return (
@@ -131,7 +138,7 @@ const ProtectedRoute = ({ children }) => {
         gap: '1rem'
       }}>
         <div className="loading-spinner-large"></div>
-        <div>Authentifizierung wird geprüft...</div>
+        <div>Authentifizierung wird geprï¿½ft...</div>
       </div>
     );
   }
@@ -160,7 +167,7 @@ const MemberOnlyRoute = ({ children }) => {
         gap: '1rem'
       }}>
         <div className="loading-spinner-large"></div>
-        <div>Authentifizierung wird geprüft...</div>
+        <div>Authentifizierung wird geprï¿½ft...</div>
       </div>
     );
   }
@@ -300,7 +307,7 @@ const App = () => {
               
               {/* ======== HAUPTBEREICHE ======== */}
               
-              {/* Übersicht mit Statistiken */}
+              {/* ï¿½bersicht mit Statistiken */}
               <Route path="uebersicht" element={<AnwesenheitDashboard />} />
               
               {/* ======== MITGLIEDER-BEREICHE ======== */}
@@ -320,7 +327,7 @@ const App = () => {
               {/* Personal Check-In System */}
               <Route path="personal-checkin" element={<PersonalCheckin />} />
               
-              {/* Tresen-Übersicht */}
+              {/* Tresen-ï¿½bersicht */}
               <Route path="tresen" element={<TresenUebersicht />} />
               
               {/* ======== VERKAUFSSYSTEM ======== */}
@@ -356,7 +363,7 @@ const App = () => {
               {/* Trainer-Management */}
               <Route path="trainer" element={<Trainer />} />
 
-              {/* Prüfungsverwaltung (Gurtprüfungen) */}
+              {/* Prï¿½fungsverwaltung (Gurtprï¿½fungen) */}
               <Route path="termine" element={<PruefungsVerwaltung />} />
               <Route path="pruefung-durchfuehren" element={<PruefungDurchfuehren />} />
 
@@ -406,7 +413,7 @@ const App = () => {
               <Route path="einstellungen/meindojo" element={<EinstellungenDojo />} />
               <Route path="einstellungen/zahlungen" element={<ZahlungsEinstellungen />} />
 
-              {/* Fehlerseite für ungültige Dashboard-Unterrouten */}
+              {/* Fehlerseite fï¿½r ungï¿½ltige Dashboard-Unterrouten */}
               <Route 
                 path="*" 
                 element={
@@ -428,7 +435,7 @@ const App = () => {
                         cursor: 'pointer'
                       }}
                     >
-                      Zurück
+                      Zurï¿½ck
                     </button>
                   </div>
                 } 
@@ -511,20 +518,20 @@ WICHTIGE HINWEISE:
 - TODO: Erweiterte StilVerwaltung-Komponente mit Graduierungen erstellen
 - /stil = alte einfache Stil-Verwaltung (bleibt als Alternative)
 
-ÄNDERUNGEN IN DIESER VERSION:
+ï¿½NDERUNGEN IN DIESER VERSION:
 - Import von StilVerwaltung zeigt nun auf GruppenStilverwaltung (Zeile 55)
-- Kommentar hinzugefügt: TODO für zukünftige Implementierung
+- Kommentar hinzugefï¿½gt: TODO fï¿½r zukï¿½nftige Implementierung
 - Routen /stile und /stile/:stilId funktionieren nun ohne Fehler
 
-API-ANFORDERUNGEN FÜR ZUKÜNFTIGE /stile IMPLEMENTIERUNG:
+API-ANFORDERUNGEN Fï¿½R ZUKï¿½NFTIGE /stile IMPLEMENTIERUNG:
 - GET /api/stile                           -> Alle Stile mit Graduierungen
 - GET /api/stile/:id                       -> Einzelner Stil mit Graduierungen  
 - POST /api/stile                          -> Neuen Stil erstellen
 - PUT /api/stile/:id                       -> Stil aktualisieren
-- DELETE /api/stile/:id                    -> Stil löschen
-- POST /api/stile/:stilId/graduierungen    -> Graduierung hinzufügen
+- DELETE /api/stile/:id                    -> Stil lï¿½schen
+- POST /api/stile/:stilId/graduierungen    -> Graduierung hinzufï¿½gen
 - PUT /api/stile/graduierungen/:id         -> Graduierung aktualisieren
-- DELETE /api/stile/graduierungen/:id      -> Graduierung löschen
+- DELETE /api/stile/graduierungen/:id      -> Graduierung lï¿½schen
 - PUT /api/stile/:stilId/graduierungen/reorder -> Drag & Drop Reordering
 ================================================================================
 */

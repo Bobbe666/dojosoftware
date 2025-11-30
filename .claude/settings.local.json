@@ -8,7 +8,14 @@
       "Bash(xargs sed:*)",
       "Bash(powershell -Command \"Get-ChildItem -Path frontend\\src -Recurse -Include *.js,*.jsx | ForEach-Object { (Get-Content $_FullName -Raw) -replace \"\"''/api/\"\",\"\"''/\"\" | Set-Content $_FullName -NoNewline }\")",
       "Bash(node fix-api-paths.js:*)",
-      "Bash(node fix-fetch-calls.js:*)"
+      "Bash(node fix-fetch-calls.js:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(node:*)",
+      "Bash(mysql:*)"
     ],
     "deny": [],
     "ask": []

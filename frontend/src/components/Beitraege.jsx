@@ -51,8 +51,8 @@ const Beitraege = () => {
         mitgliederResponse,
         vertraegeResponse
       ] = await Promise.all([
-        fetch(`${config.apiBaseUrl}/api/mitglieder${separator}${dojoFilterParam}`),
-        fetch(`${config.apiBaseUrl}/api/vertraege${separator}${dojoFilterParam}`)
+        fetch(`${config.apiBaseUrl}/mitglieder${separator}${dojoFilterParam}`),
+        fetch(`${config.apiBaseUrl}/vertraege${separator}${dojoFilterParam}`)
       ]);
 
       if (!mitgliederResponse.ok || !vertraegeResponse.ok) {

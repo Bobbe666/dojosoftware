@@ -11,7 +11,7 @@ import "../styles/components.css";
 
 const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrationComplete }) => {
   // Hole das aktive Dojo aus dem Context
-  const { activeDojo } = useDojoContext();
+  const { activeDojo, getBestDojoForNewMember } = useDojoContext();
   // Hole den Update-Context für automatische Updates
   const { triggerUpdate } = useMitgliederUpdate();
 
@@ -339,16 +339,22 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     }
   }, [memberData.vorname, memberData.nachname, memberData.geburtsdatum]);
 
-  // Aktualisiere dojo_id wenn sich das aktive Dojo ändert
+  // Intelligente Dojo-Auswahl für neues Mitglied
   useEffect(() => {
-    if (activeDojo && activeDojo.id) {
-      console.log('🏯 Aktives Dojo geändert, aktualisiere dojo_id:', activeDojo.id, activeDojo.dojoname);
+    const bestDojo = getBestDojoForNewMember();
+    if (bestDojo && bestDojo.id) {
+      console.log('🏯 Intelligente Dojo-Auswahl:', bestDojo.id, bestDojo.dojoname);
+      console.log('📊 Status:', bestDojo.steuer_status);
+      if (bestDojo.steuer_status === 'kleinunternehmer') {
+        const auslastung = (bestDojo.jahresumsatz_aktuell / bestDojo.kleinunternehmer_grenze) * 100;
+        console.log(`💰 Auslastung: ${auslastung.toFixed(1)}% (${bestDojo.jahresumsatz_aktuell}€ / ${bestDojo.kleinunternehmer_grenze}€)`);
+      }
       setMemberData(prev => ({
         ...prev,
-        dojo_id: activeDojo.id
+        dojo_id: bestDojo.id
       }));
     }
-  }, [activeDojo]);
+  }, [getBestDojoForNewMember]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -653,7 +659,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     }
   };
 
-  const renderStep1 = () => (
+  const renderStep1 = () => {
+    const bestDojo = getBestDojoForNewMember();
+    const showDojoInfo = bestDojo && bestDojo.steuer_status === 'kleinunternehmer';
+    const auslastung = showDojoInfo ? (bestDojo.jahresumsatz_aktuell / bestDojo.kleinunternehmer_grenze) * 100 : 0;
+
+    return (
     <div className="step-content">
       <h3 style={{
         color: 'var(--primary-color)',
@@ -667,6 +678,97 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         fontWeight: '600',
         borderRadius: '0'
       }}>Schritt 1: Grunddaten</h3>
+
+      {/* Dojo-Auswahl Anzeige */}
+      {bestDojo && (
+        <div style={{
+          marginBottom: '1.5rem',
+          padding: '1rem',
+          background: showDojoInfo
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))'
+            : 'rgba(255, 215, 0, 0.08)',
+          border: showDojoInfo
+            ? '2px solid rgba(16, 185, 129, 0.3)'
+            : '2px solid rgba(255, 215, 0, 0.3)',
+          borderRadius: '8px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{ fontSize: '1.2rem' }}>🏯</span>
+            <strong style={{
+              color: showDojoInfo ? '#10b981' : '#ffd700',
+              fontSize: '0.95rem'
+            }}>
+              Automatisch zugewiesen: {bestDojo.dojoname}
+            </strong>
+          </div>
+
+          {showDojoInfo && (
+            <div style={{
+              fontSize: '0.85rem',
+              color: 'rgba(255, 255, 255, 0.9)',
+              marginTop: '0.5rem',
+              lineHeight: '1.5'
+            }}>
+              <div style={{ marginBottom: '0.3rem' }}>
+                ✅ Steuerbefreit als Kleinunternehmer
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginTop: '0.5rem'
+              }}>
+                <div style={{
+                  flex: 1,
+                  height: '8px',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${Math.min(auslastung, 100)}%`,
+                    height: '100%',
+                    background: auslastung >= 80
+                      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                      : 'linear-gradient(90deg, #10b981, #3b82f6)',
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+                <span style={{
+                  minWidth: '60px',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  color: auslastung >= 80 ? '#f59e0b' : '#10b981'
+                }}>
+                  {auslastung.toFixed(1)}%
+                </span>
+              </div>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'rgba(255, 255, 255, 0.7)',
+                marginTop: '0.3rem'
+              }}>
+                {bestDojo.jahresumsatz_aktuell.toLocaleString('de-DE')}€ / {bestDojo.kleinunternehmer_grenze.toLocaleString('de-DE')}€ Grenze
+              </div>
+            </div>
+          )}
+
+          {bestDojo.steuer_status === 'regelbesteuert' && (
+            <div style={{
+              fontSize: '0.85rem',
+              color: 'rgba(255, 255, 255, 0.9)',
+              marginTop: '0.5rem'
+            }}>
+              ℹ️ USt-pflichtig ({bestDojo.ust_satz}% Umsatzsteuer)
+            </div>
+          )}
+        </div>
+      )}
       <div className="input-container" style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -876,7 +978,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       {loading && <div className="loading">Prüfe auf Duplikate...</div>}
     </div>
-  );
+    );
+  };
 
   const renderStep2 = () => (
     <div className="step-content">

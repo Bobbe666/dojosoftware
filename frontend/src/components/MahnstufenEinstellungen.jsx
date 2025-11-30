@@ -60,7 +60,7 @@ const MahnstufenEinstellungen = () => {
   const loadMahnstufenEinstellungen = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/api/mahnwesen/mahnstufen-einstellungen`);
+      const response = await fetch(`${config.apiBaseUrl}/mahnwesen/mahnstufen-einstellungen`);
 
       if (response.ok) {
         const data = await response.json();
@@ -84,7 +84,7 @@ const MahnstufenEinstellungen = () => {
     try {
       setSaving(true);
 
-      const response = await fetch(`${config.apiBaseUrl}/api/mahnwesen/mahnstufen-einstellungen`, {
+      const response = await fetch(`${config.apiBaseUrl}/mahnwesen/mahnstufen-einstellungen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mahnstufen })

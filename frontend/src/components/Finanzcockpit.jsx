@@ -61,7 +61,7 @@ const Finanzcockpit = () => {
       
       const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
       const separator = dojoFilterParam ? '&' : '';
-      const response = await fetch(`${config.apiBaseUrl}/api/finanzcockpit/stats?period=${selectedPeriod}${separator}${dojoFilterParam}`);
+      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/stats?period=${selectedPeriod}${separator}${dojoFilterParam}`);
       
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Finanzstatistiken');
@@ -88,7 +88,7 @@ const Finanzcockpit = () => {
       const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
       const days = selectedPeriod === 'month' ? 30 : selectedPeriod === 'quarter' ? 90 : 365;
       const separator = dojoFilterParam ? '&' : '';
-      const response = await fetch(`${config.apiBaseUrl}/api/finanzcockpit/timeline?period=${selectedPeriod}&days=${days}${separator}${dojoFilterParam}`);
+      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/timeline?period=${selectedPeriod}&days=${days}${separator}${dojoFilterParam}`);
       
       if (response.ok) {
         const result = await response.json();

@@ -1,18 +1,20 @@
 /* DojoEdit.css - Dedizierte Bearbeitungsseite für Dojos */
 
-/* Override parent content-card */
+/* Override parent content-card - Komplett transparent */
 .content-card:has(.dojo-edit-page) {
   border-radius: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
   background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .dojo-edit-page {
   width: 100% !important;
   min-height: 100vh !important;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
-  padding: 1rem !important;
+  background: transparent !important;
+  padding: 0 !important;
   margin: 0 !important;
 }
 
@@ -25,32 +27,34 @@
   overflow: visible;
 }
 
-/* Header - Mit runden Ecken */
+/* Header - Glassmorphism Design */
 .dojo-edit-header {
   display: flex;
   align-items: center;
   gap: 1.5rem;
   padding: 1.5rem 2rem;
-  background: rgba(15, 15, 35, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 16px;
   position: sticky;
   top: 0;
   z-index: 50;
   margin: 1rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
 }
 
 .dojo-edit-header h1 {
   color: #ffd700;
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
 }
 
 .dojo-name-header {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 1.2rem;
   font-weight: 400;
 }
@@ -59,20 +63,24 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: rgba(255, 215, 0, 0.1);
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 215, 0, 0.08);
+  backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #ffd700;
   font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .back-button:hover {
-  background: rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.15);
   border-color: #ffd700;
   transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 /* Message */
@@ -110,17 +118,23 @@
   }
 }
 
-/* Sidebar */
+/* Sidebar - Premium Glassmorphism */
 .dojo-sidebar {
   width: fit-content;
-  min-width: 200px;
+  min-width: 240px;
   max-width: 280px;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
   border-right: 1px solid rgba(255, 215, 0, 0.2);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   flex-shrink: 0;
+  margin: 1rem 0 1rem 1rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+  padding: 1rem 0.75rem;
 }
 
 .dojo-sidebar.collapsed {
@@ -128,16 +142,122 @@
   max-width: 70px;
 }
 
+/* Sidebar Header - Dojo Hamburg */
+.dojo-edit-page .mitglied-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.dojo-edit-page .mitglied-avatar {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.dojo-sidebar.collapsed .mitglied-avatar {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 0;
+}
+
+.dojo-edit-page .mitglied-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffd700;
+  line-height: 1.4;
+  text-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
+}
+
+/* Tabs - Premium Gold Design */
+.dojo-edit-page .tabs-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.dojo-edit-page .tab-vertical-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.6rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  width: 100%;
+  border: 1px solid transparent;
+}
+
+.dojo-edit-page .tab-vertical-btn:hover {
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.2);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+}
+
+.dojo-edit-page .tab-vertical-btn.active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.08));
+  color: #ffd700;
+  font-weight: 600;
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2),
+              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+}
+
+.dojo-edit-page .tab-vertical-btn .tab-icon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.dojo-edit-page .tab-vertical-btn.active .tab-icon {
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
+}
+
+/* Sidebar Toggle Button */
+.dojo-edit-page .sidebar-toggle-btn {
+  margin-top: auto;
+  margin-bottom: 0.5rem;
+  justify-content: center;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.dojo-edit-page .sidebar-toggle-btn:hover {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: #ffd700;
+}
+
 /* Content */
 .dojo-content {
   flex: 1;
   padding: 2rem;
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
   overflow-y: auto;
   min-width: 0;
 }
 
-/* Form Actions - Sticky Footer mit runden Ecken */
+/* Form Actions - Sticky Footer mit Premium Glassmorphism */
 .form-actions-sticky {
   position: sticky;
   bottom: 0;
@@ -147,12 +267,14 @@
   gap: 1rem;
   justify-content: flex-end;
   padding: 1.5rem 2rem;
-  background: #0f0f23;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 16px;
   z-index: 100;
   margin: 2rem 1rem 1rem 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
 }
 
 .btn-primary, .btn-secondary {
@@ -160,32 +282,51 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   font-size: 0.95rem;
+  outline: none;
+}
+
+.btn-primary:focus,
+.btn-secondary:focus {
+  outline: none;
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.5);
+  outline-offset: 2px;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, #ffd700 0%, #f0c419 100%);
   color: #1a1a2e;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+  filter: brightness(1.1);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 /* Tab Navigation - 2-zeilig Grid */
@@ -234,12 +375,13 @@
 
 .form-section {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(16px);
   border-radius: 16px;
   padding: 2rem;
   margin-bottom: 2rem;
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
 }
 
 .form-section h3 {

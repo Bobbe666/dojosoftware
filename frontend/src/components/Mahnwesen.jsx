@@ -36,9 +36,9 @@ const Mahnwesen = () => {
       setLoading(true);
 
       const [offeneRes, mahnungenRes, statsRes] = await Promise.all([
-        fetch(`${config.apiBaseUrl}/api/mahnwesen/offene-beitraege`),
-        fetch(`${config.apiBaseUrl}/api/mahnwesen/mahnungen`),
-        fetch(`${config.apiBaseUrl}/api/mahnwesen/statistiken`)
+        fetch(`${config.apiBaseUrl}/mahnwesen/offene-beitraege`),
+        fetch(`${config.apiBaseUrl}/mahnwesen/mahnungen`),
+        fetch(`${config.apiBaseUrl}/mahnwesen/statistiken`)
       ]);
 
       if (!offeneRes.ok || !mahnungenRes.ok || !statsRes.ok) {
@@ -66,7 +66,7 @@ const Mahnwesen = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/mahnwesen/mahnungen`, {
+      const response = await fetch(`${config.apiBaseUrl}/mahnwesen/mahnungen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,7 +95,7 @@ const Mahnwesen = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/api/mahnwesen/beitraege/${beitrag_id}/bezahlt`, {
+      const response = await fetch(`${config.apiBaseUrl}/mahnwesen/beitraege/${beitrag_id}/bezahlt`, {
         method: 'PUT'
       });
 

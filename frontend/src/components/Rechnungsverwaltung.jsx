@@ -55,8 +55,8 @@ const Rechnungsverwaltung = () => {
       setLoading(true);
 
       const [rechnungenRes, statsRes] = await Promise.all([
-        fetch(`${config.apiBaseUrl}/api/rechnungen`),
-        fetch(`${config.apiBaseUrl}/api/rechnungen/statistiken`)
+        fetch(`${config.apiBaseUrl}/rechnungen`),
+        fetch(`${config.apiBaseUrl}/rechnungen/statistiken`)
       ]);
 
       if (rechnungenRes.ok) {
@@ -120,7 +120,7 @@ const Rechnungsverwaltung = () => {
     }
 
     try {
-      const res = await fetch(`${config.apiBaseUrl}/api/rechnungen/${rechnung_id}/archivieren`, {
+      const res = await fetch(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/archivieren`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ archiviert: archivieren })
@@ -142,7 +142,7 @@ const Rechnungsverwaltung = () => {
     }
 
     try {
-      const res = await fetch(`${config.apiBaseUrl}/api/rechnungen/${rechnung_id}`, {
+      const res = await fetch(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`, {
         method: 'DELETE'
       });
 
