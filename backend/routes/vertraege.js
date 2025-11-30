@@ -6,6 +6,8 @@ const { generateVertragPDF } = require('../utils/vertragPdfGenerator');
 const { generateCompleteVertragPDF } = require('../services/vertragPdfGeneratorExtended');
 const { generatePDFWithDefaultTemplate } = require('../services/templatePdfGenerator');
 const { sendVertragEmail } = require('../services/emailService');
+const fs = require('fs').promises;
+const path = require('path');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -19,6 +21,61 @@ const queryAsync = (sql, params = []) => {
     });
   });
 };
+
+// Helper: Erstelle Dokumente-Verzeichnis falls es nicht existiert
+async function ensureDocumentsDir() {
+  const docsDir = path.join(__dirname, '..', 'generated_documents');
+  try {
+    await fs.access(docsDir);
+  } catch {
+    await fs.mkdir(docsDir, { recursive: true });
+  }
+  return docsDir;
+}
+
+// Helper: Speichere PDF-Buffer als Datei und in Datenbank
+async function savePdfToMitgliedDokumente(pdfBuffer, mitgliedId, dojoId, vertragsnummer, vorlageId = null) {
+  try {
+    // Erstelle Verzeichnis
+    const docsDir = await ensureDocumentsDir();
+
+    // Generiere Dateinamen
+    const timestamp = Date.now();
+    const filename = `Vertrag_${vertragsnummer}_${timestamp}.pdf`;
+    const filepath = path.join(docsDir, filename);
+    const relativePath = `generated_documents/${filename}`;
+
+    // Speichere PDF-Datei
+    await fs.writeFile(filepath, pdfBuffer);
+
+    // Speichere Eintrag in Datenbank
+    const dokumentname = `Mitgliedsvertrag ${vertragsnummer}`;
+
+    const insertQuery = `
+      INSERT INTO mitglied_dokumente
+      (mitglied_id, dojo_id, vorlage_id, dokumentname, dateipfad, erstellt_am)
+      VALUES (?, ?, ?, ?, ?, NOW())
+    `;
+
+    const result = await queryAsync(insertQuery, [
+      mitgliedId,
+      dojoId,
+      vorlageId,
+      dokumentname,
+      relativePath
+    ]);
+
+    return {
+      success: true,
+      dokumentId: result.insertId,
+      filename: filename,
+      filepath: relativePath
+    };
+  } catch (error) {
+    console.error('Fehler beim Speichern des PDFs:', error);
+    throw error;
+  }
+}
 
 // GET /api/vertraege - Alle Verträge abrufen (inkl. gelöschte)
 router.get('/', async (req, res) => {
@@ -330,7 +387,27 @@ router.post('/', async (req, res) => {
                 );
 
                 pdfGenerated = true;
-                // 5. Versende E-Mail mit PDF-Anhang
+
+                // 5. Speichere PDF im Mitglieder-Account
+                let pdfSaved = false;
+                let dokumentId = null;
+                try {
+                    const saveResult = await savePdfToMitgliedDokumente(
+                        pdfBuffer,
+                        mitglied_id,
+                        dojo_id,
+                        vertragData.vertragsnummer,
+                        null // vorlage_id - könnte optional aus DB geladen werden
+                    );
+                    pdfSaved = saveResult.success;
+                    dokumentId = saveResult.dokumentId;
+                    console.log(`✅ Vertragsdokument gespeichert: ${saveResult.filename} (ID: ${dokumentId})`);
+                } catch (saveError) {
+                    console.error('⚠️ Fehler beim Speichern des Vertragsdokuments:', saveError.message);
+                    // Fahre fort, auch wenn Speichern fehlschlägt
+                }
+
+                // 6. Versende E-Mail mit PDF-Anhang
                 if (mitgliedData.email) {
                     const emailResult = await sendVertragEmail({
                         email: mitgliedData.email,
@@ -364,6 +441,8 @@ router.post('/', async (req, res) => {
                 vertragsnummer: generatedVertragsnummer || vertragsnummer,
                 fields_saved: fields.length,
                 pdf_generated: pdfGenerated,
+                pdf_saved: pdfSaved || false,
+                dokument_id: dokumentId,
                 email_sent: emailSent
             }
         });
