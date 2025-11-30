@@ -366,23 +366,18 @@ const MitgliederListe = () => {
                     marginBottom: '0.3rem'
                   }}>
                     <img
-                      src={mitglied.foto_pfad ? `http://localhost:3002/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png'}
+                      key={mitglied.mitglied_id}
+                      src={mitglied.foto_pfad ? `http://localhost:3002/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                       alt={`${mitglied.vorname} ${mitglied.nachname}`}
                       style={{
                         width: '40px',
                         height: '40px',
                         borderRadius: '50%',
                         objectFit: 'cover',
-                        border: '2px solid #e5e7eb',
-                        opacity: 1,
-                        transition: 'opacity 0.2s ease-in-out'
-                      }}
-                      onLoad={(e) => {
-                        e.target.style.opacity = 1;
+                        border: '2px solid #e5e7eb'
                       }}
                       onError={(e) => {
-                        e.target.src = '/src/assets/default-avatar.png';
-                        e.target.style.opacity = 1;
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
                       }}
                     />
                     <h3 style={{

@@ -110,6 +110,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [updatedData, setUpdatedData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [avatarLoaded, setAvatarLoaded] = useState(false);
 
   const [activeTab, setActiveTab] = useState("allgemein");
   const [styleSubTab, setStyleSubTab] = useState("stile");
@@ -1871,21 +1872,20 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {/* Foto und Name oben */}
           <div className="mitglied-header">
-            <div className="mitglied-avatar">
+            <div className="mitglied-avatar" style={{ position: 'relative', background: avatarLoaded ? 'transparent' : 'linear-gradient(90deg, #2a2a4e 25%, #3a3a6e 50%, #2a2a4e 75%)', backgroundSize: '200% 100%', animation: avatarLoaded ? 'none' : 'shimmer 1.5s infinite' }}>
               <img
-                src={mitglied?.foto_pfad ? `/uploads/${mitglied.foto_pfad.replace('uploads/', '')}` : '/src/assets/default-avatar.png'}
+                key={mitglied?.mitglied_id}
+                src={mitglied?.foto_pfad ? `/uploads/${mitglied.foto_pfad.replace('uploads/', '')}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                 alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                 className="avatar-image"
                 style={{
-                  opacity: 1,
+                  opacity: avatarLoaded ? 1 : 0,
                   transition: 'opacity 0.3s ease-in-out'
                 }}
-                onLoad={(e) => {
-                  e.target.style.opacity = 1;
-                }}
+                onLoad={() => setAvatarLoaded(true)}
                 onError={(e) => {
-                  e.target.src = '/src/assets/default-avatar.png';
-                  e.target.style.opacity = 1;
+                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
+                  setAvatarLoaded(true);
                 }}
               />
             </div>
