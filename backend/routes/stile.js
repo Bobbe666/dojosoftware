@@ -14,6 +14,22 @@ router.get("/", (req, res) => {
   });
 });
 
+// Einzelnen Stil abrufen
+router.get("/:id", (req, res) => {
+  const { id } = req.params;
+  const query = "SELECT stil_id, name FROM stile WHERE stil_id = ?";
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error("Fehler beim Abrufen des Stils:", err);
+      return res.status(500).json({ error: "Fehler beim Laden des Stils" });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ error: "Stil nicht gefunden" });
+    }
+    res.json(results[0]);
+  });
+});
+
 // Neuen Stil hinzufügen
 router.post("/", (req, res) => {
   const { name } = req.body;

@@ -3,9 +3,6 @@ const express = require('express');
 const router = express.Router();
 // Datenbankverbindung
 const db = require("../db");
-// Mock data für Development
-const isDevelopment = process.env.NODE_ENV !== 'production';
-const { MOCK_STILE } = require('../mockData');
 // ============================================================================
 // TEST & DEBUG ENDPUNKT
 // ============================================================================
@@ -55,17 +52,7 @@ router.get('/test', (req, res) => {
 
 // GET - Alle Stile mit erweiterten Graduierungsfeldern abrufen
 router.get('/', (req, res) => {
-  // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-  if (isDevelopment) {
-    console.log('🔧 Development Mode: Verwende Mock-Stile');
-    return res.json(MOCK_STILE.map(stil => ({
-      ...stil,
-      anzahl_mitglieder: 0,
-      graduierungen: []
-    })));
-  }
-
-  // PRODUCTION MODE: Datenbank verwenden
+  // Datenbank verwenden
   db.getConnection((err, connection) => {
     if (err) {
       console.error('DB-Verbindungsfehler:', err);
