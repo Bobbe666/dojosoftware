@@ -856,7 +856,7 @@ const Kurse = () => {
                 >
                   <option value="">Kein Raum zuweisen</option>
                   {raeume.map((raum) => (
-                    <option key={raum.raum_id} value={raum.raum_id}>{raum.name}</option>
+                    <option key={raum.id} value={raum.id}>{raum.name}</option>
                   ))}
                 </select>
                 
