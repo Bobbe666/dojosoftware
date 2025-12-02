@@ -821,13 +821,13 @@ const Kurse = () => {
             <div className="kurs-form-left">
               <div className="form-group">
                 <label>🥋 Kampfkunst-Stil:</label>
-                <select 
+                <select
                   className="form-select"
-                  value={neuerKurs.stil} 
+                  value={neuerKurs.stil}
                   onChange={(e) => setNeuerKurs({ ...neuerKurs, stil: e.target.value })}
                 >
                   <option value="">Stil auswählen...</option>
-                  {stile.map((stil) => (
+                  {stile.filter(stil => stil.aktiv !== 0).map((stil) => (
                     <option key={stil.stil_id} value={stil.name}>{stil.name}</option>
                   ))}
                 </select>
