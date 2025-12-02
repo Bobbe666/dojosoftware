@@ -622,21 +622,38 @@ const StilVerwaltung = () => {
           });
 
           if (response.ok) {
-            // Entferne aus der Liste
-            setStile(stile.filter(s => s.stil_id !== stilId));
-            
+            const result = await response.json();
+
+            // Backend macht Soft Delete (aktiv = 0), also aktualisiere den Stil
+            setStile(stile.map(s =>
+              s.stil_id === stilId
+                ? { ...s, aktiv: false }
+                : s
+            ));
+
             // Wenn aktueller Stil gelöscht wurde, zurück zur Übersicht
             if (currentStil && currentStil.stil_id === stilId) {
               setCurrentStil(null);
               navigate('/dashboard/stile');
             }
-            
-            setSuccess(`Stil "${stil.name}" wurde erfolgreich gelöscht!`);
+
+            setSuccess(`Stil "${stil.name}" wurde erfolgreich gelöscht (deaktiviert)!`);
             setTimeout(() => setSuccess(''), 3000);
-            console.log('✅ Stil gelöscht:', stilId);
+            console.log('✅ Stil gelöscht:', result);
+          } else if (response.status === 409) {
+            // Konflikt: Stil hat noch zugeordnete Mitglieder
+            const errorData = await response.json().catch(() => ({ error: 'Stil hat noch zugeordnete Mitglieder' }));
+            const memberCount = errorData.mitglieder_anzahl || 'mehrere';
+            setError(
+              `Stil "${stil.name}" kann nicht gelöscht werden!\n\n` +
+              `Es sind noch ${memberCount} aktive Mitglieder diesem Stil zugeordnet.\n\n` +
+              `Bitte weisen Sie die Mitglieder einem anderen Stil zu oder deaktivieren Sie diese zuerst.`
+            );
+            console.warn('⚠️ Stil-Löschung verhindert:', errorData);
           } else {
             const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
             setError(errorData.error || 'Fehler beim Löschen des Stils');
+            console.error('❌ Fehler beim Löschen:', errorData);
           }
         } catch (err) {
           console.error('❌ Fehler beim Löschen des Stils:', err);
