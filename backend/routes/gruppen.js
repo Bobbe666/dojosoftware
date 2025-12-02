@@ -4,7 +4,7 @@ const router = express.Router();
 
 // Alle Gruppen abrufen
 router.get("/", (req, res) => {
-  const query = "SELECT gruppen_id, name FROM gruppen ORDER BY name";
+  const query = "SELECT gruppen_id, name, reihenfolge FROM gruppen ORDER BY reihenfolge ASC, name ASC";
   db.query(query, (err, results) => {
     if (err) {
       console.error("Fehler beim Abrufen der Gruppen:", err);
@@ -35,14 +35,14 @@ router.post("/", (req, res) => {
 // Gruppe bearbeiten
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { name } = req.body;
+  const { name, reihenfolge } = req.body;
 
   if (!name || name.trim() === "") {
     return res.status(400).json({ error: "Gruppenname darf nicht leer sein" });
   }
 
-  const query = "UPDATE gruppen SET name = ? WHERE gruppen_id = ?";
-  db.query(query, [name.trim(), id], (err, result) => {
+  const query = "UPDATE gruppen SET name = ?, reihenfolge = ? WHERE gruppen_id = ?";
+  db.query(query, [name.trim(), reihenfolge, id], (err, result) => {
     if (err) {
       console.error("Fehler beim Aktualisieren der Gruppe:", err);
       return res.status(500).json({ error: "Fehler beim Aktualisieren der Gruppe" });

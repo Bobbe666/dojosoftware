@@ -294,13 +294,41 @@ const GruppenStilVerwaltung = () => {
     }
   };
 
-  const moveGruppe = (index, direction) => {
+  const moveGruppe = async (index, direction) => {
     if (isDevelopment) {
       const newGruppen = [...mockGruppen];
       const newIndex = direction === 'up' ? index - 1 : index + 1;
       if (newIndex < 0 || newIndex >= newGruppen.length) return;
       [newGruppen[index], newGruppen[newIndex]] = [newGruppen[newIndex], newGruppen[index]];
       setMockGruppen(newGruppen);
+      return;
+    }
+
+    // Production: Tausche Reihenfolge in Datenbank
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= gruppen.length) return;
+
+    const gruppe1 = gruppen[index];
+    const gruppe2 = gruppen[newIndex];
+
+    try {
+      // Tausche reihenfolge-Werte
+      await Promise.all([
+        axios.put(`${config.apiBaseUrl}/gruppen/${gruppe1.gruppen_id}`, {
+          name: gruppe1.name,
+          reihenfolge: gruppe2.reihenfolge || newIndex
+        }),
+        axios.put(`${config.apiBaseUrl}/gruppen/${gruppe2.gruppen_id}`, {
+          name: gruppe2.name,
+          reihenfolge: gruppe1.reihenfolge || index
+        })
+      ]);
+
+      // Daten neu laden
+      ladeAlleDaten();
+    } catch (err) {
+      console.error('Fehler beim Verschieben der Gruppe:', err);
+      alert('Fehler beim Verschieben.');
     }
   };
 
