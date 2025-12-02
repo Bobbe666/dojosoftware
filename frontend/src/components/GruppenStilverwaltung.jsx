@@ -112,11 +112,28 @@ const GruppenStilVerwaltung = () => {
     const endpoint = typ === "stil" ? `${config.apiBaseUrl}/stile` : `${config.apiBaseUrl}/gruppen`;
 
     try {
-      await axios.delete(`${endpoint}/${id}`);
+      const response = await axios.delete(`${endpoint}/${id}`);
+      console.log('✅ Erfolgreich gelöscht:', response.data);
+      // Daten neu laden um UI zu aktualisieren
       ladeAlleDaten();
+      alert(`${typ === "stil" ? "Stil" : "Gruppe"} wurde erfolgreich gelöscht (deaktiviert)!`);
     } catch (err) {
-      console.error(`Fehler beim Löschen von ${typ}:`, err);
-      alert("Fehler beim Löschen.");
+      console.error(`❌ Fehler beim Löschen von ${typ}:`, err);
+
+      // Spezielle Behandlung für 409 Konflikt (Stil hat noch Mitglieder)
+      if (err.response?.status === 409) {
+        const errorData = err.response.data;
+        const memberCount = errorData.mitglieder_anzahl || 'mehrere';
+        alert(
+          `${typ === "stil" ? "Stil" : "Gruppe"} kann nicht gelöscht werden!\n\n` +
+          `Es sind noch ${memberCount} aktive Mitglieder zugeordnet.\n\n` +
+          `Bitte weisen Sie die Mitglieder einem anderen ${typ === "stil" ? "Stil" : "Gruppe"} zu oder deaktivieren Sie diese zuerst.`
+        );
+      } else {
+        // Andere Fehler
+        const errorMsg = err.response?.data?.error || err.message || 'Unbekannter Fehler';
+        alert(`Fehler beim Löschen: ${errorMsg}`);
+      }
     }
   };
 
