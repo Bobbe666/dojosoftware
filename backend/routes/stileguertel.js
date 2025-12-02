@@ -422,24 +422,69 @@ router.post('/', (req, res) => {
       });
     }
 
-    // Prüfen, ob Stil bereits existiert
-    const checkQuery = 'SELECT stil_id FROM stile WHERE name = ? AND aktiv = 1';
+    // Prüfen, ob Stil bereits existiert (aktiv oder inaktiv)
+    const checkQuery = 'SELECT stil_id, aktiv FROM stile WHERE name = ?';
     connection.query(checkQuery, [name.trim()], (checkError, existingRows) => {
       if (checkError) {
         console.error('Fehler beim Prüfen des Stil-Namens:', checkError);
         connection.release();
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Fehler beim Prüfen des Stil-Namens',
-          details: checkError.message 
+          details: checkError.message
         });
       }
 
-      if (existingRows.length > 0) {
+      // Wenn aktiver Stil existiert, Fehler zurückgeben
+      if (existingRows.length > 0 && (existingRows[0].aktiv === 1 || existingRows[0].aktiv === true)) {
         connection.release();
-        return res.status(409).json({ 
-          error: 'Ein Stil mit diesem Namen existiert bereits',
+        return res.status(409).json({
+          error: 'Ein aktiver Stil mit diesem Namen existiert bereits',
           existing_stil_id: existingRows[0].stil_id
         });
+      }
+
+      // Wenn inaktiver Stil existiert, reaktivieren
+      if (existingRows.length > 0 && (existingRows[0].aktiv === 0 || existingRows[0].aktiv === false)) {
+        const stilId = existingRows[0].stil_id;
+        const reactivateQuery = `
+          UPDATE stile
+          SET aktiv = 1,
+              beschreibung = ?,
+              aktualisiert_am = NOW()
+          WHERE stil_id = ?
+        `;
+
+        connection.query(reactivateQuery, [beschreibung ? beschreibung.trim() : '', stilId], (updateError) => {
+          if (updateError) {
+            console.error('Fehler beim Reaktivieren des Stils:', updateError);
+            connection.release();
+            return res.status(500).json({
+              error: 'Fehler beim Reaktivieren des Stils',
+              details: updateError.message
+            });
+          }
+
+          // Reaktivierten Stil zurückholen
+          const selectQuery = 'SELECT * FROM stile WHERE stil_id = ?';
+          connection.query(selectQuery, [stilId], (selectError, reactivatedStilRows) => {
+            connection.release();
+
+            if (selectError) {
+              console.error('Fehler beim Abrufen des reaktivierten Stils:', selectError);
+              return res.status(500).json({
+                error: 'Stil reaktiviert, aber Fehler beim Abrufen',
+                details: selectError.message
+              });
+            }
+
+            res.status(200).json({
+              ...reactivatedStilRows[0],
+              reactivated: true,
+              message: 'Stil wurde reaktiviert'
+            });
+          });
+        });
+        return; // Beende die Funktion hier
       }
 
       // Neuen Stil erstellen
