@@ -543,7 +543,7 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ error: 'Ungültige Stil-ID' });
   }
 
-  const { name, beschreibung, aktiv } = req.body;
+  const { name, beschreibung, aktiv, reihenfolge } = req.body;
 
   // Validierung
   if (!name || name.trim().length === 0) {
@@ -582,8 +582,8 @@ router.put('/:id', (req, res) => {
 
       // Stil aktualisieren
       const updateQuery = `
-        UPDATE stile 
-        SET name = ?, beschreibung = ?, aktiv = ?, aktualisiert_am = NOW()
+        UPDATE stile
+        SET name = ?, beschreibung = ?, aktiv = ?, reihenfolge = ?, aktualisiert_am = NOW()
         WHERE stil_id = ?
       `;
 
@@ -591,6 +591,7 @@ router.put('/:id', (req, res) => {
         name.trim(),
         beschreibung ? beschreibung.trim() : '',
         aktiv,
+        reihenfolge,
         stilId
       ], (updateError) => {
         if (updateError) {

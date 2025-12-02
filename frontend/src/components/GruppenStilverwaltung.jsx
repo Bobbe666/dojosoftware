@@ -252,13 +252,45 @@ const GruppenStilVerwaltung = () => {
   };
 
   // Position verschieben
-  const moveStil = (index, direction) => {
+  const moveStil = async (index, direction) => {
     if (isDevelopment) {
       const newStile = [...mockStile];
       const newIndex = direction === 'up' ? index - 1 : index + 1;
       if (newIndex < 0 || newIndex >= newStile.length) return;
       [newStile[index], newStile[newIndex]] = [newStile[newIndex], newStile[index]];
       setMockStile(newStile);
+      return;
+    }
+
+    // Production: Tausche Reihenfolge in Datenbank
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= stile.length) return;
+
+    const stil1 = stile[index];
+    const stil2 = stile[newIndex];
+
+    try {
+      // Tausche reihenfolge-Werte
+      await Promise.all([
+        axios.put(`${config.apiBaseUrl}/stile/${stil1.stil_id}`, {
+          name: stil1.name,
+          beschreibung: stil1.beschreibung || '',
+          aktiv: stil1.aktiv,
+          reihenfolge: stil2.reihenfolge || newIndex
+        }),
+        axios.put(`${config.apiBaseUrl}/stile/${stil2.stil_id}`, {
+          name: stil2.name,
+          beschreibung: stil2.beschreibung || '',
+          aktiv: stil2.aktiv,
+          reihenfolge: stil1.reihenfolge || index
+        })
+      ]);
+
+      // Daten neu laden
+      ladeAlleDaten();
+    } catch (err) {
+      console.error('Fehler beim Verschieben des Stils:', err);
+      alert('Fehler beim Verschieben.');
     }
   };
 
