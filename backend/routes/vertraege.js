@@ -6,6 +6,7 @@ const { generateVertragPDF } = require('../utils/vertragPdfGenerator');
 const { generateCompleteVertragPDF } = require('../services/vertragPdfGeneratorExtended');
 const { generatePDFWithDefaultTemplate } = require('../services/templatePdfGenerator');
 const { sendVertragEmail } = require('../services/emailService');
+const SepaPdfGenerator = require('../utils/sepaPdfGenerator');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -73,6 +74,105 @@ async function savePdfToMitgliedDokumente(pdfBuffer, mitgliedId, dojoId, vertrag
     };
   } catch (error) {
     console.error('Fehler beim Speichern des PDFs:', error);
+    throw error;
+  }
+}
+
+// Helper: Erstelle SEPA-Mandat in Datenbank und speichere PDF
+async function createSepaMandate(mitgliedData, dojoData, dojoId) {
+  try {
+    const { mitglied_id, iban, bic, bankname, kontoinhaber, vorname, nachname } = mitgliedData;
+
+    // Prüfe ob SEPA-Daten vorhanden sind
+    if (!iban || !kontoinhaber) {
+      console.log('⏭️ Keine SEPA-Daten vorhanden, überspringe SEPA-Mandat-Erstellung');
+      return { success: false, reason: 'no_sepa_data' };
+    }
+
+    // 1. Generiere Mandatsreferenz
+    const timestamp = Date.now();
+    const mandatsreferenz = `SEPA-${mitglied_id}-${timestamp}`;
+
+    // 2. Hole Gläubiger-ID aus Dojo-Daten
+    const glaeubigerId = dojoData.glaeubiger_id || 'DE98ZZZ09999999999';
+
+    // 3. SEPA-Mandat in Datenbank erstellen
+    const insertMandateQuery = `
+      INSERT INTO sepa_mandate
+      (mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz, glaeubiger_id, status, erstellungsdatum, provider, mandat_typ)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'aktiv', NOW(), 'manual', 'CORE')
+    `;
+
+    const mandateResult = await queryAsync(insertMandateQuery, [
+      mitglied_id,
+      iban,
+      bic || null,
+      bankname || null,
+      kontoinhaber,
+      mandatsreferenz,
+      glaeubigerId
+    ]);
+
+    const mandatId = mandateResult.insertId;
+    console.log(`✅ SEPA-Mandat erstellt: ID ${mandatId}, Referenz: ${mandatsreferenz}`);
+
+    // 4. Generiere SEPA-Mandat-PDF
+    const sepaPdfGenerator = new SepaPdfGenerator();
+    const sepaPdfData = {
+      vorname: vorname || '',
+      nachname: nachname || '',
+      strasse: mitgliedData.strasse || '',
+      plz: mitgliedData.plz || '',
+      ort: mitgliedData.ort || '',
+      iban: iban,
+      bic: bic || '',
+      bankname: bankname || '',
+      kontoinhaber: kontoinhaber,
+      mandatsreferenz: mandatsreferenz,
+      glaeubiger_id: glaeubigerId,
+      glaeubiger_name: dojoData.name || 'Dojo',
+      datum: new Date().toLocaleDateString('de-DE')
+    };
+
+    const sepaPdfBuffer = await sepaPdfGenerator.generateSepaMandatePDF(sepaPdfData);
+
+    // 5. Speichere SEPA-PDF als Mitglieder-Dokument
+    const docsDir = await ensureDocumentsDir();
+    const sepaTimestamp = Date.now();
+    const sepaFilename = `SEPA_Mandat_${mandatsreferenz}_${sepaTimestamp}.pdf`;
+    const sepaFilepath = path.join(docsDir, sepaFilename);
+    const sepaRelativePath = `generated_documents/${sepaFilename}`;
+
+    await fs.writeFile(sepaFilepath, sepaPdfBuffer);
+
+    // 6. Speichere SEPA-PDF in mitglied_dokumente
+    const dokumentname = `SEPA-Lastschriftmandat ${mandatsreferenz}`;
+    const insertDokumentQuery = `
+      INSERT INTO mitglied_dokumente
+      (mitglied_id, dojo_id, vorlage_id, dokumentname, dateipfad, erstellt_am)
+      VALUES (?, ?, NULL, ?, ?, NOW())
+    `;
+
+    const dokumentResult = await queryAsync(insertDokumentQuery, [
+      mitglied_id,
+      dojoId,
+      dokumentname,
+      sepaRelativePath
+    ]);
+
+    console.log(`✅ SEPA-Mandat-PDF gespeichert: ${sepaFilename} (Dokument-ID: ${dokumentResult.insertId})`);
+
+    return {
+      success: true,
+      mandatId: mandatId,
+      mandatsreferenz: mandatsreferenz,
+      dokumentId: dokumentResult.insertId,
+      filename: sepaFilename,
+      filepath: sepaRelativePath
+    };
+
+  } catch (error) {
+    console.error('❌ Fehler beim Erstellen des SEPA-Mandats:', error);
     throw error;
   }
 }
@@ -425,6 +525,33 @@ router.post('/', async (req, res) => {
                 } else {
                 }
 
+                // 7. SEPA-Mandat automatisch erstellen (wenn SEPA-Daten vorhanden)
+                let sepaMandatCreated = false;
+                let sepaMandatId = null;
+                let sepaMandatsreferenz = null;
+                try {
+                    const sepaResult = await createSepaMandate(mitgliedData, dojoData, dojo_id);
+                    if (sepaResult.success) {
+                        sepaMandatCreated = true;
+                        sepaMandatId = sepaResult.mandatId;
+                        sepaMandatsreferenz = sepaResult.mandatsreferenz;
+
+                        // Verknüpfe SEPA-Mandat mit Vertrag
+                        await queryAsync(`
+                            UPDATE vertraege
+                            SET sepa_mandat_id = ?
+                            WHERE id = ?
+                        `, [sepaMandatId, result.insertId]);
+
+                        console.log(`✅ SEPA-Mandat ${sepaMandatsreferenz} mit Vertrag ${result.insertId} verknüpft`);
+                    } else {
+                        console.log(`⏭️ SEPA-Mandat-Erstellung übersprungen: ${sepaResult.reason}`);
+                    }
+                } catch (sepaError) {
+                    console.error('⚠️ Fehler beim Erstellen des SEPA-Mandats:', sepaError.message);
+                    // Fahre fort, auch wenn SEPA-Mandat-Erstellung fehlschlägt
+                }
+
             } catch (pdfError) {
                 console.error('Fehler bei PDF-Generierung oder E-Mail-Versand:', pdfError);
                 console.error('   Der Vertrag wurde trotzdem erfolgreich erstellt.');
@@ -443,7 +570,10 @@ router.post('/', async (req, res) => {
                 pdf_generated: pdfGenerated,
                 pdf_saved: pdfSaved || false,
                 dokument_id: dokumentId,
-                email_sent: emailSent
+                email_sent: emailSent,
+                sepa_mandat_created: sepaMandatCreated || false,
+                sepa_mandat_id: sepaMandatId,
+                sepa_mandatsreferenz: sepaMandatsreferenz
             }
         });
     } catch (err) {
