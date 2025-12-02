@@ -31,7 +31,10 @@ const GruppenStilVerwaltung = () => {
   ]);
 
   // Verwende Mock-Daten im Development, echte Daten in Production
-  const stile = isDevelopment ? mockStile : stileFromContext;
+  // Filtere nur aktive Stile (aktiv = true oder aktiv = 1 oder aktiv = null)
+  const stile = isDevelopment
+    ? mockStile
+    : (stileFromContext || []).filter(s => s.aktiv !== 0 && s.aktiv !== false);
   const gruppen = isDevelopment ? mockGruppen : gruppenFromContext;
 
   // Eingaben für neue Stile/Gruppen
