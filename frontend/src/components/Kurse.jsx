@@ -996,31 +996,31 @@ const Kurse = () => {
                 )}
               </div>
 
+              <div className="form-group">
+                <label>👨‍🏫 Trainer:</label>
+                <div className="trainer-multiselect">
+                  {trainer.map(tr => (
+                    <label key={tr.trainer_id} className="trainer-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={neuerKurs.trainer_ids.includes(tr.trainer_id)}
+                        onChange={(e) => {
+                          const newIds = e.target.checked
+                            ? [...neuerKurs.trainer_ids, tr.trainer_id]
+                            : neuerKurs.trainer_ids.filter(id => id !== tr.trainer_id);
+                          setNeuerKurs({ ...neuerKurs, trainer_ids: newIds });
+                        }}
+                      />
+                      <span className="trainer-checkbox-name">{tr.vorname} {tr.nachname}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <button className="add-button-modern" onClick={handleHinzufuegen}>
                 <span className="btn-icon">➕</span>
                 Kurs erstellen
               </button>
-            </div>
-
-            <div className="form-group">
-              <label>👨‍🏫 Trainer:</label>
-              <div className="trainer-multiselect">
-                {trainer.map(tr => (
-                  <label key={tr.trainer_id} className="trainer-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={neuerKurs.trainer_ids.includes(tr.trainer_id)}
-                      onChange={(e) => {
-                        const newIds = e.target.checked
-                          ? [...neuerKurs.trainer_ids, tr.trainer_id]
-                          : neuerKurs.trainer_ids.filter(id => id !== tr.trainer_id);
-                        setNeuerKurs({ ...neuerKurs, trainer_ids: newIds });
-                      }}
-                    />
-                    <span className="trainer-checkbox-name">{tr.vorname} {tr.nachname}</span>
-                  </label>
-                ))}
-              </div>
             </div>
           </div>
         </div>
