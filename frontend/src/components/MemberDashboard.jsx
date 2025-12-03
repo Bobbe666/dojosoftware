@@ -130,6 +130,15 @@ const MemberDashboard = () => {
     }
   ];
 
+  // Schnellzugriff-Aktionen Handler
+  const handleQuickActionClick = (actionId) => {
+    if (actionId === 'events') {
+      navigate('/dashboard/meine-events');
+    } else {
+      handleQuickAction(actionId);
+    }
+  };
+
   // Schnellzugriff-Aktionen
   const quickActions = [
     {
@@ -137,7 +146,6 @@ const MemberDashboard = () => {
       icon: Clock,
       title: 'Check-in',
       description: 'Für heutiges Training einchecken',
-      action: () => handleQuickAction('checkin'),
       color: '#EF4444',
       badge: null
     },
@@ -146,7 +154,6 @@ const MemberDashboard = () => {
       icon: Calendar,
       title: 'Meine Events',
       description: 'Events & Anmeldungen',
-      action: () => navigate('/dashboard/meine-events'),
       color: '#F59E0B',
       badge: null
     },
@@ -155,7 +162,6 @@ const MemberDashboard = () => {
       icon: Bell,
       title: 'Benachrichtigungen',
       description: 'Nachrichten & Updates',
-      action: () => handleQuickAction('notifications'),
       color: '#06B6D4',
       badge: unreadCount > 0 ? unreadCount : null
     }
@@ -635,7 +641,7 @@ const MemberDashboard = () => {
             <div
               key={action.id}
               className="cta-tile"
-              onClick={action.action}
+              onClick={() => handleQuickActionClick(action.id)}
               style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}
             >
               <action.icon size={20} />
