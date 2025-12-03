@@ -145,7 +145,7 @@ const Kurse = () => {
 
   const getRaumName = (raum_id) => {
     if (!raum_id) return "Kein Raum zugewiesen";
-    const raum = raeume.find(r => r.raum_id === Number(raum_id));
+    const raum = raeume.find(r => r.id === Number(raum_id));
     return raum ? raum.name : "Unbekannter Raum";
   };
 
