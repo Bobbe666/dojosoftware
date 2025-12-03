@@ -1,0 +1,130 @@
+/* Events Container */
+.events-container {
+  min-height: 100vh;
+  background: var(--hintergrund-primary);
+  padding: 2rem;
+  color: var(--farbe-text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.page-subtitle {
+  color: var(--farbe-text-hell);
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.events-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.glass-card {
+  background: var(--hintergrund-secondary);
+  border: 1px solid var(--rahmen-farbe);
+  border-radius: 16px;
+  padding: 0;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+}
+
+.card-header h2 {
+  color: #2a2a3e;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.card-body {
+  padding: 2rem;
+}
+
+.info-text {
+  color: var(--farbe-text-hell);
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--farbe-text-hell);
+  font-size: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: #2a2a3e;
+  color: var(--farbe-hauptfarbe);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

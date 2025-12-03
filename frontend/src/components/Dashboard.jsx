@@ -54,7 +54,8 @@ function Dashboard() {
     pruefungswesen: false,
     artikelverwaltung: false,
     berichte: false,
-    finanzen: false
+    finanzen: false,
+    events: false
   });
 
   let role = 'mitglied';
@@ -457,6 +458,18 @@ function Dashboard() {
       badge: 'NEU',
       featured: true,
       count: stats.inventar || 0
+    }
+  ];
+
+  // ✨ Events - Veranstaltungen & Termine ✨
+  const eventsCards = [
+    {
+      icon: '📅',
+      title: 'Events verwalten',
+      description: 'Veranstaltungen, Wettkämpfe und besondere Termine',
+      path: '/dashboard/events',
+      badge: 'NEU',
+      featured: true
     }
   ];
 
@@ -1259,6 +1272,48 @@ function Dashboard() {
                                     <span className="nav-count">({formatNumber(card.count)})</span>
                                   )}
                                 </h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ✨ Events Sektion ✨ */}
+                    <div className="nav-section">
+                      <h2
+                        className="section-header collapsible"
+                        onClick={() => toggleSection('events')}
+                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="section-icon">📅</span>
+                          <span className="section-text">Events</span>
+                        </span>
+                        <span style={{ transform: collapsedSections.events ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                          ▼
+                        </span>
+                      </h2>
+                      {!collapsedSections.events && (
+                        <div className="nav-cards">
+                        {eventsCards.map((card, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleNavigation(card.path)}
+                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                          >
+                            {card.badge && (
+                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
+                                {card.badge}
+                              </div>
+                            )}
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>

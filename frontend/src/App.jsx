@@ -115,6 +115,9 @@ import NotificationSystem from "./components/NotificationSystem";
 import PruefungsVerwaltung from "./components/PruefungsVerwaltung";
 import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
 
+// Events-Verwaltung
+import Events from "./components/Events";
+
 // Protected Route Komponente mit AuthContext
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
@@ -366,6 +369,9 @@ const App = () => {
               {/* Pr�fungsverwaltung (Gurtpr�fungen) */}
               <Route path="termine" element={<PruefungsVerwaltung />} />
               <Route path="pruefung-durchfuehren" element={<PruefungDurchfuehren />} />
+
+              {/* Events-Verwaltung */}
+              <Route path="events" element={<Events />} />
 
               {/* Beitrags-Management */}
               <Route path="finanzcockpit" element={<Finanzcockpit />} />
