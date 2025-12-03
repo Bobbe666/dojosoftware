@@ -90,11 +90,26 @@ const MemberDashboard = () => {
     handleQuickAction(actionId);
   };
 
+  // Icon-Mapping Funktion
+  const getNavIcon = (iconName) => {
+    const icons = {
+      'events': Calendar,
+      'profile': User,
+      'schedule': Calendar,
+      'payments': CreditCard,
+      'stats': BarChart3,
+      'styles': Trophy,
+      'equipment': Package,
+      'rating': Star
+    };
+    return icons[iconName];
+  };
+
   // Navigation-Karten für Mitglieder
   const memberNavigationCards = useMemo(() => [
     {
       id: 'events',
-      icon: Calendar,
+      iconName: 'events',
       title: 'Meine Events',
       description: 'Events & Anmeldungen verwalten',
       path: '/dashboard/meine-events',
@@ -102,7 +117,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'profile',
-      icon: User,
+      iconName: 'profile',
       title: 'Meine Daten',
       description: 'Persönliche Informationen bearbeiten',
       path: '/member/profile',
@@ -110,7 +125,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'schedule',
-      icon: Calendar,
+      iconName: 'schedule',
       title: 'Meine Termine',
       description: 'Kurse & Prüfungen anzeigen',
       path: '/member/schedule',
@@ -118,7 +133,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'payments',
-      icon: CreditCard,
+      iconName: 'payments',
       title: 'Meine Beiträge',
       description: 'Beiträge & Zahlungen einsehen',
       path: '/member/payments',
@@ -126,7 +141,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'stats',
-      icon: BarChart3,
+      iconName: 'stats',
       title: 'Meine Statistiken',
       description: 'Trainingsfortschritt verfolgen',
       path: '/member/stats',
@@ -134,7 +149,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'styles',
-      icon: Trophy,
+      iconName: 'styles',
       title: 'Stil & Gurt',
       description: 'Kampfkunst-Stile und Graduierungen',
       path: '/member/styles',
@@ -143,7 +158,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'equipment',
-      icon: Package,
+      iconName: 'equipment',
       title: 'Equipment',
       description: 'Was brauche ich heute?',
       path: '/member/equipment',
@@ -152,7 +167,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'rating',
-      icon: Star,
+      iconName: 'rating',
       title: 'Kurs-Bewertung',
       description: 'Wie war das Training?',
       path: '/member/rating',
@@ -161,11 +176,20 @@ const MemberDashboard = () => {
     }
   ], [memberStile]);
 
+  // Schnellzugriff Icon-Mapping
+  const getQuickActionIcon = (iconName) => {
+    const icons = {
+      'checkin': Clock,
+      'notifications': Bell
+    };
+    return icons[iconName];
+  };
+
   // Schnellzugriff-Aktionen
   const quickActions = useMemo(() => [
     {
       id: 'checkin',
-      icon: Clock,
+      iconName: 'checkin',
       title: 'Check-in',
       description: 'Für heutiges Training einchecken',
       color: '#EF4444',
@@ -173,7 +197,7 @@ const MemberDashboard = () => {
     },
     {
       id: 'notifications',
-      icon: Bell,
+      iconName: 'notifications',
       title: 'Benachrichtigungen',
       description: 'Nachrichten & Updates',
       color: '#06B6D4',
@@ -617,48 +641,54 @@ const MemberDashboard = () => {
         gap: '0.8rem',
         marginBottom: '1.2rem'
       }}>
-        {memberNavigationCards.map(card => (
-          <div
-            key={card.id}
-            className="cta-tile"
-            onClick={() => handleNavigation(card.path)}
-            style={{ padding: '1rem', minHeight: '80px' }}
-          >
-            <card.icon size={24} />
-            <span style={{ fontSize: '0.9rem' }}>{card.title}</span>
-          </div>
-        ))}
+        {memberNavigationCards.map(card => {
+          const IconComponent = getNavIcon(card.iconName);
+          return (
+            <div
+              key={card.id}
+              className="cta-tile"
+              onClick={() => handleNavigation(card.path)}
+              style={{ padding: '1rem', minHeight: '80px' }}
+            >
+              <IconComponent size={24} />
+              <span style={{ fontSize: '0.9rem' }}>{card.title}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Schnellzugriff - kompakter */}
       <div style={{ marginTop: '1rem' }}>
         <div className="cta-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.8rem' }}>
-          {quickActions.map(action => (
-            <div
-              key={action.id}
-              className="cta-tile"
-              onClick={() => handleQuickActionClick(action.id)}
-              style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}
-            >
-              <action.icon size={20} />
-              <span style={{ fontSize: '0.85rem' }}>{action.title}</span>
-              {action.badge && (
-                <span style={{
-                  position: 'absolute',
-                  top: '0.5rem',
-                  right: '0.5rem',
-                  background: '#ef4444',
-                  color: 'white',
-                  padding: '0.1rem 0.4rem',
-                  borderRadius: '10px',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold'
-                }}>
-                  {action.badge}
-                </span>
-              )}
-            </div>
-          ))}
+          {quickActions.map(action => {
+            const IconComponent = getQuickActionIcon(action.iconName);
+            return (
+              <div
+                key={action.id}
+                className="cta-tile"
+                onClick={() => handleQuickActionClick(action.id)}
+                style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}
+              >
+                <IconComponent size={20} />
+                <span style={{ fontSize: '0.85rem' }}>{action.title}</span>
+                {action.badge && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '0.5rem',
+                    right: '0.5rem',
+                    background: '#ef4444',
+                    color: 'white',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '10px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold'
+                  }}>
+                    {action.badge}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
