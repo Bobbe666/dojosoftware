@@ -352,6 +352,19 @@ try {
     });
 }
 
+// 10. EVENTS (Veranstaltungen & Anmeldungen) - NEU
+try {
+  const eventsRouter = require(path.join(__dirname, "routes", "events.js"));
+  app.use("/api/events", eventsRouter);
+  logger.success('Route gemountet', { path: '/api/events' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'events',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 9.5. MIGRATION ROUTES - NEU
 try {
   const migrationRouter = require(path.join(__dirname, "routes", "migration.js"));
