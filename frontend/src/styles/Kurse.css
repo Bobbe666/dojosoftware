@@ -278,10 +278,12 @@ html body .kurse-container-modern .stat-card,
   background: var(--hintergrund-secondary);
   border: 1px solid var(--rahmen-farbe);
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.6s ease-out both;
+  max-height: 600px;
+  overflow-y: auto;
 }
 
 .kurs-card:hover {
@@ -437,10 +439,10 @@ html body .kurse-container-modern .stat-card,
 .trainer-multiselect {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  max-height: none; /* Keine Höhenbegrenzung - kein Scrollbalken */
-  overflow-y: visible; /* Kein Scrollbalken */
-  padding: 1rem;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.75rem;
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgba(255, 215, 0, 0.3);
   border-radius: 12px;
@@ -451,10 +453,10 @@ html body .kurse-container-modern .stat-card,
 .trainer-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
   transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -466,18 +468,19 @@ html body .kurse-container-modern .stat-card,
 }
 
 .trainer-checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--farbe-hauptfarbe);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .trainer-checkbox-name {
   color: #ffffff;
-  font-weight: 600;
-  font-size: 1.1rem; /* Größere, leserlichere Schrift */
+  font-weight: 500;
+  font-size: 0.95rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  line-height: 1.4;
+  line-height: 1.3;
   flex: 1;
 }
 
