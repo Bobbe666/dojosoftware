@@ -87,15 +87,19 @@ const MemberDashboard = () => {
 
   // Schnellzugriff-Aktionen Handler
   const handleQuickActionClick = (actionId) => {
-    if (actionId === 'events') {
-      navigate('/dashboard/meine-events');
-    } else {
-      handleQuickAction(actionId);
-    }
+    handleQuickAction(actionId);
   };
 
   // Navigation-Karten für Mitglieder
   const memberNavigationCards = [
+    {
+      id: 'events',
+      icon: Calendar,
+      title: 'Meine Events',
+      description: 'Events & Anmeldungen verwalten',
+      path: '/dashboard/meine-events',
+      color: '#F59E0B'
+    },
     {
       id: 'profile',
       icon: User,
@@ -165,14 +169,6 @@ const MemberDashboard = () => {
       title: 'Check-in',
       description: 'Für heutiges Training einchecken',
       color: '#EF4444',
-      badge: null
-    },
-    {
-      id: 'events',
-      icon: Calendar,
-      title: 'Meine Events',
-      description: 'Events & Anmeldungen',
-      color: '#F59E0B',
       badge: null
     },
     {
