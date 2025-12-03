@@ -43,22 +43,27 @@ router.post('/', async (req, res) => {
             duration_months,
             billing_cycle,
             payment_method,
-            active
+            active,
+            mindestlaufzeit_monate,
+            kuendigungsfrist_monate
         } = req.body;
         const result = await queryAsync(`
             INSERT INTO tarife (
                 name, price_cents, currency, duration_months,
-                billing_cycle, payment_method, active
+                billing_cycle, payment_method, active,
+                mindestlaufzeit_monate, kuendigungsfrist_monate
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             name,
             price_cents,
             currency || 'EUR',
             duration_months,
-            billing_cycle || 'monthly',
-            payment_method || 'bank_transfer',
-            active !== undefined ? active : true
+            billing_cycle || 'MONTHLY',
+            payment_method || 'SEPA',
+            active !== undefined ? active : true,
+            mindestlaufzeit_monate || duration_months,
+            kuendigungsfrist_monate || 3
         ]);
         res.json({
             success: true,
@@ -68,9 +73,11 @@ router.post('/', async (req, res) => {
                 price_cents,
                 currency: currency || 'EUR',
                 duration_months,
-                billing_cycle: billing_cycle || 'monthly',
-                payment_method: payment_method || 'bank_transfer',
-                active: active !== undefined ? active : true
+                billing_cycle: billing_cycle || 'MONTHLY',
+                payment_method: payment_method || 'SEPA',
+                active: active !== undefined ? active : true,
+                mindestlaufzeit_monate: mindestlaufzeit_monate || duration_months,
+                kuendigungsfrist_monate: kuendigungsfrist_monate || 3
             }
         });
     } catch (err) {
