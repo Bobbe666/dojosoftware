@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -91,7 +91,7 @@ const MemberDashboard = () => {
   };
 
   // Navigation-Karten für Mitglieder
-  const memberNavigationCards = [
+  const memberNavigationCards = useMemo(() => [
     {
       id: 'events',
       icon: Calendar,
@@ -159,10 +159,10 @@ const MemberDashboard = () => {
       color: '#F59E0B',
       badge: 'Feedback'
     }
-  ];
+  ], [memberStile]);
 
   // Schnellzugriff-Aktionen
-  const quickActions = [
+  const quickActions = useMemo(() => [
     {
       id: 'checkin',
       icon: Clock,
@@ -179,7 +179,7 @@ const MemberDashboard = () => {
       color: '#06B6D4',
       badge: unreadCount > 0 ? unreadCount : null
     }
-  ];
+  ], [unreadCount]);
 
   // Lade Push-Benachrichtigungen für dieses Mitglied
   const loadNotifications = async (email) => {
