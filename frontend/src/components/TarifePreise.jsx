@@ -56,6 +56,16 @@ const TarifePreise = () => {
   const [kinderCollapsed, setKinderCollapsed] = useState(false);
   const [studentenCollapsed, setStudentenCollapsed] = useState(false);
   const [erwachseneCollapsed, setErwachseneCollapsed] = useState(false);
+  const [individuellCollapsed, setIndividuellCollapsed] = useState(false);
+  const [showNewIndividuell, setShowNewIndividuell] = useState(false);
+
+  const [newIndividuell, setNewIndividuell] = useState({
+    name: "",
+    duration_months: "",
+    mindestlaufzeit_monate: "",
+    kuendigungsfrist_monate: "",
+    price_cents: ""
+  });
 
   const [newTarif, setNewTarif] = useState({
     name: "",
@@ -581,6 +591,158 @@ const TarifePreise = () => {
           </div>
         )}
       </div>
+
+      {/* Individuelle Verträge (Admin Only) */}
+      <div className="tarif-section">
+        <div
+          className="section-header collapsible"
+          onClick={() => setIndividuellCollapsed(!individuellCollapsed)}
+        >
+          <h2>
+            <Settings size={24} /> Individuelle Verträge
+            <span className="tarif-count">(Admin Only)</span>
+          </h2>
+          <div className="header-actions">
+            <button
+              className="btn btn-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNewIndividuell(true);
+              }}
+            >
+              <Plus size={20} />
+              Neuer individueller Vertrag
+            </button>
+            {individuellCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
+          </div>
+        </div>
+
+        {!individuellCollapsed && (
+          <div className="info-box">
+            <p>
+              Hier können individuelle Verträge mit benutzerdefinierten Konditionen erstellt werden.
+              Diese Funktion ist nur für Administratoren verfügbar.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Modal für individuellen Vertrag */}
+      {showNewIndividuell && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Neuer individueller Vertrag</h3>
+              <button
+                className="close-btn"
+                onClick={() => setShowNewIndividuell(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Vertragsname *</label>
+                <input
+                  type="text"
+                  value={newIndividuell.name}
+                  onChange={(e) => setNewIndividuell({...newIndividuell, name: e.target.value})}
+                  placeholder="z.B. Individualtarif Max Mustermann"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Laufzeit (Monate) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={newIndividuell.duration_months}
+                  onChange={(e) => setNewIndividuell({...newIndividuell, duration_months: e.target.value})}
+                  placeholder="z.B. 12"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Vertragsdauer/Mindestlaufzeit (Monate) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={newIndividuell.mindestlaufzeit_monate}
+                  onChange={(e) => setNewIndividuell({...newIndividuell, mindestlaufzeit_monate: e.target.value})}
+                  placeholder="z.B. 12"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Kündigungsfrist (Monate) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={newIndividuell.kuendigungsfrist_monate}
+                  onChange={(e) => setNewIndividuell({...newIndividuell, kuendigungsfrist_monate: e.target.value})}
+                  placeholder="z.B. 3"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Monatlicher Beitrag (€) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newIndividuell.price_cents ? (newIndividuell.price_cents / 100).toFixed(2) : ''}
+                  onChange={(e) => setNewIndividuell({...newIndividuell, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
+                  placeholder="z.B. 49.90"
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowNewIndividuell(false)}
+              >
+                Abbrechen
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={async () => {
+                  try {
+                    await axios.post('/tarife', {
+                      name: newIndividuell.name,
+                      duration_months: parseInt(newIndividuell.duration_months),
+                      mindestlaufzeit_monate: parseInt(newIndividuell.mindestlaufzeit_monate),
+                      kuendigungsfrist_monate: parseInt(newIndividuell.kuendigungsfrist_monate),
+                      price_cents: newIndividuell.price_cents,
+                      currency: 'EUR',
+                      billing_cycle: 'MONTHLY',
+                      payment_method: 'SEPA',
+                      active: true
+                    });
+                    setShowNewIndividuell(false);
+                    setNewIndividuell({
+                      name: "",
+                      duration_months: "",
+                      mindestlaufzeit_monate: "",
+                      kuendigungsfrist_monate: "",
+                      price_cents: ""
+                    });
+                    loadTarifeUndRabatte();
+                    alert('Individueller Vertrag erfolgreich erstellt!');
+                  } catch (error) {
+                    console.error('Fehler beim Erstellen:', error);
+                    alert('Fehler beim Erstellen: ' + (error.response?.data?.error || error.message));
+                  }
+                }}
+              >
+                <Save size={20} />
+                Vertrag erstellen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Neuer Tarif Modal */}
       {showNewTarif && (
