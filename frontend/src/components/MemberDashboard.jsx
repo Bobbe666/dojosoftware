@@ -85,125 +85,6 @@ const MemberDashboard = () => {
     }
   };
 
-  // Schnellzugriff-Aktionen Handler
-  const handleQuickActionClick = (actionId) => {
-    handleQuickAction(actionId);
-  };
-
-  // Icon-Mapping Funktion
-  const getNavIcon = (iconName) => {
-    const icons = {
-      'events': Calendar,
-      'profile': User,
-      'schedule': Calendar,
-      'payments': CreditCard,
-      'stats': BarChart3,
-      'styles': Trophy,
-      'equipment': Package,
-      'rating': Star
-    };
-    return icons[iconName];
-  };
-
-  // Navigation-Karten für Mitglieder
-  const memberNavigationCards = useMemo(() => [
-    {
-      id: 'events',
-      iconName: 'events',
-      title: 'Meine Events',
-      description: 'Events & Anmeldungen verwalten',
-      path: '/dashboard/meine-events',
-      color: '#F59E0B'
-    },
-    {
-      id: 'profile',
-      iconName: 'profile',
-      title: 'Meine Daten',
-      description: 'Persönliche Informationen bearbeiten',
-      path: '/member/profile',
-      color: '#3B82F6'
-    },
-    {
-      id: 'schedule',
-      iconName: 'schedule',
-      title: 'Meine Termine',
-      description: 'Kurse & Prüfungen anzeigen',
-      path: '/member/schedule',
-      color: '#10B981'
-    },
-    {
-      id: 'payments',
-      iconName: 'payments',
-      title: 'Meine Beiträge',
-      description: 'Beiträge & Zahlungen einsehen',
-      path: '/member/payments',
-      color: '#F59E0B'
-    },
-    {
-      id: 'stats',
-      iconName: 'stats',
-      title: 'Meine Statistiken',
-      description: 'Trainingsfortschritt verfolgen',
-      path: '/member/stats',
-      color: '#8B5CF6'
-    },
-    {
-      id: 'styles',
-      iconName: 'styles',
-      title: 'Stil & Gurt',
-      description: 'Kampfkunst-Stile und Graduierungen',
-      path: '/member/styles',
-      color: '#DC2626',
-      badge: memberStile.length > 0 ? `${memberStile.length} Stil${memberStile.length > 1 ? 'e' : ''}` : null
-    },
-    {
-      id: 'equipment',
-      iconName: 'equipment',
-      title: 'Equipment',
-      description: 'Was brauche ich heute?',
-      path: '/member/equipment',
-      color: '#7C3AED',
-      badge: 'Checkliste'
-    },
-    {
-      id: 'rating',
-      iconName: 'rating',
-      title: 'Kurs-Bewertung',
-      description: 'Wie war das Training?',
-      path: '/member/rating',
-      color: '#F59E0B',
-      badge: 'Feedback'
-    }
-  ], [memberStile]);
-
-  // Schnellzugriff Icon-Mapping
-  const getQuickActionIcon = (iconName) => {
-    const icons = {
-      'checkin': Clock,
-      'notifications': Bell
-    };
-    return icons[iconName];
-  };
-
-  // Schnellzugriff-Aktionen
-  const quickActions = useMemo(() => [
-    {
-      id: 'checkin',
-      iconName: 'checkin',
-      title: 'Check-in',
-      description: 'Für heutiges Training einchecken',
-      color: '#EF4444',
-      badge: null
-    },
-    {
-      id: 'notifications',
-      iconName: 'notifications',
-      title: 'Benachrichtigungen',
-      description: 'Nachrichten & Updates',
-      color: '#06B6D4',
-      badge: unreadCount > 0 ? unreadCount : null
-    }
-  ], [unreadCount]);
 
   // Lade Push-Benachrichtigungen für dieses Mitglied
   const loadNotifications = async (email) => {
@@ -641,54 +522,62 @@ const MemberDashboard = () => {
         gap: '0.8rem',
         marginBottom: '1.2rem'
       }}>
-        {memberNavigationCards.map(card => {
-          const IconComponent = getNavIcon(card.iconName);
-          return (
-            <div
-              key={card.id}
-              className="cta-tile"
-              onClick={() => handleNavigation(card.path)}
-              style={{ padding: '1rem', minHeight: '80px' }}
-            >
-              <IconComponent size={24} />
-              <span style={{ fontSize: '0.9rem' }}>{card.title}</span>
-            </div>
-          );
-        })}
+        <div className="cta-tile" onClick={() => handleNavigation('/dashboard/meine-events')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <Calendar size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Meine Events</span>
+        </div>
+        <div className="cta-tile" onClick={() => handleNavigation('/member/profile')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <User size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Meine Daten</span>
+        </div>
+        <div className="cta-tile" onClick={() => handleNavigation('/member/schedule')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <Calendar size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Meine Termine</span>
+        </div>
+        <div className="cta-tile" onClick={() => handleNavigation('/member/payments')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <CreditCard size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Meine Beiträge</span>
+        </div>
+        <div className="cta-tile" onClick={() => handleNavigation('/member/stats')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <BarChart3 size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Meine Statistiken</span>
+        </div>
+        <div className="cta-tile" onClick={() => handleNavigation('/member/styles')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <Trophy size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Stil & Gurt</span>
+        </div>
+        <div className="cta-tile" onClick={() => handleNavigation('/member/equipment')} style={{ padding: '1rem', minHeight: '80px' }}>
+          <Package size={24} />
+          <span style={{ fontSize: '0.9rem' }}>Equipment</span>
+        </div>
       </div>
 
       {/* Schnellzugriff - kompakter */}
       <div style={{ marginTop: '1rem' }}>
         <div className="cta-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.8rem' }}>
-          {quickActions.map(action => {
-            const IconComponent = getQuickActionIcon(action.iconName);
-            return (
-              <div
-                key={action.id}
-                className="cta-tile"
-                onClick={() => handleQuickActionClick(action.id)}
-                style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}
-              >
-                <IconComponent size={20} />
-                <span style={{ fontSize: '0.85rem' }}>{action.title}</span>
-                {action.badge && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '0.5rem',
-                    right: '0.5rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '10px',
-                    fontSize: '0.7rem',
-                    fontWeight: 'bold'
-                  }}>
-                    {action.badge}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+          <div className="cta-tile" onClick={() => handleQuickAction('checkin')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
+            <Clock size={20} />
+            <span style={{ fontSize: '0.85rem' }}>Check-in</span>
+          </div>
+          <div className="cta-tile" onClick={() => handleQuickAction('notifications')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
+            <Bell size={20} />
+            <span style={{ fontSize: '0.85rem' }}>Benachrichtigungen</span>
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '0.5rem',
+                right: '0.5rem',
+                background: '#ef4444',
+                color: 'white',
+                padding: '0.1rem 0.4rem',
+                borderRadius: '10px',
+                fontSize: '0.7rem',
+                fontWeight: 'bold'
+              }}>
+                {unreadCount}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
