@@ -270,7 +270,7 @@ const Events = () => {
         <div className="glass-card">
           <div className="card-header">
             <h2>Events</h2>
-            {isAdmin() && (
+            {isAdmin && (
               <button
                 className="btn btn-primary"
                 onClick={() => setShowNewEvent(true)}
@@ -307,7 +307,7 @@ const Events = () => {
                           </span>
                         </div>
                       </div>
-                      {isAdmin() && (
+                      {isAdmin && (
                         <div className="event-actions">
                           <button
                             className="btn-icon"
@@ -403,7 +403,7 @@ const Events = () => {
                       )}
                     </div>
 
-                    {!isAdmin() && (
+                    {!isAdmin && (
                       <div className="event-card-footer">
                         <button className="btn btn-primary" onClick={() => handleShowDetails(event)}>
                           Details anzeigen
@@ -419,7 +419,7 @@ const Events = () => {
       </div>
 
       {/* Modal: Neues Event */}
-      {showNewEvent && isAdmin() && (
+      {showNewEvent && isAdmin && (
         <div className="modal-overlay" onClick={() => setShowNewEvent(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -614,7 +614,7 @@ const Events = () => {
       )}
 
       {/* Modal: Event bearbeiten */}
-      {showEditEvent && selectedEvent && isAdmin() && (
+      {showEditEvent && selectedEvent && isAdmin && (
         <div className="modal-overlay" onClick={() => setShowEditEvent(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -868,7 +868,7 @@ const Events = () => {
                   )}
                 </div>
 
-                {isAdmin() && selectedEvent.anmeldungen && (
+                {isAdmin && selectedEvent.anmeldungen && (
                   <div className="details-section">
                     <h3>Anmeldungen ({selectedEvent.anmeldungen.length})</h3>
                     {selectedEvent.anmeldungen.length === 0 ? (

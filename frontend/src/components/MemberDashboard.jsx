@@ -516,16 +516,12 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      {/* Hauptnavigation - alle 7 Karten in einer Reihe */}
+      {/* Hauptnavigation - alle 6 Karten in einer Reihe */}
       <div className="cta-grid member-navigation-grid" style={{
-        gridTemplateColumns: 'repeat(7, 1fr)',
+        gridTemplateColumns: 'repeat(6, 1fr)',
         gap: '0.8rem',
         marginBottom: '1.2rem'
       }}>
-        <div className="cta-tile" onClick={() => handleNavigation('/dashboard/meine-events')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <Calendar size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Meine Events</span>
-        </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/profile')} style={{ padding: '1rem', minHeight: '80px' }}>
           <User size={24} />
           <span style={{ fontSize: '0.9rem' }}>Meine Daten</span>
