@@ -117,6 +117,7 @@ import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
 
 // Events-Verwaltung
 import Events from "./components/Events";
+import MeineEvents from "./components/MeineEvents";
 
 // Protected Route Komponente mit AuthContext
 const ProtectedRoute = ({ children }) => {
@@ -372,6 +373,7 @@ const App = () => {
 
               {/* Events-Verwaltung */}
               <Route path="events" element={<Events />} />
+              <Route path="meine-events" element={<MeineEvents />} />
 
               {/* Beitrags-Management */}
               <Route path="finanzcockpit" element={<Finanzcockpit />} />

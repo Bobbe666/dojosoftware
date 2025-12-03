@@ -142,6 +142,15 @@ const MemberDashboard = () => {
       badge: null
     },
     {
+      id: 'events',
+      icon: Calendar,
+      title: 'Meine Events',
+      description: 'Events & Anmeldungen',
+      action: () => navigate('/dashboard/meine-events'),
+      color: '#F59E0B',
+      badge: null
+    },
+    {
       id: 'notifications',
       icon: Bell,
       title: 'Benachrichtigungen',
