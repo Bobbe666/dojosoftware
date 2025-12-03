@@ -67,6 +67,33 @@ const MemberDashboard = () => {
   const [selectedExam, setSelectedExam] = useState(null);
   const [acceptedConditions, setAcceptedConditions] = useState(false);
 
+  // Quick Action Handler
+  const handleQuickAction = (action) => {
+    switch (action) {
+      case 'checkin':
+        setShowMemberCheckin(true);
+        break;
+      case 'notifications':
+        // Scrolle zu den Benachrichtigungen
+        const notificationsElement = document.getElementById('member-notifications');
+        if (notificationsElement) {
+          notificationsElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Schnellzugriff-Aktionen Handler
+  const handleQuickActionClick = (actionId) => {
+    if (actionId === 'events') {
+      navigate('/dashboard/meine-events');
+    } else {
+      handleQuickAction(actionId);
+    }
+  };
+
   // Navigation-Karten für Mitglieder
   const memberNavigationCards = [
     {
@@ -129,15 +156,6 @@ const MemberDashboard = () => {
       badge: 'Feedback'
     }
   ];
-
-  // Schnellzugriff-Aktionen Handler
-  const handleQuickActionClick = (actionId) => {
-    if (actionId === 'events') {
-      navigate('/dashboard/meine-events');
-    } else {
-      handleQuickAction(actionId);
-    }
-  };
 
   // Schnellzugriff-Aktionen
   const quickActions = [
@@ -518,24 +536,6 @@ const MemberDashboard = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
   };
-
-  const handleQuickAction = (action) => {
-    switch (action) {
-      case 'checkin':
-        setShowMemberCheckin(true);
-        break;
-      case 'notifications':
-        // Scrolle zu den Benachrichtigungen
-        const notificationsElement = document.getElementById('member-notifications');
-        if (notificationsElement) {
-          notificationsElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        break;
-      default:
-        break;
-    }
-  };
-
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Keine geplant';
