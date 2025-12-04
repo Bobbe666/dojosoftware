@@ -82,28 +82,28 @@ function mapGender(magiclineGender) {
 /**
  * Mapping: MagicLine Zahlungsart → Dojo System
  */
-function mapPaymentType(magiclineType) {
+function mapPaymentMethod(magiclineType) {
   const mapping = {
-    'Lastschrift': 'sepa',
-    'SEPA': 'sepa',
-    'Überweisung': 'ueberweisung',
-    'Bar': 'bar',
-    'Barzahlung': 'bar'
+    'Lastschrift': 'direct_debit',
+    'SEPA': 'direct_debit',
+    'Überweisung': 'bank_transfer',
+    'Bar': 'cash',
+    'Barzahlung': 'cash'
   };
-  return mapping[magiclineType] || 'ueberweisung';
+  return mapping[magiclineType] || 'direct_debit';
 }
 
 /**
  * Extrahiert Zahlungszyklus aus MagicLine paymentFrequency
  */
-function mapPaymentFrequency(frequency) {
+function mapBillingCycle(frequency) {
   const mapping = {
-    '1M': 1,   // Monatlich
-    '3M': 3,   // Vierteljährlich
-    '6M': 6,   // Halbjährlich
-    '12M': 12  // Jährlich
+    '1M': 'monthly',
+    '3M': 'quarterly',
+    '6M': 'biannual',
+    '12M': 'annual'
   };
-  return mapping[frequency] || 1;
+  return mapping[frequency] || 'monthly';
 }
 
 /**
@@ -213,12 +213,11 @@ async function importMember(memberFolder, baseDir) {
             mitglied_id, tarif_id,
             vertragsbeginn, vertragsende,
             kuendigungsfrist_monate, mindestlaufzeit_monate,
-            beitrag, zahlungsintervall_monate,
-            zahlungsart, status,
+            monatsbeitrag, billing_cycle,
+            payment_method, status,
             magicline_contract_id, magicline_rate_term,
-            magicline_payment_run_group,
-            erstellt_am
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            magicline_payment_run_group
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const contractValues = [
@@ -229,8 +228,8 @@ async function importMember(memberFolder, baseDir) {
           extractCancellationMonths(contract.cancellationPeriod),
           extractTermMonths(contract.rateTerm),
           contract.chargeAmountCurrent,
-          mapPaymentFrequency(contract.paymentFrequency),
-          mapPaymentType(contract.paymentType),
+          mapBillingCycle(contract.paymentFrequency),
+          mapPaymentMethod(contract.paymentType),
           contract.cancelledAt ? 'gekuendigt' : 'aktiv',
           contract.id,
           contract.rateTerm,
@@ -334,19 +333,20 @@ async function importMember(memberFolder, baseDir) {
  */
 async function findOrCreateTarif(tarifName, beitrag) {
   // Suche existierenden Tarif
-  const findSQL = `SELECT tarif_id FROM tarife WHERE tarifname = ? LIMIT 1`;
+  const findSQL = `SELECT id FROM tarife WHERE name = ? LIMIT 1`;
   const existing = await queryPromise(findSQL, [tarifName]);
 
   if (existing.length > 0) {
-    return existing[0].tarif_id;
+    return existing[0].id;
   }
 
   // Erstelle neuen Tarif
+  const priceCents = Math.round(beitrag * 100); // Konvertiere Euro zu Cents
   const createSQL = `
-    INSERT INTO tarife (tarifname, beitrag, beschreibung, aktiv)
-    VALUES (?, ?, 'Importiert aus MagicLine', 1)
+    INSERT INTO tarife (name, price_cents, duration_months, billing_cycle, payment_method, active)
+    VALUES (?, ?, 1, 'MONTHLY', 'SEPA', 1)
   `;
-  const result = await queryPromise(createSQL, [tarifName, beitrag]);
+  const result = await queryPromise(createSQL, [tarifName, priceCents]);
   return result.insertId;
 }
 
