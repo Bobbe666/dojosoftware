@@ -275,7 +275,7 @@ const StilVerwaltung = () => {
    * @param {Array} graduierungen - Array der Graduierungen mit neuer Reihenfolge
    */
   const updateGraduierungsReihenfolge = async (graduierungen) => {
-    const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen/reorder`, {
+    const response = await fetch(`${API_BASE}/stileguertel/${currentStil.stil_id}/graduierungen/reorder`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -318,7 +318,7 @@ const StilVerwaltung = () => {
 
       console.log('💾 Speichere Graduierung:', graduierungData);
 
-      const response = await fetch(`${API_BASE}/stile/graduierungen/${editingGraduierung.graduierung_id}`, {
+      const response = await fetch(`${API_BASE}/stileguertel/graduierungen/${editingGraduierung.graduierung_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(graduierungData)
@@ -424,10 +424,10 @@ const StilVerwaltung = () => {
    */
   const loadStile = async () => {
     setLoading(true);
-    console.log('🔄 Lade Stile von:', `${API_BASE}/stile`);
+    console.log('🔄 Lade Stile von:', `${API_BASE}/stileguertel`);
     console.log('🔧 API_BASE ist:', API_BASE);
     try {
-      const response = await fetch(`${API_BASE}/stile`);
+      const response = await fetch(`${API_BASE}/stileguertel`);
       console.log('📡 API Response Status:', response.status);
       console.log('📡 API Response OK:', response.ok);
       
@@ -459,7 +459,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/${id}`);
+      const response = await fetch(`${API_BASE}/stileguertel/${id}`);
       if (response.ok) {
         const data = await response.json();
         setCurrentStil(data);
@@ -493,7 +493,7 @@ const StilVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile`, {
+      const response = await fetch(`${API_BASE}/stileguertel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -528,7 +528,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}`, {
+      const response = await fetch(`${API_BASE}/stileguertel/${currentStil.stil_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedStilData)
@@ -579,7 +579,7 @@ const StilVerwaltung = () => {
       if (confirmDeactivate) {
         setLoading(true);
         try {
-          const response = await fetch(`${API_BASE}/stile/${stilId}`, {
+          const response = await fetch(`${API_BASE}/stileguertel/${stilId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -617,7 +617,7 @@ const StilVerwaltung = () => {
       if (confirmDelete) {
         setLoading(true);
         try {
-          const response = await fetch(`${API_BASE}/stile/${stilId}`, {
+          const response = await fetch(`${API_BASE}/stileguertel/${stilId}`, {
             method: 'DELETE'
           });
 
@@ -674,7 +674,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen`, {
+      const response = await fetch(`${API_BASE}/stileguertel/${currentStil.stil_id}/graduierungen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -726,7 +726,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/graduierungen/${graduierungData.graduierung_id}`, {
+      const response = await fetch(`${API_BASE}/stileguertel/graduierungen/${graduierungData.graduierung_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(graduierungData)
@@ -771,7 +771,7 @@ const StilVerwaltung = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/stile/graduierungen/${graduierungId}`, {
+      const response = await fetch(`${API_BASE}/stileguertel/graduierungen/${graduierungId}`, {
         method: 'DELETE'
       });
 
@@ -919,7 +919,7 @@ const StilVerwaltung = () => {
 
       // API-Call zum Speichern
       const response = await fetch(
-        `${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${selectedGraduierung.graduierung_id}/pruefungsinhalte`,
+        `${API_BASE}/stileguertel/${currentStil.stil_id}/graduierungen/${selectedGraduierung.graduierung_id}/pruefungsinhalte`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -979,7 +979,7 @@ const StilVerwaltung = () => {
       };
 
       const response = await fetch(
-        `${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${graduierung.graduierung_id}/pruefungsinhalte`,
+        `${API_BASE}/stileguertel/${currentStil.stil_id}/graduierungen/${graduierung.graduierung_id}/pruefungsinhalte`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -1035,7 +1035,7 @@ const StilVerwaltung = () => {
     setLoadingStats(true);
     try {
       // Stil-Statistiken laden (Schüler-Verteilung, Kategorien, etc.)
-      const stilStatsResponse = await fetch(`${API_BASE}/stile/${id}/statistiken`);
+      const stilStatsResponse = await fetch(`${API_BASE}/stileguertel/${id}/statistiken`);
       if (!stilStatsResponse.ok) throw new Error('Fehler beim Laden der Stil-Statistiken');
       const stilStats = await stilStatsResponse.json();
       setStatistiken(stilStats);
@@ -1110,7 +1110,7 @@ const StilVerwaltung = () => {
       console.log('  Current Stil:', stil.stil_id, 'to', prevReihenfolge);
       console.log('  Prev Stil:', prevStil.stil_id, 'to', currentReihenfolge);
 
-      const response = await fetch(`${API_BASE}/stile/reorder`, {
+      const response = await fetch(`${API_BASE}/stileguertel/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
@@ -1163,7 +1163,7 @@ const StilVerwaltung = () => {
       console.log('  Current Stil:', stil.stil_id, 'to', nextReihenfolge);
       console.log('  Next Stil:', nextStil.stil_id, 'to', currentReihenfolge);
 
-      const response = await fetch(`${API_BASE}/stile/reorder`, {
+      const response = await fetch(`${API_BASE}/stileguertel/reorder`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
@@ -1369,7 +1369,7 @@ const StilVerwaltung = () => {
 
                   console.log('🔄 Reaktiviere Stil:', stilData);
 
-                  const response = await fetch(`${API_BASE}/stile/${stil.stil_id}`, {
+                  const response = await fetch(`${API_BASE}/stileguertel/${stil.stil_id}`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
