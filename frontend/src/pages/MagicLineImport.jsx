@@ -31,7 +31,7 @@ const MagicLineImport = () => {
     formData.append('zipFile', file);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('dojo_auth_token');
       const response = await fetch('/api/magicline-import/upload', {
         method: 'POST',
         headers: {
