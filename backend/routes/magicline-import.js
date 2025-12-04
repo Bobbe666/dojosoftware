@@ -173,8 +173,8 @@ async function importMember(memberFolder, baseDir) {
         email, telefon,
         strasse, hausnummer, plz, ort, land,
         magicline_customer_number, magicline_uuid,
-        status, erstellt_am
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktiv', NOW())
+        aktiv, eintrittsdatum
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURDATE())
     `;
 
     const memberValues = [
