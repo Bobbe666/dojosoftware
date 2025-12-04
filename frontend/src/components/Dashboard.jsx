@@ -292,6 +292,12 @@ function Dashboard() {
       count: stats.stile || 0
     },
     {
+      icon: '👥',
+      title: 'Gruppen',
+      description: 'Trainingsgruppen verwalten',
+      path: '/dashboard/gruppen'
+    },
+    {
       icon: '👨‍🏫',
       title: 'Trainer',
       description: 'Trainer und Qualifikationen verwalten',
@@ -511,11 +517,6 @@ function Dashboard() {
     {
       label: '🎯 Neuen Tarif anlegen',
       path: '/dashboard/tarife',
-      className: 'info'
-    },
-    {
-      label: '📁 Gruppe verwalten',
-      path: '/dashboard/gruppen',
       className: 'info'
     },
     {
