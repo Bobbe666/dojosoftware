@@ -51,8 +51,7 @@ import VerkaufKasse from "./components/VerkaufKasse";
 import ArtikelgruppenVerwaltung from "./components/ArtikelgruppenVerwaltung";
 
 // ERWEITERTE STIL-VERWALTUNG (mit Graduierungen und Drag & Drop)
-// TODO: Komponente noch nicht implementiert - verwende GruppenStilverwaltung als Fallback
-import Stilverwaltung from "./components/GruppenStilverwaltung";
+import Stilverwaltung from "./components/Stilverwaltung";
 
 // MEMBER-KOMPONENTEN
 import MemberDashboard from "./components/MemberDashboard";
