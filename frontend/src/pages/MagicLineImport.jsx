@@ -31,10 +31,21 @@ const MagicLineImport = () => {
     formData.append('zipFile', file);
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/magicline-import/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
+
+      const contentType = response.headers.get('content-type');
+
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(`Server-Fehler: ${text.substring(0, 200)}`);
+      }
 
       const data = await response.json();
 
@@ -47,6 +58,7 @@ const MagicLineImport = () => {
 
     } catch (err) {
       setError(err.message);
+      console.error('Import error:', err);
     } finally {
       setImporting(false);
     }

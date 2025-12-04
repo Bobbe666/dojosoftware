@@ -7,6 +7,25 @@ const path = require('path');
 const multer = require('multer');
 const AdmZip = require('adm-zip');
 const logger = require('../utils/logger');
+const jwt = require('jsonwebtoken');
+
+// Auth Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Zugriff verweigert: Kein Token' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'dein_geheimer_key', (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Zugriff verweigert: Ungültiger Token' });
+    }
+    req.user = user;
+    next();
+  });
+};
 
 // Multer Setup für ZIP-Upload
 const upload = multer({
@@ -342,7 +361,7 @@ function queryPromise(sql, params) {
  * POST /api/magicline-import/upload
  * Akzeptiert MagicLine ZIP-Export
  */
-router.post('/upload', upload.single('zipFile'), async (req, res) => {
+router.post('/upload', authenticateToken, upload.single('zipFile'), async (req, res) => {
   const importResults = {
     startTime: new Date(),
     totalMembers: 0,
