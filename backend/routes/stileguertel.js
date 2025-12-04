@@ -302,7 +302,6 @@ router.get('/:id', (req, res) => {
           kategorie,
           dan_grad,
           aktiv,
-          pruefungsinhalte,
           erstellt_am,
           aktualisiert_am
         FROM graduierungen
@@ -321,11 +320,8 @@ router.get('/:id', (req, res) => {
           });
         }
 
-        // Parse JSON-Felder
-        const parsedGraduierungen = graduierungRows.map(row => ({
-          ...row,
-          pruefungsinhalte: row.pruefungsinhalte ? (typeof row.pruefungsinhalte === 'string' ? JSON.parse(row.pruefungsinhalte) : row.pruefungsinhalte) : null
-        }));
+        // Graduierungen ohne JSON-Parsing (pruefungsinhalte Spalte existiert nicht)
+        const parsedGraduierungen = graduierungRows;
 
         const stilDetails = {
           ...stilRows[0],
