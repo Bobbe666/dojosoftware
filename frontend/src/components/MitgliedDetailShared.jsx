@@ -577,6 +577,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       const data = response.data;
       setStile(data);
       console.log('✅ Stile geladen:', data);
+      console.log('🔍 Erste Stil-Graduierungen:', data[0]?.graduierungen);
+      console.log('🔍 Anzahl Graduierungen im ersten Stil:', data[0]?.graduierungen?.length);
     } catch (error) {
       if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
         return; // Request was cancelled, don't show error
@@ -1002,8 +1004,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   };
 
   const handleGraduationArrowChange = async (graduationId, direction) => {
+    console.log('🔘 handleGraduationArrowChange aufgerufen:', { graduationId, direction });
+    console.log('🔍 selectedStil:', selectedStil);
+    console.log('🔍 selectedStil.graduierungen:', selectedStil?.graduierungen);
+    console.log('🔍 Anzahl Graduierungen:', selectedStil?.graduierungen?.length);
+
     if (!selectedStil || !selectedStil.graduierungen) {
       console.error('❌ Kein Stil oder keine Graduierungen vorhanden');
+      console.error('❌ selectedStil:', selectedStil);
+      console.error('❌ selectedStil.graduierungen:', selectedStil?.graduierungen);
       return;
     }
 
