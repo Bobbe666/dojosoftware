@@ -1380,8 +1380,10 @@ const StilVerwaltung = () => {
                   if (response.ok) {
                     console.log('✅ Stil reaktiviert:', stilData.name);
                     await loadStile();
-                    // Klappe inaktive Stile ein, damit reaktivierter Stil oben sichtbar ist
-                    setShowInactiveStile(false);
+                    // Klappe inaktive Stile nach kurzem Delay ein, damit User die Änderung sieht
+                    setTimeout(() => {
+                      setShowInactiveStile(false);
+                    }, 500);
                   } else {
                     const error = await response.json();
                     console.error('❌ Fehler beim Reaktivieren:', error);
