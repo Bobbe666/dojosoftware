@@ -137,7 +137,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [trainingAnalysis, setTrainingAnalysis] = useState({});
   const [autoSaving, setAutoSaving] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [editMode, setEditMode] = useState(isAdmin); // Admins starten im Edit-Modus
+  const [editMode, setEditMode] = useState(false);
 
   // Neue State-Variablen für erweiterte Daten
   const [anwesenheitsDaten, setAnwesenheitsDaten] = useState([]);
@@ -5809,58 +5809,50 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                                     <button
                                       onClick={() => {
-                                        console.log('🔘 Niedriger-Button geklickt! EditMode:', editMode, 'CurrentGrad:', currentGraduation?.name);
-                                        if (!editMode) {
-                                          console.warn('⚠️ Nicht im Edit-Modus!');
-                                          return;
-                                        }
+                                        console.log('🔘 Niedriger-Button geklickt! CurrentGrad:', currentGraduation?.name);
                                         handleGraduationArrowChange(currentGraduation?.graduierung_id, 'up');
                                       }}
-                                      disabled={!editMode || !currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0}
+                                      disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0}
                                       style={{
                                         flex: 1,
                                         padding: '0.5rem',
-                                        background: (editMode && currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) > 0)
+                                        background: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) > 0)
                                           ? 'rgba(239, 68, 68, 0.2)'
                                           : 'rgba(255, 255, 255, 0.05)',
                                         border: '1px solid #ef4444',
                                         borderRadius: '6px',
                                         color: '#ef4444',
                                         fontWeight: '600',
-                                        cursor: (editMode && currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) > 0)
+                                        cursor: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) > 0)
                                           ? 'pointer'
                                           : 'not-allowed',
                                         fontSize: '0.9rem',
-                                        opacity: (!editMode || !currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0) ? 0.3 : 1
+                                        opacity: (!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0) ? 0.3 : 1
                                       }}
                                     >
                                       ⬇️ Niedriger
                                     </button>
                                     <button
                                       onClick={() => {
-                                        console.log('🔘 Höher-Button geklickt! EditMode:', editMode, 'CurrentGrad:', currentGraduation?.name);
-                                        if (!editMode) {
-                                          console.warn('⚠️ Nicht im Edit-Modus!');
-                                          return;
-                                        }
+                                        console.log('🔘 Höher-Button geklickt! CurrentGrad:', currentGraduation?.name);
                                         handleGraduationArrowChange(currentGraduation?.graduierung_id, 'down');
                                       }}
-                                      disabled={!editMode || !currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1}
+                                      disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1}
                                       style={{
                                         flex: 1,
                                         padding: '0.5rem',
-                                        background: (editMode && currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) < selectedStil.graduierungen.length - 1)
+                                        background: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) < selectedStil.graduierungen.length - 1)
                                           ? 'rgba(34, 197, 94, 0.2)'
                                           : 'rgba(255, 255, 255, 0.05)',
                                         border: '1px solid #22c55e',
                                         borderRadius: '6px',
                                         color: '#22c55e',
                                         fontWeight: '600',
-                                        cursor: (editMode && currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) < selectedStil.graduierungen.length - 1)
+                                        cursor: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) < selectedStil.graduierungen.length - 1)
                                           ? 'pointer'
                                           : 'not-allowed',
                                         fontSize: '0.9rem',
-                                        opacity: (!editMode || !currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1) ? 0.3 : 1
+                                        opacity: (!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1) ? 0.3 : 1
                                       }}
                                     >
                                       ⬆️ Höher
