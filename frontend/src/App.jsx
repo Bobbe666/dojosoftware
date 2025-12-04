@@ -357,8 +357,8 @@ const App = () => {
               
               {/* ======== VERWALTUNGSBEREICHE ======== */}
               
-              {/* Einfache Stil-Verwaltung (alt) */}
-              <Route path="stil" element={<GruppenStilverwaltung />} />
+              {/* Gruppen-Verwaltung */}
+              <Route path="gruppen" element={<GruppenStilverwaltung />} />
               
               {/* Kurs-Management */}
               <Route path="kurse" element={<Kurse />} />
