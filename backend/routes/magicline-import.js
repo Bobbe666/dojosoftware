@@ -164,17 +164,31 @@ async function importMember(memberFolder, baseDir) {
       importLog.warnings.push('Keine Bankdaten vorhanden');
     }
 
+    let contactData = null;
+    try {
+      contactData = JSON.parse(
+        await fs.readFile(path.join(memberFolder, 'contact.json'), 'utf8')
+      );
+    } catch (e) {
+      importLog.warnings.push('Keine Kontaktdaten vorhanden');
+    }
+
     // 2. MITGLIED IMPORTIEREN
     const address = customerData.addresses?.[0] || {};
+
+    // Telefonnummer aus contact.json holen
+    const telefon = contactData?.telPrivateMobile || contactData?.telPrivate ||
+                   contactData?.telBusinessMobile || contactData?.telBusiness || null;
 
     const memberInsertSQL = `
       INSERT INTO mitglieder (
         vorname, nachname, geburtsdatum, geschlecht,
-        email, telefon,
+        email, telefon, telefon_mobil,
         strasse, hausnummer, plz, ort, land,
+        iban, bic, bankname, kontoinhaber,
         magicline_customer_number, magicline_uuid,
         aktiv, eintrittsdatum
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURDATE())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURDATE())
     `;
 
     const memberValues = [
@@ -183,12 +197,17 @@ async function importMember(memberFolder, baseDir) {
       convertDate(customerData.dateOfBirth),
       mapGender(customerData.gender),
       customerData.email || null,
-      null, // Telefon - nicht in customer.json
+      telefon, // Telefon aus contact.json
+      telefon, // telefon_mobil - verwende gleichen Wert
       address.street || null,
       address.houseNumber || null,
       address.zip || null,
       address.city || null,
       address.country === 'DE' ? 'Deutschland' : address.country,
+      bankData?.iban || null,
+      bankData?.bic || null,
+      bankData?.bankName || null,
+      bankData?.accountHolder || null,
       contractsData[0]?.customerNumber || null,
       customerData.uuid,
     ];
