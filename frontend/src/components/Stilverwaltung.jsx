@@ -1354,19 +1354,26 @@ const StilVerwaltung = () => {
           {/* Reaktivieren Button für inaktive Stile */}
           {!stil.aktiv && (
             <button
-              className="btn btn-success btn-small"
+              className="btn btn-success btn-small move-btn"
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  await updateStil(stil.stil_id, { aktiv: true });
-                  loadStile();
+                  const response = await fetch(`${API_BASE}/stile/${stil.stil_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ aktiv: true })
+                  });
+                  if (response.ok) {
+                    loadStile();
+                  }
                 } catch (error) {
                   console.error('Fehler beim Reaktivieren:', error);
                 }
               }}
               title="Stil reaktivieren"
+              style={{ minWidth: '40px', padding: '4px 8px', fontSize: '0.75rem' }}
             >
-              ✓ Aktivieren
+              ✓
             </button>
           )}
 
