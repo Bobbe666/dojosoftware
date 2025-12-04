@@ -1351,29 +1351,52 @@ const StilVerwaltung = () => {
 
         {/* Actions mit Pfeil-Buttons */}
         <div className="stil-card-actions" onClick={(e) => e.stopPropagation()}>
-          {/* Reihenfolge Buttons */}
-          <button
-            className="btn btn-info btn-small move-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveUp && onMoveUp(stil);
-            }}
-            disabled={isFirst || loading}
-            title="Nach oben verschieben"
-          >
-            ↑
-          </button>
-          <button
-            className="btn btn-info btn-small move-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveDown && onMoveDown(stil);
-            }}
-            disabled={isLast || loading}
-            title="Nach unten verschieben"
-          >
-            ↓
-          </button>
+          {/* Reaktivieren Button für inaktive Stile */}
+          {!stil.aktiv && (
+            <button
+              className="btn btn-success btn-small"
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  await updateStil(stil.stil_id, { aktiv: true });
+                  loadStile();
+                } catch (error) {
+                  console.error('Fehler beim Reaktivieren:', error);
+                }
+              }}
+              title="Stil reaktivieren"
+            >
+              ✓ Aktivieren
+            </button>
+          )}
+
+          {/* Reihenfolge Buttons nur für aktive Stile */}
+          {stil.aktiv && (
+            <>
+              <button
+                className="btn btn-info btn-small move-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveUp && onMoveUp(stil);
+                }}
+                disabled={isFirst || loading}
+                title="Nach oben verschieben"
+              >
+                ↑
+              </button>
+              <button
+                className="btn btn-info btn-small move-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveDown && onMoveDown(stil);
+                }}
+                disabled={isLast || loading}
+                title="Nach unten verschieben"
+              >
+                ↓
+              </button>
+            </>
+          )}
 
           {/* Delete Button */}
           <button

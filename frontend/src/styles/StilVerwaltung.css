@@ -650,7 +650,7 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 }
 
 .stil-card.inactive .stil-card-header h3 {
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Titel */
+  color: rgba(255, 255, 255, 0.95) !important; /* Gut lesbarer Titel auch bei inaktiven Stilen */
 }
 
 .stil-card.inactive .stil-beschreibung {
