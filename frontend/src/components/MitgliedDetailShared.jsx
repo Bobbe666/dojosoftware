@@ -137,7 +137,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [trainingAnalysis, setTrainingAnalysis] = useState({});
   const [autoSaving, setAutoSaving] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(isAdmin); // Admins starten im Edit-Modus
 
   // Neue State-Variablen für erweiterte Daten
   const [anwesenheitsDaten, setAnwesenheitsDaten] = useState([]);
