@@ -958,6 +958,44 @@ Bereich zum Verwalten der Gürtel/Graduierungen - Verbesserte Hover-Effekte
   font-size: 1.5rem;             /* 24px Überschrift */
   margin: 0;                     /* Kein Außenabstand */
   color: #ffd700;                /* Gold-Farbe */
+  font-weight: 700;              /* Fett */
+  text-transform: uppercase;     /* Großbuchstaben */
+  letter-spacing: 2px;           /* Buchstabenabstand */
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+}
+
+/* Container für Sub-Tabs/Buttons */
+.sub-tabs {
+  display: flex;
+  gap: 1rem;                     /* 16px Abstand zwischen Buttons */
+  align-items: center;
+}
+
+/* Sub-Tab Buttons */
+.sub-tab-btn {
+  padding: 0.75rem 1.5rem;       /* 12px oben/unten, 24px links/rechts */
+  background: rgba(255, 215, 0, 0.1); /* Leicht goldener Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  border-radius: 8px;            /* Abgerundete Ecken */
+  color: #ffd700;                /* Gold-Text */
+  font-size: 0.95rem;            /* 15.2px */
+  font-weight: 600;              /* Semi-Bold */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;           /* Kein Zeilenumbruch */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* Text-Schatten für Lesbarkeit */
+}
+
+.sub-tab-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.2); /* Hellerer Hintergrund bei Hover */
+  border-color: #ffd700;         /* Kräftigerer Gold-Rand */
+  transform: translateY(-2px);   /* Leicht nach oben */
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+}
+
+.sub-tab-btn:disabled {
+  opacity: 0.5;                  /* Halbtransparent wenn deaktiviert */
+  cursor: not-allowed;           /* Not-Allowed Cursor */
 }
 
 /* Info-Box für Drag & Drop - Glassmorphism Design */
