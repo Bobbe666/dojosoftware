@@ -165,6 +165,17 @@ try {
       stack: error.stack
     });
 }
+try {
+  const stileRoutes = require('./routes/stile');
+  app.use('/api/stile', stileRoutes);
+  logger.success('Route gemountet', { path: '/api/stile' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'stile',
+      error: error.message,
+      stack: error.stack
+    });
+}
 
 // 2. VERKÄUFE ROUTES - KASSENSYSTEM
 try {

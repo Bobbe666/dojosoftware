@@ -141,6 +141,7 @@ async function importMember(memberFolder, baseDir) {
       member: false,
       contract: false,
       sepaMandate: false,
+      payments: 0,
       documents: 0
     }
   };
@@ -171,6 +172,15 @@ async function importMember(memberFolder, baseDir) {
       );
     } catch (e) {
       importLog.warnings.push('Keine Kontaktdaten vorhanden');
+    }
+
+    let accountDetails = null;
+    try {
+      accountDetails = JSON.parse(
+        await fs.readFile(path.join(memberFolder, 'account_details.json'), 'utf8')
+      );
+    } catch (e) {
+      importLog.warnings.push('Keine Zahlungshistorie vorhanden');
     }
 
     // 2. MITGLIED IMPORTIEREN
@@ -296,7 +306,48 @@ async function importMember(memberFolder, baseDir) {
       }
     }
 
-    // 5. DOKUMENTE IMPORTIEREN (PDFs)
+    // 5. ZAHLUNGSHISTORIE IMPORTIEREN (falls vorhanden)
+    if (accountDetails && accountDetails.dtos && Array.isArray(accountDetails.dtos)) {
+      let importedPayments = 0;
+
+      for (const transaction of accountDetails.dtos) {
+        try {
+          // Nur PAYMENT_RUN_TYPE (tatsächliche Zahlungen) importieren
+          if (transaction.parent?.typeAsString === 'PAYMENT_RUN_TYPE' && transaction.parent?.amount) {
+            const paymentSQL = `
+              INSERT INTO beitraege (
+                mitglied_id, betrag, zahlungsart, zahlungsdatum, bezahlt, dojo_id,
+                magicline_transaction_id, magicline_description
+              ) VALUES (?, ?, 'direct_debit', ?, 1, 1, ?, ?)
+            `;
+
+            const paymentValues = [
+              mitgliedId,
+              transaction.parent.amount,
+              convertDate(transaction.parent.date) || convertDate(transaction.linkDate),
+              transaction.parent.id,
+              transaction.parent.description
+            ];
+
+            await queryPromise(paymentSQL, paymentValues);
+            importedPayments++;
+          }
+        } catch (paymentError) {
+          // Stille Fehler bei Zahlungen (oft Duplikate)
+          logger.warn('Zahlung Import übersprungen', {
+            error: paymentError.message,
+            transactionId: transaction.parent?.id
+          });
+        }
+      }
+
+      if (importedPayments > 0) {
+        importLog.imported.payments = importedPayments;
+        logger.info('Zahlungshistorie importiert', { mitgliedId, count: importedPayments });
+      }
+    }
+
+    // 6. DOKUMENTE IMPORTIEREN (PDFs)
     const documentsPath = path.join(memberFolder, 'documents');
     try {
       const files = await fs.readdir(documentsPath);

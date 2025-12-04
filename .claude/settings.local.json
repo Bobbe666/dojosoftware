@@ -31,7 +31,11 @@
       "Bash(npm run build:*)",
       "Bash(rsync:*)",
       "Bash(scp:*)",
-      "Bash(tar czf:*)"
+      "Bash(tar czf:*)",
+      "WebSearch",
+      "Bash(unzip:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

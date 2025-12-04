@@ -169,7 +169,7 @@ const MagicLineImport = () => {
                 <p className="font-semibold">Import erfolgreich abgeschlossen!</p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="bg-white rounded-lg p-3 border border-green-200">
                   <div className="flex items-center gap-2 mb-1">
                     <Users className="w-4 h-4 text-blue-600" />
@@ -209,6 +209,16 @@ const MagicLineImport = () => {
                     {importResults.logs.reduce((sum, l) => sum + (l.imported?.documents || 0), 0)}
                   </p>
                 </div>
+
+                <div className="bg-white rounded-lg p-3 border border-green-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard className="w-4 h-4 text-indigo-600" />
+                    <span className="text-sm font-medium text-gray-600">Zahlungen</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-800">
+                    {importResults.logs.reduce((sum, l) => sum + (l.imported?.payments || 0), 0)}
+                  </p>
+                </div>
               </div>
 
               <p className="text-sm text-gray-600 mt-3">
@@ -242,7 +252,7 @@ const MagicLineImport = () => {
                         </span>
                       </div>
 
-                      <div className="flex gap-2 text-xs">
+                      <div className="flex gap-2 text-xs flex-wrap">
                         {log.imported?.member && (
                           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">Mitglied</span>
                         )}
@@ -251,6 +261,11 @@ const MagicLineImport = () => {
                         )}
                         {log.imported?.sepaMandate && (
                           <span className="px-2 py-1 bg-green-100 text-green-700 rounded">SEPA</span>
+                        )}
+                        {log.imported?.payments > 0 && (
+                          <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded">
+                            {log.imported.payments} Zahl.
+                          </span>
                         )}
                         {log.imported?.documents > 0 && (
                           <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded">
