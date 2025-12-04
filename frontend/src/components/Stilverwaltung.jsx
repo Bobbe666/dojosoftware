@@ -3158,7 +3158,7 @@ const StilVerwaltung = () => {
                     >
                       {stile
                         .filter(s => !s.aktiv)
-                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
                         .map(stil => (
                           <StilCard key={stil.stil_id} stil={stil} onDelete={deleteStil} />
                         ))}
