@@ -514,8 +514,8 @@ function Dashboard() {
       className: 'info'
     },
     {
-      label: '📁 Gruppe erstellen',
-      path: '/dashboard/artikelgruppen',
+      label: '📁 Gruppe verwalten',
+      path: '/dashboard/gruppen',
       className: 'info'
     },
     {

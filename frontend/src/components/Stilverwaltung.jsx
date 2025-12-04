@@ -103,8 +103,8 @@ const StilVerwaltung = () => {
   // KONSTANTEN UND KONFIGURATION
   // ============================================================================
   
-  // API Base URL mit Fallback - KORRIGIERT mit /api Prefix
-  const API_BASE = (config?.apiBaseUrl || 'http://localhost:3002') + '/api';
+  // API Base URL mit Fallback (apiBaseUrl enthält bereits /api)
+  const API_BASE = config?.apiBaseUrl || 'http://localhost:3002/api';
 
   // Erweiterte Standard-Gürtel mit Primär- und Sekundärfarben für alle Kampfkünste
   const standardGuertel = [
