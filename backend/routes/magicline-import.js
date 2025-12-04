@@ -18,7 +18,7 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Zugriff verweigert: Kein Token' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'dein_geheimer_key', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key', (err, user) => {
     if (err) {
       return res.status(403).json({ error: 'Zugriff verweigert: Ungültiger Token' });
     }
