@@ -221,22 +221,21 @@ async function importMember(memberFolder, baseDir) {
 
           const sepaMandateSQL = `
             INSERT INTO sepa_mandate (
-              mitglied_id, vertrag_id,
-              iban, bic, kontoinhaber, bank_name,
-              mandatsreferenz, unterschriftsdatum,
-              status, erstellt_am
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'aktiv', NOW())
+              mitglied_id,
+              iban, bic, kontoinhaber, bankname,
+              mandatsreferenz, erstellungsdatum,
+              status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'aktiv')
           `;
 
           const sepaMandateValues = [
             mitgliedId,
-            vertragId,
             bankData.iban,
             bankData.bic,
             bankData.accountHolder,
             bankData.bankName,
             sepaMandate?.referenceNumber || `IMPORT-${Date.now()}`,
-            convertDate(sepaMandate?.mandateGivenDate)
+            convertDate(sepaMandate?.mandateGivenDate) || new Date().toISOString().split('T')[0]
           ];
 
           await queryPromise(sepaMandateSQL, sepaMandateValues);
