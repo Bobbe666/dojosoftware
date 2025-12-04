@@ -378,6 +378,19 @@ try {
     });
 }
 
+// 9.6. MAGICLINE IMPORT ROUTES - NEU
+try {
+  const magiclineImportRouter = require(path.join(__dirname, "routes", "magicline-import.js"));
+  app.use("/api/magicline-import", magiclineImportRouter);
+  logger.success('Route gemountet', { path: '/api/magicline-import' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'magicline-import',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 10. FORTSCHRITT-TRACKING (Member Progress) - NEU
 try {
   const fortschrittRouter = require(path.join(__dirname, "routes", "fortschritt.js"));

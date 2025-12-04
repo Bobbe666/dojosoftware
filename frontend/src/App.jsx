@@ -119,6 +119,9 @@ import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
 import Events from "./components/Events";
 import MeineEvents from "./components/MeineEvents";
 
+// MagicLine Import
+import MagicLineImport from "./pages/MagicLineImport";
+
 // Protected Route Komponente mit AuthContext
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
@@ -401,6 +404,9 @@ const App = () => {
               {/* Auswertungen (Analytics & Reports) */}
               <Route path="auswertungen" element={<Auswertungen />} />
               <Route path="course-ratings" element={<CourseRatingAdmin />} />
+
+              {/* MagicLine Import */}
+              <Route path="magicline-import" element={<MagicLineImport />} />
 
               {/* Berichte & Dokumente (PDF Management) */}
               <Route path="berichte" element={<BerichteDokumente />} />

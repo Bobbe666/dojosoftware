@@ -451,6 +451,14 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '📥',
+      title: 'MagicLine Import',
+      description: 'Mitglieder & Verträge aus MagicLine importieren',
+      path: '/dashboard/magicline-import',
+      badge: 'IMPORT',
+      featured: true
+    },
+    {
       icon: '🥊',
       title: 'Equipment',
       description: 'Inventar und Ausrüstung verwalten',
