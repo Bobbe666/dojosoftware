@@ -15,14 +15,23 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    logger.warn('MagicLine Import: Kein Token vorhanden');
     return res.status(401).json({ error: 'Zugriff verweigert: Kein Token' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key', (err, user) => {
+  const secret = process.env.JWT_SECRET || 'your_jwt_secret_key';
+
+  jwt.verify(token, secret, (err, user) => {
     if (err) {
-      return res.status(403).json({ error: 'Zugriff verweigert: Ungültiger Token' });
+      logger.error('MagicLine Import: Token-Verifizierung fehlgeschlagen', {
+        error: err.message,
+        tokenStart: token.substring(0, 20) + '...',
+        secretUsed: secret === 'your_jwt_secret_key' ? 'fallback' : 'env'
+      });
+      return res.status(403).json({ error: 'Zugriff verweigert: Ungültiger Token', details: err.message });
     }
     req.user = user;
+    logger.info('MagicLine Import: Token erfolgreich verifiziert', { userId: user.id });
     next();
   });
 };
