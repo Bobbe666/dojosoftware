@@ -165,17 +165,8 @@ try {
       stack: error.stack
     });
 }
-try {
-  const stileRoutes = require('./routes/stile');
-  app.use('/api/stile', stileRoutes);
-  logger.success('Route gemountet', { path: '/api/stile' });
-} catch (error) {
-  logger.error('Fehler beim Laden der Route', {
-      route: 'stile',
-      error: error.message,
-      stack: error.stack
-    });
-}
+// ENTFERNT: Alte hardcodierte stile.js Route - wird durch stileguertel.js ersetzt (weiter unten)
+// Die neue Route hat vollständige CRUD-Funktionalität mit Datenbankanbindung
 
 // 2. VERKÄUFE ROUTES - KASSENSYSTEM
 try {
