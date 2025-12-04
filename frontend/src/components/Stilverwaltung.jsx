@@ -1358,16 +1358,26 @@ const StilVerwaltung = () => {
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
+                  const token = localStorage.getItem('token');
                   const response = await fetch(`${API_BASE}/stile/${stil.stil_id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ aktiv: true })
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ ...stil, aktiv: true })
                   });
                   if (response.ok) {
-                    loadStile();
+                    console.log('✅ Stil reaktiviert:', stil.name);
+                    await loadStile();
+                  } else {
+                    const error = await response.json();
+                    console.error('❌ Fehler beim Reaktivieren:', error);
+                    alert('Fehler beim Reaktivieren: ' + (error.error || 'Unbekannter Fehler'));
                   }
                 } catch (error) {
-                  console.error('Fehler beim Reaktivieren:', error);
+                  console.error('❌ Fehler beim Reaktivieren:', error);
+                  alert('Fehler beim Reaktivieren: ' + error.message);
                 }
               }}
               title="Stil reaktivieren"
@@ -3050,9 +3060,9 @@ const StilVerwaltung = () => {
           </div>
           <div className="header-actions">
             {!currentStil && (
-              <button 
+              <button
                 className="add-stil-btn"
-                onClick={() => setShowAddStilModal(true)}
+                onClick={() => setShowCreateForm(true)}
               >
                 ➕ Neuen Stil hinzufügen
               </button>
