@@ -1359,16 +1359,26 @@ const StilVerwaltung = () => {
                 e.stopPropagation();
                 try {
                   const token = localStorage.getItem('token');
+                  // Stelle sicher, dass name vorhanden ist (kann stil_name oder name sein)
+                  const stilData = {
+                    name: stil.name || stil.stil_name,
+                    beschreibung: stil.beschreibung || '',
+                    aktiv: true,
+                    reihenfolge: stil.reihenfolge || 0
+                  };
+
+                  console.log('🔄 Reaktiviere Stil:', stilData);
+
                   const response = await fetch(`${API_BASE}/stile/${stil.stil_id}`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',
                       'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ ...stil, aktiv: true })
+                    body: JSON.stringify(stilData)
                   });
                   if (response.ok) {
-                    console.log('✅ Stil reaktiviert:', stil.name);
+                    console.log('✅ Stil reaktiviert:', stilData.name);
                     await loadStile();
                   } else {
                     const error = await response.json();
