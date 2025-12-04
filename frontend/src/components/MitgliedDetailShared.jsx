@@ -6021,30 +6021,37 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
             </motion.div>
           </AnimatePresence>
+
+          {/* Button Container innerhalb des scrollbaren Bereichs */}
+          <div className="button-container" style={{
+            marginTop: '2rem',
+            paddingBottom: '2rem',
+            display: 'flex',
+            gap: '1rem',
+            justifyContent: 'flex-start'
+          }}>
+            {/* Edit/Save buttons - für Admin und Member */}
+            {!editMode ? (
+              <button className="edit-button" onClick={() => setEditMode(true)}>
+                {isAdmin ? 'Bearbeiten' : 'Meine Daten bearbeiten'}
+              </button>
+            ) : (
+              <button className="save-button" onClick={handleSave}>
+                Speichern
+              </button>
+            )}
+
+            {/* Back button - nur für Admin */}
+            {isAdmin && (
+              <button
+                className="back-button"
+                onClick={() => navigate("/dashboard/mitglieder")}
+              >
+                Zurück
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-
-      <div className="button-container">
-        {/* Edit/Save buttons - für Admin und Member */}
-        {!editMode ? (
-          <button className="edit-button" onClick={() => setEditMode(true)}>
-            {isAdmin ? 'Bearbeiten' : 'Meine Daten bearbeiten'}
-          </button>
-        ) : (
-          <button className="save-button" onClick={handleSave}>
-            Speichern
-          </button>
-        )}
-
-        {/* Back button - nur für Admin */}
-        {isAdmin && (
-          <button
-            className="back-button"
-            onClick={() => navigate("/dashboard/mitglieder")}
-          >
-            Zurück
-          </button>
-        )}
       </div>
 
       {/* Neuer Vertrag Modal - CACHE BREAK v2.0 */}
