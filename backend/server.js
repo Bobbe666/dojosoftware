@@ -181,6 +181,19 @@ try {
     });
 }
 
+// 2.1 STUNDENPLAN ROUTES
+try {
+  const stundenplanRoutes = require('./routes/stundenplan');
+  app.use('/api/stundenplan', stundenplanRoutes);
+  logger.success('Route geladen', { path: '/api/stundenplan' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'stundenplan routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 3. CHECKIN ROUTE - HIGHEST PRIORITY
 try {
   const checkinPath = path.join(__dirname, "routes", "checkin.js");
