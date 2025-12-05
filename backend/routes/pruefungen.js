@@ -197,6 +197,84 @@ router.get('/termine', (req, res) => {
 });
 
 /**
+ * PUT /api/pruefungen/termine/:id
+ * Aktualisiert einen Prüfungstermin
+ */
+router.put('/termine/:id', (req, res) => {
+  const termin_id = parseInt(req.params.id);
+
+  if (!termin_id || isNaN(termin_id)) {
+    return res.status(400).json({ error: 'Ungültige Termin-ID' });
+  }
+
+  const {
+    pruefungsdatum,
+    pruefungszeit,
+    pruefungsort,
+    pruefer_name,
+    stil_id,
+    pruefungsgebuehr,
+    anmeldefrist,
+    bemerkungen,
+    teilnahmebedingungen
+  } = req.body;
+
+  if (!pruefungsdatum || !stil_id) {
+    return res.status(400).json({
+      error: 'Fehlende erforderliche Felder',
+      required: ['pruefungsdatum', 'stil_id']
+    });
+  }
+
+  const updateQuery = `
+    UPDATE pruefungstermin_vorlagen
+    SET
+      pruefungsdatum = ?,
+      pruefungszeit = ?,
+      pruefungsort = ?,
+      pruefer_name = ?,
+      stil_id = ?,
+      pruefungsgebuehr = ?,
+      anmeldefrist = ?,
+      bemerkungen = ?,
+      teilnahmebedingungen = ?
+    WHERE termin_id = ?
+  `;
+
+  const values = [
+    pruefungsdatum,
+    pruefungszeit || '10:00',
+    pruefungsort || null,
+    pruefer_name || null,
+    stil_id,
+    pruefungsgebuehr || null,
+    anmeldefrist || null,
+    bemerkungen || null,
+    teilnahmebedingungen || null,
+    termin_id
+  ];
+
+  db.query(updateQuery, values, (err, result) => {
+    if (err) {
+      console.error('Fehler beim Aktualisieren des Termins:', err);
+      return res.status(500).json({
+        error: 'Fehler beim Aktualisieren',
+        details: err.message
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Termin nicht gefunden' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Termin erfolgreich aktualisiert'
+    });
+  });
+});
+
+/**
  * DELETE /api/pruefungen/termine/:id
  * Löscht einen Prüfungstermin
  */

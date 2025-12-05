@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useDojoContext } from '../context/DojoContext';
-import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit } from 'lucide-react';
+import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit, Trash2 } from 'lucide-react';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Buttons.css';
@@ -730,7 +730,7 @@ const PruefungsVerwaltung = () => {
 
   const handleTerminBearbeiten = (termin) => {
     setEditTermin({
-      id: termin.vorlageData?.id,
+      id: termin.vorlageData?.termin_id,
       datum: termin.datum,
       pruefungsdatum: termin.datum,
       pruefungszeit: termin.zeit,
@@ -739,7 +739,6 @@ const PruefungsVerwaltung = () => {
       stil_id: termin.vorlageData?.stil_id || '',
       pruefungsgebuehr: termin.vorlageData?.pruefungsgebuehr || '',
       anmeldefrist: termin.vorlageData?.anmeldefrist || '',
-      gurtlaenge: termin.vorlageData?.gurtlaenge || '',
       bemerkungen: termin.vorlageData?.bemerkungen || '',
       teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen || ''
     });
@@ -806,35 +805,80 @@ const PruefungsVerwaltung = () => {
       return;
     }
 
-    try {
-      const gespeicherteTermine = JSON.parse(localStorage.getItem('pruefungstermine') || '[]');
-      const index = gespeicherteTermine.findIndex(t => t.id === editTermin.id);
+    if (!editTermin.id) {
+      setError('Termin-ID fehlt');
+      return;
+    }
 
-      if (index !== -1) {
-        gespeicherteTermine[index] = {
-          ...gespeicherteTermine[index],
-          datum: editTermin.pruefungsdatum,
-          zeit: editTermin.pruefungszeit,
-          ort: editTermin.pruefungsort,
+    try {
+      const response = await fetch(`${API_BASE_URL}/pruefungen/termine/${editTermin.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          pruefungsdatum: editTermin.pruefungsdatum,
+          pruefungszeit: editTermin.pruefungszeit,
+          pruefungsort: editTermin.pruefungsort,
+          pruefer_name: editTermin.pruefer_name,
           stil_id: editTermin.stil_id,
           pruefungsgebuehr: editTermin.pruefungsgebuehr ? parseFloat(editTermin.pruefungsgebuehr) : null,
           anmeldefrist: editTermin.anmeldefrist || null,
-          gurtlaenge: editTermin.gurtlaenge || null,
           bemerkungen: editTermin.bemerkungen || null,
           teilnahmebedingungen: editTermin.teilnahmebedingungen || null
-        };
+        })
+      });
 
-        localStorage.setItem('pruefungstermine', JSON.stringify(gespeicherteTermine));
+      const data = await response.json();
 
-        setSuccess(`Prüfungstermin wurde aktualisiert!`);
-        setTimeout(() => setSuccess(''), 3000);
-
-        setShowEditTerminModal(false);
-        setEditTermin(null);
-        fetchPruefungstermine();
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Aktualisieren des Termins');
       }
+
+      setSuccess('Prüfungstermin wurde erfolgreich aktualisiert!');
+      setTimeout(() => setSuccess(''), 3000);
+
+      setShowEditTerminModal(false);
+      setEditTermin(null);
+      fetchPruefungstermine();
     } catch (error) {
       setError(error.message);
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleTerminLoeschen = async (termin) => {
+    if (!termin.vorlageData?.termin_id) {
+      setError('Termin-ID fehlt');
+      return;
+    }
+
+    if (!window.confirm(`Möchten Sie den Prüfungstermin am ${new Date(termin.datum).toLocaleDateString('de-DE')} wirklich löschen?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/pruefungen/termine/${termin.vorlageData.termin_id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Löschen des Termins');
+      }
+
+      setSuccess('Prüfungstermin wurde erfolgreich gelöscht!');
+      setTimeout(() => setSuccess(''), 3000);
+
+      fetchPruefungstermine();
+    } catch (error) {
+      setError(error.message);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -1343,39 +1387,74 @@ const PruefungsVerwaltung = () => {
                           </div>
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTerminBearbeiten(termin);
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
-                          border: 'none',
-                          color: 'rgba(255, 255, 255, 0.95)',
-                          padding: '0.4rem 0.6rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          borderRadius: '6px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          fontSize: '0.85rem',
-                          fontWeight: '600',
-                          boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-                        }}
-                        title="Termin bearbeiten"
-                      >
-                        <Edit size={16} />
-                        Bearbeiten
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTerminBearbeiten(termin);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                            border: 'none',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            padding: '0.4rem 0.6rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                          }}
+                          title="Termin bearbeiten"
+                        >
+                          <Edit size={16} />
+                          Bearbeiten
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTerminLoeschen(termin);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 50%, transparent 100%)',
+                            border: 'none',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            padding: '0.4rem 0.6rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            boxShadow: '0 2px 8px rgba(220, 53, 69, 0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.4) 0%, rgba(220, 53, 69, 0.2) 50%, transparent 100%)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 50%, transparent 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.2)';
+                          }}
+                          title="Termin löschen"
+                        >
+                          <Trash2 size={16} />
+                          Löschen
+                        </button>
+                      </div>
                     </div>
 
                     {/* Prüflinge-Liste */}
