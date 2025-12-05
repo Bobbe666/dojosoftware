@@ -297,7 +297,7 @@ const PruefungsVerwaltung = () => {
           stil_id: termin.stil_id,
           stil_name: termin.stil_name,
           pruefungsgebuehr: termin.pruefungsgebuehr,
-          anmeldefrist: termin.anmeldefrist,
+          anmeldefrist: termin.anmeldefrist ? termin.anmeldefrist.split('T')[0] : null,
           bemerkungen: termin.bemerkungen,
           teilnahmebedingungen: termin.teilnahmebedingungen
         };
@@ -729,11 +729,32 @@ const PruefungsVerwaltung = () => {
   };
 
   const handleTerminBearbeiten = (termin) => {
-    // Formatiere Daten korrekt (entferne Zeit-Anteil wenn vorhanden)
+    // Formatiere Daten korrekt - verhindert Zeitzonen-Probleme
     const formatDateForInput = (dateString) => {
       if (!dateString) return '';
-      // Wenn ISO-Format (mit Zeit), extrahiere nur Datum
-      return dateString.split('T')[0];
+
+      // Bereits im richtigen Format (YYYY-MM-DD)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+      }
+
+      // ISO-Format mit Zeit - extrahiere nur Datum
+      if (dateString.includes('T')) {
+        return dateString.split('T')[0];
+      }
+
+      // Falls Date-Objekt oder anderes Format, parse es
+      try {
+        const date = new Date(dateString);
+        // Verwende UTC um Zeitzonen-Probleme zu vermeiden
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch (e) {
+        console.error('Fehler beim Formatieren des Datums:', dateString, e);
+        return '';
+      }
     };
 
     setEditTermin({
