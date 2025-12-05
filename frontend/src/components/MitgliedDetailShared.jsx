@@ -5715,11 +5715,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           }}
                         >
                           <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>➕ Stil wählen...</option>
-                          {stile.filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id)).map(stil => (
-                            <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#1a1a1a', color: '#fff' }}>
-                              {stil.stil_name || stil.name}
-                            </option>
-                          ))}
+                          {stile
+                            .filter(s => s.aktiv === 1 || s.aktiv === true) // Nur aktive Stile
+                            .filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id)) // Nicht bereits zugewiesen
+                            .map(stil => (
+                              <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#1a1a1a', color: '#fff' }}>
+                                {stil.stil_name || stil.name}
+                              </option>
+                            ))}
                         </select>
                         <button
                           onClick={handleAddStyle}
