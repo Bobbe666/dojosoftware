@@ -259,10 +259,14 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   z-index: 1002 !important; /* Highest z-index for buttons */
   text-shadow: none !important; /* Remove text shadow that causes blur */
   color: #ffd700 !important; /* Ensure gold color is visible */
-  background: rgba(255, 215, 0, 0.1) !important; /* Visible background */
-  border: 2px solid rgba(255, 215, 0, 0.3) !important; /* Clear border */
-  font-weight: 600 !important; /* Bold for readability */
-  backdrop-filter: blur(8px) !important; /* Subtle blur for glassmorphism */
+  background: rgba(255, 215, 0, 0.15) !important; /* More visible background */
+  border: 2px solid rgba(255, 215, 0, 0.4) !important; /* Stronger border */
+  font-weight: 700 !important; /* Bolder for better readability */
+  backdrop-filter: none !important; /* Remove backdrop blur completely */
+  font-size: 0.95rem !important; /* Ensure proper font size */
+  padding: 0.75rem 1.5rem !important; /* Proper padding */
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
 }
 
 .graduierung-manager .section-header .sub-tab-btn:hover:not(:disabled) {
