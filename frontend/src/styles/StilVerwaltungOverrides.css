@@ -235,10 +235,13 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 /* ===== TEXT READABILITY - Besserer Kontrast ===== */
 /* Section Header h3 bereits in konsolidierter Regel oben definiert */
 
-/* Fix .graduierung-manager z-index - ensure it doesn't overlay buttons */
+/* Fix .graduierung-manager - remove backdrop-filter that blurs ALL content */
 .graduierung-manager {
   position: relative !important;
   z-index: 1 !important; /* Lower z-index so buttons can be above */
+  backdrop-filter: none !important; /* CRITICAL: Remove blur(30px) that affects all children */
+  -webkit-backdrop-filter: none !important;
+  background: rgba(30, 30, 50, 0.95) !important; /* More solid background to compensate */
 }
 
 /* Section Header - Must be above graduierung-manager */
@@ -256,26 +259,37 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 /* Sub-Tab Buttons - Fix blurred/unreadable text */
 .graduierung-manager .section-header .sub-tab-btn {
   position: relative !important;
-  z-index: 1002 !important; /* Highest z-index for buttons */
+  z-index: 9999 !important; /* Very high z-index to be above everything */
   text-shadow: none !important; /* Remove text shadow that causes blur */
   color: #ffd700 !important; /* Ensure gold color is visible */
-  background: rgba(255, 215, 0, 0.15) !important; /* More visible background */
-  border: 2px solid rgba(255, 215, 0, 0.4) !important; /* Stronger border */
+  background: rgba(30, 30, 50, 0.95) !important; /* Solid dark background instead of transparent */
+  border: 2px solid #ffd700 !important; /* Solid gold border */
   font-weight: 700 !important; /* Bolder for better readability */
   backdrop-filter: none !important; /* Remove backdrop blur completely */
+  -webkit-backdrop-filter: none !important; /* Safari support */
+  filter: none !important; /* Remove any filters */
   font-size: 0.95rem !important; /* Ensure proper font size */
   padding: 0.75rem 1.5rem !important; /* Proper padding */
   cursor: pointer !important;
   transition: all 0.3s ease !important;
+  isolation: isolate !important; /* Create new stacking context */
+  will-change: transform !important;
+  pointer-events: auto !important; /* Ensure buttons are clickable */
+}
+
+/* Ensure no pseudo-elements overlay the button */
+.graduierung-manager .section-header .sub-tab-btn::before,
+.graduierung-manager .section-header .sub-tab-btn::after {
+  display: none !important;
 }
 
 .graduierung-manager .section-header .sub-tab-btn:hover:not(:disabled) {
-  background: rgba(255, 215, 0, 0.2) !important;
+  background: rgba(30, 30, 50, 0.98) !important;
   border-color: #ffd700 !important;
-  color: #ffd700 !important;
-  text-shadow: none !important; /* Keep no shadow on hover */
+  color: #ffffff !important; /* White on hover for better visibility */
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6) !important; /* Glow effect on hover */
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.5) !important;
 }
 
 .graduierung-manager .section-header .sub-tab-btn:disabled {
