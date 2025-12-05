@@ -120,7 +120,7 @@ const PruefungsVerwaltung = () => {
 
   const fetchStile = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/stile`, {
+      const response = await fetch(`${API_BASE_URL}/stile?aktiv=true`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -729,16 +729,23 @@ const PruefungsVerwaltung = () => {
   };
 
   const handleTerminBearbeiten = (termin) => {
+    // Formatiere Daten korrekt (entferne Zeit-Anteil wenn vorhanden)
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      // Wenn ISO-Format (mit Zeit), extrahiere nur Datum
+      return dateString.split('T')[0];
+    };
+
     setEditTermin({
       id: termin.vorlageData?.termin_id,
-      datum: termin.datum,
-      pruefungsdatum: termin.datum,
-      pruefungszeit: termin.zeit,
-      pruefungsort: termin.ort,
+      datum: formatDateForInput(termin.datum),
+      pruefungsdatum: formatDateForInput(termin.datum),
+      pruefungszeit: termin.zeit || '10:00',
+      pruefungsort: termin.ort || '',
       pruefer_name: termin.vorlageData?.pruefer_name || '',
       stil_id: termin.vorlageData?.stil_id || '',
       pruefungsgebuehr: termin.vorlageData?.pruefungsgebuehr || '',
-      anmeldefrist: termin.vorlageData?.anmeldefrist || '',
+      anmeldefrist: formatDateForInput(termin.vorlageData?.anmeldefrist),
       bemerkungen: termin.vorlageData?.bemerkungen || '',
       teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen || ''
     });
