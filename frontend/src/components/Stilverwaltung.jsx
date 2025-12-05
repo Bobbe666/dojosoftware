@@ -1526,19 +1526,36 @@ const StilVerwaltung = () => {
 
 
     return (
-      <div className="graduierung-manager">
-        {/* Header mit Buttons */}
-        <div className="section-header">
-          <h3>Graduierungen verwalten</h3>
-          <div className="sub-tabs">
+      <>
+        {/* Header mit Buttons - AUSSERHALB des graduierung-manager */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+          paddingBottom: '1rem',
+          borderBottom: '2px solid rgba(255, 215, 0, 0.2)',
+          isolation: 'isolate',
+          position: 'relative',
+          zIndex: 10000
+        }}>
+          <h3 style={{
+            fontSize: '1.5rem',
+            margin: 0,
+            color: '#ffd700',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
+          }}>Graduierungen verwalten</h3>
+          <div style={{ display: 'flex', gap: '1rem' }}>
             <button
               onClick={() => setShowAddForm(true)}
-              className="sub-tab-btn"
               disabled={loading}
               title="Standard-Gürtel hinzufügen"
               style={{
                 position: 'relative',
-                zIndex: 9999,
+                zIndex: 10001,
                 backdropFilter: 'none',
                 WebkitBackdropFilter: 'none',
                 filter: 'none',
@@ -1550,22 +1567,20 @@ const StilVerwaltung = () => {
                 fontSize: '0.95rem',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 isolation: 'isolate',
-                willChange: 'transform',
-                pointerEvents: 'auto'
+                opacity: loading ? 0.5 : 1
               }}
             >
               + Graduierung hinzufügen
             </button>
             <button
               onClick={() => setShowCustomColorForm(true)}
-              className="sub-tab-btn"
               disabled={loading}
               title="Eigene Farbe erstellen"
               style={{
                 position: 'relative',
-                zIndex: 9999,
+                zIndex: 10001,
                 backdropFilter: 'none',
                 WebkitBackdropFilter: 'none',
                 filter: 'none',
@@ -1577,10 +1592,9 @@ const StilVerwaltung = () => {
                 fontSize: '0.95rem',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 isolation: 'isolate',
-                willChange: 'transform',
-                pointerEvents: 'auto'
+                opacity: loading ? 0.5 : 1
               }}
             >
               Eigene Farbe
@@ -1588,7 +1602,7 @@ const StilVerwaltung = () => {
           </div>
         </div>
 
-
+        <div className="graduierung-manager">
         {/* Move-Info */}
         {sortedGraduierungen.length > 1 && (
           <div className="drag-drop-info">
@@ -2580,6 +2594,7 @@ const StilVerwaltung = () => {
           document.body
         )}
       </div>
+      </>
     );
   };
 
