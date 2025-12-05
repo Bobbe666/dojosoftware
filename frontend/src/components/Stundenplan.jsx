@@ -745,9 +745,19 @@ const Stundenplan = () => {
       </div>
 
       {/* Formular für neuen Stundenplan-Eintrag */}
-      <div className="neuer-stundenplan-card" style={{animationDelay: `${sortedEintraege.length * 0.1 + 0.3}s`}}>
+      <div className="neuer-stundenplan-card" style={{
+        animationDelay: `${sortedEintraege.length * 0.1 + 0.3}s`,
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        background: 'rgba(30, 30, 50, 0.95)'
+      }}>
         <div className="card-header">
-          <h3>➕ Neuen Stundenplan-Eintrag hinzufügen</h3>
+          <h3 style={{
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+            filter: 'none',
+            textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
+          }}>➕ Neuen Stundenplan-Eintrag hinzufügen</h3>
         </div>
         <div className="stundenplan-form-modern">
           <div className="form-group">
