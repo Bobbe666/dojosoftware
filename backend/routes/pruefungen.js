@@ -435,18 +435,8 @@ router.get('/kandidaten', (req, res) => {
       ) as bereits_zugelassen
 
     FROM mitglieder m
-    INNER JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
-    INNER JOIN stile s ON ms.stil = (
-      CASE s.name
-        WHEN 'ShieldX' THEN 'ShieldX'
-        WHEN 'BJJ' THEN 'BJJ'
-        WHEN 'Kickboxen' THEN 'Kickboxen'
-        WHEN 'Enso Karate' THEN 'Karate'
-        WHEN 'Taekwon-Do' THEN 'Taekwon-Do'
-        ELSE ms.stil
-      END
-    )
-    LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id AND s.stil_id = msd.stil_id
+    INNER JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
+    INNER JOIN stile s ON msd.stil_id = s.stil_id
     LEFT JOIN graduierungen g_current ON msd.current_graduierung_id = g_current.graduierung_id
     LEFT JOIN graduierungen g_next ON (
       g_next.stil_id = s.stil_id
