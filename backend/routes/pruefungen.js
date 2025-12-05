@@ -265,10 +265,14 @@ router.put('/termine/:id', (req, res) => {
       });
     }
 
+    console.log('UPDATE result:', { affectedRows: result.affectedRows, changedRows: result.changedRows, warningCount: result.warningCount });
+
     if (result.affectedRows === 0) {
+      console.log('❌ Kein Termin mit ID gefunden:', termin_id);
       return res.status(404).json({ error: 'Termin nicht gefunden' });
     }
 
+    console.log('✅ Termin erfolgreich aktualisiert:', termin_id);
     res.json({
       success: true,
       message: 'Termin erfolgreich aktualisiert'
