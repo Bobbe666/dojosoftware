@@ -262,7 +262,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>📅</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {stundenplan.length}
             </span>
           </div>
@@ -273,7 +273,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🏃‍♂️</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {new Set(stundenplan.map(s => s.tag)).size}
             </span>
           </div>
@@ -284,7 +284,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🥋</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {new Set(stundenplan.map(s => s.kurs_id)).size}
             </span>
           </div>
@@ -295,7 +295,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>⏰</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {stundenplan.length > 0 ? formatTime(stundenplan.reduce((earliest, s) => s.uhrzeit_start < earliest ? s.uhrzeit_start : earliest, stundenplan[0].uhrzeit_start)) : '--'}
             </span>
           </div>
@@ -306,7 +306,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🌙</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {stundenplan.length > 0 ? formatTime(stundenplan.reduce((latest, s) => s.uhrzeit_ende > latest ? s.uhrzeit_ende : latest, stundenplan[0].uhrzeit_ende)) : '--'}
             </span>
           </div>
@@ -317,7 +317,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>📊</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {stundenplan.filter(s => s.tag === 'Montag').length}
             </span>
           </div>
@@ -328,7 +328,7 @@ const Stundenplan = () => {
         <div className="stat-card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🎉</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
               {stundenplan.filter(s => s.tag === 'Samstag' || s.tag === 'Sonntag').length}
             </span>
           </div>
