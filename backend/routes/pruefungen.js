@@ -254,6 +254,8 @@ router.put('/termine/:id', (req, res) => {
     termin_id
   ];
 
+  console.log('UPDATE Termin:', { termin_id, datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist });
+
   db.query(updateQuery, values, (err, result) => {
     if (err) {
       console.error('Fehler beim Aktualisieren des Termins:', err);
