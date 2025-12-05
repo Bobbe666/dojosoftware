@@ -235,6 +235,38 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 /* ===== TEXT READABILITY - Besserer Kontrast ===== */
 /* Section Header h3 bereits in konsolidierter Regel oben definiert */
 
+/* Sub-Tabs Container in Section Header - Ensure proper z-index */
+.section-header .sub-tabs {
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+/* Sub-Tab Buttons - Fix blurred/unreadable text */
+.section-header .sub-tab-btn {
+  position: relative !important;
+  z-index: 101 !important;
+  text-shadow: none !important; /* Remove text shadow that causes blur */
+  color: #ffd700 !important; /* Ensure gold color is visible */
+  background: rgba(255, 215, 0, 0.1) !important; /* Visible background */
+  border: 2px solid rgba(255, 215, 0, 0.3) !important; /* Clear border */
+  font-weight: 600 !important; /* Bold for readability */
+  backdrop-filter: blur(8px) !important; /* Subtle blur for glassmorphism */
+}
+
+.section-header .sub-tab-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.2) !important;
+  border-color: #ffd700 !important;
+  color: #ffd700 !important;
+  text-shadow: none !important; /* Keep no shadow on hover */
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+}
+
+.section-header .sub-tab-btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
 /* Info Box Text auch besser lesbar */
 .drag-drop-info {
   color: rgba(255, 255, 255, 0.95) !important;
