@@ -496,14 +496,14 @@
 }
 
 .mini-name {
-  font-size: 1vw;
+  font-size: 1.1rem; /* GRÖßER - Gruppenname wie "Kinder 4-6 Jahre" */
   font-weight: 600;
   color: #ffffff;
-  margin-bottom: 0.1vh;
+  margin-bottom: 0.2rem;
 }
 
 .mini-style {
-  font-size: 0.8vw;
+  font-size: 0.7rem; /* KLEINER - Stil wie "Enso Karate" */
   color: rgba(255, 255, 255, 0.7);
 }
 
