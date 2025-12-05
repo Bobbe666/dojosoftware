@@ -1536,6 +1536,25 @@ const StilVerwaltung = () => {
               className="sub-tab-btn"
               disabled={loading}
               title="Standard-Gürtel hinzufügen"
+              style={{
+                position: 'relative',
+                zIndex: 9999,
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none',
+                filter: 'none',
+                textShadow: 'none',
+                background: 'rgba(30, 30, 50, 0.95)',
+                border: '2px solid #ffd700',
+                color: '#ffd700',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                isolation: 'isolate',
+                willChange: 'transform',
+                pointerEvents: 'auto'
+              }}
             >
               + Graduierung hinzufügen
             </button>
@@ -1544,6 +1563,25 @@ const StilVerwaltung = () => {
               className="sub-tab-btn"
               disabled={loading}
               title="Eigene Farbe erstellen"
+              style={{
+                position: 'relative',
+                zIndex: 9999,
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none',
+                filter: 'none',
+                textShadow: 'none',
+                background: 'rgba(30, 30, 50, 0.95)',
+                border: '2px solid #ffd700',
+                color: '#ffd700',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                isolation: 'isolate',
+                willChange: 'transform',
+                pointerEvents: 'auto'
+              }}
             >
               Eigene Farbe
             </button>
