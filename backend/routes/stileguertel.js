@@ -364,7 +364,6 @@ router.get('/:stilId/graduierungen', (req, res) => {
         kategorie,
         dan_grad,
         aktiv,
-        pruefungsinhalte,
         erstellt_am,
         aktualisiert_am
       FROM graduierungen
@@ -383,13 +382,7 @@ router.get('/:stilId/graduierungen', (req, res) => {
         });
       }
 
-      // Parse JSON-Felder
-      const parsedRows = rows.map(row => ({
-        ...row,
-        pruefungsinhalte: row.pruefungsinhalte ? (typeof row.pruefungsinhalte === 'string' ? JSON.parse(row.pruefungsinhalte) : row.pruefungsinhalte) : null
-      }));
-
-      res.json(parsedRows);
+      res.json(rows);
     });
   });
 });
