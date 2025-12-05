@@ -29,11 +29,7 @@ router.get("/", async (req, res) => {
   try {
     const [rows, fields] = await db.promise().query(query); // Use promise-based query with mysql2
 
-    if (rows.length === 0) {
-
-      return res.status(404).json({ error: "Keine Stundenplan-Daten gefunden" });
-    }
-
+    // Leere Liste ist OK, kein Fehler - Frontend kann damit umgehen
     res.json(rows);
   } catch (err) {
     console.error("Fehler beim Abrufen der Stundenplan-Daten:", err);
