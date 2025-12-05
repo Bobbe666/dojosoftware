@@ -3367,13 +3367,9 @@ const StilVerwaltung = () => {
                 )}
 
                 {activeTab === 'graduierungen' && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
+                  <div style={{ isolation: 'isolate', position: 'relative', zIndex: 1 }}>
                     <GraduierungManager />
-                  </motion.div>
+                  </div>
                 )}
 
                 {activeTab === 'pruefungsinhalte' && (
