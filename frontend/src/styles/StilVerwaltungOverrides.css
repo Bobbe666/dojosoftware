@@ -235,16 +235,28 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 /* ===== TEXT READABILITY - Besserer Kontrast ===== */
 /* Section Header h3 bereits in konsolidierter Regel oben definiert */
 
-/* Sub-Tabs Container in Section Header - Ensure proper z-index */
-.section-header .sub-tabs {
+/* Fix .graduierung-manager z-index - ensure it doesn't overlay buttons */
+.graduierung-manager {
   position: relative !important;
-  z-index: 100 !important;
+  z-index: 1 !important; /* Lower z-index so buttons can be above */
+}
+
+/* Section Header - Must be above graduierung-manager */
+.graduierung-manager .section-header {
+  position: relative !important;
+  z-index: 1000 !important; /* Very high to be above all content */
+}
+
+/* Sub-Tabs Container in Section Header - Ensure proper z-index */
+.graduierung-manager .section-header .sub-tabs {
+  position: relative !important;
+  z-index: 1001 !important; /* Above section-header */
 }
 
 /* Sub-Tab Buttons - Fix blurred/unreadable text */
-.section-header .sub-tab-btn {
+.graduierung-manager .section-header .sub-tab-btn {
   position: relative !important;
-  z-index: 101 !important;
+  z-index: 1002 !important; /* Highest z-index for buttons */
   text-shadow: none !important; /* Remove text shadow that causes blur */
   color: #ffd700 !important; /* Ensure gold color is visible */
   background: rgba(255, 215, 0, 0.1) !important; /* Visible background */
@@ -253,7 +265,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   backdrop-filter: blur(8px) !important; /* Subtle blur for glassmorphism */
 }
 
-.section-header .sub-tab-btn:hover:not(:disabled) {
+.graduierung-manager .section-header .sub-tab-btn:hover:not(:disabled) {
   background: rgba(255, 215, 0, 0.2) !important;
   border-color: #ffd700 !important;
   color: #ffd700 !important;
@@ -262,7 +274,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
 }
 
-.section-header .sub-tab-btn:disabled {
+.graduierung-manager .section-header .sub-tab-btn:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
