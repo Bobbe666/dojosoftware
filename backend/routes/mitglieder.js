@@ -876,18 +876,36 @@ router.post("/:id/stile", (req, res) => {
                                 return resolve();
                             }
 
-                            // Neu erstellen ohne Graduierung (wird später gesetzt)
-                            const insertDataQuery = `
-                                INSERT INTO mitglied_stil_data
-                                (mitglied_id, stil_id, current_graduierung_id, erstellt_am)
-                                VALUES (?, ?, NULL, CURRENT_TIMESTAMP)
+                            // Hole die erste Graduierung für diesen Stil (niedrigste reihenfolge)
+                            const getFirstGraduierungQuery = `
+                                SELECT graduierung_id
+                                FROM graduierungen
+                                WHERE stil_id = ? AND aktiv = 1
+                                ORDER BY reihenfolge ASC
+                                LIMIT 1
                             `;
-                            db.query(insertDataQuery, [mitglied_id, stil_id], (insertDataErr) => {
-                                if (insertDataErr) {
-                                    console.error('Fehler beim Erstellen mitglied_stil_data:', insertDataErr);
-                                    return reject(insertDataErr);
+                            db.query(getFirstGraduierungQuery, [stil_id], (gradErr, gradResults) => {
+                                if (gradErr) {
+                                    console.error('Fehler beim Abrufen der ersten Graduierung:', gradErr);
+                                    return reject(gradErr);
                                 }
-                                resolve();
+
+                                const firstGraduierungId = gradResults.length > 0 ? gradResults[0].graduierung_id : null;
+
+                                // Neu erstellen mit erster Graduierung
+                                const insertDataQuery = `
+                                    INSERT INTO mitglied_stil_data
+                                    (mitglied_id, stil_id, current_graduierung_id, erstellt_am)
+                                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                                `;
+                                db.query(insertDataQuery, [mitglied_id, stil_id, firstGraduierungId], (insertDataErr) => {
+                                    if (insertDataErr) {
+                                        console.error('Fehler beim Erstellen mitglied_stil_data:', insertDataErr);
+                                        return reject(insertDataErr);
+                                    }
+                                    console.log(`✅ mitglied_stil_data erstellt für Mitglied ${mitglied_id}, Stil ${stil_id}, Graduierung ${firstGraduierungId}`);
+                                    resolve();
+                                });
                             });
                         });
                     });
