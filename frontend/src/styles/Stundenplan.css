@@ -916,6 +916,7 @@
 .kurs-name {
   font-weight: 700;
   margin-bottom: 0.5rem;
+  font-size: 0.9rem; /* Kleiner - war 1rem */
 }
 
 .stil-tag {
@@ -931,6 +932,7 @@
 .trainer-name {
   color: var(--farbe-akzent);
   font-weight: 700;
+  font-size: 1.1rem; /* Größer - war 1rem */
 }
 
 .edit-select,
