@@ -916,7 +916,7 @@
 .kurs-name {
   font-weight: 700;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem; /* Kleiner - war 1rem */
+  font-size: 1.1rem; /* GRÖßER - Gruppenname wie "Kinder 4-6 Jahre" */
 }
 
 .stil-tag {
@@ -924,15 +924,15 @@
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.7rem; /* KLEINER - Stil wie "Enso Karate" */
+  font-weight: 600;
   display: inline-block;
 }
 
 .trainer-name {
   color: var(--farbe-akzent);
   font-weight: 700;
-  font-size: 1.1rem; /* Größer - war 1rem */
+  font-size: 1rem; /* Normal - Trainer-Name */
 }
 
 .edit-select,
