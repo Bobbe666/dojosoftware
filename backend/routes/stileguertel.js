@@ -1332,7 +1332,7 @@ router.get('/:id/statistiken', (req, res) => {
         g.reihenfolge,
         COUNT(m.mitglied_id) as anzahl_mitglieder
       FROM graduierungen g
-      LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1
+      LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1 AND m.stil_id = g.stil_id
       WHERE g.stil_id = ? AND g.aktiv = 1
       GROUP BY g.graduierung_id, g.name, g.farbe_hex, g.farbe_sekundaer, g.kategorie, g.dan_grad, g.reihenfolge
       ORDER BY g.reihenfolge ASC
@@ -1350,17 +1350,17 @@ router.get('/:id/statistiken', (req, res) => {
 
       // Kategorie-Statistiken
       const kategorieStatsQuery = `
-        SELECT 
+        SELECT
           g.kategorie,
           COUNT(g.graduierung_id) as anzahl_graduierungen,
           COUNT(m.mitglied_id) as anzahl_mitglieder,
           AVG(g.trainingsstunden_min) as avg_trainingsstunden,
           AVG(g.mindestzeit_monate) as avg_mindestzeit
         FROM graduierungen g
-        LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1
+        LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1 AND m.stil_id = g.stil_id
         WHERE g.stil_id = ? AND g.aktiv = 1
         GROUP BY g.kategorie
-        ORDER BY 
+        ORDER BY
           CASE g.kategorie
             WHEN 'grundstufe' THEN 1
             WHEN 'mittelstufe' THEN 2
