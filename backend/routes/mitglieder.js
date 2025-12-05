@@ -808,55 +808,111 @@ router.post("/:id/stile", (req, res) => {
 
     // Vereinfache ohne Transaction für jetzt
 
-    // Zuerst alle bestehenden Stile für dieses Mitglied löschen
-    const deleteQuery = "DELETE FROM mitglied_stile WHERE mitglied_id = ?";
-    
-    db.query(deleteQuery, [mitglied_id], (deleteErr) => {
+    // Zuerst alle bestehenden Stile für dieses Mitglied löschen (beide Tabellen)
+    const deleteMitgliedStileQuery = "DELETE FROM mitglied_stile WHERE mitglied_id = ?";
+    const deleteMitgliedStilDataQuery = "DELETE FROM mitglied_stil_data WHERE mitglied_id = ?";
+
+    // Lösche aus mitglied_stile
+    db.query(deleteMitgliedStileQuery, [mitglied_id], (deleteErr) => {
         if (deleteErr) {
             console.error("❌ Fehler beim Löschen bestehender Stile:", deleteErr);
             return res.status(500).json({ error: "Fehler beim Löschen bestehender Stile" });
         }
 
-        // Wenn keine neuen Stile hinzugefügt werden sollen
-        if (stile.length === 0) {
-
-            return res.json({ success: true, message: "Stile erfolgreich aktualisiert", stile: [] });
-        }
-        
-        // Zuordnung von Stil-IDs zu ENUM-Werten (basiert auf tatsächlichen DB-Daten)
-        const stilMapping = {
-            2: 'ShieldX',      // ShieldX
-            3: 'BJJ',          // BJJ 
-            4: 'Kickboxen',    // Kickboxen
-            5: 'Karate',       // Enso Karate → wird als 'Karate' in ENUM gespeichert
-            7: 'Taekwon-Do',   // Taekwon-Do
-            8: 'BJJ'           // Brazilian Jiu-Jitsu → auch als BJJ
-        };
-        
-        // Filter ungültige Stil-IDs und konvertiere zu ENUM-Werten
-        const validValues = stile
-            .filter(stil_id => stilMapping[stil_id]) // Nur bekannte IDs
-            .map(stil_id => [mitglied_id, stilMapping[stil_id]]);
-            
-        if (validValues.length === 0) {
-
-            return res.json({ success: true, message: "Keine gültigen Stile zum Hinzufügen", stile: [] });
-        }
-        
-        const insertQuery = "INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?";
-        const insertValues = validValues;
-
-        db.query(insertQuery, [insertValues], (insertErr) => {
-            if (insertErr) {
-                console.error("❌ Fehler beim Hinzufügen neuer Stile:", insertErr);
-                return res.status(500).json({ error: "Fehler beim Hinzufügen neuer Stile" });
+        // Lösche auch aus mitglied_stil_data
+        db.query(deleteMitgliedStilDataQuery, [mitglied_id], (deleteDataErr) => {
+            if (deleteDataErr) {
+                console.error("❌ Fehler beim Löschen von mitglied_stil_data:", deleteDataErr);
+                // Nicht abbrechen, da mitglied_stile bereits gelöscht wurde
             }
 
-            res.json({ 
-                success: true, 
-                message: "Stile erfolgreich aktualisiert",
-                mitglied_id: mitglied_id,
-                stile: stile
+            // Wenn keine neuen Stile hinzugefügt werden sollen
+            if (stile.length === 0) {
+                return res.json({ success: true, message: "Stile erfolgreich aktualisiert", stile: [] });
+            }
+
+            // Zuordnung von Stil-IDs zu ENUM-Werten (basiert auf tatsächlichen DB-Daten)
+            const stilMapping = {
+                2: 'ShieldX',      // ShieldX
+                3: 'BJJ',          // BJJ
+                4: 'Kickboxen',    // Kickboxen
+                5: 'Karate',       // Enso Karate → wird als 'Karate' in ENUM gespeichert
+                7: 'Taekwon-Do',   // Taekwon-Do
+                8: 'BJJ'           // Brazilian Jiu-Jitsu → auch als BJJ
+            };
+
+            // Filter ungültige Stil-IDs und konvertiere zu ENUM-Werten
+            const validValues = stile
+                .filter(stil_id => stilMapping[stil_id]) // Nur bekannte IDs
+                .map(stil_id => [mitglied_id, stilMapping[stil_id]]);
+
+            if (validValues.length === 0) {
+                return res.json({ success: true, message: "Keine gültigen Stile zum Hinzufügen", stile: [] });
+            }
+
+            const insertQuery = "INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?";
+            const insertValues = validValues;
+
+            db.query(insertQuery, [insertValues], (insertErr) => {
+                if (insertErr) {
+                    console.error("❌ Fehler beim Hinzufügen neuer Stile:", insertErr);
+                    return res.status(500).json({ error: "Fehler beim Hinzufügen neuer Stile" });
+                }
+
+                // WICHTIG: Auch Einträge in mitglied_stil_data erstellen für Statistiken
+                // Erstelle für jeden Stil einen Eintrag (falls noch nicht vorhanden)
+                const stilDataPromises = stile.map(stil_id => {
+                    return new Promise((resolve, reject) => {
+                        // Prüfe ob bereits vorhanden
+                        const checkQuery = 'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?';
+                        db.query(checkQuery, [mitglied_id, stil_id], (checkErr, checkResults) => {
+                            if (checkErr) {
+                                console.error('Fehler beim Prüfen mitglied_stil_data:', checkErr);
+                                return reject(checkErr);
+                            }
+
+                            if (checkResults.length > 0) {
+                                // Bereits vorhanden
+                                return resolve();
+                            }
+
+                            // Neu erstellen ohne Graduierung (wird später gesetzt)
+                            const insertDataQuery = `
+                                INSERT INTO mitglied_stil_data
+                                (mitglied_id, stil_id, current_graduierung_id, erstellt_am)
+                                VALUES (?, ?, NULL, CURRENT_TIMESTAMP)
+                            `;
+                            db.query(insertDataQuery, [mitglied_id, stil_id], (insertDataErr) => {
+                                if (insertDataErr) {
+                                    console.error('Fehler beim Erstellen mitglied_stil_data:', insertDataErr);
+                                    return reject(insertDataErr);
+                                }
+                                resolve();
+                            });
+                        });
+                    });
+                });
+
+                // Warte auf alle Inserts
+                Promise.all(stilDataPromises)
+                    .then(() => {
+                        res.json({
+                            success: true,
+                            message: "Stile erfolgreich aktualisiert",
+                            mitglied_id: mitglied_id,
+                            stile: stile
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Fehler beim Aktualisieren mitglied_stil_data:', err);
+                        // Trotzdem Success zurückgeben, da mitglied_stile erfolgreich war
+                        res.json({
+                            success: true,
+                            message: "Stile aktualisiert, aber Warnung bei Stil-Daten",
+                            mitglied_id: mitglied_id,
+                            stile: stile
+                        });
+                    });
             });
         });
     });
