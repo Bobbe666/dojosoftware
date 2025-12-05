@@ -1330,9 +1330,10 @@ router.get('/:id/statistiken', (req, res) => {
         g.kategorie,
         g.dan_grad,
         g.reihenfolge,
-        COUNT(m.mitglied_id) as anzahl_mitglieder
+        COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
       FROM graduierungen g
-      LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1 AND m.stil_id = g.stil_id
+      LEFT JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id AND msd.stil_id = g.stil_id
+      LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
       WHERE g.stil_id = ? AND g.aktiv = 1
       GROUP BY g.graduierung_id, g.name, g.farbe_hex, g.farbe_sekundaer, g.kategorie, g.dan_grad, g.reihenfolge
       ORDER BY g.reihenfolge ASC
@@ -1352,12 +1353,13 @@ router.get('/:id/statistiken', (req, res) => {
       const kategorieStatsQuery = `
         SELECT
           g.kategorie,
-          COUNT(g.graduierung_id) as anzahl_graduierungen,
-          COUNT(m.mitglied_id) as anzahl_mitglieder,
+          COUNT(DISTINCT g.graduierung_id) as anzahl_graduierungen,
+          COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder,
           AVG(g.trainingsstunden_min) as avg_trainingsstunden,
           AVG(g.mindestzeit_monate) as avg_mindestzeit
         FROM graduierungen g
-        LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1 AND m.stil_id = g.stil_id
+        LEFT JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id AND msd.stil_id = g.stil_id
+        LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
         WHERE g.stil_id = ? AND g.aktiv = 1
         GROUP BY g.kategorie
         ORDER BY
@@ -1383,21 +1385,22 @@ router.get('/:id/statistiken', (req, res) => {
 
         // Alters-Statistiken
         const altersStatsQuery = `
-          SELECT 
-            CASE 
-              WHEN YEAR(CURDATE()) - YEAR(geburtsdatum) < 18 THEN 'Unter 18'
-              WHEN YEAR(CURDATE()) - YEAR(geburtsdatum) BETWEEN 18 AND 30 THEN '18-30'
-              WHEN YEAR(CURDATE()) - YEAR(geburtsdatum) BETWEEN 31 AND 50 THEN '31-50'
+          SELECT
+            CASE
+              WHEN YEAR(CURDATE()) - YEAR(m.geburtsdatum) < 18 THEN 'Unter 18'
+              WHEN YEAR(CURDATE()) - YEAR(m.geburtsdatum) BETWEEN 18 AND 30 THEN '18-30'
+              WHEN YEAR(CURDATE()) - YEAR(m.geburtsdatum) BETWEEN 31 AND 50 THEN '31-50'
               ELSE 'Über 50'
             END as altersgruppe,
-            COUNT(*) as anzahl
-          FROM mitglieder 
-          WHERE stil_id = ? AND aktiv = 1 AND geburtsdatum IS NOT NULL
+            COUNT(DISTINCT m.mitglied_id) as anzahl
+          FROM mitglied_stil_data msd
+          JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id
+          WHERE msd.stil_id = ? AND m.aktiv = 1 AND m.geburtsdatum IS NOT NULL
           GROUP BY altersgruppe
-          ORDER BY 
+          ORDER BY
             CASE altersgruppe
               WHEN 'Unter 18' THEN 1
-              WHEN '18-30' THEN 2  
+              WHEN '18-30' THEN 2
               WHEN '31-50' THEN 3
               ELSE 4
             END
@@ -1415,13 +1418,14 @@ router.get('/:id/statistiken', (req, res) => {
 
           // Geschlechts-Statistiken
           const geschlechtStatsQuery = `
-            SELECT 
-              geschlecht,
-              COUNT(*) as anzahl
-            FROM mitglieder 
-            WHERE stil_id = ? AND aktiv = 1 AND geschlecht IS NOT NULL
-            GROUP BY geschlecht
-            ORDER BY geschlecht
+            SELECT
+              m.geschlecht,
+              COUNT(DISTINCT m.mitglied_id) as anzahl
+            FROM mitglied_stil_data msd
+            JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id
+            WHERE msd.stil_id = ? AND m.aktiv = 1 AND m.geschlecht IS NOT NULL
+            GROUP BY m.geschlecht
+            ORDER BY m.geschlecht
           `;
 
           connection.query(geschlechtStatsQuery, [stilId], (geschlechtError, geschlechtStats) => {
