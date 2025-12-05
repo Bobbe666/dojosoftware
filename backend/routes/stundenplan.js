@@ -58,14 +58,28 @@ router.post("/", async (req, res) => {
       raum_id || null,
     ]);
 
-    res.status(201).json({
-      id: result.insertId,
-      tag,
-      uhrzeit_start,
-      uhrzeit_ende,
-      kurs_id,
-      raum_id: raum_id || null,
-    });
+    // Hole die vollständigen Daten mit JOINs für die Response
+    const [newEntry] = await db.promise().query(`
+      SELECT
+        s.stundenplan_id AS id,
+        s.tag,
+        s.uhrzeit_start,
+        s.uhrzeit_ende,
+        s.kurs_id,
+        s.raum_id,
+        k.gruppenname AS kursname,
+        k.stil,
+        t.vorname AS trainer_vorname,
+        t.nachname AS trainer_nachname,
+        r.name AS raumname
+      FROM stundenplan s
+      LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+      LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
+      LEFT JOIN raeume r ON s.raum_id = r.id
+      WHERE s.stundenplan_id = ?
+    `, [result.insertId]);
+
+    res.status(201).json(newEntry[0]);
   } catch (err) {
     console.error("Fehler beim Einfügen des Stundenplan-Eintrags:", err);
     res.status(500).json({ error: "Fehler beim Einfügen", details: err.message });
@@ -101,15 +115,28 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ error: "Stundenplan-Eintrag nicht gefunden" });
     }
 
-    res.json({
-      success: true,
-      id,
-      tag,
-      uhrzeit_start,
-      uhrzeit_ende,
-      kurs_id,
-      raum_id: raum_id || null,
-    });
+    // Hole die vollständigen Daten mit JOINs für die Response
+    const [updatedEntry] = await db.promise().query(`
+      SELECT
+        s.stundenplan_id AS id,
+        s.tag,
+        s.uhrzeit_start,
+        s.uhrzeit_ende,
+        s.kurs_id,
+        s.raum_id,
+        k.gruppenname AS kursname,
+        k.stil,
+        t.vorname AS trainer_vorname,
+        t.nachname AS trainer_nachname,
+        r.name AS raumname
+      FROM stundenplan s
+      LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+      LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
+      LEFT JOIN raeume r ON s.raum_id = r.id
+      WHERE s.stundenplan_id = ?
+    `, [id]);
+
+    res.json(updatedEntry[0]);
   } catch (err) {
     console.error("Fehler beim Aktualisieren des Stundenplan-Eintrags:", err);
     res.status(500).json({ error: "Fehler beim Aktualisieren", details: err.message });
