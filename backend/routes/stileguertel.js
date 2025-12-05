@@ -263,13 +263,14 @@ router.get('/:id', (req, res) => {
     }
 
     // Stil mit korrekter Mitglieder-Anzahl abrufen
-    // Zählt Mitglieder direkt über stil_id
+    // Zählt Mitglieder über mitglied_stil_data
     const stilQuery = `
       SELECT
         s.*,
-        COUNT(DISTINCT m.mitglied_id) as anzahl_mitglieder
+        COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
       FROM stile s
-      LEFT JOIN mitglieder m ON s.stil_id = m.stil_id AND m.aktiv = 1
+      LEFT JOIN mitglied_stil_data msd ON s.stil_id = msd.stil_id
+      LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
       WHERE s.stil_id = ? AND s.aktiv = 1
       GROUP BY s.stil_id
     `;
@@ -1519,9 +1520,10 @@ router.get('/:stilId/graduierungen/:graduierungId/mitglieder', (req, res) => {
       m.geburtsdatum,
       m.email,
       m.telefon
-    FROM mitglieder m
-    WHERE m.stil_id = ?
-      AND m.graduierung_id = ?
+    FROM mitglied_stil_data msd
+    JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id
+    WHERE msd.stil_id = ?
+      AND msd.current_graduierung_id = ?
       AND m.aktiv = 1
     ORDER BY m.nachname, m.vorname
   `;
