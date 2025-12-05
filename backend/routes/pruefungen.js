@@ -208,9 +208,9 @@ router.put('/termine/:id', (req, res) => {
   }
 
   const {
-    pruefungsdatum,
-    pruefungszeit,
-    pruefungsort,
+    datum,
+    zeit,
+    ort,
     pruefer_name,
     stil_id,
     pruefungsgebuehr,
@@ -219,10 +219,10 @@ router.put('/termine/:id', (req, res) => {
     teilnahmebedingungen
   } = req.body;
 
-  if (!pruefungsdatum || !stil_id) {
+  if (!datum || !stil_id) {
     return res.status(400).json({
       error: 'Fehlende erforderliche Felder',
-      required: ['pruefungsdatum', 'stil_id']
+      required: ['datum', 'stil_id']
     });
   }
 
@@ -242,9 +242,9 @@ router.put('/termine/:id', (req, res) => {
   `;
 
   const values = [
-    pruefungsdatum,
-    pruefungszeit || '10:00',
-    pruefungsort || null,
+    datum,
+    zeit || '10:00',
+    ort || null,
     pruefer_name || null,
     stil_id,
     pruefungsgebuehr || null,

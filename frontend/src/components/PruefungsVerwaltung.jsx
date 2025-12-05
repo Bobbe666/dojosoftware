@@ -818,10 +818,10 @@ const PruefungsVerwaltung = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          pruefungsdatum: editTermin.pruefungsdatum,
-          pruefungszeit: editTermin.pruefungszeit,
-          pruefungsort: editTermin.pruefungsort,
-          pruefer_name: editTermin.pruefer_name,
+          datum: editTermin.pruefungsdatum,
+          zeit: editTermin.pruefungszeit,
+          ort: editTermin.pruefungsort,
+          pruefer_name: editTermin.pruefer_name || null,
           stil_id: editTermin.stil_id,
           pruefungsgebuehr: editTermin.pruefungsgebuehr ? parseFloat(editTermin.pruefungsgebuehr) : null,
           anmeldefrist: editTermin.anmeldefrist || null,
