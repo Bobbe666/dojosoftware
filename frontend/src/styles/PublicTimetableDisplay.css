@@ -496,15 +496,17 @@
 }
 
 .mini-name {
-  font-size: 1.1rem; /* GRÖßER - Gruppenname wie "Kinder 4-6 Jahre" */
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 0.7rem; /* KLEINER - Gruppenname wie "Kinder 4-6 Jahre" */
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: 0.2rem;
 }
 
 .mini-style {
-  font-size: 0.7rem; /* KLEINER - Stil wie "Enso Karate" */
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1rem; /* GRÖßER - Stil wie "Enso Karate", "Kickboxen" */
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.2rem;
 }
 
 .no-day-classes {

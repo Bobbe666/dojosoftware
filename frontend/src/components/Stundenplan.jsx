@@ -404,8 +404,8 @@ const Stundenplan = () => {
                             <div className="mini-time">
                               {formatTime(eintrag.uhrzeit_start)} - {formatTime(eintrag.uhrzeit_ende)}
                             </div>
-                            <div className="mini-name">{eintrag.kursname}</div>
                             <div className="mini-style">{eintrag.stil}</div>
+                            <div className="mini-name">{eintrag.kursname}</div>
                             {eintrag.raumname && (
                               <div className="mini-raum">🏢 {eintrag.raumname}</div>
                             )}
