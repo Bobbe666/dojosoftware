@@ -62,7 +62,7 @@ router.get('/', (req, res) => {
       });
     }
 
-    // Query mit korrekter Mitglieder-Zählung direkt über stil_id
+    // Query mit korrekter Mitglieder-Zählung über mitglied_stil_data
     const stilQuery = `
       SELECT
         s.stil_id,
@@ -72,9 +72,10 @@ router.get('/', (req, res) => {
         s.reihenfolge,
         s.erstellt_am,
         s.aktualisiert_am,
-        COUNT(DISTINCT m.mitglied_id) as anzahl_mitglieder
+        COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
       FROM stile s
-      LEFT JOIN mitglieder m ON s.stil_id = m.stil_id AND m.aktiv = 1
+      LEFT JOIN mitglied_stil_data msd ON s.stil_id = msd.stil_id
+      LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
       GROUP BY s.stil_id, s.name, s.beschreibung, s.aktiv, s.reihenfolge, s.erstellt_am, s.aktualisiert_am
       ORDER BY s.aktiv DESC, s.reihenfolge ASC, s.name ASC
     `;
@@ -699,7 +700,12 @@ router.delete('/:id', (req, res) => {
       }
 
       // Prüfen ob Mitglieder zugeordnet sind
-      const memberCheckQuery = 'SELECT COUNT(*) as count FROM mitglieder WHERE stil_id = ? AND aktiv = 1';
+      const memberCheckQuery = `
+        SELECT COUNT(DISTINCT msd.mitglied_id) as count
+        FROM mitglied_stil_data msd
+        JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id
+        WHERE msd.stil_id = ? AND m.aktiv = 1
+      `;
       connection.query(memberCheckQuery, [stilId], (memberCheckError, memberRows) => {
         if (memberCheckError) {
           console.error('Fehler beim Prüfen der Mitglieder:', memberCheckError);
@@ -1114,7 +1120,12 @@ router.delete('/graduierungen/:graduierungId', (req, res) => {
       }
 
       // Prüfen ob Mitglieder diese Graduierung haben
-      const memberCheckQuery = 'SELECT COUNT(*) as count FROM mitglieder WHERE graduierung_id = ? AND aktiv = 1';
+      const memberCheckQuery = `
+        SELECT COUNT(DISTINCT msd.mitglied_id) as count
+        FROM mitglied_stil_data msd
+        JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id
+        WHERE msd.current_graduierung_id = ? AND m.aktiv = 1
+      `;
       connection.query(memberCheckQuery, [graduierungId], (memberCheckError, memberRows) => {
         if (memberCheckError) {
           console.error('Fehler beim Prüfen der Mitglieder:', memberCheckError);
@@ -1471,15 +1482,16 @@ router.get('/kategorien/uebersicht', (req, res) => {
     }
 
     const kategorieUebersichtQuery = `
-      SELECT 
+      SELECT
         s.stil_id,
         s.name as stil_name,
         g.kategorie,
-        COUNT(g.graduierung_id) as anzahl_graduierungen,
-        COUNT(DISTINCT m.mitglied_id) as anzahl_mitglieder
+        COUNT(DISTINCT g.graduierung_id) as anzahl_graduierungen,
+        COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
       FROM stile s
       LEFT JOIN graduierungen g ON s.stil_id = g.stil_id AND g.aktiv = 1
-      LEFT JOIN mitglieder m ON g.graduierung_id = m.graduierung_id AND m.aktiv = 1
+      LEFT JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id AND msd.stil_id = g.stil_id
+      LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
       WHERE s.aktiv = 1
       GROUP BY s.stil_id, s.name, g.kategorie
       ORDER BY s.name ASC, 
