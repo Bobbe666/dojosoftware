@@ -35,7 +35,8 @@
       "WebSearch",
       "Bash(unzip:*)",
       "Bash(python -m json.tool:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

@@ -2731,37 +2731,89 @@ const PruefungsVerwaltung = () => {
       {/* Statistiken Tab */}
       {activeTab === 'statistiken' && statistiken && (
         <div>
-          <h2>Prüfungsstatistiken</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <div className="stat-card">
-              <h3>Gesamt</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Prüfungsstatistiken</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Gesamt</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
                 {statistiken.gesamt.gesamt}
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Prüfungen insgesamt</div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Prüfungen</div>
             </div>
-            <div className="stat-card">
-              <h3>Bestanden</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Bestanden</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
                 {statistiken.gesamt.bestanden}
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>
                 {statistiken.gesamt.gesamt > 0
-                  ? `${Math.round((statistiken.gesamt.bestanden / statistiken.gesamt.gesamt) * 100)}% Erfolgsquote`
-                  : '0% Erfolgsquote'}
+                  ? `${Math.round((statistiken.gesamt.bestanden / statistiken.gesamt.gesamt) * 100)}% Quote`
+                  : '0% Quote'}
               </div>
             </div>
-            <div className="stat-card">
-              <h3>Nicht bestanden</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ef4444' }}>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Nicht bestanden</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
                 {statistiken.gesamt.nicht_bestanden}
               </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                {statistiken.gesamt.gesamt > 0
+                  ? `${Math.round((statistiken.gesamt.nicht_bestanden / statistiken.gesamt.gesamt) * 100)}%`
+                  : '0%'}
+              </div>
             </div>
-            <div className="stat-card">
-              <h3>Geplant</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Geplant</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
                 {statistiken.gesamt.geplant}
               </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Anstehend</div>
+            </div>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Kandidaten</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+                {kandidaten.length}
+              </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                {kandidaten.filter(k => k.berechtigt).length} berechtigt
+              </div>
+            </div>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Ø Punktzahl</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+                {(() => {
+                  const bestandenePruefungen = abgeschlossenePruefungen.filter(p => p.bestanden && p.punktzahl && p.max_punktzahl);
+                  const avgPunktzahl = bestandenePruefungen.length > 0
+                    ? bestandenePruefungen.reduce((sum, p) => sum + ((p.punktzahl / p.max_punktzahl) * 100), 0) / bestandenePruefungen.length
+                    : 0;
+                  return avgPunktzahl.toFixed(0);
+                })()}%
+              </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Bestanden</div>
+            </div>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Ø Training</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+                {(() => {
+                  const avgTrainingsstunden = kandidaten.length > 0
+                    ? kandidaten.reduce((sum, k) => sum + (k.trainingsstunden || 0), 0) / kandidaten.length
+                    : 0;
+                  return avgTrainingsstunden.toFixed(0);
+                })()}h
+              </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Kandidaten</div>
+            </div>
+            <div className="stat-card" style={{ padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Ø Monate</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#06b6d4' }}>
+                {(() => {
+                  const avgMonate = kandidaten.length > 0
+                    ? kandidaten.reduce((sum, k) => sum + (k.monate_seit_letzter || 0), 0) / kandidaten.length
+                    : 0;
+                  return avgMonate.toFixed(0);
+                })()}
+              </div>
+              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Seit letzter</div>
             </div>
           </div>
 
@@ -2883,76 +2935,6 @@ const PruefungsVerwaltung = () => {
               </div>
             </div>
           )}
-
-          {/* Durchschnittswerte */}
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Durchschnittswerte</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-              {(() => {
-                const bestandenePruefungen = abgeschlossenePruefungen.filter(p => p.bestanden && p.punktzahl && p.max_punktzahl);
-                const avgPunktzahl = bestandenePruefungen.length > 0
-                  ? bestandenePruefungen.reduce((sum, p) => sum + ((p.punktzahl / p.max_punktzahl) * 100), 0) / bestandenePruefungen.length
-                  : 0;
-
-                // Berechne durchschnittliche Trainingsstunden aus Kandidaten
-                const avgTrainingsstunden = kandidaten.length > 0
-                  ? kandidaten.reduce((sum, k) => sum + (k.trainingsstunden || 0), 0) / kandidaten.length
-                  : 0;
-
-                return (
-                  <>
-                    <div className="stat-card">
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        Durchschn. Punktzahl
-                      </h4>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>
-                        {avgPunktzahl.toFixed(1)}%
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                        bei bestandenen Prüfungen
-                      </div>
-                    </div>
-
-                    <div className="stat-card">
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        Durchschn. Trainingsstunden
-                      </h4>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
-                        {avgTrainingsstunden.toFixed(0)}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                        bei aktuellen Kandidaten
-                      </div>
-                    </div>
-
-                    <div className="stat-card">
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        Berechtigte Kandidaten
-                      </h4>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                        {kandidaten.filter(k => k.berechtigt).length}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                        von {kandidaten.length} Kandidaten
-                      </div>
-                    </div>
-
-                    <div className="stat-card">
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                        Bereits zugelassen
-                      </h4>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#06b6d4' }}>
-                        {zugelassenePruefungen.length}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
-                        Prüfungen geplant
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
 
           {/* Monatliche Entwicklung */}
           <div style={{ marginTop: '2rem' }}>
