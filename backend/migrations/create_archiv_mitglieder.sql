@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS archiv_mitglieder (
   -- Prüfungshistorie (JSON)
   pruefungen JSON DEFAULT NULL COMMENT 'Alle Prüfungen als JSON',
 
+  -- User/Login-Daten (JSON)
+  user_daten JSON DEFAULT NULL COMMENT 'Login-Daten (ohne Passwort) als JSON',
+
   -- Archiv-Metadaten
   archiviert_am DATETIME DEFAULT CURRENT_TIMESTAMP,
   archiviert_von INT DEFAULT NULL COMMENT 'User-ID des Administrators',

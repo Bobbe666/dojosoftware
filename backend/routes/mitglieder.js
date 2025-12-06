@@ -2078,7 +2078,21 @@ router.post("/:id/archivieren", async (req, res) => {
       [mitgliedId]
     );
 
-    // 5. Erstelle Archiv-Eintrag
+    // 5. Hole User/Login-Daten falls vorhanden
+    const [userData] = await db.promise().query(
+      'SELECT * FROM users WHERE mitglied_id = ?',
+      [mitgliedId]
+    );
+
+    // 6. Bereite User-Daten für Archiv vor (ohne Passwort!)
+    let userDataForArchive = null;
+    if (userData.length > 0) {
+      const user = { ...userData[0] };
+      delete user.password; // WICHTIG: Passwort nicht archivieren
+      userDataForArchive = user;
+    }
+
+    // 7. Erstelle Archiv-Eintrag
     const insertArchivQuery = `
       INSERT INTO archiv_mitglieder (
         mitglied_id, dojo_id, vorname, nachname, geburtsdatum,
@@ -2087,9 +2101,9 @@ router.post("/:id/archivieren", async (req, res) => {
         tarif_id, zahlungszyklus_id, gekuendigt, gekuendigt_am, kuendigungsgrund,
         vereinsordnung_akzeptiert, vereinsordnung_datum,
         security_question, security_answer,
-        stil_daten, sepa_mandate, pruefungen,
+        stil_daten, sepa_mandate, pruefungen, user_daten,
         archiviert_am, archiviert_von, archivierungsgrund
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
     `;
 
     const archivValues = [
@@ -2120,6 +2134,7 @@ router.post("/:id/archivieren", async (req, res) => {
       JSON.stringify(stilData),
       JSON.stringify(sepaMandate),
       JSON.stringify(pruefungen),
+      userDataForArchive ? JSON.stringify(userDataForArchive) : null,
       archiviert_von || null,
       grund || 'Mitglied archiviert'
     ];
@@ -2129,7 +2144,7 @@ router.post("/:id/archivieren", async (req, res) => {
 
     console.log(`✅ Archiv-Eintrag erstellt mit ID: ${archivId}`);
 
-    // 6. Kopiere Stil-Daten ins Archiv
+    // 8. Kopiere Stil-Daten ins Archiv
     for (const stil of stilData) {
       await db.promise().query(
         `INSERT INTO archiv_mitglied_stil_data
@@ -2139,13 +2154,19 @@ router.post("/:id/archivieren", async (req, res) => {
       );
     }
 
-    // 7. Lösche Mitglied aus Haupt-Tabellen (CASCADE löscht verknüpfte Daten)
+    // 9. Lösche User/Login-Zugang (Login wird gesperrt!)
+    if (userData.length > 0) {
+      await db.promise().query('DELETE FROM users WHERE mitglied_id = ?', [mitgliedId]);
+      console.log(`🔒 Login-Zugang für Mitglied ${mitgliedId} gelöscht`);
+    }
+
+    // 10. Lösche Mitglied aus Haupt-Tabellen (CASCADE löscht verknüpfte Daten)
     await db.promise().query('DELETE FROM mitglieder WHERE mitglied_id = ?', [mitgliedId]);
 
-    // 8. Commit Transaction
+    // 11. Commit Transaction
     await db.promise().query('COMMIT');
 
-    console.log(`✅ Mitglied ${mitgliedId} erfolgreich archiviert`);
+    console.log(`✅ Mitglied ${mitgliedId} erfolgreich archiviert und Login gesperrt`);
 
     res.json({
       success: true,
