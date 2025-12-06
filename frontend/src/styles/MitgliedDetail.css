@@ -43,12 +43,10 @@
   padding: 0.75rem 0.75rem;
   display: flex;
   flex-direction: column;
-  position: fixed;
+  flex-shrink: 0;
   height: 100vh;
-  left: 0;
+  position: sticky;
   top: 0;
-  bottom: 0;
-  z-index: 100;
   transition: all 0.3s ease;
   overflow-y: auto;
   overflow-x: hidden;
@@ -62,7 +60,7 @@
 
 /* Member Profile: Content Area Anpassung */
 .member-profile-wrapper .mitglied-content {
-  margin-top: 60px;
+  padding-top: calc(2rem + 60px);
   min-height: calc(100vh - 60px);
 }
 /* Scrollbar Styling - nur sichtbar wenn nötig */
@@ -109,15 +107,14 @@
 
 .mitglied-content {
   flex: 1;
-  margin-left: 280px;
   padding: 2rem;
   background: #000000;
   min-height: 100vh;
-  transition: margin-left 0.3s ease;
+  overflow-x: hidden;
 }
 
 .mitglied-content.sidebar-collapsed {
-  margin-left: 70px;
+  /* Kein margin-left mehr nötig, da Sidebar im Flex-Layout ist */
 }
 
 /* === 👤 Mitglied-Header === */
