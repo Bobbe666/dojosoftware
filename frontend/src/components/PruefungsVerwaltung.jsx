@@ -2856,20 +2856,20 @@ const PruefungsVerwaltung = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 {statistiken.gurtverteilung.map((gurt, index) => (
                   <div key={index} className="stat-card" style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <div
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          backgroundColor: gurt.farbe || 'rgba(255, 255, 255, 0.1)',
-                          border: '2px solid rgba(255, 255, 255, 0.3)',
-                          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)'
-                        }}
-                      />
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600' }}>{gurt.graduierung_name}</h4>
-                        <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.5)' }}>{gurt.stil_name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      {/* Gürtel-Darstellung als Rechteck */}
+                      <div style={{
+                        width: '40px',
+                        height: '28px',
+                        backgroundColor: gurt.farbe || '#CCCCCC',
+                        borderRadius: '4px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+                        flexShrink: 0
+                      }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.9)', fontWeight: '600' }}>{gurt.stil_name}</span>
+                        <h4 style={{ margin: 0, fontSize: '0.8125rem', fontWeight: '500', color: 'rgba(255, 255, 255, 0.7)' }}>{gurt.graduierung_name}</h4>
                       </div>
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#EAB308', marginBottom: '0.25rem' }}>
