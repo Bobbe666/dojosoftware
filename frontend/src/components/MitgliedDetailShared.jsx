@@ -149,6 +149,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [showVertragDetails, setShowVertragDetails] = useState(false);
   const [showStructuredDetails, setShowStructuredDetails] = useState(false);
   const [selectedVertrag, setSelectedVertrag] = useState(null);
+
+  // Drei-Punkte-Menü State
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveReason, setArchiveReason] = useState('');
   const [newVertrag, setNewVertrag] = useState(() => {
     const heute = new Date();
     const in12Monaten = new Date(heute);
@@ -1794,6 +1799,34 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     setActiveIndex(index);
   };
 
+  // Archivierungs-Funktion
+  const handleArchiveMitglied = async () => {
+    if (!window.confirm(`Möchten Sie ${mitglied.vorname} ${mitglied.nachname} wirklich archivieren?\n\nDas Mitglied wird aus der aktiven Liste entfernt und ins Archiv verschoben.`)) {
+      return;
+    }
+
+    try {
+      const response = await axios.post(`/mitglieder/${id}/archivieren`, {
+        grund: archiveReason || 'Mitglied archiviert',
+        archiviert_von: user?.id || null
+      });
+
+      if (response.data.success) {
+        alert(`✅ ${mitglied.vorname} ${mitglied.nachname} wurde erfolgreich archiviert.`);
+        setShowArchiveModal(false);
+        navigate('/mitglieder'); // Zurück zur Mitgliederliste
+      }
+    } catch (error) {
+      console.error('Fehler beim Archivieren:', error);
+      alert('❌ Fehler beim Archivieren: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  // Drucken-Funktion
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) return <p>Lade Mitgliedsdaten...</p>;
   if (error) return <p className="error">{error}</p>;
   if (!mitglied) return <p>Keine Daten gefunden.</p>;
@@ -1928,22 +1961,208 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
         <div className={`mitglied-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           {/* Status-Badges horizontal oberhalb der Hauptinhalts-Karten */}
-          <div className="status-badges-horizontal">
-            <div className="status-badge-pill" title="Offene Dokumente">
-              <div className="pill-icon">📄</div>
-              <span className="pill-label">Dokumente</span>
-              <span className="pill-count">{offeneDokumente}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="status-badges-horizontal">
+              <div className="status-badge-pill" title="Offene Dokumente">
+                <div className="pill-icon">📄</div>
+                <span className="pill-label">Dokumente</span>
+                <span className="pill-count">{offeneDokumente}</span>
+              </div>
+              <div className="status-badge-pill" title="Offene Nachrichten">
+                <div className="pill-icon">📄</div>
+                <span className="pill-label">Nachrichten</span>
+                <span className="pill-count">{offeneNachrichten}</span>
+              </div>
+              <div className={`status-badge-pill ${offeneBeiträge>0 ? 'warn' : ''}`} title="Offene Beiträge">
+                <div className="pill-icon">📄</div>
+                <span className="pill-label">Beiträge</span>
+                <span className="pill-count">{offeneBeiträge}</span>
+              </div>
             </div>
-            <div className="status-badge-pill" title="Offene Nachrichten">
-              <div className="pill-icon">📄</div>
-              <span className="pill-label">Nachrichten</span>
-              <span className="pill-count">{offeneNachrichten}</span>
-            </div>
-            <div className={`status-badge-pill ${offeneBeiträge>0 ? 'warn' : ''}`} title="Offene Beiträge">
-              <div className="pill-icon">📄</div>
-              <span className="pill-label">Beiträge</span>
-              <span className="pill-count">{offeneBeiträge}</span>
-            </div>
+
+            {/* Drei-Punkte-Menü */}
+            {isAdmin && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowActionsMenu(!showActionsMenu)}
+                  style={{
+                    background: 'rgba(255, 215, 0, 0.1)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    color: '#FFD700',
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    minWidth: '40px',
+                    height: '40px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                  }}
+                  title="Aktionen"
+                >
+                  ⋮
+                </button>
+
+                {/* Dropdown-Menü */}
+                {showActionsMenu && (
+                  <>
+                    {/* Overlay zum Schließen */}
+                    <div
+                      onClick={() => setShowActionsMenu(false)}
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 998
+                      }}
+                    />
+
+                    <div style={{
+                      position: 'absolute',
+                      top: '45px',
+                      right: 0,
+                      background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                      padding: '8px',
+                      minWidth: '200px',
+                      zIndex: 999
+                    }}>
+                      <button
+                        onClick={() => {
+                          setEditMode(!editMode);
+                          setShowActionsMenu(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#fff',
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          fontSize: '0.95rem',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 215, 0, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>✏️</span>
+                        <span>{editMode ? 'Bearbeiten beenden' : 'Bearbeiten'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleSave();
+                          setShowActionsMenu(false);
+                        }}
+                        disabled={!editMode}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          color: editMode ? '#fff' : 'rgba(255, 255, 255, 0.3)',
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          cursor: editMode ? 'pointer' : 'not-allowed',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          fontSize: '0.95rem',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (editMode) e.currentTarget.style.background = 'rgba(46, 213, 115, 0.1)';
+                        }}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>💾</span>
+                        <span>Speichern</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handlePrint();
+                          setShowActionsMenu(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#fff',
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          fontSize: '0.95rem',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(52, 152, 219, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>🖨️</span>
+                        <span>Drucken</span>
+                      </button>
+
+                      <div style={{
+                        height: '1px',
+                        background: 'rgba(255, 215, 0, 0.2)',
+                        margin: '8px 0'
+                      }} />
+
+                      <button
+                        onClick={() => {
+                          setShowArchiveModal(true);
+                          setShowActionsMenu(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#e74c3c',
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          fontSize: '0.95rem',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(231, 76, 60, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>🗑️</span>
+                        <span>Ins Archiv verschieben</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <AnimatePresence mode="wait">
@@ -7413,6 +7632,130 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   Schließen
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archivierungs-Modal */}
+      {showArchiveModal && (
+        <div
+          onClick={() => setShowArchiveModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '100%',
+              border: '1px solid rgba(231, 76, 60, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <h2 style={{ color: '#e74c3c', marginBottom: '1.5rem', fontSize: '1.5rem' }}>
+              🗑️ Mitglied archivieren
+            </h2>
+
+            <div style={{ marginBottom: '1.5rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <p>
+                Möchten Sie <strong style={{ color: '#FFD700' }}>{mitglied.vorname} {mitglied.nachname}</strong> wirklich archivieren?
+              </p>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', marginTop: '1rem' }}>
+                Das Mitglied wird aus der aktiven Liste entfernt und mit allen Daten ins Archiv verschoben.
+                Diese Aktion kann nicht rückgängig gemacht werden.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                Grund (optional):
+              </label>
+              <textarea
+                value={archiveReason}
+                onChange={(e) => setArchiveReason(e.target.value)}
+                placeholder="z.B. Austritt, Umzug, Kündigung..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: '#fff',
+                  fontSize: '0.95rem',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowArchiveModal(false);
+                  setArchiveReason('');
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                Abbrechen
+              </button>
+
+              <button
+                onClick={handleArchiveMitglied}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  boxShadow: '0 4px 12px rgba(231, 76, 60, 0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(231, 76, 60, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.3)';
+                }}
+              >
+                🗑️ Jetzt archivieren
+              </button>
             </div>
           </div>
         </div>

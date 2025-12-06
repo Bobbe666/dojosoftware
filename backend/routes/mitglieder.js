@@ -2020,4 +2020,228 @@ router.get('/:id/birthday-check', (req, res) => {
   });
 });
 
+// ==============================
+// ARCHIVIERUNG
+// ==============================
+
+/**
+ * POST /mitglieder/:id/archivieren
+ * Archiviert ein Mitglied (verschiebt in archiv_mitglieder Tabelle)
+ */
+router.post("/:id/archivieren", async (req, res) => {
+  const mitgliedId = parseInt(req.params.id);
+  const { grund, archiviert_von } = req.body;
+
+  console.log(`📦 Archivierung von Mitglied ${mitgliedId} gestartet...`);
+
+  try {
+    // Starte Transaction
+    await db.promise().query('START TRANSACTION');
+
+    // 1. Hole alle Mitgliedsdaten
+    const [mitgliedRows] = await db.promise().query(
+      'SELECT * FROM mitglieder WHERE mitglied_id = ?',
+      [mitgliedId]
+    );
+
+    if (mitgliedRows.length === 0) {
+      await db.promise().query('ROLLBACK');
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const mitglied = mitgliedRows[0];
+
+    // 2. Hole Stil-Daten
+    const [stilData] = await db.promise().query(
+      `SELECT msd.*, s.name as stil_name, g.name as graduierung_name
+       FROM mitglied_stil_data msd
+       LEFT JOIN stile s ON msd.stil_id = s.stil_id
+       LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
+       WHERE msd.mitglied_id = ?`,
+      [mitgliedId]
+    );
+
+    // 3. Hole SEPA-Mandate
+    const [sepaMandate] = await db.promise().query(
+      'SELECT * FROM sepa_mandate WHERE mitglied_id = ? ORDER BY created_at DESC',
+      [mitgliedId]
+    );
+
+    // 4. Hole Prüfungshistorie
+    const [pruefungen] = await db.promise().query(
+      `SELECT p.*, pt.pruefungsdatum, g.name as graduierung_name
+       FROM pruefungen p
+       LEFT JOIN pruefungstermin_vorlagen pt ON p.termin_id = pt.termin_id
+       LEFT JOIN graduierungen g ON p.graduierung_nachher_id = g.graduierung_id
+       WHERE p.mitglied_id = ?
+       ORDER BY pt.pruefungsdatum DESC`,
+      [mitgliedId]
+    );
+
+    // 5. Erstelle Archiv-Eintrag
+    const insertArchivQuery = `
+      INSERT INTO archiv_mitglieder (
+        mitglied_id, dojo_id, vorname, nachname, geburtsdatum,
+        strasse, plz, ort, land, telefon, email, eintrittsdatum,
+        status, notizen, foto_pfad,
+        tarif_id, zahlungszyklus_id, gekuendigt, gekuendigt_am, kuendigungsgrund,
+        vereinsordnung_akzeptiert, vereinsordnung_datum,
+        security_question, security_answer,
+        stil_daten, sepa_mandate, pruefungen,
+        archiviert_am, archiviert_von, archivierungsgrund
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
+    `;
+
+    const archivValues = [
+      mitglied.mitglied_id,
+      mitglied.dojo_id,
+      mitglied.vorname,
+      mitglied.nachname,
+      mitglied.geburtsdatum,
+      mitglied.strasse,
+      mitglied.plz,
+      mitglied.ort,
+      mitglied.land || 'Deutschland',
+      mitglied.telefon,
+      mitglied.email,
+      mitglied.eintrittsdatum,
+      mitglied.status,
+      mitglied.notizen,
+      mitglied.foto_pfad,
+      mitglied.tarif_id,
+      mitglied.zahlungszyklus_id,
+      mitglied.gekuendigt || false,
+      mitglied.gekuendigt_am,
+      mitglied.kuendigungsgrund,
+      mitglied.vereinsordnung_akzeptiert || false,
+      mitglied.vereinsordnung_datum,
+      mitglied.security_question,
+      mitglied.security_answer,
+      JSON.stringify(stilData),
+      JSON.stringify(sepaMandate),
+      JSON.stringify(pruefungen),
+      archiviert_von || null,
+      grund || 'Mitglied archiviert'
+    ];
+
+    const [archivResult] = await db.promise().query(insertArchivQuery, archivValues);
+    const archivId = archivResult.insertId;
+
+    console.log(`✅ Archiv-Eintrag erstellt mit ID: ${archivId}`);
+
+    // 6. Kopiere Stil-Daten ins Archiv
+    for (const stil of stilData) {
+      await db.promise().query(
+        `INSERT INTO archiv_mitglied_stil_data
+         (archiv_id, mitglied_id, stil_id, current_graduierung_id, aktiv_seit)
+         VALUES (?, ?, ?, ?, ?)`,
+        [archivId, mitgliedId, stil.stil_id, stil.current_graduierung_id, stil.aktiv_seit]
+      );
+    }
+
+    // 7. Lösche Mitglied aus Haupt-Tabellen (CASCADE löscht verknüpfte Daten)
+    await db.promise().query('DELETE FROM mitglieder WHERE mitglied_id = ?', [mitgliedId]);
+
+    // 8. Commit Transaction
+    await db.promise().query('COMMIT');
+
+    console.log(`✅ Mitglied ${mitgliedId} erfolgreich archiviert`);
+
+    res.json({
+      success: true,
+      message: 'Mitglied erfolgreich archiviert',
+      archivId: archivId,
+      mitglied: {
+        id: mitglied.mitglied_id,
+        name: `${mitglied.vorname} ${mitglied.nachname}`
+      }
+    });
+
+  } catch (error) {
+    // Rollback bei Fehler
+    await db.promise().query('ROLLBACK');
+    console.error('❌ Fehler beim Archivieren:', error);
+    res.status(500).json({
+      error: 'Fehler beim Archivieren des Mitglieds',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /archiv
+ * Ruft alle archivierten Mitglieder ab
+ */
+router.get("/archiv", (req, res) => {
+  const { dojo_id, limit = 100, offset = 0 } = req.query;
+
+  let whereClause = '';
+  let queryParams = [];
+
+  if (dojo_id && dojo_id !== 'all') {
+    whereClause = 'WHERE dojo_id = ?';
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  const query = `
+    SELECT * FROM v_archiv_mitglieder_uebersicht
+    ${whereClause}
+    LIMIT ? OFFSET ?
+  `;
+
+  queryParams.push(parseInt(limit), parseInt(offset));
+
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Abrufen archivierter Mitglieder:", err);
+      return res.status(500).json({ error: "Fehler beim Abrufen des Archivs" });
+    }
+
+    res.json({
+      success: true,
+      count: results.length,
+      archivierte_mitglieder: results
+    });
+  });
+});
+
+/**
+ * GET /archiv/:archivId
+ * Ruft Details eines archivierten Mitglieds ab
+ */
+router.get("/archiv/:archivId", (req, res) => {
+  const archivId = parseInt(req.params.archivId);
+
+  const query = 'SELECT * FROM archiv_mitglieder WHERE archiv_id = ?';
+
+  db.query(query, [archivId], (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Abrufen des Archiv-Eintrags:", err);
+      return res.status(500).json({ error: "Fehler beim Abrufen des Archiv-Eintrags" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Archiv-Eintrag nicht gefunden' });
+    }
+
+    const archiv = results[0];
+
+    // Parse JSON-Felder
+    if (archiv.stil_daten && typeof archiv.stil_daten === 'string') {
+      archiv.stil_daten = JSON.parse(archiv.stil_daten);
+    }
+    if (archiv.sepa_mandate && typeof archiv.sepa_mandate === 'string') {
+      archiv.sepa_mandate = JSON.parse(archiv.sepa_mandate);
+    }
+    if (archiv.pruefungen && typeof archiv.pruefungen === 'string') {
+      archiv.pruefungen = JSON.parse(archiv.pruefungen);
+    }
+
+    res.json({
+      success: true,
+      archiv: archiv
+    });
+  });
+});
+
 module.exports = router;
