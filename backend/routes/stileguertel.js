@@ -62,6 +62,10 @@ router.get('/', (req, res) => {
       });
     }
 
+    // Optional: Filter nur aktive Stile
+    const { aktiv } = req.query;
+    const aktivFilter = aktiv === 'true' ? 'WHERE s.aktiv = 1' : '';
+
     // Query mit korrekter Mitglieder-Zählung über mitglied_stil_data
     const stilQuery = `
       SELECT
@@ -76,6 +80,7 @@ router.get('/', (req, res) => {
       FROM stile s
       LEFT JOIN mitglied_stil_data msd ON s.stil_id = msd.stil_id
       LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
+      ${aktivFilter}
       GROUP BY s.stil_id, s.name, s.beschreibung, s.aktiv, s.reihenfolge, s.erstellt_am, s.aktualisiert_am
       ORDER BY s.aktiv DESC, s.reihenfolge ASC, s.name ASC
     `;
