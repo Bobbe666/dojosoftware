@@ -151,6 +151,8 @@ const PruefungsVerwaltung = () => {
       if (!response.ok) throw new Error('Fehler beim Laden der Kandidaten');
 
       const data = await response.json();
+      console.log('🎯 Kandidaten-Daten:', data.kandidaten);
+      console.log('🔍 Beispiel-Kandidat:', data.kandidaten?.[0]);
       setKandidaten(data.kandidaten || []);
     } catch (error) {
       setError(error.message);
@@ -1714,18 +1716,19 @@ const PruefungsVerwaltung = () => {
             border: '1px solid rgba(255, 215, 0, 0.2)'
           }}>
             <div style={{ flex: 1 }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <h2 style={{ margin: 0, fontSize: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
                 Prüfungskandidaten
                 <span style={{
                   marginLeft: '0.5rem',
                   color: '#ffd700',
-                  fontWeight: 'bold'
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem'
                 }}>
                   ({filteredKandidaten.filter(k => k.berechtigt).length} berechtigt / {filteredKandidaten.length} angezeigt
                   {(berechtigungsFilter !== 'all' || kandidatenStilFilter !== 'all') && ` von ${kandidaten.length} gesamt`})
                 </span>
               </h2>
-              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+              <p style={{ margin: '0.125rem 0 0 0', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
                 {selectedKandidaten.length > 0
                   ? `${selectedKandidaten.length} Kandidat${selectedKandidaten.length > 1 ? 'en' : ''} ausgewählt`
                   : 'Wählen Sie Kandidaten aus, um sie zur Prüfung zuzulassen'}
@@ -1734,8 +1737,8 @@ const PruefungsVerwaltung = () => {
               {/* Filter Controls */}
               <div style={{
                 display: 'flex',
-                gap: '1rem',
-                marginTop: '1rem',
+                gap: '0.75rem',
+                marginTop: '0.75rem',
                 alignItems: 'center',
                 flexWrap: 'wrap'
               }}>
@@ -1893,7 +1896,7 @@ const PruefungsVerwaltung = () => {
             </div>
           ) : (
             <div className="table-container">
-              <table className="data-table" style={{ fontSize: '0.875rem' }}>
+              <table className="data-table" style={{ fontSize: '0.8125rem' }}>
                 <thead>
                   <tr>
                     <th style={{ width: '40px', textAlign: 'center', color: '#EAB308' }}>
@@ -1919,39 +1922,39 @@ const PruefungsVerwaltung = () => {
                       />
                     </th>
                     <th
-                      style={{ minWidth: '180px', color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      style={{ minWidth: '140px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
                       onClick={() => handleSort('name')}
                     >
                       Name <SortIcon columnKey="name" />
                     </th>
                     <th
-                      style={{ minWidth: '110px', color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      style={{ minWidth: '90px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
                       onClick={() => handleSort('geburtsdatum')}
                     >
-                      Geburtsdatum <SortIcon columnKey="geburtsdatum" />
+                      Geb.datum <SortIcon columnKey="geburtsdatum" />
                     </th>
                     <th
-                      style={{ minWidth: '100px', color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      style={{ minWidth: '80px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
                       onClick={() => handleSort('stil_name')}
                     >
                       Stil <SortIcon columnKey="stil_name" />
                     </th>
                     <th
-                      style={{ minWidth: '150px', color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      style={{ minWidth: '120px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
                       onClick={() => handleSort('graduierung_vorher_name')}
                     >
-                      Aktueller Gurt <SortIcon columnKey="graduierung_vorher_name" />
+                      Aktuell <SortIcon columnKey="graduierung_vorher_name" />
                     </th>
                     <th
-                      style={{ minWidth: '150px', color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      style={{ minWidth: '120px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
                       onClick={() => handleSort('graduierung_nachher_name')}
                     >
-                      Angestrebter Gurt <SortIcon columnKey="graduierung_nachher_name" />
+                      Ziel <SortIcon columnKey="graduierung_nachher_name" />
                     </th>
-                    <th style={{ minWidth: '140px', color: '#EAB308' }}>Trainingsstunden</th>
-                    <th style={{ minWidth: '100px', color: '#EAB308' }}>Wartezeit</th>
-                    <th style={{ minWidth: '130px', color: '#EAB308' }}>Status</th>
-                    <th style={{ minWidth: '120px', textAlign: 'center', color: '#EAB308' }}>Aktion</th>
+                    <th style={{ minWidth: '110px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Stunden</th>
+                    <th style={{ minWidth: '80px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Monate</th>
+                    <th style={{ minWidth: '100px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Status</th>
+                    <th style={{ minWidth: '100px', textAlign: 'center', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Aktion</th>
                   </tr>
                 </thead>
                 <tbody>
