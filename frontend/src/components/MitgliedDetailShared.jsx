@@ -1965,15 +1965,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            marginBottom: '0.5rem',
-            gap: '1rem'
+            marginBottom: '1rem',
+            gap: '1rem',
+            paddingRight: '1rem',
+            paddingTop: '0.5rem'
           }}>
-            {/* Status-Badges - kompakter */}
+            {/* Status-Badges - nebeneinander */}
             <div style={{
               display: 'flex',
-              gap: '0.5rem',
+              gap: '0.75rem',
               flex: 1,
-              flexWrap: 'wrap'
+              flexWrap: 'nowrap',
+              alignItems: 'center'
             }}>
               <div style={{
                 background: 'rgba(255, 215, 0, 0.1)',

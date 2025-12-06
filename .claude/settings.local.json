@@ -36,7 +36,9 @@
       "Bash(unzip:*)",
       "Bash(python -m json.tool:*)",
       "Bash(ls:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
