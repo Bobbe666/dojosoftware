@@ -1960,54 +1960,98 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
         </aside>
 
         <div className={`mitglied-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-          {/* Status-Badges horizontal oberhalb der Hauptinhalts-Karten */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div className="status-badges-horizontal">
-              <div className="status-badge-pill" title="Offene Dokumente">
-                <div className="pill-icon">📄</div>
-                <span className="pill-label">Dokumente</span>
-                <span className="pill-count">{offeneDokumente}</span>
+          {/* Header mit Drei-Punkte-Menü */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '0.5rem',
+            gap: '1rem'
+          }}>
+            {/* Status-Badges - kompakter */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              flex: 1,
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '1px solid rgba(255, 215, 0, 0.2)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.85rem'
+              }} title="Offene Dokumente">
+                <span style={{ fontSize: '1rem' }}>📄</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Dokumente:</span>
+                <span style={{ color: '#FFD700', fontWeight: 'bold' }}>{offeneDokumente}</span>
               </div>
-              <div className="status-badge-pill" title="Offene Nachrichten">
-                <div className="pill-icon">📄</div>
-                <span className="pill-label">Nachrichten</span>
-                <span className="pill-count">{offeneNachrichten}</span>
+              <div style={{
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '1px solid rgba(255, 215, 0, 0.2)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.85rem'
+              }} title="Offene Nachrichten">
+                <span style={{ fontSize: '1rem' }}>✉️</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Nachrichten:</span>
+                <span style={{ color: '#FFD700', fontWeight: 'bold' }}>{offeneNachrichten}</span>
               </div>
-              <div className={`status-badge-pill ${offeneBeiträge>0 ? 'warn' : ''}`} title="Offene Beiträge">
-                <div className="pill-icon">📄</div>
-                <span className="pill-label">Beiträge</span>
-                <span className="pill-count">{offeneBeiträge}</span>
+              <div style={{
+                background: offeneBeiträge > 0 ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 215, 0, 0.1)',
+                border: offeneBeiträge > 0 ? '1px solid rgba(231, 76, 60, 0.3)' : '1px solid rgba(255, 215, 0, 0.2)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.85rem'
+              }} title="Offene Beiträge">
+                <span style={{ fontSize: '1rem' }}>💰</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Beiträge:</span>
+                <span style={{ color: offeneBeiträge > 0 ? '#e74c3c' : '#FFD700', fontWeight: 'bold' }}>{offeneBeiträge}</span>
               </div>
             </div>
 
             {/* Drei-Punkte-Menü */}
             {isAdmin && (
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
                 <button
                   onClick={() => setShowActionsMenu(!showActionsMenu)}
                   style={{
-                    background: 'rgba(255, 215, 0, 0.1)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
+                    background: 'rgba(255, 215, 0, 0.15)',
+                    border: '2px solid rgba(255, 215, 0, 0.4)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
                     cursor: 'pointer',
                     color: '#FFD700',
-                    fontSize: '1.25rem',
+                    fontSize: '1.5rem',
                     fontWeight: 'bold',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
-                    minWidth: '40px',
-                    height: '40px'
+                    minWidth: '44px',
+                    height: '44px',
+                    boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.2)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.25)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.6)';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
                   }}
                   title="Aktionen"
                 >
