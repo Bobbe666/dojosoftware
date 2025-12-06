@@ -2867,7 +2867,10 @@ const PruefungsVerwaltung = () => {
                           boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)'
                         }}
                       />
-                      <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600' }}>{gurt.graduierung_name}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600' }}>{gurt.graduierung_name}</h4>
+                        <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.5)' }}>{gurt.stil_name}</span>
+                      </div>
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#EAB308', marginBottom: '0.25rem' }}>
                       {gurt.anzahl}

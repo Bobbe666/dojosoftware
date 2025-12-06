@@ -971,14 +971,16 @@ router.get('/stats/statistiken', (req, res) => {
         g.name as graduierung_name,
         g.farbe_hex as farbe,
         g.reihenfolge,
+        s.name as stil_name,
         COUNT(DISTINCT m.mitglied_id) as anzahl
       FROM mitglieder m
       INNER JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
       INNER JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
+      INNER JOIN stile s ON g.stil_id = s.stil_id
       WHERE m.aktiv = 1
       ${gurtWhereClause}
-      GROUP BY g.graduierung_id, g.name, g.farbe_hex, g.reihenfolge
-      ORDER BY g.reihenfolge ASC
+      GROUP BY g.graduierung_id, g.name, g.farbe_hex, g.reihenfolge, s.name
+      ORDER BY s.name ASC, g.reihenfolge ASC
     `
   };
 
