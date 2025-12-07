@@ -61,7 +61,7 @@ router.get('/', (req, res) => {
     FROM events e
     LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id
       AND ea.status IN ('angemeldet', 'bestaetigt')
-    LEFT JOIN dojos d ON e.dojo_id = d.dojo_id
+    LEFT JOIN dojo d ON e.dojo_id = d.id
     LEFT JOIN raeume r ON e.raum_id = r.id
     WHERE 1=1
   `;
@@ -122,7 +122,7 @@ router.get('/:id', (req, res) => {
       r.name as raum_name,
       COUNT(DISTINCT ea.anmeldung_id) as anzahl_anmeldungen
     FROM events e
-    LEFT JOIN dojos d ON e.dojo_id = d.dojo_id
+    LEFT JOIN dojo d ON e.dojo_id = d.id
     LEFT JOIN raeume r ON e.raum_id = r.id
     LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id
       AND ea.status IN ('angemeldet', 'bestaetigt')
@@ -206,7 +206,7 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
       r.name as raum_name
     FROM event_anmeldungen ea
     JOIN events e ON ea.event_id = e.event_id
-    LEFT JOIN dojos d ON e.dojo_id = d.dojo_id
+    LEFT JOIN dojo d ON e.dojo_id = d.id
     LEFT JOIN raeume r ON e.raum_id = r.id
     WHERE ea.mitglied_id = ?
     ORDER BY e.datum DESC, e.uhrzeit_beginn DESC
