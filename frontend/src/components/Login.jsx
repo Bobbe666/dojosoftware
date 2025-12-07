@@ -27,6 +27,12 @@ const Login = () => {
   // Redirect wenn bereits eingeloggt - basierend auf Rolle
   const { user } = useAuth();
   if (isAuthenticated && !authLoading) {
+    // Trainer zu Trainer-Dashboard weiterleiten
+    const userRole = user?.rolle || user?.role;
+    if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && user?.username === 'TrainerloginTDA') {
+      return <Navigate to="/trainer" replace />;
+    }
+    // Alle anderen zu normalem Dashboard
     return <Navigate to="/dashboard" replace />;
   }
 
