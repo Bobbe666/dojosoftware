@@ -115,8 +115,8 @@ const DojoSwitcher = () => {
               background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
             }} />
             <div className="dojo-switcher-content">
-              <div className="dojo-switcher-label">Gesamtumsatz {new Date().getFullYear()}:</div>
-              <div className="dojo-switcher-name">{parseFloat(dojos.reduce((sum, d) => sum + (d.jahresumsatz_aktuell || 0), 0)).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
+              <div className="dojo-switcher-label">Ansicht:</div>
+              <div className="dojo-switcher-name">Alle Dojos</div>
             </div>
             <Building2 size={18} className="status-icon info" />
           </>
