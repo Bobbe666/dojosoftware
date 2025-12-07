@@ -66,6 +66,10 @@ import CourseRatingAdmin from "./components/CourseRatingAdmin";
 import MitgliedDetailShared from "./components/MitgliedDetailShared";
 import MemberHeader from "./components/MemberHeader";
 
+// TRAINER-KOMPONENTEN
+import TrainerDashboard from "./components/TrainerDashboard";
+import TrainerOnlyRoute from "./components/TrainerOnlyRoute";
+
 // Beitrags-Management
 import Finanzcockpit from "./components/Finanzcockpit";
 import Beitraege from "./components/Beitraege";
@@ -255,6 +259,14 @@ const App = () => {
                 <MemberOnlyRoute>
                   <MemberEvents />
                 </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/trainer"
+              element={
+                <TrainerOnlyRoute>
+                  <TrainerDashboard />
+                </TrainerOnlyRoute>
               }
             />
             <Route
