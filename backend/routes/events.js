@@ -56,7 +56,7 @@ router.get('/', (req, res) => {
     SELECT
       e.*,
       COUNT(DISTINCT ea.anmeldung_id) as anzahl_anmeldungen,
-      d.name as dojo_name,
+      d.dojoname as dojo_name,
       r.name as raum_name
     FROM events e
     LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id
@@ -118,7 +118,7 @@ router.get('/:id', (req, res) => {
   const query = `
     SELECT
       e.*,
-      d.name as dojo_name,
+      d.dojoname as dojo_name,
       r.name as raum_name,
       COUNT(DISTINCT ea.anmeldung_id) as anzahl_anmeldungen
     FROM events e
@@ -202,7 +202,7 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
       ea.status as anmeldung_status,
       ea.bezahlt,
       ea.anmeldedatum,
-      d.name as dojo_name,
+      d.dojoname as dojo_name,
       r.name as raum_name
     FROM event_anmeldungen ea
     JOIN events e ON ea.event_id = e.event_id
