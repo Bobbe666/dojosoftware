@@ -2069,12 +2069,11 @@ router.post("/:id/archivieren", async (req, res) => {
 
     // 4. Hole Prüfungshistorie
     const [pruefungen] = await db.promise().query(
-      `SELECT p.*, pt.pruefungsdatum, g.name as graduierung_name
+      `SELECT p.*, g.name as graduierung_name
        FROM pruefungen p
-       LEFT JOIN pruefungstermin_vorlagen pt ON p.termin_id = pt.termin_id
        LEFT JOIN graduierungen g ON p.graduierung_nachher_id = g.graduierung_id
        WHERE p.mitglied_id = ?
-       ORDER BY pt.pruefungsdatum DESC`,
+       ORDER BY p.pruefungsdatum DESC`,
       [mitgliedId]
     );
 
