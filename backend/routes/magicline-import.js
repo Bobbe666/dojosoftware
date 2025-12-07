@@ -469,7 +469,9 @@ router.post('/upload', authenticateToken, upload.single('zipFile'), async (req, 
       const fullPath = path.join(extractPath, entry);
       const stat = await fs.stat(fullPath);
 
-      if (stat.isDirectory() && entry.startsWith('M-')) {
+      // MagicLine Ordner beginnen mit Mitgliedsnummer, z.B. "1-80_Name" oder "M-123_Name"
+      // Akzeptiere alle Ordner, die mit einer Zahl oder "M-" beginnen
+      if (stat.isDirectory() && (entry.match(/^\d+-/) || entry.startsWith('M-'))) {
         memberFolders.push(fullPath);
       }
     }
