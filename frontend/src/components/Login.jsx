@@ -91,10 +91,21 @@ const Login = () => {
 
       setSuccessMessage(`Willkommen zurück, ${userData.username}!`);
 
-      // Weiterleitung basierend auf Rolle
-      if (userData.rolle === 'eingeschraenkt' && userData.username === 'TrainerloginTDA') {
+      // Debug: Log userData to verify structure
+      console.log('🔍 Login userData:', userData);
+      console.log('🔍 Role check:', {
+        role: userData.role,
+        rolle: userData.rolle,
+        username: userData.username
+      });
+
+      // Weiterleitung basierend auf Rolle (prüfe beide Eigenschaften für Kompatibilität)
+      const userRole = userData.rolle || userData.role;
+      if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && userData.username === 'TrainerloginTDA') {
+        console.log('✅ Redirecting to /trainer');
         navigate('/trainer', { replace: true });
       } else {
+        console.log('✅ Redirecting to /dashboard');
         navigate('/dashboard', { replace: true });
       }
       
