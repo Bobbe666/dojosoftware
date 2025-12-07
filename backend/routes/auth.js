@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
 
     // Dann in admin_users Tabelle suchen (Admins/Trainer)
     const adminQuery = `
-      SELECT id, username, email, password, rolle as role, vorname, nachname, berechtigungen, aktiv, created_at
+      SELECT id, username, email, password, rolle as role, vorname, nachname, berechtigungen, aktiv, erstellt_am
       FROM admin_users
       WHERE email = ? OR username = ?
       LIMIT 1
