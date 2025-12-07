@@ -184,7 +184,7 @@ const DojoSwitcher = () => {
                     <span className="dropdown-item-inhaber">Kombinierte Ansicht aller Dojos</span>
                   </div>
                   <div className="dropdown-item-umsatz">
-                    Gesamtumsatz {new Date().getFullYear()}: {parseFloat(dojos.reduce((sum, d) => sum + (d.jahresumsatz_aktuell || 0), 0)).toLocaleString('de-DE')} €
+                    Gesamtumsatz {new Date().getFullYear()}: {dojos.reduce((sum, d) => sum + parseFloat(d.jahresumsatz_aktuell || 0), 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </div>
                 </div>
               </button>
