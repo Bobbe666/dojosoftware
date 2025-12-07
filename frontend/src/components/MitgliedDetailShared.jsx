@@ -1801,10 +1801,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // Archivierungs-Funktion
   const handleArchiveMitglied = async () => {
-    if (!window.confirm(`Möchten Sie ${mitglied.vorname} ${mitglied.nachname} wirklich archivieren?\n\nDas Mitglied wird aus der aktiven Liste entfernt und ins Archiv verschoben.`)) {
-      return;
-    }
-
     try {
       const response = await axios.post(`/mitglieder/${id}/archivieren`, {
         grund: archiveReason || 'Mitglied archiviert',
@@ -1812,9 +1808,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       });
 
       if (response.data.success) {
-        alert(`✅ ${mitglied.vorname} ${mitglied.nachname} wurde erfolgreich archiviert.`);
+        // Modal schließen und sofort zur Mitgliederübersicht navigieren
         setShowArchiveModal(false);
-        navigate('/mitglieder'); // Zurück zur Mitgliederliste
+        alert(`✅ ${mitglied.vorname} ${mitglied.nachname} wurde erfolgreich archiviert.`);
+
+        // Navigiere zur Mitglieder-Übersicht
+        window.location.href = '/mitglieder';
       }
     } catch (error) {
       console.error('Fehler beim Archivieren:', error);

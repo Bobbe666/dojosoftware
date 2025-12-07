@@ -57,6 +57,7 @@ import Stilverwaltung from "./components/Stilverwaltung";
 import MemberDashboard from "./components/MemberDashboard";
 import CourseRating from "./components/CourseRating";
 import MemberSchedule from "./components/MemberSchedule";
+import MemberEvents from "./components/MemberEvents";
 import MemberPayments from "./components/MemberPayments";
 import MemberStats from "./components/MemberStats";
 import MemberStyles from "./components/MemberStyles";
@@ -245,6 +246,14 @@ const App = () => {
               element={
                 <MemberOnlyRoute>
                   <MemberSchedule />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/events"
+              element={
+                <MemberOnlyRoute>
+                  <MemberEvents />
                 </MemberOnlyRoute>
               }
             />

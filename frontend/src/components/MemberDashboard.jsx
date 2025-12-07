@@ -555,6 +555,10 @@ const MemberDashboard = () => {
             <Clock size={20} />
             <span style={{ fontSize: '0.85rem' }}>Check-in</span>
           </div>
+          <div className="cta-tile" onClick={() => navigate('/member/events')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
+            <Calendar size={20} />
+            <span style={{ fontSize: '0.85rem' }}>Events</span>
+          </div>
           <div className="cta-tile" onClick={() => handleQuickAction('notifications')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Bell size={20} />
             <span style={{ fontSize: '0.85rem' }}>Benachrichtigungen</span>

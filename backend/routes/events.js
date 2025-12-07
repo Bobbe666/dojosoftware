@@ -272,7 +272,7 @@ router.post('/', (req, res) => {
     eventData.anforderungen || null
   ];
 
-  db.query(query, params, (err, result) => {
+  db.query(query, params, async (err, result) => {
     if (err) {
       console.error('Fehler beim Erstellen des Events:', err);
       return res.status(500).json({
@@ -281,9 +281,41 @@ router.post('/', (req, res) => {
       });
     }
 
+    const eventId = result.insertId;
+
+    // Automatische Benachrichtigung an alle Mitglieder senden
+    try {
+      const [mitglieder] = await db.promise().query(
+        'SELECT mitglied_id, email, vorname, nachname FROM mitglieder WHERE status = "aktiv"'
+      );
+
+      const notificationMessage = `Neues Event: ${eventData.titel} am ${eventData.datum}`;
+      const notificationDetails = eventData.beschreibung || 'Melden Sie sich jetzt an!';
+
+      // Erstelle Benachrichtigungen für alle aktiven Mitglieder
+      for (const mitglied of mitglieder) {
+        await db.promise().query(
+          `INSERT INTO notifications (mitglied_id, email, type, message, details, link, created_at)
+           VALUES (?, ?, 'event_neu', ?, ?, ?, NOW())`,
+          [
+            mitglied.mitglied_id,
+            mitglied.email,
+            notificationMessage,
+            notificationDetails,
+            `/member/events`
+          ]
+        );
+      }
+
+      console.log(`✅ Event ${eventId} erstellt und ${mitglieder.length} Benachrichtigungen versendet`);
+    } catch (notifErr) {
+      console.error('Fehler beim Versenden der Benachrichtigungen:', notifErr);
+      // Fehler bei Benachrichtigungen nicht kritisch - Event wurde trotzdem erstellt
+    }
+
     res.status(201).json({
       message: 'Event erfolgreich erstellt',
-      event_id: result.insertId
+      event_id: eventId
     });
   });
 });
@@ -594,6 +626,169 @@ router.delete('/:id', (req, res) => {
       });
     }
   );
+});
+
+// ============================================================================
+// EVENT-ANMELDUNGEN (Member-Login)
+// ============================================================================
+
+/**
+ * POST /api/events/:id/anmelden
+ * Mitglied meldet sich für ein Event an
+ */
+router.post('/:id/anmelden', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { mitglied_id, notizen } = req.body;
+
+  if (!mitglied_id) {
+    return res.status(400).json({ error: 'Mitglied-ID fehlt' });
+  }
+
+  try {
+    // 1. Prüfe ob Event existiert und ob noch Plätze frei sind
+    const [eventRows] = await db.promise().query(
+      'SELECT * FROM events WHERE event_id = ?',
+      [eventId]
+    );
+
+    if (eventRows.length === 0) {
+      return res.status(404).json({ error: 'Event nicht gefunden' });
+    }
+
+    const event = eventRows[0];
+
+    // 2. Prüfe ob Anmeldefrist noch läuft
+    if (event.anmeldefrist && new Date(event.anmeldefrist) < new Date()) {
+      return res.status(400).json({ error: 'Anmeldefrist ist abgelaufen' });
+    }
+
+    // 3. Prüfe ob bereits angemeldet
+    const [existingRows] = await db.promise().query(
+      'SELECT * FROM event_anmeldungen WHERE event_id = ? AND mitglied_id = ?',
+      [eventId, mitglied_id]
+    );
+
+    if (existingRows.length > 0) {
+      return res.status(400).json({ error: 'Sie sind bereits für dieses Event angemeldet' });
+    }
+
+    // 4. Zähle aktuelle Anmeldungen
+    const [countRows] = await db.promise().query(
+      "SELECT COUNT(*) as count FROM event_anmeldungen WHERE event_id = ? AND status IN ('angemeldet', 'bestaetigt')",
+      [eventId]
+    );
+
+    const currentCount = countRows[0].count;
+
+    if (event.max_teilnehmer && currentCount >= event.max_teilnehmer) {
+      return res.status(400).json({ error: 'Event ist bereits ausgebucht' });
+    }
+
+    // 5. Erstelle Anmeldung
+    const [result] = await db.promise().query(
+      `INSERT INTO event_anmeldungen
+       (event_id, mitglied_id, status, anmeldedatum, notizen)
+       VALUES (?, ?, 'angemeldet', NOW(), ?)`,
+      [eventId, mitglied_id, notizen || null]
+    );
+
+    console.log(`✅ Mitglied ${mitglied_id} für Event ${eventId} angemeldet`);
+
+    res.json({
+      success: true,
+      message: 'Erfolgreich für Event angemeldet',
+      anmeldung_id: result.insertId
+    });
+  } catch (error) {
+    console.error('Fehler bei Event-Anmeldung:', error);
+    res.status(500).json({ error: 'Fehler bei der Event-Anmeldung' });
+  }
+});
+
+/**
+ * DELETE /api/events/:id/anmelden
+ * Mitglied meldet sich von einem Event ab
+ */
+router.delete('/:id/anmelden', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { mitglied_id } = req.body;
+
+  if (!mitglied_id) {
+    return res.status(400).json({ error: 'Mitglied-ID fehlt' });
+  }
+
+  try {
+    // 1. Prüfe ob Anmeldung existiert
+    const [rows] = await db.promise().query(
+      'SELECT * FROM event_anmeldungen WHERE event_id = ? AND mitglied_id = ?',
+      [eventId, mitglied_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Keine Anmeldung gefunden' });
+    }
+
+    // 2. Lösche Anmeldung
+    await db.promise().query(
+      'DELETE FROM event_anmeldungen WHERE event_id = ? AND mitglied_id = ?',
+      [eventId, mitglied_id]
+    );
+
+    console.log(`✅ Mitglied ${mitglied_id} von Event ${eventId} abgemeldet`);
+
+    res.json({
+      success: true,
+      message: 'Erfolgreich von Event abgemeldet'
+    });
+  } catch (error) {
+    console.error('Fehler bei Event-Abmeldung:', error);
+    res.status(500).json({ error: 'Fehler bei der Event-Abmeldung' });
+  }
+});
+
+/**
+ * GET /api/events/member/:mitglied_id
+ * Alle Events mit Anmeldestatus für ein Mitglied
+ */
+router.get('/member/:mitglied_id', async (req, res) => {
+  const mitgliedId = parseInt(req.params.mitglied_id);
+
+  try {
+    const query = `
+      SELECT
+        e.*,
+        COUNT(DISTINCT ea.anmeldung_id) as anzahl_anmeldungen,
+        d.dojoname as dojo_name,
+        r.name as raum_name,
+        CASE
+          WHEN ea_member.anmeldung_id IS NOT NULL THEN 1
+          ELSE 0
+        END as ist_angemeldet,
+        ea_member.status as anmeldung_status,
+        ea_member.anmeldedatum as mein_anmeldedatum
+      FROM events e
+      LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id
+        AND ea.status IN ('angemeldet', 'bestaetigt')
+      LEFT JOIN event_anmeldungen ea_member ON e.event_id = ea_member.event_id
+        AND ea_member.mitglied_id = ?
+      LEFT JOIN dojo d ON e.dojo_id = d.id
+      LEFT JOIN raeume r ON e.raum_id = r.id
+      WHERE e.status = 'aktiv'
+        AND e.datum >= CURDATE()
+      GROUP BY e.event_id
+      ORDER BY e.datum ASC, e.uhrzeit_beginn ASC
+    `;
+
+    const [rows] = await db.promise().query(query, [mitgliedId]);
+
+    res.json({
+      success: true,
+      events: rows
+    });
+  } catch (error) {
+    console.error('Fehler beim Laden der Member-Events:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Events' });
+  }
 });
 
 module.exports = router;
