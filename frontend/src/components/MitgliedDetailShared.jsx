@@ -1813,7 +1813,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
         alert(`✅ ${mitglied.vorname} ${mitglied.nachname} wurde erfolgreich archiviert.`);
 
         // Navigiere zur Mitglieder-Übersicht
-        window.location.href = '/mitglieder';
+        window.location.href = '/dashboard/mitglieder';
       }
     } catch (error) {
       console.error('Fehler beim Archivieren:', error);
