@@ -24,6 +24,12 @@ const MagicLineImport = () => {
       return;
     }
 
+    console.log('🚀 Starting import...', {
+      fileName: file.name,
+      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      fileType: file.type
+    });
+
     setImporting(true);
     setError(null);
 
@@ -32,6 +38,8 @@ const MagicLineImport = () => {
 
     try {
       const token = localStorage.getItem('dojo_auth_token');
+      console.log('📤 Uploading to /api/magicline-import/upload...');
+
       const response = await fetch('/api/magicline-import/upload', {
         method: 'POST',
         headers: {
@@ -40,14 +48,22 @@ const MagicLineImport = () => {
         body: formData,
       });
 
+      console.log('📥 Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type')
+      });
+
       const contentType = response.headers.get('content-type');
 
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
+        console.error('❌ Non-JSON response:', text.substring(0, 500));
         throw new Error(`Server-Fehler: ${text.substring(0, 200)}`);
       }
 
       const data = await response.json();
+      console.log('✅ Import data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Import fehlgeschlagen');
@@ -57,8 +73,8 @@ const MagicLineImport = () => {
       setFile(null);
 
     } catch (err) {
+      console.error('❌ Import error:', err);
       setError(err.message);
-      console.error('Import error:', err);
     } finally {
       setImporting(false);
     }
