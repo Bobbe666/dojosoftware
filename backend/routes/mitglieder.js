@@ -2159,10 +2159,41 @@ router.post("/:id/archivieren", async (req, res) => {
       console.log(`🔒 Login-Zugang für Mitglied ${mitgliedId} gelöscht`);
     }
 
-    // 10. Lösche Mitglied aus Haupt-Tabellen (CASCADE löscht verknüpfte Daten)
+    // 10. Lösche alle abhängigen Daten (Foreign Key Constraints)
+    console.log(`🗑️ Lösche abhängige Daten für Mitglied ${mitgliedId}...`);
+
+    // Reihenfolge wichtig: Von abhängigsten zu unabhängigen Tabellen
+    await db.promise().query('DELETE FROM fortschritt_updates WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglieder_meilensteine WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM trainings_notizen WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM pruefung_teilnehmer WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM event_anmeldungen WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM gruppen_mitglieder WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM verkaeufe WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM gesetzlicher_vertreter WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM beitraege WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM anwesenheit WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM anwesenheit_protokoll WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM checkins WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM pruefungen WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglieder_fortschritt WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM stripe_payment_intents WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM rechnungen WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglied_stil_data WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglied_stile WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglieder_ziele WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM kurs_bewertungen WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM payment_provider_logs WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglieder_dokumente WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM mitglied_dokumente WHERE mitglied_id = ?', [mitgliedId]);
+    await db.promise().query('DELETE FROM sepa_mandate WHERE mitglied_id = ?', [mitgliedId]);
+
+    console.log(`✅ Abhängige Daten gelöscht`);
+
+    // 11. Jetzt kann das Mitglied sicher gelöscht werden
     await db.promise().query('DELETE FROM mitglieder WHERE mitglied_id = ?', [mitgliedId]);
 
-    // 11. Commit Transaction
+    // 12. Commit Transaction
     await db.promise().query('COMMIT');
 
     console.log(`✅ Mitglied ${mitgliedId} erfolgreich archiviert und Login gesperrt`);
