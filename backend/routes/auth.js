@@ -56,34 +56,64 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // Database query mit Ihrem bestehenden DB-System
-    const query = `
+    // Zuerst in users Tabelle suchen (Mitglieder)
+    const userQuery = `
       SELECT id, username, email, password, role, mitglied_id, created_at
       FROM users
       WHERE email = ? OR username = ?
       LIMIT 1
     `;
 
+    // Dann in admin_users Tabelle suchen (Admins/Trainer)
+    const adminQuery = `
+      SELECT id, username, email, password, rolle as role, vorname, nachname, berechtigungen, aktiv, created_at
+      FROM admin_users
+      WHERE email = ? OR username = ?
+      LIMIT 1
+    `;
+
     // Verwenden Sie Ihr bestehendes DB-System
-    db.query(query, [loginField, loginField], async (err, results) => {
+    db.query(userQuery, [loginField, loginField], async (err, results) => {
       if (err) {
         console.error('💥 Database error:', err);
-        return res.status(500).json({ 
-          login: false, 
+        return res.status(500).json({
+          login: false,
           message: "Server-Fehler bei der Datenbankabfrage",
           error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
       }
 
+      // Wenn nicht in users gefunden, in admin_users suchen
       if (results.length === 0) {
+        db.query(adminQuery, [loginField, loginField], async (adminErr, adminResults) => {
+          if (adminErr) {
+            console.error('💥 Admin database error:', adminErr);
+            return res.status(500).json({
+              login: false,
+              message: "Server-Fehler bei der Datenbankabfrage",
+              error: process.env.NODE_ENV === 'development' ? adminErr.message : undefined
+            });
+          }
 
-        return res.status(401).json({ 
-          login: false, 
-          message: "Benutzer nicht gefunden" 
+          if (adminResults.length === 0) {
+            return res.status(401).json({
+              login: false,
+              message: "Benutzer nicht gefunden"
+            });
+          }
+
+          // Admin/Trainer gefunden - verarbeite Login
+          await processLogin(adminResults[0], password, res, true);
         });
+        return;
       }
 
-      const user = results[0];
+      // User gefunden - verarbeite Login
+      await processLogin(results[0], password, res, false);
+    });
+
+    // Hilfsfunktion für Login-Verarbeitung
+    async function processLogin(user, password, res, isAdmin) {
 
       try {
         // Password verification
@@ -99,13 +129,16 @@ router.post('/login', async (req, res) => {
         }
 
         // Create JWT token
-
         const tokenPayload = {
           id: user.id,
           username: user.username,
           email: user.email,
           role: user.role,
-          mitglied_id: user.mitglied_id || null, // 🔐 Mitglied-ID hinzufügen
+          rolle: user.role, // Für Kompatibilität
+          mitglied_id: user.mitglied_id || null,
+          vorname: user.vorname || null,
+          nachname: user.nachname || null,
+          berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
           iat: Math.floor(Date.now() / 1000)
         };
 
@@ -117,7 +150,11 @@ router.post('/login', async (req, res) => {
           username: user.username,
           email: user.email,
           role: user.role,
-          mitglied_id: user.mitglied_id || null, // 🔐 Mitglied-ID in Response
+          rolle: user.role, // Für Kompatibilität
+          mitglied_id: user.mitglied_id || null,
+          vorname: user.vorname || null,
+          nachname: user.nachname || null,
+          berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
           loginTime: new Date().toISOString()
         };
 
@@ -131,12 +168,12 @@ router.post('/login', async (req, res) => {
 
       } catch (bcryptError) {
         console.error('💥 Bcrypt error:', bcryptError);
-        return res.status(500).json({ 
-          login: false, 
-          message: "Fehler bei der Passwort-Überprüfung" 
+        return res.status(500).json({
+          login: false,
+          message: "Fehler bei der Passwort-Überprüfung"
         });
       }
-    });
+    }
     
   } catch (error) {
     console.error('💥 Login error:', error);
