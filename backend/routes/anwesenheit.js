@@ -111,8 +111,8 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
         params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id];
 
     } else if (show_style_only) {
-        // NEU: Alle Mitglieder des Stils anzeigen (ohne Gruppeneinschränkung)
-        // Zeigt ALLE Mitglieder die den gleichen Stil haben wie der Kurs, unabhängig von der Gruppe
+        // NEU: Alle Mitglieder des Dojos anzeigen (da Stil-Zuordnungen noch nicht gepflegt sind)
+        // Zeigt ALLE aktiven Mitglieder die zum gleichen Dojo gehören wie der Kurs
         query = `
             SELECT DISTINCT
                 m.mitglied_id,
@@ -140,17 +140,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 -- Kurs-Info
                 k.gruppenname as kurs_name,
                 CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
-                k.stil as kurs_stil,
-                st.name as mitglied_stil_name
+                k.stil as kurs_stil
 
             FROM mitglieder m
 
-            -- Join mit Kurs-Info um den Stil zu ermitteln
+            -- Join mit Kurs-Info um das Dojo zu ermitteln
             INNER JOIN stundenplan s ON s.stundenplan_id = ?
             INNER JOIN kurse k ON s.kurs_id = k.kurs_id
-
-            -- Join mit Stil-Tabelle für Stil-Vergleich
-            LEFT JOIN stile st ON m.stil_id = st.stil_id
 
             -- Check-in Status für heute
             LEFT JOIN (
@@ -186,14 +182,9 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 AND a.datum = ?
             )
 
-            -- Nur Mitglieder mit dem gleichen Stil wie der Kurs
+            -- Alle aktiven Mitglieder des gleichen Dojos
             WHERE m.aktiv = 1
-                AND (
-                    -- Entweder exakter Stil-Name-Match
-                    st.name = k.stil
-                    -- Oder wenn kein stil_id gesetzt, als Fallback
-                    OR (m.stil_id IS NULL AND k.stil IS NOT NULL)
-                )
+                AND m.dojo_id = k.dojo_id
 
             ORDER BY
                 CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
