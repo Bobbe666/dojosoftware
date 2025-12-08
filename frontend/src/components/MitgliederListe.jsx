@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
@@ -393,59 +394,61 @@ const MitgliederListe = () => {
                   <span>Aktionen</span>
                 </button>
 
-                {/* Dropdown Menü */}
-                {showMenu && (
-                  <div
-                    style={{
-                      position: 'fixed',
-                      top: `${menuPosition.top}px`,
-                      left: `${menuPosition.left}px`,
-                      background: '#1a1a2e',
-                      border: '3px solid #ffd700',
-                      borderRadius: '8px',
-                      boxShadow: '0 8px 24px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.4)',
-                      zIndex: 999999,
-                      minWidth: '220px',
-                      backdropFilter: 'blur(16px)',
-                      overflow: 'visible',
-                      display: 'block',
-                      visibility: 'visible',
-                      opacity: 1
-                    }}
-                    onClick={(e) => console.log('🎯 Dropdown clicked!')}
-                  >
-                    <button
-                      onClick={handleToggleSelectionMode}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'rgba(255, 255, 255, 0.95)',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        fontWeight: '600'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
-                        e.target.style.color = '#fff';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'transparent';
-                        e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                      }}
-                    >
-                      <span style={{ fontSize: '1.2rem' }}>📦</span>
-                      <span>{selectionMode ? 'Auswahl beenden' : 'Mehrfach archivieren'}</span>
-                    </button>
-                  </div>
-                )}
               </div>
+
+              {/* Dropdown Menü als Portal direkt im Body */}
+              {showMenu && ReactDOM.createPortal(
+                <div
+                  style={{
+                    position: 'fixed',
+                    top: `${menuPosition.top}px`,
+                    left: `${menuPosition.left}px`,
+                    background: '#1a1a2e',
+                    border: '3px solid #ffd700',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 24px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.4)',
+                    zIndex: 999999,
+                    minWidth: '220px',
+                    backdropFilter: 'blur(16px)',
+                    overflow: 'visible',
+                    display: 'block',
+                    visibility: 'visible',
+                    opacity: 1
+                  }}
+                  onClick={(e) => console.log('🎯 Dropdown clicked!')}
+                >
+                  <button
+                    onClick={handleToggleSelectionMode}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'rgba(255, 255, 255, 0.95)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontWeight: '600'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
+                      e.target.style.color = '#fff';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'transparent';
+                      e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>📦</span>
+                    <span>{selectionMode ? 'Auswahl beenden' : 'Mehrfach archivieren'}</span>
+                  </button>
+                </div>,
+                document.body
+              )}
             </div>
             
             <div style={{ marginBottom: '0.3rem', fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
