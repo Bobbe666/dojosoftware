@@ -204,32 +204,52 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
         params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
 
     } else {
-        // FIXED: UNION-basierte Query - lädt sowohl eingecheckte als auch trainer-hinzugefügte
+        // Standard: Kurs-Mitglieder (Stil + Altersgruppe)
+        // Zeigt alle Mitglieder die zum Stil UND zur Altersgruppe des Kurses passen
         query = `
-            -- Teil 1: Eingecheckte Mitglieder
-            SELECT 
+            SELECT DISTINCT
                 m.mitglied_id,
                 m.vorname,
                 m.nachname,
                 CONCAT(m.vorname, ' ', m.nachname) as full_name,
                 m.gurtfarbe,
+                m.geburtsdatum,
                 m.aktiv,
-                
-                'eingecheckt' as checkin_status,
+
+                -- Check-in Status für heute
+                CASE
+                    WHEN latest_c.checkin_id IS NOT NULL THEN 'eingecheckt'
+                    ELSE 'nicht_eingecheckt'
+                END as checkin_status,
+
                 latest_c.checkin_time,
                 latest_c.checkout_time,
                 latest_c.status as checkin_db_status,
-                
+                latest_c.checkin_id,
+
+                -- Anwesenheitsstatus
                 COALESCE(a.anwesend, 0) as anwesend,
                 a.erstellt_am as anwesenheit_eingetragen,
-                
+
+                -- Kurs-Info
                 k.gruppenname as kurs_name,
                 CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
-                
-                1 as anwesenheits_prioritaet  -- Eingecheckte haben Priorität 1
-                
-            FROM (
-                SELECT 
+                k.stil as kurs_stil,
+                ms.stil as mitglied_stil,
+                TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) as alter
+
+            FROM mitglieder m
+
+            -- Join mit Kurs-Info
+            INNER JOIN stundenplan s ON s.stundenplan_id = ?
+            INNER JOIN kurse k ON s.kurs_id = k.kurs_id
+
+            -- Join mit mitglied_stile für Stil-Zuordnung
+            INNER JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
+
+            -- Check-in Status
+            LEFT JOIN (
+                SELECT
                     c1.mitglied_id,
                     c1.stundenplan_id,
                     c1.checkin_time,
@@ -238,72 +258,56 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                     c1.checkin_id
                 FROM checkins c1
                 INNER JOIN (
-                    SELECT 
+                    SELECT
                         mitglied_id,
                         stundenplan_id,
                         MAX(checkin_time) as max_checkin_time
-                    FROM checkins 
-                    WHERE stundenplan_id = ? 
+                    FROM checkins
+                    WHERE stundenplan_id = ?
                         AND DATE(checkin_time) = ?
                     GROUP BY mitglied_id, stundenplan_id
-                ) c2 ON c1.mitglied_id = c2.mitglied_id 
-                    AND c1.stundenplan_id = c2.stundenplan_id 
+                ) c2 ON c1.mitglied_id = c2.mitglied_id
+                    AND c1.stundenplan_id = c2.stundenplan_id
                     AND c1.checkin_time = c2.max_checkin_time
-            ) latest_c
-            JOIN mitglieder m ON latest_c.mitglied_id = m.mitglied_id
+            ) latest_c ON (
+                m.mitglied_id = latest_c.mitglied_id
+                AND latest_c.stundenplan_id = ?
+            )
+
+            -- Anwesenheit
             LEFT JOIN anwesenheit a ON (
-                m.mitglied_id = a.mitglied_id 
-                AND a.stundenplan_id = latest_c.stundenplan_id 
+                m.mitglied_id = a.mitglied_id
+                AND a.stundenplan_id = ?
                 AND a.datum = ?
             )
-            LEFT JOIN stundenplan s ON latest_c.stundenplan_id = s.stundenplan_id
-            LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+
             WHERE m.aktiv = 1
-            
-            UNION
-            
-            -- Teil 2: Trainer-hinzugefügte (nicht eingecheckte)
-            SELECT 
-                m.mitglied_id,
-                m.vorname,
-                m.nachname,
-                CONCAT(m.vorname, ' ', m.nachname) as full_name,
-                m.gurtfarbe,
-                m.aktiv,
-                
-                'nicht_eingecheckt' as checkin_status,
-                NULL as checkin_time,
-                NULL as checkout_time,
-                NULL as checkin_db_status,
-                
-                a.anwesend,
-                a.erstellt_am as anwesenheit_eingetragen,
-                
-                k.gruppenname as kurs_name,
-                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
-                
-                2 as anwesenheits_prioritaet  -- Trainer-hinzugefügte haben Priorität 2
-                
-            FROM mitglieder m
-            INNER JOIN anwesenheit a ON (
-                m.mitglied_id = a.mitglied_id 
-                AND a.stundenplan_id = ? 
-                AND a.datum = ?
-                AND a.anwesend = 1
-            )
-            LEFT JOIN stundenplan s ON a.stundenplan_id = s.stundenplan_id
-            LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-            WHERE m.aktiv = 1
-                AND NOT EXISTS (
-                    SELECT 1 FROM checkins c 
-                    WHERE c.mitglied_id = m.mitglied_id 
-                        AND c.stundenplan_id = ? 
-                        AND DATE(c.checkin_time) = ?
+                -- Stil-Match
+                AND (
+                    ms.stil = k.stil
+                    OR k.stil LIKE CONCAT('%', ms.stil, '%')
+                    OR ms.stil LIKE CONCAT('%', k.stil, '%')
                 )
-            
-            ORDER BY anwesenheits_prioritaet ASC, nachname, vorname
+                -- Altersgruppen-Match (vereinfacht)
+                AND (
+                    -- Erwachsene: 16+
+                    (k.gruppenname LIKE '%Erwachsene%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) >= 16)
+                    -- Jugendliche: 13-17
+                    OR (k.gruppenname LIKE '%Jugendlich%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) BETWEEN 13 AND 25)
+                    -- Kinder 7-12
+                    OR (k.gruppenname LIKE '%7-12%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) BETWEEN 7 AND 12)
+                    -- Kinder 4-6
+                    OR (k.gruppenname LIKE '%4-6%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) BETWEEN 4 AND 6)
+                    -- Family Training: alle Altersgruppen
+                    OR (k.gruppenname LIKE '%Family%')
+                )
+
+            ORDER BY
+                CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,
+                CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END,
+                m.nachname, m.vorname
         `;
-        params = [stundenplan_id, datum, datum, stundenplan_id, datum, stundenplan_id, datum];
+        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
     }
 
     db.query(query, params, (err, results) => {
