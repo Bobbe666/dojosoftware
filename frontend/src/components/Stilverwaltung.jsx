@@ -121,10 +121,10 @@ const StilVerwaltung = () => {
     { name: 'Grüngurt', primaer: '#32CD32', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 8 },
     { name: 'Grün-Blaugurt', primaer: '#32CD32', sekundaer: '#0066CC', kategorie: 'mittelstufe', reihenfolge: 9 },
     { name: 'Blaugurt', primaer: '#0066CC', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 10 },
-    { name: 'Blau-Rotgurt', primaer: '#0066CC', sekundaer: '#DC143C', kategorie: 'mittelstufe', reihenfolge: 11 },
-    { name: 'Rotgurt', primaer: '#DC143C', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 12 },
 
     // === OBERSTUFE (Fortgeschritten Plus) ===
+    { name: 'Blau-Rotgurt', primaer: '#0066CC', sekundaer: '#DC143C', kategorie: 'oberstufe', reihenfolge: 11 },
+    { name: 'Rotgurt', primaer: '#DC143C', sekundaer: null, kategorie: 'oberstufe', reihenfolge: 12 },
     { name: 'Blau-Braungurt', primaer: '#0066CC', sekundaer: '#8B4513', kategorie: 'oberstufe', reihenfolge: 13 },
     { name: 'Braungurt', primaer: '#8B4513', sekundaer: null, kategorie: 'oberstufe', reihenfolge: 14 },
     { name: 'Rot-Schwarzgurt', primaer: '#DC143C', sekundaer: '#000000', kategorie: 'oberstufe', reihenfolge: 15 },
