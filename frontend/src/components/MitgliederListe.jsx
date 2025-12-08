@@ -156,18 +156,18 @@ const MitgliederListe = () => {
     console.log('🔘 Menu Toggle clicked, current showMenu:', showMenu);
     if (!showMenu && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect();
-      // Position direkt unter dem Button, rechts ausgerichtet
+      // TEMPORÄR: Zentriere das Dropdown mitten auf dem Bildschirm zum Testen
       const pos = {
-        top: rect.bottom + 4,
-        left: rect.left  // Links am Button ausrichten
+        top: window.innerHeight / 2 - 50,
+        left: window.innerWidth / 2 - 110
       };
-      console.log('📍 Menu position calculated:', pos);
+      console.log('📍 Menu position (CENTER OF SCREEN):', pos);
       console.log('📏 Button rect:', rect);
+      console.log('🖥️ Window size:', window.innerWidth, 'x', window.innerHeight);
       setMenuPosition(pos);
     }
     setShowMenu(!showMenu);
     console.log('✅ Menu state changed to:', !showMenu);
-    console.log('🎯 showMenu is now:', !showMenu, 'Position:', menuPosition);
   };
 
   const handleToggleMemberSelection = (mitgliedId) => {
