@@ -154,23 +154,25 @@ const MitgliederListe = () => {
   };
 
   const handleToggleSelectionMode = () => {
+    console.log('🎯 handleToggleSelectionMode called!');
+    console.log('Current selectionMode:', selectionMode);
     setSelectionMode(!selectionMode);
     setSelectedMembers([]);
     setShowMenu(false);
+    console.log('✅ Selection mode toggled, menu closed');
   };
 
   const handleMenuToggle = () => {
     console.log('🔘 Menu Toggle clicked, current showMenu:', showMenu);
     if (!showMenu && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect();
-      // TEMPORÄR: Zentriere das Dropdown mitten auf dem Bildschirm zum Testen
+      // Position direkt unter dem Button
       const pos = {
-        top: window.innerHeight / 2 - 50,
-        left: window.innerWidth / 2 - 110
+        top: rect.bottom + 8,
+        left: rect.left
       };
-      console.log('📍 Menu position (CENTER OF SCREEN):', pos);
+      console.log('📍 Menu position calculated:', pos);
       console.log('📏 Button rect:', rect);
-      console.log('🖥️ Window size:', window.innerWidth, 'x', window.innerHeight);
       setMenuPosition(pos);
     }
     setShowMenu(!showMenu);
@@ -429,36 +431,38 @@ const MitgliederListe = () => {
                   }}
                 >
                   <button
-                    onClick={(e) => {
-                      console.log('📦 Archivieren button clicked!');
+                    onMouseDown={(e) => {
+                      console.log('📦 Archivieren button MOUSEDOWN!');
+                      e.preventDefault();
                       e.stopPropagation();
                       handleToggleSelectionMode();
                     }}
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      background: 'transparent',
+                      background: 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
                       border: 'none',
-                      color: 'rgba(255, 255, 255, 0.95)',
+                      color: 'white',
                       textAlign: 'left',
                       cursor: 'pointer',
-                      fontSize: '0.85rem',
+                      fontSize: '0.9rem',
                       transition: 'all 0.2s ease',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.75rem',
-                      fontWeight: '600'
+                      fontWeight: '700',
+                      borderRadius: '6px'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
-                      e.target.style.color = '#fff';
+                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.4), rgba(255, 215, 0, 0.2))';
+                      e.target.style.transform = 'translateX(4px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = 'transparent';
-                      e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))';
+                      e.target.style.transform = 'translateX(0)';
                     }}
                   >
-                    <span style={{ fontSize: '1.2rem' }}>📦</span>
+                    <span style={{ fontSize: '1.3rem' }}>📦</span>
                     <span>{selectionMode ? 'Auswahl beenden' : 'Mehrfach archivieren'}</span>
                   </button>
                 </div>,
