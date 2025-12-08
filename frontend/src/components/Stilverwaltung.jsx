@@ -112,36 +112,38 @@ const StilVerwaltung = () => {
     { name: 'Weißgurt', primaer: '#FFFFFF', sekundaer: null, kategorie: 'grundstufe', reihenfolge: 1 },
     { name: 'Weiß-Gelbgurt', primaer: '#FFFFFF', sekundaer: '#FFD700', kategorie: 'grundstufe', reihenfolge: 2 },
     { name: 'Gelbgurt', primaer: '#FFD700', sekundaer: null, kategorie: 'grundstufe', reihenfolge: 3 },
-    { name: 'Gelb-Orangegurt', primaer: '#FFD700', sekundaer: '#FF8C00', kategorie: 'grundstufe', reihenfolge: 4 },
-    { name: 'Orangegurt', primaer: '#FF8C00', sekundaer: null, kategorie: 'grundstufe', reihenfolge: 5 },
-    
+    { name: 'Gelb-Grüngurt', primaer: '#FFD700', sekundaer: '#32CD32', kategorie: 'grundstufe', reihenfolge: 4 },
+    { name: 'Gelb-Orangegurt', primaer: '#FFD700', sekundaer: '#FF8C00', kategorie: 'grundstufe', reihenfolge: 5 },
+    { name: 'Orangegurt', primaer: '#FF8C00', sekundaer: null, kategorie: 'grundstufe', reihenfolge: 6 },
+
     // === MITTELSTUFE (Fortgeschritten) ===
-    { name: 'Orange-Grüngurt', primaer: '#FF8C00', sekundaer: '#32CD32', kategorie: 'mittelstufe', reihenfolge: 6 },
-    { name: 'Grüngurt', primaer: '#32CD32', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 7 },
-    { name: 'Grün-Blaugurt', primaer: '#32CD32', sekundaer: '#0066CC', kategorie: 'mittelstufe', reihenfolge: 8 },
-    { name: 'Blaugurt', primaer: '#0066CC', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 9 },
-    
+    { name: 'Orange-Grüngurt', primaer: '#FF8C00', sekundaer: '#32CD32', kategorie: 'mittelstufe', reihenfolge: 7 },
+    { name: 'Grüngurt', primaer: '#32CD32', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 8 },
+    { name: 'Grün-Blaugurt', primaer: '#32CD32', sekundaer: '#0066CC', kategorie: 'mittelstufe', reihenfolge: 9 },
+    { name: 'Blaugurt', primaer: '#0066CC', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 10 },
+    { name: 'Blau-Rotgurt', primaer: '#0066CC', sekundaer: '#DC143C', kategorie: 'mittelstufe', reihenfolge: 11 },
+    { name: 'Rotgurt', primaer: '#DC143C', sekundaer: null, kategorie: 'mittelstufe', reihenfolge: 12 },
+
     // === OBERSTUFE (Fortgeschritten Plus) ===
-    { name: 'Blau-Braungurt', primaer: '#0066CC', sekundaer: '#8B4513', kategorie: 'oberstufe', reihenfolge: 10 },
-    { name: 'Braungurt', primaer: '#8B4513', sekundaer: null, kategorie: 'oberstufe', reihenfolge: 11 },
-    { name: 'Rot-Schwarzgurt', primaer: '#DC143C', sekundaer: '#000000', kategorie: 'oberstufe', reihenfolge: 12 },
-    { name: 'Braun-Schwarzgurt', primaer: '#8B4513', sekundaer: '#000000', kategorie: 'oberstufe', reihenfolge: 13 },
-    
-    // === DAN-GRADE (Schwarzgurt-Stufen) ===
-    { name: '1.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 1, reihenfolge: 14 },
-    { name: '2.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#FFD700', kategorie: 'dan', dan: 2, reihenfolge: 15 },
-    { name: '3.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#FFD700', kategorie: 'dan', dan: 3, reihenfolge: 16 },
-    { name: '4.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#FFD700', kategorie: 'dan', dan: 4, reihenfolge: 17 },
-    { name: '5.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#FFD700', kategorie: 'dan', dan: 5, reihenfolge: 18 },
-    { name: '6.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#DC143C', kategorie: 'dan', dan: 6, reihenfolge: 19 },
-    { name: '7.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#DC143C', kategorie: 'dan', dan: 7, reihenfolge: 20 },
-    { name: '8.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#DC143C', kategorie: 'dan', dan: 8, reihenfolge: 21 },
-    { name: '9.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#DC143C', kategorie: 'dan', dan: 9, reihenfolge: 22 },
-    { name: '10.DAN Schwarzgurt', primaer: '#000000', sekundaer: '#DC143C', kategorie: 'dan', dan: 10, reihenfolge: 23 },
-    
+    { name: 'Blau-Braungurt', primaer: '#0066CC', sekundaer: '#8B4513', kategorie: 'oberstufe', reihenfolge: 13 },
+    { name: 'Braungurt', primaer: '#8B4513', sekundaer: null, kategorie: 'oberstufe', reihenfolge: 14 },
+    { name: 'Rot-Schwarzgurt', primaer: '#DC143C', sekundaer: '#000000', kategorie: 'oberstufe', reihenfolge: 15 },
+    { name: 'Braun-Schwarzgurt', primaer: '#8B4513', sekundaer: '#000000', kategorie: 'oberstufe', reihenfolge: 16 },
+
+    // === DAN-GRADE (Schwarzgurt-Stufen) - Alle durchgehend schwarz ===
+    { name: '1.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 1, reihenfolge: 17 },
+    { name: '2.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 2, reihenfolge: 18 },
+    { name: '3.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 3, reihenfolge: 19 },
+    { name: '4.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 4, reihenfolge: 20 },
+    { name: '5.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 5, reihenfolge: 21 },
+    { name: '6.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 6, reihenfolge: 22 },
+    { name: '7.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 7, reihenfolge: 23 },
+    { name: '8.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 8, reihenfolge: 24 },
+    { name: '9.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 9, reihenfolge: 25 },
+    { name: '10.DAN Schwarzgurt', primaer: '#000000', sekundaer: null, kategorie: 'dan', dan: 10, reihenfolge: 26 },
+
     // === MEISTER-GRADE (Rot-Gürtel) ===
-    { name: 'Rotgurt', primaer: '#DC143C', sekundaer: null, kategorie: 'meister', reihenfolge: 24 },
-    { name: 'Rot-Weißgurt', primaer: '#DC143C', sekundaer: '#FFFFFF', kategorie: 'meister', reihenfolge: 25 }
+    { name: 'Rot-Weißgurt', primaer: '#DC143C', sekundaer: '#FFFFFF', kategorie: 'meister', reihenfolge: 27 }
   ];
 
   // ============================================================================
