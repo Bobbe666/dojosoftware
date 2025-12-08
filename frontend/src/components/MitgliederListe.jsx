@@ -212,7 +212,7 @@ const MitgliederListe = () => {
       const response = await axios.post('/mitglieder/bulk-archivieren', {
         mitglied_ids: selectedMembers,
         grund: 'Bulk-Archivierung durch Admin',
-        archiviert_von: 'Admin'
+        archiviert_von: null  // NULL statt String, da Spalte Integer erwartet
       });
 
       if (response.data.success) {
