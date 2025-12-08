@@ -152,14 +152,18 @@ const MitgliederListe = () => {
   };
 
   const handleMenuToggle = () => {
+    console.log('🔘 Menu Toggle clicked, current showMenu:', showMenu);
     if (!showMenu && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.right + window.scrollX - 220
-      });
+      const pos = {
+        top: rect.bottom + 8,
+        left: rect.right - 220
+      };
+      console.log('📍 Menu position calculated:', pos);
+      setMenuPosition(pos);
     }
     setShowMenu(!showMenu);
+    console.log('✅ Menu state changed to:', !showMenu);
   };
 
   const handleToggleMemberSelection = (mitgliedId) => {
