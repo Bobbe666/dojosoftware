@@ -73,7 +73,7 @@ const Anwesenheit = () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(`/api/anwesenheit/kurse/${datum}`);
+      const response = await axios.get(`/anwesenheit/kurse/${datum}`);
       const data = response.data;
       
       if (data.success) {
