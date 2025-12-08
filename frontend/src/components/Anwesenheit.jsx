@@ -20,6 +20,7 @@ const Anwesenheit = () => {
   
   // NEU: Check-in Integration
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [showStyleOnly, setShowStyleOnly] = useState(false); // NEU: Stil-Filter (ohne Gruppe)
   const [kurseStats, setKurseStats] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -111,6 +112,7 @@ const Anwesenheit = () => {
     setMitglieder([]);
     setAnwesenheit({});
     setShowAllMembers(false);
+    setShowStyleOnly(false); // NEU: Stil-Filter zurücksetzen
     // 🆕 Suche zurücksetzen
     setSuchbegriff("");
     setAllMembersForSearch([]);
@@ -146,8 +148,16 @@ const Anwesenheit = () => {
       const stundenplan_id = stunde.stundenplan_id || stunde.id;
 
       // Mitglieder basierend auf Check-ins laden
+      // Priorisierung: show_all > show_style_only > standard (nur eingecheckte)
+      let queryParams = '';
+      if (showAllMembers) {
+        queryParams = '?show_all=true';
+      } else if (showStyleOnly) {
+        queryParams = '?show_style_only=true';
+      }
+
       const membersResponse = await fetch(
-        `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${showAllMembers ? '?show_all=true' : ''}`
+        `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
       );
       const membersData = await membersResponse.json();
       
@@ -192,8 +202,17 @@ const Anwesenheit = () => {
       const reloadMembers = async () => {
         try {
           setLoading(true);
+
+          // Priorisierung: show_all > show_style_only > standard (nur eingecheckte)
+          let queryParams = '';
+          if (showAllMembers) {
+            queryParams = '?show_all=true';
+          } else if (showStyleOnly) {
+            queryParams = '?show_style_only=true';
+          }
+
           const membersResponse = await fetch(
-            `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${showAllMembers ? '?show_all=true' : ''}`
+            `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
           );
           const membersData = await membersResponse.json();
           
@@ -225,7 +244,7 @@ const Anwesenheit = () => {
       };
       reloadMembers();
     }
-  }, [updateTrigger, ausgewaehlteStunde, ausgewaehltesDatum, showAllMembers]);
+  }, [updateTrigger, ausgewaehlteStunde, ausgewaehltesDatum, showAllMembers, showStyleOnly]);
 
   // 🆕 NEU: Alle Mitglieder für intelligente Suche laden
   const loadAllMembersForSearch = async (stundenplan_id) => {
@@ -247,7 +266,28 @@ const Anwesenheit = () => {
   const toggleShowAllMembers = () => {
     const newShowAll = !showAllMembers;
     setShowAllMembers(newShowAll);
-    
+
+    // Wenn show_all aktiviert wird, style_only deaktivieren
+    if (newShowAll && showStyleOnly) {
+      setShowStyleOnly(false);
+    }
+
+    if (ausgewaehlteStunde) {
+      // Kurs neu laden mit anderer Einstellung
+      handleStundeWaehlen(ausgewaehlteStunde);
+    }
+  };
+
+  // NEU: Toggle für Stil-Filter (zeigt alle Mitglieder des Stils, unabhängig von der Gruppe)
+  const toggleShowStyleOnly = () => {
+    const newShowStyleOnly = !showStyleOnly;
+    setShowStyleOnly(newShowStyleOnly);
+
+    // Wenn style_only aktiviert wird, show_all deaktivieren
+    if (newShowStyleOnly && showAllMembers) {
+      setShowAllMembers(false);
+    }
+
     if (ausgewaehlteStunde) {
       // Kurs neu laden mit anderer Einstellung
       handleStundeWaehlen(ausgewaehlteStunde);
@@ -542,8 +582,8 @@ const Anwesenheit = () => {
             <div className="suchfeld-links">
               <input
                 type="text"
-                placeholder={isSearchActive 
-                  ? "🔍 Durchsuche ALLE Kursmitglieder..." 
+                placeholder={isSearchActive
+                  ? "🔍 Durchsuche ALLE Kursmitglieder..."
                   : "Mitglied suchen..."
                 }
                 value={suchbegriff}
@@ -558,21 +598,71 @@ const Anwesenheit = () => {
                 }}
               />
             </div>
-            
-            <div className="check-in-toggle-kompakt">
-              <label className="toggle-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={showAllMembers}
-                  onChange={toggleShowAllMembers}
-                  className="toggle-checkbox"
-                />
-                {showAllMembers 
-                  ? "🔍 Alle Mitglieder anzeigen" 
-                  : "✅ Nur eingecheckte Mitglieder anzeigen"}
-              </label>
+
+            {/* NEU: Filter-Buttons in Gruppe */}
+            <div className="filter-buttons-gruppe" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              {/* Button 1: Kurs-Mitglieder (Standard) */}
+              <button
+                onClick={() => {
+                  setShowAllMembers(false);
+                  setShowStyleOnly(false);
+                  if (ausgewaehlteStunde) handleStundeWaehlen(ausgewaehlteStunde);
+                }}
+                className={!showAllMembers && !showStyleOnly ? 'filter-button-active' : 'filter-button-inactive'}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '2px solid',
+                  borderColor: !showAllMembers && !showStyleOnly ? '#1976d2' : '#ccc',
+                  backgroundColor: !showAllMembers && !showStyleOnly ? '#e3f2fd' : '#fff',
+                  color: !showAllMembers && !showStyleOnly ? '#1976d2' : '#666',
+                  fontWeight: !showAllMembers && !showStyleOnly ? 'bold' : 'normal',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                📋 Kurs-Mitglieder
+              </button>
+
+              {/* Button 2: Stil-Mitglieder (mehr Mitglieder) */}
+              <button
+                onClick={toggleShowStyleOnly}
+                className={showStyleOnly ? 'filter-button-active' : 'filter-button-inactive'}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '2px solid',
+                  borderColor: showStyleOnly ? '#ff9800' : '#ccc',
+                  backgroundColor: showStyleOnly ? '#fff3e0' : '#fff',
+                  color: showStyleOnly ? '#ff9800' : '#666',
+                  fontWeight: showStyleOnly ? 'bold' : 'normal',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                🥋 Alle Stil-Mitglieder
+              </button>
+
+              {/* Button 3: Alle Mitglieder (Suche) */}
+              <button
+                onClick={toggleShowAllMembers}
+                className={showAllMembers ? 'filter-button-active' : 'filter-button-inactive'}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: '2px solid',
+                  borderColor: showAllMembers ? '#4caf50' : '#ccc',
+                  backgroundColor: showAllMembers ? '#e8f5e9' : '#fff',
+                  color: showAllMembers ? '#4caf50' : '#666',
+                  fontWeight: showAllMembers ? 'bold' : 'normal',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                🔍 Alle Mitglieder
+              </button>
             </div>
-            
+
             <div className="filter-checkbox-kompakt">
               <label className="filter-checkbox-label">
                 <input
@@ -584,7 +674,7 @@ const Anwesenheit = () => {
                 Nur nicht anwesende Mitglieder anzeigen
               </label>
             </div>
-            
+
             <div className="anwesend-button-rechts">
               <button className="anwesend-toggle-button">
                 ✅ Anwesend
@@ -595,12 +685,23 @@ const Anwesenheit = () => {
           {/* Statistiken anzeigen */}
           <div className="mitglieder-stats-container">
             <div className="mitglieder-stats">
-              📊 {mitglieder.length} Mitglieder | 
+              📊 {mitglieder.length} Mitglieder |
               ✅ {mitglieder.filter(m => anwesenheit[m.mitglied_id]?.status === 'anwesend').length} anwesend |
               📱 {mitglieder.filter(m => m.checkin_status === 'eingecheckt').length} eingecheckt
-              {/* 🆕 Suchstatus anzeigen */}
+              {/* Filter-Status anzeigen */}
+              {showStyleOnly && (
+                <span style={{ color: '#ff9800', fontWeight: 'bold', marginLeft: '10px' }}>
+                  | 🥋 Stil-Filter aktiv
+                </span>
+              )}
+              {showAllMembers && (
+                <span style={{ color: '#4caf50', fontWeight: 'bold', marginLeft: '10px' }}>
+                  | 🔍 Alle Mitglieder
+                </span>
+              )}
+              {/* Suchstatus anzeigen */}
               {isSearchActive && (
-                <span style={{ color: '#1976d2', fontWeight: 'bold' }}>
+                <span style={{ color: '#1976d2', fontWeight: 'bold', marginLeft: '10px' }}>
                   | 🔍 Suche aktiv ({allMembersForSearch.length} durchsuchbar)
                 </span>
               )}

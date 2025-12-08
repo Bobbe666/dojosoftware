@@ -28,6 +28,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
     const stundenplan_id = parseInt(req.params.stundenplan_id, 10);
     const datum = req.params.datum;
     const show_all = req.query.show_all === 'true'; // Optional: alle Mitglieder anzeigen
+    const show_style_only = req.query.show_style_only === 'true'; // NEU: Nur Stil-Filter (ohne Gruppe)
 
     if (isNaN(stundenplan_id)) {
 
@@ -108,7 +109,96 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 m.nachname, m.vorname
         `;
         params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id];
-        
+
+    } else if (show_style_only) {
+        // NEU: Alle Mitglieder des Stils anzeigen (ohne Gruppeneinschränkung)
+        // Zeigt ALLE Mitglieder die den gleichen Stil haben wie der Kurs, unabhängig von der Gruppe
+        query = `
+            SELECT DISTINCT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                CONCAT(m.vorname, ' ', m.nachname) as full_name,
+                m.gurtfarbe,
+                m.aktiv,
+
+                -- Check-in Status für heute (nur neuester Check-in)
+                CASE
+                    WHEN latest_c.checkin_id IS NOT NULL THEN 'eingecheckt'
+                    ELSE 'nicht_eingecheckt'
+                END as checkin_status,
+
+                latest_c.checkin_time,
+                latest_c.checkout_time,
+                latest_c.status as checkin_db_status,
+                latest_c.checkin_id,
+
+                -- Anwesenheitsstatus aus anwesenheit Tabelle
+                COALESCE(a.anwesend, 0) as anwesend,
+                a.erstellt_am as anwesenheit_eingetragen,
+
+                -- Kurs-Info
+                k.gruppenname as kurs_name,
+                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
+                k.stil as kurs_stil,
+                st.name as mitglied_stil_name
+
+            FROM mitglieder m
+            -- Join mit Stil-Tabelle für Stil-Vergleich
+            INNER JOIN stundenplan s ON s.stundenplan_id = ?
+            INNER JOIN kurse k ON s.kurs_id = k.kurs_id
+            LEFT JOIN stile st ON m.stil_id = st.stil_id
+
+            -- Nur Mitglieder mit dem gleichen Stil wie der Kurs
+            WHERE m.aktiv = 1
+                AND (
+                    -- Entweder exakter Stil-Name-Match
+                    st.name = k.stil
+                    -- Oder wenn kein stil_id gesetzt, als Fallback
+                    OR (m.stil_id IS NULL AND k.stil IS NOT NULL)
+                )
+
+            -- Check-in Status für heute
+            LEFT JOIN (
+                SELECT
+                    c1.mitglied_id,
+                    c1.stundenplan_id,
+                    c1.checkin_time,
+                    c1.checkout_time,
+                    c1.status,
+                    c1.checkin_id
+                FROM checkins c1
+                INNER JOIN (
+                    SELECT
+                        mitglied_id,
+                        stundenplan_id,
+                        MAX(checkin_time) as max_checkin_time
+                    FROM checkins
+                    WHERE stundenplan_id = ?
+                        AND DATE(checkin_time) = ?
+                    GROUP BY mitglied_id, stundenplan_id
+                ) c2 ON c1.mitglied_id = c2.mitglied_id
+                    AND c1.stundenplan_id = c2.stundenplan_id
+                    AND c1.checkin_time = c2.max_checkin_time
+            ) latest_c ON (
+                m.mitglied_id = latest_c.mitglied_id
+                AND latest_c.stundenplan_id = ?
+            )
+
+            -- Anwesenheit für diesen Kurs und Datum
+            LEFT JOIN anwesenheit a ON (
+                m.mitglied_id = a.mitglied_id
+                AND a.stundenplan_id = ?
+                AND a.datum = ?
+            )
+
+            ORDER BY
+                CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
+                CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END,  -- Dann anwesend markierte
+                m.nachname, m.vorname
+        `;
+        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
+
     } else {
         // FIXED: UNION-basierte Query - lädt sowohl eingecheckte als auch trainer-hinzugefügte
         query = `
@@ -235,6 +325,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             stundenplan_id: stundenplan_id,
             datum: datum,
             show_all: show_all,
+            show_style_only: show_style_only,
             stats: stats,
             members: results
         });
