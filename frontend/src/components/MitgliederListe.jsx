@@ -155,15 +155,18 @@ const MitgliederListe = () => {
     console.log('🔘 Menu Toggle clicked, current showMenu:', showMenu);
     if (!showMenu && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect();
+      // Position direkt unter dem Button, rechts ausgerichtet
       const pos = {
-        top: rect.bottom + 8,
-        left: rect.right - 220
+        top: rect.bottom + 4,
+        left: rect.left  // Links am Button ausrichten
       };
       console.log('📍 Menu position calculated:', pos);
+      console.log('📏 Button rect:', rect);
       setMenuPosition(pos);
     }
     setShowMenu(!showMenu);
     console.log('✅ Menu state changed to:', !showMenu);
+    console.log('🎯 showMenu is now:', !showMenu, 'Position:', menuPosition);
   };
 
   const handleToggleMemberSelection = (mitgliedId) => {
@@ -392,19 +395,25 @@ const MitgliederListe = () => {
 
                 {/* Dropdown Menü */}
                 {showMenu && (
-                  <div style={{
-                    position: 'fixed',
-                    top: `${menuPosition.top}px`,
-                    left: `${menuPosition.left}px`,
-                    background: 'rgba(26, 26, 46, 0.98)',
-                    border: '2px solid rgba(255, 215, 0, 0.5)',
-                    borderRadius: '8px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.7)',
-                    zIndex: 99999,
-                    minWidth: '220px',
-                    backdropFilter: 'blur(16px)',
-                    overflow: 'visible'
-                  }}>
+                  <div
+                    style={{
+                      position: 'fixed',
+                      top: `${menuPosition.top}px`,
+                      left: `${menuPosition.left}px`,
+                      background: '#1a1a2e',
+                      border: '3px solid #ffd700',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 24px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.4)',
+                      zIndex: 999999,
+                      minWidth: '220px',
+                      backdropFilter: 'blur(16px)',
+                      overflow: 'visible',
+                      display: 'block',
+                      visibility: 'visible',
+                      opacity: 1
+                    }}
+                    onClick={(e) => console.log('🎯 Dropdown clicked!')}
+                  >
                     <button
                       onClick={handleToggleSelectionMode}
                       style={{
