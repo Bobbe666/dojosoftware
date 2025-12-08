@@ -2220,6 +2220,216 @@ router.post("/:id/archivieren", async (req, res) => {
 });
 
 /**
+ * POST /mitglieder/bulk-archivieren
+ * Archiviert mehrere Mitglieder gleichzeitig
+ */
+router.post("/bulk-archivieren", async (req, res) => {
+  const { mitglied_ids, grund, archiviert_von } = req.body;
+
+  // Validierung
+  if (!mitglied_ids || !Array.isArray(mitglied_ids) || mitglied_ids.length === 0) {
+    return res.status(400).json({
+      error: 'Keine Mitglieds-IDs angegeben',
+      details: 'mitglied_ids muss ein Array mit mindestens einem Element sein'
+    });
+  }
+
+  console.log(`📦 Bulk-Archivierung von ${mitglied_ids.length} Mitgliedern gestartet...`);
+
+  const results = {
+    success: [],
+    failed: []
+  };
+
+  // Archiviere jedes Mitglied einzeln
+  for (const mitgliedId of mitglied_ids) {
+    try {
+      // Starte Transaction für dieses Mitglied
+      await db.promise().query('START TRANSACTION');
+
+      // 1. Hole alle Mitgliedsdaten
+      const [mitgliedRows] = await db.promise().query(
+        'SELECT * FROM mitglieder WHERE mitglied_id = ?',
+        [mitgliedId]
+      );
+
+      if (mitgliedRows.length === 0) {
+        await db.promise().query('ROLLBACK');
+        results.failed.push({
+          mitglied_id: mitgliedId,
+          error: 'Mitglied nicht gefunden'
+        });
+        continue;
+      }
+
+      const mitglied = mitgliedRows[0];
+
+      // 2. Hole Stil-Daten
+      const [stilData] = await db.promise().query(
+        `SELECT msd.*, s.name as stil_name, g.name as graduierung_name
+         FROM mitglied_stil_data msd
+         LEFT JOIN stile s ON msd.stil_id = s.stil_id
+         LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
+         WHERE msd.mitglied_id = ?`,
+        [mitgliedId]
+      );
+
+      // 3. Hole SEPA-Mandate
+      const [sepaMandate] = await db.promise().query(
+        'SELECT * FROM sepa_mandate WHERE mitglied_id = ? ORDER BY created_at DESC',
+        [mitgliedId]
+      );
+
+      // 4. Hole Prüfungshistorie
+      const [pruefungen] = await db.promise().query(
+        `SELECT p.*, g.name as graduierung_name
+         FROM pruefungen p
+         LEFT JOIN graduierungen g ON p.graduierung_nachher_id = g.graduierung_id
+         WHERE p.mitglied_id = ?
+         ORDER BY p.pruefungsdatum DESC`,
+        [mitgliedId]
+      );
+
+      // 5. Hole User/Login-Daten falls vorhanden
+      const [userData] = await db.promise().query(
+        'SELECT * FROM users WHERE mitglied_id = ?',
+        [mitgliedId]
+      );
+
+      // 6. Bereite User-Daten für Archiv vor (ohne Passwort!)
+      let userDataForArchive = null;
+      if (userData.length > 0) {
+        const user = { ...userData[0] };
+        delete user.password; // WICHTIG: Passwort nicht archivieren
+        userDataForArchive = user;
+      }
+
+      // 7. Erstelle Archiv-Eintrag
+      const insertArchivQuery = `
+        INSERT INTO archiv_mitglieder (
+          mitglied_id, dojo_id, vorname, nachname, geburtsdatum,
+          strasse, plz, ort, land, telefon, email, eintrittsdatum,
+          status, notizen, foto_pfad,
+          tarif_id, zahlungszyklus_id, gekuendigt, gekuendigt_am, kuendigungsgrund,
+          vereinsordnung_akzeptiert, vereinsordnung_datum,
+          security_question, security_answer,
+          stil_daten, sepa_mandate, pruefungen, user_daten,
+          archiviert_am, archiviert_von, archivierungsgrund
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
+      `;
+
+      const archivValues = [
+        mitglied.mitglied_id,
+        mitglied.dojo_id,
+        mitglied.vorname,
+        mitglied.nachname,
+        mitglied.geburtsdatum,
+        mitglied.strasse,
+        mitglied.plz,
+        mitglied.ort,
+        mitglied.land || 'Deutschland',
+        mitglied.telefon,
+        mitglied.email,
+        mitglied.eintrittsdatum,
+        mitglied.status,
+        mitglied.notizen,
+        mitglied.foto_pfad,
+        mitglied.tarif_id,
+        mitglied.zahlungszyklus_id,
+        mitglied.gekuendigt || false,
+        mitglied.gekuendigt_am,
+        mitglied.kuendigungsgrund,
+        mitglied.vereinsordnung_akzeptiert || false,
+        mitglied.vereinsordnung_datum,
+        mitglied.security_question,
+        mitglied.security_answer,
+        JSON.stringify(stilData),
+        JSON.stringify(sepaMandate),
+        JSON.stringify(pruefungen),
+        userDataForArchive ? JSON.stringify(userDataForArchive) : null,
+        archiviert_von || null,
+        grund || 'Mitglieder bulk-archiviert'
+      ];
+
+      const [archivResult] = await db.promise().query(insertArchivQuery, archivValues);
+      const archivId = archivResult.insertId;
+
+      // 8. Kopiere Stil-Daten ins Archiv
+      for (const stil of stilData) {
+        await db.promise().query(
+          `INSERT INTO archiv_mitglied_stil_data
+           (archiv_id, mitglied_id, stil_id, current_graduierung_id, aktiv_seit)
+           VALUES (?, ?, ?, ?, ?)`,
+          [archivId, mitgliedId, stil.stil_id, stil.current_graduierung_id, stil.aktiv_seit]
+        );
+      }
+
+      // 9. Lösche User/Login-Zugang (Login wird gesperrt!)
+      if (userData.length > 0) {
+        await db.promise().query('DELETE FROM users WHERE mitglied_id = ?', [mitgliedId]);
+      }
+
+      // 10. Lösche alle abhängigen Daten (Foreign Key Constraints)
+      await db.promise().query('DELETE FROM fortschritt_updates WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglieder_meilensteine WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM trainings_notizen WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM pruefung_teilnehmer WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM event_anmeldungen WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM gruppen_mitglieder WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM verkaeufe WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM gesetzlicher_vertreter WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM beitraege WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM anwesenheit WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM anwesenheit_protokoll WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM checkins WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM pruefungen WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglieder_fortschritt WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM stripe_payment_intents WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM rechnungen WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglied_stil_data WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglied_stile WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglieder_ziele WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM kurs_bewertungen WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM payment_provider_logs WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglieder_dokumente WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM mitglied_dokumente WHERE mitglied_id = ?', [mitgliedId]);
+      await db.promise().query('DELETE FROM sepa_mandate WHERE mitglied_id = ?', [mitgliedId]);
+
+      // 11. Jetzt kann das Mitglied sicher gelöscht werden
+      await db.promise().query('DELETE FROM mitglieder WHERE mitglied_id = ?', [mitgliedId]);
+
+      // 12. Commit Transaction
+      await db.promise().query('COMMIT');
+
+      results.success.push({
+        mitglied_id: mitgliedId,
+        name: `${mitglied.vorname} ${mitglied.nachname}`,
+        archiv_id: archivId
+      });
+
+      console.log(`✅ Mitglied ${mitgliedId} erfolgreich archiviert`);
+
+    } catch (error) {
+      // Rollback bei Fehler für dieses Mitglied
+      await db.promise().query('ROLLBACK');
+      console.error(`❌ Fehler beim Archivieren von Mitglied ${mitgliedId}:`, error);
+      results.failed.push({
+        mitglied_id: mitgliedId,
+        error: error.message
+      });
+    }
+  }
+
+  console.log(`📊 Bulk-Archivierung abgeschlossen: ${results.success.length} erfolgreich, ${results.failed.length} fehlgeschlagen`);
+
+  res.json({
+    success: true,
+    message: `${results.success.length} von ${mitglied_ids.length} Mitgliedern erfolgreich archiviert`,
+    results: results
+  });
+});
+
+/**
  * GET /archiv
  * Ruft alle archivierten Mitglieder ab
  */

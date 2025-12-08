@@ -46,6 +46,9 @@ const MitgliederListe = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLetter, setSelectedLetter] = useState("");
   const [availableLetters, setAvailableLetters] = useState([]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [showMenu, setShowMenu] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -110,6 +113,18 @@ const MitgliederListe = () => {
     setFilteredMitglieder(filtered);
   }, [mitglieder, searchTerm, selectedLetter]);
 
+  // Schließe Menü beim Klicken außerhalb
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showMenu && !event.target.closest('.menu-container')) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
   const handleNewMember = () => {
     setIsModalOpen(true);
   };
@@ -125,6 +140,82 @@ const MitgliederListe = () => {
     } else {
       setSelectedLetter(letter);
       setSearchTerm(""); // Reset Suchfeld bei Alphabet-Filter
+    }
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedMembers([]);
+    setShowMenu(false);
+  };
+
+  const handleToggleMemberSelection = (mitgliedId) => {
+    if (selectedMembers.includes(mitgliedId)) {
+      setSelectedMembers(selectedMembers.filter(id => id !== mitgliedId));
+    } else {
+      setSelectedMembers([...selectedMembers, mitgliedId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedMembers.length === filteredMitglieder.length) {
+      setSelectedMembers([]);
+    } else {
+      setSelectedMembers(filteredMitglieder.map(m => m.mitglied_id));
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    if (selectedMembers.length === 0) {
+      alert('Bitte wähle mindestens ein Mitglied aus.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Möchtest du wirklich ${selectedMembers.length} Mitglied(er) archivieren?\n\n` +
+      `Diese Aktion kann nicht rückgängig gemacht werden.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await axios.post('/mitglieder/bulk-archivieren', {
+        mitglied_ids: selectedMembers,
+        grund: 'Bulk-Archivierung durch Admin',
+        archiviert_von: 'Admin'
+      });
+
+      if (response.data.success) {
+        const { results } = response.data;
+
+        if (results.failed.length > 0) {
+          alert(
+            `Archivierung abgeschlossen:\n\n` +
+            `✅ Erfolgreich: ${results.success.length}\n` +
+            `❌ Fehlgeschlagen: ${results.failed.length}\n\n` +
+            `Fehlgeschlagene Mitglieder:\n${results.failed.map(f => `- ID ${f.mitglied_id}: ${f.error}`).join('\n')}`
+          );
+        } else {
+          alert(`✅ ${results.success.length} Mitglied(er) erfolgreich archiviert!`);
+        }
+
+        // Reset selection mode und lade Mitglieder neu
+        setSelectionMode(false);
+        setSelectedMembers([]);
+
+        // Trigger reload
+        const dojoFilterParam = getDojoFilterParam();
+        const url = dojoFilterParam
+          ? `/mitglieder/all?${dojoFilterParam}`
+          : '/mitglieder/all';
+
+        const refreshResponse = await axios.get(url);
+        setMitglieder(refreshResponse.data);
+        setFilteredMitglieder(refreshResponse.data);
+      }
+    } catch (error) {
+      console.error('Fehler bei der Bulk-Archivierung:', error);
+      alert(`Fehler bei der Archivierung: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -155,10 +246,10 @@ const MitgliederListe = () => {
             boxShadow: 'none',
             marginTop: '0.3rem'
           }}>
-            {/* Suchfeld und Button oberhalb der Buchstabenreihe */}
-            <div style={{ 
-              display: 'flex !important', 
-              alignItems: 'center !important', 
+            {/* Suchfeld und Buttons oberhalb der Buchstabenreihe */}
+            <div style={{
+              display: 'flex !important',
+              alignItems: 'center !important',
               marginBottom: '0.4rem',
               width: '100%',
               textAlign: 'left !important',
@@ -185,7 +276,7 @@ const MitgliederListe = () => {
                   color: 'rgba(255, 255, 255, 0.9)',
                   boxSizing: 'border-box',
                   height: '28px',
-                  marginRight: '2rem'
+                  marginRight: '0.5rem'
                 }}
                 className="search-input-dark"
                 onFocus={(e) => {
@@ -197,6 +288,7 @@ const MitgliederListe = () => {
                   e.target.style.boxShadow = '0 1px 4px rgba(0, 0, 0, 0.1)';
                 }}
               />
+
               <button
                 onClick={handleNewMember}
                 style={{
@@ -238,9 +330,107 @@ const MitgliederListe = () => {
               </button>
             </div>
             
-            <div style={{ marginBottom: '0.3rem', fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
-              Filter nach Nachname:
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.3rem'
+            }}>
+              <div style={{ fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
+                Filter nach Nachname:
+              </div>
+
+              {/* Drei-Punkte-Menü Button - Hier besser sichtbar! */}
+              <div className="menu-container" style={{ position: 'relative', zIndex: 9999 }}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  style={{
+                    padding: '0.4rem 0.8rem',
+                    fontSize: '0.85rem',
+                    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.15))',
+                    color: '#ffd700',
+                    border: '2px solid rgba(255, 215, 0, 0.5)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontWeight: '700',
+                    boxShadow: '0 3px 10px rgba(255, 215, 0, 0.3)',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(12px)',
+                    position: 'relative',
+                    zIndex: 10000
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 215, 0, 0.25))';
+                    e.target.style.color = '#fff';
+                    e.target.style.borderColor = '#ffd700';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.15))';
+                    e.target.style.color = '#ffd700';
+                    e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 3px 10px rgba(255, 215, 0, 0.3)';
+                  }}
+                >
+                  <span style={{ fontSize: '1rem' }}>⋮</span>
+                  Aktionen
+                </button>
+
+                {/* Dropdown Menü */}
+                {showMenu && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: '0',
+                    marginTop: '0.5rem',
+                    background: 'rgba(26, 26, 46, 0.98)',
+                    border: '2px solid rgba(255, 215, 0, 0.4)',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+                    zIndex: 1000,
+                    minWidth: '200px',
+                    backdropFilter: 'blur(16px)',
+                    overflow: 'hidden'
+                  }}>
+                    <button
+                      onClick={handleToggleSelectionMode}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'rgba(255, 255, 255, 0.95)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        fontWeight: '600'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
+                        e.target.style.color = '#fff';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = 'transparent';
+                        e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                      }}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>📦</span>
+                      <span>{selectionMode ? 'Auswahl beenden' : 'Mehrfach archivieren'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
               {availableLetters.map(letter => (
                 <button
@@ -321,6 +511,104 @@ const MitgliederListe = () => {
 
 
 
+      {/* Aktionsleiste im Auswahlmodus */}
+      {selectionMode && (
+        <div style={{
+          background: 'rgba(139, 92, 246, 0.15)',
+          border: '1px solid rgba(139, 92, 246, 0.3)',
+          borderRadius: '8px',
+          padding: '0.75rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backdropFilter: 'blur(12px)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.85rem', fontWeight: '600' }}>
+              {selectedMembers.length} Mitglied{selectedMembers.length !== 1 ? 'er' : ''} ausgewählt
+            </span>
+            <button
+              onClick={handleSelectAll}
+              style={{
+                padding: '0.3rem 0.6rem',
+                fontSize: '0.75rem',
+                background: 'transparent',
+                color: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+            >
+              {selectedMembers.length === filteredMitglieder.length ? 'Alle abwählen' : 'Alle auswählen'}
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={handleBulkArchive}
+              disabled={selectedMembers.length === 0}
+              style={{
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.8rem',
+                background: selectedMembers.length > 0 ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'rgba(128, 128, 128, 0.3)',
+                color: selectedMembers.length > 0 ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: selectedMembers.length > 0 ? 'pointer' : 'not-allowed',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedMembers.length > 0) {
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              <span>📦</span>
+              Archivieren
+            </button>
+            <button
+              onClick={handleToggleSelectionMode}
+              style={{
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.8rem',
+                background: 'transparent',
+                color: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+
       {error && <div className="alert error">{error}</div>}
       {loading && (
         <div className="loading-state">
@@ -345,7 +633,14 @@ const MitgliederListe = () => {
               <div
                 key={mitglied.mitglied_id}
                 className="stat-card"
-                onClick={() => navigate(`/dashboard/mitglieder/${mitglied.mitglied_id}`)}
+                onClick={(e) => {
+                  if (selectionMode) {
+                    e.stopPropagation();
+                    handleToggleMemberSelection(mitglied.mitglied_id);
+                  } else {
+                    navigate(`/dashboard/mitglieder/${mitglied.mitglied_id}`);
+                  }
+                }}
                  style={{
                    padding: '0.8rem',
                    borderRadius: '6px',
@@ -354,14 +649,55 @@ const MitgliederListe = () => {
                    minHeight: '130px',
                    display: 'flex',
                    flexDirection: 'column',
-                   justifyContent: 'flex-start'
+                   justifyContent: 'flex-start',
+                   position: 'relative',
+                   border: selectionMode && selectedMembers.includes(mitglied.mitglied_id)
+                     ? '2px solid rgba(139, 92, 246, 0.6)'
+                     : '1px solid rgba(255, 255, 255, 0.1)',
+                   boxShadow: selectionMode && selectedMembers.includes(mitglied.mitglied_id)
+                     ? '0 0 15px rgba(139, 92, 246, 0.3)'
+                     : 'none'
                  }}
               >
+                {/* Checkbox im Auswahlmodus */}
+                {selectionMode && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '0.5rem',
+                      right: '0.5rem',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '4px',
+                      border: selectedMembers.includes(mitglied.mitglied_id)
+                        ? '2px solid #8b5cf6'
+                        : '2px solid rgba(255, 255, 255, 0.4)',
+                      background: selectedMembers.includes(mitglied.mitglied_id)
+                        ? '#8b5cf6'
+                        : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      zIndex: 10
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleMemberSelection(mitglied.mitglied_id);
+                    }}
+                  >
+                    {selectedMembers.includes(mitglied.mitglied_id) && (
+                      <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: 'bold' }}>✓</span>
+                    )}
+                  </div>
+                )}
+
                 <div style={{ marginBottom: '0.3rem' }}>
                   {/* Foto-Anzeige */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: '0.5rem',
                     marginBottom: '0.3rem'
                   }}>
