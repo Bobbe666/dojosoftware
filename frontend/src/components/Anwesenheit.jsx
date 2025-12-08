@@ -577,10 +577,6 @@ const Anwesenheit = () => {
 
       {ausgewaehlteStunde && (
         <div className="mitglieder-abschnitt">
-          <h3>
-            Anwesenheit für {ausgewaehlteStunde.stil} - {ausgewaehlteStunde.kurs_name} am {ausgewaehltesDatum}
-          </h3>
-
           {/* NEU: Suchfeld, Toggle und Anwesend-Button in einer Zeile */}
           <div className="alle-kontrollen-container">
             <div className="suchfeld-links">
