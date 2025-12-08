@@ -236,7 +236,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
                 k.stil as kurs_stil,
                 ms.stil as mitglied_stil,
-                TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) as alter
+                TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) as mitglied_alter
 
             FROM mitglieder m
 
