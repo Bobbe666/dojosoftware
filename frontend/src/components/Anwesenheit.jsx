@@ -140,24 +140,19 @@ const Anwesenheit = () => {
       setAusgewaehlteStunde(stunde);
       setMitglieder([]);
       setAnwesenheit({});
+      // Filter zurücksetzen auf Standard (Kurs-Mitglieder)
+      setShowAllMembers(false);
+      setShowStyleOnly(false);
       // 🆕 Suche zurücksetzen
       setSuchbegriff("");
       setAllMembersForSearch([]);
       setIsSearchActive(false);
-      
+
       const stundenplan_id = stunde.stundenplan_id || stunde.id;
 
-      // Mitglieder basierend auf Check-ins laden
-      // Priorisierung: show_all > show_style_only > standard (nur eingecheckte)
-      let queryParams = '';
-      if (showAllMembers) {
-        queryParams = '?show_all=true';
-      } else if (showStyleOnly) {
-        queryParams = '?show_style_only=true';
-      }
-
+      // Standard: Kurs-Mitglieder laden (ohne Parameter)
       const membersResponse = await fetch(
-        `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
+        `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}`
       );
       const membersData = await membersResponse.json();
       
@@ -603,10 +598,32 @@ const Anwesenheit = () => {
             <div className="filter-buttons-gruppe" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               {/* Button 1: Kurs-Mitglieder (Standard) */}
               <button
-                onClick={() => {
+                onClick={async () => {
+                  if (!ausgewaehlteStunde) return;
                   setShowAllMembers(false);
                   setShowStyleOnly(false);
-                  if (ausgewaehlteStunde) handleStundeWaehlen(ausgewaehlteStunde);
+                  setLoading(true);
+
+                  const stundenplan_id = ausgewaehlteStunde.stundenplan_id || ausgewaehlteStunde.id;
+                  const membersResponse = await fetch(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}`);
+                  const membersData = await membersResponse.json();
+
+                  if (membersData.success) {
+                    setMitglieder(membersData.members);
+                    const anwesenheitStatus = {};
+                    membersData.members.forEach(member => {
+                      anwesenheitStatus[member.mitglied_id] = {
+                        status: member.anwesend === 1 ? "anwesend" : "",
+                        bemerkung: "",
+                        gespeichert: member.anwesend === 1,
+                        checkin_status: member.checkin_status,
+                        checkin_time: member.checkin_time,
+                        checkout_time: member.checkout_time
+                      };
+                    });
+                    setAnwesenheit(anwesenheitStatus);
+                  }
+                  setLoading(false);
                 }}
                 className={!showAllMembers && !showStyleOnly ? 'filter-button-active' : 'filter-button-inactive'}
                 style={{
@@ -626,7 +643,33 @@ const Anwesenheit = () => {
 
               {/* Button 2: Stil-Mitglieder (mehr Mitglieder) */}
               <button
-                onClick={toggleShowStyleOnly}
+                onClick={async () => {
+                  if (!ausgewaehlteStunde) return;
+                  setShowAllMembers(false);
+                  setShowStyleOnly(true);
+                  setLoading(true);
+
+                  const stundenplan_id = ausgewaehlteStunde.stundenplan_id || ausgewaehlteStunde.id;
+                  const membersResponse = await fetch(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_style_only=true`);
+                  const membersData = await membersResponse.json();
+
+                  if (membersData.success) {
+                    setMitglieder(membersData.members);
+                    const anwesenheitStatus = {};
+                    membersData.members.forEach(member => {
+                      anwesenheitStatus[member.mitglied_id] = {
+                        status: member.anwesend === 1 ? "anwesend" : "",
+                        bemerkung: "",
+                        gespeichert: member.anwesend === 1,
+                        checkin_status: member.checkin_status,
+                        checkin_time: member.checkin_time,
+                        checkout_time: member.checkout_time
+                      };
+                    });
+                    setAnwesenheit(anwesenheitStatus);
+                  }
+                  setLoading(false);
+                }}
                 className={showStyleOnly ? 'filter-button-active' : 'filter-button-inactive'}
                 style={{
                   padding: '8px 16px',
@@ -645,7 +688,33 @@ const Anwesenheit = () => {
 
               {/* Button 3: Alle Mitglieder (Suche) */}
               <button
-                onClick={toggleShowAllMembers}
+                onClick={async () => {
+                  if (!ausgewaehlteStunde) return;
+                  setShowAllMembers(true);
+                  setShowStyleOnly(false);
+                  setLoading(true);
+
+                  const stundenplan_id = ausgewaehlteStunde.stundenplan_id || ausgewaehlteStunde.id;
+                  const membersResponse = await fetch(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`);
+                  const membersData = await membersResponse.json();
+
+                  if (membersData.success) {
+                    setMitglieder(membersData.members);
+                    const anwesenheitStatus = {};
+                    membersData.members.forEach(member => {
+                      anwesenheitStatus[member.mitglied_id] = {
+                        status: member.anwesend === 1 ? "anwesend" : "",
+                        bemerkung: "",
+                        gespeichert: member.anwesend === 1,
+                        checkin_status: member.checkin_status,
+                        checkin_time: member.checkin_time,
+                        checkout_time: member.checkout_time
+                      };
+                    });
+                    setAnwesenheit(anwesenheitStatus);
+                  }
+                  setLoading(false);
+                }}
                 className={showAllMembers ? 'filter-button-active' : 'filter-button-inactive'}
                 style={{
                   padding: '8px 16px',
