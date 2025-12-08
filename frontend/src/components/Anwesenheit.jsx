@@ -552,7 +552,11 @@ const Anwesenheit = () => {
               <div>
                 {stunde.wochentag}, {stunde.zeit}
               </div>
-              <div>{stunde.kurs_name || "Kurs"}</div>
+              <div>
+                {stunde.stil && <strong>{stunde.stil}</strong>}
+                {stunde.stil && stunde.kurs_name && <br />}
+                {stunde.kurs_name}
+              </div>
               {stats.showStats ? (
                 <div className="kurs-stats">
                   📍 {stats.aktive_checkins} aktiv | 📋 {stats.checkins_heute} heute
