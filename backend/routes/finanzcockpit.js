@@ -171,18 +171,34 @@ router.get('/stats', (req, res) => {
     }),
     
     // Zahlläufe-Statistiken
-    // Hinweis: Zahlläufe haben keine direkte mitglied_id, daher kein Dojo-Filter möglich
     new Promise((resolve, reject) => {
+      let whereConditions = ['geplanter_einzug >= ?', 'geplanter_einzug <= ?'];
+      let queryParams = [dateStart, dateEnd];
+
+      // 🔒 DOJO-FILTER: Zahlläufe jetzt mit dojo_id
+      if (dojo_id && dojo_id !== 'all') {
+        whereConditions.push('dojo_id = ?');
+        queryParams.push(parseInt(dojo_id));
+      }
+
       const query = `
-        SELECT 
+        SELECT
           COUNT(*) as gesamt_zahllaeufe,
           COUNT(CASE WHEN status = 'abgeschlossen' THEN 1 END) as abgeschlossene_zahllaeufe,
           COALESCE(SUM(CASE WHEN status = 'abgeschlossen' THEN betrag ELSE 0 END), 0) as abgeschlossene_summe
         FROM zahllaeufe
-        WHERE geplanter_einzug >= ? AND geplanter_einzug <= ?
+        WHERE ${whereConditions.join(' AND ')}
       `;
-      db.query(query, [dateStart, dateEnd], (err, results) => {
-        if (err) return reject(err);
+      db.query(query, queryParams, (err, results) => {
+        if (err) {
+          console.error('Fehler bei Zahlläufe-Query:', err);
+          // Wenn Spalte fehlt, 0 zurückgeben
+          if (err.code === 'ER_BAD_FIELD_ERROR') {
+            console.warn('⚠️ dojo_id-Spalte in zahllaeufe nicht gefunden. Migration ausführen!');
+            return resolve({ gesamt_zahllaeufe: 0, abgeschlossene_zahllaeufe: 0, abgeschlossene_summe: 0 });
+          }
+          return reject(err);
+        }
         resolve(results[0] || { gesamt_zahllaeufe: 0, abgeschlossene_zahllaeufe: 0, abgeschlossene_summe: 0 });
       });
     }),
@@ -219,12 +235,15 @@ router.get('/stats', (req, res) => {
     new Promise((resolve, reject) => {
       let whereConditions = ['kb.geschaeft_datum >= ?', 'kb.geschaeft_datum <= ?', "kb.bewegungsart = 'ausgabe'"];
       let queryParams = [dateStart, dateEnd];
-      
-      // Kassenbuch hat keine direkte dojo_id, daher kein Filter möglich
-      // TODO: Wenn Kassenbuch dojo_id bekommt, hier Filter hinzufügen
-      
+
+      // 🔒 DOJO-FILTER: Kassenbuch jetzt mit dojo_id
+      if (dojo_id && dojo_id !== 'all') {
+        whereConditions.push('kb.dojo_id = ?');
+        queryParams.push(parseInt(dojo_id));
+      }
+
       const query = `
-        SELECT 
+        SELECT
           COUNT(*) as anzahl_ausgaben,
           COALESCE(SUM(kb.betrag_cent), 0) as ausgaben_cent
         FROM kassenbuch kb
@@ -233,13 +252,43 @@ router.get('/stats', (req, res) => {
       db.query(query, queryParams, (err, results) => {
         if (err) {
           console.error('Fehler bei Ausgaben-Query:', err);
-          // Wenn Tabelle nicht existiert, 0 zurückgeben
-          if (err.code === 'ER_NO_SUCH_TABLE') {
+          // Wenn Tabelle nicht existiert oder Spalte fehlt, 0 zurückgeben
+          if (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_FIELD_ERROR') {
+            console.warn('⚠️ Kassenbuch-Tabelle oder dojo_id-Spalte nicht gefunden. Migration ausführen!');
             return resolve({ anzahl_ausgaben: 0, ausgaben_cent: 0 });
           }
           return reject(err);
         }
         resolve(results[0] || { anzahl_ausgaben: 0, ausgaben_cent: 0 });
+      });
+    }),
+
+    // Ausgaben aus Kassenbuch (Vorperiode für Trend)
+    new Promise((resolve, reject) => {
+      let whereConditions = ['kb.geschaeft_datum >= ?', 'kb.geschaeft_datum <= ?', "kb.bewegungsart = 'ausgabe'"];
+      let queryParams = [prevDateStart, prevDateEnd];
+
+      // 🔒 DOJO-FILTER: Kassenbuch mit dojo_id
+      if (dojo_id && dojo_id !== 'all') {
+        whereConditions.push('kb.dojo_id = ?');
+        queryParams.push(parseInt(dojo_id));
+      }
+
+      const query = `
+        SELECT
+          COALESCE(SUM(kb.betrag_cent), 0) as ausgaben_cent
+        FROM kassenbuch kb
+        WHERE ${whereConditions.join(' AND ')}
+      `;
+      db.query(query, queryParams, (err, results) => {
+        if (err) {
+          console.error('Fehler bei Ausgaben-Vorperiode-Query:', err);
+          if (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_FIELD_ERROR') {
+            return resolve({ ausgaben_cent: 0 });
+          }
+          return reject(err);
+        }
+        resolve(results[0] || { ausgaben_cent: 0 });
       });
     })
   ]).then(([
@@ -249,7 +298,8 @@ router.get('/stats', (req, res) => {
     rechnungenStats,
     zahllaeufeStats,
     zahlungenStats,
-    ausgabenStats
+    ausgabenStats,
+    ausgabenPrevStats
   ]) => {
     // Berechne Gesamteinnahmen
     const monatlicheEinnahmen = parseFloat(vertraegeStats.monatliche_einnahmen) || 0;
@@ -282,8 +332,10 @@ router.get('/stats', (req, res) => {
     const cashflowProzent = gesamteinnahmen > 0 ? (cashflow / gesamteinnahmen) * 100 : 0;
     
     // Ausgaben-Trend (Vorperiode)
-    // TODO: Ausgaben-Vorperiode berechnen wenn benötigt
-    const ausgabenTrend = 0; // Wird später implementiert wenn Vorperiode benötigt
+    const ausgabenPrev = (parseFloat(ausgabenPrevStats.ausgaben_cent) || 0) / 100;
+    const ausgabenTrend = ausgabenPrev > 0
+      ? ((gesamteAusgaben - ausgabenPrev) / ausgabenPrev) * 100
+      : 0;
     
     const stats = {
       period,
