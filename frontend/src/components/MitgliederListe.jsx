@@ -308,7 +308,8 @@ const MitgliederListe = () => {
                   transition: 'all 0.3s ease',
                   backdropFilter: 'blur(8px)',
                   boxSizing: 'border-box',
-                  height: '28px'
+                  height: '28px',
+                  marginRight: '0.5rem'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
@@ -328,57 +329,47 @@ const MitgliederListe = () => {
                 <span style={{ fontSize: '0.8rem' }}>➕</span>
                 Mitglied anlegen
               </button>
-            </div>
-            
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.3rem'
-            }}>
-              <div style={{ fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
-                Filter nach Nachname:
-              </div>
 
-              {/* Drei-Punkte-Menü Button - Hier besser sichtbar! */}
-              <div className="menu-container" style={{ position: 'relative', zIndex: 9999 }}>
+              {/* Drei-Punkte-Menü Button - RECHTS NEBEN "Mitglied anlegen" */}
+              <div className="menu-container" style={{ position: 'relative', display: 'inline-block', zIndex: 10000 }}>
                 <button
                   onClick={() => setShowMenu(!showMenu)}
                   style={{
-                    padding: '0.4rem 0.8rem',
-                    fontSize: '0.85rem',
-                    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.15))',
+                    padding: '0.3rem 0.6rem',
+                    fontSize: '0.75rem',
+                    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))',
                     color: '#ffd700',
                     border: '2px solid rgba(255, 215, 0, 0.5)',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
+                    whiteSpace: 'nowrap',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
+                    gap: '0.3rem',
                     fontWeight: '700',
-                    boxShadow: '0 3px 10px rgba(255, 215, 0, 0.3)',
+                    boxShadow: '0 3px 10px rgba(255, 215, 0, 0.4)',
                     transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(12px)',
-                    position: 'relative',
-                    zIndex: 10000
+                    backdropFilter: 'blur(8px)',
+                    boxSizing: 'border-box',
+                    height: '28px'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 215, 0, 0.25))';
+                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(255, 215, 0, 0.3))';
                     e.target.style.color = '#fff';
                     e.target.style.borderColor = '#ffd700';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.5)';
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.6)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.15))';
+                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
                     e.target.style.color = '#ffd700';
                     e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
                     e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 3px 10px rgba(255, 215, 0, 0.3)';
+                    e.target.style.boxShadow = '0 3px 10px rgba(255, 215, 0, 0.4)';
                   }}
                 >
-                  <span style={{ fontSize: '1rem' }}>⋮</span>
-                  Aktionen
+                  <span style={{ fontSize: '1rem', fontWeight: '900' }}>⋮</span>
+                  <span>Aktionen</span>
                 </button>
 
                 {/* Dropdown Menü */}
@@ -389,11 +380,11 @@ const MitgliederListe = () => {
                     right: '0',
                     marginTop: '0.5rem',
                     background: 'rgba(26, 26, 46, 0.98)',
-                    border: '2px solid rgba(255, 215, 0, 0.4)',
+                    border: '2px solid rgba(255, 215, 0, 0.5)',
                     borderRadius: '8px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
-                    zIndex: 1000,
-                    minWidth: '200px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.7)',
+                    zIndex: 10001,
+                    minWidth: '220px',
                     backdropFilter: 'blur(16px)',
                     overflow: 'hidden'
                   }}>
@@ -429,6 +420,10 @@ const MitgliederListe = () => {
                   </div>
                 )}
               </div>
+            </div>
+            
+            <div style={{ marginBottom: '0.3rem', fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
+              Filter nach Nachname:
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
