@@ -73,7 +73,7 @@ const Anwesenheit = () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(`/anwesenheit/kurse/${datum}`);
+      const response = await axios.get(`/api/anwesenheit/kurse/${datum}`);
       const data = response.data;
       
       if (data.success) {
@@ -157,7 +157,7 @@ const Anwesenheit = () => {
       }
 
       const membersResponse = await fetch(
-        `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
+        `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
       );
       const membersData = await membersResponse.json();
       
@@ -212,7 +212,7 @@ const Anwesenheit = () => {
           }
 
           const membersResponse = await fetch(
-            `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
+            `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
           );
           const membersData = await membersResponse.json();
           
@@ -250,7 +250,7 @@ const Anwesenheit = () => {
   const loadAllMembersForSearch = async (stundenplan_id) => {
     try {
       const allMembersResponse = await fetch(
-        `/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`
+        `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`
       );
       const allMembersData = await allMembersResponse.json();
       
