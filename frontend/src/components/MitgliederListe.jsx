@@ -119,8 +119,15 @@ const MitgliederListe = () => {
   // Schließe Menü beim Klicken außerhalb
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showMenu && !event.target.closest('.menu-container')) {
-        setShowMenu(false);
+      if (showMenu) {
+        // Prüfe ob Klick auf den Button oder das Dropdown war
+        const isMenuButton = event.target.closest('.menu-container');
+        const isDropdownContent = event.target.closest('.dropdown-content');
+
+        if (!isMenuButton && !isDropdownContent) {
+          console.log('🚫 Click outside detected, closing menu');
+          setShowMenu(false);
+        }
       }
     };
 
@@ -399,6 +406,7 @@ const MitgliederListe = () => {
               {/* Dropdown Menü als Portal direkt im Body */}
               {showMenu && ReactDOM.createPortal(
                 <div
+                  className="dropdown-content"
                   style={{
                     position: 'fixed',
                     top: `${menuPosition.top}px`,
@@ -415,10 +423,17 @@ const MitgliederListe = () => {
                     visibility: 'visible',
                     opacity: 1
                   }}
-                  onClick={(e) => console.log('🎯 Dropdown clicked!')}
+                  onClick={(e) => {
+                    console.log('🎯 Dropdown clicked!');
+                    e.stopPropagation();
+                  }}
                 >
                   <button
-                    onClick={handleToggleSelectionMode}
+                    onClick={(e) => {
+                      console.log('📦 Archivieren button clicked!');
+                      e.stopPropagation();
+                      handleToggleSelectionMode();
+                    }}
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
