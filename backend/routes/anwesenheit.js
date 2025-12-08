@@ -111,8 +111,8 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
         params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id];
 
     } else if (show_style_only) {
-        // NEU: Alle Mitglieder des Dojos anzeigen (da Stil-Zuordnungen noch nicht gepflegt sind)
-        // Zeigt ALLE aktiven Mitglieder die zum gleichen Dojo gehören wie der Kurs
+        // NEU: Alle Mitglieder des Stils anzeigen (über mitglied_stile Tabelle)
+        // Zeigt ALLE Mitglieder die den gleichen Stil trainieren wie der Kurs, unabhängig von der Altersgruppe
         query = `
             SELECT DISTINCT
                 m.mitglied_id,
@@ -140,13 +140,17 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 -- Kurs-Info
                 k.gruppenname as kurs_name,
                 CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
-                k.stil as kurs_stil
+                k.stil as kurs_stil,
+                ms.stil as mitglied_stil
 
             FROM mitglieder m
 
-            -- Join mit Kurs-Info um das Dojo zu ermitteln
+            -- Join mit Kurs-Info um den Stil zu ermitteln
             INNER JOIN stundenplan s ON s.stundenplan_id = ?
             INNER JOIN kurse k ON s.kurs_id = k.kurs_id
+
+            -- Join mit mitglied_stile für Stil-Zuordnung
+            INNER JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
 
             -- Check-in Status für heute
             LEFT JOIN (
@@ -182,9 +186,15 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 AND a.datum = ?
             )
 
-            -- Alle aktiven Mitglieder des gleichen Dojos
+            -- Nur Mitglieder mit dem gleichen Stil wie der Kurs
             WHERE m.aktiv = 1
-                AND m.dojo_id = k.dojo_id
+                AND (
+                    -- Exakter Match (z.B. "Karate" = "Karate")
+                    ms.stil = k.stil
+                    -- Oder Karate-Varianten (Enso Karate enthält Karate)
+                    OR (k.stil LIKE CONCAT('%', ms.stil, '%'))
+                    OR (ms.stil LIKE CONCAT('%', k.stil, '%'))
+                )
 
             ORDER BY
                 CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
