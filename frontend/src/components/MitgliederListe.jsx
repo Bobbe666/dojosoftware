@@ -49,6 +49,8 @@ const MitgliederListe = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const menuButtonRef = React.useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -147,6 +149,17 @@ const MitgliederListe = () => {
     setSelectionMode(!selectionMode);
     setSelectedMembers([]);
     setShowMenu(false);
+  };
+
+  const handleMenuToggle = () => {
+    if (!showMenu && menuButtonRef.current) {
+      const rect = menuButtonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 220
+      });
+    }
+    setShowMenu(!showMenu);
   };
 
   const handleToggleMemberSelection = (mitgliedId) => {
@@ -333,7 +346,8 @@ const MitgliederListe = () => {
               {/* Drei-Punkte-Menü Button - RECHTS NEBEN "Mitglied anlegen" */}
               <div className="menu-container" style={{ position: 'relative', display: 'inline-block', zIndex: 10000 }}>
                 <button
-                  onClick={() => setShowMenu(!showMenu)}
+                  ref={menuButtonRef}
+                  onClick={handleMenuToggle}
                   style={{
                     padding: '0.3rem 0.6rem',
                     fontSize: '0.75rem',
@@ -375,18 +389,17 @@ const MitgliederListe = () => {
                 {/* Dropdown Menü */}
                 {showMenu && (
                   <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    right: '0',
-                    marginTop: '0.5rem',
+                    position: 'fixed',
+                    top: `${menuPosition.top}px`,
+                    left: `${menuPosition.left}px`,
                     background: 'rgba(26, 26, 46, 0.98)',
                     border: '2px solid rgba(255, 215, 0, 0.5)',
                     borderRadius: '8px',
                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.7)',
-                    zIndex: 10001,
+                    zIndex: 99999,
                     minWidth: '220px',
                     backdropFilter: 'blur(16px)',
-                    overflow: 'hidden'
+                    overflow: 'visible'
                   }}>
                     <button
                       onClick={handleToggleSelectionMode}
