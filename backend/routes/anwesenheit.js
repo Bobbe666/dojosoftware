@@ -144,19 +144,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 st.name as mitglied_stil_name
 
             FROM mitglieder m
-            -- Join mit Stil-Tabelle für Stil-Vergleich
+
+            -- Join mit Kurs-Info um den Stil zu ermitteln
             INNER JOIN stundenplan s ON s.stundenplan_id = ?
             INNER JOIN kurse k ON s.kurs_id = k.kurs_id
-            LEFT JOIN stile st ON m.stil_id = st.stil_id
 
-            -- Nur Mitglieder mit dem gleichen Stil wie der Kurs
-            WHERE m.aktiv = 1
-                AND (
-                    -- Entweder exakter Stil-Name-Match
-                    st.name = k.stil
-                    -- Oder wenn kein stil_id gesetzt, als Fallback
-                    OR (m.stil_id IS NULL AND k.stil IS NOT NULL)
-                )
+            -- Join mit Stil-Tabelle für Stil-Vergleich
+            LEFT JOIN stile st ON m.stil_id = st.stil_id
 
             -- Check-in Status für heute
             LEFT JOIN (
@@ -191,6 +185,15 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 AND a.stundenplan_id = ?
                 AND a.datum = ?
             )
+
+            -- Nur Mitglieder mit dem gleichen Stil wie der Kurs
+            WHERE m.aktiv = 1
+                AND (
+                    -- Entweder exakter Stil-Name-Match
+                    st.name = k.stil
+                    -- Oder wenn kein stil_id gesetzt, als Fallback
+                    OR (m.stil_id IS NULL AND k.stil IS NOT NULL)
+                )
 
             ORDER BY
                 CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
