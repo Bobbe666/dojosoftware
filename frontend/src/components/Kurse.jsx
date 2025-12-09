@@ -129,6 +129,9 @@ const Kurse = () => {
   const [filterStil, setFilterStil] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
 
+  // Kollaps-State für Stil-Gruppen (alle standardmäßig geöffnet)
+  const [collapsedStile, setCollapsedStile] = useState({});
+
   const getTrainerName = (trainer_id) => {
     const t = trainer.find(t => t.trainer_id === Number(trainer_id));
     return t ? `${t.vorname} ${t.nachname}` : "Unbekannter Trainer";
@@ -160,6 +163,41 @@ const Kurse = () => {
     return sortConfig.direction === 'asc' ? "↑" : "↓";
   };
 
+  // Toggle Stil-Gruppe
+  const toggleStil = (stilName) => {
+    setCollapsedStile(prev => ({
+      ...prev,
+      [stilName]: !prev[stilName]
+    }));
+  };
+
+  // Gruppiere Kurse nach Stil
+  const kurseByStil = useMemo(() => {
+    const grouped = {};
+
+    kurse
+      .filter(k => !filterTrainer || k.trainer_id.toString() === filterTrainer)
+      .forEach(kurs => {
+        const stil = kurs.stil || 'Unbekannter Stil';
+        if (!grouped[stil]) {
+          grouped[stil] = [];
+        }
+        grouped[stil].push(kurs);
+      });
+
+    // Sortiere Kurse innerhalb jeder Gruppe
+    Object.keys(grouped).forEach(stil => {
+      grouped[stil].sort((a, b) => {
+        const aVal = a.gruppenname || '';
+        const bVal = b.gruppenname || '';
+        return aVal.localeCompare(bVal);
+      });
+    });
+
+    return grouped;
+  }, [kurse, filterTrainer]);
+
+  // Alte sortedKurse für Kompatibilität (wird nicht mehr verwendet)
   const sortedKurse = useMemo(() => {
     return [...kurse]
       .filter(k =>
@@ -465,99 +503,9 @@ const Kurse = () => {
   function renderKurseTab() {
     return (
       <>
-        {/* Sortierung */}
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          marginBottom: '1rem',
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
-          <span style={{ color: '#ffffff', fontWeight: 600, marginRight: '0.5rem' }}>
-            📊 Sortieren nach:
-          </span>
-          <button
-            onClick={() => handleSort('stil')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'stil' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'stil' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
-          >
-            🥋 Stil {sortConfig.key === 'stil' && getSortIcon('stil')}
-          </button>
-          <button
-            onClick={() => handleSort('gruppenname')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'gruppenname' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'gruppenname' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
-          >
-            🏷️ Gruppe {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
-          </button>
-          <button
-            onClick={() => handleSort('raum')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'raum' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'raum' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
-          >
-            🏛️ Raum {sortConfig.key === 'raum' && getSortIcon('raum')}
-          </button>
-          <button
-            onClick={() => handleSort('trainer')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'trainer' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'trainer' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
-          >
-            👨‍🏫 Trainer {sortConfig.key === 'trainer' && getSortIcon('trainer')}
-          </button>
-        </div>
-
         {/* Filter + Export */}
         <div className="kurse-controls">
           <div className="kurse-filters">
-            <div className="filter-group">
-              <label>🎯 Stil filtern:</label>
-              <select
-                className="filter-select"
-                onChange={e => setFilterStil(e.target.value)}
-                value={filterStil}
-              >
-                <option value="">Alle Stile anzeigen</option>
-                {stile.map(s => (
-                  <option key={s.stil_id} value={s.name}>{s.name}</option>
-                ))}
-              </select>
-            </div>
             <div className="filter-group">
               <label>👨‍🏫 Trainer filtern:</label>
               <select
@@ -781,10 +729,66 @@ const Kurse = () => {
           </div>
         </div>
 
-        {/* Kursliste als Cards */}
-        <div className="kurse-grid">
-          {sortedKurse.length > 0 ? (
-            sortedKurse.map((kurs, index) => (
+        {/* Kursliste gruppiert nach Stil */}
+        <div className="kurse-by-stil">
+          {Object.keys(kurseByStil).length > 0 ? (
+            Object.keys(kurseByStil).sort().map((stilName, stilIndex) => (
+              <div key={stilName} className="stil-section" style={{ marginBottom: '2rem' }}>
+                {/* Stil-Header mit Dropdown */}
+                <h2
+                  className="stil-header"
+                  onClick={() => toggleStil(stilName)}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '1rem 1.5rem',
+                    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
+                    border: '2px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '12px',
+                    marginBottom: '1rem',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <span style={{ fontSize: '1.5rem' }}>🥋</span>
+                    <span style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ffffff', textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)' }}>
+                      {stilName}
+                    </span>
+                    <span style={{
+                      fontSize: '0.9rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '12px',
+                      fontWeight: 600
+                    }}>
+                      {kurseByStil[stilName].length} {kurseByStil[stilName].length === 1 ? 'Kurs' : 'Kurse'}
+                    </span>
+                  </span>
+                  <span style={{
+                    transform: collapsedStile[stilName] ? 'rotate(-90deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.3s ease',
+                    fontSize: '1.2rem',
+                    color: '#ffffff'
+                  }}>
+                    ▼
+                  </span>
+                </h2>
+
+                {/* Kurse dieser Stil-Gruppe */}
+                {!collapsedStile[stilName] && (
+                  <div className="kurse-grid" style={{ animationDelay: `${stilIndex * 0.1}s` }}>
+                    {kurseByStil[stilName].map((kurs, index) => (
               <div key={kurs.kurs_id} className="kurs-card" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="kurs-card-header">
                   <div className="kurs-stil-badge">
@@ -924,6 +928,10 @@ const Kurse = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           ) : (
