@@ -750,6 +750,24 @@ const Kurse = () => {
                     </div>
 
                     <div className="kurs-field">
+                      <label>🏷️ Gruppe:</label>
+                      {editingId === kurs.kurs_id ? (
+                        <select
+                          className="edit-select"
+                          value={editingData.gruppenname}
+                          onChange={(e) => setEditingData({ ...editingData, gruppenname: e.target.value })}
+                        >
+                          <option value="">Gruppe auswählen...</option>
+                          {gruppen.map((gruppe) => (
+                            <option key={gruppe.gruppen_id} value={gruppe.name}>{gruppe.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="kurs-value">{kurs.gruppenname || "Keine Gruppe"}</span>
+                      )}
+                    </div>
+
+                    <div className="kurs-field">
                       <label>🏛️ Raum:</label>
                       {editingId === kurs.kurs_id ? (
                         <select
