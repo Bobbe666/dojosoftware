@@ -85,6 +85,7 @@ router.get("/all", (req, res) => {
             m.nachname,
             m.geburtsdatum,
             m.gurtfarbe,
+            m.aktuelle_graduierung,
             m.email,
             m.telefon_mobil,
             m.aktiv,
