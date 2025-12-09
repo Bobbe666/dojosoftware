@@ -125,7 +125,7 @@ const Kurse = () => {
     raum_id: ""
   });
 
-  const [sortConfig, setSortConfig] = useState({ key: 'stil', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'gruppenname', direction: 'asc' });
   const [filterStil, setFilterStil] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
 
@@ -185,17 +185,44 @@ const Kurse = () => {
         grouped[stil].push(kurs);
       });
 
-    // Sortiere Kurse innerhalb jeder Gruppe
+    // Sortiere Kurse innerhalb jeder Gruppe basierend auf sortConfig
     Object.keys(grouped).forEach(stil => {
       grouped[stil].sort((a, b) => {
-        const aVal = a.gruppenname || '';
-        const bVal = b.gruppenname || '';
-        return aVal.localeCompare(bVal);
+        if (!sortConfig.key) {
+          // Standard: nach Gruppenname
+          const aVal = a.gruppenname || '';
+          const bVal = b.gruppenname || '';
+          return aVal.localeCompare(bVal);
+        }
+
+        let aVal, bVal;
+
+        // Spezielle Behandlung für Trainer (kann Array sein)
+        if (sortConfig.key === 'trainer') {
+          aVal = Array.isArray(a.trainer_ids) ? getTrainerNames(a.trainer_ids) : getTrainerName(a.trainer_id);
+          bVal = Array.isArray(b.trainer_ids) ? getTrainerNames(b.trainer_ids) : getTrainerName(b.trainer_id);
+        } else if (sortConfig.key === 'raum') {
+          aVal = getRaumName(a.raum_id);
+          bVal = getRaumName(b.raum_id);
+        } else if (sortConfig.key === 'gruppenname') {
+          aVal = a.gruppenname || '';
+          bVal = b.gruppenname || '';
+        } else {
+          aVal = a[sortConfig.key]?.toString() || '';
+          bVal = b[sortConfig.key]?.toString() || '';
+        }
+
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
       });
     });
 
     return grouped;
-  }, [kurse, filterTrainer]);
+  }, [kurse, filterTrainer, sortConfig]);
 
   // Alte sortedKurse für Kompatibilität (wird nicht mehr verwendet)
   const sortedKurse = useMemo(() => {
@@ -503,6 +530,67 @@ const Kurse = () => {
   function renderKurseTab() {
     return (
       <>
+        {/* Sortierung innerhalb der Stil-Gruppen */}
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <span style={{ color: '#ffffff', fontWeight: 600, marginRight: '0.5rem' }}>
+            📊 Kurse sortieren nach:
+          </span>
+          <button
+            onClick={() => handleSort('gruppenname')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'gruppenname' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'gruppenname' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            🏷️ Gruppe {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
+          </button>
+          <button
+            onClick={() => handleSort('raum')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'raum' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'raum' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            🏛️ Raum {sortConfig.key === 'raum' && getSortIcon('raum')}
+          </button>
+          <button
+            onClick={() => handleSort('trainer')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'trainer' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'trainer' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            👨‍🏫 Trainer {sortConfig.key === 'trainer' && getSortIcon('trainer')}
+          </button>
+        </div>
+
         {/* Filter + Export */}
         <div className="kurse-controls">
           <div className="kurse-filters">
