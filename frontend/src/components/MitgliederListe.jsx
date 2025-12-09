@@ -134,9 +134,15 @@ const MitgliederListe = () => {
 
     // Stil-Filter
     if (filterStil) {
-      filtered = filtered.filter(m =>
-        m.stile?.split(',').map(s => s.trim()).includes(filterStil)
-      );
+      if (filterStil === '__OHNE_STIL__') {
+        // Zeige nur Mitglieder ohne Stil
+        filtered = filtered.filter(m => !m.stile || m.stile.trim() === '');
+      } else {
+        // Zeige nur Mitglieder mit diesem Stil
+        filtered = filtered.filter(m =>
+          m.stile?.split(',').map(s => s.trim()).includes(filterStil)
+        );
+      }
     }
 
     // Alter-Filter
@@ -556,7 +562,6 @@ const MitgliederListe = () => {
               <select
                 value={filterStil}
                 onChange={(e) => setFilterStil(e.target.value)}
-                size="1"
                 style={{
                   padding: '0.3rem 0.6rem',
                   fontSize: '0.75rem',
@@ -570,13 +575,14 @@ const MitgliederListe = () => {
                   backdropFilter: 'blur(8px)',
                   height: '28px',
                   outline: 'none',
-                  minWidth: '150px',
-                  maxWidth: '200px'
+                  width: 'auto',
+                  paddingRight: '2rem'
                 }}
               >
-                <option value="" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>🎯 Alle Stile</option>
+                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🎯 Alle Stile</option>
+                <option value="__OHNE_STIL__" style={{ background: '#1a1a2e', color: '#ff6b6b' }}>❌ Ohne Stil</option>
                 {availableStile.map(stil => (
-                  <option key={stil} value={stil} style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>
+                  <option key={stil} value={stil} style={{ background: '#1a1a2e', color: '#ffffff' }}>
                     {stil}
                   </option>
                 ))}
@@ -586,7 +592,6 @@ const MitgliederListe = () => {
               <select
                 value={filterAlter}
                 onChange={(e) => setFilterAlter(e.target.value)}
-                size="1"
                 style={{
                   padding: '0.3rem 0.6rem',
                   fontSize: '0.75rem',
@@ -600,24 +605,23 @@ const MitgliederListe = () => {
                   backdropFilter: 'blur(8px)',
                   height: '28px',
                   outline: 'none',
-                  minWidth: '180px',
-                  maxWidth: '220px'
+                  width: 'auto',
+                  paddingRight: '2rem'
                 }}
               >
-                <option value="" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>📅 Alle Altersgruppen</option>
-                <option value="0-6" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>0-6 Jahre</option>
-                <option value="7-12" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>7-12 Jahre</option>
-                <option value="13-17" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>13-17 Jahre</option>
-                <option value="18-25" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>18-25 Jahre</option>
-                <option value="26-40" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>26-40 Jahre</option>
-                <option value="41+" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>41+ Jahre</option>
+                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>📅 Alle Altersgruppen</option>
+                <option value="0-6" style={{ background: '#1a1a2e', color: '#ffffff' }}>0-6 Jahre</option>
+                <option value="7-12" style={{ background: '#1a1a2e', color: '#ffffff' }}>7-12 Jahre</option>
+                <option value="13-17" style={{ background: '#1a1a2e', color: '#ffffff' }}>13-17 Jahre</option>
+                <option value="18-25" style={{ background: '#1a1a2e', color: '#ffffff' }}>18-25 Jahre</option>
+                <option value="26-40" style={{ background: '#1a1a2e', color: '#ffffff' }}>26-40 Jahre</option>
+                <option value="41+" style={{ background: '#1a1a2e', color: '#ffffff' }}>41+ Jahre</option>
               </select>
 
               {/* Gurt-Filter */}
               <select
                 value={filterGurt}
                 onChange={(e) => setFilterGurt(e.target.value)}
-                size="1"
                 style={{
                   padding: '0.3rem 0.6rem',
                   fontSize: '0.75rem',
@@ -631,13 +635,13 @@ const MitgliederListe = () => {
                   backdropFilter: 'blur(8px)',
                   height: '28px',
                   outline: 'none',
-                  minWidth: '150px',
-                  maxWidth: '200px'
+                  width: 'auto',
+                  paddingRight: '2rem'
                 }}
               >
-                <option value="" style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>🥋 Alle Gurte</option>
+                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🥋 Alle Gurte</option>
                 {availableGurte.map(gurt => (
-                  <option key={gurt} value={gurt} style={{ background: '#1a1a2e', color: '#ffffff', padding: '0.5rem' }}>
+                  <option key={gurt} value={gurt} style={{ background: '#1a1a2e', color: '#ffffff' }}>
                     {gurt}
                   </option>
                 ))}
