@@ -297,6 +297,9 @@ html body .kurse-container-modern .stat-card,
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100 !important;
 }
 
 .kurs-stil-badge {
@@ -310,6 +313,9 @@ html body .kurse-container-modern .stat-card,
 .kurs-actions {
   display: flex;
   gap: 0.5rem;
+  position: relative;
+  z-index: 9999 !important;
+  flex-shrink: 0;
 }
 
 .action-btn {
@@ -325,6 +331,9 @@ html body .kurse-container-modern .stat-card,
   align-items: center;
   justify-content: center;
   font-size: 14px;
+  position: relative;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
 }
 
 .action-btn:hover {
@@ -345,6 +354,8 @@ html body .kurse-container-modern .stat-card,
   overflow-y: auto;
   max-height: 500px;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .kurs-field {
@@ -356,10 +367,15 @@ html body .kurse-container-modern .stat-card,
   gap: 1rem;
 }
 
-/* Trainer-Feld braucht spezielle Behandlung */
-.kurs-field:has(.trainer-multiselect) {
+/* Trainer-Feld braucht spezielle Behandlung - nur im Bearbeitungsmodus */
+.kurs-card-content .kurs-field:has(.trainer-multiselect) {
   flex-direction: column;
   align-items: stretch;
+  gap: 0.5rem;
+}
+
+.kurs-card-content .kurs-field:has(.trainer-multiselect) label {
+  margin-bottom: 0.25rem;
 }
 
 .kurs-field:last-child {
@@ -467,7 +483,7 @@ html body .kurse-container-modern .stat-card,
   box-sizing: border-box;
   /* Verhindere, dass die Box andere Elemente überlagert */
   position: relative;
-  z-index: 1;
+  z-index: 1 !important;
 }
 
 /* Scrollbar Styling für bessere Optik */
