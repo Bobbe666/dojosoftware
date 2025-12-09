@@ -2508,4 +2508,43 @@ router.get("/archiv/:archivId", (req, res) => {
   });
 });
 
+// ✅ API: Alle verfügbaren Stile abrufen
+router.get("/filter-options/stile", (req, res) => {
+  const query = `
+    SELECT name
+    FROM stile
+    WHERE aktiv = 1
+    ORDER BY name
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Stile:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Stile" });
+    }
+
+    const stile = results.map(r => r.name);
+    res.json({ success: true, stile });
+  });
+});
+
+// ✅ API: Alle verfügbaren Gurte/Graduierungen abrufen
+router.get("/filter-options/gurte", (req, res) => {
+  const query = `
+    SELECT DISTINCT name
+    FROM graduierungen
+    ORDER BY reihenfolge
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Gurte:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Gurte" });
+    }
+
+    const gurte = results.map(r => r.name);
+    res.json({ success: true, gurte });
+  });
+});
+
 module.exports = router;

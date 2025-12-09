@@ -71,9 +71,14 @@ const MitgliederListe = () => {
     console.log('🏢 Lade Mitglieder mit Filter:', dojoFilterParam);
     console.log('🔍 API URL:', url);
 
-    axios.get(url)
-      .then((response) => {
-        const data = response.data;
+    // Lade Mitglieder, Stile und Gurte parallel
+    Promise.all([
+      axios.get(url),
+      axios.get('/mitglieder/filter-options/stile'),
+      axios.get('/mitglieder/filter-options/gurte')
+    ])
+      .then(([mitgliederResponse, stileResponse, gurteResponse]) => {
+        const data = mitgliederResponse.data;
         if (!Array.isArray(data)) {
           throw new Error("Unerwartetes API-Format!");
         }
@@ -86,21 +91,17 @@ const MitgliederListe = () => {
         )].sort();
         setAvailableLetters(letters);
 
-        // Verfügbare Stile extrahieren
-        console.log('🔍 Stile aus Mitgliederdaten:', data.map(m => m.stile).filter(Boolean));
-        const stile = [...new Set(
-          data.map(m => m.stile).filter(Boolean).flatMap(s => s.split(',').map(x => x.trim()))
-        )].sort();
-        console.log('✅ Verfügbare Stile:', stile);
-        setAvailableStile(stile);
+        // Verfügbare Stile aus API
+        if (stileResponse.data.success) {
+          console.log('✅ Verfügbare Stile aus API:', stileResponse.data.stile);
+          setAvailableStile(stileResponse.data.stile);
+        }
 
-        // Verfügbare Gurte extrahieren
-        console.log('🔍 Gurte aus Mitgliederdaten:', data.map(m => m.aktuelle_graduierung).filter(Boolean));
-        const gurte = [...new Set(
-          data.map(m => m.aktuelle_graduierung).filter(Boolean)
-        )].sort();
-        console.log('✅ Verfügbare Gurte:', gurte);
-        setAvailableGurte(gurte);
+        // Verfügbare Gurte aus API
+        if (gurteResponse.data.success) {
+          console.log('✅ Verfügbare Gurte aus API:', gurteResponse.data.gurte);
+          setAvailableGurte(gurteResponse.data.gurte);
+        }
 
         console.log(`✅ ${data.length} Mitglieder geladen (Filter: ${dojoFilterParam || 'alle'})`);
       })
