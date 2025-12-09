@@ -1442,10 +1442,40 @@ router.get('/', (req, res) => {
         details: err.message
       });
     }
+
+    // Formatiere DATE-Felder um Zeitzonen-Probleme zu vermeiden
+    const formattedResults = results.map(pruefung => {
+      const formatDate = (dateValue) => {
+        if (!dateValue) return null;
+
+        // MySQL gibt DATE als Date-Objekt zurück
+        if (dateValue instanceof Date) {
+          const year = dateValue.getFullYear();
+          const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+          const day = String(dateValue.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+
+        // Falls es bereits ein String ist, extrahiere YYYY-MM-DD
+        if (typeof dateValue === 'string') {
+          return dateValue.split('T')[0];
+        }
+
+        return null;
+      };
+
+      return {
+        ...pruefung,
+        pruefungsdatum: formatDate(pruefung.pruefungsdatum),
+        anmeldefrist: formatDate(pruefung.anmeldefrist),
+        bezahldatum: formatDate(pruefung.bezahldatum)
+      };
+    });
+
     res.json({
       success: true,
-      count: results.length,
-      pruefungen: results
+      count: formattedResults.length,
+      pruefungen: formattedResults
     });
   });
 });
