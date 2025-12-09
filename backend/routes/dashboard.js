@@ -52,11 +52,15 @@ async function getDashboardStats(dojo_id) {
     const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND dojo_id = ${parseInt(dojo_id)}` : '';
     const dojoJoinFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
 
+    // Debug: Log Anwesenheits-Query
+    const anwesenheitQuery = `SELECT COUNT(*) as count FROM anwesenheit WHERE anwesend = 1${dojoFilter}`;
+    console.log('🔍 Anwesenheits-Query:', anwesenheitQuery);
+
     const queries = await Promise.all([
       db.promise().query(`SELECT COUNT(*) as count FROM mitglieder WHERE aktiv = 1${dojoFilter}`).catch(() => [[]]),
       db.promise().query(`SELECT COUNT(*) as count FROM kurse WHERE 1=1${dojoFilter}`).catch(() => [[]]),
       db.promise().query(`SELECT COUNT(*) as count FROM trainer WHERE 1=1${dojoFilter}`).catch(() => [[]]),
-      db.promise().query(`SELECT COUNT(*) as count FROM anwesenheit WHERE anwesend = 1${dojoFilter}`).catch(() => [[]]),
+      db.promise().query(anwesenheitQuery).catch((err) => { console.error('❌ Anwesenheits-Query Fehler:', err); return [[]]; }),
       db.promise().query(`SELECT COUNT(*) as count FROM beitraege WHERE bezahlt = 0${dojoFilter}`).catch(() => [[]]),
       // Checkins: JOIN mit mitglieder für dojo_id
       db.promise().query(`SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE DATE(c.checkin_time) = CURDATE() AND c.status = 'active'${dojoJoinFilter}`).catch(() => [[]]),
@@ -70,6 +74,7 @@ async function getDashboardStats(dojo_id) {
     stats.kurse = queries[1][0][0]?.count || 0;
     stats.trainer = queries[2][0][0]?.count || 0;
     stats.anwesenheit = queries[3][0][0]?.count || 0;
+    console.log('✅ Anwesenheit gefunden:', stats.anwesenheit);
     stats.beitraege = queries[4][0][0]?.count || 0;
     stats.checkins_heute = queries[5][0][0]?.count || 0;
     stats.stile = queries[6][0][0]?.count || 0;
