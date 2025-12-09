@@ -298,6 +298,12 @@ router.get('/courses-today', async (req, res) => {
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     const todayName = dayNames[today.getDay()];
 
+    // 🔒 TAX COMPLIANCE: Dojo-Filter aus Query-Parameter
+    const { dojo_id } = req.query;
+    const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND s.dojo_id = ${parseInt(dojo_id)}` : '';
+
+    console.log(`🔍 Lade Kurse für: ${todayName} (dojo_id=${dojo_id || 'all'})`);
+
     // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
     if (isDevelopment) {
       console.log('🔧 Development Mode: Verwende Mock-Kurse');
@@ -331,11 +337,12 @@ router.get('/courses-today', async (req, res) => {
       FROM stundenplan s
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
       LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
-      WHERE LOWER(s.tag) = LOWER(?) OR s.tag = ?
+      WHERE (LOWER(s.tag) = LOWER(?) OR s.tag = ?)${dojoFilter}
       ORDER BY s.uhrzeit_start
     `;
 
     const courses = await queryAsync(query, [todayName, todayName]);
+    console.log(`✅ ${courses.length} Kurse gefunden für ${todayName}`);
 
     res.json({
       success: true,

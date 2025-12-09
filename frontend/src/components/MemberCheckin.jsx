@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { X, Calendar, CheckCircle, Clock } from 'lucide-react';
 import config from '../config/config.js';
 import '../styles/themes.css';
@@ -8,6 +9,7 @@ import '../styles/CheckinSystem.css';
 
 const MemberCheckin = ({ onClose }) => {
   const { user } = useAuth();
+  const { getDojoFilterParam } = useDojoContext(); // 🔒 TAX COMPLIANCE
   const [memberData, setMemberData] = useState(null);
   const [coursesToday, setCoursesToday] = useState([]);
   const [selectedCourses, setSelectedCourses] = useState([]);
@@ -40,10 +42,17 @@ const MemberCheckin = ({ onClose }) => {
       const member = await memberResponse.json();
       setMemberData(member);
 
-      // Lade heutige Kurse
-      const coursesResponse = await fetch(`${API_BASE}/checkin/courses-today`);
+      // Lade heutige Kurse mit dojo_id Filter
+      const dojoFilterParam = getDojoFilterParam();
+      const coursesUrl = dojoFilterParam
+        ? `${API_BASE}/checkin/courses-today?${dojoFilterParam}`
+        : `${API_BASE}/checkin/courses-today`;
+      console.log('🔍 Lade Kurse von:', coursesUrl);
+
+      const coursesResponse = await fetch(coursesUrl);
       if (coursesResponse.ok) {
         const result = await coursesResponse.json();
+        console.log('✅ Kurse geladen:', result.courses?.length || 0);
         if (result.success) {
           setCoursesToday(result.courses || []);
         }
