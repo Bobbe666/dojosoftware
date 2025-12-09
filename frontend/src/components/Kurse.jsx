@@ -264,17 +264,28 @@ const Kurse = () => {
   };
 
   const handleBearbeiten = (kurs) => {
+    console.log('=== BEARBEITEN START ===');
+    console.log('Kurs Daten:', kurs);
     setEditingId(kurs.kurs_id);
-    setEditingData({
+    const editData = {
       gruppenname: kurs.gruppenname,
       stil: kurs.stil,
       trainer_ids: Array.isArray(kurs.trainer_ids) ? kurs.trainer_ids : [kurs.trainer_id],
       raum_id: kurs.raum_id || ""
-    });
+    };
+    console.log('EditingData gesetzt auf:', editData);
+    setEditingData(editData);
   };
 
   const handleSpeichern = async (id) => {
+    console.log('=== SPEICHERN START ===');
+    console.log('EditingData beim Speichern:', editingData);
+    console.log('Gruppenname:', editingData.gruppenname);
+    console.log('Stil:', editingData.stil);
+    console.log('Trainer IDs:', editingData.trainer_ids);
+
     if (!editingData.gruppenname || !editingData.stil || editingData.trainer_ids.length === 0) {
+      console.log('VALIDIERUNG FEHLGESCHLAGEN!');
       alert("Bitte Gruppenname, Stil und mindestens einen Trainer angeben.");
       return;
     }
