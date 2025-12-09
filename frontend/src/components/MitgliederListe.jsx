@@ -54,6 +54,13 @@ const MitgliederListe = () => {
   const menuButtonRef = React.useRef(null);
   const navigate = useNavigate();
 
+  // Neue Filter-States
+  const [filterStil, setFilterStil] = useState("");
+  const [filterAlter, setFilterAlter] = useState("");
+  const [filterGurt, setFilterGurt] = useState("");
+  const [availableStile, setAvailableStile] = useState([]);
+  const [availableGurte, setAvailableGurte] = useState([]);
+
   useEffect(() => {
     // 🔒 TAX COMPLIANCE: Lade Mitglieder mit Dojo-Filter
     const dojoFilterParam = getDojoFilterParam();
@@ -78,6 +85,18 @@ const MitgliederListe = () => {
           data.map(m => m.nachname?.charAt(0)?.toUpperCase()).filter(Boolean)
         )].sort();
         setAvailableLetters(letters);
+
+        // Verfügbare Stile extrahieren
+        const stile = [...new Set(
+          data.map(m => m.stile).filter(Boolean).flatMap(s => s.split(',').map(x => x.trim()))
+        )].sort();
+        setAvailableStile(stile);
+
+        // Verfügbare Gurte extrahieren
+        const gurte = [...new Set(
+          data.map(m => m.aktuelle_graduierung).filter(Boolean)
+        )].sort();
+        setAvailableGurte(gurte);
 
         console.log(`✅ ${data.length} Mitglieder geladen (Filter: ${dojoFilterParam || 'alle'})`);
       })
@@ -113,8 +132,51 @@ const MitgliederListe = () => {
       );
     }
 
+    // Stil-Filter
+    if (filterStil) {
+      filtered = filtered.filter(m =>
+        m.stile?.split(',').map(s => s.trim()).includes(filterStil)
+      );
+    }
+
+    // Alter-Filter
+    if (filterAlter) {
+      filtered = filtered.filter(m => {
+        if (!m.geburtsdatum) return false;
+        const age = calculateAge(m.geburtsdatum);
+
+        switch(filterAlter) {
+          case '0-6': return age >= 0 && age <= 6;
+          case '7-12': return age >= 7 && age <= 12;
+          case '13-17': return age >= 13 && age <= 17;
+          case '18-25': return age >= 18 && age <= 25;
+          case '26-40': return age >= 26 && age <= 40;
+          case '41+': return age >= 41;
+          default: return true;
+        }
+      });
+    }
+
+    // Gurt-Filter
+    if (filterGurt) {
+      filtered = filtered.filter(m => m.aktuelle_graduierung === filterGurt);
+    }
+
     setFilteredMitglieder(filtered);
-  }, [mitglieder, searchTerm, selectedLetter]);
+  }, [mitglieder, searchTerm, selectedLetter, filterStil, filterAlter, filterGurt]);
+
+  // Hilfsfunktion: Alter berechnen
+  const calculateAge = (birthdate) => {
+    if (!birthdate) return 0;
+    const today = new Date();
+    const birth = new Date(birthdate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   // Schließe Menü beim Klicken außerhalb
   useEffect(() => {
@@ -142,6 +204,18 @@ const MitgliederListe = () => {
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     if (selectedLetter) setSelectedLetter(""); // Reset Alphabet-Filter bei Suche
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSelectedLetter("");
+    setFilterStil("");
+    setFilterAlter("");
+    setFilterGurt("");
+  };
+
+  const hasActiveFilters = () => {
+    return searchTerm || selectedLetter || filterStil || filterAlter || filterGurt;
   };
 
   const handleLetterFilter = (letter) => {
@@ -469,7 +543,134 @@ const MitgliederListe = () => {
                 document.body
               )}
             </div>
-            
+
+            {/* Neue Filter-Leiste */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '0.8rem',
+              flexWrap: 'wrap'
+            }}>
+              {/* Stil-Filter */}
+              <select
+                value={filterStil}
+                onChange={(e) => setFilterStil(e.target.value)}
+                style={{
+                  padding: '0.3rem 0.6rem',
+                  fontSize: '0.75rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  border: filterStil ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.3s ease',
+                  backdropFilter: 'blur(8px)',
+                  height: '28px',
+                  outline: 'none'
+                }}
+              >
+                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🎯 Alle Stile</option>
+                {availableStile.map(stil => (
+                  <option key={stil} value={stil} style={{ background: '#1a1a2e', color: '#ffffff' }}>
+                    {stil}
+                  </option>
+                ))}
+              </select>
+
+              {/* Alter-Filter */}
+              <select
+                value={filterAlter}
+                onChange={(e) => setFilterAlter(e.target.value)}
+                style={{
+                  padding: '0.3rem 0.6rem',
+                  fontSize: '0.75rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  border: filterAlter ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.3s ease',
+                  backdropFilter: 'blur(8px)',
+                  height: '28px',
+                  outline: 'none'
+                }}
+              >
+                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>📅 Alle Altersgruppen</option>
+                <option value="0-6" style={{ background: '#1a1a2e', color: '#ffffff' }}>0-6 Jahre</option>
+                <option value="7-12" style={{ background: '#1a1a2e', color: '#ffffff' }}>7-12 Jahre</option>
+                <option value="13-17" style={{ background: '#1a1a2e', color: '#ffffff' }}>13-17 Jahre</option>
+                <option value="18-25" style={{ background: '#1a1a2e', color: '#ffffff' }}>18-25 Jahre</option>
+                <option value="26-40" style={{ background: '#1a1a2e', color: '#ffffff' }}>26-40 Jahre</option>
+                <option value="41+" style={{ background: '#1a1a2e', color: '#ffffff' }}>41+ Jahre</option>
+              </select>
+
+              {/* Gurt-Filter */}
+              <select
+                value={filterGurt}
+                onChange={(e) => setFilterGurt(e.target.value)}
+                style={{
+                  padding: '0.3rem 0.6rem',
+                  fontSize: '0.75rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  border: filterGurt ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.3s ease',
+                  backdropFilter: 'blur(8px)',
+                  height: '28px',
+                  outline: 'none'
+                }}
+              >
+                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🥋 Alle Gurte</option>
+                {availableGurte.map(gurt => (
+                  <option key={gurt} value={gurt} style={{ background: '#1a1a2e', color: '#ffffff' }}>
+                    {gurt}
+                  </option>
+                ))}
+              </select>
+
+              {/* Filter zurücksetzen Button */}
+              {hasActiveFilters() && (
+                <button
+                  onClick={handleResetFilters}
+                  style={{
+                    padding: '0.3rem 0.6rem',
+                    fontSize: '0.75rem',
+                    background: 'rgba(255, 0, 0, 0.2)',
+                    color: '#ff6b6b',
+                    border: '1px solid rgba(255, 0, 0, 0.4)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(8px)',
+                    height: '28px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    fontWeight: '600'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(255, 0, 0, 0.3)';
+                    e.target.style.color = '#ffffff';
+                    e.target.style.borderColor = 'rgba(255, 0, 0, 0.6)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(255, 0, 0, 0.2)';
+                    e.target.style.color = '#ff6b6b';
+                    e.target.style.borderColor = 'rgba(255, 0, 0, 0.4)';
+                  }}
+                >
+                  ✕ Filter zurücksetzen
+                </button>
+              )}
+            </div>
+
             <div style={{ marginBottom: '0.3rem', fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
               Filter nach Nachname:
             </div>
