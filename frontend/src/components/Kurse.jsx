@@ -125,7 +125,7 @@ const Kurse = () => {
     raum_id: ""
   });
 
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'stil', direction: 'asc' });
   const [filterStil, setFilterStil] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
 
@@ -168,8 +168,27 @@ const Kurse = () => {
       )
       .sort((a, b) => {
         if (!sortConfig.key) return 0;
-        const aVal = a[sortConfig.key]?.toString().toLowerCase();
-        const bVal = b[sortConfig.key]?.toString().toLowerCase();
+
+        let aVal, bVal;
+
+        // Spezielle Behandlung für Trainer (kann Array sein)
+        if (sortConfig.key === 'trainer') {
+          aVal = Array.isArray(a.trainer_ids) ? getTrainerNames(a.trainer_ids) : getTrainerName(a.trainer_id);
+          bVal = Array.isArray(b.trainer_ids) ? getTrainerNames(b.trainer_ids) : getTrainerName(b.trainer_id);
+        } else if (sortConfig.key === 'raum') {
+          aVal = getRaumName(a.raum_id);
+          bVal = getRaumName(b.raum_id);
+        } else if (sortConfig.key === 'gruppenname') {
+          aVal = a.gruppenname || '';
+          bVal = b.gruppenname || '';
+        } else {
+          aVal = a[sortConfig.key]?.toString() || '';
+          bVal = b[sortConfig.key]?.toString() || '';
+        }
+
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+
         if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -435,14 +454,91 @@ const Kurse = () => {
   function renderKurseTab() {
     return (
       <>
+        {/* Sortierung */}
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <span style={{ color: '#ffffff', fontWeight: 600, marginRight: '0.5rem' }}>
+            📊 Sortieren nach:
+          </span>
+          <button
+            onClick={() => handleSort('stil')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'stil' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'stil' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            🥋 Stil {sortConfig.key === 'stil' && getSortIcon('stil')}
+          </button>
+          <button
+            onClick={() => handleSort('gruppenname')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'gruppenname' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'gruppenname' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            🏷️ Gruppe {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
+          </button>
+          <button
+            onClick={() => handleSort('raum')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'raum' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'raum' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            🏛️ Raum {sortConfig.key === 'raum' && getSortIcon('raum')}
+          </button>
+          <button
+            onClick={() => handleSort('trainer')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: sortConfig.key === 'trainer' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+              border: sortConfig.key === 'trainer' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+          >
+            👨‍🏫 Trainer {sortConfig.key === 'trainer' && getSortIcon('trainer')}
+          </button>
+        </div>
+
         {/* Filter + Export */}
         <div className="kurse-controls">
           <div className="kurse-filters">
             <div className="filter-group">
               <label>🎯 Stil filtern:</label>
-              <select 
-                className="filter-select" 
-                onChange={e => setFilterStil(e.target.value)} 
+              <select
+                className="filter-select"
+                onChange={e => setFilterStil(e.target.value)}
                 value={filterStil}
               >
                 <option value="">Alle Stile anzeigen</option>
@@ -453,9 +549,9 @@ const Kurse = () => {
             </div>
             <div className="filter-group">
               <label>👨‍🏫 Trainer filtern:</label>
-              <select 
-                className="filter-select" 
-                onChange={e => setFilterTrainer(e.target.value)} 
+              <select
+                className="filter-select"
+                onChange={e => setFilterTrainer(e.target.value)}
                 value={filterTrainer}
               >
                 <option value="">Alle Trainer anzeigen</option>
@@ -763,7 +859,7 @@ const Kurse = () => {
                           ))}
                         </select>
                       ) : (
-                        <span className="kurs-value">{kurs.gruppenname || "Keine Gruppe"}</span>
+                        <span className="kurs-value gruppe">{kurs.gruppenname || "Keine Gruppe"}</span>
                       )}
                     </div>
 

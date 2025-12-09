@@ -370,6 +370,11 @@ html body .kurse-container-modern .stat-card,
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
+.kurs-value.gruppe {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .stil-tag {
   background: var(--farbe-hauptfarbe);
   color: white;
