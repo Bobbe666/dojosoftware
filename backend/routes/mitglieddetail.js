@@ -58,7 +58,7 @@ router.get("/:id", (req, res) => {
       -- Aktuelle Graduierung aus mitglied_stil_data
       GROUP_CONCAT(
         DISTINCT CONCAT(
-          s.stil_name, ':',
+          s.name, ':',
           COALESCE(g.name, m.gurtfarbe)
         ) SEPARATOR '; '
       ) AS aktuelle_graduierungen
@@ -113,7 +113,7 @@ router.put("/:id", (req, res) => {
         -- Aktuelle Graduierung aus mitglied_stil_data
         GROUP_CONCAT(
           DISTINCT CONCAT(
-            s.stil_name, ':',
+            s.name, ':',
             COALESCE(g.name, m.gurtfarbe)
           ) SEPARATOR '; '
         ) AS aktuelle_graduierungen
