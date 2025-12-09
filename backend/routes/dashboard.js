@@ -53,7 +53,8 @@ async function getDashboardStats(dojo_id) {
     const dojoJoinFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
 
     // Debug: Log Anwesenheits-Query
-    const anwesenheitQuery = `SELECT COUNT(*) as count FROM anwesenheit WHERE anwesend = 1${dojoFilter}`;
+    // Zähle EINDEUTIGE Personen, die heute da waren (nicht die Summe aller Anwesenheiten)
+    const anwesenheitQuery = `SELECT COUNT(DISTINCT mitglied_id) as count FROM anwesenheit WHERE DATE(datum) = CURDATE() AND anwesend = 1${dojoFilter}`;
     console.log('🔍 Anwesenheits-Query:', anwesenheitQuery);
 
     const queries = await Promise.all([
