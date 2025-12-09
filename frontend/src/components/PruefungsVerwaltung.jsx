@@ -346,42 +346,11 @@ const PruefungsVerwaltung = () => {
       const dojoId = activeDojo.id;
       let datenZuVerwenden = customPruefungsDaten || pruefungsDaten;
 
-      // Wenn keine Prüfungsdaten vorhanden sind, suche die nächste Prüfung für den Stil
+      // WICHTIG: Prüfungsdatum muss immer explizit angegeben werden
+      // Keine automatische Terminsuche mehr, da dies zu Fehlzuordnungen führt
       if (!datenZuVerwenden.pruefungsdatum) {
-        // Lade Prüfungstermine für den Stil des Kandidaten
-        const termineResponse = await fetch(
-          `${API_BASE_URL}/pruefungen/termine?dojo_id=${dojoId}&stil_id=${kandidat.stil_id}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-          }
-        );
-        const termineData = await termineResponse.json();
-
-        // Finde nächste zukünftige Prüfung
-        const heute = new Date();
-        heute.setHours(0, 0, 0, 0);
-
-        const naechsteTermine = (termineData.termine || [])
-          .filter(t => new Date(t.pruefungsdatum) >= heute)
-          .sort((a, b) => new Date(a.pruefungsdatum) - new Date(b.pruefungsdatum));
-
-        if (naechsteTermine.length === 0) {
-          setError(`Keine zukünftige Prüfung für ${kandidat.stil_name} gefunden. Bitte erstellen Sie zuerst einen Prüfungstermin.`);
-          return;
-        }
-
-        const naechsterTermin = naechsteTermine[0];
-        datenZuVerwenden = {
-          pruefungsdatum: naechsterTermin.pruefungsdatum,
-          pruefungszeit: naechsterTermin.pruefungszeit || '10:00',
-          pruefungsort: naechsterTermin.pruefungsort || '',
-          pruefungsgebuehr: naechsterTermin.pruefungsgebuehr || '',
-          anmeldefrist: naechsterTermin.anmeldefrist || '',
-          bemerkungen: naechsterTermin.bemerkungen || '',
-          teilnahmebedingungen: naechsterTermin.teilnahmebedingungen || ''
-        };
+        setError('Bitte geben Sie ein Prüfungsdatum an.');
+        return;
       }
 
       // Kombiniere Datum und Uhrzeit
