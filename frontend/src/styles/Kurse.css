@@ -278,12 +278,12 @@ html body .kurse-container-modern .stat-card,
   background: var(--hintergrund-secondary);
   border: 1px solid var(--rahmen-farbe);
   border-radius: 16px;
-  overflow: visible;
+  overflow: hidden;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.6s ease-out both;
-  max-height: 600px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .kurs-card:hover {
@@ -342,14 +342,24 @@ html body .kurse-container-modern .stat-card,
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow-y: auto;
+  max-height: 500px;
+  flex: 1;
 }
 
 .kurs-field {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--rahmen-farbe);
+  gap: 1rem;
+}
+
+/* Trainer-Feld braucht spezielle Behandlung */
+.kurs-field:has(.trainer-multiselect) {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .kurs-field:last-child {
@@ -444,49 +454,78 @@ html body .kurse-container-modern .stat-card,
 .trainer-multiselect {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-height: 300px;
+  gap: 0.4rem;
+  max-height: 200px;
   overflow-y: auto;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-radius: 12px;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
   backdrop-filter: blur(10px);
-  min-width: 200px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Verhindere, dass die Box andere Elemente überlagert */
+  position: relative;
+  z-index: 1;
+}
+
+/* Scrollbar Styling für bessere Optik */
+.trainer-multiselect::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trainer-multiselect::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.trainer-multiselect::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.4);
+  border-radius: 3px;
+}
+
+.trainer-multiselect::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.6);
 }
 
 .trainer-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   cursor: pointer;
-  padding: 0.4rem 0.6rem;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .trainer-checkbox-label:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.4);
+  transform: translateX(2px);
 }
 
 .trainer-checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   accent-color: var(--farbe-hauptfarbe);
   cursor: pointer;
   flex-shrink: 0;
+  margin: 0;
 }
 
 .trainer-checkbox-name {
   color: #ffffff;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  line-height: 1.3;
+  line-height: 1.2;
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* New Input Elements */
