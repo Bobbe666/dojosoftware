@@ -2187,7 +2187,33 @@ const PruefungsVerwaltung = () => {
                             </button>
                           )
                         ) : (
-                          <span style={{ color: '#d1d5db', fontSize: '0.75rem' }}>—</span>
+                          <button
+                            onClick={() => {
+                              if (kandidat.pruefung_id) {
+                                handleZulassungEntfernen({
+                                  pruefung_id: kandidat.pruefung_id,
+                                  mitglied_id: kandidat.mitglied_id,
+                                  vorname: kandidat.vorname,
+                                  nachname: kandidat.nachname
+                                });
+                              } else {
+                                setError('Keine Prüfung-ID gefunden. Bitte aktualisieren Sie die Seite.');
+                              }
+                            }}
+                            className="btn btn-sm btn-danger"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              padding: '0.5rem 1rem',
+                              fontSize: '0.8125rem',
+                              fontWeight: '600'
+                            }}
+                            title="Zulassung widerrufen"
+                          >
+                            <X size={16} />
+                            Entfernen
+                          </button>
                         )}
                       </td>
                     </tr>

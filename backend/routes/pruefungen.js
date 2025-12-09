@@ -432,7 +432,18 @@ router.get('/kandidaten', (req, res) => {
         AND p.stil_id = s.stil_id
         AND p.graduierung_nachher_id = g_next.graduierung_id
         AND p.status = 'geplant'
-      ) as bereits_zugelassen
+      ) as bereits_zugelassen,
+
+      -- Prüfungs-ID für bereits zugelassene Kandidaten
+      (
+        SELECT p.pruefung_id
+        FROM pruefungen p
+        WHERE p.mitglied_id = m.mitglied_id
+        AND p.stil_id = s.stil_id
+        AND p.graduierung_nachher_id = g_next.graduierung_id
+        AND p.status = 'geplant'
+        LIMIT 1
+      ) as pruefung_id
 
     FROM mitglieder m
     INNER JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
