@@ -87,15 +87,19 @@ const MitgliederListe = () => {
         setAvailableLetters(letters);
 
         // Verfügbare Stile extrahieren
+        console.log('🔍 Stile aus Mitgliederdaten:', data.map(m => m.stile).filter(Boolean));
         const stile = [...new Set(
           data.map(m => m.stile).filter(Boolean).flatMap(s => s.split(',').map(x => x.trim()))
         )].sort();
+        console.log('✅ Verfügbare Stile:', stile);
         setAvailableStile(stile);
 
         // Verfügbare Gurte extrahieren
+        console.log('🔍 Gurte aus Mitgliederdaten:', data.map(m => m.aktuelle_graduierung).filter(Boolean));
         const gurte = [...new Set(
           data.map(m => m.aktuelle_graduierung).filter(Boolean)
         )].sort();
+        console.log('✅ Verfügbare Gurte:', gurte);
         setAvailableGurte(gurte);
 
         console.log(`✅ ${data.length} Mitglieder geladen (Filter: ${dojoFilterParam || 'alle'})`);
