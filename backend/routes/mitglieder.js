@@ -85,7 +85,8 @@ router.get("/all", (req, res) => {
             m.nachname,
             m.geburtsdatum,
             m.gurtfarbe,
-            m.aktuelle_graduierung,
+            m.graduierung_id,
+            g.name AS aktuelle_graduierung,
             m.email,
             m.telefon_mobil,
             m.aktiv,
@@ -111,6 +112,7 @@ router.get("/all", (req, res) => {
             m.foto_pfad
         FROM mitglieder m
         LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
+        LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id
         ${whereClause}
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
