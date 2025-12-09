@@ -2789,15 +2789,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   )}
                 </div>
                 <div>
-                  <label>Gurtfarbe:</label>
+                  <label>Aktuelle Graduierung(en):</label>
                   {editMode && isAdmin ? (
                     <input
                       type="text"
                       value={updatedData.gurtfarbe || ""}
                       onChange={(e) => handleChange(e, "gurtfarbe")}
+                      placeholder="Legacy-Feld (wird nicht mehr verwendet)"
+                      disabled
+                      style={{ opacity: 0.5, cursor: 'not-allowed' }}
                     />
                   ) : (
-                    <span>{mitglied.gurtfarbe}</span>
+                    <span>{mitglied.aktuelle_graduierungen || mitglied.gurtfarbe || "Keine Graduierung zugeordnet"}</span>
                   )}
                 </div>
               </div>

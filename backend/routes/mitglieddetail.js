@@ -48,15 +48,34 @@ const upload = multer({
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
-  // Datenbank verwenden
-  const query = "SELECT *, mitglied_id AS id, trainingsstunden, foto_pfad FROM mitglieder WHERE mitglied_id = ?";
+  // Datenbank verwenden - hole Mitgliedsdaten UND aktuelle Graduierung
+  const query = `
+    SELECT
+      m.*,
+      m.mitglied_id AS id,
+      m.trainingsstunden,
+      m.foto_pfad,
+      -- Aktuelle Graduierung aus mitglied_stil_data
+      GROUP_CONCAT(
+        DISTINCT CONCAT(
+          s.stil_name, ':',
+          COALESCE(g.name, m.gurtfarbe)
+        ) SEPARATOR '; '
+      ) AS aktuelle_graduierungen
+    FROM mitglieder m
+    LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
+    LEFT JOIN stile s ON msd.stil_id = s.stil_id
+    LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
+    WHERE m.mitglied_id = ?
+    GROUP BY m.mitglied_id
+  `;
+
   db.query(query, [id], (err, results) => {
     if (err) {
       console.error(`Fehler beim Abrufen des Mitglieds ${id}:`, err);
       return res.status(500).json({ error: "Fehler beim Laden des Mitglieds" });
     }
     if (results.length === 0) {
-
       return res.status(404).json({ message: "Mitglied nicht gefunden." });
     }
 
@@ -86,14 +105,32 @@ router.put("/:id", (req, res) => {
     }
 
     // Nach dem Update: Den aktualisierten Datensatz abfragen und zurücksenden
-    const selectQuery = "SELECT *, mitglied_id AS id, foto_pfad FROM mitglieder WHERE mitglied_id = ?";
+    const selectQuery = `
+      SELECT
+        m.*,
+        m.mitglied_id AS id,
+        m.foto_pfad,
+        -- Aktuelle Graduierung aus mitglied_stil_data
+        GROUP_CONCAT(
+          DISTINCT CONCAT(
+            s.stil_name, ':',
+            COALESCE(g.name, m.gurtfarbe)
+          ) SEPARATOR '; '
+        ) AS aktuelle_graduierungen
+      FROM mitglieder m
+      LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
+      LEFT JOIN stile s ON msd.stil_id = s.stil_id
+      LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
+      WHERE m.mitglied_id = ?
+      GROUP BY m.mitglied_id
+    `;
+
     db.query(selectQuery, [id], (err, results) => {
       if (err) {
         console.error(`Fehler beim Abrufen des aktualisierten Mitglieds ${id}:`, err);
         return res.status(500).json({ error: "Fehler beim Abrufen des aktualisierten Mitglieds" });
       }
       if (results.length === 0) {
-
         return res.status(404).json({ message: "Mitglied nicht gefunden." });
       }
 
