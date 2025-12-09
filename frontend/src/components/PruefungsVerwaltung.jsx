@@ -848,8 +848,15 @@ const PruefungsVerwaltung = () => {
   };
 
   const handleTerminLoeschen = async (termin) => {
+    // Prüfe ob es eine echte Vorlage ist oder nur ein gruppierter Termin mit Kandidaten
     if (!termin.vorlageData?.termin_id) {
-      setError('Termin-ID fehlt');
+      // Wenn es Kandidaten gibt, müssen diese einzeln entfernt werden
+      if (termin.pruefungen && termin.pruefungen.length > 0) {
+        setError(`Dieser Termin hat ${termin.pruefungen.length} zugelassene Kandidaten. Bitte entfernen Sie zuerst alle Kandidaten über "Zugelassene Prüfungen".`);
+        return;
+      }
+      // Wenn keine Vorlage und keine Kandidaten: Termin existiert nicht wirklich
+      setError('Dieser Termin existiert nicht in der Datenbank. Bitte aktualisieren Sie die Seite.');
       return;
     }
 
