@@ -1301,19 +1301,48 @@ router.post('/:id/status-aendern', (req, res) => {
         // 2. Aktualisiere Graduierung in mitglied_stil_data
         const graduierung_id = bestanden ? graduierung_nachher_id : graduierung_vorher_id;
 
-        const updateGraduierungQuery = `
-          INSERT INTO mitglied_stil_data (
-            mitglied_id, stil_id, current_graduierung_id, aktualisiert_am
-          ) VALUES (?, ?, ?, NOW())
-          ON DUPLICATE KEY UPDATE
-            current_graduierung_id = VALUES(current_graduierung_id),
-            aktualisiert_am = NOW()
-        `;
+        // Hole Prüfungsdatum für letzte_pruefung Update
+        const getPruefungQuery = 'SELECT pruefungsdatum FROM pruefungen WHERE pruefung_id = ?';
+        connection.query(getPruefungQuery, [pruefung_id], (getPruefungErr, pruefungResults) => {
+          if (getPruefungErr) {
+            return connection.rollback(() => {
+              connection.release();
+              console.error('Fehler beim Abrufen der Prüfung:', getPruefungErr);
+              res.status(500).json({ error: 'Fehler beim Abrufen der Prüfung' });
+            });
+          }
 
-        connection.query(
-          updateGraduierungQuery,
-          [mitglied_id, stil_id, graduierung_id],
-          (gradErr) => {
+          const pruefungsdatum = pruefungResults[0]?.pruefungsdatum;
+
+          // Bei bestanden=true: Setze current_graduierung_id UND letzte_pruefung
+          // Bei bestanden=false: Setze nur current_graduierung_id zurück
+          const updateGraduierungQuery = bestanden
+            ? `
+              INSERT INTO mitglied_stil_data (
+                mitglied_id, stil_id, current_graduierung_id, letzte_pruefung, aktualisiert_am
+              ) VALUES (?, ?, ?, ?, NOW())
+              ON DUPLICATE KEY UPDATE
+                current_graduierung_id = VALUES(current_graduierung_id),
+                letzte_pruefung = VALUES(letzte_pruefung),
+                aktualisiert_am = NOW()
+            `
+            : `
+              INSERT INTO mitglied_stil_data (
+                mitglied_id, stil_id, current_graduierung_id, aktualisiert_am
+              ) VALUES (?, ?, ?, NOW())
+              ON DUPLICATE KEY UPDATE
+                current_graduierung_id = VALUES(current_graduierung_id),
+                aktualisiert_am = NOW()
+            `;
+
+          const queryParams = bestanden
+            ? [mitglied_id, stil_id, graduierung_id, pruefungsdatum]
+            : [mitglied_id, stil_id, graduierung_id];
+
+          connection.query(
+            updateGraduierungQuery,
+            queryParams,
+            (gradErr) => {
             if (gradErr) {
               return connection.rollback(() => {
                 connection.release();
@@ -1342,6 +1371,7 @@ router.post('/:id/status-aendern', (req, res) => {
             });
           }
         );
+        });
       });
     });
   });
@@ -1736,6 +1766,7 @@ router.put('/:id', (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Prüfung nicht gefunden' });
     }
+
     // Aktualisierte Prüfung zurückholen
     const selectQuery = `
       SELECT p.*, m.vorname, m.nachname, s.name as stil_name,
@@ -1755,10 +1786,41 @@ router.put('/:id', (req, res) => {
         });
       }
 
+      const pruefung = selectResults[0];
+
+      // Wenn Prüfung auf "bestanden" gesetzt wurde, aktualisiere letzte_pruefung
+      if (updateData.bestanden === true || updateData.bestanden === 1) {
+        const updateStilDataQuery = `
+          INSERT INTO mitglied_stil_data (
+            mitglied_id, stil_id, current_graduierung_id, letzte_pruefung, aktualisiert_am
+          ) VALUES (?, ?, ?, ?, NOW())
+          ON DUPLICATE KEY UPDATE
+            current_graduierung_id = VALUES(current_graduierung_id),
+            letzte_pruefung = VALUES(letzte_pruefung),
+            aktualisiert_am = NOW()
+        `;
+
+        db.query(
+          updateStilDataQuery,
+          [
+            pruefung.mitglied_id,
+            pruefung.stil_id,
+            pruefung.graduierung_nachher_id,
+            pruefung.pruefungsdatum
+          ],
+          (stilDataErr) => {
+            if (stilDataErr) {
+              console.error('Fehler beim Aktualisieren von mitglied_stil_data:', stilDataErr);
+              // Prüfung wurde trotzdem aktualisiert, nur Log-Warnung
+            }
+          }
+        );
+      }
+
       res.json({
         success: true,
         message: 'Prüfung erfolgreich aktualisiert',
-        pruefung: selectResults[0]
+        pruefung: pruefung
       });
     });
   });
