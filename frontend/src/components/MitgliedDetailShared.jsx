@@ -117,6 +117,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [activeStyleTab, setActiveStyleTab] = useState(0);
   const [activeExamTab, setActiveExamTab] = useState(0);
   const [financeSubTab, setFinanceSubTab] = useState("finanzübersicht");
+  const [graduationListCollapsed, setGraduationListCollapsed] = useState(true); // Graduierungen-Liste standardmäßig eingeklappt
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Beiträge Ansichts-Filter State
@@ -6215,98 +6216,95 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             </div>
                           </div>
 
-                          {/* Karte 3: Alle Graduierungen - Volle Breite */}
+                          {/* Karte 3: Alle Graduierungen - Volle Breite - Einklappbar */}
                           <div className="grid-container" style={{ marginTop: '1.5rem' }}>
                             <div className="field-group card">
-                              <h3>📊 Alle Graduierungen - {memberStil.stil_name}</h3>
+                              <div
+                                onClick={() => {
+                                  setGraduationListCollapsed(!graduationListCollapsed);
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  cursor: 'pointer',
+                                  padding: '0.5rem',
+                                  margin: '-0.5rem -0.5rem 0.5rem -0.5rem',
+                                  borderRadius: '6px',
+                                  transition: 'background 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = 'rgba(255, 215, 0, 0.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'transparent';
+                                }}
+                              >
+                                <h3 style={{ margin: 0 }}>📊 Alle Graduierungen - {memberStil.stil_name}</h3>
+                                <span style={{
+                                  fontSize: '1.5rem',
+                                  color: '#FFD700',
+                                  transform: graduationListCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                                  transition: 'transform 0.3s ease',
+                                  display: 'inline-block'
+                                }}>
+                                  ▼
+                                </span>
+                              </div>
 
-                              {/* Dropdown zur Auswahl der Graduierung */}
-                              {fullStilData && fullStilData.graduierungen && fullStilData.graduierungen.length > 0 ? (
-                                <div style={{ marginTop: '1rem' }}>
-                                  <label style={{
-                                    display: 'block',
-                                    marginBottom: '0.5rem',
-                                    color: '#FFD700',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '600'
-                                  }}>
-                                    Graduierung auswählen:
-                                  </label>
-                                  <select
-                                    value={currentGraduation?.graduierung_id || ''}
-                                    onChange={(e) => {
-                                      const selectedGradId = parseInt(e.target.value);
-                                      if (selectedGradId) {
-                                        handleGraduationArrowChange(currentGraduation?.graduierung_id, selectedGradId);
-                                      }
-                                    }}
-                                    disabled={!editMode || !isAdmin}
-                                    style={{
-                                      width: '100%',
-                                      padding: '0.75rem 1rem',
-                                      background: '#1a1a1a',
-                                      border: '1px solid rgba(255, 215, 0, 0.3)',
-                                      borderRadius: '8px',
-                                      color: '#fff',
-                                      fontSize: '1rem',
-                                      cursor: (editMode && isAdmin) ? 'pointer' : 'not-allowed',
-                                      opacity: (editMode && isAdmin) ? 1 : 0.6,
-                                      transition: 'all 0.2s ease'
-                                    }}
-                                  >
-                                    <option value="" style={{ background: '#1a1a1a', color: '#999' }}>
-                                      -- Bitte wählen --
-                                    </option>
-                                    {fullStilData.graduierungen
+                              {!graduationListCollapsed && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                                  {fullStilData && fullStilData.graduierungen && fullStilData.graduierungen.length > 0 ? (
+                                    fullStilData.graduierungen
                                       .sort((a, b) => a.reihenfolge - b.reihenfolge)
-                                      .map((graduation) => (
-                                        <option
+                                      .map((graduation, index) => (
+                                        <div
                                           key={graduation.graduierung_id}
-                                          value={graduation.graduierung_id}
                                           style={{
-                                            background: '#1a1a1a',
-                                            color: currentGraduation?.graduierung_id === graduation.graduierung_id ? '#FFD700' : '#fff',
-                                            fontWeight: currentGraduation?.graduierung_id === graduation.graduierung_id ? '700' : '400'
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            padding: '0.75rem',
+                                            background: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id)
+                                              ? 'rgba(255, 215, 0, 0.15)'
+                                              : 'rgba(255, 255, 255, 0.03)',
+                                            border: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id)
+                                              ? '2px solid #FFD700'
+                                              : '1px solid rgba(255, 255, 255, 0.1)',
+                                            borderRadius: '8px',
+                                            transition: 'all 0.2s ease'
                                           }}
                                         >
-                                          {graduation.name} - {graduation.reihenfolge || '?'}. Kyu ({graduation.trainingsstunden_min}h, {graduation.mindestzeit_monate} Monate)
-                                        </option>
+                                          <BeltPreview
+                                            primaer={graduation.farbe_hex}
+                                            sekundaer={graduation.farbe_sekundaer}
+                                            size="small"
+                                          />
+                                          <div style={{ flex: 1 }}>
+                                            <div style={{
+                                              fontWeight: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? '700' : '600',
+                                              color: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? '#FFD700' : '#fff',
+                                              fontSize: '0.95rem'
+                                            }}>
+                                              {graduation.name}
+                                              {(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) && (
+                                                <span style={{ marginLeft: '0.5rem', color: '#FFD700', fontSize: '0.85rem' }}>
+                                                  ⭐ Aktuell
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div style={{ color: '#999', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                                              {graduation.reihenfolge || index + 1}. Kyu · {graduation.trainingsstunden_min}h · {graduation.mindestzeit_monate} Monate
+                                            </div>
+                                          </div>
+                                        </div>
                                       ))
-                                    }
-                                  </select>
-
-                                  {/* Vorschau der ausgewählten Graduierung */}
-                                  {currentGraduation && (
-                                    <div style={{
-                                      marginTop: '1rem',
-                                      padding: '1rem',
-                                      background: 'rgba(255, 215, 0, 0.1)',
-                                      border: '2px solid rgba(255, 215, 0, 0.3)',
-                                      borderRadius: '8px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '1rem'
-                                    }}>
-                                      <BeltPreview
-                                        primaer={currentGraduation.farbe_hex}
-                                        sekundaer={currentGraduation.farbe_sekundaer}
-                                        size="normal"
-                                      />
-                                      <div>
-                                        <div style={{ fontWeight: '700', color: '#FFD700', fontSize: '1.1rem' }}>
-                                          {currentGraduation.name}
-                                        </div>
-                                        <div style={{ color: '#999', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                                          {currentGraduation.reihenfolge}. Kyu · {currentGraduation.trainingsstunden_min}h · {currentGraduation.mindestzeit_monate} Monate
-                                        </div>
-                                      </div>
-                                    </div>
+                                  ) : (
+                                    <p style={{ textAlign: 'center', color: '#999', padding: '1rem' }}>
+                                      Keine Graduierungen verfügbar
+                                    </p>
                                   )}
                                 </div>
-                              ) : (
-                                <p style={{ textAlign: 'center', color: '#999', padding: '1rem', marginTop: '1rem' }}>
-                                  Keine Graduierungen verfügbar
-                                </p>
                               )}
                             </div>
                           </div>
