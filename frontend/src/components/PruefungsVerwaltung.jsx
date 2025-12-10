@@ -360,7 +360,11 @@ const PruefungsVerwaltung = () => {
           );
 
           if (termineResponse.ok) {
-            const termineData = await termineResponse.json();
+            const termineResult = await termineResponse.json();
+            // Backend gibt { success: true, termine: [...] } zurück
+            const termineData = termineResult.termine || [];
+
+            console.log('📅 Prüfungstermine geladen:', termineData);
 
             // Finde den nächsten zukünftigen Termin
             const heute = new Date();
