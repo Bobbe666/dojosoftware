@@ -944,6 +944,17 @@ const PruefungsVerwaltung = () => {
     }
   };
 
+  const handlePruefungslistePDF = async (termin) => {
+    try {
+      // Öffne die PDF in einem neuen Tab
+      const pdfUrl = `${API_BASE_URL}/pruefungen/termine/${termin.datum}/pdf?stil_id=${termin.stil_id}&dojo_id=${activeDojo.id}`;
+      window.open(pdfUrl, '_blank');
+    } catch (error) {
+      setError('Fehler beim Generieren der PDF: ' + error.message);
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
   const loadGraduierungenFuerModal = async (stil_id) => {
     try {
       const response = await fetch(
@@ -1450,6 +1461,38 @@ const PruefungsVerwaltung = () => {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePruefungslistePDF(termin);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%)',
+                            border: 'none',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            padding: '0.4rem 0.6rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0.2) 50%, transparent 100%)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.2)';
+                          }}
+                          title="Teilnehmerliste als PDF drucken"
+                        >
+                          📄 PDF
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
