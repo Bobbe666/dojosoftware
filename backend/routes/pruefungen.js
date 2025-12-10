@@ -1880,14 +1880,14 @@ router.get('/termine/:datum/pdf', (req, res) => {
       pt.pruefungszeit,
       pt.pruefungsort,
       pt.pruefungsgebuehr,
-      d.name AS dojo_name
+      d.dojoname AS dojo_name
     FROM pruefungen p
     INNER JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
     LEFT JOIN graduierungen g_vorher ON p.graduierung_vorher_id = g_vorher.graduierung_id
     LEFT JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
     INNER JOIN stile s ON p.stil_id = s.stil_id
     LEFT JOIN pruefungstermin_vorlagen pt ON DATE(p.pruefungsdatum) = DATE(pt.pruefungsdatum) AND p.stil_id = pt.stil_id
-    LEFT JOIN dojo d ON p.dojo_id = d.dojo_id
+    LEFT JOIN dojo d ON p.dojo_id = d.id
     WHERE DATE(p.pruefungsdatum) = ?
       AND p.stil_id = ?
       AND p.dojo_id = ?
