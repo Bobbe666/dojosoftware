@@ -1866,6 +1866,8 @@ router.get('/termine/:datum/pdf', (req, res) => {
   const { datum } = req.params;
   const { stil_id, dojo_id } = req.query;
 
+  console.log('📄 PDF-Anfrage:', { datum, stil_id, dojo_id });
+
   const query = `
     SELECT
       p.pruefung_id,
@@ -1891,11 +1893,16 @@ router.get('/termine/:datum/pdf', (req, res) => {
     WHERE DATE(p.pruefungsdatum) = ?
       AND p.stil_id = ?
       AND p.dojo_id = ?
-      AND p.status IN ('zugelassen', 'bestanden', 'nicht_bestanden')
+      AND p.status IN ('geplant', 'durchgefuehrt', 'bestanden', 'nicht_bestanden')
     ORDER BY m.nachname, m.vorname
   `;
 
   db.query(query, [datum, stil_id, dojo_id], (err, results) => {
+    if (err) {
+      console.error('❌ Fehler beim Laden der Prüfungsteilnehmer:', err);
+    } else {
+      console.log(`✅ ${results.length} Teilnehmer gefunden`);
+    }
     if (err) {
       console.error('Fehler beim Laden der Prüfungsteilnehmer:', err);
       return res.status(500).json({
