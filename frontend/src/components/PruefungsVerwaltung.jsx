@@ -346,10 +346,62 @@ const PruefungsVerwaltung = () => {
       const dojoId = activeDojo.id;
       let datenZuVerwenden = customPruefungsDaten || pruefungsDaten;
 
-      // WICHTIG: Prüfungsdatum muss immer explizit angegeben werden
-      // Keine automatische Terminsuche mehr, da dies zu Fehlzuordnungen führt
+      // Wenn kein Prüfungsdatum angegeben wurde, suche automatisch den nächsten Termin für den Stil
+      if (!datenZuVerwenden.pruefungsdatum && kandidat.stil_id) {
+        try {
+          // Lade die nächsten Prüfungstermine für diesen Stil
+          const termineResponse = await fetch(
+            `${API_BASE_URL}/pruefungen/termine?stil_id=${kandidat.stil_id}&dojo_id=${dojoId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+          );
+
+          if (termineResponse.ok) {
+            const termineData = await termineResponse.json();
+
+            // Finde den nächsten zukünftigen Termin
+            const heute = new Date();
+            heute.setHours(0, 0, 0, 0);
+
+            const naechsterTermin = termineData
+              .filter(termin => {
+                const terminDatum = new Date(termin.pruefungsdatum);
+                terminDatum.setHours(0, 0, 0, 0);
+                return terminDatum >= heute;
+              })
+              .sort((a, b) => new Date(a.pruefungsdatum) - new Date(b.pruefungsdatum))[0];
+
+            if (naechsterTermin) {
+              // Übernehme alle Daten vom gefundenen Termin
+              datenZuVerwenden = {
+                pruefungsdatum: naechsterTermin.pruefungsdatum,
+                pruefungszeit: naechsterTermin.pruefungszeit || '10:00',
+                pruefungsort: naechsterTermin.pruefungsort,
+                pruefungsgebuehr: naechsterTermin.pruefungsgebuehr,
+                anmeldefrist: naechsterTermin.anmeldefrist,
+                gurtlaenge: naechsterTermin.gurtlaenge,
+                bemerkungen: naechsterTermin.bemerkungen,
+                teilnahmebedingungen: naechsterTermin.teilnahmebedingungen
+              };
+              console.log('✅ Nächster Prüfungstermin gefunden:', naechsterTermin);
+            } else {
+              setError(`Kein zukünftiger Prüfungstermin für ${kandidat.stil_name} gefunden. Bitte legen Sie zuerst einen Termin an.`);
+              return;
+            }
+          }
+        } catch (termineError) {
+          console.error('Fehler beim Laden der Termine:', termineError);
+          setError('Fehler beim Laden der Prüfungstermine.');
+          return;
+        }
+      }
+
+      // Prüfe erneut ob ein Datum vorhanden ist
       if (!datenZuVerwenden.pruefungsdatum) {
-        setError('Bitte geben Sie ein Prüfungsdatum an.');
+        setError('Kein Prüfungsdatum verfügbar. Bitte legen Sie zuerst einen Prüfungstermin an.');
         return;
       }
 
