@@ -420,7 +420,7 @@ const DojoEdit = () => {
     }
 
     try {
-      const url = isNewDojo ? '/dojos' : `/dojos/${id}`;
+      const url = isNewDojo ? `${config.apiBaseUrl}/dojos` : `${config.apiBaseUrl}/dojos/${id}`;
       const method = isNewDojo ? 'POST' : 'PUT';
 
       // Setze USt-Satz basierend auf Steuer-Status
