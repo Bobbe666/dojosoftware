@@ -4266,14 +4266,25 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 {isAdmin && mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
                   <div style={{
                     marginBottom: '1.5rem',
-                    padding: '0.5rem 1rem',
+                    padding: '1rem 1.5rem',
                     background: 'rgba(52, 152, 219, 0.1)',
                     borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    color: '#5dade2',
                     border: '1px solid rgba(52, 152, 219, 0.3)'
                   }}>
-                    <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
+                    <div style={{
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      color: '#5dade2',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Mitglied ist aus folgendem Grund Beitrags- bzw. Vertragsfrei
+                    </div>
+                    <div style={{
+                      fontSize: '0.9rem',
+                      color: '#5dade2'
+                    }}>
+                      <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
+                    </div>
                   </div>
                 )}
 
