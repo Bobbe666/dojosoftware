@@ -400,7 +400,7 @@ router.get('/statistics/gesamt', (req, res) => {
       (SELECT COUNT(*) FROM dojo WHERE ist_aktiv = TRUE) as dojos_anzahl,
 
       -- Anzahl aktiver Mitglieder (über alle Dojos)
-      (SELECT COUNT(*) FROM mitglieder WHERE ist_aktiv = TRUE) as mitglieder_gesamt,
+      (SELECT COUNT(*) FROM mitglieder WHERE aktiv = 1) as mitglieder_gesamt,
 
       -- Anzahl Kurse (über alle Dojos)
       (SELECT COUNT(*) FROM kurse) as kurse_gesamt,
