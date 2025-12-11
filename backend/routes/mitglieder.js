@@ -352,8 +352,8 @@ router.get("/filter/tarif-abweichung", (req, res) => {
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
     "v.status = 'aktiv'",
-    // Zeige Verträge die ENTWEDER keinen Tarif haben ODER vom Standardpreis abweichen
-    "(v.tarif_id IS NULL OR (t.id IS NOT NULL AND v.monatsbeitrag != t.standardpreis))"
+    // Zeige Verträge die ENTWEDER keinen Tarif haben ODER vom Tarif-Preis abweichen
+    "(v.tarif_id IS NULL OR (t.id IS NOT NULL AND v.monatsbeitrag != (t.price_cents / 100)))"
   ];
   let queryParams = [];
 
@@ -374,11 +374,15 @@ router.get("/filter/tarif-abweichung", (req, res) => {
       m.aktiv,
       v.monatsbeitrag,
       v.tarif_id,
+      v.billing_cycle,
       t.name as tarif_name,
-      t.standardpreis,
+      t.price_cents,
+      t.billing_cycle as tarif_billing_cycle,
+      t.altersgruppe,
       CASE
         WHEN v.tarif_id IS NULL THEN CONCAT('Alter Vertrag ohne Tarif-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat)')
-        ELSE CONCAT('Zahlt €', COALESCE(v.monatsbeitrag, 0), ' statt €', COALESCE(t.standardpreis, 0), ' (', t.name, ')')
+        ELSE CONCAT('Zahlt €', COALESCE(v.monatsbeitrag, 0), ' statt €', ROUND(COALESCE(t.price_cents, 0) / 100, 2), ' (', t.name,
+                    CASE WHEN t.altersgruppe IS NOT NULL THEN CONCAT(' - ', t.altersgruppe) ELSE '' END, ')')
       END as abweichung_grund
     FROM mitglieder m
     JOIN vertraege v ON m.mitglied_id = v.mitglied_id
