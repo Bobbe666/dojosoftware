@@ -5,6 +5,7 @@ import FinanzamtSelector from './FinanzamtSelector';
 import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
 import { useDojoContext } from '../context/DojoContext';
+import config from '../config/config.js';
 import '../styles/MitgliedDetail.css';
 import '../styles/DojoEdit.css';
 
