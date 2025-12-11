@@ -400,6 +400,25 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ===================================================================
+// USER MANAGEMENT (Production)
+// ===================================================================
+
+// Get all users (for admin panel)
+router.get('/users', (req, res) => {
+  const query = 'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC';
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('💥 Error fetching users:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    // Return array directly for frontend compatibility
+    res.json(results);
+  });
+});
+
+// ===================================================================
 // ERROR HANDLING
 // ===================================================================
 
