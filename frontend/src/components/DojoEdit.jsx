@@ -257,7 +257,7 @@ const DojoEdit = () => {
     }
 
     try {
-      const response = await fetch(`/dojos/${id}`);
+      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}`);
       if (!response.ok) throw new Error('Fehler beim Laden des Dojos');
       const dojo = await response.json();
 

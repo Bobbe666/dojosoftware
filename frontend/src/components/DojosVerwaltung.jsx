@@ -112,7 +112,7 @@ const DojosVerwaltung = () => {
     if (!window.confirm('Möchten Sie dieses Dojo wirklich deaktivieren?')) return;
 
     try {
-      const response = await fetch(`/dojos/${id}`, { method: 'DELETE' });
+      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}`, { method: 'DELETE' });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error);
