@@ -352,9 +352,13 @@ router.get("/filter/tarif-abweichung", (req, res) => {
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
     "v.status = 'aktiv'",
-    // Zeige Verträge die ENTWEDER keinen Tarif haben ODER vom erwarteten Monatspreis abweichen
+    // Zeige Verträge die:
+    // 1. Keinen Tarif haben (tarif_id IS NULL) ODER
+    // 2. Einen Tarif ohne Altersgruppe haben (alte Tarife, nicht kategorisiert) ODER
+    // 3. Vom erwarteten Monatspreis abweichen
     `(
       v.tarif_id IS NULL
+      OR t.altersgruppe IS NULL
       OR (
         t.id IS NOT NULL
         AND v.monatsbeitrag != ROUND(
@@ -406,6 +410,8 @@ router.get("/filter/tarif-abweichung", (req, res) => {
       CASE
         WHEN v.tarif_id IS NULL THEN
           CONCAT('Alter Vertrag ohne Tarif-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat)')
+        WHEN t.altersgruppe IS NULL THEN
+          CONCAT('Tarif ohne Altersgruppen-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat - ', t.name, ')')
         ELSE
           CONCAT(
             'Zahlt €', COALESCE(v.monatsbeitrag, 0),
@@ -426,7 +432,7 @@ router.get("/filter/tarif-abweichung", (req, res) => {
                  WHEN t.billing_cycle = 'YEARLY' THEN ' - Jährlich'
                  ELSE ''
             END,
-            CASE WHEN t.altersgruppe IS NOT NULL THEN CONCAT(', ', t.altersgruppe) ELSE '' END,
+            ', ', t.altersgruppe,
             ')'
           )
       END as abweichung_grund
