@@ -7632,6 +7632,149 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
               </div>
 
+              {/* Alle Vertragsdaten - Vollständige Übersicht */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                marginBottom: '2rem'
+              }}>
+                <h3 style={{
+                  margin: '0 0 1rem 0',
+                  fontSize: '1.1rem',
+                  color: '#FFD700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  📊 Alle Vertragsdaten
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '1rem'
+                }}>
+                  {Object.entries(selectedVertrag)
+                    .filter(([key]) => !['vorname', 'nachname', 'email', 'price_cents'].includes(key))
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([key, value]) => {
+                      let displayValue = value;
+
+                      // Formatiere Datumswerte
+                      if (value && typeof value === 'string' && (
+                        key.includes('datum') ||
+                        key.includes('_am') ||
+                        key.includes('_von') ||
+                        key.includes('_bis') ||
+                        key === 'vertragsbeginn' ||
+                        key === 'vertragsende' ||
+                        key === 'kuendigung_eingegangen'
+                      )) {
+                        try {
+                          const date = new Date(value);
+                          if (!isNaN(date.getTime())) {
+                            displayValue = date.toLocaleString('de-DE');
+                          }
+                        } catch (e) {
+                          // Behalte Originalwert bei
+                        }
+                      }
+
+                      // Formatiere Boolean-Werte
+                      if (typeof value === 'boolean') {
+                        displayValue = value ? '✅ Ja' : '❌ Nein';
+                      }
+
+                      // Formatiere Null-Werte
+                      if (value === null || value === undefined || value === '') {
+                        displayValue = '—';
+                      }
+
+                      // Formatiere Zahlen
+                      if (typeof value === 'number' && !key.includes('id') && key !== 'personenVertragNr') {
+                        displayValue = value.toLocaleString('de-DE');
+                      }
+
+                      // Übersetze Feldnamen
+                      const fieldNameTranslations = {
+                        'id': 'Vertrags-ID',
+                        'mitglied_id': 'Mitglieds-ID',
+                        'dojo_id': 'Dojo-ID',
+                        'tarif_id': 'Tarif-ID',
+                        'vertragsnummer': 'Vertragsnummer',
+                        'personenVertragNr': 'Persönliche Vertragsnummer',
+                        'status': 'Status',
+                        'vertragsbeginn': 'Vertragsbeginn',
+                        'vertragsende': 'Vertragsende',
+                        'mindestlaufzeit_monate': 'Mindestlaufzeit (Monate)',
+                        'kuendigungsfrist_monate': 'Kündigungsfrist (Monate)',
+                        'automatische_verlaengerung': 'Automatische Verlängerung',
+                        'verlaengerung_monate': 'Verlängerung um (Monate)',
+                        'monatsbeitrag': 'Monatsbeitrag',
+                        'billing_cycle': 'Zahlungsrhythmus',
+                        'payment_method': 'Zahlungsart',
+                        'lastschrift_status': 'Lastschrift-Status',
+                        'sepa_mandats_id': 'SEPA-Mandats-ID',
+                        'kuendigung_eingegangen': 'Kündigung eingegangen',
+                        'kuendigungsgrund': 'Kündigungsgrund',
+                        'gekuendigt_von': 'Gekündigt von',
+                        'ruhepause_von': 'Ruhepause von',
+                        'ruhepause_bis': 'Ruhepause bis',
+                        'ruhepause_grund': 'Grund für Ruhepause',
+                        'agb_akzeptiert_am': 'AGB akzeptiert am',
+                        'datenschutz_akzeptiert_am': 'Datenschutz akzeptiert am',
+                        'hausordnung_akzeptiert_am': 'Hausordnung akzeptiert am',
+                        'unterschrift_datum': 'Unterschriftsdatum',
+                        'dokument_pfad': 'Dokument-Pfad',
+                        'notizen': 'Notizen',
+                        'bemerkung': 'Bemerkung',
+                        'rabatt_prozent': 'Rabatt (%)',
+                        'rabatt_betrag': 'Rabatt (Betrag)',
+                        'erstellt_am': 'Erstellt am',
+                        'aktualisiert_am': 'Aktualisiert am',
+                        'created_at': 'Erstellt am',
+                        'updated_at': 'Aktualisiert am',
+                        'geloescht': 'Gelöscht',
+                        'tarif_name': 'Tarifname',
+                        'magicline_contract_id': 'Magicline Vertrags-ID',
+                        'probezeit_tage': 'Probezeit (Tage)',
+                        'vertragsdauer_monate': 'Vertragsdauer (Monate)'
+                      };
+
+                      const displayName = fieldNameTranslations[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+
+                      return (
+                        <div key={key} style={{
+                          padding: '0.75rem',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255, 255, 255, 0.05)'
+                        }}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: 'rgba(255, 215, 0, 0.7)',
+                            marginBottom: '0.3rem',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}>
+                            {displayName}
+                          </div>
+                          <div style={{
+                            fontSize: '0.9rem',
+                            color: '#fff',
+                            fontWeight: '500',
+                            wordBreak: 'break-word'
+                          }}>
+                            {String(displayValue)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
               {/* Timestamps */}
               <div style={{
                 background: 'rgba(255, 255, 255, 0.03)',
