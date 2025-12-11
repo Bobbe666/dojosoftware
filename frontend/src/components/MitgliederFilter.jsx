@@ -231,7 +231,7 @@ const MitgliederFilter = () => {
             <div
               key={mitglied.mitglied_id}
               className="mitglied-card"
-              onClick={() => navigate(`/dashboard/mitglied/${mitglied.mitglied_id}`)}
+              onClick={() => navigate(`/dashboard/mitglieder/${mitglied.mitglied_id}`)}
               style={{ cursor: 'pointer' }}
             >
               <div className="mitglied-card__header">
