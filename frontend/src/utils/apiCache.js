@@ -12,7 +12,11 @@ class APICache {
         const paramString = Object.keys(params).sort()
             .map(key => `${key}=${params[key]}`)
             .join('&');
-        return paramString ? `${url}?${paramString}` : url;
+        if (!paramString) return url;
+
+        // Prüfe ob URL bereits Query-Parameter hat
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}${paramString}`;
     }
 
     // Daten aus Cache abrufen
