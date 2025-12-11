@@ -405,28 +405,47 @@ router.get('/statistics/gesamt', (req, res) => {
       -- Anzahl Kurse (über alle Dojos)
       (SELECT COUNT(*) FROM kurse) as kurse_gesamt,
 
-      -- Umsatz von Kleinunternehmer-Dojos (aktuelles Jahr)
-      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell), 0)
-       FROM dojo d
-       WHERE d.ist_aktiv = TRUE AND d.steuer_status = 'kleinunternehmer'
+      -- Umsatz von Kleinunternehmer-Dojos (berechnet aus aktiven Verträgen)
+      (SELECT COALESCE(SUM(v.monatsbeitrag * 12), 0)
+       FROM vertraege v
+       JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+       JOIN dojo d ON m.dojo_id = d.id
+       WHERE v.status = 'active'
+       AND m.aktiv = 1
+       AND d.ist_aktiv = TRUE
+       AND d.steuer_status = 'kleinunternehmer'
       ) as umsatz_kleinunternehmer,
 
-      -- Umsatz von Regelbesteuerten Dojos (aktuelles Jahr)
-      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell), 0)
-       FROM dojo d
-       WHERE d.ist_aktiv = TRUE AND d.steuer_status = 'regelbesteuert'
+      -- Umsatz von Regelbesteuerten Dojos (berechnet aus aktiven Verträgen)
+      (SELECT COALESCE(SUM(v.monatsbeitrag * 12), 0)
+       FROM vertraege v
+       JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+       JOIN dojo d ON m.dojo_id = d.id
+       WHERE v.status = 'active'
+       AND m.aktiv = 1
+       AND d.ist_aktiv = TRUE
+       AND d.steuer_status = 'regelbesteuert'
       ) as umsatz_regelbesteuerung,
 
-      -- Gesamtumsatz (aktuelles Jahr)
-      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell), 0)
-       FROM dojo d
-       WHERE d.ist_aktiv = TRUE
+      -- Gesamtumsatz (berechnet aus aktiven Verträgen)
+      (SELECT COALESCE(SUM(v.monatsbeitrag * 12), 0)
+       FROM vertraege v
+       JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+       JOIN dojo d ON m.dojo_id = d.id
+       WHERE v.status = 'active'
+       AND m.aktiv = 1
+       AND d.ist_aktiv = TRUE
       ) as umsatz_gesamt,
 
-      -- USt zu zahlen (nur von regelbesteuerten Dojos, aktuelles Jahr)
-      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell * d.ust_satz / 100), 0)
-       FROM dojo d
-       WHERE d.ist_aktiv = TRUE AND d.steuer_status = 'regelbesteuert'
+      -- USt zu zahlen (nur von regelbesteuerten Dojos)
+      (SELECT COALESCE(SUM(v.monatsbeitrag * 12 * d.ust_satz / 100), 0)
+       FROM vertraege v
+       JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+       JOIN dojo d ON m.dojo_id = d.id
+       WHERE v.status = 'active'
+       AND m.aktiv = 1
+       AND d.ist_aktiv = TRUE
+       AND d.steuer_status = 'regelbesteuert'
       ) as ust_gesamt
   `;
 
