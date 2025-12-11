@@ -4220,115 +4220,59 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 {/* VERTRAGSFREI STATUS */}
                 {isAdmin && (
-                  <div style={{
-                    background: mitglied?.vertragsfrei
-                      ? 'linear-gradient(135deg, rgba(52, 152, 219, 0.12) 0%, rgba(41, 128, 185, 0.12) 100%)'
-                      : 'linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 160, 0, 0.08) 100%)',
-                    borderRadius: '12px',
-                    padding: '1.25rem',
-                    marginBottom: '2rem',
-                    border: mitglied?.vertragsfrei
-                      ? '2px solid rgba(52, 152, 219, 0.4)'
-                      : '2px dashed rgba(255, 193, 7, 0.5)',
-                    boxShadow: mitglied?.vertragsfrei
-                      ? '0 4px 12px rgba(52, 152, 219, 0.15)'
-                      : '0 4px 12px rgba(255, 193, 7, 0.1)',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem'
-                    }}>
-                      <button
-                        className={`btn-toggle btn-block ${
-                          mitglied?.vertragsfrei ? 'btn-toggle-success' : 'btn-toggle-warning'
-                        }`}
-                        onClick={async () => {
-                          const isVertragsfrei = !mitglied?.vertragsfrei;
-                          const grund = isVertragsfrei
-                            ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
-                            : null;
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <button
+                      className={`btn btn-block ${
+                        mitglied?.vertragsfrei ? 'btn-success' : 'btn-warning'
+                      }`}
+                      onClick={async () => {
+                        const isVertragsfrei = !mitglied?.vertragsfrei;
+                        const grund = isVertragsfrei
+                          ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
+                          : null;
 
-                          if (isVertragsfrei && !grund) {
-                            return;
-                          }
+                        if (isVertragsfrei && !grund) {
+                          return;
+                        }
 
-                          try {
-                            await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
-                              vertragsfrei: isVertragsfrei ? 1 : 0,
-                              vertragsfrei_grund: grund || null
-                            });
+                        try {
+                          await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
+                            vertragsfrei: isVertragsfrei ? 1 : 0,
+                            vertragsfrei_grund: grund || null
+                          });
 
-                            setMitglied(prev => ({
-                              ...prev,
-                              vertragsfrei: isVertragsfrei ? 1 : 0,
-                              vertragsfrei_grund: grund || null
-                            }));
+                          setMitglied(prev => ({
+                            ...prev,
+                            vertragsfrei: isVertragsfrei ? 1 : 0,
+                            vertragsfrei_grund: grund || null
+                          }));
 
-                            alert(isVertragsfrei
-                              ? '✅ Mitglied wurde als vertragsfrei markiert'
-                              : '✅ Vertragsfreistellung wurde aufgehoben'
-                            );
-                          } catch (error) {
-                            console.error('Fehler beim Aktualisieren:', error);
-                            alert('❌ Fehler beim Speichern der Vertragsfreistellung');
-                          }
-                        }}
-                        style={{ flex: 1 }}
-                      >
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '0.25rem'
-                        }}>
-                          <div style={{
-                            fontSize: '1.05rem',
-                            fontWeight: '700',
-                            letterSpacing: '0.3px'
-                          }}>
-                            {mitglied?.vertragsfrei
-                              ? '✅ Mitglied ist vertragsfrei'
-                              : '👆 Klicken: Mitglied vertragsfrei stellen'}
-                          </div>
-                          <div style={{
-                            fontSize: '0.85rem',
-                            opacity: 0.85,
-                            fontWeight: '400'
-                          }}>
-                            {mitglied?.vertragsfrei
-                              ? 'Keine Vertragspflicht • Beitragsfrei'
-                              : 'z.B. für Ehrenmitglieder, Sponsoren, Familienmitglieder'}
-                          </div>
-                        </div>
-                      </button>
+                          alert(isVertragsfrei
+                            ? '✅ Mitglied wurde als vertragsfrei markiert'
+                            : '✅ Vertragsfreistellung wurde aufgehoben'
+                          );
+                        } catch (error) {
+                          console.error('Fehler beim Aktualisieren:', error);
+                          alert('❌ Fehler beim Speichern der Vertragsfreistellung');
+                        }
+                      }}
+                    >
+                      {mitglied?.vertragsfrei
+                        ? '✅ Mitglied ist vertragsfrei'
+                        : 'Mitglied vertragsfrei stellen'}
+                    </button>
 
-                      {mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
-                        <div style={{
-                          padding: '0.5rem 1rem',
-                          background: 'rgba(52, 152, 219, 0.15)',
-                          borderRadius: '8px',
-                          fontSize: '0.9rem',
-                          color: '#5dade2',
-                          border: '1px solid rgba(52, 152, 219, 0.3)'
-                        }}>
-                          <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
-                        </div>
-                      )}
-                    </div>
-
-                    {mitglied?.vertragsfrei && (
+                    {mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
                       <div style={{
-                        marginTop: '1rem',
-                        padding: '0.75rem',
-                        background: 'rgba(52, 152, 219, 0.05)',
+                        marginTop: '0.75rem',
+                        padding: '0.5rem 1rem',
+                        background: 'rgba(52, 152, 219, 0.1)',
                         borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        borderLeft: '3px solid #3498db'
+                        fontSize: '0.9rem',
+                        color: '#5dade2',
+                        border: '1px solid rgba(52, 152, 219, 0.3)'
                       }}>
-                        ℹ️ <strong>Info:</strong> Vertragsfreie Mitglieder benötigen keinen aktiven Vertrag und sind von Beitragszahlungen befreit.
+                        <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
                       </div>
                     )}
                   </div>
