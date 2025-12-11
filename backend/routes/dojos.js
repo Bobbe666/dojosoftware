@@ -394,18 +394,40 @@ router.get('/:id/statistics', (req, res) => {
 router.get('/statistics/gesamt', (req, res) => {
   const jahr = req.query.jahr || new Date().getFullYear();
 
-  // Simplified query that doesn't rely on dojo_id in mitglieder table (for now)
   const query = `
     SELECT
-      COUNT(DISTINCT d.id) as dojos_anzahl,
-      0 as mitglieder_gesamt,
-      0 as kurse_gesamt,
-      0 as umsatz_kleinunternehmer,
-      0 as umsatz_regelbesteuerung,
-      0 as umsatz_gesamt,
-      0 as ust_gesamt
-    FROM dojo d
-    WHERE d.ist_aktiv = TRUE
+      -- Anzahl aktiver Dojos
+      (SELECT COUNT(*) FROM dojo WHERE ist_aktiv = TRUE) as dojos_anzahl,
+
+      -- Anzahl aktiver Mitglieder (über alle Dojos)
+      (SELECT COUNT(*) FROM mitglieder WHERE ist_aktiv = TRUE) as mitglieder_gesamt,
+
+      -- Anzahl Kurse (über alle Dojos)
+      (SELECT COUNT(*) FROM kurse) as kurse_gesamt,
+
+      -- Umsatz von Kleinunternehmer-Dojos (aktuelles Jahr)
+      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell), 0)
+       FROM dojo d
+       WHERE d.ist_aktiv = TRUE AND d.steuer_status = 'kleinunternehmer'
+      ) as umsatz_kleinunternehmer,
+
+      -- Umsatz von Regelbesteuerten Dojos (aktuelles Jahr)
+      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell), 0)
+       FROM dojo d
+       WHERE d.ist_aktiv = TRUE AND d.steuer_status = 'regelbesteuert'
+      ) as umsatz_regelbesteuerung,
+
+      -- Gesamtumsatz (aktuelles Jahr)
+      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell), 0)
+       FROM dojo d
+       WHERE d.ist_aktiv = TRUE
+      ) as umsatz_gesamt,
+
+      -- USt zu zahlen (nur von regelbesteuerten Dojos, aktuelles Jahr)
+      (SELECT COALESCE(SUM(d.jahresumsatz_aktuell * d.ust_satz / 100), 0)
+       FROM dojo d
+       WHERE d.ist_aktiv = TRUE AND d.steuer_status = 'regelbesteuert'
+      ) as ust_gesamt
   `;
 
   req.db.query(query, (err, results) => {
