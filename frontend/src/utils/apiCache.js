@@ -134,7 +134,8 @@ export const fetchDashboardBatch = async (token, dojoFilterParam = '') => {
     return fetchWithCache(url, {
         headers: {
             'Authorization': `Bearer ${token}`
-        }
+        },
+        bypassCache: true // TEMPORÄR: Cache deaktiviert zum Debuggen
     }, 3 * 60 * 1000); // 3 Minuten Cache für Dashboard
 };
 
