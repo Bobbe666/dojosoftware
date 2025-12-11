@@ -86,7 +86,7 @@ const AdminVerwaltung = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/users`);
+      const response = await fetch(`${config.apiBaseUrl}/auth/users`);
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setUsers(data);
