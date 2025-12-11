@@ -13,7 +13,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
-import "../styles/MitgliederVerwaltung.css";
+import "../styles/Auswertungen.css";
 
 const MitgliederFilter = () => {
   const { filterType } = useParams();
@@ -128,9 +128,16 @@ const MitgliederFilter = () => {
   };
 
   return (
-    <div className="mitglieder-verwaltung">
+    <div style={{ padding: '2rem', minHeight: '100vh' }}>
       {/* Header */}
-      <div className="mitglieder-header">
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '2rem',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
         <button className="btn btn-secondary" onClick={() => navigate('/dashboard/finanzcockpit')}>
           <ArrowLeft size={20} />
           Zurück zum Finanzcockpit
