@@ -7632,146 +7632,296 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
               </div>
 
-              {/* Alle Vertragsdaten - Vollständige Übersicht */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                marginBottom: '2rem'
-              }}>
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  fontSize: '1.1rem',
+              {/* Zusätzliche Vertragsdaten - Strukturiert */}
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{
+                  margin: '0 0 1.5rem 0',
+                  fontSize: '1.3rem',
+                  fontWeight: '700',
                   color: '#FFD700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
+                  textAlign: 'center',
+                  borderBottom: '2px solid rgba(255, 215, 0, 0.3)',
+                  paddingBottom: '1rem'
                 }}>
-                  📊 Alle Vertragsdaten
-                </h3>
+                  📊 Weitere Vertragsdetails
+                </h2>
+
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                  gap: '1rem'
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '1.5rem'
                 }}>
-                  {Object.entries(selectedVertrag)
-                    .filter(([key]) => !['vorname', 'nachname', 'email', 'price_cents'].includes(key))
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([key, value]) => {
-                      let displayValue = value;
-
-                      // Formatiere Datumswerte
-                      if (value && typeof value === 'string' && (
-                        key.includes('datum') ||
-                        key.includes('_am') ||
-                        key.includes('_von') ||
-                        key.includes('_bis') ||
-                        key === 'vertragsbeginn' ||
-                        key === 'vertragsende' ||
-                        key === 'kuendigung_eingegangen'
-                      )) {
-                        try {
-                          const date = new Date(value);
-                          if (!isNaN(date.getTime())) {
-                            displayValue = date.toLocaleString('de-DE');
-                          }
-                        } catch (e) {
-                          // Behalte Originalwert bei
-                        }
-                      }
-
-                      // Formatiere Boolean-Werte
-                      if (typeof value === 'boolean') {
-                        displayValue = value ? '✅ Ja' : '❌ Nein';
-                      }
-
-                      // Formatiere Null-Werte
-                      if (value === null || value === undefined || value === '') {
-                        displayValue = '—';
-                      }
-
-                      // Formatiere Zahlen
-                      if (typeof value === 'number' && !key.includes('id') && key !== 'personenVertragNr') {
-                        displayValue = value.toLocaleString('de-DE');
-                      }
-
-                      // Übersetze Feldnamen
-                      const fieldNameTranslations = {
-                        'id': 'Vertrags-ID',
-                        'mitglied_id': 'Mitglieds-ID',
-                        'dojo_id': 'Dojo-ID',
-                        'tarif_id': 'Tarif-ID',
-                        'vertragsnummer': 'Vertragsnummer',
-                        'personenVertragNr': 'Persönliche Vertragsnummer',
-                        'status': 'Status',
-                        'vertragsbeginn': 'Vertragsbeginn',
-                        'vertragsende': 'Vertragsende',
-                        'mindestlaufzeit_monate': 'Mindestlaufzeit (Monate)',
-                        'kuendigungsfrist_monate': 'Kündigungsfrist (Monate)',
-                        'automatische_verlaengerung': 'Automatische Verlängerung',
-                        'verlaengerung_monate': 'Verlängerung um (Monate)',
-                        'monatsbeitrag': 'Monatsbeitrag',
-                        'billing_cycle': 'Zahlungsrhythmus',
-                        'payment_method': 'Zahlungsart',
-                        'lastschrift_status': 'Lastschrift-Status',
-                        'sepa_mandats_id': 'SEPA-Mandats-ID',
-                        'kuendigung_eingegangen': 'Kündigung eingegangen',
-                        'kuendigungsgrund': 'Kündigungsgrund',
-                        'gekuendigt_von': 'Gekündigt von',
-                        'ruhepause_von': 'Ruhepause von',
-                        'ruhepause_bis': 'Ruhepause bis',
-                        'ruhepause_grund': 'Grund für Ruhepause',
-                        'agb_akzeptiert_am': 'AGB akzeptiert am',
-                        'datenschutz_akzeptiert_am': 'Datenschutz akzeptiert am',
-                        'hausordnung_akzeptiert_am': 'Hausordnung akzeptiert am',
-                        'unterschrift_datum': 'Unterschriftsdatum',
-                        'dokument_pfad': 'Dokument-Pfad',
-                        'notizen': 'Notizen',
-                        'bemerkung': 'Bemerkung',
-                        'rabatt_prozent': 'Rabatt (%)',
-                        'rabatt_betrag': 'Rabatt (Betrag)',
-                        'erstellt_am': 'Erstellt am',
-                        'aktualisiert_am': 'Aktualisiert am',
-                        'created_at': 'Erstellt am',
-                        'updated_at': 'Aktualisiert am',
-                        'geloescht': 'Gelöscht',
-                        'tarif_name': 'Tarifname',
-                        'magicline_contract_id': 'Magicline Vertrags-ID',
-                        'probezeit_tage': 'Probezeit (Tage)',
-                        'vertragsdauer_monate': 'Vertragsdauer (Monate)'
-                      };
-
-                      const displayName = fieldNameTranslations[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
-
-                      return (
-                        <div key={key} style={{
-                          padding: '0.75rem',
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(255, 255, 255, 0.05)'
-                        }}>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: 'rgba(255, 215, 0, 0.7)',
-                            marginBottom: '0.3rem',
-                            fontWeight: '600',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                          }}>
-                            {displayName}
+                  {/* Zusätzliche Laufzeit-Details */}
+                  {(selectedVertrag.vertragsdauer_monate || selectedVertrag.verlaengerung_monate || selectedVertrag.probezeit_tage) && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        ⏱️ Erweiterte Laufzeit
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {selectedVertrag.vertragsdauer_monate && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertragsdauer</div>
+                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.vertragsdauer_monate} Monate</div>
                           </div>
-                          <div style={{
-                            fontSize: '0.9rem',
-                            color: '#fff',
-                            fontWeight: '500',
-                            wordBreak: 'break-word'
-                          }}>
-                            {String(displayValue)}
+                        )}
+                        {selectedVertrag.verlaengerung_monate && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Verlängerung um</div>
+                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.verlaengerung_monate} Monate</div>
+                          </div>
+                        )}
+                        {selectedVertrag.probezeit_tage && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Probezeit</div>
+                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.probezeit_tage} Tage</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rabatte & Sonderkonditionen */}
+                  {(selectedVertrag.rabatt_prozent || selectedVertrag.rabatt_betrag) && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        🎁 Rabatte
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {selectedVertrag.rabatt_prozent && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Rabatt (%)</div>
+                            <div style={{ fontSize: '0.95rem', color: '#4caf50', fontWeight: '600' }}>{selectedVertrag.rabatt_prozent}%</div>
+                          </div>
+                        )}
+                        {selectedVertrag.rabatt_betrag && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Rabatt (Betrag)</div>
+                            <div style={{ fontSize: '0.95rem', color: '#4caf50', fontWeight: '600' }}>{selectedVertrag.rabatt_betrag} €</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SEPA & Banking */}
+                  {selectedVertrag.sepa_mandats_id && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        🏦 SEPA-Mandat
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Mandatsreferenz</div>
+                          <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500', wordBreak: 'break-all' }}>{selectedVertrag.sepa_mandats_id}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Kündigungsdetails */}
+                  {selectedVertrag.gekuendigt_von && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        📝 Kündigungsinfo
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Gekündigt von</div>
+                          <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.gekuendigt_von}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ruhepause-Grund */}
+                  {selectedVertrag.ruhepause_grund && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        ⏸️ Ruhepause-Details
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Grund</div>
+                          <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.ruhepause_grund}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dokumente & Unterschriften */}
+                  {(selectedVertrag.unterschrift_datum || selectedVertrag.dokument_pfad) && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        📄 Dokumente
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {selectedVertrag.unterschrift_datum && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Unterschriftsdatum</div>
+                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                              {new Date(selectedVertrag.unterschrift_datum).toLocaleDateString('de-DE')}
+                            </div>
+                          </div>
+                        )}
+                        {selectedVertrag.dokument_pfad && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Dokument-Pfad</div>
+                            <div style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '500', wordBreak: 'break-all' }}>{selectedVertrag.dokument_pfad}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notizen & Bemerkungen */}
+                  {(selectedVertrag.notizen || selectedVertrag.bemerkung) && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <h3 style={{
+                        margin: '0 0 1rem 0',
+                        fontSize: '1.1rem',
+                        color: '#FFD700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        📝 Notizen
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {selectedVertrag.notizen && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Notizen</div>
+                            <div style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '400', lineHeight: '1.5' }}>{selectedVertrag.notizen}</div>
+                          </div>
+                        )}
+                        {selectedVertrag.bemerkung && (
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Bemerkung</div>
+                            <div style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '400', lineHeight: '1.5' }}>{selectedVertrag.bemerkung}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Technische Daten */}
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <h3 style={{
+                      margin: '0 0 1rem 0',
+                      fontSize: '1.1rem',
+                      color: '#FFD700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      🔧 Technische Daten
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertrags-ID</div>
+                        <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.id}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Persönliche Vertragsnummer</div>
+                        <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>#{selectedVertrag.personenVertragNr}</div>
+                      </div>
+                      {selectedVertrag.magicline_contract_id && (
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Magicline Vertrags-ID</div>
+                          <div style={{ fontSize: '0.95rem', color: '#9ca3af', fontWeight: '500' }}>{selectedVertrag.magicline_contract_id}</div>
+                        </div>
+                      )}
+                      {selectedVertrag.geloescht !== undefined && (
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Status</div>
+                          <div style={{ fontSize: '0.95rem', color: selectedVertrag.geloescht ? '#ef4444' : '#4caf50', fontWeight: '600' }}>
+                            {selectedVertrag.geloescht ? '🗑️ Gelöscht' : '✅ Aktiv'}
                           </div>
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
