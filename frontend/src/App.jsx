@@ -72,6 +72,7 @@ import TrainerOnlyRoute from "./components/TrainerOnlyRoute";
 
 // Beitrags-Management
 import Finanzcockpit from "./components/Finanzcockpit";
+import MitgliederFilter from "./components/MitgliederFilter";
 import Beitraege from "./components/Beitraege";
 import Mahnwesen from "./components/Mahnwesen";
 import MahnstufenEinstellungen from "./components/MahnstufenEinstellungen";
@@ -400,6 +401,7 @@ const App = () => {
 
               {/* Beitrags-Management */}
               <Route path="finanzcockpit" element={<Finanzcockpit />} />
+              <Route path="mitglieder-filter/:filterType" element={<MitgliederFilter />} />
               <Route path="beitraege" element={<Beitraege />} />
               <Route path="mahnwesen" element={<Mahnwesen />} />
               <Route path="mahnstufen-einstellungen" element={<MahnstufenEinstellungen />} />

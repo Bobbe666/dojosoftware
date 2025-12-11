@@ -668,6 +668,44 @@ const Finanzcockpit = () => {
           </button>
         </div>
       </section>
+
+      <section className="finanzcockpit__actions">
+        <h3>📊 Mitglieder-Analysen</h3>
+        <div className="finanzcockpit__actions-grid">
+          <button
+            className="finanzcockpit__action-button"
+            onClick={() => navigate('/dashboard/mitglieder-filter/ohne-sepa')}
+            style={{ borderLeft: '3px solid #ef4444' }}
+          >
+            <AlertCircle size={20} />
+            Ohne SEPA-Mandat
+          </button>
+          <button
+            className="finanzcockpit__action-button"
+            onClick={() => navigate('/dashboard/mitglieder-filter/ohne-vertrag')}
+            style={{ borderLeft: '3px solid #f59e0b' }}
+          >
+            <FileText size={20} />
+            Ohne Vertrag
+          </button>
+          <button
+            className="finanzcockpit__action-button"
+            onClick={() => navigate('/dashboard/mitglieder-filter/tarif-abweichung')}
+            style={{ borderLeft: '3px solid #8b5cf6' }}
+          >
+            <AlertCircle size={20} />
+            Tarif-Abweichungen
+          </button>
+          <button
+            className="finanzcockpit__action-button"
+            onClick={() => navigate('/dashboard/mitglieder-filter/zahlungsweisen')}
+            style={{ borderLeft: '3px solid #3b82f6' }}
+          >
+            <CreditCard size={20} />
+            Nach Zahlungsweise
+          </button>
+        </div>
+      </section>
     </div>
   );
 };

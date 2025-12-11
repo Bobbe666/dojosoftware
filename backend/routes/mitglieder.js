@@ -258,6 +258,186 @@ router.get("/filter-options/gurte", (req, res) => {
   });
 });
 
+// ✅ API: Mitglieder ohne SEPA-Mandat (MUSS VOR /:id Route stehen!)
+router.get("/filter/ohne-sepa", (req, res) => {
+  const { dojo_id } = req.query;
+
+  // 🔒 DOJO-FILTER: Baue WHERE-Clause
+  let whereConditions = [
+    "m.zahlungsmethode IN ('SEPA-Lastschrift', 'Lastschrift')",
+    "(sm.mandatsreferenz IS NULL OR sm.status != 'aktiv')"
+  ];
+  let queryParams = [];
+
+  if (dojo_id && dojo_id !== 'all') {
+    whereConditions.push('m.dojo_id = ?');
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+  const query = `
+    SELECT DISTINCT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      m.email,
+      m.zahlungsmethode,
+      m.aktiv,
+      v.monatsbeitrag
+    FROM mitglieder m
+    LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+    LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+    ${whereClause}
+    ORDER BY m.nachname, m.vorname
+  `;
+
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Mitglieder ohne SEPA:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Mitglieder" });
+    }
+
+    res.json({ success: true, data: results });
+  });
+});
+
+// ✅ API: Mitglieder ohne Vertrag (MUSS VOR /:id Route stehen!)
+router.get("/filter/ohne-vertrag", (req, res) => {
+  const { dojo_id } = req.query;
+
+  // 🔒 DOJO-FILTER: Baue WHERE-Clause
+  let whereConditions = [
+    "m.aktiv = 1",
+    "v.vertrag_id IS NULL"
+  ];
+  let queryParams = [];
+
+  if (dojo_id && dojo_id !== 'all') {
+    whereConditions.push('m.dojo_id = ?');
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+  const query = `
+    SELECT DISTINCT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      m.email,
+      m.zahlungsmethode,
+      m.aktiv,
+      NULL as monatsbeitrag
+    FROM mitglieder m
+    LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+    ${whereClause}
+    ORDER BY m.nachname, m.vorname
+  `;
+
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Mitglieder ohne Vertrag:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Mitglieder" });
+    }
+
+    res.json({ success: true, data: results });
+  });
+});
+
+// ✅ API: Mitglieder mit Tarif-Abweichungen (MUSS VOR /:id Route stehen!)
+router.get("/filter/tarif-abweichung", (req, res) => {
+  const { dojo_id } = req.query;
+
+  // 🔒 DOJO-FILTER: Baue WHERE-Clause
+  let whereConditions = [
+    "v.status = 'aktiv'",
+    "t.id IS NOT NULL",
+    "v.monatsbeitrag != t.standardpreis"
+  ];
+  let queryParams = [];
+
+  if (dojo_id && dojo_id !== 'all') {
+    whereConditions.push('m.dojo_id = ?');
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+  const query = `
+    SELECT DISTINCT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      m.email,
+      m.zahlungsmethode,
+      m.aktiv,
+      v.monatsbeitrag,
+      t.name as tarif_name,
+      t.standardpreis,
+      CONCAT('Zahlt €', v.monatsbeitrag, ' statt €', t.standardpreis, ' (', t.name, ')') as abweichung_grund
+    FROM mitglieder m
+    JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    ${whereClause}
+    ORDER BY m.nachname, m.vorname
+  `;
+
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Mitglieder mit Tarif-Abweichung:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Mitglieder" });
+    }
+
+    res.json({ success: true, data: results });
+  });
+});
+
+// ✅ API: Mitglieder nach Zahlungsweise filtern (MUSS VOR /:id Route stehen!)
+router.get("/filter/zahlungsweisen", (req, res) => {
+  const { payment_method, dojo_id } = req.query;
+
+  // 🔒 DOJO-FILTER: Baue WHERE-Clause
+  let whereConditions = [];
+  let queryParams = [];
+
+  if (payment_method && payment_method !== 'all') {
+    whereConditions.push('m.zahlungsmethode = ?');
+    queryParams.push(payment_method);
+  }
+
+  if (dojo_id && dojo_id !== 'all') {
+    whereConditions.push('m.dojo_id = ?');
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT DISTINCT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      m.email,
+      m.zahlungsmethode,
+      m.aktiv,
+      v.monatsbeitrag
+    FROM mitglieder m
+    LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+    ${whereClause}
+    ORDER BY m.nachname, m.vorname
+  `;
+
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Mitglieder nach Zahlungsweise:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Mitglieder" });
+    }
+
+    res.json({ success: true, data: results });
+  });
+});
+
 // ✅ API: Einzelnes Mitglied VOLLPROFIL abrufen - KORRIGIERT + DOJO-FILTER
 router.get("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
