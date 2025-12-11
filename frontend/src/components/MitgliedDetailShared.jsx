@@ -4221,12 +4221,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 {/* VERTRAGSFREI STATUS */}
                 {isAdmin && (
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(41, 128, 185, 0.1) 100%)',
+                    background: mitglied?.vertragsfrei
+                      ? 'linear-gradient(135deg, rgba(52, 152, 219, 0.12) 0%, rgba(41, 128, 185, 0.12) 100%)'
+                      : 'linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 160, 0, 0.08) 100%)',
                     borderRadius: '12px',
                     padding: '1.25rem',
                     marginBottom: '2rem',
-                    border: '1px solid rgba(52, 152, 219, 0.3)',
-                    boxShadow: '0 4px 12px rgba(52, 152, 219, 0.1)'
+                    border: mitglied?.vertragsfrei
+                      ? '2px solid rgba(52, 152, 219, 0.4)'
+                      : '2px dashed rgba(255, 193, 7, 0.5)',
+                    boxShadow: mitglied?.vertragsfrei
+                      ? '0 4px 12px rgba(52, 152, 219, 0.15)'
+                      : '0 4px 12px rgba(255, 193, 7, 0.1)',
+                    transition: 'all 0.3s ease'
                   }}>
                     <div style={{
                       display: 'flex',
@@ -4236,13 +4243,35 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       <label style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem',
+                        gap: '1rem',
                         cursor: 'pointer',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: '#3498db',
-                        flex: 1
-                      }}>
+                        flex: 1,
+                        padding: '0.875rem 1.25rem',
+                        background: mitglied?.vertragsfrei
+                          ? 'rgba(52, 152, 219, 0.15)'
+                          : 'rgba(255, 193, 7, 0.12)',
+                        borderRadius: '10px',
+                        border: '1px solid',
+                        borderColor: mitglied?.vertragsfrei
+                          ? 'rgba(52, 152, 219, 0.3)'
+                          : 'rgba(255, 193, 7, 0.4)',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = mitglied?.vertragsfrei
+                          ? 'rgba(52, 152, 219, 0.22)'
+                          : 'rgba(255, 193, 7, 0.18)';
+                        e.currentTarget.style.transform = 'translateX(4px)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = mitglied?.vertragsfrei
+                          ? 'rgba(52, 152, 219, 0.15)'
+                          : 'rgba(255, 193, 7, 0.12)';
+                        e.currentTarget.style.transform = 'translateX(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                      >
                         <input
                           type="checkbox"
                           checked={mitglied?.vertragsfrei || false}
@@ -4280,19 +4309,39 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             }
                           }}
                           style={{
-                            width: '20px',
-                            height: '20px',
+                            width: '24px',
+                            height: '24px',
                             cursor: 'pointer',
-                            accentColor: '#3498db'
+                            accentColor: mitglied?.vertragsfrei ? '#3498db' : '#ffc107',
+                            flexShrink: 0
                           }}
                         />
-                        <span style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
-                          🎖️ Mitglied ist vertragsfrei
-                        </span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '1.05rem',
+                            fontWeight: '700',
+                            color: mitglied?.vertragsfrei ? '#3498db' : '#ffc107',
+                            marginBottom: '0.25rem',
+                            letterSpacing: '0.3px'
+                          }}>
+                            {mitglied?.vertragsfrei
+                              ? '✅ Mitglied ist vertragsfrei'
+                              : '👆 Klicken: Mitglied vertragsfrei stellen'}
+                          </div>
+                          <div style={{
+                            fontSize: '0.85rem',
+                            color: 'rgba(255, 255, 255, 0.65)',
+                            fontWeight: '400',
+                            lineHeight: '1.4'
+                          }}>
+                            {mitglied?.vertragsfrei
+                              ? 'Keine Vertragspflicht • Beitragsfrei'
+                              : 'z.B. für Ehrenmitglieder, Sponsoren, Familienmitglieder'}
+                          </div>
+                        </div>
                       </label>
 
                       {mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
