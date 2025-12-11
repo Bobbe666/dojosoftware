@@ -135,7 +135,7 @@ const AdminVerwaltung = () => {
 
   // Filtere Benutzer nach Rolle
   const getUsersByRole = (rolle) => {
-    return users.filter(u => u.rolle === rolle);
+    return users.filter(u => u.role === rolle);
   };
 
   // Toggle für Rolle ein-/ausklappen
