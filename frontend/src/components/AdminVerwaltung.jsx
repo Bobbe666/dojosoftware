@@ -15,6 +15,13 @@ const AdminVerwaltung = () => {
     verkauf: true
   });
 
+  // Modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editForm, setEditForm] = useState({ username: '', email: '', role: '' });
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
+
   // Rollen-Definitionen
   const rollen = [
     { key: 'admin', label: 'Admin', icon: '👨‍💼', color: '#3b82f6' },
@@ -146,6 +153,128 @@ const AdminVerwaltung = () => {
     }));
   };
 
+  // Benutzer bearbeiten
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    setEditForm({
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editForm.username || !editForm.email || !editForm.role) {
+      showMessage('Bitte alle Felder ausfüllen', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/auth/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Speichern');
+      }
+
+      showMessage(data.message || 'Benutzer erfolgreich aktualisiert', 'success');
+      setShowEditModal(false);
+      loadUsers(); // Reload users
+    } catch (err) {
+      showMessage(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Passwort zurücksetzen
+  const handlePasswordReset = (user) => {
+    setSelectedUser(user);
+    setPasswordForm({ newPassword: '', confirmPassword: '' });
+    setShowPasswordModal(true);
+  };
+
+  const handleSavePassword = async () => {
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
+      showMessage('Bitte beide Felder ausfüllen', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showMessage('Passwörter stimmen nicht überein', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      showMessage('Passwort muss mindestens 6 Zeichen lang sein', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/auth/users/${selectedUser.id}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: passwordForm.newPassword })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Zurücksetzen');
+      }
+
+      showMessage(data.message || 'Passwort erfolgreich zurückgesetzt', 'success');
+      setShowPasswordModal(false);
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      showMessage(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Benutzer löschen
+  const handleDelete = async (user) => {
+    if (user.id === 1) {
+      showMessage('Super-Admin kann nicht gelöscht werden', 'error');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Möchten Sie den Benutzer "${user.username}" (${user.email}) wirklich löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden!`
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/auth/users/${user.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Löschen');
+      }
+
+      showMessage(data.message || 'Benutzer erfolgreich gelöscht', 'success');
+      loadUsers(); // Reload users
+    } catch (err) {
+      showMessage(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Render Rechtezuweisung Tab
   const renderRechteTab = () => (
     <div className="rechte-container">
@@ -249,13 +378,13 @@ const AdminVerwaltung = () => {
                   <p className="email">{user.email}</p>
                 </div>
                 <div className="user-actions">
-                  <button className="btn-icon" title="Bearbeiten">
+                  <button className="btn-icon" title="Bearbeiten" onClick={() => handleEdit(user)}>
                     <Edit3 size={16} />
                   </button>
-                  <button className="btn-icon" title="Passwort ändern">
+                  <button className="btn-icon" title="Passwort ändern" onClick={() => handlePasswordReset(user)}>
                     <Lock size={16} />
                   </button>
-                  <button className="btn-icon btn-danger" title="Löschen">
+                  <button className="btn-icon btn-danger" title="Löschen" onClick={() => handleDelete(user)}>
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -312,6 +441,101 @@ const AdminVerwaltung = () => {
       <div className="tab-content">
         {activeTab === 'rechte' ? renderRechteTab() : renderUserList(activeTab)}
       </div>
+
+      {/* Edit User Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Benutzer bearbeiten</h2>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Benutzername</label>
+                <input
+                  type="text"
+                  value={editForm.username}
+                  onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                  placeholder="Benutzername"
+                />
+              </div>
+              <div className="form-group">
+                <label>E-Mail</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="E-Mail"
+                />
+              </div>
+              <div className="form-group">
+                <label>Rolle</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                >
+                  <option value="">Rolle wählen...</option>
+                  {rollen.map(r => (
+                    <option key={r.key} value={r.key}>{r.icon} {r.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                Abbrechen
+              </button>
+              <button className="btn btn-primary" onClick={handleSaveEdit} disabled={loading}>
+                {loading ? 'Speichern...' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {showPasswordModal && (
+        <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Passwort zurücksetzen</h2>
+              <button className="modal-close" onClick={() => setShowPasswordModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p className="modal-info">
+                Passwort für: <strong>{selectedUser?.username}</strong> ({selectedUser?.email})
+              </p>
+              <div className="form-group">
+                <label>Neues Passwort</label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  placeholder="Mindestens 6 Zeichen"
+                />
+              </div>
+              <div className="form-group">
+                <label>Passwort wiederholen</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  placeholder="Passwort wiederholen"
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>
+                Abbrechen
+              </button>
+              <button className="btn btn-primary" onClick={handleSavePassword} disabled={loading}>
+                {loading ? 'Zurücksetzen...' : 'Passwort zurücksetzen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

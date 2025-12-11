@@ -418,6 +418,99 @@ router.get('/users', (req, res) => {
   });
 });
 
+// Update user (username, email, role)
+router.put('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { username, email, role } = req.body;
+
+  // Validation
+  if (!username || !email || !role) {
+    return res.status(400).json({ error: 'Username, Email und Rolle sind erforderlich' });
+  }
+
+  if (!['admin', 'supervisor', 'trainer', 'verkauf', 'member'].includes(role)) {
+    return res.status(400).json({ error: 'Ungültige Rolle' });
+  }
+
+  try {
+    const updateQuery = 'UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?';
+    db.query(updateQuery, [username, email, role, id], (err, result) => {
+      if (err) {
+        console.error('💥 Error updating user:', err);
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(400).json({ error: 'Benutzername oder E-Mail bereits vergeben' });
+        }
+        return res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      res.json({ success: true, message: 'Benutzer erfolgreich aktualisiert' });
+    });
+  } catch (error) {
+    console.error('💥 Error updating user:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reset user password
+router.put('/users/:id/password', async (req, res) => {
+  const { id } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updateQuery = 'UPDATE users SET password = ? WHERE id = ?';
+
+    db.query(updateQuery, [hashedPassword, id], (err, result) => {
+      if (err) {
+        console.error('💥 Error resetting password:', err);
+        return res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
+    });
+  } catch (error) {
+    console.error('💥 Error resetting password:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete user
+router.delete('/users/:id', (req, res) => {
+  const { id } = req.params;
+
+  // Prevent deleting user with ID 1 (super admin)
+  if (id === '1') {
+    return res.status(403).json({ error: 'Super-Admin kann nicht gelöscht werden' });
+  }
+
+  const deleteQuery = 'DELETE FROM users WHERE id = ?';
+
+  db.query(deleteQuery, [id], (err, result) => {
+    if (err) {
+      console.error('💥 Error deleting user:', err);
+      return res.status(500).json({ error: 'Fehler beim Löschen' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+
+    res.json({ success: true, message: 'Benutzer erfolgreich gelöscht' });
+  });
+});
+
 // ===================================================================
 // ERROR HANDLING
 // ===================================================================

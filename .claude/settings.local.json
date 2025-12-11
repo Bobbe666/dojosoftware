@@ -38,7 +38,9 @@
       "Bash(ls:*)",
       "Bash(awk:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(pm2 list:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
