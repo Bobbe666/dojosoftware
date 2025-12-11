@@ -905,10 +905,12 @@ app.use((error, req, res, next) => {
 // =============================================
 
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Listen on all IPv4 interfaces
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   logger.success('Server gestartet', {
     port: PORT,
+    host: HOST,
     url: `http://localhost:${PORT}`,
     environment: process.env.NODE_ENV || 'development',
     nodeVersion: process.version
