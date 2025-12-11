@@ -4240,91 +4240,52 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       alignItems: 'center',
                       gap: '1rem'
                     }}>
-                      <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        cursor: 'pointer',
-                        flex: 1,
-                        padding: '0.875rem 1.25rem',
-                        background: mitglied?.vertragsfrei
-                          ? 'rgba(52, 152, 219, 0.15)'
-                          : 'rgba(255, 193, 7, 0.12)',
-                        borderRadius: '10px',
-                        border: '1px solid',
-                        borderColor: mitglied?.vertragsfrei
-                          ? 'rgba(52, 152, 219, 0.3)'
-                          : 'rgba(255, 193, 7, 0.4)',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = mitglied?.vertragsfrei
-                          ? 'rgba(52, 152, 219, 0.22)'
-                          : 'rgba(255, 193, 7, 0.18)';
-                        e.currentTarget.style.transform = 'translateX(4px)';
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = mitglied?.vertragsfrei
-                          ? 'rgba(52, 152, 219, 0.15)'
-                          : 'rgba(255, 193, 7, 0.12)';
-                        e.currentTarget.style.transform = 'translateX(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
+                      <button
+                        className={`btn-toggle btn-block ${
+                          mitglied?.vertragsfrei ? 'btn-toggle-success' : 'btn-toggle-warning'
+                        }`}
+                        onClick={async () => {
+                          const isVertragsfrei = !mitglied?.vertragsfrei;
+                          const grund = isVertragsfrei
+                            ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
+                            : null;
+
+                          if (isVertragsfrei && !grund) {
+                            return;
+                          }
+
+                          try {
+                            await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
+                              vertragsfrei: isVertragsfrei ? 1 : 0,
+                              vertragsfrei_grund: grund || null
+                            });
+
+                            setMitglied(prev => ({
+                              ...prev,
+                              vertragsfrei: isVertragsfrei ? 1 : 0,
+                              vertragsfrei_grund: grund || null
+                            }));
+
+                            alert(isVertragsfrei
+                              ? '✅ Mitglied wurde als vertragsfrei markiert'
+                              : '✅ Vertragsfreistellung wurde aufgehoben'
+                            );
+                          } catch (error) {
+                            console.error('Fehler beim Aktualisieren:', error);
+                            alert('❌ Fehler beim Speichern der Vertragsfreistellung');
+                          }
+                        }}
+                        style={{ flex: 1 }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={mitglied?.vertragsfrei || false}
-                          onChange={async (e) => {
-                            const isVertragsfrei = e.target.checked;
-                            const grund = isVertragsfrei
-                              ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
-                              : null;
-
-                            if (isVertragsfrei && !grund) {
-                              e.target.checked = false;
-                              return;
-                            }
-
-                            try {
-                              await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
-                                vertragsfrei: isVertragsfrei ? 1 : 0,
-                                vertragsfrei_grund: grund || null
-                              });
-
-                              setMitglied(prev => ({
-                                ...prev,
-                                vertragsfrei: isVertragsfrei ? 1 : 0,
-                                vertragsfrei_grund: grund || null
-                              }));
-
-                              alert(isVertragsfrei
-                                ? '✅ Mitglied wurde als vertragsfrei markiert'
-                                : '✅ Vertragsfreistellung wurde aufgehoben'
-                              );
-                            } catch (error) {
-                              console.error('Fehler beim Aktualisieren:', error);
-                              alert('❌ Fehler beim Speichern der Vertragsfreistellung');
-                              e.target.checked = !isVertragsfrei;
-                            }
-                          }}
-                          style={{
-                            width: '24px',
-                            height: '24px',
-                            cursor: 'pointer',
-                            accentColor: mitglied?.vertragsfrei ? '#3498db' : '#ffc107',
-                            flexShrink: 0
-                          }}
-                        />
-                        <div style={{ flex: 1 }}>
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}>
                           <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
                             fontSize: '1.05rem',
                             fontWeight: '700',
-                            color: mitglied?.vertragsfrei ? '#3498db' : '#ffc107',
-                            marginBottom: '0.25rem',
                             letterSpacing: '0.3px'
                           }}>
                             {mitglied?.vertragsfrei
@@ -4333,16 +4294,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           </div>
                           <div style={{
                             fontSize: '0.85rem',
-                            color: 'rgba(255, 255, 255, 0.65)',
-                            fontWeight: '400',
-                            lineHeight: '1.4'
+                            opacity: 0.85,
+                            fontWeight: '400'
                           }}>
                             {mitglied?.vertragsfrei
                               ? 'Keine Vertragspflicht • Beitragsfrei'
                               : 'z.B. für Ehrenmitglieder, Sponsoren, Familienmitglieder'}
                           </div>
                         </div>
-                      </label>
+                      </button>
 
                       {mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
                         <div style={{
