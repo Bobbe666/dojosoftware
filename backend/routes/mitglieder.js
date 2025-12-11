@@ -352,8 +352,22 @@ router.get("/filter/tarif-abweichung", (req, res) => {
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
     "v.status = 'aktiv'",
-    // Zeige Verträge die ENTWEDER keinen Tarif haben ODER vom Tarif-Preis abweichen
-    "(v.tarif_id IS NULL OR (t.id IS NOT NULL AND v.monatsbeitrag != (t.price_cents / 100)))"
+    // Zeige Verträge die ENTWEDER keinen Tarif haben ODER vom erwarteten Monatspreis abweichen
+    `(
+      v.tarif_id IS NULL
+      OR (
+        t.id IS NOT NULL
+        AND v.monatsbeitrag != ROUND(
+          CASE
+            WHEN t.billing_cycle = 'MONTHLY' THEN t.price_cents / 100
+            WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+            WHEN t.billing_cycle = 'YEARLY' THEN (t.price_cents / 100) / 12
+            ELSE t.price_cents / 100
+          END,
+          2
+        )
+      )
+    )`
   ];
   let queryParams = [];
 
@@ -372,17 +386,49 @@ router.get("/filter/tarif-abweichung", (req, res) => {
       m.email,
       m.zahlungsmethode,
       m.aktiv,
+      m.geburtsdatum,
       v.monatsbeitrag,
       v.tarif_id,
-      v.billing_cycle,
+      v.billing_cycle as vertrag_billing_cycle,
       t.name as tarif_name,
       t.price_cents,
       t.billing_cycle as tarif_billing_cycle,
       t.altersgruppe,
+      ROUND(
+        CASE
+          WHEN t.billing_cycle = 'MONTHLY' THEN t.price_cents / 100
+          WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+          WHEN t.billing_cycle = 'YEARLY' THEN (t.price_cents / 100) / 12
+          ELSE t.price_cents / 100
+        END,
+        2
+      ) as erwarteter_monatsbeitrag,
       CASE
-        WHEN v.tarif_id IS NULL THEN CONCAT('Alter Vertrag ohne Tarif-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat)')
-        ELSE CONCAT('Zahlt €', COALESCE(v.monatsbeitrag, 0), ' statt €', ROUND(COALESCE(t.price_cents, 0) / 100, 2), ' (', t.name,
-                    CASE WHEN t.altersgruppe IS NOT NULL THEN CONCAT(' - ', t.altersgruppe) ELSE '' END, ')')
+        WHEN v.tarif_id IS NULL THEN
+          CONCAT('Alter Vertrag ohne Tarif-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat)')
+        ELSE
+          CONCAT(
+            'Zahlt €', COALESCE(v.monatsbeitrag, 0),
+            ' statt €',
+            ROUND(
+              CASE
+                WHEN t.billing_cycle = 'MONTHLY' THEN t.price_cents / 100
+                WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+                WHEN t.billing_cycle = 'YEARLY' THEN (t.price_cents / 100) / 12
+                ELSE t.price_cents / 100
+              END,
+              2
+            ),
+            '/Monat (',
+            t.name,
+            CASE WHEN t.billing_cycle = 'MONTHLY' THEN ' - Monatlich'
+                 WHEN t.billing_cycle = 'QUARTERLY' THEN ' - Vierteljährlich'
+                 WHEN t.billing_cycle = 'YEARLY' THEN ' - Jährlich'
+                 ELSE ''
+            END,
+            CASE WHEN t.altersgruppe IS NOT NULL THEN CONCAT(', ', t.altersgruppe) ELSE '' END,
+            ')'
+          )
       END as abweichung_grund
     FROM mitglieder m
     JOIN vertraege v ON m.mitglied_id = v.mitglied_id
