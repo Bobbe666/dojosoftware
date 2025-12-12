@@ -1186,7 +1186,7 @@ const DojoEdit = () => {
                       checked={formData.feiertage_geschlossen}
                       onChange={(e) => setFormData({ ...formData, feiertage_geschlossen: e.target.checked })}
                     />
-                    An Feiertagen geschlossen
+                    <span>An Feiertagen geschlossen</span>
                   </label>
                 </div>
                 <div className="form-group">
@@ -1196,7 +1196,7 @@ const DojoEdit = () => {
                       checked={formData.ferien_geschlossen}
                       onChange={(e) => setFormData({ ...formData, ferien_geschlossen: e.target.checked })}
                     />
-                    In den Schulferien geschlossen
+                    <span>In den Schulferien geschlossen</span>
                   </label>
                 </div>
               </div>
