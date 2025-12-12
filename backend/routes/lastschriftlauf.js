@@ -131,7 +131,7 @@ router.get("/missing-mandates", (req, res) => {
  */
 router.get("/preview", (req, res) => {
     const query = `
-        SELECT DISTINCT
+        SELECT
             m.mitglied_id,
             m.vorname,
             m.nachname,
@@ -152,10 +152,9 @@ router.get("/preview", (req, res) => {
             'monatlich' as zahlungszyklus
         FROM mitglieder m
         JOIN vertraege v ON m.mitglied_id = v.mitglied_id
-        LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+        INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv' AND sm.mandatsreferenz IS NOT NULL
         WHERE v.status = 'aktiv'
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
-          AND sm.mandatsreferenz IS NOT NULL
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
     `;
