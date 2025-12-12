@@ -265,7 +265,8 @@ router.get("/filter/ohne-sepa", (req, res) => {
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
     "m.zahlungsmethode IN ('SEPA-Lastschrift', 'Lastschrift')",
-    "(sm.mandatsreferenz IS NULL OR sm.status != 'aktiv')"
+    "(sm.mandatsreferenz IS NULL OR sm.status != 'aktiv')",
+    "(m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)"
   ];
   let queryParams = [];
 
