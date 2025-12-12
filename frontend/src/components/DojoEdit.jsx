@@ -1134,7 +1134,7 @@ const DojoEdit = () => {
                     checked={formData.newsletter_aktiv}
                     onChange={(e) => setFormData({ ...formData, newsletter_aktiv: e.target.checked })}
                   />
-                  Newsletter-Funktion aktiv
+                  <span>Newsletter-Funktion aktiv</span>
                 </label>
               </div>
             </div>
