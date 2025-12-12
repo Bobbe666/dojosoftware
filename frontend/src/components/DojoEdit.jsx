@@ -988,7 +988,7 @@ const DojoEdit = () => {
                       checked={formData.kuendigung_nur_monatsende}
                       onChange={(e) => setFormData({ ...formData, kuendigung_nur_monatsende: e.target.checked })}
                     />
-                    Kündigung nur zum Monatsende
+                    <span>Kündigung nur zum Monatsende</span>
                   </label>
                 </div>
                 <div className="form-group">
@@ -998,7 +998,7 @@ const DojoEdit = () => {
                       checked={formData.kuendigung_schriftlich}
                       onChange={(e) => setFormData({ ...formData, kuendigung_schriftlich: e.target.checked })}
                     />
-                    Kündigung muss schriftlich erfolgen
+                    <span>Kündigung muss schriftlich erfolgen</span>
                   </label>
                 </div>
               </div>
@@ -1011,7 +1011,7 @@ const DojoEdit = () => {
                       checked={formData.automatische_verlaengerung}
                       onChange={(e) => setFormData({ ...formData, automatische_verlaengerung: e.target.checked })}
                     />
-                    Automatische Verlängerung nach Erstlaufzeit
+                    <span>Automatische Verlängerung nach Erstlaufzeit</span>
                   </label>
                 </div>
                 {formData.automatische_verlaengerung && (
