@@ -581,6 +581,15 @@
   gap: 1rem;
 }
 
+.tarife-container .header-actions .btn-primary,
+.tarife-container .header-actions .btn-primary:hover,
+.tarife-container .header-actions .btn-primary:focus,
+.tarife-container .header-actions .btn-primary:active {
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
 .tarife-container .tarif-count {
   background: linear-gradient(135deg, #ffd700, #ff6b35);
   color: #1a1a2e;
