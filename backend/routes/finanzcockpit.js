@@ -385,36 +385,42 @@ router.get('/stats', (req, res) => {
 
 // GET /api/finanzcockpit/timeline - Zeitreihen-Daten für Charts
 router.get('/timeline', (req, res) => {
-  const { period = 'month', days = 30, dojo_id } = req.query;
-  
-  const daysNum = parseInt(days) || 30;
+  const { period = 'month', months = 12, dojo_id } = req.query;
+
+  const monthsNum = parseInt(months) || 12;
   const data = [];
-  
-  // Generiere Datumsliste
-  for (let i = daysNum - 1; i >= 0; i--) {
+
+  // Generiere Monatsliste (letzte X Monate)
+  for (let i = monthsNum - 1; i >= 0; i--) {
     const date = new Date();
-    date.setDate(date.getDate() - i);
+    date.setMonth(date.getMonth() - i);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+
     data.push({
-      date: date.toISOString().slice(0, 10),
-      label: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+      year_month: `${year}-${month}`,
+      label: date.toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })
     });
   }
-  
-  // Hole Daten für jeden Tag
+
+  // Hole Daten für jeden Monat
   Promise.all(
-    data.map(item => 
+    data.map(item =>
       new Promise((resolve, reject) => {
-        let whereConditions = ['v.verkauf_datum = ?', 'v.storniert = FALSE'];
-        let queryParams = [item.date];
-        
+        let whereConditions = [
+          'DATE_FORMAT(v.verkauf_datum, "%Y-%m") = ?',
+          'v.storniert = FALSE'
+        ];
+        let queryParams = [item.year_month];
+
         if (dojo_id && dojo_id !== 'all') {
           // Bei dojo_id Filter: Laufkunden (mitglied_id IS NULL) ausschließen, nur Mitglieder des Dojos einbeziehen
           whereConditions.push('(v.mitglied_id IS NOT NULL AND m.dojo_id = ?)');
           queryParams.push(parseInt(dojo_id));
         }
-        
+
         const query = `
-          SELECT 
+          SELECT
             COALESCE(SUM(v.brutto_gesamt_cent), 0) as umsatz_cent,
             COUNT(*) as anzahl_verkaeufe
           FROM verkaeufe v

@@ -86,9 +86,9 @@ const Finanzcockpit = () => {
   const loadTimelineData = async () => {
     try {
       const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
-      const days = selectedPeriod === 'month' ? 30 : selectedPeriod === 'quarter' ? 90 : 365;
+      const months = selectedPeriod === 'month' ? 3 : selectedPeriod === 'quarter' ? 6 : 12;
       const separator = dojoFilterParam ? '&' : '';
-      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/timeline?period=${selectedPeriod}&days=${days}${separator}${dojoFilterParam}`);
+      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/timeline?period=${selectedPeriod}&months=${months}${separator}${dojoFilterParam}`);
       
       if (response.ok) {
         const result = await response.json();
