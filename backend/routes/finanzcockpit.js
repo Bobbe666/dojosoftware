@@ -477,8 +477,8 @@ router.get('/timeline', (req, res) => {
         let whereConditions = [
           'v.status = "aktiv"',
           // Vertrag war in diesem Monat aktiv:
-          // start_datum <= Monatsende UND (end_datum IS NULL ODER end_datum >= Monatsanfang)
-          '(v.start_datum <= ? AND (v.end_datum IS NULL OR v.end_datum >= ?))'
+          // vertragsbeginn <= Monatsende UND (vertragsende IS NULL ODER vertragsende >= Monatsanfang)
+          '(v.vertragsbeginn <= ? AND (v.vertragsende IS NULL OR v.vertragsende >= ?))'
         ];
         let queryParams = [monthEnd, monthStart];
 
