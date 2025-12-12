@@ -465,28 +465,33 @@ router.get('/timeline', (req, res) => {
     });
   }
 
-  // Hole Daten für jeden Monat
+  // Hole Daten für jeden Monat (monatliche Vertragseinnahmen)
   Promise.all(
     data.map(item =>
       new Promise((resolve, reject) => {
+        // Berechne Monatsanfang und Monatsende für diesen Monat
+        const [year, month] = item.year_month.split('-');
+        const monthStart = `${year}-${month}-01`;
+        const monthEnd = new Date(parseInt(year), parseInt(month), 0).toISOString().slice(0, 10);
+
         let whereConditions = [
-          'DATE_FORMAT(v.verkauf_datum, "%Y-%m") = ?',
-          'v.storniert = FALSE'
+          'v.status = "aktiv"',
+          // Vertrag war in diesem Monat aktiv:
+          // start_datum <= Monatsende UND (end_datum IS NULL ODER end_datum >= Monatsanfang)
+          '(v.start_datum <= ? AND (v.end_datum IS NULL OR v.end_datum >= ?))'
         ];
-        let queryParams = [item.year_month];
+        let queryParams = [monthEnd, monthStart];
 
         if (dojo_id && dojo_id !== 'all') {
-          // Bei dojo_id Filter: Laufkunden (mitglied_id IS NULL) ausschließen, nur Mitglieder des Dojos einbeziehen
-          whereConditions.push('(v.mitglied_id IS NOT NULL AND m.dojo_id = ?)');
+          whereConditions.push('v.dojo_id = ?');
           queryParams.push(parseInt(dojo_id));
         }
 
         const query = `
           SELECT
-            COALESCE(SUM(v.brutto_gesamt_cent), 0) as umsatz_cent,
-            COUNT(*) as anzahl_verkaeufe
-          FROM verkaeufe v
-          LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+            COUNT(*) as anzahl_vertraege,
+            COALESCE(SUM(v.monatsbeitrag), 0) as monatliche_einnahmen
+          FROM vertraege v
           WHERE ${whereConditions.join(' AND ')}
         `;
         db.query(query, queryParams, (err, results) => {
@@ -494,11 +499,11 @@ router.get('/timeline', (req, res) => {
             console.error('Fehler bei Timeline-Query:', err);
             return reject(err);
           }
-          const stats = results[0] || { umsatz_cent: 0, anzahl_verkaeufe: 0 };
+          const stats = results[0] || { anzahl_vertraege: 0, monatliche_einnahmen: 0 };
           resolve({
             ...item,
-            umsatz: (parseFloat(stats.umsatz_cent) || 0) / 100,
-            anzahlVerkaeufe: parseInt(stats.anzahl_verkaeufe) || 0
+            umsatz: parseFloat(stats.monatliche_einnahmen) || 0,
+            anzahlVertraege: parseInt(stats.anzahl_vertraege) || 0
           });
         });
       })
