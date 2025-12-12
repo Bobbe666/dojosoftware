@@ -53,17 +53,17 @@ router.get('/stats', (req, res) => {
     new Promise((resolve, reject) => {
       let whereClause = "WHERE v.status = 'aktiv'";
       let queryParams = [];
-      
+
       if (dojo_id && dojo_id !== 'all') {
         whereClause += ' AND v.dojo_id = ?';
         queryParams.push(parseInt(dojo_id));
       }
-      
+
       const query = `
-        SELECT 
+        SELECT
           COUNT(*) as anzahl_vertraege,
           COALESCE(SUM(
-            CASE 
+            CASE
               WHEN billing_cycle = 'monthly' THEN monatsbeitrag
               WHEN billing_cycle = 'quarterly' THEN monatsbeitrag * 3
               WHEN billing_cycle = 'yearly' THEN monatsbeitrag * 12
@@ -78,6 +78,64 @@ router.get('/stats', (req, res) => {
       db.query(query, queryParams, (err, results) => {
         if (err) return reject(err);
         resolve(results[0] || { anzahl_vertraege: 0, monatliche_einnahmen: 0 });
+      });
+    }),
+
+    // Einnahmen aus Verträgen nach Zahlungsmethode aufgeschlüsselt
+    new Promise((resolve, reject) => {
+      let whereConditions = ["v.status = 'aktiv'"];
+      let queryParams = [];
+
+      if (dojo_id && dojo_id !== 'all') {
+        whereConditions.push('v.dojo_id = ?');
+        queryParams.push(parseInt(dojo_id));
+      }
+
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+      const query = `
+        SELECT
+          m.zahlungsmethode,
+          COALESCE(SUM(v.monatsbeitrag), 0) as monatliche_einnahmen
+        FROM vertraege v
+        LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+        ${whereClause}
+        GROUP BY m.zahlungsmethode
+      `;
+      db.query(query, queryParams, (err, results) => {
+        if (err) return reject(err);
+
+        // Initialisiere mit 0
+        const breakdown = {
+          bar: 0,
+          karte: 0,
+          lastschrift: 0,
+          ueberweisung: 0,
+          paypal: 0,
+          sonstige: 0
+        };
+
+        // Mappe die Ergebnisse
+        results.forEach(row => {
+          const methode = (row.zahlungsmethode || '').toLowerCase();
+          const betrag = parseFloat(row.monatliche_einnahmen) || 0;
+
+          if (methode === 'bar') {
+            breakdown.bar += betrag;
+          } else if (methode === 'karte') {
+            breakdown.karte += betrag;
+          } else if (methode === 'lastschrift' || methode === 'sepa-lastschrift') {
+            breakdown.lastschrift += betrag;
+          } else if (methode === 'überweisung' || methode === 'ueberweisung') {
+            breakdown.ueberweisung += betrag;
+          } else if (methode === 'paypal') {
+            breakdown.paypal += betrag;
+          } else {
+            breakdown.sonstige += betrag;
+          }
+        });
+
+        resolve(breakdown);
       });
     }),
     
@@ -293,6 +351,7 @@ router.get('/stats', (req, res) => {
     })
   ]).then(([
     vertraegeStats,
+    vertraegePaymentBreakdown,
     verkaeufeStats,
     verkaeufePrevStats,
     rechnungenStats,
@@ -359,10 +418,13 @@ router.get('/stats', (req, res) => {
       // Trends
       einnahmenTrend,
       ausgabenTrend, // Echte Berechnung (später mit Vorperiode)
-      // Zahlungsarten
-      barEinnahmen: (parseFloat(verkaeufeStats.bar_umsatz_cent) || 0) / 100,
-      kartenEinnahmen: (parseFloat(verkaeufeStats.karte_umsatz_cent) || 0) / 100,
-      lastschriftEinnahmen: zahlungenEinnahmen + zahllaeufeEinnahmen,
+      // Zahlungsarten (Verkäufe + monatliche Vertragseinnahmen)
+      barEinnahmen: ((parseFloat(verkaeufeStats.bar_umsatz_cent) || 0) / 100) + (vertraegePaymentBreakdown.bar || 0),
+      kartenEinnahmen: ((parseFloat(verkaeufeStats.karte_umsatz_cent) || 0) / 100) + (vertraegePaymentBreakdown.karte || 0),
+      lastschriftEinnahmen: zahlungenEinnahmen + zahllaeufeEinnahmen + (vertraegePaymentBreakdown.lastschrift || 0),
+      ueberweisungEinnahmen: (vertraegePaymentBreakdown.ueberweisung || 0),
+      paypalEinnahmen: (vertraegePaymentBreakdown.paypal || 0),
+      sonstigeEinnahmen: (vertraegePaymentBreakdown.sonstige || 0),
       // Offene Posten
       offeneRechnungen: parseInt(rechnungenStats.offene_rechnungen) || 0,
       offeneRechnungenBetrag: parseFloat(rechnungenStats.offene_summe) || 0,
@@ -446,6 +508,49 @@ router.get('/timeline', (req, res) => {
   }).catch(err => {
     console.error('Fehler beim Abrufen der Timeline-Daten:', err);
     res.status(500).json({ success: false, error: err.message });
+  });
+});
+
+// GET /api/finanzcockpit/tarif-breakdown - Einnahmen nach Tarifen
+router.get('/tarif-breakdown', (req, res) => {
+  const { dojo_id } = req.query;
+
+  let whereConditions = ['v.status = "aktiv"'];
+  let queryParams = [];
+
+  if (dojo_id && dojo_id !== 'all') {
+    whereConditions.push('m.dojo_id = ?');
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT
+      t.name as tarif_name,
+      COUNT(v.id) as anzahl_vertraege,
+      SUM(v.monatsbeitrag) as monatliche_einnahmen
+    FROM vertraege v
+    JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    ${whereClause}
+    GROUP BY t.id, t.name
+    ORDER BY monatliche_einnahmen DESC
+  `;
+
+  db.query(query, queryParams, (err, results) => {
+    if (err) {
+      console.error('Fehler bei Tarif-Breakdown-Query:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+
+    const data = results.map(row => ({
+      name: row.tarif_name || 'Kein Tarif',
+      value: parseFloat(row.monatliche_einnahmen) || 0,
+      count: parseInt(row.anzahl_vertraege) || 0
+    })).filter(item => item.value > 0);
+
+    res.json({ success: true, data });
   });
 });
 
