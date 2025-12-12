@@ -89,6 +89,50 @@ router.get("/", async (req, res) => {
  * API-Route: Mitglieder mit Lastschrift aber ohne SEPA-Mandat
  * GET /api/lastschriftlauf/missing-mandates
  */
+// Diagnose-Route: Zeige alle Mitglieder mit Lastschrift und ihren Status
+router.get("/diagnose", (req, res) => {
+    const query = `
+        SELECT
+            m.mitglied_id,
+            m.vorname,
+            m.nachname,
+            m.zahlungsmethode,
+            (SELECT COUNT(*) FROM vertraege WHERE mitglied_id = m.mitglied_id) as total_contracts,
+            (SELECT COUNT(*) FROM vertraege WHERE mitglied_id = m.mitglied_id AND status = 'aktiv') as active_contracts,
+            (SELECT COUNT(*) FROM sepa_mandate WHERE mitglied_id = m.mitglied_id) as total_mandates,
+            (SELECT COUNT(*) FROM sepa_mandate WHERE mitglied_id = m.mitglied_id AND status = 'aktiv' AND mandatsreferenz IS NOT NULL) as active_mandates,
+            (SELECT status FROM sepa_mandate WHERE mitglied_id = m.mitglied_id LIMIT 1) as mandate_status
+        FROM mitglieder m
+        WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+        ORDER BY m.nachname, m.vorname
+    `;
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('❌ Database error:', err);
+            return res.status(500).json({
+                error: 'Datenbankfehler',
+                details: err.message
+            });
+        }
+
+        const summary = {
+            total: results.length,
+            with_active_contract: results.filter(r => r.active_contracts > 0).length,
+            with_active_mandate: results.filter(r => r.active_mandates > 0).length,
+            with_both: results.filter(r => r.active_contracts > 0 && r.active_mandates > 0).length,
+            missing_contract: results.filter(r => r.active_contracts === 0).length,
+            missing_mandate: results.filter(r => r.active_mandates === 0).length
+        };
+
+        res.json({
+            success: true,
+            summary,
+            details: results
+        });
+    });
+});
+
 router.get("/missing-mandates", (req, res) => {
     const query = `
         SELECT DISTINCT
