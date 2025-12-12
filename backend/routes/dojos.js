@@ -488,6 +488,44 @@ router.get('/statistics/gesamt', (req, res) => {
 });
 
 // =====================================================
+// GET /api/dojos/:id/debug-revenue - Debug Umsatz-Diskrepanz
+// =====================================================
+router.get('/:id/debug-revenue', (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT
+      v.id as vertrag_id,
+      v.mitglied_id,
+      v.monatsbeitrag,
+      v.status,
+      v.dojo_id,
+      m.vorname,
+      m.nachname
+    FROM vertraege v
+    LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+    WHERE v.dojo_id = ? AND v.status = 'aktiv'
+    ORDER BY v.monatsbeitrag DESC
+  `;
+
+  req.db.query(query, [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    const total = results.reduce((sum, r) => sum + parseFloat(r.monatsbeitrag || 0), 0);
+    const totalYearly = total * 12;
+
+    res.json({
+      count: results.length,
+      totalMonthly: total.toFixed(2),
+      totalYearly: totalYearly.toFixed(2),
+      contracts: results
+    });
+  });
+});
+
+// =====================================================
 // GET /api/dojos/:id/members - Mitglieder eines Dojos mit Vertragsdaten
 // =====================================================
 router.get('/:id/members', (req, res) => {
