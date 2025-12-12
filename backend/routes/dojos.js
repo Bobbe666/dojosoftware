@@ -26,6 +26,7 @@ router.get('/', (req, res) => {
       COALESCE(
         (SELECT SUM(v.monatsbeitrag * 12)
          FROM vertraege v
+         INNER JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
          WHERE v.dojo_id = d.id
          AND v.status = 'aktiv'),
         0
