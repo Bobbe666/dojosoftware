@@ -71,7 +71,7 @@ const Beitraege = () => {
       
       // Berechne monatliche Einnahmen
       const monatlicheEinnahmen = aktiveVertraege.reduce((sum, vertrag) => {
-        return sum + (parseFloat(vertrag.monatlicher_beitrag) || 0);
+        return sum + (parseFloat(vertrag.monatsbeitrag) || 0);
       }, 0);
 
       // Berechne Gesamteinnahmen (vereinfacht: 12 Monate)
