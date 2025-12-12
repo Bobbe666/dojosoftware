@@ -161,7 +161,12 @@ const Lastschriftlauf = ({ embedded = false }) => {
             </p>
             <div className="missing-mandates-list">
               {missingMandates.slice(0, 5).map(member => (
-                <div key={member.mitglied_id} className="missing-mandate-item">
+                <div
+                  key={member.mitglied_id}
+                  className="missing-mandate-item"
+                  onClick={() => navigate(`/dashboard/mitglieder/${member.mitglied_id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <span className="member-name">
                     {member.vorname} {member.nachname} (ID: {member.mitglied_id})
                   </span>

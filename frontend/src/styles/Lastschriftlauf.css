@@ -128,6 +128,13 @@
   align-items: center;
   padding: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.missing-mandate-item:hover {
+  background: rgba(245, 158, 11, 0.1);
+  transform: translateX(4px);
 }
 
 .missing-mandate-item:last-child {
