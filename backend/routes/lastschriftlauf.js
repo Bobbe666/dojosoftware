@@ -131,29 +131,32 @@ router.get("/missing-mandates", (req, res) => {
  */
 router.get("/preview", (req, res) => {
     const query = `
-        SELECT
-            v.id as vertrag_id,
-            v.mitglied_id,
-            v.monatsbeitrag as monatlicher_beitrag,
-            v.billing_cycle as zahlungszyklus,
+        SELECT DISTINCT
+            m.mitglied_id,
             m.vorname,
             m.nachname,
             m.iban,
             m.bic,
             m.kontoinhaber,
-            sm.bankname,
             m.zahlungsmethode,
-            t.name as tarif_name,
-            t.price_cents,
+            sm.bankname,
             sm.mandatsreferenz,
-            sm.glaeubiger_id
-        FROM vertraege v
-        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-        LEFT JOIN tarife t ON v.tarif_id = t.id
-        LEFT JOIN sepa_mandate sm ON v.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            sm.glaeubiger_id,
+            (SELECT SUM(monatsbeitrag)
+             FROM vertraege
+             WHERE mitglied_id = m.mitglied_id AND status = 'aktiv') as monatlicher_beitrag,
+            (SELECT GROUP_CONCAT(DISTINCT name SEPARATOR ', ')
+             FROM tarife t
+             JOIN vertraege v ON v.tarif_id = t.id
+             WHERE v.mitglied_id = m.mitglied_id AND v.status = 'aktiv') as tarif_name,
+            'monatlich' as zahlungszyklus
+        FROM mitglieder m
+        JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+        LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
         WHERE v.status = 'aktiv'
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND sm.mandatsreferenz IS NOT NULL
+        GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
     `;
 
@@ -169,23 +172,19 @@ router.get("/preview", (req, res) => {
         // Ermittle häufigste Bank
         const mostCommonBank = getMostCommonBank(results);
 
-        // Zähle eindeutige Mitglieder
-        const uniqueMembers = [...new Set(results.map(r => r.mitglied_id))];
-
         const preview = results.map(r => ({
             mitglied_id: r.mitglied_id,
             name: `${r.vorname} ${r.nachname}`,
             iban: maskIBAN(r.iban),
             betrag: calculateAmount(r),
             mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
-            tarif: r.tarif_name,
+            tarif: r.tarif_name || 'Kein Tarif',
             zahlungszyklus: r.zahlungszyklus,
             bank: r.bankname
         }));
 
         res.json({
             count: results.length,
-            unique_members: uniqueMembers.length,
             total_amount: calculateTotalAmount(results),
             primary_bank: mostCommonBank || 'Gemischte Banken',
             preview: preview
