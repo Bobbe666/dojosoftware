@@ -439,7 +439,7 @@ router.get('/statistics/gesamt', (req, res) => {
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
        JOIN dojo d ON m.dojo_id = d.id
-       WHERE v.status = 'active'
+       WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
        AND d.steuer_status = 'kleinunternehmer'
@@ -450,7 +450,7 @@ router.get('/statistics/gesamt', (req, res) => {
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
        JOIN dojo d ON m.dojo_id = d.id
-       WHERE v.status = 'active'
+       WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
        AND d.steuer_status = 'regelbesteuert'
@@ -461,7 +461,7 @@ router.get('/statistics/gesamt', (req, res) => {
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
        JOIN dojo d ON m.dojo_id = d.id
-       WHERE v.status = 'active'
+       WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
       ) as umsatz_gesamt,
@@ -471,7 +471,7 @@ router.get('/statistics/gesamt', (req, res) => {
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
        JOIN dojo d ON m.dojo_id = d.id
-       WHERE v.status = 'active'
+       WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
        AND d.steuer_status = 'regelbesteuert'
