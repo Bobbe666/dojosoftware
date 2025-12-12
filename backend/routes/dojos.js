@@ -460,6 +460,94 @@ router.get('/statistics/gesamt', (req, res) => {
 });
 
 // =====================================================
+// GET /api/dojos/:id/members - Mitglieder eines Dojos mit Vertragsdaten
+// =====================================================
+router.get('/:id/members', (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      m.zahlungsmethode,
+      v.id as vertrag_id,
+      v.dojo_id,
+      v.monatsbeitrag,
+      v.monatsbeitrag * 12 as jahresbeitrag,
+      v.status,
+      v.vertragsbeginn,
+      v.vertragsende,
+      v.billing_cycle,
+      t.name as tarif
+    FROM mitglieder m
+    JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    WHERE v.dojo_id = ?
+      AND v.status = 'aktiv'
+    ORDER BY v.monatsbeitrag DESC, m.nachname, m.vorname
+  `;
+
+  req.db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen der Dojo-Mitglieder:', err);
+      return res.status(500).json({ error: 'Fehler beim Laden der Mitglieder' });
+    }
+
+    // Berechne Summen
+    const totalMonthly = results.reduce((sum, row) => sum + parseFloat(row.monatsbeitrag || 0), 0);
+    const totalYearly = totalMonthly * 12;
+
+    res.json({
+      success: true,
+      dojo_id: parseInt(id),
+      count: results.length,
+      totalMonthly: totalMonthly.toFixed(2),
+      totalYearly: totalYearly.toFixed(2),
+      members: results
+    });
+  });
+});
+
+// =====================================================
+// PUT /api/dojos/redistribute-members - Mitglieder umverteilen
+// =====================================================
+router.put('/redistribute-members', (req, res) => {
+  const { sourceDojo, targetDojo, memberIds } = req.body;
+
+  if (!sourceDojo || !targetDojo || !memberIds || memberIds.length === 0) {
+    return res.status(400).json({
+      error: 'sourceDojo, targetDojo und memberIds sind erforderlich'
+    });
+  }
+
+  // Update dojo_id für alle Verträge der angegebenen Mitglieder
+  const placeholders = memberIds.map(() => '?').join(',');
+  const updateQuery = `
+    UPDATE vertraege
+    SET dojo_id = ?
+    WHERE mitglied_id IN (${placeholders})
+      AND dojo_id = ?
+      AND status = 'aktiv'
+  `;
+
+  const queryParams = [targetDojo, ...memberIds, sourceDojo];
+
+  req.db.query(updateQuery, queryParams, (err, result) => {
+    if (err) {
+      console.error('Fehler beim Umverteilen der Mitglieder:', err);
+      return res.status(500).json({ error: 'Fehler beim Umverteilen' });
+    }
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} Verträge erfolgreich von Dojo ${sourceDojo} zu Dojo ${targetDojo} verschoben`,
+      affectedRows: result.affectedRows
+    });
+  });
+});
+
+// =====================================================
 // POST /api/dojos/migrate/add-bank-fields - MIGRATION
 // =====================================================
 router.post('/migrate/add-bank-fields', (req, res) => {
