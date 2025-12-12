@@ -13,7 +13,8 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine
 } from "recharts";
 import {
   TrendingUp,
@@ -49,10 +50,12 @@ const Finanzcockpit = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [stats, setStats] = useState(null);
   const [timelineData, setTimelineData] = useState([]);
+  const [tarifData, setTarifData] = useState([]);
 
   useEffect(() => {
     loadFinanzStats();
     loadTimelineData();
+    loadTarifData();
   }, [updateTrigger, selectedPeriod, activeDojo, filter]); // 🔒 TAX COMPLIANCE: Neu laden wenn Dojo-Filter ändert
 
   const loadFinanzStats = async () => {
@@ -89,15 +92,54 @@ const Finanzcockpit = () => {
       const months = selectedPeriod === 'month' ? 3 : selectedPeriod === 'quarter' ? 6 : 12;
       const separator = dojoFilterParam ? '&' : '';
       const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/timeline?period=${selectedPeriod}&months=${months}${separator}${dojoFilterParam}`);
-      
+
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          setTimelineData(result.data);
+          // Berechne Trendlinie (lineare Regression)
+          const data = result.data;
+          const n = data.length;
+          if (n > 1) {
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            data.forEach((point, index) => {
+              sumX += index;
+              sumY += point.umsatz || 0;
+              sumXY += index * (point.umsatz || 0);
+              sumX2 += index * index;
+            });
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            // Füge Trendwerte hinzu
+            const dataWithTrend = data.map((point, index) => ({
+              ...point,
+              trend: slope * index + intercept
+            }));
+            setTimelineData(dataWithTrend);
+          } else {
+            setTimelineData(data);
+          }
         }
       }
     } catch (error) {
       console.error('Fehler beim Laden der Timeline-Daten:', error);
+    }
+  };
+
+  const loadTarifData = async () => {
+    try {
+      const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
+      const separator = dojoFilterParam ? '&' : '';
+      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/tarif-breakdown?${dojoFilterParam}`);
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setTarifData(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Tarif-Daten:', error);
     }
   };
 
@@ -148,6 +190,64 @@ const Finanzcockpit = () => {
   };
 
   const periodLabel = periodLabels[selectedPeriod] || 'Zeitraum';
+
+  // Custom Tooltip für Einnahmen-Aufschlüsselung mit Tarif-Details
+  const CustomIncomeTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          backgroundColor: 'var(--bg-modal)',
+          border: '1px solid var(--border-primary)',
+          borderRadius: '12px',
+          color: 'var(--text-primary)',
+          padding: '12px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
+        }}>
+          <p style={{ margin: '0 0 8px 0', fontWeight: '600', fontSize: '0.9rem' }}>
+            {label}: {formatCurrency(payload[0].value)}
+          </p>
+
+          {label === 'Verträge' && tarifData.length > 0 && (
+            <div style={{
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              paddingTop: '8px',
+              marginTop: '4px'
+            }}>
+              <p style={{
+                margin: '0 0 6px 0',
+                fontSize: '0.8rem',
+                color: '#FFD700',
+                fontWeight: '600'
+              }}>
+                Aufschlüsselung nach Tarifen:
+              </p>
+              {tarifData.map(tarif => (
+                <div
+                  key={tarif.name}
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '3px 0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+                  }}
+                >
+                  <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    {tarif.name}
+                  </span>
+                  <span style={{ color: '#10b981', fontWeight: '500' }}>
+                    {formatCurrency(tarif.value)} ({tarif.count})
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Daten für Zahlungsarten-Chart
   const paymentMethodData = stats ? [
@@ -440,6 +540,15 @@ const Finanzcockpit = () => {
                   dot={{ fill: '#f59e0b', r: 4 }}
                   activeDot={{ r: 6 }}
                 />
+                <Line
+                  type="monotone"
+                  dataKey="trend"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  name="Trend"
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -505,15 +614,7 @@ const Finanzcockpit = () => {
                       style={{ fontSize: '0.75rem' }}
                       tickFormatter={formatCurrencyCompact}
                     />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--bg-modal)',
-                        border: '1px solid var(--border-primary)',
-                        borderRadius: '12px',
-                        color: 'var(--text-primary)'
-                      }}
-                      formatter={(value) => formatCurrency(value)}
-                    />
+                    <Tooltip content={<CustomIncomeTooltip />} />
                     <Bar dataKey="value" fill="#f59e0b" radius={[10, 10, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
