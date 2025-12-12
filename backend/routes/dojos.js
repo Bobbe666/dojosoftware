@@ -24,18 +24,8 @@ router.get('/', (req, res) => {
       d.ust_satz,
       d.kleinunternehmer_grenze,
       COALESCE(
-        (SELECT SUM(
-          CASE 
-            WHEN v.billing_cycle = 'monthly' THEN COALESCE(v.monatsbeitrag, t.price_cents / 100) * 12
-            WHEN v.billing_cycle = 'quarterly' THEN COALESCE(v.monatsbeitrag, t.price_cents / 100) * 4
-            WHEN v.billing_cycle = 'yearly' THEN COALESCE(v.monatsbeitrag, t.price_cents / 100)
-            WHEN v.billing_cycle = 'weekly' THEN COALESCE(v.monatsbeitrag, t.price_cents / 100) * 52
-            WHEN v.billing_cycle = 'daily' THEN COALESCE(v.monatsbeitrag, t.price_cents / 100) * 365
-            ELSE COALESCE(v.monatsbeitrag, t.price_cents / 100) * 12
-          END
-        )
+        (SELECT SUM(v.monatsbeitrag * 12)
          FROM vertraege v
-         LEFT JOIN tarife t ON v.tarif_id = t.id
          WHERE v.dojo_id = d.id
          AND v.status = 'aktiv'),
         0
