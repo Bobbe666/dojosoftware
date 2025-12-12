@@ -462,8 +462,13 @@ router.get("/filter/zahlungsweisen", (req, res) => {
   let queryParams = [];
 
   if (payment_method && payment_method !== 'all') {
-    whereConditions.push('m.zahlungsmethode = ?');
-    queryParams.push(payment_method);
+    // Lastschrift umfasst sowohl "SEPA-Lastschrift" als auch "Lastschrift"
+    if (payment_method === 'Lastschrift') {
+      whereConditions.push("(m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')");
+    } else {
+      whereConditions.push('m.zahlungsmethode = ?');
+      queryParams.push(payment_method);
+    }
   }
 
   if (dojo_id && dojo_id !== 'all') {

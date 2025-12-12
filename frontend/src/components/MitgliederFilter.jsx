@@ -165,7 +165,7 @@ const MitgliederFilter = () => {
         }}>
           <h3 style={{ color: '#FFD700', marginBottom: '1rem' }}>Zahlungsmethode wählen</h3>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {['all', 'SEPA-Lastschrift', 'Lastschrift', 'Überweisung', 'Bar', 'Karte', 'PayPal'].map(method => (
+            {['all', 'Lastschrift', 'Überweisung', 'Bar', 'Karte', 'PayPal'].map(method => (
               <button
                 key={method}
                 className={`btn ${selectedPaymentMethod === method ? 'btn-primary' : 'btn-secondary'}`}
