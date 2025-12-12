@@ -438,7 +438,7 @@ router.get('/statistics/gesamt', (req, res) => {
       (SELECT COALESCE(SUM(v.monatsbeitrag * 12), 0)
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-       JOIN dojo d ON m.dojo_id = d.id
+       JOIN dojo d ON v.dojo_id = d.id
        WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
@@ -449,7 +449,7 @@ router.get('/statistics/gesamt', (req, res) => {
       (SELECT COALESCE(SUM(v.monatsbeitrag * 12), 0)
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-       JOIN dojo d ON m.dojo_id = d.id
+       JOIN dojo d ON v.dojo_id = d.id
        WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
@@ -460,7 +460,7 @@ router.get('/statistics/gesamt', (req, res) => {
       (SELECT COALESCE(SUM(v.monatsbeitrag * 12), 0)
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-       JOIN dojo d ON m.dojo_id = d.id
+       JOIN dojo d ON v.dojo_id = d.id
        WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
@@ -470,7 +470,7 @@ router.get('/statistics/gesamt', (req, res) => {
       (SELECT COALESCE(SUM(v.monatsbeitrag * 12 * d.ust_satz / 100), 0)
        FROM vertraege v
        JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-       JOIN dojo d ON m.dojo_id = d.id
+       JOIN dojo d ON v.dojo_id = d.id
        WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
