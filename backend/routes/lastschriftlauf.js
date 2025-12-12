@@ -169,6 +169,9 @@ router.get("/preview", (req, res) => {
         // Ermittle häufigste Bank
         const mostCommonBank = getMostCommonBank(results);
 
+        // Zähle eindeutige Mitglieder
+        const uniqueMembers = [...new Set(results.map(r => r.mitglied_id))];
+
         const preview = results.map(r => ({
             mitglied_id: r.mitglied_id,
             name: `${r.vorname} ${r.nachname}`,
@@ -182,6 +185,7 @@ router.get("/preview", (req, res) => {
 
         res.json({
             count: results.length,
+            unique_members: uniqueMembers.length,
             total_amount: calculateTotalAmount(results),
             primary_bank: mostCommonBank || 'Gemischte Banken',
             preview: preview
