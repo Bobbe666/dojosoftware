@@ -95,10 +95,11 @@ const Finanzcockpit = () => {
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
+        if (result.success && result.data) {
           // Berechne Trendlinie (lineare Regression)
-          const data = result.data;
+          const data = result.data || [];
           const n = data.length;
+
           if (n > 1) {
             let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
             data.forEach((point, index) => {
@@ -107,22 +108,35 @@ const Finanzcockpit = () => {
               sumXY += index * (point.umsatz || 0);
               sumX2 += index * index;
             });
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            const intercept = (sumY - slope * sumX) / n;
 
-            // Füge Trendwerte hinzu
-            const dataWithTrend = data.map((point, index) => ({
-              ...point,
-              trend: slope * index + intercept
-            }));
-            setTimelineData(dataWithTrend);
+            // Vermeide Division durch 0
+            const denominator = (n * sumX2 - sumX * sumX);
+            if (denominator !== 0) {
+              const slope = (n * sumXY - sumX * sumY) / denominator;
+              const intercept = (sumY - slope * sumX) / n;
+
+              // Füge Trendwerte hinzu
+              const dataWithTrend = data.map((point, index) => ({
+                ...point,
+                trend: slope * index + intercept
+              }));
+              setTimelineData(dataWithTrend);
+            } else {
+              // Wenn alle Werte gleich sind (z.B. alle 0), keine Trendlinie
+              setTimelineData(data.map(point => ({ ...point, trend: point.umsatz || 0 })));
+            }
           } else {
             setTimelineData(data);
           }
+        } else {
+          setTimelineData([]);
         }
+      } else {
+        setTimelineData([]);
       }
     } catch (error) {
       console.error('Fehler beim Laden der Timeline-Daten:', error);
+      setTimelineData([]);
     }
   };
 
