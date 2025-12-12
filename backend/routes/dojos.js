@@ -210,6 +210,44 @@ router.post('/', (req, res) => {
 });
 
 // =====================================================
+// PUT /api/dojos/redistribute-members - Mitglieder umverteilen
+// =====================================================
+router.put('/redistribute-members', (req, res) => {
+  const { sourceDojo, targetDojo, memberIds } = req.body;
+
+  if (!sourceDojo || !targetDojo || !memberIds || memberIds.length === 0) {
+    return res.status(400).json({
+      error: 'sourceDojo, targetDojo und memberIds sind erforderlich'
+    });
+  }
+
+  // Update dojo_id für alle Verträge der angegebenen Mitglieder
+  const placeholders = memberIds.map(() => '?').join(',');
+  const updateQuery = `
+    UPDATE vertraege
+    SET dojo_id = ?
+    WHERE mitglied_id IN (${placeholders})
+      AND dojo_id = ?
+      AND status = 'aktiv'
+  `;
+
+  const queryParams = [targetDojo, ...memberIds, sourceDojo];
+
+  req.db.query(updateQuery, queryParams, (err, result) => {
+    if (err) {
+      console.error('Fehler beim Umverteilen der Mitglieder:', err);
+      return res.status(500).json({ error: 'Fehler beim Umverteilen' });
+    }
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} Verträge erfolgreich von Dojo ${sourceDojo} zu Dojo ${targetDojo} verschoben`,
+      affectedRows: result.affectedRows
+    });
+  });
+});
+
+// =====================================================
 // PUT /api/dojos/:id - Dojo aktualisieren (dynamisch)
 // =====================================================
 router.put('/:id', (req, res) => {
@@ -505,44 +543,6 @@ router.get('/:id/members', (req, res) => {
       totalMonthly: totalMonthly.toFixed(2),
       totalYearly: totalYearly.toFixed(2),
       members: results
-    });
-  });
-});
-
-// =====================================================
-// PUT /api/dojos/redistribute-members - Mitglieder umverteilen
-// =====================================================
-router.put('/redistribute-members', (req, res) => {
-  const { sourceDojo, targetDojo, memberIds } = req.body;
-
-  if (!sourceDojo || !targetDojo || !memberIds || memberIds.length === 0) {
-    return res.status(400).json({
-      error: 'sourceDojo, targetDojo und memberIds sind erforderlich'
-    });
-  }
-
-  // Update dojo_id für alle Verträge der angegebenen Mitglieder
-  const placeholders = memberIds.map(() => '?').join(',');
-  const updateQuery = `
-    UPDATE vertraege
-    SET dojo_id = ?
-    WHERE mitglied_id IN (${placeholders})
-      AND dojo_id = ?
-      AND status = 'aktiv'
-  `;
-
-  const queryParams = [targetDojo, ...memberIds, sourceDojo];
-
-  req.db.query(updateQuery, queryParams, (err, result) => {
-    if (err) {
-      console.error('Fehler beim Umverteilen der Mitglieder:', err);
-      return res.status(500).json({ error: 'Fehler beim Umverteilen' });
-    }
-
-    res.json({
-      success: true,
-      message: `${result.affectedRows} Verträge erfolgreich von Dojo ${sourceDojo} zu Dojo ${targetDojo} verschoben`,
-      affectedRows: result.affectedRows
     });
   });
 });
