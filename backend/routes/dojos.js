@@ -453,7 +453,7 @@ router.get('/statistics/gesamt', (req, res) => {
        WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
-       AND d.steuer_status = 'regelbesteuert'
+       AND d.steuer_status = 'regelbesteuerung'
       ) as umsatz_regelbesteuerung,
 
       -- Gesamtumsatz (berechnet aus aktiven Verträgen)
@@ -474,7 +474,7 @@ router.get('/statistics/gesamt', (req, res) => {
        WHERE v.status = 'aktiv'
        AND m.aktiv = 1
        AND d.ist_aktiv = TRUE
-       AND d.steuer_status = 'regelbesteuert'
+       AND d.steuer_status = 'regelbesteuerung'
       ) as ust_gesamt
   `;
 
