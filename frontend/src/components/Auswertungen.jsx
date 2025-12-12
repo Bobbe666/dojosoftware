@@ -37,12 +37,14 @@ function Auswertungen() {
   const [growthPeriod, setGrowthPeriod] = useState('monat');
   const [memberAnalytics, setMemberAnalytics] = useState(null);
   const [beitragsvergleich, setBeitragsvergleich] = useState(null);
+  const [beltsData, setBeltsData] = useState(null);
 
   const tabs = [
     { id: 'breakeven', label: 'Break-Even Analyse', icon: '💡' },
     { id: 'overview', label: 'Übersicht', icon: '📊' },
     { id: 'financial', label: 'Finanzen', icon: '💰' },
     { id: 'members', label: 'Mitglieder', icon: '👥' },
+    { id: 'belts', label: 'Gürtel', icon: '🥋' },
     { id: 'performance', label: 'Performance', icon: '📈' },
     { id: 'forecasting', label: 'Prognosen', icon: '🔮' }
   ];
@@ -61,6 +63,7 @@ function Auswertungen() {
     loadKostenvorlagen();
     loadMemberAnalytics();
     loadBeitragsvergleich();
+    loadBeltsData();
   }, [timePeriod]);
 
   const loadAuswertungen = async () => {
@@ -207,6 +210,21 @@ function Auswertungen() {
         niedrigeBeitraege: [],
         tarife: [],
         zusammenfassung: { gesamt: 0, potential: 0, niedrigsterTarif: 0, durchschnittlicheErhoehung: 0 }
+      });
+    }
+  };
+
+  const loadBeltsData = async () => {
+    try {
+      const response = await axios.get('/stile/auswertungen/guertel-uebersicht');
+      if (response.data.success) {
+        setBeltsData(response.data);
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der Gürtel-Daten:', err);
+      setBeltsData({
+        stile: [],
+        summary: { total_stile: 0, total_guertel: 0, total_mitglieder: 0 }
       });
     }
   };
@@ -1054,6 +1072,87 @@ function Auswertungen() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'belts' && beltsData && (
+          <div className="tab-panel">
+            <div className="belts-overview-header">
+              <h2>🥋 Gürtel-Übersicht</h2>
+              <div className="summary-stats">
+                <div className="summary-stat">
+                  <span className="stat-label">Stile:</span>
+                  <span className="stat-value">{beltsData.summary.total_stile}</span>
+                </div>
+                <div className="summary-stat">
+                  <span className="stat-label">Gürtel:</span>
+                  <span className="stat-value">{beltsData.summary.total_guertel}</span>
+                </div>
+                <div className="summary-stat">
+                  <span className="stat-label">Mitglieder:</span>
+                  <span className="stat-value">{beltsData.summary.total_mitglieder}</span>
+                </div>
+              </div>
+            </div>
+
+            {beltsData.stile.map((stil) => (
+              <div key={stil.stil_id} className="stil-section">
+                <div className="stil-header">
+                  <h3>{stil.stil_name}</h3>
+                  <span className="stil-stats">
+                    {stil.guertel.length} Gürtel • {stil.guertel.reduce((sum, g) => sum + g.mitglieder.length, 0)} Mitglieder
+                  </span>
+                </div>
+
+                <div className="guertel-grid">
+                  {stil.guertel.map((guertel) => (
+                    <div key={guertel.graduierung_id} className="guertel-card">
+                      <div className="guertel-header">
+                        <div
+                          className="guertel-color-badge"
+                          style={{
+                            background: guertel.farbe_sekundaer
+                              ? `linear-gradient(135deg, ${guertel.farbe_hex}, ${guertel.farbe_sekundaer})`
+                              : guertel.farbe_hex
+                          }}
+                        />
+                        <div className="guertel-info">
+                          <h4>{guertel.gurt_name}</h4>
+                          <span className="guertel-category">{guertel.kategorie}</span>
+                          {guertel.dan_grad && <span className="dan-badge">{guertel.dan_grad}. DAN</span>}
+                        </div>
+                        <span className="member-count">{guertel.mitglieder.length} Mitglieder</span>
+                      </div>
+
+                      {guertel.mitglieder.length > 0 && (
+                        <div className="members-list">
+                          <div className="members-header">
+                            <span>Name</span>
+                            <span>Anwesenheit Jahr</span>
+                            <span>Anwesenheit Monat</span>
+                          </div>
+                          {guertel.mitglieder.map((member) => (
+                            <div key={member.mitglied_id} className="member-row">
+                              <span className="member-name">
+                                {member.vorname} {member.nachname}
+                              </span>
+                              <span className="attendance-stat">{member.anwesenheit_jahr}x</span>
+                              <span className="attendance-stat">{member.anwesenheit_monat}x</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {guertel.mitglieder.length === 0 && (
+                        <div className="no-members">
+                          <p>Keine Mitglieder</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

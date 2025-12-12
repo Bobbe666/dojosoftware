@@ -1619,6 +1619,123 @@ router.put('/:stilId/graduierungen/:graduierungId/pruefungsinhalte', (req, res) 
   });
 });
 
+// GET - Komplette Gürtel-Übersicht für Auswertungen
+// Liefert alle Stile mit Gürteln und Mitgliedern-Namen
+router.get('/auswertungen/guertel-uebersicht', (req, res) => {
+  db.getConnection((err, connection) => {
+    if (err) {
+      console.error('DB-Verbindungsfehler:', err);
+      return res.status(500).json({
+        error: 'Datenbankverbindung fehlgeschlagen',
+        details: err.message
+      });
+    }
+
+    // Alle Stile mit ihren Graduierungen und Mitgliedern
+    const query = `
+      SELECT
+        s.stil_id,
+        s.name as stil_name,
+        g.graduierung_id,
+        g.name as gurt_name,
+        g.farbe_hex,
+        g.farbe_sekundaer,
+        g.kategorie,
+        g.dan_grad,
+        g.reihenfolge,
+        m.mitglied_id,
+        m.vorname,
+        m.nachname,
+        m.email,
+        (SELECT COUNT(*) FROM anwesenheit_protokoll ap
+         WHERE ap.mitglied_id = m.mitglied_id
+         AND ap.status = 'anwesend'
+         AND YEAR(ap.datum) = YEAR(CURDATE())
+        ) as anwesenheit_jahr,
+        (SELECT COUNT(*) FROM anwesenheit_protokoll ap
+         WHERE ap.mitglied_id = m.mitglied_id
+         AND ap.status = 'anwesend'
+         AND YEAR(ap.datum) = YEAR(CURDATE())
+         AND MONTH(ap.datum) = MONTH(CURDATE())
+        ) as anwesenheit_monat
+      FROM stile s
+      LEFT JOIN graduierungen g ON s.stil_id = g.stil_id AND g.aktiv = 1
+      LEFT JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id AND msd.stil_id = g.stil_id
+      LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
+      WHERE s.aktiv = 1
+      ORDER BY s.reihenfolge ASC, s.name ASC, g.reihenfolge ASC, m.nachname ASC, m.vorname ASC
+    `;
+
+    connection.query(query, (error, results) => {
+      connection.release();
+
+      if (error) {
+        console.error('Fehler beim Abrufen der Gürtel-Übersicht:', error);
+        return res.status(500).json({
+          error: 'Fehler beim Abrufen der Gürtel-Übersicht',
+          details: error.message
+        });
+      }
+
+      // Gruppiere die Ergebnisse nach Stil und Gürtel
+      const stileMap = new Map();
+
+      results.forEach(row => {
+        if (!stileMap.has(row.stil_id)) {
+          stileMap.set(row.stil_id, {
+            stil_id: row.stil_id,
+            stil_name: row.stil_name,
+            guertel: new Map()
+          });
+        }
+
+        const stil = stileMap.get(row.stil_id);
+
+        if (row.graduierung_id && !stil.guertel.has(row.graduierung_id)) {
+          stil.guertel.set(row.graduierung_id, {
+            graduierung_id: row.graduierung_id,
+            gurt_name: row.gurt_name,
+            farbe_hex: row.farbe_hex,
+            farbe_sekundaer: row.farbe_sekundaer,
+            kategorie: row.kategorie,
+            dan_grad: row.dan_grad,
+            reihenfolge: row.reihenfolge,
+            mitglieder: []
+          });
+        }
+
+        if (row.mitglied_id && row.graduierung_id) {
+          const guertel = stil.guertel.get(row.graduierung_id);
+          guertel.mitglieder.push({
+            mitglied_id: row.mitglied_id,
+            vorname: row.vorname,
+            nachname: row.nachname,
+            email: row.email,
+            anwesenheit_jahr: row.anwesenheit_jahr || 0,
+            anwesenheit_monat: row.anwesenheit_monat || 0
+          });
+        }
+      });
+
+      // Konvertiere Maps zu Arrays
+      const stile = Array.from(stileMap.values()).map(stil => ({
+        ...stil,
+        guertel: Array.from(stil.guertel.values())
+      }));
+
+      res.json({
+        success: true,
+        stile: stile,
+        summary: {
+          total_stile: stile.length,
+          total_guertel: stile.reduce((sum, s) => sum + s.guertel.length, 0),
+          total_mitglieder: results.filter(r => r.mitglied_id).length
+        }
+      });
+    });
+  });
+});
+
 module.exports = router;
 
 /*
