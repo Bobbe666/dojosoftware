@@ -37,6 +37,7 @@ router.get("/", async (req, res) => {
             WHERE v.status = 'aktiv'
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
             ORDER BY m.nachname, m.vorname
         `;
 
@@ -148,6 +149,7 @@ router.get("/missing-mandates", (req, res) => {
         WHERE v.status = 'aktiv'
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND sm.mandat_id IS NULL
+          AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
     `;
@@ -199,6 +201,7 @@ router.get("/preview", (req, res) => {
         INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv' AND sm.mandatsreferenz IS NOT NULL
         WHERE v.status = 'aktiv'
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+          AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
     `;
