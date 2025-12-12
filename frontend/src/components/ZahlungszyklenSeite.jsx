@@ -619,7 +619,7 @@ const ZyklusDisplayCard = ({ zyklus, formatIntervall, onEdit, onDelete }) => {
           }}>
             <Clock size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
             <span style={{
-              color: '#f59e0b',
+              color: 'rgba(255, 255, 255, 0.95)',
               fontSize: '0.875rem',
               fontWeight: 600,
               textShadow: 'none',
