@@ -62,11 +62,13 @@ const Beitraege = () => {
       const mitgliederData = await mitgliederResponse.json();
       const vertraegeData = await vertraegeResponse.json();
 
-      const mitglieder = mitgliederData.data || [];
-      const vertraege = vertraegeData.data || [];
+      // Handle both array and object responses
+      const mitglieder = Array.isArray(mitgliederData) ? mitgliederData : (mitgliederData.data || []);
+      const vertraege = Array.isArray(vertraegeData) ? vertraegeData : (vertraegeData.data || []);
 
       // Berechne Statistiken basierend auf echten Daten
-      const aktiveMitglieder = mitglieder.filter(m => m.status === 'aktiv').length;
+      // API liefert bereits nur aktive Mitglieder (WHERE aktiv = 1)
+      const aktiveMitglieder = mitglieder.length;
       const aktiveVertraege = vertraege.filter(v => v.status === 'aktiv');
       
       // Berechne monatliche Einnahmen
