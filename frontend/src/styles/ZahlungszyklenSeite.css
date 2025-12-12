@@ -342,7 +342,7 @@
 .zahlungszyklen-seite .card-header h3 {
   font-size: 1rem !important;
   font-weight: 600 !important;
-  color: #f59e0b !important;
+  color: rgba(255, 255, 255, 0.95) !important;
   margin: 0 !important;
   text-shadow: none !important;
   -webkit-font-smoothing: antialiased !important;
@@ -351,7 +351,7 @@
   background-image: none !important;
   background-clip: initial !important;
   -webkit-background-clip: initial !important;
-  -webkit-text-fill-color: #f59e0b !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.95) !important;
   filter: none !important;
   transform: none !important;
   will-change: auto !important;
