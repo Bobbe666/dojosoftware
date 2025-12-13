@@ -1755,13 +1755,24 @@ const StilVerwaltung = () => {
                           key={guertel.name}
                           className={`belt-option ${newGraduierung.name === guertel.name ? 'selected' : ''}`}
                           onClick={() => {
+                            // Automatisch passende Wartezeit aus Prüfungseinstellungen vorschlagen
+                            let suggestedWaitTime = 3; // Default
+                            if (guertel.kategorie === 'grundstufe' && currentStil?.wartezeit_grundstufe) {
+                              suggestedWaitTime = currentStil.wartezeit_grundstufe;
+                            } else if (guertel.kategorie === 'mittelstufe' && currentStil?.wartezeit_mittelstufe) {
+                              suggestedWaitTime = currentStil.wartezeit_mittelstufe;
+                            } else if (guertel.kategorie === 'oberstufe' && currentStil?.wartezeit_oberstufe) {
+                              suggestedWaitTime = currentStil.wartezeit_oberstufe;
+                            }
+
                             setNewGraduierung({
                               ...newGraduierung,
                               name: guertel.name,
                               farbe_hex: guertel.primaer,
                               farbe_sekundaer: guertel.sekundaer,
                               kategorie: guertel.kategorie,
-                              dan_grad: guertel.dan || null
+                              dan_grad: guertel.dan || null,
+                              mindestzeit_monate: suggestedWaitTime
                             });
                           }}
                           title={guertel.name}
@@ -4205,10 +4216,25 @@ const StilVerwaltung = () => {
                     <label className="form-label">Kategorie (optional):</label>
                     <select
                       value={editingGraduierung.kategorie || ''}
-                      onChange={(e) => setEditingGraduierung({
-                        ...editingGraduierung,
-                        kategorie: e.target.value || null
-                      })}
+                      onChange={(e) => {
+                        const selectedKategorie = e.target.value || null;
+
+                        // Automatisch passende Wartezeit aus Prüfungseinstellungen vorschlagen
+                        let suggestedWaitTime = editingGraduierung.mindestzeit_monate;
+                        if (selectedKategorie === 'grundstufe' && currentStil?.wartezeit_grundstufe) {
+                          suggestedWaitTime = currentStil.wartezeit_grundstufe;
+                        } else if (selectedKategorie === 'mittelstufe' && currentStil?.wartezeit_mittelstufe) {
+                          suggestedWaitTime = currentStil.wartezeit_mittelstufe;
+                        } else if (selectedKategorie === 'oberstufe' && currentStil?.wartezeit_oberstufe) {
+                          suggestedWaitTime = currentStil.wartezeit_oberstufe;
+                        }
+
+                        setEditingGraduierung({
+                          ...editingGraduierung,
+                          kategorie: selectedKategorie,
+                          mindestzeit_monate: suggestedWaitTime
+                        });
+                      }}
                       className="form-select"
                     >
                       <option value="">Keine Kategorie</option>
