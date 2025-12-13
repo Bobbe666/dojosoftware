@@ -527,9 +527,11 @@ const StilVerwaltung = () => {
    */
   const updateStil = async (updatedStilData) => {
     if (!currentStil) return;
-    
+
     setLoading(true);
     try {
+      console.log('📤 Sende Stil-Update:', updatedStilData);
+
       const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -538,13 +540,16 @@ const StilVerwaltung = () => {
 
       if (response.ok) {
         const updatedStil = await response.json();
+        console.log('✅ Stil-Update erfolgreich, Antwort:', updatedStil);
+
+        // Aktualisiere currentStil mit der kompletten Antwort vom Backend
         setCurrentStil(updatedStil);
         setStile(stile.map(s => s.stil_id === currentStil.stil_id ? updatedStil : s));
         setSuccess('Stil erfolgreich aktualisiert!');
         setTimeout(() => setSuccess(''), 2000);
-        console.log('✅ Stil aktualisiert:', updatedStil);
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unbekannter Fehler' }));
+        console.error('❌ Stil-Update fehlgeschlagen:', errorData);
         setError(errorData.error || 'Fehler beim Aktualisieren des Stils');
       }
     } catch (err) {
