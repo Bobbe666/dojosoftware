@@ -3526,6 +3526,67 @@ const StilVerwaltung = () => {
                       >
                         {loading ? 'Wird gespeichert...' : '💾 Einstellungen speichern'}
                       </button>
+
+                      <button
+                        className="sub-tab-btn"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(34, 139, 34, 0.3))',
+                          borderColor: '#32CD32'
+                        }}
+                        onClick={async () => {
+                          if (!confirm('Möchten Sie die aktuellen Wartezeiten auf ALLE bestehenden Graduierungen anwenden?\n\nDies überschreibt die Mindestzeiten aller Graduierungen entsprechend ihrer Kategorie.')) {
+                            return;
+                          }
+
+                          setLoading(true);
+                          try {
+                            const graduierungen = currentStil.graduierungen || [];
+                            let updatedCount = 0;
+
+                            for (const grad of graduierungen) {
+                              let newWaitTime = grad.mindestzeit_monate;
+
+                              if (grad.kategorie === 'grundstufe') {
+                                newWaitTime = currentStil.wartezeit_grundstufe || 3;
+                              } else if (grad.kategorie === 'mittelstufe') {
+                                newWaitTime = currentStil.wartezeit_mittelstufe || 4;
+                              } else if (grad.kategorie === 'oberstufe') {
+                                newWaitTime = currentStil.wartezeit_oberstufe || 6;
+                              }
+
+                              // Nur aktualisieren wenn sich was geändert hat
+                              if (newWaitTime !== grad.mindestzeit_monate) {
+                                const response = await fetch(`${API_BASE}/stile/graduierungen/${grad.graduierung_id}`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    ...grad,
+                                    mindestzeit_monate: newWaitTime
+                                  })
+                                });
+
+                                if (response.ok) {
+                                  updatedCount++;
+                                }
+                              }
+                            }
+
+                            // Reload Stil to get updated graduations
+                            await loadStilDetails(currentStil.stil_id);
+
+                            setSuccess(`${updatedCount} Graduierung(en) erfolgreich aktualisiert!`);
+                            setTimeout(() => setSuccess(''), 3000);
+                          } catch (err) {
+                            console.error('Fehler beim Aktualisieren der Graduierungen:', err);
+                            setError('Fehler beim Anwenden der Wartezeiten');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={loading || !currentStil.graduierungen?.length}
+                      >
+                        {loading ? 'Wird angewendet...' : '🔄 Auf alle Graduierungen anwenden'}
+                      </button>
                     </div>
                   </motion.div>
                 )}
