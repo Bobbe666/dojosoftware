@@ -3298,6 +3298,7 @@ const StilVerwaltung = () => {
               <div className="tab-navigation">
                 {[
                   { id: 'allgemein', label: '📋 Allgemein', title: 'Grundeinstellungen des Stils' },
+                  { id: 'pruefungseinstellungen', label: '⏱️ Prüfungseinstellungen', title: 'Wartezeiten und Prüfungsregeln' },
                   { id: 'graduierungen', label: '🎖️ Graduierungen', title: 'Gürtel und Graduierungen verwalten' },
                   { id: 'pruefungsinhalte', label: '📝 Prüfungsinhalte', title: 'Prüfungsinhalte definieren' },
                   { id: 'statistiken', label: '📊 Statistiken', title: 'Auswertungen und Statistiken' }
@@ -3378,6 +3379,136 @@ const StilVerwaltung = () => {
                         title="Stil löschen oder deaktivieren"
                       >
                         🗑️ Stil löschen
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'pruefungseinstellungen' && (
+                  <motion.div
+                    className="pruefungseinstellungen-tab"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h3>Prüfungseinstellungen</h3>
+                    <p className="tab-description">
+                      Definieren Sie die standardmäßigen Wartezeiten zwischen Gürtelprüfungen für verschiedene Stufen.
+                    </p>
+
+                    <div className="pruefungseinstellungen-container">
+                      {/* Wartezeiten für Farbgürtel */}
+                      <div className="wartezeiten-section">
+                        <h4>Wartezeiten für Farbgürtel</h4>
+
+                        <div className="form-group">
+                          <label className="form-label">
+                            Grundstufe (Monate):
+                            <span className="label-info">Weiß-, Gelb-, Orangegurt</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={currentStil.wartezeit_grundstufe || 3}
+                            onChange={(e) => setCurrentStil({
+                              ...currentStil,
+                              wartezeit_grundstufe: parseInt(e.target.value) || 3
+                            })}
+                            className="form-input"
+                            placeholder="z.B. 3"
+                          />
+                          <small>Empfohlen: 3 Monate</small>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">
+                            Mittelstufe (Monate):
+                            <span className="label-info">Grün-, Blaugurt</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={currentStil.wartezeit_mittelstufe || 4}
+                            onChange={(e) => setCurrentStil({
+                              ...currentStil,
+                              wartezeit_mittelstufe: parseInt(e.target.value) || 4
+                            })}
+                            className="form-input"
+                            placeholder="z.B. 4"
+                          />
+                          <small>Empfohlen: 4 Monate</small>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">
+                            Oberstufe (Monate):
+                            <span className="label-info">Rot-, Braungurt</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="24"
+                            value={currentStil.wartezeit_oberstufe || 6}
+                            onChange={(e) => setCurrentStil({
+                              ...currentStil,
+                              wartezeit_oberstufe: parseInt(e.target.value) || 6
+                            })}
+                            className="form-input"
+                            placeholder="z.B. 6"
+                          />
+                          <small>Empfohlen: 6 Monate</small>
+                        </div>
+                      </div>
+
+                      {/* Schwarzgurt-Einstellungen */}
+                      <div className="schwarzgurt-section">
+                        <h4>Schwarzgurt-Regelung (DAN-Grade)</h4>
+
+                        <div className="form-group checkbox-group">
+                          <label className="form-label checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={currentStil.wartezeit_schwarzgurt_traditionell || false}
+                              onChange={(e) => setCurrentStil({
+                                ...currentStil,
+                                wartezeit_schwarzgurt_traditionell: e.target.checked
+                              })}
+                            />
+                            <span className="checkbox-text">
+                              Traditionelle Wartezeiten verwenden
+                            </span>
+                          </label>
+                          <div className="checkbox-info">
+                            <p>Bei aktivierter Option gelten folgende Wartezeiten:</p>
+                            <ul>
+                              <li>1. DAN → 2. DAN: 2 Jahre</li>
+                              <li>2. DAN → 3. DAN: 3 Jahre</li>
+                              <li>3. DAN → 4. DAN: 4 Jahre</li>
+                              <li>4. DAN → 5. DAN: 5 Jahre</li>
+                              <li>usw. (DAN-Stufe = Jahre Wartezeit)</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="sub-tabs">
+                      <button
+                        className="sub-tab-btn"
+                        onClick={() => updateStil({
+                          name: currentStil.name,
+                          beschreibung: currentStil.beschreibung,
+                          aktiv: currentStil.aktiv,
+                          wartezeit_grundstufe: currentStil.wartezeit_grundstufe,
+                          wartezeit_mittelstufe: currentStil.wartezeit_mittelstufe,
+                          wartezeit_oberstufe: currentStil.wartezeit_oberstufe,
+                          wartezeit_schwarzgurt_traditionell: currentStil.wartezeit_schwarzgurt_traditionell
+                        })}
+                        disabled={loading || !currentStil.name?.trim()}
+                      >
+                        {loading ? 'Wird gespeichert...' : '💾 Einstellungen speichern'}
                       </button>
                     </div>
                   </motion.div>

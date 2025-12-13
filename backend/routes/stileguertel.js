@@ -74,6 +74,10 @@ router.get('/', (req, res) => {
         s.beschreibung,
         s.aktiv,
         s.reihenfolge,
+        s.wartezeit_grundstufe,
+        s.wartezeit_mittelstufe,
+        s.wartezeit_oberstufe,
+        s.wartezeit_schwarzgurt_traditionell,
         s.erstellt_am,
         s.aktualisiert_am,
         COUNT(DISTINCT msd.mitglied_id) as anzahl_mitglieder
@@ -81,7 +85,7 @@ router.get('/', (req, res) => {
       LEFT JOIN mitglied_stil_data msd ON s.stil_id = msd.stil_id
       LEFT JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id AND m.aktiv = 1
       ${aktivFilter}
-      GROUP BY s.stil_id, s.name, s.beschreibung, s.aktiv, s.reihenfolge, s.erstellt_am, s.aktualisiert_am
+      GROUP BY s.stil_id, s.name, s.beschreibung, s.aktiv, s.reihenfolge, s.wartezeit_grundstufe, s.wartezeit_mittelstufe, s.wartezeit_oberstufe, s.wartezeit_schwarzgurt_traditionell, s.erstellt_am, s.aktualisiert_am
       ORDER BY s.aktiv DESC, s.reihenfolge ASC, s.name ASC
     `;
 
@@ -394,7 +398,15 @@ router.get('/:stilId/graduierungen', (req, res) => {
 
 // POST - Neuen Stil erstellen
 router.post('/', (req, res) => {
-  const { name, beschreibung, aktiv = true } = req.body;
+  const {
+    name,
+    beschreibung,
+    aktiv = true,
+    wartezeit_grundstufe = 3,
+    wartezeit_mittelstufe = 4,
+    wartezeit_oberstufe = 6,
+    wartezeit_schwarzgurt_traditionell = false
+  } = req.body;
 
   // Erweiterte Validierung
   if (!name || name.trim().length === 0) {
@@ -446,11 +458,22 @@ router.post('/', (req, res) => {
           UPDATE stile
           SET aktiv = 1,
               beschreibung = ?,
+              wartezeit_grundstufe = ?,
+              wartezeit_mittelstufe = ?,
+              wartezeit_oberstufe = ?,
+              wartezeit_schwarzgurt_traditionell = ?,
               aktualisiert_am = NOW()
           WHERE stil_id = ?
         `;
 
-        connection.query(reactivateQuery, [beschreibung ? beschreibung.trim() : '', stilId], (updateError) => {
+        connection.query(reactivateQuery, [
+          beschreibung ? beschreibung.trim() : '',
+          wartezeit_grundstufe,
+          wartezeit_mittelstufe,
+          wartezeit_oberstufe,
+          wartezeit_schwarzgurt_traditionell,
+          stilId
+        ], (updateError) => {
           if (updateError) {
             console.error('Fehler beim Reaktivieren des Stils:', updateError);
             connection.release();
@@ -485,14 +508,18 @@ router.post('/', (req, res) => {
 
       // Neuen Stil erstellen
       const insertQuery = `
-        INSERT INTO stile (name, beschreibung, aktiv, erstellt_am, aktualisiert_am) 
-        VALUES (?, ?, ?, NOW(), NOW())
+        INSERT INTO stile (name, beschreibung, aktiv, wartezeit_grundstufe, wartezeit_mittelstufe, wartezeit_oberstufe, wartezeit_schwarzgurt_traditionell, erstellt_am, aktualisiert_am)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
-      
+
       const insertValues = [
         name.trim(),
         beschreibung ? beschreibung.trim() : '',
-        aktiv
+        aktiv,
+        wartezeit_grundstufe,
+        wartezeit_mittelstufe,
+        wartezeit_oberstufe,
+        wartezeit_schwarzgurt_traditionell
       ];
 
       connection.query(insertQuery, insertValues, (insertError, result) => {
@@ -539,7 +566,16 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ error: 'Ungültige Stil-ID' });
   }
 
-  const { name, beschreibung, aktiv, reihenfolge } = req.body;
+  const {
+    name,
+    beschreibung,
+    aktiv,
+    reihenfolge,
+    wartezeit_grundstufe,
+    wartezeit_mittelstufe,
+    wartezeit_oberstufe,
+    wartezeit_schwarzgurt_traditionell
+  } = req.body;
 
   // Validierung
   if (!name || name.trim().length === 0) {
@@ -579,7 +615,9 @@ router.put('/:id', (req, res) => {
       // Stil aktualisieren
       const updateQuery = `
         UPDATE stile
-        SET name = ?, beschreibung = ?, aktiv = ?, reihenfolge = ?, aktualisiert_am = NOW()
+        SET name = ?, beschreibung = ?, aktiv = ?, reihenfolge = ?,
+            wartezeit_grundstufe = ?, wartezeit_mittelstufe = ?, wartezeit_oberstufe = ?,
+            wartezeit_schwarzgurt_traditionell = ?, aktualisiert_am = NOW()
         WHERE stil_id = ?
       `;
 
@@ -588,6 +626,10 @@ router.put('/:id', (req, res) => {
         beschreibung ? beschreibung.trim() : '',
         aktiv,
         reihenfolge,
+        wartezeit_grundstufe !== undefined ? wartezeit_grundstufe : 3,
+        wartezeit_mittelstufe !== undefined ? wartezeit_mittelstufe : 4,
+        wartezeit_oberstufe !== undefined ? wartezeit_oberstufe : 6,
+        wartezeit_schwarzgurt_traditionell !== undefined ? wartezeit_schwarzgurt_traditionell : false,
         stilId
       ], (updateError) => {
         if (updateError) {
