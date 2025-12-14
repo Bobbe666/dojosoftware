@@ -274,7 +274,7 @@ router.get('/:id/preview', async (req, res) => {
                d.dojoname, d.strasse as dojo_strasse, d.hausnummer as dojo_hausnummer,
                d.plz as dojo_plz, d.ort as dojo_ort, d.telefon as dojo_telefon,
                d.email as dojo_email, d.internet as dojo_internet
-        FROM dojo3_mitglieder m
+        FROM mitglieder m
         LEFT JOIN vertraege v ON m.id = v.mitglied_id
         LEFT JOIN dojos d ON m.dojo_id = d.id
         WHERE m.dojo_id = ? AND v.id IS NOT NULL
