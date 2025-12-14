@@ -106,6 +106,7 @@ const DokumenteVerwaltung = () => {
   const handleEditVorlage = (id) => {
     setSelectedTemplate(id);
     setShowTemplateEditor(true);
+    setActiveTab('vorlagen'); // Wechsle zum Vorlagen-Tab, damit der Editor sichtbar wird
   };
 
   const handleOpenCopyModal = () => {
