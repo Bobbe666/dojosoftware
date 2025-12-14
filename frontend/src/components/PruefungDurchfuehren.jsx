@@ -1086,6 +1086,8 @@ const PruefungDurchfuehren = () => {
                                               inhaltId,
                                               kategorie,
                                               bewertung,
+                                              bewertung_bestanden: bewertung.bestanden,
+                                              checkbox_checked: bewertung.bestanden || false,
                                               alle_bewertungen_in_kategorie: bewertungen[pruefling.pruefung_id]?.[kategorie]
                                             });
                                             return (
