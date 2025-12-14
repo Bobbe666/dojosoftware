@@ -145,7 +145,7 @@ const PruefungDurchfuehren = () => {
       // Editing-Modus öffnen
       setEditingPruefling(pruefling);
       // Lade Prüfungsinhalte
-      loadPruefungsinhalte(pruefling.pruefung_id, targetGurt?.id || pruefling.graduierung_nachher_id);
+      loadPruefungsinhalte(pruefling.pruefung_id, pruefling.stil_id, targetGurt?.id || pruefling.graduierung_nachher_id);
     }
   };
 
@@ -326,10 +326,10 @@ const PruefungDurchfuehren = () => {
   };
 
   // Lädt Prüfungsinhalte für eine Graduierung
-  const loadPruefungsinhalte = async (pruefungId, graduierungId) => {
+  const loadPruefungsinhalte = async (pruefungId, stilId, graduierungId) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/stile/graduierungen/${graduierungId}/pruefungsinhalte`,
+        `${API_BASE_URL}/stile/${stilId}/graduierungen/${graduierungId}/pruefungsinhalte`,
         { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
       );
 
