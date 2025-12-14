@@ -1384,12 +1384,27 @@ Styling für den Prüfungsinhalt-Bereich
   color: rgba(255, 255, 255, 0.8); /* Gedämpftes Weiß */
   padding: 0.25rem 0;            /* Vertikaler Abstand */
   font-size: 0.9rem;             /* Kleinere Schrift */
+  display: flex;                 /* Flexbox für horizontales Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: space-between; /* Text links, Buttons rechts */
+  gap: 0.5rem;                   /* Abstand zwischen Text und Buttons */
 }
 
 .category li:before {
   content: '•';                  /* Bullet Point */
   color: #ffd700;                /* Gold-Farbe */
   margin-right: 0.5rem;          /* Abstand nach rechts */
+  flex-shrink: 0;                /* Bullet darf nicht schrumpfen */
+}
+
+.category li > span {
+  flex: 1;                       /* Text nimmt verfügbaren Platz */
+}
+
+.category .inhalt-actions {
+  display: flex;                 /* Flexbox für Buttons */
+  gap: 0.25rem;                  /* Abstand zwischen Buttons */
+  flex-shrink: 0;                /* Buttons dürfen nicht schrumpfen */
 }
 
 /* 
