@@ -31,6 +31,10 @@ const PruefungDurchfuehren = () => {
   const [editingPruefling, setEditingPruefling] = useState(null);
   const [ergebnisse, setErgebnisse] = useState({}); // Key: pruefung_id, Value: ergebnis-Objekt
 
+  // Bewertungs-States
+  const [pruefungsinhalte, setPruefungsinhalte] = useState({}); // Key: pruefung_id, Value: Inhalte
+  const [bewertungen, setBewertungen] = useState({}); // Key: pruefung_id, Value: Bewertungen-Objekt
+
   useEffect(() => {
     fetchStile();
     fetchPruefungen();
@@ -140,6 +144,8 @@ const PruefungDurchfuehren = () => {
 
       // Editing-Modus öffnen
       setEditingPruefling(pruefling);
+      // Lade Prüfungsinhalte
+      loadPruefungsinhalte(pruefling.pruefung_id, targetGurt?.id || pruefling.graduierung_nachher_id);
     }
   };
 
@@ -250,6 +256,37 @@ const PruefungDurchfuehren = () => {
         );
       }
 
+      
+      // Bewertungen speichern
+      const pruefungBewertungen = bewertungen[pruefling.pruefung_id];
+      if (pruefungBewertungen) {
+        const bewertungenArray = [];
+        Object.values(pruefungBewertungen).forEach(kategorieBewertungen => {
+          if (Array.isArray(kategorieBewertungen)) {
+            kategorieBewertungen.forEach(bew => {
+              bewertungenArray.push({
+                inhalt_id: bew.inhalt_id,
+                bestanden: bew.bestanden,
+                punktzahl: bew.punktzahl,
+                max_punktzahl: bew.max_punktzahl || 10,
+                kommentar: bew.kommentar
+              });
+            });
+          }
+        });
+
+        if (bewertungenArray.length > 0) {
+          await fetch(`${API_BASE_URL}/pruefungen/${pruefling.pruefung_id}/bewertungen`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ bewertungen: bewertungenArray })
+          });
+        }
+      }
+
       setSuccess('Prüfungsergebnis erfolgreich gespeichert!');
       setEditingPruefling(null);
       fetchPruefungen();
@@ -287,6 +324,78 @@ const PruefungDurchfuehren = () => {
       throw error;
     }
   };
+
+  // Lädt Prüfungsinhalte für eine Graduierung
+  const loadPruefungsinhalte = async (pruefungId, graduierungId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/stile/graduierungen/${graduierungId}/pruefungsinhalte`,
+        { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+      );
+
+      if (!response.ok) {
+        console.error('Fehler beim Laden der Prüfungsinhalte');
+        return;
+      }
+
+      const data = await response.json();
+      console.log('📚 Prüfungsinhalte geladen:', data);
+
+      setPruefungsinhalte(prev => ({
+        ...prev,
+        [pruefungId]: data.pruefungsinhalte || {}
+      }));
+
+      // Lade bestehende Bewertungen
+      await loadBewertungen(pruefungId);
+    } catch (error) {
+      console.error('Fehler beim Laden der Prüfungsinhalte:', error);
+    }
+  };
+
+  // Lädt bestehende Bewertungen für eine Prüfung
+  const loadBewertungen = async (pruefungId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/pruefungen/${pruefungId}/bewertungen`,
+        { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+      );
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data.success && data.bewertungen) {
+        setBewertungen(prev => ({
+          ...prev,
+          [pruefungId]: data.bewertungen
+        }));
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Bewertungen:', error);
+    }
+  };
+
+  // Aktualisiert eine einzelne Bewertung
+  const updateBewertung = (pruefungId, inhaltId, field, value) => {
+    setBewertungen(prev => {
+      const pruefungBewertungen = prev[pruefungId] || {};
+      const kategorieBewertungen = Object.keys(pruefungBewertungen).reduce((acc, kat) => {
+        acc[kat] = pruefungBewertungen[kat].map(bew => {
+          if (bew.inhalt_id === inhaltId) {
+            return { ...bew, [field]: value };
+          }
+          return bew;
+        });
+        return acc;
+      }, {});
+
+      return {
+        ...prev,
+        [pruefungId]: kategorieBewertungen
+      };
+    });
+  };
+
 
 
   const getStatusBadge = (pruefling) => {
