@@ -3582,7 +3582,7 @@ const StilVerwaltung = () => {
                             }
 
                             // Reload Stil to get updated graduations
-                            await loadStilDetails(currentStil.stil_id);
+                            await loadStil(currentStil.stil_id);
 
                             setSuccess(`${updatedCount} Graduierung(en) erfolgreich aktualisiert!`);
                             setTimeout(() => setSuccess(''), 3000);
