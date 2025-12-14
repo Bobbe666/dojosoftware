@@ -3594,7 +3594,7 @@ const StilVerwaltung = () => {
 
                               // Nur aktualisieren wenn sich was geändert hat oder Kategorie gesetzt werden soll
                               if (newWaitTime !== grad.mindestzeit_monate || updateKategorie) {
-                                const response = await fetch(`${API_BASE}/stileguertel/graduierungen/${grad.graduierung_id}`, {
+                                const response = await fetch(`${API_BASE}/stile/graduierungen/${grad.graduierung_id}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({
