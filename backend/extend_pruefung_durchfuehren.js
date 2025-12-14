@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, 'src', 'components', 'PruefungDurchfuehren.jsx');
+const filePath = path.join(__dirname, '..', 'frontend', 'src', 'components', 'PruefungDurchfuehren.jsx');
 
 console.log('📖 Lese Datei:', filePath);
 
