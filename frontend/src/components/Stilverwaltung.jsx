@@ -74,6 +74,9 @@ const StilVerwaltung = () => {
   
   // Drag & Drop States (nur für Graduierungen)
   const [activeId, setActiveId] = useState(null);                  // Aktive Drag-ID (für Graduierungen)
+
+  // Prüfungsinhalte Accordion State
+  const [expandedGraduierungen, setExpandedGraduierungen] = useState([]); // Geöffnete Graduierungen im Prüfungsinhalte-Tab
   const [draggedGraduierung, setDraggedGraduierung] = useState(null); // Gezogene Graduierung
 
   // Prüfungsinhalte States
@@ -3034,6 +3037,15 @@ const StilVerwaltung = () => {
       }
     ];
 
+    // Toggle-Funktion für Graduierungen
+    const toggleGraduierung = (graduierungId) => {
+      setExpandedGraduierungen(prev =>
+        prev.includes(graduierungId)
+          ? prev.filter(id => id !== graduierungId)
+          : [...prev, graduierungId]
+      );
+    };
+
     return (
       <div className="pruefungsinhalt-manager">
         <div className="section-header">
@@ -3046,19 +3058,35 @@ const StilVerwaltung = () => {
             .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
             .map(grad => {
               const pruefungsinhalte = grad.pruefungsinhalte || {};
+              const isExpanded = expandedGraduierungen.includes(grad.graduierung_id);
 
               return (
                 <div key={grad.graduierung_id} className="graduierung-pruefung">
-                  <div className="graduierung-header">
-                    <BeltPreview
-                      primaer={grad.farbe_hex}
-                      sekundaer={grad.farbe_sekundaer}
-                      size="normal"
-                    />
-                    <h4>{grad.name}</h4>
+                  <div
+                    className="graduierung-header clickable"
+                    onClick={() => toggleGraduierung(grad.graduierung_id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                      <BeltPreview
+                        primaer={grad.farbe_hex}
+                        sekundaer={grad.farbe_sekundaer}
+                        size="normal"
+                      />
+                      <h4 style={{ margin: 0 }}>{grad.name}</h4>
+                    </div>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      transition: 'transform 0.3s ease',
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      display: 'inline-block'
+                    }}>
+                      ▼
+                    </span>
                   </div>
 
-                  <div className="pruefungsinhalt-categories">
+                  {isExpanded && (
+                    <div className="pruefungsinhalt-categories">
                     {kategorien.map(kategorie => {
                       const inhalte = pruefungsinhalte[kategorie.key] || [];
 
@@ -3123,7 +3151,8 @@ const StilVerwaltung = () => {
                         </div>
                       );
                     })}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })

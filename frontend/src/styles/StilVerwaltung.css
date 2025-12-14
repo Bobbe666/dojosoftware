@@ -1145,12 +1145,18 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 
 /* Graduierung Header - Grid Layout */
 .graduierung-header {
-  display: grid;                 /* Grid Layout */
-  grid-template-columns: 1fr auto; /* Name links, Buttons rechts */
+  display: flex;                 /* Flexbox Layout */
+  justify-content: space-between; /* Links Name, rechts Pfeil */
   align-items: center;           /* Vertikal zentrieren */
   gap: 1rem;                     /* Abstand zwischen Spalten */
-  padding-bottom: 0.75rem;       /* Abstand nach unten */
+  padding: 0.75rem;              /* Innenabstand */
   border-bottom: 1px solid rgba(255, 215, 0, 0.15); /* Trennlinie */
+  transition: background 0.3s ease; /* Sanfter Übergang */
+}
+
+.graduierung-header.clickable:hover {
+  background: rgba(255, 215, 0, 0.05); /* Leichter Gold-Hintergrund beim Hover */
+  border-radius: 8px;            /* Abgerundete Ecken beim Hover */
 }
 
 /* Graduierung Name mit Farbkreis */
@@ -1358,6 +1364,19 @@ Styling für den Prüfungsinhalt-Bereich
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive Spalten */
   gap: 1.5rem;                   /* Abstand zwischen Kategorien */
   margin-top: 1rem;              /* Abstand nach oben */
+  padding: 1rem;                 /* Innenabstand */
+  animation: slideDown 0.3s ease-out; /* Slide-Down Animation */
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Einzelne Kategorie */
