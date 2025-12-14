@@ -246,7 +246,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// GET /api/vertragsvorlagen/:id/preview - Vorschau der Vorlage mit Beispieldaten
+// GET /api/vertragsvorlagen/:id/preview - Vorschau der Vorlage mit echten Daten
 router.get('/:id/preview', async (req, res) => {
   try {
     const { id } = req.params;
@@ -259,45 +259,114 @@ router.get('/:id/preview', async (req, res) => {
 
     const template = vorlagen[0];
 
-    // Beispieldaten
-    const sampleData = {
-      mitglied: {
-        vorname: 'Max',
-        nachname: 'Mustermann',
-        email: 'max.mustermann@example.com',
-        telefon: '0123 456789',
-        strasse: 'Musterstraße',
-        hausnummer: '123',
-        plz: '12345',
-        ort: 'Musterstadt',
-        geburtsdatum: '01.01.1990',
-        mitgliedsnummer: 'M-001'
-      },
-      vertrag: {
-        vertragsnummer: 'V-2025-001',
-        vertragsbeginn: '01.01.2025',
-        vertragsende: '31.12.2025',
-        monatsbeitrag: '49.99',
-        mindestlaufzeit_monate: '12',
-        kuendigungsfrist_monate: '3',
-        tarifname: 'Standard Tarif'
-      },
-      dojo: {
-        dojoname: 'Muster Dojo',
-        strasse: 'Dojo-Straße',
-        hausnummer: '1',
-        plz: '54321',
-        ort: 'Dojo-Stadt',
-        telefon: '09876 543210',
-        email: 'info@muster-dojo.de',
-        internet: 'www.muster-dojo.de'
-      },
-      system: {
-        datum: new Date().toLocaleDateString('de-DE'),
-        jahr: new Date().getFullYear(),
-        monat: new Date().toLocaleDateString('de-DE', { month: 'long' })
+    // Versuche, echte Daten zu laden (erstes Mitglied mit Vertrag für dieses Dojo)
+    let sampleData;
+
+    try {
+      const mitglieder = await queryAsync(`
+        SELECT m.*, v.*, d.*,
+               m.vorname as mitglied_vorname, m.nachname as mitglied_nachname,
+               m.email as mitglied_email, m.telefon as mitglied_telefon,
+               m.strasse as mitglied_strasse, m.hausnummer as mitglied_hausnummer,
+               m.plz as mitglied_plz, m.ort as mitglied_ort,
+               v.vertragsnummer, v.vertragsbeginn, v.vertragsende,
+               v.monatsbeitrag, v.mindestlaufzeit_monate, v.kuendigungsfrist_monate,
+               d.dojoname, d.strasse as dojo_strasse, d.hausnummer as dojo_hausnummer,
+               d.plz as dojo_plz, d.ort as dojo_ort, d.telefon as dojo_telefon,
+               d.email as dojo_email, d.internet as dojo_internet
+        FROM dojo3_mitglieder m
+        LEFT JOIN vertraege v ON m.id = v.mitglied_id
+        LEFT JOIN dojos d ON m.dojo_id = d.id
+        WHERE m.dojo_id = ? AND v.id IS NOT NULL
+        ORDER BY v.erstellt_am DESC
+        LIMIT 1
+      `, [template.dojo_id]);
+
+      if (mitglieder.length > 0) {
+        const data = mitglieder[0];
+        sampleData = {
+          mitglied: {
+            vorname: data.mitglied_vorname || 'Max',
+            nachname: data.mitglied_nachname || 'Mustermann',
+            email: data.mitglied_email || 'max.mustermann@example.com',
+            telefon: data.mitglied_telefon || '0123 456789',
+            strasse: data.mitglied_strasse || 'Musterstraße',
+            hausnummer: data.mitglied_hausnummer || '123',
+            plz: data.mitglied_plz || '12345',
+            ort: data.mitglied_ort || 'Musterstadt',
+            geburtsdatum: data.geburtsdatum ? new Date(data.geburtsdatum).toLocaleDateString('de-DE') : '01.01.1990',
+            mitgliedsnummer: data.mitgliedsnummer || 'M-001'
+          },
+          vertrag: {
+            vertragsnummer: data.vertragsnummer || 'V-2025-001',
+            vertragsbeginn: data.vertragsbeginn ? new Date(data.vertragsbeginn).toLocaleDateString('de-DE') : '01.01.2025',
+            vertragsende: data.vertragsende ? new Date(data.vertragsende).toLocaleDateString('de-DE') : '31.12.2025',
+            monatsbeitrag: data.monatsbeitrag || '49.99',
+            mindestlaufzeit_monate: data.mindestlaufzeit_monate || '12',
+            kuendigungsfrist_monate: data.kuendigungsfrist_monate || '3',
+            tarifname: data.tarifname || 'Standard Tarif'
+          },
+          dojo: {
+            dojoname: data.dojoname || 'Muster Dojo',
+            strasse: data.dojo_strasse || 'Dojo-Straße',
+            hausnummer: data.dojo_hausnummer || '1',
+            plz: data.dojo_plz || '54321',
+            ort: data.dojo_ort || 'Dojo-Stadt',
+            telefon: data.dojo_telefon || '09876 543210',
+            email: data.dojo_email || 'info@muster-dojo.de',
+            internet: data.dojo_internet || 'www.muster-dojo.de'
+          },
+          system: {
+            datum: new Date().toLocaleDateString('de-DE'),
+            jahr: new Date().getFullYear(),
+            monat: new Date().toLocaleDateString('de-DE', { month: 'long' })
+          }
+        };
+      } else {
+        throw new Error('Keine Mitglieder mit Vertrag gefunden');
       }
-    };
+    } catch (dbErr) {
+      // Fallback auf Beispieldaten, wenn keine echten Daten verfügbar sind
+      console.log('⚠️ Verwende Beispieldaten für Vorschau:', dbErr.message);
+      sampleData = {
+        mitglied: {
+          vorname: 'Max',
+          nachname: 'Mustermann',
+          email: 'max.mustermann@example.com',
+          telefon: '0123 456789',
+          strasse: 'Musterstraße',
+          hausnummer: '123',
+          plz: '12345',
+          ort: 'Musterstadt',
+          geburtsdatum: '01.01.1990',
+          mitgliedsnummer: 'M-001'
+        },
+        vertrag: {
+          vertragsnummer: 'V-2025-001',
+          vertragsbeginn: '01.01.2025',
+          vertragsende: '31.12.2025',
+          monatsbeitrag: '49.99',
+          mindestlaufzeit_monate: '12',
+          kuendigungsfrist_monate: '3',
+          tarifname: 'Standard Tarif'
+        },
+        dojo: {
+          dojoname: 'Muster Dojo',
+          strasse: 'Dojo-Straße',
+          hausnummer: '1',
+          plz: '54321',
+          ort: 'Dojo-Stadt',
+          telefon: '09876 543210',
+          email: 'info@muster-dojo.de',
+          internet: 'www.muster-dojo.de'
+        },
+        system: {
+          datum: new Date().toLocaleDateString('de-DE'),
+          jahr: new Date().getFullYear(),
+          monat: new Date().toLocaleDateString('de-DE', { month: 'long' })
+        }
+      };
+    }
 
     // Template rendern
     let html = template.grapesjs_html;
