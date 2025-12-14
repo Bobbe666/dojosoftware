@@ -371,12 +371,48 @@ router.get('/:id/preview', async (req, res) => {
     // Template rendern
     let html = template.grapesjs_html;
 
-    // Platzhalter ersetzen
+    // Platzhalter ersetzen (unterstützt beide Formate: {{kategorie.feld}} und {{feld}})
     Object.entries(sampleData).forEach(([category, data]) => {
       Object.entries(data).forEach(([key, value]) => {
-        const placeholder = new RegExp(`{{${category}\\.${key}}}`, 'g');
-        html = html.replace(placeholder, value);
+        // Format: {{mitglied.vorname}}
+        const placeholderWithCategory = new RegExp(`{{${category}\\.${key}}}`, 'g');
+        html = html.replace(placeholderWithCategory, value || '');
+
+        // Format: {{vorname}} (ohne Kategorie - für Kompatibilität)
+        const placeholderWithoutCategory = new RegExp(`{{${key}}}`, 'g');
+        html = html.replace(placeholderWithoutCategory, value || '');
       });
+    });
+
+    // Zusätzliche Template-spezifische Platzhalter
+    const additionalMappings = {
+      'mitglied_id': sampleData.mitglied.mitgliedsnummer,
+      'anrede': 'Herr/Frau',
+      'mobil': sampleData.mitglied.telefon,
+      'dojo_name': sampleData.dojo.dojoname,
+      'dojo_adresse': `${sampleData.dojo.strasse} ${sampleData.dojo.hausnummer}, ${sampleData.dojo.plz} ${sampleData.dojo.ort}`,
+      'dojo_kontakt': `Tel: ${sampleData.dojo.telefon} | E-Mail: ${sampleData.dojo.email}`,
+      'tarif_name': sampleData.vertrag.tarifname,
+      'betrag': sampleData.vertrag.monatsbeitrag,
+      'aufnahmegebuehr': '0.00',
+      'mindestlaufzeit': `${sampleData.vertrag.mindestlaufzeit_monate} Monate`,
+      'nutzungsbeginn': sampleData.vertrag.vertragsbeginn,
+      'vertragsverlaengerung': '1 Monat',
+      'kuendigungsfrist': `${sampleData.vertrag.kuendigungsfrist_monate} Monate`,
+      'zahlweise': 'monatlich',
+      'zahlungsdienstleister': sampleData.dojo.dojoname,
+      'glaeubiger_id': 'DE00ZZZ00000000000',
+      'kontoinhaber': `${sampleData.mitglied.vorname} ${sampleData.mitglied.nachname}`,
+      'kreditinstitut': 'Musterbank',
+      'bic': 'DEUTDEDBXXX',
+      'iban': 'DE89 3704 0044 0532 0130 00',
+      'sepa_referenz': sampleData.vertrag.vertragsnummer,
+      'zahlungstermine': 'Siehe Tabelle unten'
+    };
+
+    Object.entries(additionalMappings).forEach(([placeholder, value]) => {
+      const regex = new RegExp(`{{${placeholder}}}`, 'g');
+      html = html.replace(regex, value || '');
     });
 
     // HTML mit CSS kombinieren
