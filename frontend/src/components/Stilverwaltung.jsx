@@ -962,9 +962,32 @@ const StilVerwaltung = () => {
   /**
    * Öffnet das Modal zum Anzeigen der Prüfungsinhalte
    */
-  const handleShowPruefungsinhalte = (graduierung) => {
-    setViewingGraduierung(graduierung);
-    setShowPruefungsinhalteModal(true);
+  const handleShowPruefungsinhalte = async (graduierung) => {
+    try {
+      // Lade die Prüfungsinhalte für diese Graduierung vom Backend
+      const response = await fetch(`${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${graduierung.graduierung_id}/pruefungsinhalte`);
+
+      if (response.ok) {
+        const data = await response.json();
+        // Füge die Prüfungsinhalte zur Graduierung hinzu
+        const graduierungMitInhalten = {
+          ...graduierung,
+          pruefungsinhalte: data.pruefungsinhalte || {}
+        };
+        setViewingGraduierung(graduierungMitInhalten);
+        setShowPruefungsinhalteModal(true);
+      } else {
+        // Falls nicht gefunden, zeige leeres Modal
+        console.log('Keine Prüfungsinhalte gefunden, zeige leeres Modal');
+        setViewingGraduierung({...graduierung, pruefungsinhalte: {}});
+        setShowPruefungsinhalteModal(true);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Prüfungsinhalte:', error);
+      // Zeige Modal trotzdem, aber leer
+      setViewingGraduierung({...graduierung, pruefungsinhalte: {}});
+      setShowPruefungsinhalteModal(true);
+    }
   };
 
   /**
