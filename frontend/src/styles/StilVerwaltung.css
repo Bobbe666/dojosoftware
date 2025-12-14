@@ -1366,18 +1366,28 @@ Styling für den Prüfungsinhalt-Bereich
   border-radius: 10px;           /* Abgerundete Ecken */
   padding: 1rem;                 /* Innenabstand */
   border: 1px solid rgba(255, 255, 255, 0.05); /* Sehr dezenter Rand */
+  display: flex;                 /* Flexbox für vertikales Layout */
+  flex-direction: column;        /* Vertikal ausrichten */
+  min-height: 300px;             /* Mindesthöhe für einheitliche Karten */
 }
 
 .category h5 {
   color: #ffd700;                /* Gold-Überschrift */
   margin: 0 0 0.75rem 0;         /* Abstand nach unten */
   font-size: 1.1rem;             /* Größere Schrift */
+  flex-shrink: 0;                /* Überschrift darf nicht schrumpfen */
 }
 
 .category ul {
   list-style: none;             /* Keine Bullet Points */
   padding: 0;                    /* Kein Padding */
   margin: 0 0 1rem 0;           /* Abstand nach unten */
+  flex: 1;                       /* Nimmt verfügbaren Platz ein */
+}
+
+.category .sub-tabs {
+  margin-top: auto;              /* Pusht die Buttons nach unten */
+  padding-top: 0.5rem;           /* Abstand nach oben */
 }
 
 .category li {
