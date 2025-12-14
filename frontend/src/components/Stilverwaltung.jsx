@@ -3576,20 +3576,20 @@ const StilVerwaltung = () => {
                             };
 
                             for (const grad of graduierungen) {
-                              // Erkenne Kategorie automatisch wenn nicht gesetzt
-                              const kategorie = grad.kategorie || detectKategorie(grad.name);
+                              // Erkenne Kategorie automatisch - hat Vorrang vor bestehender Kategorie
+                              const detectedKategorie = detectKategorie(grad.name);
+                              const kategorie = detectedKategorie || grad.kategorie;
                               let newWaitTime = grad.mindestzeit_monate;
-                              let updateKategorie = false;
+
+                              // Kategorie aktualisieren wenn sich die erkannte von der bestehenden unterscheidet
+                              const updateKategorie = detectedKategorie && detectedKategorie !== grad.kategorie;
 
                               if (kategorie === 'grundstufe') {
                                 newWaitTime = currentStil.wartezeit_grundstufe || 3;
-                                updateKategorie = !grad.kategorie; // Kategorie setzen wenn nicht vorhanden
                               } else if (kategorie === 'mittelstufe') {
                                 newWaitTime = currentStil.wartezeit_mittelstufe || 4;
-                                updateKategorie = !grad.kategorie;
                               } else if (kategorie === 'oberstufe') {
                                 newWaitTime = currentStil.wartezeit_oberstufe || 6;
-                                updateKategorie = !grad.kategorie;
                               }
 
                               // Nur aktualisieren wenn sich was geändert hat oder Kategorie gesetzt werden soll
