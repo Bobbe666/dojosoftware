@@ -321,9 +321,8 @@ router.get('/:id', (req, res) => {
       `;
 
       connection.query(graduierungenQuery, [stilId], (graduierungError, graduierungRows) => {
-        connection.release(); // Connection immer freigeben
-
         if (graduierungError) {
+          connection.release();
           console.error(`Fehler beim Abrufen der Graduierungen für Stil ${stilId}:`, graduierungError);
           return res.status(500).json({
             error: 'Fehler beim Abrufen der Graduierungen',
@@ -331,14 +330,76 @@ router.get('/:id', (req, res) => {
           });
         }
 
-        // Graduierungen ohne JSON-Parsing (pruefungsinhalte Spalte existiert nicht)
-        const parsedGraduierungen = graduierungRows;
+        // Lade Prüfungsinhalte für alle Graduierungen
+        const pruefungsinhalteQuery = `
+          SELECT
+            graduierung_id,
+            kategorie,
+            titel,
+            beschreibung,
+            reihenfolge,
+            pflicht,
+            inhalt_id
+          FROM pruefungsinhalte
+          WHERE graduierung_id IN (?)
+          AND aktiv = 1
+          ORDER BY kategorie, reihenfolge
+        `;
 
-        const stilDetails = {
-          ...stilRows[0],
-          graduierungen: parsedGraduierungen
-        };
-        res.json(stilDetails);
+        const graduierungIds = graduierungRows.map(g => g.graduierung_id);
+
+        if (graduierungIds.length === 0) {
+          connection.release();
+          const stilDetails = {
+            ...stilRows[0],
+            graduierungen: []
+          };
+          return res.json(stilDetails);
+        }
+
+        connection.query(pruefungsinhalteQuery, [graduierungIds], (inhaltError, inhaltRows) => {
+          connection.release(); // Connection immer freigeben
+
+          if (inhaltError) {
+            console.error(`Fehler beim Abrufen der Prüfungsinhalte:`, inhaltError);
+            // Fahre ohne Prüfungsinhalte fort
+            const stilDetails = {
+              ...stilRows[0],
+              graduierungen: graduierungRows
+            };
+            return res.json(stilDetails);
+          }
+
+          // Gruppiere Prüfungsinhalte nach Graduierung und Kategorie
+          const graduierungenMitInhalten = graduierungRows.map(grad => {
+            const inhalte = inhaltRows.filter(i => i.graduierung_id === grad.graduierung_id);
+
+            // Gruppiere nach Kategorie
+            const pruefungsinhalte = {};
+            inhalte.forEach(inhalt => {
+              if (!pruefungsinhalte[inhalt.kategorie]) {
+                pruefungsinhalte[inhalt.kategorie] = [];
+              }
+              pruefungsinhalte[inhalt.kategorie].push({
+                id: inhalt.inhalt_id,
+                inhalt: inhalt.titel,
+                reihenfolge: inhalt.reihenfolge,
+                pflicht: inhalt.pflicht === 1
+              });
+            });
+
+            return {
+              ...grad,
+              pruefungsinhalte
+            };
+          });
+
+          const stilDetails = {
+            ...stilRows[0],
+            graduierungen: graduierungenMitInhalten
+          };
+          res.json(stilDetails);
+        });
       });
     });
   });
@@ -1669,48 +1730,60 @@ router.put('/:stilId/graduierungen/:graduierungId/pruefungsinhalte', (req, res) 
     return res.status(400).json({ error: 'Prüfungsinhalte sind erforderlich' });
   }
 
-  // Konvertiere das Objekt zu JSON
-  const pruefungsinhalteJson = JSON.stringify(pruefungsinhalte);
+  // Lösche erst alle bestehenden Einträge für diese Graduierung
+  const deleteQuery = 'DELETE FROM pruefungsinhalte WHERE graduierung_id = ?';
 
-  // Prüfe, ob die Spalte existiert, falls nicht, erstelle sie
-  const addColumnQuery = `
-    ALTER TABLE graduierungen
-    ADD COLUMN IF NOT EXISTS pruefungsinhalte JSON DEFAULT NULL
-  `;
-
-  db.query(addColumnQuery, (alterError) => {
-    if (alterError && !alterError.message.includes('Duplicate column')) {
-      console.error('Fehler beim Hinzufügen der Spalte:', alterError);
-      // Fahre trotzdem fort, vielleicht existiert die Spalte bereits
+  db.query(deleteQuery, [graduierungId], (deleteError) => {
+    if (deleteError) {
+      console.error('❌ Fehler beim Löschen alter Prüfungsinhalte:', deleteError);
+      return res.status(500).json({ error: 'Fehler beim Löschen alter Prüfungsinhalte' });
     }
 
-    // Aktualisiere die Prüfungsinhalte
-    const updateQuery = `
-      UPDATE graduierungen
-      SET pruefungsinhalte = ?, aktualisiert_am = NOW()
-      WHERE graduierung_id = ? AND stil_id = ?
-    `;
+    // Konvertiere das JSON-Objekt in einzelne Datenbankeinträge
+    const insertPromises = [];
 
-    db.query(updateQuery, [pruefungsinhalteJson, graduierungId, stilId], (updateError, results) => {
-      if (updateError) {
-        console.error('❌ Fehler beim Aktualisieren der Prüfungsinhalte:', updateError);
-        return res.status(500).json({
-          error: 'Fehler beim Aktualisieren der Prüfungsinhalte',
-          details: updateError.message
+    Object.entries(pruefungsinhalte).forEach(([kategorie, inhalte]) => {
+      if (Array.isArray(inhalte)) {
+        inhalte.forEach((inhalt, index) => {
+          const insertQuery = `
+            INSERT INTO pruefungsinhalte
+            (graduierung_id, kategorie, titel, beschreibung, reihenfolge, pflicht, aktiv)
+            VALUES (?, ?, ?, '', ?, 0, 1)
+          `;
+
+          const values = [
+            graduierungId,
+            kategorie,
+            inhalt.inhalt || inhalt.titel || '',
+            inhalt.reihenfolge !== undefined ? inhalt.reihenfolge : index
+          ];
+
+          insertPromises.push(
+            new Promise((resolve, reject) => {
+              db.query(insertQuery, values, (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+              });
+            })
+          );
         });
       }
-
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ error: 'Graduierung nicht gefunden' });
-      }
-
-      console.log('✅ Prüfungsinhalte erfolgreich aktualisiert');
-      res.json({
-        success: true,
-        message: 'Prüfungsinhalte aktualisiert',
-        pruefungsinhalte: pruefungsinhalte
-      });
     });
+
+    // Führe alle Inserts aus
+    Promise.all(insertPromises)
+      .then(() => {
+        console.log('✅ Prüfungsinhalte erfolgreich gespeichert');
+        res.json({
+          success: true,
+          message: 'Prüfungsinhalte aktualisiert',
+          count: insertPromises.length
+        });
+      })
+      .catch(error => {
+        console.error('❌ Fehler beim Speichern der Prüfungsinhalte:', error);
+        res.status(500).json({ error: 'Fehler beim Speichern der Prüfungsinhalte' });
+      });
   });
 });
 
