@@ -376,23 +376,50 @@ const PruefungDurchfuehren = () => {
   };
 
   // Aktualisiert eine einzelne Bewertung
-  const updateBewertung = (pruefungId, inhaltId, field, value) => {
+  const updateBewertung = (pruefungId, inhaltId, kategorie, field, value) => {
+    console.log('🔧 updateBewertung called:', { pruefungId, inhaltId, kategorie, field, value });
+
     setBewertungen(prev => {
       const pruefungBewertungen = prev[pruefungId] || {};
-      const kategorieBewertungen = Object.keys(pruefungBewertungen).reduce((acc, kat) => {
-        acc[kat] = pruefungBewertungen[kat].map(bew => {
-          if (bew.inhalt_id === inhaltId) {
-            return { ...bew, [field]: value };
-          }
-          return bew;
-        });
-        return acc;
-      }, {});
 
-      return {
+      // Kopiere die Kategorie-Arrays, um Mutation zu vermeiden
+      const kategorieBewertungen = {};
+      Object.keys(pruefungBewertungen).forEach(key => {
+        kategorieBewertungen[key] = [...pruefungBewertungen[key]];
+      });
+
+      // Stelle sicher, dass Kategorie-Array existiert
+      if (!kategorieBewertungen[kategorie]) {
+        kategorieBewertungen[kategorie] = [];
+      }
+
+      // Finde bestehende Bewertung oder erstelle neue
+      const existingIndex = kategorieBewertungen[kategorie].findIndex(b => b.inhalt_id === inhaltId);
+
+      if (existingIndex >= 0) {
+        // Aktualisiere bestehende Bewertung - erstelle neues Array
+        kategorieBewertungen[kategorie] = kategorieBewertungen[kategorie].map((bew, idx) =>
+          idx === existingIndex
+            ? { ...bew, [field]: value }
+            : bew
+        );
+        console.log('✏️ Updated existing:', kategorieBewertungen[kategorie][existingIndex]);
+      } else {
+        // Erstelle neue Bewertung
+        const newBewertung = {
+          inhalt_id: inhaltId,
+          [field]: value
+        };
+        kategorieBewertungen[kategorie] = [...kategorieBewertungen[kategorie], newBewertung];
+        console.log('➕ Created new:', newBewertung);
+      }
+
+      const result = {
         ...prev,
         [pruefungId]: kategorieBewertungen
       };
+      console.log('📦 New bewertungen state:', result);
+      return result;
     });
   };
 
@@ -1029,6 +1056,100 @@ const PruefungDurchfuehren = () => {
                                     }}
                                   />
                                 </div>
+
+                                {/* Prüfungsinhalte & Bewertungen */}
+                                {pruefungsinhalte[pruefling.pruefung_id] && (
+                                  <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                                    <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.1rem' }}>
+                                      📋 Prüfungsinhalte bewerten
+                                    </h4>
+                                    {Object.entries(pruefungsinhalte[pruefling.pruefung_id]).map(([kategorie, inhalte]) => (
+                                      <div key={kategorie} style={{ marginBottom: '1.5rem' }}>
+                                        <h5 style={{
+                                          color: '#ffd700',
+                                          fontSize: '0.95rem',
+                                          marginBottom: '0.75rem',
+                                          borderBottom: '1px solid rgba(255,215,0,0.2)',
+                                          paddingBottom: '0.5rem'
+                                        }}>
+                                          {kategorie === 'grundtechniken' && '🥋 Grundtechniken'}
+                                          {kategorie === 'kata' && '🎭 Kata / Formen'}
+                                          {kategorie === 'kumite' && '⚔️ Kumite / Sparring'}
+                                          {kategorie === 'theorie' && '📚 Theorie'}
+                                        </h5>
+                                        <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                          {inhalte.map((inhalt, idx) => {
+                                            const inhaltId = inhalt.id || inhalt.inhalt_id;
+                                            const bewertung = bewertungen[pruefling.pruefung_id]?.[kategorie]?.find(b => b.inhalt_id === inhaltId) || {};
+                                            return (
+                                              <div key={`${kategorie}-${idx}-${inhaltId}`} style={{
+                                                display: 'flex',
+                                                gap: '1rem',
+                                                alignItems: 'center',
+                                                padding: '0.75rem',
+                                                background: 'rgba(0,0,0,0.2)',
+                                                borderRadius: '6px',
+                                                fontSize: '0.9rem'
+                                              }}>
+                                                <span style={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>{inhalt.inhalt || inhalt.titel}</span>
+
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '140px' }}>
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={bewertung.bestanden || false}
+                                                    onChange={(e) => updateBewertung(pruefling.pruefung_id, inhaltId, kategorie, 'bestanden', e.target.checked)}
+                                                    id={`checkbox-${kategorie}-${idx}-${inhaltId}`}
+                                                    style={{
+                                                      width: '20px',
+                                                      height: '20px',
+                                                      cursor: 'pointer',
+                                                      accentColor: '#ffd700',
+                                                      flexShrink: 0
+                                                    }}
+                                                  />
+                                                  <label
+                                                    htmlFor={`checkbox-${kategorie}-${idx}-${inhaltId}`}
+                                                    style={{
+                                                      color: 'rgba(255,255,255,0.7)',
+                                                      cursor: 'pointer',
+                                                      userSelect: 'none'
+                                                    }}
+                                                  >
+                                                    Bestanden
+                                                  </label>
+                                                </div>
+
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '120px' }}>
+                                                  <input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    min="0"
+                                                    max={inhalt.max_punktzahl || bewertung.max_punktzahl || 10}
+                                                    value={bewertung.punktzahl || ''}
+                                                    onChange={(e) => updateBewertung(pruefling.pruefung_id, inhaltId, kategorie, 'punktzahl', parseFloat(e.target.value) || 0)}
+                                                    style={{
+                                                      width: '70px',
+                                                      padding: '0.4rem',
+                                                      background: 'rgba(255,255,255,0.1)',
+                                                      border: '1px solid rgba(255,215,0,0.3)',
+                                                      borderRadius: '4px',
+                                                      color: '#fff',
+                                                      fontSize: '0.85rem',
+                                                      textAlign: 'center'
+                                                    }}
+                                                  />
+                                                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
+                                                    / {inhalt.max_punktzahl || bewertung.max_punktzahl || 10}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
 
                                 {/* Aktionen */}
                                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
