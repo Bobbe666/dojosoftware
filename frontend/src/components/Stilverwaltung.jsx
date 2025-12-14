@@ -3534,7 +3534,7 @@ const StilVerwaltung = () => {
                           borderColor: '#32CD32'
                         }}
                         onClick={async () => {
-                          if (!confirm('Möchten Sie die aktuellen Wartezeiten auf ALLE bestehenden Graduierungen anwenden?\n\nDies überschreibt die Mindestzeiten aller Graduierungen entsprechend ihrer Kategorie.')) {
+                          if (!confirm('Möchten Sie die aktuellen Wartezeiten auf ALLE bestehenden Graduierungen anwenden?\n\nDies überschreibt die Mindestzeiten aller Graduierungen entsprechend ihrer Kategorie.\n\nHinweis: Kategorien werden automatisch basierend auf dem Gürtelnamen erkannt.')) {
                             return;
                           }
 
@@ -3543,19 +3543,57 @@ const StilVerwaltung = () => {
                             const graduierungen = currentStil.graduierungen || [];
                             let updatedCount = 0;
 
-                            for (const grad of graduierungen) {
-                              let newWaitTime = grad.mindestzeit_monate;
+                            // Funktion zum automatischen Erkennen der Kategorie basierend auf dem Namen
+                            const detectKategorie = (name) => {
+                              const nameLower = name.toLowerCase();
 
-                              if (grad.kategorie === 'grundstufe') {
-                                newWaitTime = currentStil.wartezeit_grundstufe || 3;
-                              } else if (grad.kategorie === 'mittelstufe') {
-                                newWaitTime = currentStil.wartezeit_mittelstufe || 4;
-                              } else if (grad.kategorie === 'oberstufe') {
-                                newWaitTime = currentStil.wartezeit_oberstufe || 6;
+                              // DAN-Grade
+                              if (nameLower.includes('dan') || nameLower.includes('schwarzgurt')) {
+                                return 'dan';
                               }
 
-                              // Nur aktualisieren wenn sich was geändert hat
-                              if (newWaitTime !== grad.mindestzeit_monate) {
+                              // Meister
+                              if (nameLower.includes('rot-weiß') || nameLower.includes('meister')) {
+                                return 'meister';
+                              }
+
+                              // Oberstufe: Braun, Rot, kombiniert mit Schwarz
+                              if (nameLower.includes('braun') || nameLower.includes('rot')) {
+                                return 'oberstufe';
+                              }
+
+                              // Mittelstufe: Blau, Grün
+                              if (nameLower.includes('blau') || nameLower.includes('grün')) {
+                                return 'mittelstufe';
+                              }
+
+                              // Grundstufe: Weiß, Gelb, Orange
+                              if (nameLower.includes('weiß') || nameLower.includes('gelb') || nameLower.includes('orange')) {
+                                return 'grundstufe';
+                              }
+
+                              return null;
+                            };
+
+                            for (const grad of graduierungen) {
+                              // Erkenne Kategorie automatisch wenn nicht gesetzt
+                              const kategorie = grad.kategorie || detectKategorie(grad.name);
+                              let newWaitTime = grad.mindestzeit_monate;
+                              let updateKategorie = false;
+
+                              if (kategorie === 'grundstufe') {
+                                newWaitTime = currentStil.wartezeit_grundstufe || 3;
+                                updateKategorie = !grad.kategorie; // Kategorie setzen wenn nicht vorhanden
+                              } else if (kategorie === 'mittelstufe') {
+                                newWaitTime = currentStil.wartezeit_mittelstufe || 4;
+                                updateKategorie = !grad.kategorie;
+                              } else if (kategorie === 'oberstufe') {
+                                newWaitTime = currentStil.wartezeit_oberstufe || 6;
+                                updateKategorie = !grad.kategorie;
+                              }
+
+                              // Nur aktualisieren wenn sich was geändert hat oder Kategorie gesetzt werden soll
+                              if (newWaitTime !== grad.mindestzeit_monate || updateKategorie) {
                                 const response = await fetch(`${API_BASE}/stileguertel/graduierungen/${grad.graduierung_id}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
@@ -3566,7 +3604,7 @@ const StilVerwaltung = () => {
                                     mindestzeit_monate: newWaitTime,
                                     farbe_hex: grad.farbe_hex,
                                     farbe_sekundaer: grad.farbe_sekundaer,
-                                    kategorie: grad.kategorie,
+                                    kategorie: kategorie, // Verwende die erkannte oder vorhandene Kategorie
                                     dan_grad: grad.dan_grad,
                                     aktiv: grad.aktiv
                                   })
