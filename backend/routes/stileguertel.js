@@ -1611,9 +1611,17 @@ router.get('/:stilId/graduierungen/:graduierungId/pruefungsinhalte', (req, res) 
   }
 
   const query = `
-    SELECT pruefungsinhalte
-    FROM graduierungen
-    WHERE graduierung_id = ?
+    SELECT
+      inhalt_id,
+      kategorie,
+      titel,
+      beschreibung,
+      reihenfolge,
+      pflicht,
+      aktiv
+    FROM pruefungsinhalte
+    WHERE graduierung_id = ? AND aktiv = 1
+    ORDER BY kategorie, reihenfolge
   `;
 
   db.query(query, [graduierungId], (error, results) => {
@@ -1622,20 +1630,22 @@ router.get('/:stilId/graduierungen/:graduierungId/pruefungsinhalte', (req, res) 
       return res.status(500).json({ error: 'Fehler beim Abrufen der Prüfungsinhalte' });
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'Graduierung nicht gefunden' });
-    }
+    // Gruppiere Prüfungsinhalte nach Kategorie
+    const pruefungsinhalte = {};
+    results.forEach(inhalt => {
+      if (!pruefungsinhalte[inhalt.kategorie]) {
+        pruefungsinhalte[inhalt.kategorie] = [];
+      }
+      pruefungsinhalte[inhalt.kategorie].push({
+        id: inhalt.inhalt_id,
+        titel: inhalt.titel,
+        beschreibung: inhalt.beschreibung,
+        pflicht: inhalt.pflicht === 1,
+        reihenfolge: inhalt.reihenfolge
+      });
+    });
 
-    // Parse JSON wenn vorhanden
-    let pruefungsinhalte = {};
-    try {
-      pruefungsinhalte = results[0].pruefungsinhalte ? JSON.parse(results[0].pruefungsinhalte) : {};
-    } catch (parseError) {
-      console.error('Fehler beim Parsen der Prüfungsinhalte:', parseError);
-      pruefungsinhalte = results[0].pruefungsinhalte || {};
-    }
-
-    console.log('✅ Prüfungsinhalte gefunden:', pruefungsinhalte);
+    console.log('✅ Prüfungsinhalte gefunden:', Object.keys(pruefungsinhalte).length, 'Kategorien');
     res.json({ pruefungsinhalte });
   });
 });
