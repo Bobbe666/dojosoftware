@@ -709,42 +709,59 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
     }
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
     if (!editor) return;
 
     try {
-      // Get current HTML and CSS from editor
-      const html = editor.getHtml();
-      const css = editor.getCss();
+      // Falls Template bereits gespeichert ist, verwende die Backend-Preview mit echten Daten
+      if (templateId) {
+        console.log('📡 Lade Vorschau mit echten Daten für Template:', templateId);
+        const response = await axios.get(`/vertragsvorlagen/${templateId}/preview`);
+        const blob = new Blob([response.data], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
 
-      // Create a complete HTML document with styles
-      const fullHtml = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <style>${css}</style>
-            <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-          </head>
-          <body style="padding: 20px;">
-            ${html}
-          </body>
-        </html>
-      `;
+        // Clean up old URL if exists
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
 
-      // Create blob and URL for preview
-      const blob = new Blob([fullHtml], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
+        setPreviewUrl(url);
+      } else {
+        // Für neue (noch nicht gespeicherte) Templates: lokale Vorschau mit Platzhaltern
+        console.log('📝 Zeige lokale Vorschau (Template noch nicht gespeichert)');
+        const html = editor.getHtml();
+        const css = editor.getCss();
 
-      // Clean up old URL if exists
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+        const fullHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <style>${css}</style>
+              <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+            </head>
+            <body style="padding: 20px;">
+              ${html}
+              <div style="margin-top: 40px; padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+                <p style="margin: 0 0 10px 0;"><strong>ℹ️ Hinweis:</strong> Dies ist eine neue, noch nicht gespeicherte Vorlage.</p>
+                <p style="margin: 0;"><strong>Speichern Sie die Vorlage</strong>, um eine Vorschau mit echten Daten aus der Datenbank zu sehen.</p>
+              </div>
+            </body>
+          </html>
+        `;
+
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+
+        setPreviewUrl(url);
       }
-
-      setPreviewUrl(url);
     } catch (error) {
       console.error('Fehler bei der Vorschau:', error);
-      alert('❌ Fehler bei der Vorschau-Erstellung');
+      alert('❌ Fehler bei der Vorschau-Erstellung: ' + error.message);
     }
   };
 
