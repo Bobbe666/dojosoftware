@@ -1081,15 +1081,6 @@ const PruefungDurchfuehren = () => {
                                           {inhalte.map((inhalt, idx) => {
                                             const inhaltId = inhalt.id || inhalt.inhalt_id;
                                             const bewertung = bewertungen[pruefling.pruefung_id]?.[kategorie]?.find(b => b.inhalt_id === inhaltId) || {};
-                                            console.log('🔍 Rendering:', {
-                                              inhalt_name: inhalt.inhalt || inhalt.titel,
-                                              inhaltId,
-                                              kategorie,
-                                              bewertung,
-                                              bewertung_bestanden: bewertung.bestanden,
-                                              checkbox_checked: bewertung.bestanden || false,
-                                              alle_bewertungen_in_kategorie: bewertungen[pruefling.pruefung_id]?.[kategorie]
-                                            });
                                             return (
                                               <div key={`${kategorie}-${idx}-${inhaltId}`} style={{
                                                 display: 'flex',
@@ -1102,30 +1093,29 @@ const PruefungDurchfuehren = () => {
                                               }}>
                                                 <span style={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>{inhalt.inhalt || inhalt.titel}</span>
 
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '140px' }}>
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={bewertung.bestanden || false}
-                                                    onChange={(e) => updateBewertung(pruefling.pruefung_id, inhaltId, kategorie, 'bestanden', e.target.checked)}
-                                                    id={`checkbox-${kategorie}-${idx}-${inhaltId}`}
+                                                <div style={{ minWidth: '140px' }}>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => updateBewertung(pruefling.pruefung_id, inhaltId, kategorie, 'bestanden', !bewertung.bestanden)}
+                                                    className={`btn-toggle ${bewertung.bestanden ? 'btn-toggle-success active' : 'btn-toggle-neutral'}`}
                                                     style={{
-                                                      width: '20px',
-                                                      height: '20px',
-                                                      cursor: 'pointer',
-                                                      accentColor: '#ffd700',
-                                                      flexShrink: 0
-                                                    }}
-                                                  />
-                                                  <label
-                                                    htmlFor={`checkbox-${kategorie}-${idx}-${inhaltId}`}
-                                                    style={{
-                                                      color: 'rgba(255,255,255,0.7)',
-                                                      cursor: 'pointer',
-                                                      userSelect: 'none'
+                                                      padding: '0.4rem 0.8rem',
+                                                      fontSize: '0.8rem',
+                                                      width: '100%'
                                                     }}
                                                   >
-                                                    Bestanden
-                                                  </label>
+                                                    {bewertung.bestanden ? (
+                                                      <>
+                                                        <Check size={14} style={{ marginRight: '0.3rem' }} />
+                                                        Bestanden
+                                                      </>
+                                                    ) : (
+                                                      <>
+                                                        <X size={14} style={{ marginRight: '0.3rem' }} />
+                                                        Offen
+                                                      </>
+                                                    )}
+                                                  </button>
                                                 </div>
 
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '120px' }}>
