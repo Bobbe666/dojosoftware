@@ -3556,17 +3556,27 @@ const StilVerwaltung = () => {
 
                               // Nur aktualisieren wenn sich was geändert hat
                               if (newWaitTime !== grad.mindestzeit_monate) {
-                                const response = await fetch(`${API_BASE}/stile/graduierungen/${grad.graduierung_id}`, {
+                                const response = await fetch(`${API_BASE}/stileguertel/graduierungen/${grad.graduierung_id}`, {
                                   method: 'PUT',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({
-                                    ...grad,
-                                    mindestzeit_monate: newWaitTime
+                                    name: grad.name,
+                                    reihenfolge: grad.reihenfolge,
+                                    trainingsstunden_min: grad.trainingsstunden_min,
+                                    mindestzeit_monate: newWaitTime,
+                                    farbe_hex: grad.farbe_hex,
+                                    farbe_sekundaer: grad.farbe_sekundaer,
+                                    kategorie: grad.kategorie,
+                                    dan_grad: grad.dan_grad,
+                                    aktiv: grad.aktiv
                                   })
                                 });
 
                                 if (response.ok) {
                                   updatedCount++;
+                                  console.log(`✅ ${grad.name} aktualisiert: ${grad.mindestzeit_monate} → ${newWaitTime} Monate`);
+                                } else {
+                                  console.error(`❌ Fehler beim Aktualisieren von ${grad.name}`);
                                 }
                               }
                             }
