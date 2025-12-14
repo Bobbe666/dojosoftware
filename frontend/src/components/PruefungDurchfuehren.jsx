@@ -1081,6 +1081,13 @@ const PruefungDurchfuehren = () => {
                                           {inhalte.map((inhalt, idx) => {
                                             const inhaltId = inhalt.id || inhalt.inhalt_id;
                                             const bewertung = bewertungen[pruefling.pruefung_id]?.[kategorie]?.find(b => b.inhalt_id === inhaltId) || {};
+                                            console.log('🔍 Rendering:', {
+                                              inhalt_name: inhalt.inhalt || inhalt.titel,
+                                              inhaltId,
+                                              kategorie,
+                                              bewertung,
+                                              alle_bewertungen_in_kategorie: bewertungen[pruefling.pruefung_id]?.[kategorie]
+                                            });
                                             return (
                                               <div key={`${kategorie}-${idx}-${inhaltId}`} style={{
                                                 display: 'flex',
