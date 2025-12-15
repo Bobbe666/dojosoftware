@@ -93,12 +93,12 @@ const NotificationSystem = () => {
     loadTemplates();
     loadHistory();
     loadPushSubscriptions();
-    loadTimelineData();
+    // loadTimelineData(); // TODO: Endpoint noch nicht implementiert
   }, []);
 
   const loadDashboardData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dashboard/notifications-dashboard`);
+      const response = await fetch(`${config.apiBaseUrl}/notifications/dashboard`);
       const data = await response.json();
       if (data.success) {
         setDashboardData(data);
@@ -170,8 +170,8 @@ const NotificationSystem = () => {
 
   const loadRecipients = async () => {
     try {
-      // Versuche zuerst die Dashboard-Route
-      const response = await fetch(`${config.apiBaseUrl}/dashboard/notification-recipients`);
+      // Versuche zuerst die Notifications-Route
+      const response = await fetch(`${config.apiBaseUrl}/notifications/recipients`);
       const data = await response.json();
       if (data.success) {
         setRecipients({
@@ -277,7 +277,7 @@ const NotificationSystem = () => {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dashboard/notification-templates`);
+      const response = await fetch(`${config.apiBaseUrl}/notifications/templates`);
       const data = await response.json();
       if (data.success) {
         setTemplates(data.templates);
@@ -301,7 +301,7 @@ const NotificationSystem = () => {
 
   const loadPushSubscriptions = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dashboard/push-subscriptions`);
+      const response = await fetch(`${config.apiBaseUrl}/notifications/push/subscriptions`);
       const data = await response.json();
       if (data.success) {
         setPushSubscriptions(data.subscriptions);
@@ -485,7 +485,7 @@ const NotificationSystem = () => {
     setSuccess('');
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dashboard/push-send`, {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/push/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

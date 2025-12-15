@@ -509,6 +509,19 @@ try {
     });
 }
 
+// 15.1 EMAIL SERVICE - NEU
+try {
+  const emailServiceRouter = require(path.join(__dirname, "routes", "emailService.js"));
+  app.use("/api/email-service", emailServiceRouter);
+  logger.success('Route gemountet', { path: '/api/email-service' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'email-service',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 16. PRÜFUNGSVERWALTUNG (Gurtprüfungen & Exam Management) - NEU
 try {
   const pruefungenRouter = require(path.join(__dirname, "routes", "pruefungen.js"));
