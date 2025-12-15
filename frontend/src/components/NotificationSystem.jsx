@@ -1303,12 +1303,13 @@ const NotificationSystem = () => {
                     left: 0,
                     right: 0,
                     backgroundColor: 'white',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    maxHeight: '200px',
+                    border: '2px solid #1976d2',
+                    borderRadius: '6px',
+                    maxHeight: '250px',
                     overflowY: 'auto',
                     zIndex: 1000,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    marginTop: '0.25rem'
                   }}>
                     {recipients.alle
                       .filter(r =>
@@ -1330,23 +1331,35 @@ const NotificationSystem = () => {
                             setMemberSearch('');
                           }}
                           style={{
-                            padding: '0.75rem',
+                            padding: '0.75rem 1rem',
                             cursor: 'pointer',
-                            borderBottom: '1px solid #f0f0f0',
-                            transition: 'background-color 0.2s'
+                            borderBottom: '1px solid #e0e0e0',
+                            transition: 'all 0.2s'
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e3f2fd';
+                            e.currentTarget.style.borderLeftWidth = '4px';
+                            e.currentTarget.style.borderLeftColor = '#1976d2';
+                            e.currentTarget.style.borderLeftStyle = 'solid';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'white';
+                            e.currentTarget.style.borderLeftWidth = '0';
+                          }}
                         >
-                          <div style={{ fontWeight: '500' }}>{member.name}</div>
-                          <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                          <div style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '0.95rem', marginBottom: '0.25rem' }}>
+                            {member.name}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: '#444' }}>
                             {member.email}
                             <span style={{
                               marginLeft: '0.5rem',
-                              padding: '2px 6px',
-                              backgroundColor: '#e3f2fd',
-                              borderRadius: '3px',
-                              fontSize: '0.75rem'
+                              padding: '3px 8px',
+                              backgroundColor: '#1976d2',
+                              color: 'white',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
                             }}>
                               {member.type}
                             </span>
