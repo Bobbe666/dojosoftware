@@ -285,7 +285,7 @@ const NotificationSystem = () => {
 
   const loadHistory = async (page = 1) => {
     try {
-      const response = await fetch(`/dashboard/notification-history?page=${page}&limit=20`);
+      const response = await fetch(`${config.apiBaseUrl}/notifications/history?page=${page}&limit=20`);
       const data = await response.json();
       if (data.success) {
         setHistory(data);
