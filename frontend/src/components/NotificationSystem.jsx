@@ -571,6 +571,29 @@ const NotificationSystem = () => {
     }
   };
 
+  const deleteBulkNotification = async (id) => {
+    if (!window.confirm('⚠️ ACHTUNG: Diese Aktion löscht die Benachrichtigung für ALLE Empfänger!\n\nMöchten Sie wirklich fortfahren?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/history/bulk/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(`${data.deletedCount} Benachrichtigung(en) erfolgreich gelöscht`);
+        // History neu laden
+        await loadHistory();
+      } else {
+        setError(data.message || 'Fehler beim Löschen der Benachrichtigungen');
+      }
+    } catch (error) {
+      setError('Fehler beim Löschen der Benachrichtigungen');
+    }
+  };
+
   // ===================================================================
   // 🎨 RENDER FUNCTIONS
   // ===================================================================
@@ -1666,9 +1689,41 @@ const NotificationSystem = () => {
                       e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
                       e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
                     }}
-                    title="Benachrichtigung löschen"
+                    title="Nur diesen Empfänger löschen"
                   >
                     🗑️
+                  </button>
+                  <button
+                    onClick={() => deleteBulkNotification(group.id)}
+                    style={{
+                      background: 'rgba(220, 38, 38, 0.3)',
+                      color: '#dc2626',
+                      border: '2px solid rgba(220, 38, 38, 0.5)',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: '700',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.4)';
+                      e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.7)';
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.3)';
+                      e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.5)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="⚠️ Für ALLE Empfänger löschen"
+                  >
+                    <span>🗑️🗑️</span>
+                    <span style={{ fontSize: '0.75rem' }}>Alle</span>
                   </button>
                 </div>
 

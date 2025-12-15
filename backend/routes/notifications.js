@@ -549,6 +549,46 @@ router.delete('/history/:id', async (req, res) => {
   }
 });
 
+// Alle Benachrichtigungen mit gleichem Subject und Timestamp löschen (für alle Empfänger)
+router.delete('/history/bulk/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Hole zuerst Subject und Timestamp der Benachrichtigung
+    const notification = await new Promise((resolve, reject) => {
+      db.query('SELECT subject, created_at FROM notifications WHERE id = ?', [id], (err, results) => {
+        if (err) reject(err);
+        else resolve(results[0]);
+      });
+    });
+
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Benachrichtigung nicht gefunden' });
+    }
+
+    // Lösche alle Benachrichtigungen mit gleichem Subject und Timestamp
+    const result = await new Promise((resolve, reject) => {
+      db.query(
+        'DELETE FROM notifications WHERE subject = ? AND created_at = ?',
+        [notification.subject, notification.created_at],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
+    });
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} Benachrichtigung(en) erfolgreich gelöscht`,
+      deletedCount: result.affectedRows
+    });
+  } catch (error) {
+    console.error('Bulk Delete Notification Fehler:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Löschen der Benachrichtigungen' });
+  }
+});
+
 // ===================================================================
 // EMPFÄNGER GRUPPEN
 // ===================================================================
