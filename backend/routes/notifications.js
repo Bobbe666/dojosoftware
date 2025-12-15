@@ -346,34 +346,22 @@ router.post('/push/subscribe', async (req, res) => {
 router.post('/push/send', async (req, res) => {
   try {
     const { recipients, title, message, data, icon, badge, url } = req.body;
-    
+
     if (!title || !message) {
       return res.status(400).json({ success: false, message: 'Titel und Nachricht sind erforderlich' });
+    }
+
+    if (!recipients || recipients.length === 0) {
+      return res.status(400).json({ success: false, message: 'Mindestens ein Empfänger erforderlich' });
     }
 
     const results = [];
     let sentCount = 0;
 
-    // Hole alle aktiven Push-Subscriptions
-    const subscriptions = await new Promise((resolve, reject) => {
-      let query = 'SELECT * FROM push_subscriptions WHERE is_active = TRUE';
-      let params = [];
-      
-      if (recipients && recipients.length > 0) {
-        query += ' AND user_id IN (' + recipients.map(() => '?').join(',') + ')';
-        params = recipients;
-      }
-      
-      db.query(query, params, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
-
-    // Simuliere Push-Versand (in echter Implementierung würde hier web-push verwendet)
-    for (const subscription of subscriptions) {
+    // Sende Push-Notification an jeden Empfänger
+    for (const recipient of recipients) {
       try {
-        // Hier würde der echte Push-Versand stattfinden
+        // Hier würde der echte Push-Versand stattfinden (web-push)
         // const pushPayload = JSON.stringify({
         //   title: title,
         //   body: message,
@@ -381,36 +369,50 @@ router.post('/push/send', async (req, res) => {
         //   badge: badge || '/icons/badge-72x72.png',
         //   data: data || { url: url || '/' }
         // });
-        
+
         // await webpush.sendNotification(subscription, pushPayload);
-        
-        // Push-Notification loggen
+
+        // Push-Notification in Datenbank loggen
         await new Promise((resolve, reject) => {
           db.query(`
             INSERT INTO notifications (type, recipient, subject, message, status, created_at)
             VALUES (?, ?, ?, ?, 'sent', NOW())
-          `, ['push', `User ${subscription.user_id}`, title, message], (err, result) => {
+          `, ['push', recipient, title, message], (err, result) => {
             if (err) reject(err);
             else resolve(result);
           });
         });
 
-        results.push({ recipient: `User ${subscription.user_id}`, status: 'sent' });
+        results.push({ recipient: recipient, status: 'sent' });
         sentCount++;
       } catch (error) {
-        results.push({ 
-          recipient: `User ${subscription.user_id}`, 
-          status: 'failed', 
-          error: error.message 
+        console.error(`Fehler beim Senden an ${recipient}:`, error);
+
+        // Fehlerhafte Push-Notification loggen
+        await new Promise((resolve, reject) => {
+          db.query(`
+            INSERT INTO notifications (type, recipient, subject, message, status, error_message, created_at)
+            VALUES (?, ?, ?, ?, 'failed', ?, NOW())
+          `, ['push', recipient, title, message, error.message], (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
+        });
+
+        results.push({
+          recipient: recipient,
+          status: 'failed',
+          error: error.message
         });
       }
     }
 
-    res.json({ 
-      success: true, 
-      message: `${sentCount} von ${subscriptions.length} Push-Nachrichten erfolgreich gesendet`,
+    res.json({
+      success: true,
+      message: `${sentCount} von ${recipients.length} Push-Nachrichten erfolgreich gesendet`,
       results,
-      totalSubscriptions: subscriptions.length
+      sentCount,
+      totalRecipients: recipients.length
     });
   } catch (error) {
     console.error('Push Send Fehler:', error);

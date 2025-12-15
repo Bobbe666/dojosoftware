@@ -1541,6 +1541,8 @@ const NotificationSystem = () => {
           subject: notification.subject,
           type: notification.type,
           timestamp: notification.created_at,
+          message: notification.message,
+          recipient: notification.recipient,
           total_sent: notification.total_sent || 1,
           total_read: notification.total_read || 0,
           status: notification.status
@@ -1617,6 +1619,69 @@ const NotificationSystem = () => {
                      group.status === 'failed' ? '❌ Fehlgeschlagen' : '⏳ Ausstehend'}
                   </div>
                 </div>
+
+                {/* Nachrichteninhalt */}
+                {group.message && (
+                  <div style={{
+                    marginBottom: '0.8rem',
+                    padding: '0.8rem',
+                    background: 'rgba(20, 20, 30, 0.5)',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid #ffd700'
+                  }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      marginBottom: '0.4rem',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      Nachricht
+                    </div>
+                    <div
+                      style={{
+                        color: '#e0e0e0',
+                        fontSize: '0.9rem',
+                        lineHeight: '1.5',
+                        maxHeight: '100px',
+                        overflowY: 'auto'
+                      }}
+                      dangerouslySetInnerHTML={{ __html: group.message }}
+                    />
+                  </div>
+                )}
+
+                {/* Empfänger anzeigen */}
+                {group.recipient && (
+                  <div style={{
+                    marginBottom: '0.8rem',
+                    padding: '0.6rem 0.8rem',
+                    background: 'rgba(96, 165, 250, 0.1)',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(96, 165, 250, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>👤</span>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      fontWeight: '600',
+                      textTransform: 'uppercase'
+                    }}>
+                      Empfänger:
+                    </span>
+                    <span style={{
+                      color: '#60a5fa',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}>
+                      {group.recipient}
+                    </span>
+                  </div>
+                )}
 
                 {/* Statistiken */}
                 <div style={{
