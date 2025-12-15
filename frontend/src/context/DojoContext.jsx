@@ -119,9 +119,17 @@ export const DojoProvider = ({ children }) => {
 
       const data = await response.json();
       console.log('✅ Dojos geladen:', data);
-      setDojos(data);
+
+      // Stelle sicher, dass data ein Array ist
+      if (Array.isArray(data)) {
+        setDojos(data);
+      } else {
+        console.error('❌ Dojos API returned non-array:', data);
+        setDojos([]); // Fallback zu leerem Array
+      }
     } catch (error) {
       console.error('❌ Fehler beim Laden der Dojos:', error);
+      setDojos([]); // Stelle sicher, dass dojos immer ein Array ist
     } finally {
       setLoading(false);
     }
