@@ -472,20 +472,25 @@ router.delete('/push/subscribe/:id', async (req, res) => {
 
 router.get('/history', async (req, res) => {
   try {
-    const { page = 1, limit = 20, type, status } = req.query;
+    const { page = 1, limit = 20, type, status, recipient } = req.query;
     const offset = (page - 1) * limit;
-    
+
     let whereClause = '1=1';
     let params = [];
-    
+
     if (type) {
       whereClause += ' AND type = ?';
       params.push(type);
     }
-    
+
     if (status) {
       whereClause += ' AND status = ?';
       params.push(status);
+    }
+
+    if (recipient) {
+      whereClause += ' AND recipient = ?';
+      params.push(recipient);
     }
     
     // Gesamtanzahl

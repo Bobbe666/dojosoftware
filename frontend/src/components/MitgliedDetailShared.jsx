@@ -145,6 +145,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [finanzDaten, setFinanzDaten] = useState([]);
   const [statistikDaten, setStatistikDaten] = useState({});
   const [verträge, setVerträge] = useState([]);
+
+  // Nachrichten State
+  const [memberNotifications, setMemberNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [showNewVertrag, setShowNewVertrag] = useState(false);
   const [editingVertrag, setEditingVertrag] = useState(null);
   const [showVertragDetails, setShowVertragDetails] = useState(false);
@@ -876,6 +880,33 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
         return; // Request was cancelled, don't show error
       }
       console.error('❌ Fehler beim Laden archivierter Mandate:', error);
+    }
+  };
+
+  const loadMemberNotifications = async (signal = null) => {
+    if (!mitglied?.email) return;
+
+    setNotificationsLoading(true);
+    try {
+      const response = await axios.get(`/notifications/history`, {
+        params: {
+          recipient: mitglied.email,
+          limit: 100
+        },
+        signal: signal || undefined
+      });
+
+      if (response.data.success) {
+        setMemberNotifications(response.data.notifications || []);
+        console.log('✅ Mitglieder-Benachrichtigungen geladen:', response.data.notifications?.length);
+      }
+    } catch (error) {
+      if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        return; // Request was cancelled, don't show error
+      }
+      console.error('❌ Fehler beim Laden der Benachrichtigungen:', error);
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -1623,6 +1654,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   }, [activeTab, mitglied?.dojo_id, isAdmin, id]);
 
+  // Load member notifications when nachrichten tab is active
+  useEffect(() => {
+    if (activeTab === "nachrichten" && mitglied?.email) {
+      const controller = new AbortController();
+      loadMemberNotifications(controller.signal);
+
+      return () => {
+        controller.abort();
+      };
+    }
+  }, [activeTab, mitglied?.email]);
+
   const handleChange = (e, key) => {
     let value = e.target.value;
     
@@ -1856,6 +1899,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     { key: "dokumente", label: "Dokumente", icon: "📁" },
     { key: "familie", label: "Familie & Vertreter", icon: "👨‍👩‍👧‍👦" },
     { key: "gurt_stil", label: "Gurt & Stil / Prüfung", icon: "🥋" },
+    { key: "nachrichten", label: "Nachrichten", icon: "📬" },
     { key: "statistiken", label: "Statistiken", icon: "📊" },
     { key: "sicherheit", label: "Sicherheit", icon: "🔒" },
   ];
@@ -5441,6 +5485,125 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
+          {activeTab === "nachrichten" && (
+            <div style={{padding: '1.5rem', background: 'transparent'}}>
+              <div style={{marginBottom: '1.5rem'}}>
+                <h3 style={{color: '#ffd700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                  📬 Nachrichtenarchiv
+                </h3>
+                <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem'}}>
+                  Alle Benachrichtigungen die an {mitglied?.vorname} {mitglied?.nachname} ({mitglied?.email}) gesendet wurden
+                </p>
+              </div>
+
+              {notificationsLoading ? (
+                <div style={{textAlign: 'center', padding: '2rem', color: 'rgba(255, 255, 255, 0.7)'}}>
+                  Lade Benachrichtigungen...
+                </div>
+              ) : memberNotifications.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '3rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)'
+                }}>
+                  <div style={{fontSize: '3rem', marginBottom: '1rem'}}>📭</div>
+                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.1rem'}}>
+                    Noch keine Benachrichtigungen erhalten
+                  </p>
+                </div>
+              ) : (
+                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                  {memberNotifications.map((notification, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        background: 'rgba(30, 30, 45, 0.8)',
+                        border: '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '10px',
+                        padding: '1rem',
+                        backdropFilter: 'blur(10px)'
+                      }}
+                    >
+                      {/* Header */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.8rem',
+                        marginBottom: '0.8rem'
+                      }}>
+                        <div style={{fontSize: '1.5rem'}}>
+                          {notification.type === 'email' ? '📧' : '📱'}
+                        </div>
+                        <div style={{flex: 1}}>
+                          <h4 style={{
+                            color: '#ffd700',
+                            margin: 0,
+                            fontSize: '1rem',
+                            fontWeight: '600'
+                          }}>
+                            {notification.subject}
+                          </h4>
+                          <div style={{
+                            color: '#808090',
+                            fontSize: '0.85rem',
+                            marginTop: '0.2rem'
+                          }}>
+                            {new Date(notification.created_at).toLocaleString('de-DE')}
+                          </div>
+                        </div>
+                        <div style={{
+                          background: notification.status === 'sent' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                          color: notification.status === 'sent' ? '#22c55e' : '#ef4444',
+                          padding: '0.3rem 0.8rem',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: '600'
+                        }}>
+                          {notification.status === 'sent' ? '✅ Gesendet' :
+                           notification.status === 'failed' ? '❌ Fehlgeschlagen' : '⏳ Ausstehend'}
+                        </div>
+                      </div>
+
+                      {/* Nachrichteninhalt */}
+                      {notification.message && (
+                        <div style={{
+                          padding: '0.8rem',
+                          background: 'rgba(20, 20, 30, 0.5)',
+                          borderRadius: '8px',
+                          borderLeft: '3px solid #ffd700',
+                          marginTop: '0.8rem'
+                        }}>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#a0a0b0',
+                            marginBottom: '0.4rem',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                          }}>
+                            Nachricht
+                          </div>
+                          <div
+                            style={{
+                              color: '#e0e0e0',
+                              fontSize: '0.9rem',
+                              lineHeight: '1.5',
+                              maxHeight: '150px',
+                              overflowY: 'auto'
+                            }}
+                            dangerouslySetInnerHTML={{ __html: notification.message }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === "statistiken" && (
             <div style={{padding: '1rem', background: 'transparent'}}>
               {/* Kompakte Statistik-Karten Grid */}
@@ -6912,6 +7075,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       <strong>💰 Monatsbeitrag:</strong> €{parseFloat(selectedVertrag.monatsbeitrag).toFixed(2)}
                     </div>
                   )}
+                  {selectedVertrag.aufnahmegebuehr_cents && (
+                    <div className="detail-item">
+                      <strong>💵 Aufnahmegebühr:</strong> €{(selectedVertrag.aufnahmegebuehr_cents / 100).toFixed(2)}
+                    </div>
+                  )}
                   <div className="detail-item">
                     <strong>📄 Vertrags-PDF:</strong>{' '}
                     <button
@@ -7026,6 +7194,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   {selectedVertrag.monatsbeitrag && (
                     <div className="detail-item">
                       <strong>Monatsbeitrag:</strong> €{parseFloat(selectedVertrag.monatsbeitrag).toFixed(2)}
+                    </div>
+                  )}
+                  {selectedVertrag.aufnahmegebuehr_cents && (
+                    <div className="detail-item">
+                      <strong>Aufnahmegebühr:</strong> €{(selectedVertrag.aufnahmegebuehr_cents / 100).toFixed(2)}
                     </div>
                   )}
                   {selectedVertrag.rabatt_prozent > 0 && (
@@ -7486,6 +7659,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         {selectedVertrag.monatsbeitrag ? `${parseFloat(selectedVertrag.monatsbeitrag).toFixed(2)} €` : 'Nicht festgelegt'}
                       </div>
                     </div>
+                    {selectedVertrag.aufnahmegebuehr_cents && (
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Aufnahmegebühr</div>
+                        <div style={{ fontSize: '0.95rem', color: '#ff9800', fontWeight: '600' }}>
+                          {(selectedVertrag.aufnahmegebuehr_cents / 100).toFixed(2)} €
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Zahlungsrhythmus</div>
                       <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
