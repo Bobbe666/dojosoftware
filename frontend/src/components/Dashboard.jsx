@@ -45,17 +45,18 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [userDisplayName, setUserDisplayName] = useState(''); // Angezeigter Username/Name
 
-  // Kollaps-State für Dashboard-Sektionen (alle standardmäßig geöffnet)
+  // Kollaps-State für Dashboard-Sektionen (nur Check-in standardmäßig geöffnet)
   const [collapsedSections, setCollapsedSections] = useState({
     checkin: false,
-    mitglieder: false,
-    verwaltung: false,
-    einstellungen: false,
-    pruefungswesen: false,
-    artikelverwaltung: false,
-    berichte: false,
-    finanzen: false,
-    events: false
+    mitglieder: true,
+    verwaltung: true,
+    personal: true,
+    einstellungen: true,
+    pruefungswesen: true,
+    artikelverwaltung: true,
+    berichte: true,
+    finanzen: true,
+    events: true
   });
 
   let role = 'mitglied';
@@ -296,7 +297,11 @@ function Dashboard() {
       title: 'Gruppen',
       description: 'Trainingsgruppen verwalten',
       path: '/dashboard/gruppen'
-    },
+    }
+  ];
+
+  // ✨ Personal - Trainer & Mitarbeiter ✨
+  const personalCards = [
     {
       icon: '👨‍🏫',
       title: 'Trainer',
@@ -1061,53 +1066,6 @@ function Dashboard() {
                       )}
                     </div>
 
-                    {/* ✨ Finanzen Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('finanzen')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">💰</span>
-                          <span className="section-text">Finanzen</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.finanzen ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.finanzen && (
-                        <div className="nav-cards">
-                        {finanzenCards.map((card, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleNavigation(card.path)}
-                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
-                          >
-                            {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : 'live'}`}>
-                                {card.badge}
-                              </div>
-                            )}
-                            <div className="nav-content">
-                              <div className="nav-card-header">
-                                <span className="nav-icon">{card.icon}</span>
-                                <h3>
-                                  {card.title}
-                                  {card.count !== undefined && (
-                                    <span className="nav-count">({formatNumber(card.count)})</span>
-                                  )}
-                                </h3>
-                              </div>
-                              <p>{card.description}</p>
-                            </div>
-                            <div className="nav-arrow">→</div>
-                          </div>
-                        ))}
-                        </div>
-                      )}
-                    </div>
-
                     {/* ✨ Prüfungswesen Sektion ✨ */}
                     <div className="nav-section">
                       <h2
@@ -1133,6 +1091,95 @@ function Dashboard() {
                           >
                             {card.badge && (
                               <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
+                                {card.badge}
+                              </div>
+                            )}
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>
+                                  {card.title}
+                                  {card.count !== undefined && (
+                                    <span className="nav-count">({formatNumber(card.count)})</span>
+                                  )}
+                                </h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ✨ Events Sektion ✨ */}
+                    <div className="nav-section">
+                      <h2
+                        className="section-header collapsible"
+                        onClick={() => toggleSection('events')}
+                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="section-icon">📅</span>
+                          <span className="section-text">Events</span>
+                        </span>
+                        <span style={{ transform: collapsedSections.events ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                          ▼
+                        </span>
+                      </h2>
+                      {!collapsedSections.events && (
+                        <div className="nav-cards">
+                        {eventsCards.map((card, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleNavigation(card.path)}
+                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                          >
+                            {card.badge && (
+                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
+                                {card.badge}
+                              </div>
+                            )}
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>{card.title}</h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ✨ Finanzen Sektion ✨ */}
+                    <div className="nav-section">
+                      <h2
+                        className="section-header collapsible"
+                        onClick={() => toggleSection('finanzen')}
+                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="section-icon">💰</span>
+                          <span className="section-text">Finanzen</span>
+                        </span>
+                        <span style={{ transform: collapsedSections.finanzen ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                          ▼
+                        </span>
+                      </h2>
+                      {!collapsedSections.finanzen && (
+                        <div className="nav-cards">
+                        {finanzenCards.map((card, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleNavigation(card.path)}
+                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                          >
+                            {card.badge && (
+                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : 'live'}`}>
                                 {card.badge}
                               </div>
                             )}
@@ -1244,6 +1291,53 @@ function Dashboard() {
                       )}
                     </div>
 
+                    {/* ✨ Personal Sektion ✨ */}
+                    <div className="nav-section">
+                      <h2
+                        className="section-header collapsible"
+                        onClick={() => toggleSection('personal')}
+                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="section-icon">👨‍🏫</span>
+                          <span className="section-text">Personal</span>
+                        </span>
+                        <span style={{ transform: collapsedSections.personal ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                          ▼
+                        </span>
+                      </h2>
+                      {!collapsedSections.personal && (
+                        <div className="nav-cards">
+                        {personalCards.map((card, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleNavigation(card.path)}
+                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                          >
+                            {card.badge && (
+                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : 'live'}`}>
+                                {card.badge}
+                              </div>
+                            )}
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>
+                                  {card.title}
+                                  {card.count !== undefined && (
+                                    <span className="nav-count">({formatNumber(card.count)})</span>
+                                  )}
+                                </h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Admin Berichte Sektion */}
                     <div className="nav-section">
                       <h2
@@ -1281,48 +1375,6 @@ function Dashboard() {
                                     <span className="nav-count">({formatNumber(card.count)})</span>
                                   )}
                                 </h3>
-                              </div>
-                              <p>{card.description}</p>
-                            </div>
-                            <div className="nav-arrow">→</div>
-                          </div>
-                        ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ✨ Events Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('events')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">📅</span>
-                          <span className="section-text">Events</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.events ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.events && (
-                        <div className="nav-cards">
-                        {eventsCards.map((card, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleNavigation(card.path)}
-                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
-                          >
-                            {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
-                                {card.badge}
-                              </div>
-                            )}
-                            <div className="nav-content">
-                              <div className="nav-card-header">
-                                <span className="nav-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>
