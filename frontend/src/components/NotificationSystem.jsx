@@ -1244,23 +1244,23 @@ const NotificationSystem = () => {
           <label>Empfänger auswählen</label>
           <div className="recipient-selector">
             <div className="recipient-groups">
-              <button 
-                className={`recipient-group-btn ${emailData.recipients.length === recipients.mitglieder.length ? 'active' : ''}`}
-                onClick={() => setEmailData({...emailData, recipients: recipients.mitglieder.map(r => r.email)})}
+              <button
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.mitglieder?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.mitglieder || []).map(r => r.email)})}
               >
-                👥 Alle Mitglieder ({recipients.mitglieder.length})
+                👥 Alle Mitglieder ({recipients.mitglieder?.length || 0})
               </button>
-              <button 
-                className={`recipient-group-btn ${emailData.recipients.length === recipients.trainer.length ? 'active' : ''}`}
-                onClick={() => setEmailData({...emailData, recipients: recipients.trainer.map(r => r.email)})}
+              <button
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.trainer?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.trainer || []).map(r => r.email)})}
               >
-                👨‍🏫 Alle Trainer ({recipients.trainer.length})
+                👨‍🏫 Alle Trainer ({recipients.trainer?.length || 0})
               </button>
-              <button 
-                className={`recipient-group-btn ${emailData.recipients.length === recipients.personal.length ? 'active' : ''}`}
-                onClick={() => setEmailData({...emailData, recipients: recipients.personal.map(r => r.email)})}
+              <button
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.personal?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.personal || []).map(r => r.email)})}
               >
-                🧑‍💼 Alle Mitarbeiter ({recipients.personal.length})
+                🧑‍💼 Alle Mitarbeiter ({recipients.personal?.length || 0})
               </button>
               <button 
                 className={`recipient-group-btn ${emailData.recipients.length === (recipients.admin?.length || 0) ? 'active' : ''}`}
@@ -1424,31 +1424,31 @@ const NotificationSystem = () => {
           <div className="recipient-selector">
             <div className="recipient-groups">
               <button
-                className={`recipient-group-btn ${pushData.recipients.length === recipients.mitglieder.length ? 'active' : ''}`}
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.mitglieder?.length || 0) ? 'active' : ''}`}
                 onClick={() => {
                   setSelectedIndividuals([]);
-                  setPushData({...pushData, recipients: recipients.mitglieder.map(r => r.email)});
+                  setPushData({...pushData, recipients: (recipients.mitglieder || []).map(r => r.email)});
                 }}
               >
-                👥 Alle Mitglieder ({recipients.mitglieder.length})
+                👥 Alle Mitglieder ({recipients.mitglieder?.length || 0})
               </button>
               <button
-                className={`recipient-group-btn ${pushData.recipients.length === recipients.trainer.length ? 'active' : ''}`}
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.trainer?.length || 0) ? 'active' : ''}`}
                 onClick={() => {
                   setSelectedIndividuals([]);
-                  setPushData({...pushData, recipients: recipients.trainer.map(r => r.email)});
+                  setPushData({...pushData, recipients: (recipients.trainer || []).map(r => r.email)});
                 }}
               >
-                👨‍🏫 Alle Trainer ({recipients.trainer.length})
+                👨‍🏫 Alle Trainer ({recipients.trainer?.length || 0})
               </button>
               <button
-                className={`recipient-group-btn ${pushData.recipients.length === recipients.personal.length ? 'active' : ''}`}
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.personal?.length || 0) ? 'active' : ''}`}
                 onClick={() => {
                   setSelectedIndividuals([]);
-                  setPushData({...pushData, recipients: recipients.personal.map(r => r.email)});
+                  setPushData({...pushData, recipients: (recipients.personal || []).map(r => r.email)});
                 }}
               >
-                🧑‍💼 Alle Mitarbeiter ({recipients.personal.length})
+                🧑‍💼 Alle Mitarbeiter ({recipients.personal?.length || 0})
               </button>
               <button
                 className={`recipient-group-btn ${pushData.recipients.length === (recipients.admin?.length || 0) ? 'active' : ''}`}
