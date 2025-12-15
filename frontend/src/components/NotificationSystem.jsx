@@ -53,7 +53,11 @@ const NotificationSystem = () => {
   
   // Push Subscriptions State
   const [pushSubscriptions, setPushSubscriptions] = useState([]);
-  
+
+  // Member Search State
+  const [memberSearch, setMemberSearch] = useState('');
+  const [selectedIndividuals, setSelectedIndividuals] = useState([]);
+
   // Recipients State
   const [recipients, setRecipients] = useState({
     mitglieder: [],
@@ -1240,34 +1244,177 @@ const NotificationSystem = () => {
           <label>Empfänger auswählen</label>
           <div className="recipient-selector">
             <div className="recipient-groups">
-              <button 
+              <button
                 className={`recipient-group-btn ${pushData.recipients.length === recipients.mitglieder.length ? 'active' : ''}`}
-                onClick={() => setPushData({...pushData, recipients: recipients.mitglieder.map(r => r.email)})}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: recipients.mitglieder.map(r => r.email)});
+                }}
               >
                 👥 Alle Mitglieder ({recipients.mitglieder.length})
               </button>
-              <button 
+              <button
                 className={`recipient-group-btn ${pushData.recipients.length === recipients.trainer.length ? 'active' : ''}`}
-                onClick={() => setPushData({...pushData, recipients: recipients.trainer.map(r => r.email)})}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: recipients.trainer.map(r => r.email)});
+                }}
               >
                 👨‍🏫 Alle Trainer ({recipients.trainer.length})
               </button>
-              <button 
+              <button
                 className={`recipient-group-btn ${pushData.recipients.length === recipients.personal.length ? 'active' : ''}`}
-                onClick={() => setPushData({...pushData, recipients: recipients.personal.map(r => r.email)})}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: recipients.personal.map(r => r.email)});
+                }}
               >
                 🧑‍💼 Alle Mitarbeiter ({recipients.personal.length})
               </button>
-              <button 
+              <button
                 className={`recipient-group-btn ${pushData.recipients.length === (recipients.admin?.length || 0) ? 'active' : ''}`}
-                onClick={() => setPushData({...pushData, recipients: (recipients.admin || []).map(r => r.email)})}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: (recipients.admin || []).map(r => r.email)});
+                }}
               >
                 👑 Alle Admins ({recipients.admin?.length || 0})
               </button>
             </div>
-            
-            <div className="selected-recipients">
-              <strong>Ausgewählte Empfänger: {pushData.recipients.length}</strong>
+
+            <div className="individual-selection" style={{ marginTop: '1.5rem' }}>
+              <label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: '600' }}>
+                🔍 Einzelne Mitglieder auswählen
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  placeholder="Nach Name oder Email suchen..."
+                  className="form-input"
+                  style={{ width: '100%', marginBottom: '0.5rem' }}
+                />
+
+                {memberSearch.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}>
+                    {recipients.alle
+                      .filter(r =>
+                        r.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        r.email.toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      .slice(0, 10)
+                      .map((member, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            if (!selectedIndividuals.find(m => m.email === member.email)) {
+                              setSelectedIndividuals([...selectedIndividuals, member]);
+                              setPushData({
+                                ...pushData,
+                                recipients: [...new Set([...pushData.recipients, member.email])]
+                              });
+                            }
+                            setMemberSearch('');
+                          }}
+                          style={{
+                            padding: '0.75rem',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f0f0f0',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                        >
+                          <div style={{ fontWeight: '500' }}>{member.name}</div>
+                          <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                            {member.email}
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              padding: '2px 6px',
+                              backgroundColor: '#e3f2fd',
+                              borderRadius: '3px',
+                              fontSize: '0.75rem'
+                            }}>
+                              {member.type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+
+                    {recipients.alle.filter(r =>
+                      r.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                      r.email.toLowerCase().includes(memberSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div style={{ padding: '1rem', textAlign: 'center', color: '#999' }}>
+                        Keine Ergebnisse gefunden
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {selectedIndividuals.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <strong style={{ marginBottom: '0.5rem', display: 'block' }}>
+                    Ausgewählte einzelne Empfänger ({selectedIndividuals.length}):
+                  </strong>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {selectedIndividuals.map((member, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          backgroundColor: '#e3f2fd',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        {member.name} ({member.email})
+                        <button
+                          onClick={() => {
+                            setSelectedIndividuals(selectedIndividuals.filter(m => m.email !== member.email));
+                            setPushData({
+                              ...pushData,
+                              recipients: pushData.recipients.filter(e => e !== member.email)
+                            });
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#666',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            padding: 0,
+                            lineHeight: 1
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="selected-recipients" style={{ marginTop: '1.5rem' }}>
+              <strong>Gesamt ausgewählte Empfänger: {pushData.recipients.length}</strong>
               {pushData.recipients.length > 0 && (
                 <div className="recipient-list">
                   {pushData.recipients.slice(0, 5).map((email, index) => (

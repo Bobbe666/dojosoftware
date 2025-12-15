@@ -534,6 +534,7 @@ router.get('/recipients', async (req, res) => {
     let memberEmails = [];
     let trainerEmails = [];
     let personalEmails = [];
+    let adminEmails = [];
 
     // Prüfe ob mitglieder Tabelle existiert und hole Daten
     try {
@@ -633,13 +634,43 @@ router.get('/recipients', async (req, res) => {
       personalEmails = [];
     }
 
+    // Prüfe ob users Tabelle existiert und hole Admin-Daten
+    try {
+      adminEmails = await new Promise((resolve, reject) => {
+        db.query(`
+          SELECT DISTINCT
+            email,
+            CONCAT(COALESCE(username, ''), ' (Admin)') as name,
+            'admin' as type
+          FROM users
+          WHERE role IN ('admin', 'super_admin')
+            AND email IS NOT NULL
+            AND email != ''
+            AND email != 'NULL'
+          ORDER BY username
+        `, (err, results) => {
+          if (err) {
+            console.error('Admin query error:', err);
+            resolve([]); // Leeres Array bei Fehler
+          } else {
+            console.log('✅ Admin users loaded:', results.length);
+            resolve(results);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Admin load error:', error);
+      adminEmails = [];
+    }
+
     res.json({
       success: true,
       recipients: {
         mitglieder: memberEmails,
         trainer: trainerEmails,
         personal: personalEmails,
-        alle: [...memberEmails, ...trainerEmails, ...personalEmails]
+        admin: adminEmails,
+        alle: [...memberEmails, ...trainerEmails, ...personalEmails, ...adminEmails]
       }
     });
   } catch (error) {
