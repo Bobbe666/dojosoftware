@@ -9,7 +9,7 @@ import '../styles/Events.css';
 
 const Events = () => {
   const { token, isAdmin } = useAuth();
-  const { selectedDojo } = useDojoContext();
+  const { activeDojo } = useDojoContext();
 
   const [events, setEvents] = useState([]);
   const [raeume, setRaeume] = useState([]);
@@ -46,7 +46,7 @@ const Events = () => {
     setLoading(true);
     setError('');
     try {
-      const dojoFilter = selectedDojo?.dojo_id ? `?dojo_id=${selectedDojo.dojo_id}` : '';
+      const dojoFilter = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
       const response = await axios.get(`${config.apiBaseUrl}/events${dojoFilter}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -57,7 +57,7 @@ const Events = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, selectedDojo]);
+  }, [token, activeDojo]);
 
   // Lade Räume
   const ladeRaeume = useCallback(async () => {
@@ -99,7 +99,7 @@ const Events = () => {
         `${config.apiBaseUrl}/events`,
         {
           ...newEvent,
-          dojo_id: selectedDojo?.dojo_id || 1,
+          dojo_id: activeDojo?.id || 1,
           raum_id: newEvent.raum_id || null,
           max_teilnehmer: newEvent.max_teilnehmer ? parseInt(newEvent.max_teilnehmer) : null
         },
