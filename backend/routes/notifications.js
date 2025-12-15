@@ -595,6 +595,7 @@ router.delete('/history/bulk/:id', async (req, res) => {
 
 router.get('/recipients', async (req, res) => {
   try {
+    const { dojo_id } = req.query;
 
     // Hole verschiedene Empfängergruppen - prüfe zuerst welche Tabellen existieren
     let memberEmails = [];
@@ -602,32 +603,39 @@ router.get('/recipients', async (req, res) => {
     let personalEmails = [];
     let adminEmails = [];
 
+    // Erstelle WHERE clause für dojo_id Filter
+    const dojoFilter = dojo_id && dojo_id !== 'all' ? 'AND dojo_id = ?' : '';
+    const dojoParams = dojo_id && dojo_id !== 'all' ? [parseInt(dojo_id)] : [];
+
     // Prüfe ob mitglieder Tabelle existiert und hole Daten
     try {
       memberEmails = await new Promise((resolve, reject) => {
         db.query(`
-          SELECT DISTINCT 
-            COALESCE(email, '') as email, 
-            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
+          SELECT DISTINCT
+            COALESCE(email, '') as email,
+            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name,
             'mitglied' as type
-          FROM mitglieder 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM mitglieder
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoFilter}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoParams, (err, results) => {
           if (err) {
 
             // Fallback: Hole alle Mitglieder und filtere später
             db.query(`
-              SELECT DISTINCT 
-                COALESCE(email, '') as email, 
-                CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
+              SELECT DISTINCT
+                COALESCE(email, '') as email,
+                CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name,
                 'mitglied' as type
-              FROM mitglieder 
+              FROM mitglieder
+              WHERE 1=1
+                ${dojoFilter}
               ORDER BY name
-            `, (fallbackErr, fallbackResults) => {
+            `, dojoParams, (fallbackErr, fallbackResults) => {
               if (fallbackErr) {
 
                 resolve([]);
@@ -659,10 +667,11 @@ router.get('/recipients', async (req, res) => {
       trainerEmails = await new Promise((resolve, reject) => {
         db.query(`
           SELECT DISTINCT email, CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 'trainer' as type
-          FROM trainer 
+          FROM trainer
           WHERE email IS NOT NULL AND email != '' AND email != 'NULL'
+            ${dojoFilter}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoParams, (err, results) => {
           if (err) {
 
             resolve([]); // Leeres Array bei Fehler
@@ -682,10 +691,11 @@ router.get('/recipients', async (req, res) => {
       personalEmails = await new Promise((resolve, reject) => {
         db.query(`
           SELECT DISTINCT email, CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 'personal' as type
-          FROM personal 
+          FROM personal
           WHERE email IS NOT NULL AND email != '' AND email != 'NULL'
+            ${dojoFilter}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoParams, (err, results) => {
           if (err) {
 
             resolve([]); // Leeres Array bei Fehler

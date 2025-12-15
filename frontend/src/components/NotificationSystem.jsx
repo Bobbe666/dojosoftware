@@ -3,8 +3,10 @@ import { Mail, Bell, Settings, Send, Users, History, FileText, CheckCircle, XCir
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 import '../styles/NotificationSystem.css';
 import config from '../config/config.js';
+import { useDojoContext } from '../context/DojoContext';
 
 const NotificationSystem = () => {
+  const { activeDojo, filter } = useDojoContext();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,6 +98,13 @@ const NotificationSystem = () => {
     // loadTimelineData(); // TODO: Endpoint noch nicht implementiert
   }, []);
 
+  // Lade Empfänger neu, wenn sich der Dojo-Filter ändert
+  useEffect(() => {
+    if (activeDojo) {
+      loadRecipients();
+    }
+  }, [filter, activeDojo]);
+
   const loadDashboardData = async () => {
     try {
       const response = await fetch(`${config.apiBaseUrl}/notifications/dashboard`);
@@ -170,8 +179,25 @@ const NotificationSystem = () => {
 
   const loadRecipients = async () => {
     try {
-      // Versuche zuerst die Notifications-Route
-      const response = await fetch(`${config.apiBaseUrl}/notifications/recipients`);
+      // Bestimme dojo_id basierend auf Filter
+      let dojoIdParam = '';
+      if (filter === 'all') {
+        dojoIdParam = 'dojo_id=all';
+      } else if (filter === 'current' && activeDojo) {
+        dojoIdParam = `dojo_id=${activeDojo.id}`;
+      } else if (activeDojo) {
+        // Fallback: Wenn kein Filter gesetzt ist, verwende aktivenDojo
+        dojoIdParam = `dojo_id=${activeDojo.id}`;
+      }
+
+      // Versuche zuerst die Notifications-Route mit dojo_id Filter
+      const url = dojoIdParam
+        ? `${config.apiBaseUrl}/notifications/recipients?${dojoIdParam}`
+        : `${config.apiBaseUrl}/notifications/recipients`;
+
+      console.log('📧 Loading recipients with filter:', dojoIdParam || 'no filter');
+
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         setRecipients({
@@ -181,7 +207,12 @@ const NotificationSystem = () => {
           admin: data.recipients.admin || [],
           alle: data.recipients.alle || []
         });
-        console.log('✅ Loaded recipients from dashboard API');
+        console.log('✅ Loaded recipients from dashboard API:', {
+          mitglieder: data.recipients.mitglieder?.length || 0,
+          trainer: data.recipients.trainer?.length || 0,
+          personal: data.recipients.personal?.length || 0,
+          filter: dojoIdParam || 'all'
+        });
         return;
       }
     } catch (error) {
@@ -1157,6 +1188,57 @@ const NotificationSystem = () => {
         <p>Erstellen und versenden Sie Emails an Ihre Mitglieder</p>
       </div>
 
+      {/* Dojo-Filter Indikator */}
+      {activeDojo && (
+        <div style={{
+          background: filter === 'all'
+            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 107, 53, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%)'
+            : `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
+          border: `1px solid ${filter === 'all' ? 'rgba(255, 215, 0, 0.3)' : `${activeDojo.farbe}66`}`,
+          borderRadius: '10px',
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.8rem'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '40px',
+            borderRadius: '4px',
+            background: filter === 'all'
+              ? 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
+              : activeDojo.farbe
+          }} />
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#a0a0b0',
+              marginBottom: '0.3rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Empfänger-Filter aktiv
+            </div>
+            <div style={{
+              fontSize: '1rem',
+              color: '#ffd700',
+              fontWeight: '600'
+            }}>
+              {filter === 'all' ? '🏯 Alle Dojos' : `🏯 ${activeDojo.dojoname}`}
+            </div>
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#e0e0e0',
+              marginTop: '0.3rem'
+            }}>
+              Verfügbare Empfänger: {recipients.mitglieder.length} Mitglieder, {recipients.trainer.length} Trainer, {recipients.personal.length} Mitarbeiter
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="composer-form">
         <div className="form-group">
           <label>Empfänger auswählen</label>
@@ -1269,6 +1351,57 @@ const NotificationSystem = () => {
         <h3>📱 Push-Nachrichten versenden</h3>
         <p>Erstellen und versenden Sie Push-Benachrichtigungen an Ihre Mitglieder</p>
       </div>
+
+      {/* Dojo-Filter Indikator */}
+      {activeDojo && (
+        <div style={{
+          background: filter === 'all'
+            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 107, 53, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%)'
+            : `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
+          border: `1px solid ${filter === 'all' ? 'rgba(255, 215, 0, 0.3)' : `${activeDojo.farbe}66`}`,
+          borderRadius: '10px',
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.8rem'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '40px',
+            borderRadius: '4px',
+            background: filter === 'all'
+              ? 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
+              : activeDojo.farbe
+          }} />
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#a0a0b0',
+              marginBottom: '0.3rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Empfänger-Filter aktiv
+            </div>
+            <div style={{
+              fontSize: '1rem',
+              color: '#ffd700',
+              fontWeight: '600'
+            }}>
+              {filter === 'all' ? '🏯 Alle Dojos' : `🏯 ${activeDojo.dojoname}`}
+            </div>
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#e0e0e0',
+              marginTop: '0.3rem'
+            }}>
+              Verfügbare Empfänger: {recipients.mitglieder.length} Mitglieder, {recipients.trainer.length} Trainer, {recipients.personal.length} Mitarbeiter
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="composer-form">
         <div className="form-group">
