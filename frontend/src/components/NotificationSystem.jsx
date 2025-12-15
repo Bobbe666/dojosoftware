@@ -548,6 +548,29 @@ const NotificationSystem = () => {
     }
   };
 
+  const deleteNotification = async (id) => {
+    if (!window.confirm('Möchten Sie diese Benachrichtigung wirklich löschen?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/history/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('Benachrichtigung erfolgreich gelöscht');
+        // History neu laden
+        await loadHistory();
+      } else {
+        setError(data.message || 'Fehler beim Löschen der Benachrichtigung');
+      }
+    } catch (error) {
+      setError('Fehler beim Löschen der Benachrichtigung');
+    }
+  };
+
   // ===================================================================
   // 🎨 RENDER FUNCTIONS
   // ===================================================================
@@ -1538,6 +1561,7 @@ const NotificationSystem = () => {
       const key = `${notification.subject}_${notification.created_at}`;
       if (!groupedNotifications[key]) {
         groupedNotifications[key] = {
+          id: notification.id,
           subject: notification.subject,
           type: notification.type,
           timestamp: notification.created_at,
@@ -1618,6 +1642,34 @@ const NotificationSystem = () => {
                     {group.status === 'sent' ? '✅ Gesendet' :
                      group.status === 'failed' ? '❌ Fehlgeschlagen' : '⏳ Ausstehend'}
                   </div>
+                  <button
+                    onClick={() => deleteNotification(group.id)}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    }}
+                    title="Benachrichtigung löschen"
+                  >
+                    🗑️
+                  </button>
                 </div>
 
                 {/* Nachrichteninhalt */}

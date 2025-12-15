@@ -525,6 +525,25 @@ router.get('/history', async (req, res) => {
   }
 });
 
+// Einzelne Benachrichtigung löschen
+router.delete('/history/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await new Promise((resolve, reject) => {
+      db.query('DELETE FROM notifications WHERE id = ?', [id], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    res.json({ success: true, message: 'Benachrichtigung erfolgreich gelöscht' });
+  } catch (error) {
+    console.error('Delete Notification Fehler:', error);
+    res.status(500).json({ success: false, message: 'Fehler beim Löschen der Benachrichtigung' });
+  }
+});
+
 // ===================================================================
 // EMPFÄNGER GRUPPEN
 // ===================================================================
