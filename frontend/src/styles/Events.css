@@ -592,6 +592,65 @@
   gap: 0.5rem;
 }
 
+/* Tab Navigation */
+.tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: rgba(42, 42, 62, 0.6);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  color: var(--farbe-text-hell);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.4);
+  color: var(--farbe-hauptfarbe);
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  border-color: var(--farbe-hauptfarbe);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+}
+
+/* Compact Event Card */
+.event-card-compact {
+  background: rgba(42, 42, 62, 0.4);
+  padding: 1rem;
+}
+
+.event-card-compact:hover {
+  background: rgba(42, 42, 62, 0.7);
+  transform: translateY(-2px);
+}
+
+.event-card-compact .event-card-header {
+  padding: 0;
+  border-bottom: none;
+}
+
+.event-card-compact .event-title-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.event-card-compact .event-info-row {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
 /* Animations */
 @keyframes fadeInUp {
   from {

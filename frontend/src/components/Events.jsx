@@ -16,6 +16,7 @@ const Events = () => {
   const [trainer, setTrainer] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('aktuelle'); // 'aktuelle', 'geplante', 'vergangene'
 
   // Modal States
   const [showNewEvent, setShowNewEvent] = useState(false);
@@ -280,6 +281,31 @@ const Events = () => {
     return namen.length > 0 ? namen.join(', ') : 'Keine Trainer zugewiesen';
   };
 
+  // Events nach Datum filtern
+  const getFilteredEvents = () => {
+    const heute = new Date();
+    heute.setHours(0, 0, 0, 0);
+
+    return events.filter(event => {
+      const eventDatum = new Date(event.datum);
+      eventDatum.setHours(0, 0, 0, 0);
+
+      if (activeTab === 'aktuelle') {
+        // Heute
+        return eventDatum.getTime() === heute.getTime();
+      } else if (activeTab === 'geplante') {
+        // Zukünftig
+        return eventDatum.getTime() > heute.getTime();
+      } else if (activeTab === 'vergangene') {
+        // Vergangen
+        return eventDatum.getTime() < heute.getTime();
+      }
+      return true;
+    });
+  };
+
+  const filteredEvents = getFilteredEvents();
+
   return (
     <div className="events-container">
       <div className="page-header">
@@ -293,6 +319,30 @@ const Events = () => {
             ⚠️ {error}
           </div>
         )}
+
+        {/* Tab Navigation */}
+        <div className="glass-card" style={{ marginBottom: '1rem' }}>
+          <div className="tabs-container">
+            <button
+              className={`tab-button ${activeTab === 'aktuelle' ? 'active' : ''}`}
+              onClick={() => setActiveTab('aktuelle')}
+            >
+              Aktuelle
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'geplante' ? 'active' : ''}`}
+              onClick={() => setActiveTab('geplante')}
+            >
+              Geplante
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'vergangene' ? 'active' : ''}`}
+              onClick={() => setActiveTab('vergangene')}
+            >
+              Vergangene
+            </button>
+          </div>
+        </div>
 
         <div className="glass-card">
           <div className="card-header">
@@ -312,59 +362,101 @@ const Events = () => {
               <div className="loading-state">
                 <p>Lade Events...</p>
               </div>
-            ) : events.length === 0 ? (
+            ) : filteredEvents.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">📅</div>
-                <h3>Noch keine Events vorhanden</h3>
-                <p>Erstellen Sie Ihr erstes Event, um loszulegen.</p>
+                <h3>Keine {activeTab === 'aktuelle' ? 'aktuellen' : activeTab === 'geplante' ? 'geplanten' : 'vergangenen'} Events</h3>
+                <p>{activeTab === 'aktuelle' ? 'Heute finden keine Events statt.' : activeTab === 'geplante' ? 'Es sind noch keine Events geplant.' : 'Es gibt noch keine vergangenen Events.'}</p>
               </div>
             ) : (
               <div className="events-list">
-                {events.map((event) => (
-                  <div key={event.event_id} className="event-card">
-                    <div className="event-card-header">
-                      <div className="event-title-section">
-                        <h3>{event.titel}</h3>
-                        <div className="event-badges">
-                          <span className={`badge ${getEventTypColor(event.event_typ)}`}>
-                            {event.event_typ}
-                          </span>
-                          <span className={`badge ${getStatusColor(event.status)}`}>
-                            {getStatusText(event.status)}
-                          </span>
+                {filteredEvents.map((event) => (
+                  <div
+                    key={event.event_id}
+                    className={`event-card ${activeTab === 'vergangene' ? 'event-card-compact' : ''}`}
+                    onClick={activeTab === 'vergangene' ? () => handleShowDetails(event) : undefined}
+                    style={activeTab === 'vergangene' ? { cursor: 'pointer' } : {}}
+                  >
+                    {activeTab === 'vergangene' ? (
+                      // Kompakte Ansicht für vergangene Events
+                      <>
+                        <div className="event-card-header">
+                          <div className="event-title-section">
+                            <h3>{event.titel}</h3>
+                            <div className="event-info-row" style={{ marginTop: '0.5rem' }}>
+                              <span className="event-icon">📅</span>
+                              <span>{formatDatum(event.datum)}</span>
+                            </div>
+                          </div>
+                          {isAdmin && (
+                            <div className="event-actions" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className="btn-icon"
+                                onClick={() => {
+                                  setSelectedEvent(event);
+                                  setShowEditEvent(true);
+                                }}
+                                title="Bearbeiten"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="btn-icon btn-danger"
+                                onClick={() => handleDeleteEvent(event.event_id)}
+                                title="Löschen"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      {isAdmin && (
-                        <div className="event-actions">
-                          <button
-                            className="btn-icon"
-                            onClick={() => handleShowDetails(event)}
-                            title="Details anzeigen"
-                          >
-                            👁️
-                          </button>
-                          <button
-                            className="btn-icon"
-                            onClick={() => {
-                              setSelectedEvent(event);
-                              setShowEditEvent(true);
-                            }}
-                            title="Bearbeiten"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            className="btn-icon btn-danger"
-                            onClick={() => handleDeleteEvent(event.event_id)}
-                            title="Löschen"
-                          >
-                            🗑️
-                          </button>
+                      </>
+                    ) : (
+                      // Vollständige Ansicht für aktuelle und geplante Events
+                      <>
+                        <div className="event-card-header">
+                          <div className="event-title-section">
+                            <h3>{event.titel}</h3>
+                            <div className="event-badges">
+                              <span className={`badge ${getEventTypColor(event.event_typ)}`}>
+                                {event.event_typ}
+                              </span>
+                              <span className={`badge ${getStatusColor(event.status)}`}>
+                                {getStatusText(event.status)}
+                              </span>
+                            </div>
+                          </div>
+                          {isAdmin && (
+                            <div className="event-actions">
+                              <button
+                                className="btn-icon"
+                                onClick={() => handleShowDetails(event)}
+                                title="Details anzeigen"
+                              >
+                                👁️
+                              </button>
+                              <button
+                                className="btn-icon"
+                                onClick={() => {
+                                  setSelectedEvent(event);
+                                  setShowEditEvent(true);
+                                }}
+                                title="Bearbeiten"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="btn-icon btn-danger"
+                                onClick={() => handleDeleteEvent(event.event_id)}
+                                title="Löschen"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    <div className="event-card-body">
+                        <div className="event-card-body">
                       <div className="event-info-row">
                         <span className="event-icon">📅</span>
                         <span>{formatDatum(event.datum)}</span>
@@ -430,12 +522,14 @@ const Events = () => {
                       )}
                     </div>
 
-                    {!isAdmin && (
-                      <div className="event-card-footer">
-                        <button className="btn btn-primary" onClick={() => handleShowDetails(event)}>
-                          Details anzeigen
-                        </button>
-                      </div>
+                        {!isAdmin && (
+                          <div className="event-card-footer">
+                            <button className="btn btn-primary" onClick={() => handleShowDetails(event)}>
+                              Details anzeigen
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
