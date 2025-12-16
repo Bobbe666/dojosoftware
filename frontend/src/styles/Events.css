@@ -1,39 +1,161 @@
 /* Events Container */
 .events-container {
-  min-height: 100vh;
-  background: var(--hintergrund-primary);
-  padding: 2rem;
+  width: calc(100% + 4rem);
+  min-height: calc(100vh + 4rem);
+  margin: -2rem;
+  padding: 0;
+  background: #000000 !important;
   color: var(--farbe-text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-sizing: border-box;
 }
 
-.page-header {
+/* Layout-Struktur */
+.events-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #000000;
+  border: none;
+  box-shadow: none;
+}
+
+/* Events Sidebar */
+.events-sidebar {
+  width: 280px;
+  background: #000000;
+  border-right: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  transition: all 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  gap: 1.5rem;
+}
+
+/* Scrollbar Styling */
+.events-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.events-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.events-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+}
+
+.events-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
+}
+
+/* Sidebar Header */
+.events-sidebar-header {
   text-align: center;
-  margin-bottom: 2rem;
-  animation: fadeInUp 0.6s ease-out;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
 }
 
-.page-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.events-icon {
+  font-size: 3rem;
   margin-bottom: 0.5rem;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
-.page-subtitle {
-  color: var(--farbe-text-hell);
-  font-size: 1.1rem;
-  font-weight: 400;
+.events-sidebar-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--farbe-hauptfarbe);
   margin: 0;
 }
 
+/* Vertikale Tabs */
+.tabs-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.tab-vertical-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.tab-vertical-btn:hover {
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
+}
+
+.tab-vertical-btn.active {
+  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  color: #2a2a3e;
+  font-weight: 600;
+}
+
+.tab-icon {
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
+.tab-label {
+  flex: 1;
+}
+
+/* Create Event Button */
+.btn-create-event {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  border: none;
+  border-radius: 8px;
+  color: #2a2a3e;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.btn-create-event:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.btn-create-event span:first-child {
+  font-size: 1.2rem;
+}
+
+/* Events Content */
 .events-content {
-  max-width: 1400px;
-  margin: 0 auto;
+  flex: 1;
+  padding: 2rem;
+  background: #000000;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .glass-card {
@@ -590,39 +712,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-/* Tab Navigation */
-.tabs-container {
-  display: flex;
-  gap: 0.5rem;
-  padding: 1rem;
-}
-
-.tab-button {
-  flex: 1;
-  padding: 0.75rem 1.5rem;
-  background: rgba(42, 42, 62, 0.6);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 8px;
-  color: var(--farbe-text-hell);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.tab-button:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.4);
-  color: var(--farbe-hauptfarbe);
-}
-
-.tab-button.active {
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
-  border-color: var(--farbe-hauptfarbe);
-  color: #ffffff;
-  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
 }
 
 /* Compact Event Card */

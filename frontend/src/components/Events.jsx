@@ -306,58 +306,60 @@ const Events = () => {
 
   const filteredEvents = getFilteredEvents();
 
+  // Tab-Konfiguration für Sidebar
+  const tabs = [
+    { key: 'aktuelle', label: 'Aktuelle', icon: '📅' },
+    { key: 'geplante', label: 'Geplante', icon: '🗓️' },
+    { key: 'vergangene', label: 'Vergangene', icon: '📜' }
+  ];
+
   return (
     <div className="events-container">
-      <div className="page-header">
-        <h1 className="page-title">Events verwalten</h1>
-        <p className="page-subtitle">Veranstaltungen, Wettkämpfe und besondere Termine</p>
-      </div>
-
-      <div className="events-content">
-        {error && (
-          <div className="error-message" style={{ marginBottom: '1rem' }}>
-            ⚠️ {error}
+      <div className="events-layout">
+        {/* Sidebar */}
+        <aside className="events-sidebar">
+          {/* Sidebar Header */}
+          <div className="events-sidebar-header">
+            <div className="events-icon">📅</div>
+            <h2 className="events-sidebar-title">Events</h2>
           </div>
-        )}
 
-        {/* Tab Navigation */}
-        <div className="glass-card" style={{ marginBottom: '1rem' }}>
-          <div className="tabs-container">
-            <button
-              className={`tab-button ${activeTab === 'aktuelle' ? 'active' : ''}`}
-              onClick={() => setActiveTab('aktuelle')}
-            >
-              Aktuelle
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'geplante' ? 'active' : ''}`}
-              onClick={() => setActiveTab('geplante')}
-            >
-              Geplante
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'vergangene' ? 'active' : ''}`}
-              onClick={() => setActiveTab('vergangene')}
-            >
-              Vergangene
-            </button>
-          </div>
-        </div>
-
-        <div className="glass-card">
-          <div className="card-header">
-            <h2>Events</h2>
-            {isAdmin && (
+          {/* Navigation Tabs */}
+          <nav className="tabs-vertical">
+            {tabs.map((tab) => (
               <button
-                className="btn btn-primary"
-                onClick={() => setShowNewEvent(true)}
+                key={tab.key}
+                className={`tab-vertical-btn ${activeTab === tab.key ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.key)}
               >
-                ➕ Neues Event erstellen
+                <span className="tab-icon">{tab.icon}</span>
+                <span className="tab-label">{tab.label}</span>
               </button>
-            )}
-          </div>
+            ))}
+          </nav>
 
-          <div className="card-body">
+          {/* Neues Event Button */}
+          {isAdmin && (
+            <button
+              className="btn-create-event"
+              onClick={() => setShowNewEvent(true)}
+            >
+              <span>➕</span>
+              <span>Neues Event erstellen</span>
+            </button>
+          )}
+        </aside>
+
+        {/* Main Content */}
+        <div className="events-content">
+          {error && (
+            <div className="error-message" style={{ marginBottom: '1rem' }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          <div className="glass-card">
+            <div className="card-body">
             {loading ? (
               <div className="loading-state">
                 <p>Lade Events...</p>
@@ -537,6 +539,7 @@ const Events = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Modal: Neues Event */}
