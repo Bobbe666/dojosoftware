@@ -64,12 +64,14 @@ const TarifePreise = () => {
     duration_months: "",
     mindestlaufzeit_monate: "",
     kuendigungsfrist_monate: "",
-    price_cents: ""
+    price_cents: "",
+    aufnahmegebuehr_cents: 4999 // Standard: 49,99 EUR
   });
 
   const [newTarif, setNewTarif] = useState({
     name: "",
     price_cents: "",
+    aufnahmegebuehr_cents: 4999, // Standard: 49,99 EUR
     currency: "EUR",
     duration_months: "",
     billing_cycle: "monthly",
@@ -115,6 +117,8 @@ const TarifePreise = () => {
           name: tarif.name,
           price_euros: (tarif.price_cents / 100).toFixed(2), // Cents to Euros
           price_cents: tarif.price_cents,
+          aufnahmegebuehr_euros: ((tarif.aufnahmegebuehr_cents || 4999) / 100).toFixed(2),
+          aufnahmegebuehr_cents: tarif.aufnahmegebuehr_cents || 4999,
           currency: tarif.currency || 'EUR',
           duration_months: tarif.duration_months,
           billing_cycle: tarif.billing_cycle,
@@ -184,6 +188,7 @@ const TarifePreise = () => {
         setNewTarif({
           name: "",
           price_cents: "",
+          aufnahmegebuehr_cents: 4999,
           currency: "EUR",
           duration_months: "",
           billing_cycle: "monthly",
@@ -357,6 +362,12 @@ const TarifePreise = () => {
                 <div className="tarif-details">
                   <div className="detail-item">
                     <span className="label">
+                      <DollarSign size={14} /> Aufnahmegebühr
+                    </span>
+                    <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">
                       <Calendar size={14} /> Laufzeit
                     </span>
                     <div className="value">{tarif.duration_months} Monate</div>
@@ -366,7 +377,7 @@ const TarifePreise = () => {
                       <CreditCard size={14} /> Zahlungsmethode
                     </span>
                     <div className="value">
-                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' : 
+                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
                        tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
                        tarif.payment_method === 'CARD' ? 'Kreditkarte' :
                        tarif.payment_method === 'PAYPAL' ? 'PayPal' :
@@ -454,6 +465,12 @@ const TarifePreise = () => {
                 </div>
 
                 <div className="tarif-details">
+                  <div className="detail-item">
+                    <span className="label">
+                      <DollarSign size={14} /> Aufnahmegebühr
+                    </span>
+                    <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
+                  </div>
                   <div className="detail-item">
                     <span className="label">
                       <Calendar size={14} /> Laufzeit
@@ -555,6 +572,12 @@ const TarifePreise = () => {
                 <div className="tarif-details">
                   <div className="detail-item">
                     <span className="label">
+                      <DollarSign size={14} /> Aufnahmegebühr
+                    </span>
+                    <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">
                       <Calendar size={14} /> Laufzeit
                     </span>
                     <div className="value">{tarif.duration_months} Monate</div>
@@ -564,7 +587,7 @@ const TarifePreise = () => {
                       <CreditCard size={14} /> Zahlungsmethode
                     </span>
                     <div className="value">
-                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' : 
+                      {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
                        tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
                        tarif.payment_method === 'CARD' ? 'Kreditkarte' :
                        tarif.payment_method === 'PAYPAL' ? 'PayPal' :
@@ -696,6 +719,18 @@ const TarifePreise = () => {
                   placeholder="z.B. 49.90"
                 />
               </div>
+
+              <div className="form-group">
+                <label>Aufnahmegebühr (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newIndividuell.aufnahmegebuehr_cents ? (newIndividuell.aufnahmegebuehr_cents / 100).toFixed(2) : ''}
+                  onChange={(e) => setNewIndividuell({...newIndividuell, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
+                  placeholder="49.99"
+                />
+              </div>
             </div>
 
             <div className="modal-footer">
@@ -715,6 +750,7 @@ const TarifePreise = () => {
                       mindestlaufzeit_monate: parseInt(newIndividuell.mindestlaufzeit_monate),
                       kuendigungsfrist_monate: parseInt(newIndividuell.kuendigungsfrist_monate),
                       price_cents: newIndividuell.price_cents,
+                      aufnahmegebuehr_cents: newIndividuell.aufnahmegebuehr_cents,
                       currency: 'EUR',
                       billing_cycle: 'MONTHLY',
                       payment_method: 'SEPA',
@@ -726,7 +762,8 @@ const TarifePreise = () => {
                       duration_months: "",
                       mindestlaufzeit_monate: "",
                       kuendigungsfrist_monate: "",
-                      price_cents: ""
+                      price_cents: "",
+                      aufnahmegebuehr_cents: 4999
                     });
                     loadTarifeUndRabatte();
                     alert('Individueller Vertrag erfolgreich erstellt!');
@@ -747,7 +784,7 @@ const TarifePreise = () => {
       {/* Neuer Tarif Modal */}
       {showNewTarif && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="modal" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <h3>Neuer Tarif</h3>
               <button
@@ -758,94 +795,138 @@ const TarifePreise = () => {
               </button>
             </div>
 
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Name *</label>
+            <div style={{ padding: '1.5rem' }}>
+              {/* Name - volle Breite */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  Name *
+                </label>
                 <input
                   type="text"
                   value={newTarif.name}
                   onChange={(e) => setNewTarif({...newTarif, name: e.target.value})}
                   placeholder="Tarif-Bezeichnung"
+                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Preis (€) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newTarif.price_cents ? (newTarif.price_cents / 100).toFixed(2) : ''}
-                  onChange={(e) => setNewTarif({...newTarif, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                  placeholder="0.00"
-                />
+              {/* Preis & Aufnahmegebühr - 2 Spalten */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Preis (€) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newTarif.price_cents ? (newTarif.price_cents / 100).toFixed(2) : ''}
+                    onChange={(e) => setNewTarif({...newTarif, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
+                    placeholder="0.00"
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Aufnahmegebühr (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newTarif.aufnahmegebuehr_cents ? (newTarif.aufnahmegebuehr_cents / 100).toFixed(2) : ''}
+                    onChange={(e) => setNewTarif({...newTarif, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
+                    placeholder="49.99"
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Zahlungsintervall *</label>
-                <select
-                  value={newTarif.billing_cycle}
-                  onChange={(e) => setNewTarif({...newTarif, billing_cycle: e.target.value})}
-                >
-                  <option value="">Bitte wählen...</option>
-                  {zahlungszyklen.length > 0 ? (
-                    zahlungszyklen.map(zyklus => {
-                      const cycleValue = zyklus.name?.toLowerCase() || zyklus.intervall?.toLowerCase() || '';
-                      return (
-                        <option key={zyklus.id || zyklus.zyklus_id} value={cycleValue}>
-                          {zyklus.name || zyklus.intervall}
-                        </option>
-                      );
-                    })
-                  ) : (
-                    <>
-                      <option value="daily">Täglich</option>
-                      <option value="weekly">Wöchentlich</option>
-                      <option value="monthly">Monatlich</option>
-                      <option value="quarterly">Vierteljährlich</option>
-                      <option value="yearly">Jährlich</option>
-                    </>
-                  )}
-                </select>
+              {/* Laufzeit & Zahlungsintervall - 2 Spalten */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Laufzeit (Monate) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newTarif.duration_months}
+                    onChange={(e) => setNewTarif({...newTarif, duration_months: parseInt(e.target.value) || ''})}
+                    placeholder="12"
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Zahlungsintervall *
+                  </label>
+                  <select
+                    value={newTarif.billing_cycle}
+                    onChange={(e) => setNewTarif({...newTarif, billing_cycle: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="">Bitte wählen...</option>
+                    {zahlungszyklen.length > 0 ? (
+                      zahlungszyklen.map(zyklus => {
+                        const cycleValue = zyklus.name?.toLowerCase() || zyklus.intervall?.toLowerCase() || '';
+                        return (
+                          <option key={zyklus.id || zyklus.zyklus_id} value={cycleValue}>
+                            {zyklus.name || zyklus.intervall}
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="daily">Täglich</option>
+                        <option value="weekly">Wöchentlich</option>
+                        <option value="monthly">Monatlich</option>
+                        <option value="quarterly">Vierteljährlich</option>
+                        <option value="yearly">Jährlich</option>
+                      </>
+                    )}
+                  </select>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Laufzeit (Monate) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newTarif.duration_months}
-                  onChange={(e) => setNewTarif({...newTarif, duration_months: parseInt(e.target.value) || ''})}
-                  placeholder="12"
-                />
+              {/* Zahlungsmethode & Währung - 2 Spalten */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Zahlungsmethode *
+                  </label>
+                  <select
+                    value={newTarif.payment_method}
+                    onChange={(e) => setNewTarif({...newTarif, payment_method: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="bank_transfer">Banküberweisung</option>
+                    <option value="direct_debit">Lastschrift</option>
+                    <option value="credit_card">Kreditkarte</option>
+                    <option value="cash">Bar</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Währung
+                  </label>
+                  <select
+                    value={newTarif.currency}
+                    onChange={(e) => setNewTarif({...newTarif, currency: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="CHF">CHF</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Zahlungsmethode *</label>
-                <select
-                  value={newTarif.payment_method}
-                  onChange={(e) => setNewTarif({...newTarif, payment_method: e.target.value})}
-                >
-                  <option value="bank_transfer">Banküberweisung</option>
-                  <option value="direct_debit">Lastschrift</option>
-                  <option value="credit_card">Kreditkarte</option>
-                  <option value="cash">Bar</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Währung</label>
-                <select
-                  value={newTarif.currency}
-                  onChange={(e) => setNewTarif({...newTarif, currency: e.target.value})}
-                >
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="CHF">CHF</option>
-                </select>
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
+              {/* Status */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={newTarif.active}
@@ -854,23 +935,26 @@ const TarifePreise = () => {
                   Tarif ist aktiv
                 </label>
               </div>
-            </div>
 
-            <div className="form-actions">
-              <button
-                className="cancel-btn"
-                onClick={() => setShowNewTarif(false)}
-              >
-                Abbrechen
-              </button>
-              <button
-                className="save-btn"
-                onClick={() => handleSaveTarif(newTarif)}
-                disabled={!newTarif.name || !newTarif.price_cents || !newTarif.duration_months}
-              >
-                <Save size={16} />
-                Speichern
-              </button>
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowNewTarif(false)}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => handleSaveTarif(newTarif)}
+                  disabled={!newTarif.name || !newTarif.price_cents || !newTarif.duration_months}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Save size={16} />
+                  Speichern
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -879,7 +963,7 @@ const TarifePreise = () => {
       {/* Tarif bearbeiten Modal */}
       {editingTarif && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="modal" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <h3>Tarif bearbeiten</h3>
               <button
@@ -890,83 +974,131 @@ const TarifePreise = () => {
               </button>
             </div>
 
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Name *</label>
+            <div style={{ padding: '1.5rem' }}>
+              {/* Name - volle Breite */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  Name *
+                </label>
                 <input
                   type="text"
                   value={editingTarif.name}
                   onChange={(e) => setEditingTarif({...editingTarif, name: e.target.value})}
                   placeholder="Tarif-Bezeichnung"
+                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Preis (€) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={editingTarif.price_euros || ''}
-                  onChange={(e) => setEditingTarif({
-                    ...editingTarif,
-                    price_euros: e.target.value,
-                    price_cents: Math.round(parseFloat(e.target.value || 0) * 100)
-                  })}
-                  placeholder="0.00"
-                />
+              {/* Preis & Aufnahmegebühr - 2 Spalten */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Preis (€) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editingTarif.price_euros || ''}
+                    onChange={(e) => setEditingTarif({
+                      ...editingTarif,
+                      price_euros: e.target.value,
+                      price_cents: Math.round(parseFloat(e.target.value || 0) * 100)
+                    })}
+                    placeholder="0.00"
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Aufnahmegebühr (€)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editingTarif.aufnahmegebuehr_euros || ''}
+                    onChange={(e) => setEditingTarif({
+                      ...editingTarif,
+                      aufnahmegebuehr_euros: e.target.value,
+                      aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)
+                    })}
+                    placeholder="49.99"
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Zahlungsintervall *</label>
-                <select
-                  value={editingTarif.billing_cycle?.toUpperCase() || ''}
-                  onChange={(e) => setEditingTarif({...editingTarif, billing_cycle: e.target.value})}
-                >
-                  <option value="">Bitte wählen...</option>
-                  <option value="MONTHLY">Monatlich</option>
-                  <option value="QUARTERLY">Vierteljährlich</option>
-                  <option value="YEARLY">Jährlich</option>
-                </select>
+              {/* Laufzeit & Zahlungsintervall - 2 Spalten */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Laufzeit (Monate) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingTarif.duration_months}
+                    onChange={(e) => setEditingTarif({...editingTarif, duration_months: parseInt(e.target.value) || ''})}
+                    placeholder="12"
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Zahlungsintervall *
+                  </label>
+                  <select
+                    value={editingTarif.billing_cycle?.toUpperCase() || ''}
+                    onChange={(e) => setEditingTarif({...editingTarif, billing_cycle: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="">Bitte wählen...</option>
+                    <option value="MONTHLY">Monatlich</option>
+                    <option value="QUARTERLY">Vierteljährlich</option>
+                    <option value="YEARLY">Jährlich</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Laufzeit (Monate) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={editingTarif.duration_months}
-                  onChange={(e) => setEditingTarif({...editingTarif, duration_months: parseInt(e.target.value) || ''})}
-                  placeholder="12"
-                />
+              {/* Zahlungsmethode & Währung - 2 Spalten */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Zahlungsmethode *
+                  </label>
+                  <select
+                    value={editingTarif.payment_method?.toUpperCase() || ''}
+                    onChange={(e) => setEditingTarif({...editingTarif, payment_method: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="SEPA">SEPA</option>
+                    <option value="CARD">Kreditkarte</option>
+                    <option value="PAYPAL">PayPal</option>
+                    <option value="BANK_TRANSFER">Banküberweisung</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    Währung
+                  </label>
+                  <select
+                    value={editingTarif.currency}
+                    onChange={(e) => setEditingTarif({...editingTarif, currency: e.target.value})}
+                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="CHF">CHF</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Zahlungsmethode *</label>
-                <select
-                  value={editingTarif.payment_method?.toUpperCase() || ''}
-                  onChange={(e) => setEditingTarif({...editingTarif, payment_method: e.target.value})}
-                >
-                  <option value="SEPA">SEPA</option>
-                  <option value="CARD">Kreditkarte</option>
-                  <option value="PAYPAL">PayPal</option>
-                  <option value="BANK_TRANSFER">Banküberweisung</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Währung</label>
-                <select
-                  value={editingTarif.currency}
-                  onChange={(e) => setEditingTarif({...editingTarif, currency: e.target.value})}
-                >
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="CHF">CHF</option>
-                </select>
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
+              {/* Status */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={editingTarif.active}
@@ -975,23 +1107,26 @@ const TarifePreise = () => {
                   Tarif ist aktiv
                 </label>
               </div>
-            </div>
 
-            <div className="form-actions">
-              <button
-                className="cancel-btn"
-                onClick={() => setEditingTarif(null)}
-              >
-                Abbrechen
-              </button>
-              <button
-                className="save-btn"
-                onClick={() => handleSaveTarif(editingTarif)}
-                disabled={!editingTarif.name || !editingTarif.price_cents || !editingTarif.duration_months}
-              >
-                <Save size={16} />
-                Speichern
-              </button>
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setEditingTarif(null)}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => handleSaveTarif(editingTarif)}
+                  disabled={!editingTarif.name || !editingTarif.price_cents || !editingTarif.duration_months}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Save size={16} />
+                  Speichern
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -39,6 +39,7 @@ router.post('/', async (req, res) => {
         const {
             name,
             price_cents,
+            aufnahmegebuehr_cents,
             currency,
             duration_months,
             billing_cycle,
@@ -49,14 +50,15 @@ router.post('/', async (req, res) => {
         } = req.body;
         const result = await queryAsync(`
             INSERT INTO tarife (
-                name, price_cents, currency, duration_months,
+                name, price_cents, aufnahmegebuehr_cents, currency, duration_months,
                 billing_cycle, payment_method, active,
                 mindestlaufzeit_monate, kuendigungsfrist_monate
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             name,
             price_cents,
+            aufnahmegebuehr_cents || 4999,
             currency || 'EUR',
             duration_months,
             billing_cycle || 'MONTHLY',
@@ -71,6 +73,7 @@ router.post('/', async (req, res) => {
                 id: result.insertId,
                 name,
                 price_cents,
+                aufnahmegebuehr_cents: aufnahmegebuehr_cents || 4999,
                 currency: currency || 'EUR',
                 duration_months,
                 billing_cycle: billing_cycle || 'MONTHLY',
@@ -90,12 +93,12 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, price_cents, currency, duration_months, billing_cycle, payment_method, active } = req.body;
+        const { name, price_cents, aufnahmegebuehr_cents, currency, duration_months, billing_cycle, payment_method, active } = req.body;
         await queryAsync(`
             UPDATE tarife
-            SET name = ?, price_cents = ?, currency = ?, duration_months = ?, mindestlaufzeit_monate = ?, billing_cycle = ?, payment_method = ?, active = ?
+            SET name = ?, price_cents = ?, aufnahmegebuehr_cents = ?, currency = ?, duration_months = ?, mindestlaufzeit_monate = ?, billing_cycle = ?, payment_method = ?, active = ?
             WHERE id = ?
-        `, [name, price_cents, currency, duration_months, duration_months, billing_cycle, payment_method, active, id]);
+        `, [name, price_cents, aufnahmegebuehr_cents || 4999, currency, duration_months, duration_months, billing_cycle, payment_method, active, id]);
         res.json({ success: true, message: 'Tarif erfolgreich aktualisiert' });
     } catch (err) {
         console.error('Fehler beim Aktualisieren des Tarifs:', err);

@@ -77,6 +77,7 @@ import Beitraege from "./components/Beitraege";
 import Mahnwesen from "./components/Mahnwesen";
 import MahnstufenEinstellungen from "./components/MahnstufenEinstellungen";
 import Rechnungsverwaltung from "./components/Rechnungsverwaltung";
+import RechnungErstellen from "./components/RechnungErstellen";
 import Lastschriftlauf from "./components/Lastschriftlauf";
 import SepaMandateVerwaltung from "./components/SepaMandateVerwaltung";
 import Zahllaeufe from "./components/Zahllaeufe";
@@ -407,6 +408,7 @@ const App = () => {
               <Route path="mahnstufen-einstellungen" element={<MahnstufenEinstellungen />} />
               <Route path="rechnungen" element={<Rechnungsverwaltung />} />
               <Route path="rechnungen/:id" element={<Rechnungsverwaltung />} />
+              <Route path="rechnung-erstellen" element={<RechnungErstellen />} />
               <Route path="lastschriftlauf" element={<LastschriftManagement />} />
               <Route path="sepa-mandate" element={<SepaMandateVerwaltung />} />
               <Route path="zahllaeufe" element={<LastschriftManagement />} />

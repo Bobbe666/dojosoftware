@@ -1,0 +1,315 @@
+/* Rechnung Erstellen Container */
+.rechnung-erstellen-container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem;
+}
+
+.rechnung-editor {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Formular Bereich */
+.rechnung-form {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+.rechnung-form h2 {
+  margin: 0 0 1.5rem 0;
+  color: #1e3a8a;
+  font-size: 1.5rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+}
+
+.form-section h3 {
+  margin: 0 0 1rem 0;
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.form-section select,
+.form-section input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #111827;
+  background: #ffffff;
+}
+
+.form-section select:focus,
+.form-section input:focus {
+  outline: none;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.form-grid label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.position-input {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.position-input select {
+  width: 100%;
+}
+
+.position-input input {
+  width: 80px;
+}
+
+.btn-add {
+  padding: 0.75rem 1rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-add:hover {
+  background: #059669;
+}
+
+.btn-save {
+  width: 100%;
+  padding: 1rem;
+  background: #1e40af;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.btn-save:hover {
+  background: #1e3a8a;
+}
+
+/* Rechnungsvorschau */
+.rechnung-preview {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* Invoice Page - wie PDF */
+.invoice-page {
+  background: white;
+  max-width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 20mm;
+  font-family: Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.4;
+  color: #000000;
+}
+
+/* Invoice Header */
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+}
+
+.company-info {
+  flex: 1;
+}
+
+.company-small {
+  font-size: 8pt;
+  color: #666;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #000;
+}
+
+.recipient-address {
+  margin-top: 1rem;
+  line-height: 1.6;
+}
+
+.invoice-meta {
+  text-align: right;
+  min-width: 250px;
+}
+
+.logo-placeholder {
+  width: 120px;
+  height: 120px;
+  border: 2px solid #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: #666;
+}
+
+.invoice-numbers {
+  font-size: 9pt;
+  line-height: 1.8;
+}
+
+/* Invoice Title */
+.invoice-title {
+  margin-bottom: 2rem;
+}
+
+.invoice-title h1 {
+  font-size: 18pt;
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+}
+
+.page-number {
+  text-align: right;
+  font-size: 9pt;
+  color: #666;
+}
+
+/* Invoice Table */
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  font-size: 9pt;
+}
+
+.invoice-table thead {
+  background: #f3f4f6;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+
+.invoice-table th {
+  padding: 0.5rem 0.25rem;
+  text-align: left;
+  font-weight: bold;
+  font-size: 8pt;
+}
+
+.invoice-table th:nth-child(3),
+.invoice-table th:nth-child(4),
+.invoice-table th:nth-child(6),
+.invoice-table th:nth-child(7),
+.invoice-table th:nth-child(8) {
+  text-align: right;
+}
+
+.invoice-table td {
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.invoice-table td:nth-child(3),
+.invoice-table td:nth-child(4),
+.invoice-table td:nth-child(6),
+.invoice-table td:nth-child(7),
+.invoice-table td:nth-child(8) {
+  text-align: right;
+}
+
+/* Invoice Totals */
+.invoice-totals {
+  margin-left: auto;
+  width: 50%;
+  font-size: 10pt;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.totals-row.total-final {
+  font-weight: bold;
+  font-size: 11pt;
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+/* Payment Terms */
+.payment-terms {
+  margin-top: 2rem;
+  font-size: 9pt;
+}
+
+.payment-terms p {
+  margin: 0.25rem 0;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .rechnung-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .rechnung-form {
+    position: static;
+  }
+}
+
+@media print {
+  .rechnung-form {
+    display: none;
+  }
+
+  .rechnung-preview {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .invoice-page {
+    margin: 0;
+    box-shadow: none;
+  }
+}

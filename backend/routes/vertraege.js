@@ -299,6 +299,7 @@ router.post('/', async (req, res) => {
             billing_cycle,
             payment_method,
             monatsbeitrag,
+            aufnahmegebuehr_cents,
             vertragsnummer,
             kuendigungsfrist_monate,
             mindestlaufzeit_monate,
@@ -370,6 +371,7 @@ router.post('/', async (req, res) => {
         if (billing_cycle) { fields.push('billing_cycle'); values.push(billing_cycle); }
         if (payment_method) { fields.push('payment_method'); values.push(payment_method); }
         if (monatsbeitrag !== undefined) { fields.push('monatsbeitrag'); values.push(monatsbeitrag); }
+        if (aufnahmegebuehr_cents !== undefined) { fields.push('aufnahmegebuehr_cents'); values.push(aufnahmegebuehr_cents); }
 
         // Optional: Weitere Vertragsdaten
         if (vertragsnummer) { fields.push('vertragsnummer'); values.push(vertragsnummer); }

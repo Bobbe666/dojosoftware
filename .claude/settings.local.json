@@ -40,7 +40,11 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(pm2 list:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(python:*)",
+      "WebFetch(domain:dokan.de)",
+      "Bash(git mv:*)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "ask": []

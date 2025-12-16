@@ -40,7 +40,6 @@ const Rechnungsverwaltung = () => {
     ueberfaellige_summe: 0,
     gesamt_summe: 0
   });
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -208,7 +207,7 @@ const Rechnungsverwaltung = () => {
         </div>
         <button
           className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => navigate('/dashboard/rechnung-erstellen')}
         >
           <Plus size={20} />
           Neue Rechnung
@@ -401,19 +400,6 @@ const Rechnungsverwaltung = () => {
           </table>
         )}
       </div>
-
-      {/* Create Modal Placeholder */}
-      {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Neue Rechnung erstellen</h2>
-            <p>Formular wird implementiert...</p>
-            <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
-              Schließen
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
