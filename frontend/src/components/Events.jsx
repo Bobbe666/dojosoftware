@@ -74,11 +74,14 @@ const Events = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Stelle sicher, dass response.data ein Array ist
-      if (Array.isArray(response.data)) {
-        setRaeume(response.data);
+      // Die API gibt { success: true, data: raeume } zurück
+      const raeumeData = response.data.data || response.data || [];
+
+      // Stelle sicher, dass raeumeData ein Array ist
+      if (Array.isArray(raeumeData)) {
+        setRaeume(raeumeData);
       } else {
-        console.error('Raeume API returned non-array:', response.data);
+        console.error('Raeume API returned non-array:', raeumeData);
         setRaeume([]);
       }
     } catch (err) {
@@ -524,8 +527,8 @@ const Events = () => {
                     onChange={(e) => setNewEvent({ ...newEvent, raum_id: e.target.value })}
                   >
                     <option value="">Kein Raum</option>
-                    {raeume.map((raum) => (
-                      <option key={raum.id} value={raum.id}>
+                    {Array.isArray(raeume) && raeume.map((raum) => (
+                      <option key={raum.raum_id || raum.id} value={raum.raum_id || raum.id}>
                         {raum.name}
                       </option>
                     ))}
@@ -717,8 +720,8 @@ const Events = () => {
                     onChange={(e) => setSelectedEvent({ ...selectedEvent, raum_id: e.target.value })}
                   >
                     <option value="">Kein Raum</option>
-                    {raeume.map((raum) => (
-                      <option key={raum.id} value={raum.id}>
+                    {Array.isArray(raeume) && raeume.map((raum) => (
+                      <option key={raum.raum_id || raum.id} value={raum.raum_id || raum.id}>
                         {raum.name}
                       </option>
                     ))}
