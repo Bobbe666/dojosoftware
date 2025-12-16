@@ -69,6 +69,36 @@ router.get('/', (req, res) => {
   });
 });
 
+// GET /api/rechnungen/naechste-nummer - Nächste Rechnungsnummer für Datum
+router.get('/naechste-nummer', (req, res) => {
+  const { datum } = req.query;
+
+  if (!datum) {
+    return res.status(400).json({ success: false, error: 'Datum erforderlich' });
+  }
+
+  const datumObj = new Date(datum);
+  const jahr = datumObj.getFullYear();
+  const monat = String(datumObj.getMonth() + 1).padStart(2, '0');
+  const tag = String(datumObj.getDate()).padStart(2, '0');
+  const datumPrefix = `${jahr}/${monat}/${tag}`;
+
+  const checkQuery = `SELECT COUNT(*) as count FROM rechnungen WHERE DATE(datum) = ?`;
+
+  db.query(checkQuery, [datum], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Ermitteln der nächsten Nummer:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+
+    const count = results[0].count;
+    const laufnummer = 1000 + count;
+    const rechnungsnummer = `${datumPrefix}-${laufnummer}`;
+
+    res.json({ success: true, rechnungsnummer: rechnungsnummer });
+  });
+});
+
 // GET /api/rechnungen/statistiken - Statistiken für Dashboard
 router.get('/statistiken', (req, res) => {
   const query = `
@@ -180,18 +210,25 @@ router.post('/', (req, res) => {
   const mwst_betrag = netto_betrag * (mwst_satz_num / 100);
   const brutto_betrag = netto_betrag + mwst_betrag;
 
-  // Generiere Rechnungsnummer
-  const Jahr = new Date().getFullYear();
-  const checkQuery = `SELECT COUNT(*) as count FROM rechnungen WHERE YEAR(datum) = ?`;
+  // Generiere Rechnungsnummer im Format yyyy/mm/dd-1000
+  const datumObj = new Date(datum);
+  const jahr = datumObj.getFullYear();
+  const monat = String(datumObj.getMonth() + 1).padStart(2, '0');
+  const tag = String(datumObj.getDate()).padStart(2, '0');
+  const datumPrefix = `${jahr}/${monat}/${tag}`;
 
-  db.query(checkQuery, [Jahr], (checkErr, checkResults) => {
+  // Zähle Rechnungen für diesen Tag
+  const checkQuery = `SELECT COUNT(*) as count FROM rechnungen WHERE DATE(datum) = ?`;
+
+  db.query(checkQuery, [datum], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Fehler beim Prüfen der Rechnungsnummer:', checkErr);
       return res.status(500).json({ success: false, error: checkErr.message });
     }
 
-    const count = checkResults[0].count + 1;
-    const rechnungsnummer = `RE-${Jahr}-${String(count).padStart(5, '0')}`;
+    const count = checkResults[0].count;
+    const laufnummer = 1000 + count;
+    const rechnungsnummer = `${datumPrefix}-${laufnummer}`;
 
     // Rechnung einfügen
     const insertQuery = `

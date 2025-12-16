@@ -15,7 +15,7 @@ const RechnungErstellen = () => {
   const [selectedMitglied, setSelectedMitglied] = useState(null);
 
   const [rechnungsDaten, setRechnungsDaten] = useState({
-    rechnungsnummer: '',
+    rechnungsnummer: 'Wird geladen...',
     kundennummer: '',
     belegdatum: new Date().toISOString().split('T')[0],
     leistungsdatum: new Date().toISOString().split('T')[0],
@@ -37,7 +37,12 @@ const RechnungErstellen = () => {
   useEffect(() => {
     loadMitglieder();
     loadArtikel();
+    loadRechnungsnummer(rechnungsDaten.belegdatum);
   }, []);
+
+  useEffect(() => {
+    loadRechnungsnummer(rechnungsDaten.belegdatum);
+  }, [rechnungsDaten.belegdatum]);
 
   const loadMitglieder = async () => {
     try {
@@ -58,6 +63,27 @@ const RechnungErstellen = () => {
       setArtikel(response.data.data || []);
     } catch (error) {
       console.error('Fehler beim Laden der Artikel:', error);
+    }
+  };
+
+  const loadRechnungsnummer = async (datum) => {
+    try {
+      const response = await axios.get(`${config.apiBaseUrl}/rechnungen/naechste-nummer`, {
+        params: { datum },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setRechnungsDaten(prev => ({
+          ...prev,
+          rechnungsnummer: response.data.rechnungsnummer
+        }));
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Rechnungsnummer:', error);
+      setRechnungsDaten(prev => ({
+        ...prev,
+        rechnungsnummer: 'Fehler beim Laden'
+      }));
     }
   };
 
@@ -164,19 +190,22 @@ const RechnungErstellen = () => {
       });
 
       if (response.data.success) {
-        alert('Rechnung erfolgreich erstellt!');
+        alert(`Rechnung erfolgreich erstellt!\nRechnungsnummer: ${response.data.rechnungsnummer}`);
         // Reset form
         setSelectedMitglied(null);
         setPositionen([]);
+        const neueDatum = new Date().toISOString().split('T')[0];
         setRechnungsDaten({
-          rechnungsnummer: '',
+          rechnungsnummer: 'Wird geladen...',
           kundennummer: '',
-          belegdatum: new Date().toISOString().split('T')[0],
-          leistungsdatum: new Date().toISOString().split('T')[0],
+          belegdatum: neueDatum,
+          leistungsdatum: neueDatum,
           zahlungsfrist: '',
           rabatt_prozent: 0,
           rabatt_auf_betrag: 0
         });
+        // Lade die nächste Rechnungsnummer
+        loadRechnungsnummer(neueDatum);
       }
     } catch (error) {
       console.error('Fehler beim Speichern:', error);
