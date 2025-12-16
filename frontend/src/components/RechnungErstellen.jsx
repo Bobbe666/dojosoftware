@@ -318,7 +318,7 @@ const RechnungErstellen = () => {
                     <>
                       <div>Herrn/Frau</div>
                       <div>{selectedMitglied.vorname} {selectedMitglied.nachname}</div>
-                      <div>{selectedMitglied.adresse}</div>
+                      <div>{selectedMitglied.adresse} {selectedMitglied.hausnummer}</div>
                       <div>{selectedMitglied.plz} {selectedMitglied.ort}</div>
                     </>
                   ) : (

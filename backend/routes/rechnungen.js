@@ -490,10 +490,12 @@ router.get('/:id/vorschau', (req, res) => {
       CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
       m.email,
       m.strasse,
+      m.hausnummer,
       m.plz,
       m.ort,
       d.dojoname,
       d.strasse AS dojo_strasse,
+      d.hausnummer AS dojo_hausnummer,
       d.plz AS dojo_plz,
       d.ort AS dojo_ort,
       d.telefon AS dojo_telefon,
@@ -629,12 +631,12 @@ router.get('/:id/vorschau', (req, res) => {
   <div class="header">
     <div>
       <div class="company-small">
-        ${rechnung.dojoname || ''} | ${rechnung.dojo_strasse || ''} | ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}
+        ${rechnung.dojoname || ''} | ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''} | ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}
       </div>
       <div class="recipient">
         <div>Herrn/Frau</div>
         <div>${rechnung.mitglied_name}</div>
-        <div>${rechnung.strasse || ''}</div>
+        <div>${rechnung.strasse || ''} ${rechnung.hausnummer || ''}</div>
         <div>${rechnung.plz || ''} ${rechnung.ort || ''}</div>
       </div>
     </div>
