@@ -240,14 +240,6 @@ function Dashboard() {
       count: stats.mitglieder
     },
     {
-      icon: '📥',
-      title: 'MagicLine Import',
-      description: 'Mitglieder & Verträge aus MagicLine importieren',
-      path: '/dashboard/magicline-import',
-      badge: 'IMPORT',
-      featured: true
-    },
-    {
       icon: '👥',
       title: 'Buddy-Gruppen',
       description: 'Freunde-Einladungen und Gruppenverwaltung',
@@ -398,6 +390,14 @@ function Dashboard() {
       description: 'Mehrere Dojos & Steuer-Tracking verwalten',
       path: '/dashboard/dojos',
       badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📥',
+      title: 'MagicLine Import',
+      description: 'Mitglieder & Verträge aus MagicLine importieren',
+      path: '/dashboard/magicline-import',
+      badge: 'IMPORT',
       featured: true
     }
   ];
