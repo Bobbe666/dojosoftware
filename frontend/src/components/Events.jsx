@@ -50,10 +50,18 @@ const Events = () => {
       const response = await axios.get(`${config.apiBaseUrl}/events${dojoFilter}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setEvents(response.data);
+
+      // Stelle sicher, dass response.data ein Array ist
+      if (Array.isArray(response.data)) {
+        setEvents(response.data);
+      } else {
+        console.error('Events API returned non-array:', response.data);
+        setEvents([]);
+      }
     } catch (err) {
       console.error('Fehler beim Laden der Events:', err);
       setError('Fehler beim Laden der Events: ' + err.message);
+      setEvents([]); // Stelle sicher, dass events ein Array bleibt
     } finally {
       setLoading(false);
     }
@@ -65,9 +73,17 @@ const Events = () => {
       const response = await axios.get(`${config.apiBaseUrl}/raeume`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setRaeume(response.data);
+
+      // Stelle sicher, dass response.data ein Array ist
+      if (Array.isArray(response.data)) {
+        setRaeume(response.data);
+      } else {
+        console.error('Raeume API returned non-array:', response.data);
+        setRaeume([]);
+      }
     } catch (err) {
       console.error('Fehler beim Laden der Räume:', err);
+      setRaeume([]);
     }
   }, [token]);
 
@@ -77,9 +93,17 @@ const Events = () => {
       const response = await axios.get(`${config.apiBaseUrl}/trainer`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTrainer(response.data);
+
+      // Stelle sicher, dass response.data ein Array ist
+      if (Array.isArray(response.data)) {
+        setTrainer(response.data);
+      } else {
+        console.error('Trainer API returned non-array:', response.data);
+        setTrainer([]);
+      }
     } catch (err) {
       console.error('Fehler beim Laden der Trainer:', err);
+      setTrainer([]);
     }
   }, [token]);
 
