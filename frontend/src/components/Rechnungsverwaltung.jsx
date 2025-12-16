@@ -531,99 +531,95 @@ const Rechnungsverwaltung = () => {
             </div>
 
             <div className="modal-body">
-              <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                {/* Mitglied */}
-                <div className="form-group">
-                  <label>Mitglied *</label>
-                  <select
-                    value={formData.mitglied_id}
-                    onChange={(e) => setFormData({...formData, mitglied_id: e.target.value})}
-                    required
-                  >
-                    <option value="">Bitte wählen...</option>
-                    {mitglieder.map(m => (
-                      <option key={m.mitglied_id} value={m.mitglied_id}>
-                        {m.vorname} {m.nachname}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Rechnungsdaten Sektion */}
+              <div className="form-section">
+                <h3>📋 Rechnungsdaten</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Mitglied *</label>
+                    <select
+                      value={formData.mitglied_id}
+                      onChange={(e) => setFormData({...formData, mitglied_id: e.target.value})}
+                      required
+                    >
+                      <option value="">Bitte wählen...</option>
+                      {mitglieder.map(m => (
+                        <option key={m.mitglied_id} value={m.mitglied_id}>
+                          {m.vorname} {m.nachname}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Art */}
-                <div className="form-group">
-                  <label>Art *</label>
-                  <select
-                    value={formData.art}
-                    onChange={(e) => setFormData({...formData, art: e.target.value})}
-                  >
-                    <option value="Verkauf">Verkauf</option>
-                    <option value="Mitgliedsbeitrag">Mitgliedsbeitrag</option>
-                    <option value="Prüfungsgebühr">Prüfungsgebühr</option>
-                    <option value="Lehrgang">Lehrgang</option>
-                    <option value="Sonstiges">Sonstiges</option>
-                  </select>
-                </div>
+                  <div className="form-group">
+                    <label>Art *</label>
+                    <select
+                      value={formData.art}
+                      onChange={(e) => setFormData({...formData, art: e.target.value})}
+                    >
+                      <option value="Verkauf">Verkauf</option>
+                      <option value="Mitgliedsbeitrag">Mitgliedsbeitrag</option>
+                      <option value="Prüfungsgebühr">Prüfungsgebühr</option>
+                      <option value="Lehrgang">Lehrgang</option>
+                      <option value="Sonstiges">Sonstiges</option>
+                    </select>
+                  </div>
 
-                {/* Datum */}
-                <div className="form-group">
-                  <label>Rechnungsdatum *</label>
-                  <input
-                    type="date"
-                    value={formData.datum}
-                    onChange={(e) => setFormData({...formData, datum: e.target.value})}
-                    required
-                  />
-                </div>
+                  <div className="form-group">
+                    <label>Rechnungsdatum *</label>
+                    <input
+                      type="date"
+                      value={formData.datum}
+                      onChange={(e) => setFormData({...formData, datum: e.target.value})}
+                      required
+                    />
+                  </div>
 
-                {/* Fälligkeitsdatum */}
-                <div className="form-group">
-                  <label>Fälligkeitsdatum *</label>
-                  <input
-                    type="date"
-                    value={formData.faelligkeitsdatum}
-                    onChange={(e) => setFormData({...formData, faelligkeitsdatum: e.target.value})}
-                    required
-                  />
-                </div>
+                  <div className="form-group">
+                    <label>Fälligkeitsdatum *</label>
+                    <input
+                      type="date"
+                      value={formData.faelligkeitsdatum}
+                      onChange={(e) => setFormData({...formData, faelligkeitsdatum: e.target.value})}
+                      required
+                    />
+                  </div>
 
-                {/* MwSt Satz */}
-                <div className="form-group">
-                  <label>MwSt-Satz (%)</label>
-                  <input
-                    type="number"
-                    value={formData.mwst_satz}
-                    onChange={(e) => setFormData({...formData, mwst_satz: parseFloat(e.target.value)})}
-                    min="0"
-                    max="100"
-                    step="0.01"
-                  />
-                </div>
+                  <div className="form-group">
+                    <label>MwSt-Satz (%)</label>
+                    <input
+                      type="number"
+                      value={formData.mwst_satz}
+                      onChange={(e) => setFormData({...formData, mwst_satz: parseFloat(e.target.value)})}
+                      min="0"
+                      max="100"
+                      step="0.01"
+                    />
+                  </div>
 
-                {/* Beschreibung */}
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Beschreibung</label>
-                  <textarea
-                    value={formData.beschreibung}
-                    onChange={(e) => setFormData({...formData, beschreibung: e.target.value})}
-                    rows="2"
-                  ></textarea>
-                </div>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>Beschreibung</label>
+                    <textarea
+                      value={formData.beschreibung}
+                      onChange={(e) => setFormData({...formData, beschreibung: e.target.value})}
+                      rows="2"
+                    ></textarea>
+                  </div>
 
-                {/* Notizen */}
-                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Interne Notizen</label>
-                  <textarea
-                    value={formData.notizen}
-                    onChange={(e) => setFormData({...formData, notizen: e.target.value})}
-                    rows="2"
-                  ></textarea>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>Interne Notizen</label>
+                    <textarea
+                      value={formData.notizen}
+                      onChange={(e) => setFormData({...formData, notizen: e.target.value})}
+                      rows="2"
+                    ></textarea>
+                  </div>
                 </div>
               </div>
 
-              <hr style={{ margin: '1.5rem 0', border: 'none', borderTop: '1px solid #ddd' }} />
-
-              {/* Positionen hinzufügen */}
-              <h3 style={{ marginBottom: '1rem' }}>Positionen</h3>
+              {/* Positionen Sektion */}
+              <div className="form-section">
+                <h3>📦 Rechnungspositionen</h3>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 <select
                   value={selectedArtikel}
@@ -689,16 +685,36 @@ const Rechnungsverwaltung = () => {
                 </div>
               )}
 
-              {/* Summen */}
-              {positionen.length > 0 && (
-                <div style={{ textAlign: 'right', marginTop: '1rem' }}>
-                  <div><strong>Netto:</strong> {calculateTotals().netto.toFixed(2)} €</div>
-                  <div><strong>MwSt ({formData.mwst_satz}%):</strong> {calculateTotals().mwst.toFixed(2)} €</div>
-                  <div style={{ fontSize: '1.2rem', marginTop: '0.5rem' }}>
-                    <strong>Brutto:</strong> {calculateTotals().brutto.toFixed(2)} €
+                {/* Summen */}
+                {positionen.length > 0 && (
+                  <div style={{
+                    marginTop: '1.5rem',
+                    padding: '1rem',
+                    background: '#f3f4f6',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ color: '#374151', fontWeight: '600' }}>Netto:</span>
+                      <span style={{ color: '#111827', fontWeight: '600' }}>{calculateTotals().netto.toFixed(2)} €</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ color: '#374151', fontWeight: '600' }}>MwSt ({formData.mwst_satz}%):</span>
+                      <span style={{ color: '#111827', fontWeight: '600' }}>{calculateTotals().mwst.toFixed(2)} €</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginTop: '0.75rem',
+                      paddingTop: '0.75rem',
+                      borderTop: '2px solid #1e40af'
+                    }}>
+                      <span style={{ color: '#1e3a8a', fontWeight: '700', fontSize: '1.1rem' }}>Brutto:</span>
+                      <span style={{ color: '#1e3a8a', fontWeight: '700', fontSize: '1.1rem' }}>{calculateTotals().brutto.toFixed(2)} €</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="modal-footer">
