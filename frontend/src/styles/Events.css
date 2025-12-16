@@ -56,10 +56,11 @@
 }
 
 .card-header h2 {
-  color: #2a2a3e;
+  color: #ffffff;
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .card-body {
@@ -335,16 +336,17 @@
 }
 
 .modal-header h2 {
-  color: #2a2a3e;
+  color: #ffffff;
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .modal-close {
   background: none;
   border: none;
-  color: #2a2a3e;
+  color: #ffffff;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
