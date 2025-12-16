@@ -42,26 +42,8 @@ const Rechnungsverwaltung = () => {
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Form States
-  const [mitglieder, setMitglieder] = useState([]);
-  const [artikel, setArtikel] = useState([]);
-  const [formData, setFormData] = useState({
-    mitglied_id: '',
-    datum: new Date().toISOString().split('T')[0],
-    faelligkeitsdatum: '',
-    art: 'Verkauf',
-    beschreibung: '',
-    notizen: '',
-    mwst_satz: 19
-  });
-  const [positionen, setPositionen] = useState([]);
-  const [selectedArtikel, setSelectedArtikel] = useState('');
-  const [menge, setMenge] = useState(1);
-
   useEffect(() => {
     loadData();
-    loadMitglieder();
-    loadArtikel();
   }, []);
 
   useEffect(() => {
@@ -91,30 +73,6 @@ const Rechnungsverwaltung = () => {
     } catch (error) {
       console.error('Fehler beim Laden der Daten:', error);
       setLoading(false);
-    }
-  };
-
-  const loadMitglieder = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseUrl}/mitglieder`);
-      if (response.ok) {
-        const data = await response.json();
-        setMitglieder(data || []);
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden der Mitglieder:', error);
-    }
-  };
-
-  const loadArtikel = async () => {
-    try {
-      const response = await fetch(`${config.apiBaseUrl}/artikel`);
-      if (response.ok) {
-        const data = await response.json();
-        setArtikel(data.data || []);
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden der Artikel:', error);
     }
   };
 
@@ -154,83 +112,6 @@ const Rechnungsverwaltung = () => {
     }
 
     setFilteredRechnungen(filtered);
-  };
-
-  // Formular-Funktionen
-  const addPosition = () => {
-    if (!selectedArtikel || menge <= 0) return;
-
-    const foundArtikel = artikel.find(a => a.artikel_id === parseInt(selectedArtikel));
-    if (!foundArtikel) return;
-
-    const einzelpreis = foundArtikel.verkaufspreis_cent / 100;
-    const gesamtpreis = einzelpreis * menge;
-
-    const neuePosition = {
-      artikel_id: foundArtikel.artikel_id,
-      bezeichnung: foundArtikel.name,
-      menge: menge,
-      einzelpreis: einzelpreis,
-      gesamtpreis: gesamtpreis,
-      mwst_satz: formData.mwst_satz,
-      beschreibung: foundArtikel.beschreibung || ''
-    };
-
-    setPositionen([...positionen, neuePosition]);
-    setSelectedArtikel('');
-    setMenge(1);
-  };
-
-  const removePosition = (index) => {
-    setPositionen(positionen.filter((_, i) => i !== index));
-  };
-
-  const calculateTotals = () => {
-    const netto = positionen.reduce((sum, pos) => sum + pos.gesamtpreis, 0);
-    const mwst = netto * (formData.mwst_satz / 100);
-    const brutto = netto + mwst;
-    return { netto, mwst, brutto };
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.mitglied_id || !formData.datum || !formData.faelligkeitsdatum || positionen.length === 0) {
-      alert('Bitte füllen Sie alle Pflichtfelder aus und fügen Sie mindestens eine Position hinzu.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${config.apiBaseUrl}/rechnungen`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          positionen
-        })
-      });
-
-      if (response.ok) {
-        alert('Rechnung erfolgreich erstellt!');
-        setShowCreateModal(false);
-        // Reset form
-        setFormData({
-          mitglied_id: '',
-          datum: new Date().toISOString().split('T')[0],
-          faelligkeitsdatum: '',
-          art: 'Verkauf',
-          beschreibung: '',
-          notizen: '',
-          mwst_satz: 19
-        });
-        setPositionen([]);
-        loadData();
-      } else {
-        const error = await response.json();
-        alert('Fehler beim Erstellen der Rechnung: ' + (error.error || 'Unbekannter Fehler'));
-      }
-    } catch (error) {
-      console.error('Fehler beim Erstellen der Rechnung:', error);
-      alert('Fehler beim Erstellen der Rechnung.');
-    }
   };
 
   const handleArchivieren = async (rechnung_id, archivieren) => {
@@ -521,210 +402,15 @@ const Rechnungsverwaltung = () => {
         )}
       </div>
 
-      {/* Create Invoice Modal */}
+      {/* Create Modal Placeholder */}
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
-            <div className="modal-header">
-              <h2>Neue Rechnung erstellen</h2>
-              <button className="close-btn" onClick={() => setShowCreateModal(false)}>×</button>
-            </div>
-
-            <div className="modal-body">
-              {/* Rechnungsdaten Sektion */}
-              <div className="form-section">
-                <h3>📋 Rechnungsdaten</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label>Mitglied *</label>
-                    <select
-                      value={formData.mitglied_id}
-                      onChange={(e) => setFormData({...formData, mitglied_id: e.target.value})}
-                      required
-                    >
-                      <option value="">Bitte wählen...</option>
-                      {mitglieder.map(m => (
-                        <option key={m.mitglied_id} value={m.mitglied_id}>
-                          {m.vorname} {m.nachname}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Art *</label>
-                    <select
-                      value={formData.art}
-                      onChange={(e) => setFormData({...formData, art: e.target.value})}
-                    >
-                      <option value="Verkauf">Verkauf</option>
-                      <option value="Mitgliedsbeitrag">Mitgliedsbeitrag</option>
-                      <option value="Prüfungsgebühr">Prüfungsgebühr</option>
-                      <option value="Lehrgang">Lehrgang</option>
-                      <option value="Sonstiges">Sonstiges</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Rechnungsdatum *</label>
-                    <input
-                      type="date"
-                      value={formData.datum}
-                      onChange={(e) => setFormData({...formData, datum: e.target.value})}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Fälligkeitsdatum *</label>
-                    <input
-                      type="date"
-                      value={formData.faelligkeitsdatum}
-                      onChange={(e) => setFormData({...formData, faelligkeitsdatum: e.target.value})}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>MwSt-Satz (%)</label>
-                    <input
-                      type="number"
-                      value={formData.mwst_satz}
-                      onChange={(e) => setFormData({...formData, mwst_satz: parseFloat(e.target.value)})}
-                      min="0"
-                      max="100"
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label>Beschreibung</label>
-                    <textarea
-                      value={formData.beschreibung}
-                      onChange={(e) => setFormData({...formData, beschreibung: e.target.value})}
-                      rows="2"
-                    ></textarea>
-                  </div>
-
-                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label>Interne Notizen</label>
-                    <textarea
-                      value={formData.notizen}
-                      onChange={(e) => setFormData({...formData, notizen: e.target.value})}
-                      rows="2"
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-
-              {/* Positionen Sektion */}
-              <div className="form-section">
-                <h3>📦 Rechnungspositionen</h3>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                <select
-                  value={selectedArtikel}
-                  onChange={(e) => setSelectedArtikel(e.target.value)}
-                  style={{ flex: 1 }}
-                >
-                  <option value="">Artikel wählen...</option>
-                  {artikel.map(a => (
-                    <option key={a.artikel_id} value={a.artikel_id}>
-                      {a.name} - {(a.verkaufspreis_cent / 100).toFixed(2)} €
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={menge}
-                  onChange={(e) => setMenge(parseInt(e.target.value))}
-                  min="1"
-                  placeholder="Menge"
-                  style={{ width: '100px' }}
-                />
-                <button
-                  className="btn btn-primary"
-                  onClick={addPosition}
-                  type="button"
-                >
-                  Hinzufügen
-                </button>
-              </div>
-
-              {/* Positionsliste */}
-              {positionen.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #ddd' }}>
-                        <th style={{ padding: '0.5rem', textAlign: 'left' }}>Bezeichnung</th>
-                        <th style={{ padding: '0.5rem', textAlign: 'right' }}>Menge</th>
-                        <th style={{ padding: '0.5rem', textAlign: 'right' }}>Einzelpreis</th>
-                        <th style={{ padding: '0.5rem', textAlign: 'right' }}>Gesamtpreis</th>
-                        <th style={{ padding: '0.5rem' }}></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {positionen.map((pos, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                          <td style={{ padding: '0.5rem' }}>{pos.bezeichnung}</td>
-                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{pos.menge}</td>
-                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{pos.einzelpreis.toFixed(2)} €</td>
-                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{pos.gesamtpreis.toFixed(2)} €</td>
-                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                            <button
-                              onClick={() => removePosition(index)}
-                              style={{ background: '#dc3545', color: 'white', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer' }}
-                            >
-                              ×
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-                {/* Summen */}
-                {positionen.length > 0 && (
-                  <div style={{
-                    marginTop: '1.5rem',
-                    padding: '1rem',
-                    background: '#f3f4f6',
-                    borderRadius: '6px',
-                    border: '1px solid #d1d5db'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#374151', fontWeight: '600' }}>Netto:</span>
-                      <span style={{ color: '#111827', fontWeight: '600' }}>{calculateTotals().netto.toFixed(2)} €</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ color: '#374151', fontWeight: '600' }}>MwSt ({formData.mwst_satz}%):</span>
-                      <span style={{ color: '#111827', fontWeight: '600' }}>{calculateTotals().mwst.toFixed(2)} €</span>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginTop: '0.75rem',
-                      paddingTop: '0.75rem',
-                      borderTop: '2px solid #1e40af'
-                    }}>
-                      <span style={{ color: '#1e3a8a', fontWeight: '700', fontSize: '1.1rem' }}>Brutto:</span>
-                      <span style={{ color: '#1e3a8a', fontWeight: '700', fontSize: '1.1rem' }}>{calculateTotals().brutto.toFixed(2)} €</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
-                Abbrechen
-              </button>
-              <button className="btn btn-primary" onClick={handleSubmit}>
-                Rechnung erstellen
-              </button>
-            </div>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Neue Rechnung erstellen</h2>
+            <p>Formular wird implementiert...</p>
+            <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
+              Schließen
+            </button>
           </div>
         </div>
       )}
