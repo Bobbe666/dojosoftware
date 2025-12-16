@@ -61,6 +61,12 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+.form-section select option {
+  background: #1a1a2e;
+  color: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem;
+}
+
 .form-section select:focus,
 .form-section input:focus {
   outline: none;
@@ -94,6 +100,12 @@
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.position-input select option {
+  background: #1a1a2e;
+  color: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem;
 }
 
 .position-input input {
