@@ -30,7 +30,7 @@ router.get("/", (req, res) => {
 
     if (stil) {
         const query = `
-            SELECT DISTINCT m.mitglied_id, m.vorname, m.nachname, m.adresse, m.plz, m.ort, m.email, m.telefon_mobil
+            SELECT DISTINCT m.mitglied_id, m.vorname, m.nachname, m.strasse as adresse, m.plz, m.ort, m.email, m.telefon_mobil
             FROM mitglieder m
             JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
             ${whereClause}
@@ -48,7 +48,7 @@ router.get("/", (req, res) => {
     } else {
         // Standard: Alle aktiven Mitglieder
         const query = `
-            SELECT mitglied_id, vorname, nachname, adresse, plz, ort, email, telefon_mobil
+            SELECT mitglied_id, vorname, nachname, strasse as adresse, plz, ort, email, telefon_mobil
             FROM mitglieder m
             ${whereClause}
             ORDER BY nachname, vorname
