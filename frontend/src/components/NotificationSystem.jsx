@@ -251,21 +251,26 @@ const NotificationSystem = () => {
       try {
         const membersResponse = await fetch(`${config.apiBaseUrl}/mitglieder`);
         const membersData = await membersResponse.json();
-        console.log('📊 Raw members data:', membersData.slice(0, 2)); // Zeige ersten 2 Einträge
-        
+        console.log('📊 Raw members data:', Array.isArray(membersData) ? membersData.slice(0, 2) : membersData); // Zeige ersten 2 Einträge
+
         // Erstelle realistische Email-Adressen basierend auf den Namen
-        memberEmails = membersData.map(member => {
-          const firstName = (member.vorname || 'member').toLowerCase().replace(/[^a-z]/g, '');
-          const lastName = (member.nachname || 'test').toLowerCase().replace(/[^a-z]/g, '');
-          const email = `${firstName}.${lastName}@dojo.local`;
-          
-          return {
-            email: email,
-            name: `${member.vorname || ''} ${member.nachname || ''}`.trim(),
-            type: 'mitglied'
-          };
-        });
-        
+        if (Array.isArray(membersData)) {
+          memberEmails = membersData.map(member => {
+            const firstName = (member.vorname || 'member').toLowerCase().replace(/[^a-z]/g, '');
+            const lastName = (member.nachname || 'test').toLowerCase().replace(/[^a-z]/g, '');
+            const email = `${firstName}.${lastName}@dojo.local`;
+
+            return {
+              email: email,
+              name: `${member.vorname || ''} ${member.nachname || ''}`.trim(),
+              type: 'mitglied'
+            };
+          });
+        } else {
+          console.warn('⚠️ membersData is not an array:', membersData);
+          memberEmails = [];
+        }
+
         console.log(`✅ Created ${memberEmails.length} member emails`);
       } catch (error) {
         console.log('❌ Members API error:', error);
@@ -275,22 +280,26 @@ const NotificationSystem = () => {
       // Lade Trainer direkt
       const trainersResponse = await fetch(`${config.apiBaseUrl}/trainer`);
       const trainersData = await trainersResponse.json();
-      
-      const trainerEmails = trainersData.filter(trainer => trainer.email && trainer.email !== '').map(trainer => ({
-        email: trainer.email,
-        name: `${trainer.vorname || ''} ${trainer.nachname || ''}`.trim(),
-        type: 'trainer'
-      }));
-      
+
+      const trainerEmails = Array.isArray(trainersData)
+        ? trainersData.filter(trainer => trainer.email && trainer.email !== '').map(trainer => ({
+            email: trainer.email,
+            name: `${trainer.vorname || ''} ${trainer.nachname || ''}`.trim(),
+            type: 'trainer'
+          }))
+        : [];
+
       // Lade Personal direkt
       const personalResponse = await fetch(`${config.apiBaseUrl}/personal`);
       const personalData = await personalResponse.json();
-      
-      const personalEmails = personalData.filter(personal => personal.email && personal.email !== '').map(personal => ({
-        email: personal.email,
-        name: `${personal.vorname || ''} ${personal.nachname || ''}`.trim(),
-        type: 'personal'
-      }));
+
+      const personalEmails = Array.isArray(personalData)
+        ? personalData.filter(personal => personal.email && personal.email !== '').map(personal => ({
+            email: personal.email,
+            name: `${personal.vorname || ''} ${personal.nachname || ''}`.trim(),
+            type: 'personal'
+          }))
+        : [];
       
       setRecipients({
         mitglieder: memberEmails,
@@ -1326,7 +1335,7 @@ const NotificationSystem = () => {
             className="form-select"
           >
             <option value="">Kein Template</option>
-            {templates.map(template => (
+            {Array.isArray(templates) && templates.map(template => (
               <option key={template.id} value={template.id}>{template.name}</option>
             ))}
           </select>
@@ -1744,7 +1753,7 @@ const NotificationSystem = () => {
         </div>
 
         <div className="history-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {groups.map((group, index) => {
+          {Array.isArray(groups) && groups.map((group, index) => {
             const key = `${group.subject}_${group.timestamp}`;
             const recipients = expandedNotifications[key];
             const readPercentage = group.total_sent > 0 ? Math.round((group.total_read / group.total_sent) * 100) : 0;
