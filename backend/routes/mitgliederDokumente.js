@@ -218,27 +218,63 @@ router.post('/:id/dokumente/generate', async (req, res) => {
 });
 
 // GET /api/mitglieder/:id/dokumente
-// List all documents for a member
+// List all documents for a member (including invoices)
 router.get('/:id/dokumente', async (req, res) => {
   const mitgliedId = req.params.id;
   try {
-    const query = `
+    // Query für normale Dokumente
+    const dokumenteQuery = `
       SELECT
-        md.*,
+        md.id,
+        md.mitglied_id,
+        md.dokumentname,
+        md.dateipfad,
+        md.erstellt_am,
         vv.name AS vorlage_name,
-        vv.template_type
+        vv.template_type,
+        'dokument' AS typ
       FROM mitglied_dokumente md
       LEFT JOIN vertragsvorlagen vv ON md.vorlage_id = vv.id
       WHERE md.mitglied_id = ?
-      ORDER BY md.erstellt_am DESC
     `;
 
-    db.query(query, [mitgliedId], (err, results) => {
-      if (err) {
-        console.error('Fehler beim Laden der Dokumente:', err);
+    // Query für Rechnungen
+    const rechnungenQuery = `
+      SELECT
+        r.rechnung_id AS id,
+        r.mitglied_id,
+        CONCAT('Rechnung ', r.rechnungsnummer) AS dokumentname,
+        NULL AS dateipfad,
+        r.datum AS erstellt_am,
+        NULL AS vorlage_name,
+        NULL AS template_type,
+        'rechnung' AS typ,
+        r.rechnungsnummer,
+        r.betrag,
+        r.status
+      FROM rechnungen r
+      WHERE r.mitglied_id = ?
+    `;
+
+    // Beide Queries parallel ausführen
+    db.query(dokumenteQuery, [mitgliedId], (err1, dokumente) => {
+      if (err1) {
+        console.error('Fehler beim Laden der Dokumente:', err1);
         return res.status(500).json({ error: 'Fehler beim Laden der Dokumente' });
       }
-      res.json({ success: true, data: results });
+
+      db.query(rechnungenQuery, [mitgliedId], (err2, rechnungen) => {
+        if (err2) {
+          console.error('Fehler beim Laden der Rechnungen:', err2);
+          return res.status(500).json({ error: 'Fehler beim Laden der Rechnungen' });
+        }
+
+        // Kombiniere beide Arrays und sortiere nach Datum
+        const alleDokumente = [...dokumente, ...rechnungen]
+          .sort((a, b) => new Date(b.erstellt_am) - new Date(a.erstellt_am));
+
+        res.json({ success: true, data: alleDokumente });
+      });
     });
 
   } catch (error) {
