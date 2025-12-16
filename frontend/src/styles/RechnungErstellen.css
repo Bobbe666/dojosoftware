@@ -1,7 +1,7 @@
 /* Rechnung Erstellen Container */
 .rechnung-erstellen-container {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   padding: 2rem;
 }
 
@@ -15,10 +15,12 @@
 
 /* Formular Bereich */
 .rechnung-form {
-  background: #ffffff;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   height: fit-content;
   position: sticky;
   top: 2rem;
@@ -26,14 +28,15 @@
 
 .rechnung-form h2 {
   margin: 0 0 1.5rem 0;
-  color: #1e3a8a;
+  color: #ffd700;
   font-size: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
 
 .form-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
 }
 
 .form-section:last-of-type {
@@ -42,7 +45,7 @@
 
 .form-section h3 {
   margin: 0 0 1rem 0;
-  color: #374151;
+  color: #ffd700;
   font-size: 1rem;
   font-weight: 600;
 }
@@ -51,18 +54,18 @@
 .form-section input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 6px;
   font-size: 0.95rem;
-  color: #111827;
-  background: #ffffff;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .form-section select:focus,
 .form-section input:focus {
   outline: none;
-  border-color: #1e40af;
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  border-color: #ffd700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
 .form-grid {
@@ -74,7 +77,7 @@
 .form-grid label {
   display: block;
   margin-bottom: 0.25rem;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -88,42 +91,54 @@
 
 .position-input select {
   width: 100%;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .position-input input {
   width: 80px;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .btn-add {
   padding: 0.75rem 1rem;
-  background: #10b981;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  border: none;
+  border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
 .btn-add:hover {
-  background: #059669;
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
 }
 
 .btn-save {
   width: 100%;
   padding: 1rem;
-  background: #1e40af;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #ffd700, #f59e0b);
+  color: #1a1a2e;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: 1rem;
+  transition: all 0.2s ease;
 }
 
 .btn-save:hover {
-  background: #1e3a8a;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 /* Rechnungsvorschau */
