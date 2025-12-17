@@ -63,13 +63,13 @@
 .tab-content-section .form-input,
 .tab-content-section .form-select,
 .tab-content-section .form-textarea {
-  padding: 0.5rem 0.75rem !important;
+  padding: 0.45rem 0.65rem !important;
   background: rgba(0, 0, 0, 0.3) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 8px !important;
   color: #ffffff !important;
-  font-size: 0.95rem !important;
-  height: 42px !important;
+  font-size: 0.9rem !important;
+  height: 38px !important;
   font-family: var(--schriftart-haupt) !important;
   box-shadow: none !important;
 }
@@ -145,8 +145,65 @@
 /* Modal Hintergrund - keine Transparenz */
 .modal-content.artikel-modal {
   background: #1a1a2e !important;
+  max-width: 100% !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .artikel-modal .modal-body {
   background: #1a1a2e !important;
+  flex: 1 !important;
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+  padding: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.tab-content-section {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.preiskalkulation-container {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.preis-eingabe-section,
+.preis-kalkulation-section {
+  overflow-y: auto !important;
+  max-height: 100% !important;
+}
+
+/* Kompaktere Labels für mehr Platz */
+.tab-content-section .form-group label {
+  font-size: 0.8rem !important;
+  margin-bottom: 0.2rem !important;
+}
+
+/* Kompaktere Abstände */
+.tab-content-section .form-grid {
+  gap: 1rem !important;
+}
+
+.preiskalkulation-container {
+  gap: 1rem !important;
+}
+
+.preis-eingabe-section,
+.preis-kalkulation-section {
+  padding: 0.85rem !important;
+}
+
+.preis-eingabe-section h3,
+.preis-kalkulation-section h3 {
+  font-size: 0.95rem !important;
+  margin-bottom: 0.6rem !important;
 }

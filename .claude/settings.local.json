@@ -44,7 +44,8 @@
       "Bash(python:*)",
       "WebFetch(domain:dokan.de)",
       "Bash(git mv:*)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(tar:*)"
     ],
     "deny": [],
     "ask": []
