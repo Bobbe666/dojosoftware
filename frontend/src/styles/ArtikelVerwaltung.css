@@ -1904,8 +1904,8 @@
    ============================================ */
 
 .modal-content.artikel-modal {
-  max-width: 1200px;
-  max-height: 95vh;
+  max-width: 1400px;
+  max-height: 98vh;
   background: #1a1a2e;
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: var(--radius-lg);
@@ -1944,7 +1944,7 @@
 .artikel-modal .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.25rem;
+  padding: 1rem;
   background: #1a1a2e;
 }
 
@@ -1955,7 +1955,7 @@
 .tab-content-section .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .tab-content-section .form-grid .full-width {
@@ -1971,24 +1971,24 @@
 .tab-content-section .form-group label {
   font-weight: 600;
   color: #ffd700;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 /* Formularfelder - einheitliche Höhe und Rahmen */
 .tab-content-section .form-input,
 .tab-content-section .form-select,
 .tab-content-section .form-textarea {
-  padding: 0.5rem 0.75rem;
+  padding: 0.45rem 0.65rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
-  height: 42px;
+  height: 38px;
   font-family: var(--schriftart-haupt);
 }
 
@@ -2061,7 +2061,7 @@
 .preiskalkulation-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1rem;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -2070,7 +2070,7 @@
   background: rgba(0, 0, 0, 0.3);
   border: 2px solid rgba(255, 215, 0, 0.2);
   border-radius: var(--radius-md);
-  padding: 1rem;
+  padding: 0.85rem;
 }
 
 .preis-kalkulation-section {
@@ -2141,19 +2141,19 @@
 
 .kalkulation-label {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
 .kalkulation-value {
   color: #ffffff;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   font-family: 'Courier New', monospace;
 }
 
 .kalkulation-value.final-price {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   color: #ffd700;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
@@ -2216,8 +2216,8 @@
 
 .preis-eingabe-section h3,
 .preis-kalkulation-section h3 {
-  font-size: 1rem;
-  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
 }
 
 .tab-content-section .form-group small {
