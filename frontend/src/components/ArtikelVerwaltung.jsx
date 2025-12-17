@@ -42,6 +42,8 @@ const ArtikelVerwaltung = () => {
     ean_code: '',
     artikel_nummer: '',
     einkaufspreis_euro: '',
+    zusatzkosten_euro: '',
+    marge_prozent: '',
     verkaufspreis_euro: '',
     mwst_prozent: 19.00,
     lagerbestand: 0,
@@ -210,6 +212,8 @@ const ArtikelVerwaltung = () => {
       ean_code: artikel.ean_code || '',
       artikel_nummer: artikel.artikel_nummer || '',
       einkaufspreis_euro: artikel.einkaufspreis_euro || '',
+      zusatzkosten_euro: artikel.zusatzkosten_euro || '',
+      marge_prozent: artikel.marge_prozent || '',
       verkaufspreis_euro: artikel.verkaufspreis_euro || '',
       mwst_prozent: artikel.mwst_prozent || 19.00,
       lagerbestand: artikel.lagerbestand || 0,
@@ -237,6 +241,8 @@ const ArtikelVerwaltung = () => {
       ean_code: '',
       artikel_nummer: '',
       einkaufspreis_euro: '',
+      zusatzkosten_euro: '',
+      marge_prozent: '',
       verkaufspreis_euro: '',
       mwst_prozent: 19.00,
       lagerbestand: 0,
@@ -414,53 +420,209 @@ const ArtikelVerwaltung = () => {
     </div>
   );
 
-  const renderTabPreise = () => (
-    <div className="tab-content-section">
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Einkaufspreis (€)</label>
-          <input
-            type="number"
-            name="einkaufspreis_euro"
-            value={formData.einkaufspreis_euro}
-            onChange={handleInputChange}
-            step="0.01"
-            min="0"
-            className="form-input"
-            placeholder="0.00"
-          />
-        </div>
+  const renderTabPreise = () => {
+    // Berechnungen für Preiskalkulation
+    const einkaufspreis = parseFloat(formData.einkaufspreis_euro) || 0;
+    const zusatzkosten = parseFloat(formData.zusatzkosten_euro) || 0;
+    const marge_prozent = parseFloat(formData.marge_prozent) || 0;
+    const verkaufspreis_netto = parseFloat(formData.verkaufspreis_euro) || 0;
+    const mwst_prozent = parseFloat(formData.mwst_prozent) || 19;
 
-        <div className="form-group">
-          <label>Verkaufspreis (€) *</label>
-          <input
-            type="number"
-            name="verkaufspreis_euro"
-            value={formData.verkaufspreis_euro}
-            onChange={handleInputChange}
-            step="0.01"
-            min="0"
-            required
-            className="form-input"
-            placeholder="0.00"
-          />
-        </div>
+    // Zwischensumme (Einkaufspreis + Zusatzkosten)
+    const zwischensumme = einkaufspreis + zusatzkosten;
 
-        <div className="form-group">
-          <label>MwSt. (%)</label>
-          <select
-            name="mwst_prozent"
-            value={formData.mwst_prozent}
-            onChange={handleInputChange}
-            className="form-select"
-          >
-            <option value="7.00">7% (ermäßigt)</option>
-            <option value="19.00">19% (normal)</option>
-          </select>
+    // MwSt. Betrag berechnen
+    const mwst_betrag = (verkaufspreis_netto * mwst_prozent) / 100;
+
+    // Brutto-Verkaufspreis
+    const verkaufspreis_brutto = verkaufspreis_netto + mwst_betrag;
+
+    // Marge in Euro (falls Marge% gesetzt ist)
+    const marge_euro = zwischensumme > 0 && marge_prozent > 0
+      ? (zwischensumme * marge_prozent) / 100
+      : verkaufspreis_netto - zwischensumme;
+
+    // Gewinnspanne berechnen
+    const gewinn = verkaufspreis_netto - zwischensumme;
+    const gewinnspanne_prozent = zwischensumme > 0 ? (gewinn / zwischensumme) * 100 : 0;
+
+    // Kalkulierter VK bei Marge-Eingabe
+    const kalkulierter_vk = zwischensumme + marge_euro;
+
+    const handlePreisChange = (e) => {
+      const { name, value } = e.target;
+      handleInputChange(e);
+
+      // Auto-Berechnung: Wenn Marge% gesetzt wird, VK berechnen
+      if (name === 'marge_prozent') {
+        const marge_p = parseFloat(value) || 0;
+        const zwsum = einkaufspreis + zusatzkosten;
+        if (zwsum > 0) {
+          const neuer_vk = zwsum + (zwsum * marge_p / 100);
+          setFormData(prev => ({
+            ...prev,
+            verkaufspreis_euro: neuer_vk.toFixed(2)
+          }));
+        }
+      }
+    };
+
+    return (
+      <div className="tab-content-section">
+        <div className="preiskalkulation-container">
+          {/* Eingabebereich */}
+          <div className="preis-eingabe-section">
+            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
+              📝 Eingabe
+            </h3>
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label>EINKAUFSPREIS (€)</label>
+                <input
+                  type="number"
+                  name="einkaufspreis_euro"
+                  value={formData.einkaufspreis_euro}
+                  onChange={handlePreisChange}
+                  step="0.01"
+                  min="0"
+                  className="form-input"
+                  placeholder="0.00"
+                />
+                <small style={{color: '#888', fontSize: '0.85rem'}}>Herstellpreis/Einkaufspreis netto</small>
+              </div>
+
+              <div className="form-group">
+                <label>ZUSATZKOSTEN (€)</label>
+                <input
+                  type="number"
+                  name="zusatzkosten_euro"
+                  value={formData.zusatzkosten_euro}
+                  onChange={handlePreisChange}
+                  step="0.01"
+                  min="0"
+                  className="form-input"
+                  placeholder="0.00"
+                />
+                <small style={{color: '#888', fontSize: '0.85rem'}}>Versand, Verpackung, etc.</small>
+              </div>
+
+              <div className="form-group">
+                <label>MARGE (%)</label>
+                <input
+                  type="number"
+                  name="marge_prozent"
+                  value={formData.marge_prozent}
+                  onChange={handlePreisChange}
+                  step="0.01"
+                  min="0"
+                  className="form-input"
+                  placeholder="0.00"
+                />
+                <small style={{color: '#888', fontSize: '0.85rem'}}>Gewinnaufschlag in %</small>
+              </div>
+
+              <div className="form-group">
+                <label>VERKAUFSPREIS (€) *</label>
+                <input
+                  type="number"
+                  name="verkaufspreis_euro"
+                  value={formData.verkaufspreis_euro}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  min="0"
+                  required
+                  className="form-input"
+                  placeholder="0.00"
+                />
+                <small style={{color: '#888', fontSize: '0.85rem'}}>Netto-Verkaufspreis</small>
+              </div>
+
+              <div className="form-group">
+                <label>MWST. (%)</label>
+                <select
+                  name="mwst_prozent"
+                  value={formData.mwst_prozent}
+                  onChange={handleInputChange}
+                  className="form-select"
+                >
+                  <option value="7.00">7% (ermäßigt)</option>
+                  <option value="19.00">19% (normal)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Kalkulationsübersicht */}
+          <div className="preis-kalkulation-section">
+            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
+              📊 Kalkulation
+            </h3>
+
+            <div className="kalkulation-table">
+              <div className="kalkulation-row">
+                <span className="kalkulation-label">Einkaufspreis (Netto)</span>
+                <span className="kalkulation-value">{einkaufspreis.toFixed(2)} €</span>
+              </div>
+
+              <div className="kalkulation-row">
+                <span className="kalkulation-label">+ Zusatzkosten</span>
+                <span className="kalkulation-value">{zusatzkosten.toFixed(2)} €</span>
+              </div>
+
+              <div className="kalkulation-row total">
+                <span className="kalkulation-label"><strong>= Zwischensumme</strong></span>
+                <span className="kalkulation-value"><strong>{zwischensumme.toFixed(2)} €</strong></span>
+              </div>
+
+              <div className="kalkulation-row highlight">
+                <span className="kalkulation-label">+ Marge ({marge_prozent.toFixed(1)}%)</span>
+                <span className="kalkulation-value">{marge_euro.toFixed(2)} €</span>
+              </div>
+
+              {marge_prozent > 0 && (
+                <div className="kalkulation-row info">
+                  <span className="kalkulation-label">→ Kalkulierter VK (Netto)</span>
+                  <span className="kalkulation-value">{kalkulierter_vk.toFixed(2)} €</span>
+                </div>
+              )}
+
+              <div className="kalkulation-row total">
+                <span className="kalkulation-label"><strong>= Verkaufspreis (Netto)</strong></span>
+                <span className="kalkulation-value"><strong>{verkaufspreis_netto.toFixed(2)} €</strong></span>
+              </div>
+
+              <div className="kalkulation-row">
+                <span className="kalkulation-label">+ MwSt. ({mwst_prozent}%)</span>
+                <span className="kalkulation-value">{mwst_betrag.toFixed(2)} €</span>
+              </div>
+
+              <div className="kalkulation-row final">
+                <span className="kalkulation-label"><strong>= VERKAUFSPREIS (BRUTTO)</strong></span>
+                <span className="kalkulation-value final-price"><strong>{verkaufspreis_brutto.toFixed(2)} €</strong></span>
+              </div>
+
+              <div className="kalkulation-divider"></div>
+
+              <div className="kalkulation-row profit">
+                <span className="kalkulation-label">💰 Gewinn pro Stück</span>
+                <span className="kalkulation-value" style={{color: gewinn >= 0 ? '#10b981' : '#ef4444'}}>
+                  {gewinn.toFixed(2)} €
+                </span>
+              </div>
+
+              <div className="kalkulation-row profit">
+                <span className="kalkulation-label">📈 Gewinnspanne</span>
+                <span className="kalkulation-value" style={{color: gewinnspanne_prozent >= 0 ? '#10b981' : '#ef4444'}}>
+                  {gewinnspanne_prozent.toFixed(1)} %
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTabLager = () => (
     <div className="tab-content-section">
@@ -656,10 +818,17 @@ const ArtikelVerwaltung = () => {
     return (
       <div className="modal-overlay fullscreen-modal" onClick={() => setShowModal(false)}>
         <div className="modal-content artikel-modal" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>
-              {modalMode === 'create' ? '🆕 Neuen Artikel erstellen' : '✏️ Artikel bearbeiten'}
-            </h2>
+          <div className="modal-header artikel-modal-header">
+            <div className="modal-header-content">
+              <h2 className="modal-title">
+                {modalMode === 'create' ? '🆕 ARTIKEL ERSTELLEN' : '✏️ ARTIKEL BEARBEITEN'}
+              </h2>
+              {modalMode === 'edit' && selectedArtikel && (
+                <p className="modal-subtitle">
+                  {selectedArtikel.name}
+                </p>
+              )}
+            </div>
             <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
           </div>
 

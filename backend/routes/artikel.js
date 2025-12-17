@@ -64,7 +64,8 @@ const formatArtikel = (artikel) => ({
   ...artikel,
   verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
   einkaufspreis_euro: artikel.einkaufspreis_cent / 100,
-  lager_status: artikel.lagerbestand <= artikel.mindestbestand ? 
+  zusatzkosten_euro: artikel.zusatzkosten_cent ? artikel.zusatzkosten_cent / 100 : 0,
+  lager_status: artikel.lagerbestand <= artikel.mindestbestand ?
     (artikel.lagerbestand === 0 ? 'ausverkauft' : 'nachbestellen') : 'verfuegbar'
 });
 
@@ -325,41 +326,43 @@ router.get('/:id', (req, res) => {
 // POST /api/artikel - Neuen Artikel erstellen
 router.post('/', (req, res) => {
   const {
-    kategorie_id, name, beschreibung, ean_code, artikel_nummer,
-    einkaufspreis_euro, verkaufspreis_euro, mwst_prozent,
+    kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+    einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
     lagerbestand, mindestbestand, lager_tracking,
     farbe_hex, aktiv, sichtbar_kasse
   } = req.body;
-  
+
   // Validierung
   if (!kategorie_id || !name || !verkaufspreis_euro) {
-    return res.status(400).json({ 
-      error: 'Kategorie, Name und Verkaufspreis sind erforderlich' 
+    return res.status(400).json({
+      error: 'Kategorie, Name und Verkaufspreis sind erforderlich'
     });
   }
-  
+
   // Preise in Cent umwandeln
   const verkaufspreis_cent = Math.round(parseFloat(verkaufspreis_euro) * 100);
   const einkaufspreis_cent = einkaufspreis_euro ? Math.round(parseFloat(einkaufspreis_euro) * 100) : 0;
-  
+  const zusatzkosten_cent = zusatzkosten_euro ? Math.round(parseFloat(zusatzkosten_euro) * 100) : 0;
+  const marge_p = marge_prozent ? parseFloat(marge_prozent) : null;
+
   // TODO: Bild-Upload implementieren
   let bild_url = null;
   let bild_base64 = null;
-  
+
   const query = `
     INSERT INTO artikel (
-      kategorie_id, name, beschreibung, ean_code, artikel_nummer,
-      einkaufspreis_cent, verkaufspreis_cent, mwst_prozent,
+      kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+      einkaufspreis_cent, zusatzkosten_cent, marge_prozent, verkaufspreis_cent, mwst_prozent,
       lagerbestand, mindestbestand, lager_tracking,
       bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
-  
+
   const params = [
-    kategorie_id, name, beschreibung, ean_code, artikel_nummer,
-    einkaufspreis_cent, verkaufspreis_cent, mwst_prozent || 19.00,
+    kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+    einkaufspreis_cent, zusatzkosten_cent, marge_p, verkaufspreis_cent, mwst_prozent || 19.00,
     lagerbestand || 0, mindestbestand || 0, lager_tracking !== 'false',
-    bild_url, bild_base64, farbe_hex || '#FFFFFF', 
+    bild_url, bild_base64, farbe_hex || '#FFFFFF',
     aktiv !== 'false', sichtbar_kasse !== 'false'
   ];
   
@@ -396,38 +399,39 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const artikel_id = req.params.id;
   const {
-    kategorie_id, name, beschreibung, ean_code, artikel_nummer,
-    einkaufspreis_euro, verkaufspreis_euro, mwst_prozent,
+    kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+    einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
     lagerbestand, mindestbestand, lager_tracking,
     farbe_hex, aktiv, sichtbar_kasse
   } = req.body;
-  
+
   // Zuerst aktuellen Artikel abrufen
   db.query('SELECT * FROM artikel WHERE artikel_id = ?', [artikel_id], (error, currentResults) => {
     if (error) {
       console.error('Fehler beim Abrufen des aktuellen Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des aktuellen Artikels' });
     }
-    
+
     if (currentResults.length === 0) {
       return res.status(404).json({ error: 'Artikel nicht gefunden' });
     }
-    
+
     const currentArtikel = currentResults[0];
-    
+
     // Preise in Cent umwandeln
     const verkaufspreis_cent = verkaufspreis_euro ? Math.round(parseFloat(verkaufspreis_euro) * 100) : currentArtikel.verkaufspreis_cent;
     const einkaufspreis_cent = einkaufspreis_euro ? Math.round(parseFloat(einkaufspreis_euro) * 100) : currentArtikel.einkaufspreis_cent;
-    
+    const zusatzkosten_cent = zusatzkosten_euro !== undefined ? Math.round(parseFloat(zusatzkosten_euro || 0) * 100) : (currentArtikel.zusatzkosten_cent || 0);
+
     let updateFields = [];
     let updateValues = [];
-    
+
     // Dynamische Update-Felder
     const fields = {
-      kategorie_id, name, beschreibung, ean_code, artikel_nummer,
-      mwst_prozent, mindestbestand, lager_tracking, farbe_hex, aktiv, sichtbar_kasse
+      kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+      mwst_prozent, marge_prozent, mindestbestand, lager_tracking, farbe_hex, aktiv, sichtbar_kasse
     };
-    
+
     // Nur geänderte Felder hinzufügen
     Object.entries(fields).forEach(([field, value]) => {
       if (value !== undefined) {
@@ -435,13 +439,18 @@ router.put('/:id', (req, res) => {
         updateValues.push(value);
       }
     });
-    
+
     // Preise hinzufügen
     if (einkaufspreis_euro !== undefined) {
       updateFields.push('einkaufspreis_cent = ?');
       updateValues.push(einkaufspreis_cent);
     }
-    
+
+    if (zusatzkosten_euro !== undefined) {
+      updateFields.push('zusatzkosten_cent = ?');
+      updateValues.push(zusatzkosten_cent);
+    }
+
     if (verkaufspreis_euro !== undefined) {
       updateFields.push('verkaufspreis_cent = ?');
       updateValues.push(verkaufspreis_cent);
