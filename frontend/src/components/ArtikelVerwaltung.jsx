@@ -468,10 +468,10 @@ const ArtikelVerwaltung = () => {
     };
 
     return (
-      <div className="tab-content-section">
-        <div className="preiskalkulation-container">
+      <div className="tab-content-section" style={{flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
+        <div className="preiskalkulation-container" style={{height: '100%', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
           {/* Eingabebereich */}
-          <div className="preis-eingabe-section">
+          <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(0, 0, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.2)', borderRadius: '8px'}}>
             <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
               📝 Eingabe
             </h3>
@@ -554,7 +554,7 @@ const ArtikelVerwaltung = () => {
           </div>
 
           {/* Kalkulationsübersicht */}
-          <div className="preis-kalkulation-section">
+          <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(255, 215, 0, 0.05)', border: '2px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px'}}>
             <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
               📊 Kalkulation
             </h3>
@@ -816,8 +816,8 @@ const ArtikelVerwaltung = () => {
 
     // Neues Tab-basiertes Modal für Create/Edit
     return (
-      <div className="modal-overlay fullscreen-modal" onClick={() => setShowModal(false)}>
-        <div className="modal-content artikel-modal" onClick={e => e.stopPropagation()}>
+      <div className="modal-overlay fullscreen-modal" onClick={() => setShowModal(false)} style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <div className="modal-content artikel-modal" onClick={e => e.stopPropagation()} style={{maxWidth: '100%', maxHeight: '100vh', height: '100vh', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#1a1a2e'}}>
           <div className="modal-header artikel-modal-header">
             <div className="modal-header-content">
               <h2 className="modal-title">
@@ -846,7 +846,7 @@ const ArtikelVerwaltung = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="modal-body">
+          <div className="modal-body" style={{flex: 1, overflowY: 'hidden', overflowX: 'hidden', padding: '1rem', display: 'flex', flexDirection: 'column'}}>
             {renderTabContent()}
           </div>
 
