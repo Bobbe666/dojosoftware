@@ -559,59 +559,59 @@ const ArtikelVerwaltung = () => {
               📊 Kalkulation
             </h3>
 
-            <div className="kalkulation-table">
-              <div className="kalkulation-row">
+            <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.35rem'}}>
+              <div className="kalkulation-row" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label">Einkaufspreis (Netto)</span>
                 <span className="kalkulation-value">{einkaufspreis.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row">
+              <div className="kalkulation-row" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label">+ Zusatzkosten</span>
                 <span className="kalkulation-value">{zusatzkosten.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total">
+              <div className="kalkulation-row total" style={{padding: '0.5rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label"><strong>= Zwischensumme</strong></span>
                 <span className="kalkulation-value"><strong>{zwischensumme.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row highlight">
+              <div className="kalkulation-row highlight" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label">+ Marge ({marge_prozent.toFixed(1)}%)</span>
                 <span className="kalkulation-value">{marge_euro.toFixed(2)} €</span>
               </div>
 
               {marge_prozent > 0 && (
-                <div className="kalkulation-row info">
+                <div className="kalkulation-row info" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                   <span className="kalkulation-label">→ Kalkulierter VK (Netto)</span>
                   <span className="kalkulation-value">{kalkulierter_vk.toFixed(2)} €</span>
                 </div>
               )}
 
-              <div className="kalkulation-row total">
+              <div className="kalkulation-row total" style={{padding: '0.5rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label"><strong>= Verkaufspreis (Netto)</strong></span>
                 <span className="kalkulation-value"><strong>{verkaufspreis_netto.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row">
+              <div className="kalkulation-row" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label">+ MwSt. ({mwst_prozent}%)</span>
                 <span className="kalkulation-value">{mwst_betrag.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row final">
+              <div className="kalkulation-row final" style={{padding: '0.6rem 0.7rem', fontSize: '0.9rem'}}>
                 <span className="kalkulation-label"><strong>= VERKAUFSPREIS (BRUTTO)</strong></span>
                 <span className="kalkulation-value final-price"><strong>{verkaufspreis_brutto.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-divider"></div>
+              <div className="kalkulation-divider" style={{margin: '0.5rem 0', height: '1px'}}></div>
 
-              <div className="kalkulation-row profit">
+              <div className="kalkulation-row profit" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label">💰 Gewinn pro Stück</span>
                 <span className="kalkulation-value" style={{color: gewinn >= 0 ? '#10b981' : '#ef4444'}}>
                   {gewinn.toFixed(2)} €
                 </span>
               </div>
 
-              <div className="kalkulation-row profit">
+              <div className="kalkulation-row profit" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
                 <span className="kalkulation-label">📈 Gewinnspanne</span>
                 <span className="kalkulation-value" style={{color: gewinnspanne_prozent >= 0 ? '#10b981' : '#ef4444'}}>
                   {gewinnspanne_prozent.toFixed(1)} %
