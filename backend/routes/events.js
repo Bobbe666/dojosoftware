@@ -881,4 +881,36 @@ router.post('/:id/admin-anmelden', async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/events/anmeldung/:id/bezahlt
+ * Admin markiert eine Anmeldung als bezahlt
+ */
+router.put('/anmeldung/:id/bezahlt', async (req, res) => {
+  const anmeldungId = parseInt(req.params.id);
+
+  try {
+    // Aktualisiere Bezahlt-Status
+    const [result] = await db.promise().query(
+      `UPDATE event_anmeldungen
+       SET bezahlt = true, bezahldatum = NOW()
+       WHERE anmeldung_id = ?`,
+      [anmeldungId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Anmeldung nicht gefunden' });
+    }
+
+    console.log(`✅ Anmeldung ${anmeldungId} wurde als bezahlt markiert`);
+
+    res.json({
+      success: true,
+      message: 'Anmeldung wurde als bezahlt markiert'
+    });
+  } catch (error) {
+    console.error('❌ Fehler beim Aktualisieren des Bezahlt-Status:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren des Bezahlt-Status' });
+  }
+});
+
 module.exports = router;

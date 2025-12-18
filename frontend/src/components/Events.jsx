@@ -292,6 +292,36 @@ const Events = () => {
     }
   };
 
+  // Markiere Anmeldung als bezahlt
+  const handleMarkAsPaid = async (anmeldungId) => {
+    if (!confirm('Anmeldung als bezahlt markieren?')) {
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${config.apiBaseUrl}/events/anmeldung/${anmeldungId}/bezahlt`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        alert(response.data.message || 'Anmeldung als bezahlt markiert');
+        // Refresh event details um aktualisierte Anmeldung zu zeigen
+        if (selectedEvent) {
+          const eventResponse = await axios.get(
+            `${config.apiBaseUrl}/events/${selectedEvent.event_id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setSelectedEvent(eventResponse.data);
+        }
+      }
+    } catch (err) {
+      console.error('Fehler beim Markieren als bezahlt:', err);
+      alert('Fehler: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   // Formatiere Datum
   const formatDatum = (datum) => {
     if (!datum) return '';
@@ -1120,7 +1150,27 @@ const Events = () => {
                               {anmeldung.bezahlt ? (
                                 <div className="text-success">✅ Bezahlt</div>
                               ) : (
-                                <div className="text-warning">⏳ Nicht bezahlt</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <div className="text-warning">⏳ Nicht bezahlt</div>
+                                  {isAdmin && (
+                                    <button
+                                      className="btn btn-sm"
+                                      onClick={() => handleMarkAsPaid(anmeldung.anmeldung_id)}
+                                      style={{
+                                        padding: '0.25rem 0.5rem',
+                                        fontSize: '0.75rem',
+                                        background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1))',
+                                        border: '1px solid rgba(255, 215, 0, 0.4)',
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                        color: 'rgba(255, 215, 0, 0.9)',
+                                        fontWeight: '600'
+                                      }}
+                                    >
+                                      Bezahlt
+                                    </button>
+                                  )}
+                                </div>
                               )}
                               {anmeldung.bemerkung && (
                                 <div className="anmeldung-bemerkung">
