@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Edit3, Save, X, Plus, Award, Clock, CheckCircle, AlertCircle, FileText, Download } from 'lucide-react';
+import { Calendar, Edit3, Save, X, Award, Clock, CheckCircle, AlertCircle, FileText, Download } from 'lucide-react';
 import '../styles/PruefungsStatus.css';
 
 const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
@@ -8,23 +8,8 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAnmerkungenModal, setShowAnmerkungenModal] = useState(false);
-  const [showPruefungModal, setShowPruefungModal] = useState(false);
   const [anmerkungen, setAnmerkungen] = useState('');
   const [tempAnmerkungen, setTempAnmerkungen] = useState('');
-  const [neuePruefung, setNewPruefung] = useState({
-    pruefungsdatum: '',
-    pruefungszeit: '10:00',
-    pruefungsort: '',
-    pruefungsgebuehr: '',
-    anmeldefrist: '',
-    bemerkungen: '',
-    stil_id: '',
-    graduierung_nachher_id: '',
-    dojo_id: ''
-  });
-  const [stile, setStile] = useState([]);
-  const [graduierungen, setGraduierungen] = useState([]);
-  const [dojos, setDojos] = useState([]);
 
   useEffect(() => {
     if (mitgliedId) {
@@ -178,20 +163,6 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       }
     } catch (error) {
       console.error('Fehler beim Speichern der Anmerkungen:', error);
-    }
-  };
-
-  const handlePruefungPlanen = async () => {
-    try {
-      await axios.post('/pruefungen', {
-        ...neuePruefung,
-        mitglied_id: mitgliedId,
-        status: 'geplant'
-      });
-      setShowPruefungModal(false);
-      loadPruefungsdaten(); // Daten neu laden
-    } catch (error) {
-      console.error('Fehler beim Planen der Prüfung:', error);
     }
   };
 
@@ -427,30 +398,6 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                     </div>
                   </>
                 )}
-                {!stilDaten.naechstePruefung && !readOnly && (
-                  <div>
-                    <button
-                      className="plan-pruefung-btn"
-                      onClick={() => setShowPruefungModal(true)}
-                      style={{
-                        background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        color: '#000',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginTop: '0.5rem'
-                      }}
-                    >
-                      <Plus size={16} />
-                      Neue Prüfung planen
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Karte 4: Prüfungshistorie */}
@@ -566,78 +513,6 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
         </div>
       )}
 
-      {/* Prüfung planen Modal */}
-      {showPruefungModal && (
-        <div className="modal-overlay" onClick={() => setShowPruefungModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Neue Prüfung planen</h3>
-              <button className="close-btn" onClick={() => setShowPruefungModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Stil</label>
-                <select
-                  value={neuePruefung.stil_id}
-                  onChange={(e) => setNewPruefung({...neuePruefung, stil_id: e.target.value})}
-                >
-                  <option value="">Stil wählen</option>
-                  {stile.map(stil => (
-                    <option key={stil.stil_id} value={stil.stil_id}>
-                      {stil.stil_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Datum</label>
-                <input
-                  type="date"
-                  value={neuePruefung.pruefungsdatum}
-                  onChange={(e) => setNewPruefung({...neuePruefung, pruefungsdatum: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Zeit</label>
-                <input
-                  type="time"
-                  value={neuePruefung.pruefungszeit}
-                  onChange={(e) => setNewPruefung({...neuePruefung, pruefungszeit: e.target.value})}
-                />
-              </div>
-              <div className="form-group">
-                <label>Ort</label>
-                <input
-                  type="text"
-                  value={neuePruefung.pruefungsort}
-                  onChange={(e) => setNewPruefung({...neuePruefung, pruefungsort: e.target.value})}
-                  placeholder="Prüfungsort"
-                />
-              </div>
-              <div className="form-group">
-                <label>Bemerkungen</label>
-                <textarea
-                  value={neuePruefung.bemerkungen}
-                  onChange={(e) => setNewPruefung({...neuePruefung, bemerkungen: e.target.value})}
-                  placeholder="Bemerkungen zur Prüfung..."
-                  rows={3}
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowPruefungModal(false)}>
-                Abbrechen
-              </button>
-              <button className="btn-primary" onClick={handlePruefungPlanen}>
-                <Plus size={16} />
-                Prüfung planen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
