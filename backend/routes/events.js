@@ -791,4 +791,93 @@ router.get('/member/:mitglied_id', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/events/:id/admin-anmelden
+ * Admin fügt Mitglied zu Event hinzu (umgeht alle Validierungen)
+ */
+router.post('/:id/admin-anmelden', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { mitglied_id, bemerkung } = req.body;
+
+  if (!mitglied_id) {
+    return res.status(400).json({ error: 'Mitglied-ID fehlt' });
+  }
+
+  try {
+    // 1. Prüfe ob Event existiert
+    const [eventRows] = await db.promise().query(
+      'SELECT * FROM events WHERE event_id = ?',
+      [eventId]
+    );
+
+    if (eventRows.length === 0) {
+      return res.status(404).json({ error: 'Event nicht gefunden' });
+    }
+
+    const event = eventRows[0];
+
+    // 2. Prüfe ob Mitglied existiert
+    const [memberRows] = await db.promise().query(
+      'SELECT mitglied_id, vorname, nachname, email FROM mitglieder WHERE mitglied_id = ?',
+      [mitglied_id]
+    );
+
+    if (memberRows.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const member = memberRows[0];
+
+    // 3. Prüfe ob bereits angemeldet (Duplicate Check)
+    const [existingRows] = await db.promise().query(
+      'SELECT * FROM event_anmeldungen WHERE event_id = ? AND mitglied_id = ?',
+      [eventId, mitglied_id]
+    );
+
+    if (existingRows.length > 0) {
+      return res.status(400).json({ error: 'Mitglied ist bereits für dieses Event angemeldet' });
+    }
+
+    // 4. Admin-Anmeldung erstellen (UMGEHT alle Validierungen)
+    // - Keine Deadline-Prüfung
+    // - Keine Max-Teilnehmer-Prüfung
+    // - Status: bestaetigt
+    // - Bezahlt: true
+    // - Bezahldatum: NOW()
+    const [result] = await db.promise().query(
+      `INSERT INTO event_anmeldungen
+       (event_id, mitglied_id, status, anmeldedatum, bezahlt, bezahldatum, bemerkung)
+       VALUES (?, ?, 'bestaetigt', NOW(), true, NOW(), ?)`,
+      [eventId, mitglied_id, bemerkung || 'Durch Admin hinzugefügt']
+    );
+
+    console.log(`✅ Admin hat Mitglied ${mitglied_id} zu Event ${eventId} hinzugefügt`);
+
+    // 5. Benachrichtigung an Mitglied senden (Optional: Email)
+    // TODO: Email-Service implementieren wenn verfügbar
+    try {
+      // Einfache Konsolen-Notification für jetzt
+      console.log(`📧 Benachrichtigung an ${member.email}:`);
+      console.log(`   Event: ${event.titel}`);
+      console.log(`   Datum: ${new Date(event.datum).toLocaleDateString('de-DE')}`);
+      console.log(`   Status: Bestätigt und bezahlt`);
+
+      // Falls Email-Service existiert, hier aufrufen:
+      // await sendEventNotification(member.email, event, 'admin-added');
+    } catch (notifError) {
+      console.error('⚠️ Fehler beim Senden der Benachrichtigung:', notifError);
+      // Fehler bei Benachrichtigung soll Anmeldung nicht verhindern
+    }
+
+    res.json({
+      success: true,
+      message: `${member.vorname} ${member.nachname} wurde erfolgreich zum Event hinzugefügt`,
+      anmeldung_id: result.insertId
+    });
+  } catch (error) {
+    console.error('❌ Fehler bei Admin-Event-Anmeldung:', error);
+    res.status(500).json({ error: 'Fehler beim Hinzufügen des Teilnehmers' });
+  }
+});
+
 module.exports = router;

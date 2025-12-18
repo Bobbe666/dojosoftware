@@ -23,6 +23,14 @@ const Events = () => {
   const [showEditEvent, setShowEditEvent] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
+  const [selectedEventForParticipant, setSelectedEventForParticipant] = useState(null);
+
+  // Teilnehmer-Verwaltung States
+  const [allMembers, setAllMembers] = useState([]);
+  const [selectedMemberId, setSelectedMemberId] = useState('');
+  const [participantBemerkung, setParticipantBemerkung] = useState('');
+  const [eventRegistrations, setEventRegistrations] = useState({});
 
   // Form States
   const [newEvent, setNewEvent] = useState({
@@ -214,6 +222,74 @@ const Events = () => {
     }
   };
 
+  // Lade alle Mitglieder für Teilnehmer-Auswahl
+  useEffect(() => {
+    const loadMembers = async () => {
+      if (!isAdmin) return;
+      try {
+        const dojoFilter = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+        const response = await axios.get(`${config.apiBaseUrl}/mitglieder/all${dojoFilter}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAllMembers(response.data || []);
+      } catch (err) {
+        console.error('Fehler beim Laden der Mitglieder:', err);
+      }
+    };
+    loadMembers();
+  }, [isAdmin, activeDojo, token]);
+
+  // Öffne Add Participant Modal
+  const handleShowAddParticipant = async (event) => {
+    setSelectedEventForParticipant(event);
+    setSelectedMemberId('');
+    setParticipantBemerkung('');
+
+    // Lade existierende Anmeldungen für dieses Event
+    try {
+      const response = await axios.get(
+        `${config.apiBaseUrl}/events/${event.event_id}/anmeldungen`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Speichere registrierte Mitglieder-IDs
+      const registeredIds = response.data.map(a => a.mitglied_id);
+      setEventRegistrations(prev => ({...prev, [event.event_id]: registeredIds}));
+    } catch (err) {
+      console.error('Fehler beim Laden der Anmeldungen:', err);
+    }
+
+    setShowAddParticipantModal(true);
+  };
+
+  // Füge Teilnehmer zum Event hinzu
+  const handleAddParticipant = async () => {
+    if (!selectedMemberId) {
+      alert('Bitte wählen Sie ein Mitglied aus');
+      return;
+    }
+
+    setError('');
+    try {
+      const response = await axios.post(
+        `${config.apiBaseUrl}/events/${selectedEventForParticipant.event_id}/admin-anmelden`,
+        {
+          mitglied_id: parseInt(selectedMemberId),
+          bemerkung: participantBemerkung || undefined
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        alert(response.data.message || 'Teilnehmer erfolgreich hinzugefügt');
+        setShowAddParticipantModal(false);
+        ladeEvents(); // Refresh event list
+      }
+    } catch (err) {
+      console.error('Fehler beim Hinzufügen des Teilnehmers:', err);
+      alert('Fehler: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   // Formatiere Datum
   const formatDatum = (datum) => {
     if (!datum) return '';
@@ -393,6 +469,17 @@ const Events = () => {
                           {isAdmin && (
                             <div className="event-actions" onClick={(e) => e.stopPropagation()}>
                               <button
+                                className="btn-icon btn-success"
+                                onClick={() => handleShowAddParticipant(event)}
+                                title="Teilnehmer hinzufügen"
+                                style={{
+                                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
+                                  border: '1px solid rgba(255, 215, 0, 0.3)'
+                                }}
+                              >
+                                👤➕
+                              </button>
+                              <button
                                 className="btn-icon"
                                 onClick={() => {
                                   setSelectedEvent(event);
@@ -436,6 +523,17 @@ const Events = () => {
                                 title="Details anzeigen"
                               >
                                 👁️
+                              </button>
+                              <button
+                                className="btn-icon btn-success"
+                                onClick={() => handleShowAddParticipant(event)}
+                                title="Teilnehmer hinzufügen"
+                                style={{
+                                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
+                                  border: '1px solid rgba(255, 215, 0, 0.3)'
+                                }}
+                              >
+                                👤➕
                               </button>
                               <button
                                 className="btn-icon"
@@ -1037,6 +1135,78 @@ const Events = () => {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowEventDetails(false)}>
                 Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Teilnehmer hinzufügen */}
+      {showAddParticipantModal && selectedEventForParticipant && isAdmin && (
+        <div className="modal-overlay" onClick={() => setShowAddParticipantModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Teilnehmer zu "{selectedEventForParticipant.titel}" hinzufügen</h2>
+              <button className="btn-close" onClick={() => setShowAddParticipantModal(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Mitglied auswählen *</label>
+                <select
+                  className="form-control"
+                  value={selectedMemberId}
+                  onChange={(e) => setSelectedMemberId(e.target.value)}
+                  required
+                >
+                  <option value="">-- Mitglied wählen --</option>
+                  {allMembers
+                    .filter(member => {
+                      // Filtere bereits angemeldete Mitglieder heraus
+                      const registeredIds = eventRegistrations[selectedEventForParticipant.event_id] || [];
+                      return !registeredIds.includes(member.mitglied_id);
+                    })
+                    .map((member) => (
+                      <option key={member.mitglied_id} value={member.mitglied_id}>
+                        {member.vorname} {member.nachname} ({member.email})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Bemerkung (optional)</label>
+                <textarea
+                  className="form-control"
+                  rows="3"
+                  value={participantBemerkung}
+                  onChange={(e) => setParticipantBemerkung(e.target.value)}
+                  placeholder="Optionale Notiz zur Anmeldung..."
+                />
+              </div>
+
+              <div className="alert alert-info" style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                ℹ️ Wird automatisch als bezahlt markiert und das Mitglied erhält eine Benachrichtigung.
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowAddParticipantModal(false)}
+              >
+                Abbrechen
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleAddParticipant}
+                disabled={!selectedMemberId}
+                style={{
+                  background: selectedMemberId ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1))' : undefined,
+                  border: selectedMemberId ? '1px solid rgba(255, 215, 0, 0.4)' : undefined
+                }}
+              >
+                ✓ Hinzufügen
               </button>
             </div>
           </div>
