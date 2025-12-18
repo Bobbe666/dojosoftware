@@ -521,12 +521,11 @@ router.get("/print", async (req, res) => {
         m.nachname,
         m.geburtsdatum,
         m.dojo_id,
-        GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') as stile,
+        GROUP_CONCAT(DISTINCT ms.stil SEPARATOR ', ') as stile,
         v.status as vertrag_status,
         t.name as tarif_name
       FROM mitglieder m
       LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
-      LEFT JOIN stile s ON ms.stil_id = s.stil_id
       LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
       LEFT JOIN tarife t ON v.tarif_id = t.id
       WHERE m.aktiv = 1
