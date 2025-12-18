@@ -2793,4 +2793,169 @@ router.get("/archiv/:archivId", (req, res) => {
   });
 });
 
+/**
+ * GET /mitglieder/print
+ * Generiert eine PDF-Liste aller Mitglieder mit Name, Geburtsdatum, Stil und Vertrag
+ */
+router.get("/print", async (req, res) => {
+  const PDFDocument = require('pdfkit');
+  const { dojo_id } = req.query;
+
+  try {
+    // Mitglieder mit Stil und Vertrag abrufen
+    let query = `
+      SELECT
+        m.mitglied_id,
+        m.vorname,
+        m.nachname,
+        m.geburtsdatum,
+        m.dojo_id,
+        GROUP_CONCAT(DISTINCT s.stil_name SEPARATOR ', ') as stile,
+        v.status as vertrag_status,
+        t.name as tarif_name
+      FROM mitglieder m
+      LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
+      LEFT JOIN stile s ON ms.stil_id = s.stil_id
+      LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+      LEFT JOIN tarife t ON v.tarif_id = t.id
+      WHERE m.archiviert = 0
+    `;
+
+    const params = [];
+    if (dojo_id && dojo_id !== 'all') {
+      query += ` AND m.dojo_id = ?`;
+      params.push(dojo_id);
+    }
+
+    query += ` GROUP BY m.mitglied_id ORDER BY m.nachname, m.vorname`;
+
+    db.query(query, params, (err, mitglieder) => {
+      if (err) {
+        console.error("❌ Fehler beim Abrufen der Mitglieder:", err);
+        return res.status(500).json({ error: "Fehler beim Abrufen der Mitglieder" });
+      }
+
+      // PDF erstellen
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+
+      // PDF direkt zum Client streamen
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="mitgliederliste.pdf"');
+      doc.pipe(res);
+
+      // Header
+      doc.fontSize(20)
+         .font('Helvetica-Bold')
+         .text('Mitgliederliste', { align: 'center' })
+         .moveDown();
+
+      doc.fontSize(10)
+         .font('Helvetica')
+         .text(`Erstellt am: ${new Date().toLocaleDateString('de-DE')}`, { align: 'center' })
+         .text(`Anzahl Mitglieder: ${mitglieder.length}`, { align: 'center' })
+         .moveDown(2);
+
+      // Tabellen-Header
+      const startY = doc.y;
+      const col1X = 50;
+      const col2X = 200;
+      const col3X = 300;
+      const col4X = 380;
+      const rowHeight = 20;
+
+      doc.fontSize(10)
+         .font('Helvetica-Bold');
+
+      doc.text('Name', col1X, startY, { width: 140, continued: false })
+         .text('Geburtsdatum', col2X, startY, { width: 90, continued: false })
+         .text('Stil', col3X, startY, { width: 70, continued: false })
+         .text('Vertrag', col4X, startY, { width: 150, continued: false });
+
+      // Linie unter Header
+      doc.moveTo(col1X, startY + 15)
+         .lineTo(530, startY + 15)
+         .stroke();
+
+      let currentY = startY + rowHeight;
+
+      // Mitglieder-Daten
+      doc.font('Helvetica')
+         .fontSize(9);
+
+      mitglieder.forEach((mitglied, index) => {
+        // Neue Seite wenn nötig
+        if (currentY > 750) {
+          doc.addPage();
+          currentY = 50;
+
+          // Header wiederholen
+          doc.fontSize(10)
+             .font('Helvetica-Bold')
+             .text('Name', col1X, currentY, { width: 140, continued: false })
+             .text('Geburtsdatum', col2X, currentY, { width: 90, continued: false })
+             .text('Stil', col3X, currentY, { width: 70, continued: false })
+             .text('Vertrag', col4X, currentY, { width: 150, continued: false });
+
+          doc.moveTo(col1X, currentY + 15)
+             .lineTo(530, currentY + 15)
+             .stroke();
+
+          currentY += rowHeight;
+          doc.font('Helvetica')
+             .fontSize(9);
+        }
+
+        // Zebra-Streifen
+        if (index % 2 === 0) {
+          doc.rect(col1X - 5, currentY - 5, 490, rowHeight - 2)
+             .fill('#f5f5f5');
+          doc.fillColor('#000000');
+        }
+
+        // Name
+        const name = `${mitglied.nachname}, ${mitglied.vorname}`;
+        doc.text(name, col1X, currentY, { width: 140, continued: false });
+
+        // Geburtsdatum
+        const geburtsdatum = mitglied.geburtsdatum
+          ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE')
+          : '-';
+        doc.text(geburtsdatum, col2X, currentY, { width: 90, continued: false });
+
+        // Stil
+        const stil = mitglied.stile || 'Kein Stil';
+        doc.text(stil, col3X, currentY, { width: 70, continued: false });
+
+        // Vertrag
+        const vertrag = mitglied.tarif_name || 'Kein Vertrag';
+        doc.text(vertrag, col4X, currentY, { width: 150, continued: false });
+
+        currentY += rowHeight;
+      });
+
+      // Footer
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(8)
+           .text(
+             `Seite ${i + 1} von ${pageCount}`,
+             50,
+             doc.page.height - 50,
+             { align: 'center' }
+           );
+      }
+
+      // PDF abschließen
+      doc.end();
+    });
+  } catch (error) {
+    console.error("❌ Fehler beim Erstellen der PDF:", error);
+    res.status(500).json({ error: "Fehler beim Erstellen der PDF" });
+  }
+});
+
 module.exports = router;
