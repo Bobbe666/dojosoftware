@@ -222,13 +222,12 @@ const Events = () => {
     }
   };
 
-  // Lade alle Mitglieder für Teilnehmer-Auswahl
+  // Lade alle Mitglieder für Teilnehmer-Auswahl (ALLE Mitglieder, nicht nur vom aktuellen Dojo)
   useEffect(() => {
     const loadMembers = async () => {
       if (!isAdmin) return;
       try {
-        const dojoFilter = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
-        const response = await axios.get(`${config.apiBaseUrl}/mitglieder/all${dojoFilter}`, {
+        const response = await axios.get(`${config.apiBaseUrl}/mitglieder/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAllMembers(response.data || []);
@@ -237,7 +236,7 @@ const Events = () => {
       }
     };
     loadMembers();
-  }, [isAdmin, activeDojo, token]);
+  }, [isAdmin, token]);
 
   // Öffne Add Participant Modal
   const handleShowAddParticipant = async (event) => {
@@ -474,7 +473,8 @@ const Events = () => {
                                 title="Teilnehmer hinzufügen"
                                 style={{
                                   background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
-                                  border: '1px solid rgba(255, 215, 0, 0.3)'
+                                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                                  fontSize: '0.85rem'
                                 }}
                               >
                                 👤➕
@@ -530,7 +530,8 @@ const Events = () => {
                                 title="Teilnehmer hinzufügen"
                                 style={{
                                   background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
-                                  border: '1px solid rgba(255, 215, 0, 0.3)'
+                                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                                  fontSize: '0.85rem'
                                 }}
                               >
                                 👤➕
