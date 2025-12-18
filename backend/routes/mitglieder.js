@@ -605,23 +605,9 @@ router.get("/print", async (req, res) => {
       mitglieder.forEach((mitglied, index) => {
         // Neue Seite wenn nötig
         if (currentY > 750) {
-          // Footer auf aktueller Seite hinzufügen (ohne Gesamt-Seitenzahl)
-          const currentPage = doc.page;
-          const savedY = currentY;
-          doc.fontSize(8)
-             .fillColor('#666666')
-             .text(`Seite ${currentPageNum}`, 50, currentPage.height - 50, {
-               align: 'center',
-               width: currentPage.width - 100,
-               lineBreak: false
-             });
-
           currentPageNum++;
           doc.addPage();
           currentY = 50;
-
-          // Neue Seite registrieren
-          pageNumbers.push({ pageNum: currentPageNum, pageRef: doc.page });
 
           // Header wiederholen
           doc.fontSize(10)
