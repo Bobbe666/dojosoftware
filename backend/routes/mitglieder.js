@@ -595,9 +595,16 @@ router.get("/print", async (req, res) => {
       doc.font('Helvetica')
          .fontSize(9);
 
+      let pageNumber = 1;
+      const pages = [];
+
       mitglieder.forEach((mitglied, index) => {
         // Neue Seite wenn nötig
         if (currentY > 750) {
+          // Footer auf aktueller Seite hinzufügen (wird später aktualisiert)
+          pages.push({ page: doc.page, number: pageNumber });
+          pageNumber++;
+
           doc.addPage();
           currentY = 50;
 
@@ -646,18 +653,21 @@ router.get("/print", async (req, res) => {
         currentY += rowHeight;
       });
 
-      // Footer
-      const pageCount = doc.bufferedPageRange().count;
-      for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
+      // Letzte Seite zur Liste hinzufügen
+      pages.push({ page: doc.page, number: pageNumber });
+      const totalPages = pageNumber;
+
+      // Footer auf allen Seiten hinzufügen
+      pages.forEach(({ page, number }) => {
         doc.fontSize(8)
+           .fillColor('#000000')
            .text(
-             `Seite ${i + 1} von ${pageCount}`,
+             `Seite ${number} von ${totalPages}`,
              50,
-             doc.page.height - 50,
-             { align: 'center' }
+             page.height - 50,
+             { align: 'center', width: page.width - 100 }
            );
-      }
+      });
 
       // PDF abschließen
       doc.end();
