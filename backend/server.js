@@ -165,6 +165,20 @@ try {
       stack: error.stack
     });
 }
+
+// 10ER-KARTEN ROUTES
+try {
+  const zehnerkartenRoutes = require('./routes/zehnerkarten');
+  app.use('/api', zehnerkartenRoutes);
+  logger.success('Route gemountet', { path: '/api/zehnerkarten & /api/mitglieder/:id/zehnerkarten' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'zehnerkarten',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // ENTFERNT: Alte hardcodierte stile.js Route - wird durch stileguertel.js ersetzt (weiter unten)
 // Die neue Route hat vollständige CRUD-Funktionalität mit Datenbankanbindung
 

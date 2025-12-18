@@ -45,7 +45,8 @@
       "WebFetch(domain:dokan.de)",
       "Bash(git mv:*)",
       "Bash(git revert:*)",
-      "Bash(tar:*)"
+      "Bash(tar:*)",
+      "Bash(dir \"C:\\dojosoftware\" /b)"
     ],
     "deny": [],
     "ask": []

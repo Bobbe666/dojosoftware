@@ -65,6 +65,9 @@ const formatArtikel = (artikel) => ({
   verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
   einkaufspreis_euro: artikel.einkaufspreis_cent / 100,
   zusatzkosten_euro: artikel.zusatzkosten_cent ? artikel.zusatzkosten_cent / 100 : 0,
+  // Handelskalkulation - Bezugskalkulation
+  listeneinkaufspreis_euro: artikel.listeneinkaufspreis_cent ? artikel.listeneinkaufspreis_cent / 100 : 0,
+  bezugskosten_euro: artikel.bezugskosten_cent ? artikel.bezugskosten_cent / 100 : 0,
   lager_status: artikel.lagerbestand <= artikel.mindestbestand ?
     (artikel.lagerbestand === 0 ? 'ausverkauft' : 'nachbestellen') : 'verfuegbar'
 });
@@ -328,6 +331,10 @@ router.post('/', (req, res) => {
   const {
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
     einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
+    // Handelskalkulation Felder
+    listeneinkaufspreis_euro, lieferrabatt_prozent, lieferskonto_prozent, bezugskosten_euro,
+    gemeinkosten_prozent, gewinnzuschlag_prozent,
+    kundenskonto_prozent, kundenrabatt_prozent,
     lagerbestand, mindestbestand, lager_tracking,
     farbe_hex, aktiv, sichtbar_kasse
   } = req.body;
@@ -345,6 +352,16 @@ router.post('/', (req, res) => {
   const zusatzkosten_cent = zusatzkosten_euro ? Math.round(parseFloat(zusatzkosten_euro) * 100) : 0;
   const marge_p = marge_prozent ? parseFloat(marge_prozent) : null;
 
+  // Handelskalkulation - Cent-Umwandlung
+  const listeneinkaufspreis_cent = listeneinkaufspreis_euro ? Math.round(parseFloat(listeneinkaufspreis_euro) * 100) : 0;
+  const bezugskosten_cent = bezugskosten_euro ? Math.round(parseFloat(bezugskosten_euro) * 100) : 0;
+  const lieferrabatt_p = lieferrabatt_prozent ? parseFloat(lieferrabatt_prozent) : 0;
+  const lieferskonto_p = lieferskonto_prozent ? parseFloat(lieferskonto_prozent) : 0;
+  const gemeinkosten_p = gemeinkosten_prozent ? parseFloat(gemeinkosten_prozent) : 0;
+  const gewinnzuschlag_p = gewinnzuschlag_prozent ? parseFloat(gewinnzuschlag_prozent) : 0;
+  const kundenskonto_p = kundenskonto_prozent ? parseFloat(kundenskonto_prozent) : 0;
+  const kundenrabatt_p = kundenrabatt_prozent ? parseFloat(kundenrabatt_prozent) : 0;
+
   // TODO: Bild-Upload implementieren
   let bild_url = null;
   let bild_base64 = null;
@@ -353,14 +370,20 @@ router.post('/', (req, res) => {
     INSERT INTO artikel (
       kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
       einkaufspreis_cent, zusatzkosten_cent, marge_prozent, verkaufspreis_cent, mwst_prozent,
+      listeneinkaufspreis_cent, lieferrabatt_prozent, lieferskonto_prozent, bezugskosten_cent,
+      gemeinkosten_prozent, gewinnzuschlag_prozent,
+      kundenskonto_prozent, kundenrabatt_prozent,
       lagerbestand, mindestbestand, lager_tracking,
       bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
     einkaufspreis_cent, zusatzkosten_cent, marge_p, verkaufspreis_cent, mwst_prozent || 19.00,
+    listeneinkaufspreis_cent, lieferrabatt_p, lieferskonto_p, bezugskosten_cent,
+    gemeinkosten_p, gewinnzuschlag_p,
+    kundenskonto_p, kundenrabatt_p,
     lagerbestand || 0, mindestbestand || 0, lager_tracking !== 'false',
     bild_url, bild_base64, farbe_hex || '#FFFFFF',
     aktiv !== 'false', sichtbar_kasse !== 'false'
@@ -401,6 +424,10 @@ router.put('/:id', (req, res) => {
   const {
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
     einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
+    // Handelskalkulation Felder
+    listeneinkaufspreis_euro, lieferrabatt_prozent, lieferskonto_prozent, bezugskosten_euro,
+    gemeinkosten_prozent, gewinnzuschlag_prozent,
+    kundenskonto_prozent, kundenrabatt_prozent,
     lagerbestand, mindestbestand, lager_tracking,
     farbe_hex, aktiv, sichtbar_kasse
   } = req.body;
@@ -429,7 +456,10 @@ router.put('/:id', (req, res) => {
     // Dynamische Update-Felder
     const fields = {
       kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
-      mwst_prozent, marge_prozent, mindestbestand, lager_tracking, farbe_hex, aktiv, sichtbar_kasse
+      mwst_prozent, marge_prozent, mindestbestand, lager_tracking, farbe_hex, aktiv, sichtbar_kasse,
+      // Handelskalkulation Prozentsätze
+      lieferrabatt_prozent, lieferskonto_prozent, gemeinkosten_prozent, gewinnzuschlag_prozent,
+      kundenskonto_prozent, kundenrabatt_prozent
     };
 
     // Nur geänderte Felder hinzufügen
@@ -455,7 +485,20 @@ router.put('/:id', (req, res) => {
       updateFields.push('verkaufspreis_cent = ?');
       updateValues.push(verkaufspreis_cent);
     }
-    
+
+    // Handelskalkulation Preise hinzufügen
+    if (listeneinkaufspreis_euro !== undefined) {
+      const listeneinkaufspreis_cent = Math.round(parseFloat(listeneinkaufspreis_euro || 0) * 100);
+      updateFields.push('listeneinkaufspreis_cent = ?');
+      updateValues.push(listeneinkaufspreis_cent);
+    }
+
+    if (bezugskosten_euro !== undefined) {
+      const bezugskosten_cent = Math.round(parseFloat(bezugskosten_euro || 0) * 100);
+      updateFields.push('bezugskosten_cent = ?');
+      updateValues.push(bezugskosten_cent);
+    }
+
     // TODO: Bild-Upload für Updates implementieren
     
     // Lagerbestand separat behandeln (wegen Lagerbewegung)

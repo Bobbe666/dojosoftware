@@ -126,11 +126,13 @@ const TarifePreise = () => {
           active: tarif.active === 1,
           // Helper für Kategorisierung - erweiterte Logik
           isChildRate: (tarif.name.toLowerCase().includes('kinder') ||
+                       tarif.name.toLowerCase().includes('kids') ||
                        tarif.name.toLowerCase().includes('jugendliche')) &&
                        !tarif.name.toLowerCase().includes('studenten') &&
                        !tarif.name.toLowerCase().includes('schüler'),
           isStudentRate: tarif.name.toLowerCase().includes('studenten') ||
-                        tarif.name.toLowerCase().includes('schüler'),
+                        tarif.name.toLowerCase().includes('schüler') ||
+                        tarif.name.toLowerCase().includes('kids'),
           isAdultRate: tarif.name.toLowerCase().includes('erwachsene') ||
                       tarif.name.toLowerCase().includes('18+')
         }));

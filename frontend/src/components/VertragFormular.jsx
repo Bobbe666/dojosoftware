@@ -322,7 +322,7 @@ const VertragFormular = ({
                 vertragsende: calculatedEnde
               });
             }}
-            style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem', lineHeight: '1.3', height: '32px' }}
+            style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
           >
             <option value="">Tarif auswählen</option>
             {tarife.map(tarif => (
@@ -347,7 +347,7 @@ const VertragFormular = ({
           <select
             value={vertrag.billing_cycle || ''}
             onChange={(e) => onChange({...vertrag, billing_cycle: e.target.value})}
-            style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem', lineHeight: '1.3', height: '32px' }}
+            style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
           >
             <option value="">Bitte wählen...</option>
             {zahlungszyklen.length > 0 ? (
@@ -382,7 +382,7 @@ const VertragFormular = ({
                 vertragsende: calculatedEnde
               });
             }}
-            style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem', lineHeight: '1.3', height: '32px' }}
+            style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
           />
         </div>
 
@@ -509,7 +509,7 @@ const VertragFormular = ({
             <select
               value={vertrag.sepa_mandat_id || ''}
               onChange={(e) => onChange({...vertrag, sepa_mandat_id: e.target.value ? parseInt(e.target.value) : null})}
-              style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem', lineHeight: '1.3', height: '32px' }}
+              style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
             >
               <option value="">Kein SEPA-Mandat ausgewählt</option>
               {sepaMandate && (
@@ -644,7 +644,7 @@ const VertragFormular = ({
               checked={vertrag.gesundheitserklaerung || false}
               onChange={(e) => onChange({...vertrag, gesundheitserklaerung: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.9)' }}>
               Gesundheitliche Eignung bestätigt
             </span>
           </label>
@@ -656,7 +656,7 @@ const VertragFormular = ({
               checked={vertrag.foto_einverstaendnis || false}
               onChange={(e) => onChange({...vertrag, foto_einverstaendnis: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.9)' }}>
               Foto/Video-Einwilligung erteilt
             </span>
           </label>

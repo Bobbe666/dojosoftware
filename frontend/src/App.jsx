@@ -47,6 +47,7 @@ import TresenUebersicht from "./components/TresenUebersicht";
 
 // Artikelverwaltung & Verkaufssystem
 import ArtikelVerwaltung from "./components/ArtikelVerwaltung";
+import ArtikelFormular from "./components/ArtikelFormular";
 import VerkaufKasse from "./components/VerkaufKasse";
 import ArtikelgruppenVerwaltung from "./components/ArtikelgruppenVerwaltung";
 
@@ -366,6 +367,8 @@ const App = () => {
               
               {/* Artikelverwaltung */}
               <Route path="artikel" element={<ArtikelVerwaltung />} />
+              <Route path="artikel/neu" element={<ArtikelFormular mode="create" />} />
+              <Route path="artikel/bearbeiten/:id" element={<ArtikelFormular mode="edit" />} />
               
               {/* Kassensystem */}
               <Route path="kasse" element={<VerkaufKasse />} />

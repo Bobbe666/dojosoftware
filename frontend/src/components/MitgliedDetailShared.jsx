@@ -6,6 +6,7 @@ import MitgliedFortschritt from './MitgliedFortschritt';
 import PruefungsStatus from './PruefungsStatus';
 import Kuendigungshinweis from './Kuendigungshinweis';
 import VertragFormular from './VertragFormular';
+import ZehnerkartenVerwaltung from './ZehnerkartenVerwaltung';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🏢 TAX COMPLIANCE
 import { useAuth } from '../context/AuthContext.jsx'; // For member ID
 import '../styles/Buttons.css';
@@ -4867,6 +4868,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   </div>
                 )}
               </div>
+
+              {/* 10ER-KARTEN VERWALTUNG */}
+              <ZehnerkartenVerwaltung
+                mitgliedId={mitglied?.mitglied_id}
+                mitglied={mitglied}
+                isAdmin={isAdmin}
+              />
             </div>
           )}
 

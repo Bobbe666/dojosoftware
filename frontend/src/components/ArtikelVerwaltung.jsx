@@ -6,12 +6,15 @@
 // =====================================================================================
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/components.css';
 import '../styles/ArtikelVerwaltung.css';
 import '../styles/ArtikelVerwaltungOverrides.css';
 import config from '../config/config.js';
 
 const ArtikelVerwaltung = () => {
+  const navigate = useNavigate();
+
   // =====================================================================================
   // STATE MANAGEMENT
   // =====================================================================================
@@ -193,37 +196,11 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   
   const handleCreate = () => {
-    setModalMode('create');
-    setSelectedArtikel(null);
-    setActiveTab('basis');
-    resetForm();
-    setShowModal(true);
+    navigate('/dashboard/artikel/neu');
   };
 
   const handleEdit = (artikel) => {
-    setModalMode('edit');
-    setSelectedArtikel(artikel);
-    setActiveTab('basis');
-    setFormData({
-      kategorie_id: artikel.kategorie_id,
-      artikelgruppe_id: artikel.artikelgruppe_id,
-      name: artikel.name,
-      beschreibung: artikel.beschreibung || '',
-      ean_code: artikel.ean_code || '',
-      artikel_nummer: artikel.artikel_nummer || '',
-      einkaufspreis_euro: artikel.einkaufspreis_euro || '',
-      zusatzkosten_euro: artikel.zusatzkosten_euro || '',
-      marge_prozent: artikel.marge_prozent || '',
-      verkaufspreis_euro: artikel.verkaufspreis_euro || '',
-      mwst_prozent: artikel.mwst_prozent || 19.00,
-      lagerbestand: artikel.lagerbestand || 0,
-      mindestbestand: artikel.mindestbestand || 0,
-      lager_tracking: artikel.lager_tracking,
-      farbe_hex: artikel.farbe_hex || '#FFFFFF',
-      aktiv: artikel.aktiv,
-      sichtbar_kasse: artikel.sichtbar_kasse
-    });
-    setShowModal(true);
+    navigate(`/dashboard/artikel/bearbeiten/${artikel.artikel_id}`);
   };
   
   const handleLager = (artikel) => {
