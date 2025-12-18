@@ -86,11 +86,19 @@
   padding: 2rem 0.5rem 0.75rem 0.5rem;
 }
 
-/* Toggle Button - RUND und KLAR */
+/* Toggle Button - Normal (wie Tab) */
 .sidebar-toggle-btn {
   margin-top: auto;
   margin-bottom: 1rem;
   justify-content: center;
+}
+
+.sidebar-toggle-btn .tab-icon {
+  margin: 0;
+}
+
+/* Toggle Button - NUR RUND wenn Sidebar verkleinert */
+.mitglied-sidebar.collapsed .sidebar-toggle-btn {
   width: 48px !important;
   height: 48px !important;
   border-radius: 50% !important;
@@ -103,13 +111,12 @@
   border: 2px solid rgba(255, 215, 0, 0.5) !important;
 }
 
-.sidebar-toggle-btn .tab-icon {
-  margin: 0;
+.mitglied-sidebar.collapsed .sidebar-toggle-btn .tab-icon {
   font-size: 1.25rem;
 }
 
-/* Hover für Toggle-Button */
-.sidebar-toggle-btn:hover {
+/* Hover für runden Toggle-Button (nur wenn collapsed) */
+.mitglied-sidebar.collapsed .sidebar-toggle-btn:hover {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.6) 0%, rgba(255, 215, 0, 0.3) 100%) !important;
   border-color: rgba(255, 215, 0, 0.8) !important;
   transform: scale(1.05) !important;
