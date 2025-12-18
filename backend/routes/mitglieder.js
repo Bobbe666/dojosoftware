@@ -86,7 +86,10 @@ router.get("/all", (req, res) => {
             m.geburtsdatum,
             m.gurtfarbe,
             m.graduierung_id,
-            COALESCE(g_stil.name, g.name) AS aktuelle_graduierung,
+            COALESCE(
+                GROUP_CONCAT(DISTINCT g_stil.name ORDER BY g_stil.name SEPARATOR ', '),
+                g.name
+            ) AS aktuelle_graduierung,
             m.email,
             m.telefon_mobil,
             m.aktiv,
@@ -113,17 +116,8 @@ router.get("/all", (req, res) => {
         FROM mitglieder m
         LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
         LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id
-        LEFT JOIN (
-            SELECT msd.mitglied_id, g.name, g.reihenfolge
-            FROM mitglied_stil_data msd
-            JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
-            WHERE (msd.mitglied_id, g.reihenfolge) IN (
-                SELECT msd2.mitglied_id, MAX(g2.reihenfolge)
-                FROM mitglied_stil_data msd2
-                JOIN graduierungen g2 ON msd2.current_graduierung_id = g2.graduierung_id
-                GROUP BY msd2.mitglied_id
-            )
-        ) g_stil ON m.mitglied_id = g_stil.mitglied_id
+        LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
+        LEFT JOIN graduierungen g_stil ON msd.current_graduierung_id = g_stil.graduierung_id
         ${whereClause}
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname

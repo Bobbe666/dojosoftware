@@ -170,7 +170,9 @@ const MitgliederListe = () => {
 
     // Gurt-Filter
     if (filterGurt) {
-      filtered = filtered.filter(m => m.aktuelle_graduierung === filterGurt);
+      filtered = filtered.filter(m =>
+        m.aktuelle_graduierung?.split(',').map(s => s.trim()).includes(filterGurt)
+      );
     }
 
     setFilteredMitglieder(filtered);
