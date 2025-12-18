@@ -595,18 +595,33 @@ router.get("/print", async (req, res) => {
       doc.font('Helvetica')
          .fontSize(9);
 
-      let pageNumber = 1;
-      const pages = [];
+      // Seitenzähler für Footer
+      let currentPageNum = 1;
+      const pageNumbers = []; // Speichert Y-Positionen und Page-Objekte
+
+      // Erste Seite registrieren
+      pageNumbers.push({ pageNum: currentPageNum, pageRef: doc.page });
 
       mitglieder.forEach((mitglied, index) => {
         // Neue Seite wenn nötig
         if (currentY > 750) {
-          // Footer auf aktueller Seite hinzufügen (wird später aktualisiert)
-          pages.push({ page: doc.page, number: pageNumber });
-          pageNumber++;
+          // Footer auf aktueller Seite hinzufügen (ohne Gesamt-Seitenzahl)
+          const currentPage = doc.page;
+          const savedY = currentY;
+          doc.fontSize(8)
+             .fillColor('#666666')
+             .text(`Seite ${currentPageNum}`, 50, currentPage.height - 50, {
+               align: 'center',
+               width: currentPage.width - 100,
+               lineBreak: false
+             });
 
+          currentPageNum++;
           doc.addPage();
           currentY = 50;
+
+          // Neue Seite registrieren
+          pageNumbers.push({ pageNum: currentPageNum, pageRef: doc.page });
 
           // Header wiederholen
           doc.fontSize(10)
@@ -653,21 +668,15 @@ router.get("/print", async (req, res) => {
         currentY += rowHeight;
       });
 
-      // Letzte Seite zur Liste hinzufügen
-      pages.push({ page: doc.page, number: pageNumber });
-      const totalPages = pageNumber;
-
-      // Footer auf allen Seiten hinzufügen
-      pages.forEach(({ page, number }) => {
-        doc.fontSize(8)
-           .fillColor('#000000')
-           .text(
-             `Seite ${number} von ${totalPages}`,
-             50,
-             page.height - 50,
-             { align: 'center', width: page.width - 100 }
-           );
-      });
+      // Footer auf letzter Seite hinzufügen
+      const totalPages = currentPageNum;
+      doc.fontSize(8)
+         .fillColor('#666666')
+         .text(`Seite ${currentPageNum} von ${totalPages}`, 50, doc.page.height - 50, {
+           align: 'center',
+           width: doc.page.width - 100,
+           lineBreak: false
+         });
 
       // PDF abschließen
       doc.end();
