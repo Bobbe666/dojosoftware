@@ -1542,24 +1542,47 @@ router.get("/:id/stil/:stil_id/data", (req, res) => {
             return res.status(500).json({ error: "Fehler beim Abrufen der Daten" });
         }
 
-        if (results.length === 0) {
-            // Keine Daten vorhanden - leeres Objekt zurückgeben
-            return res.json({
-                success: true,
-                data: {
-                    mitglied_id,
-                    stil_id,
-                    current_graduierung_id: null,
-                    letzte_pruefung: null,
-                    naechste_pruefung: null,
-                    anmerkungen: null
-                }
-            });
-        }
+        // Prüfe automatisch ob es einen kommenden Prüfungstermin für diesen Stil gibt
+        const pruefungsterminQuery = `
+            SELECT pruefungsdatum
+            FROM pruefungstermin_vorlagen
+            WHERE stil_id = ?
+            AND pruefungsdatum >= CURDATE()
+            ORDER BY pruefungsdatum ASC
+            LIMIT 1
+        `;
 
-        res.json({
-            success: true,
-            data: results[0]
+        db.query(pruefungsterminQuery, [stil_id], (pruefErr, pruefResults) => {
+            if (pruefErr) {
+                console.error("⚠️ Fehler beim Abrufen des Prüfungstermins:", pruefErr);
+                // Fahre trotzdem fort, gebe nur stilData zurück
+            }
+
+            let stilData = results.length > 0 ? results[0] : {
+                mitglied_id,
+                stil_id,
+                current_graduierung_id: null,
+                letzte_pruefung: null,
+                naechste_pruefung: null,
+                anmerkungen: null
+            };
+
+            // Wenn Prüfungstermin gefunden und neuer/aktueller als gespeicherte naechste_pruefung
+            if (pruefResults && pruefResults.length > 0) {
+                const kommenderTermin = pruefResults[0].pruefungsdatum;
+
+                if (!stilData.naechste_pruefung || new Date(kommenderTermin) > new Date(stilData.naechste_pruefung)) {
+                    stilData.naechste_pruefung = kommenderTermin;
+                    stilData.auto_gefuellt = true; // Markierung dass automatisch gefüllt
+
+                    console.log(`✅ Auto-Befüllung: Nächster Prüfungstermin für Stil ${stil_id}: ${kommenderTermin}`);
+                }
+            }
+
+            res.json({
+                success: true,
+                data: stilData
+            });
         });
     });
 });
