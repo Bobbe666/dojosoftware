@@ -98,11 +98,9 @@
   margin: 0;
 }
 
+/* Hover für Toggle-Button - KEINE Padding-Änderung! */
 .sidebar-toggle-btn:hover {
-  background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
-  padding: 0.25rem 0.75rem;
-  margin: 0.05rem 0;
+  /* Erbt von .tab-vertical-btn:hover - keine extra Styles nötig */
 }
 
 .mitglied-content {
@@ -223,10 +221,11 @@
 }
 
 .tab-vertical-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
-  color: #ffd700;
+  /* Gleicher Style wie normaler Tab - kein Unterschied */
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 700;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
 }
 
 .tab-vertical-btn .tab-icon {
