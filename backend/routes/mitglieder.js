@@ -521,7 +521,7 @@ router.get("/print", async (req, res) => {
         m.nachname,
         m.geburtsdatum,
         m.dojo_id,
-        GROUP_CONCAT(DISTINCT s.stil_name SEPARATOR ', ') as stile,
+        GROUP_CONCAT(DISTINCT s.name SEPARATOR ', ') as stile,
         v.status as vertrag_status,
         t.name as tarif_name
       FROM mitglieder m
