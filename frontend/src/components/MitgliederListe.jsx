@@ -247,6 +247,37 @@ const MitgliederListe = () => {
     console.log('✅ Selection mode toggled, menu closed');
   };
 
+  const handlePrintMitglieder = async () => {
+    console.log('🖨️ Drucken Mitgliederliste!');
+    try {
+      setShowMenu(false);
+
+      // 🔒 TAX COMPLIANCE: Dojo-Filter wie bei anderen API-Aufrufen
+      const dojoFilterParam = getDojoFilterParam();
+      const url = dojoFilterParam
+        ? `/mitglieder/print?${dojoFilterParam}`
+        : '/mitglieder/print';
+
+      console.log('🖨️ PDF URL:', url);
+
+      // PDF von Backend abrufen
+      const response = await axios.get(url, {
+        responseType: 'blob'
+      });
+
+      // PDF im neuen Tab öffnen
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const pdfUrl = window.URL.createObjectURL(blob);
+      window.open(pdfUrl, '_blank');
+
+      // URL nach kurzer Zeit freigeben
+      setTimeout(() => window.URL.revokeObjectURL(pdfUrl), 100);
+    } catch (error) {
+      console.error('❌ Fehler beim Drucken der Mitgliederliste:', error);
+      alert('Fehler beim Erstellen der PDF-Liste');
+    }
+  };
+
   const handleMenuToggle = () => {
     console.log('🔘 Menu Toggle clicked, current showMenu:', showMenu);
     if (!showMenu && menuButtonRef.current) {
@@ -463,7 +494,7 @@ const MitgliederListe = () => {
                     alignItems: 'center',
                     gap: '0.3rem',
                     fontWeight: '700',
-                    boxShadow: '0 3px 10px rgba(255, 215, 0, 0.4)',
+                    boxShadow: '0 2px 6px rgba(255, 215, 0, 0.2)',
                     transition: 'all 0.3s ease',
                     backdropFilter: 'blur(8px)',
                     boxSizing: 'border-box',
@@ -474,14 +505,14 @@ const MitgliederListe = () => {
                     e.target.style.color = '#fff';
                     e.target.style.borderColor = '#ffd700';
                     e.target.style.transform = 'translateY(-1px)';
-                    e.target.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.6)';
+                    e.target.style.boxShadow = '0 3px 10px rgba(255, 215, 0, 0.3)';
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
                     e.target.style.color = '#ffd700';
                     e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
                     e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 3px 10px rgba(255, 215, 0, 0.4)';
+                    e.target.style.boxShadow = '0 2px 6px rgba(255, 215, 0, 0.2)';
                   }}
                 >
                   <span style={{ fontSize: '1rem', fontWeight: '900' }}>⋮</span>
@@ -515,6 +546,43 @@ const MitgliederListe = () => {
                     e.stopPropagation();
                   }}
                 >
+                  <button
+                    onMouseDown={(e) => {
+                      console.log('🖨️ Drucken button MOUSEDOWN!');
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePrintMitglieder();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      background: 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
+                      border: 'none',
+                      color: 'white',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      fontWeight: '700',
+                      borderRadius: '6px',
+                      marginBottom: '0.5rem'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.4), rgba(255, 215, 0, 0.2))';
+                      e.target.style.transform = 'translateX(4px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))';
+                      e.target.style.transform = 'translateX(0)';
+                    }}
+                  >
+                    <span style={{ fontSize: '1.3rem' }}>🖨️</span>
+                    <span>Mitgliederliste drucken</span>
+                  </button>
+
                   <button
                     onMouseDown={(e) => {
                       console.log('📦 Archivieren button MOUSEDOWN!');

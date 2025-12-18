@@ -721,33 +721,68 @@ Glassmorphism-Design mit Theme-Variablen.
 .tab-vertical-btn,
 .tab {
   background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.2);
   color: rgba(255, 255, 255, 0.7);
-  border: none;
   padding: 12px 16px;
   text-align: left;
   border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-vertical-btn::before,
+.tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.tab-vertical-btn:hover::before,
+.tab:hover::before {
+  left: 100%;
 }
 
 .tab-vertical-btn:hover,
 .tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 215, 0, 0.4);
   color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.tab-vertical-btn:active,
+.tab:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
 }
 
 .tab-icon {
   font-size: 1rem;
   margin-right: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.tab-vertical-btn:hover .tab-icon,
+.tab:hover .tab-icon {
+  transform: scale(1.1);
 }
 
 .tab-label {
   flex: 1;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .tab-vertical-btn.active,
@@ -756,7 +791,7 @@ Glassmorphism-Design mit Theme-Variablen.
   color: rgba(255, 255, 255, 0.95);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
-  border: none;
+  border: 1px solid rgba(255, 215, 0, 0.4);
 }
 
 /* ===== HORIZONTAL SUB-TABS ===== */
