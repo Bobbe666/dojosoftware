@@ -86,7 +86,7 @@ router.get("/all", (req, res) => {
             m.geburtsdatum,
             m.gurtfarbe,
             m.graduierung_id,
-            g.name AS aktuelle_graduierung,
+            COALESCE(g_stil.name, g.name) AS aktuelle_graduierung,
             m.email,
             m.telefon_mobil,
             m.aktiv,
@@ -113,6 +113,13 @@ router.get("/all", (req, res) => {
         FROM mitglieder m
         LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
         LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id
+        LEFT JOIN (
+            SELECT msd.mitglied_id, g.name, g.reihenfolge
+            FROM mitglied_stil_data msd
+            JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
+            ORDER BY g.reihenfolge DESC
+            LIMIT 999999
+        ) g_stil ON m.mitglied_id = g_stil.mitglied_id
         ${whereClause}
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
@@ -242,9 +249,12 @@ router.get("/filter-options/stile", (req, res) => {
 // ✅ API: Alle verfügbaren Gurte/Graduierungen abrufen (MUSS VOR /:id Route stehen!)
 router.get("/filter-options/gurte", (req, res) => {
   const query = `
-    SELECT DISTINCT name
-    FROM graduierungen
-    ORDER BY reihenfolge
+    SELECT DISTINCT g.name
+    FROM graduierungen g
+    INNER JOIN mitglied_stil_data msd ON g.graduierung_id = msd.current_graduierung_id
+    INNER JOIN mitglieder m ON msd.mitglied_id = m.mitglied_id
+    WHERE m.aktiv = 1
+    ORDER BY g.reihenfolge
   `;
 
   db.query(query, (err, results) => {
