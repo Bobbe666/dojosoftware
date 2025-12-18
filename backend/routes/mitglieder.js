@@ -1413,8 +1413,10 @@ router.get("/:id/stile", (req, res) => {
     const stilMapping = {
         'ShieldX': { stil_id: 2, stil_name: 'ShieldX', beschreibung: 'Moderne Selbstverteidigung mit realistischen Szenarien' },
         'BJJ': { stil_id: 3, stil_name: 'BJJ', beschreibung: 'Brazilian Jiu-Jitsu - Bodenkampf und Grappling-Techniken' },
+        'Brazilian Jiu Jitsu': { stil_id: 3, stil_name: 'Brazilian Jiu Jitsu', beschreibung: 'Brazilian Jiu-Jitsu - Bodenkampf und Grappling-Techniken' },
         'Kickboxen': { stil_id: 4, stil_name: 'Kickboxen', beschreibung: 'Moderne Kampfsportart kombiniert Boxing mit Fußtechniken' },
         'Karate': { stil_id: 5, stil_name: 'Enso Karate', beschreibung: 'Traditionelle japanische Kampfkunst mit Fokus auf Schlag- und Tritttechniken' },
+        'Enso Karate': { stil_id: 5, stil_name: 'Enso Karate', beschreibung: 'Traditionelle japanische Kampfkunst mit Fokus auf Schlag- und Tritttechniken' },
         'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do', beschreibung: 'Koreanische Kampfkunst mit Betonung auf Fußtechniken und hohe Tritte' }
     };
 
@@ -1434,12 +1436,16 @@ router.get("/:id/stile", (req, res) => {
         // Transformiere die ENUM-Werte zurück zu den erwarteten Objekten
         const transformedResults = results.map(row => {
             const stilInfo = stilMapping[row.stil];
+            if (!stilInfo) {
+                console.warn(`⚠️ Stil '${row.stil}' nicht im Mapping gefunden`);
+                return null;
+            }
             return {
                 stil_id: stilInfo.stil_id,
                 stil_name: stilInfo.stil_name,
                 beschreibung: stilInfo.beschreibung
             };
-        });
+        }).filter(Boolean);
 
         res.json({
             success: true,
