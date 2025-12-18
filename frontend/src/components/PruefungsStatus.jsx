@@ -34,7 +34,6 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       if (zugewieseneStile.length === 0) {
         console.log('⚠️ Keine Stile zugewiesen');
         setStileDaten([]);
-        setStile([]);
         setLoading(false);
         return;
       }
@@ -101,17 +100,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       })));
 
       setStileDaten(stileMitDaten);
-      setStile(zugewieseneStile);
-      
-      // Lade Graduierungen und Dojos für Modals
-      const [graduierungenRes, dojosRes] = await Promise.all([
-        axios.get('/stile'),
-        axios.get('/dojos')
-      ]);
-      
-      setGraduierungen(graduierungenRes.data);
-      setDojos(dojosRes.data);
-      
+
     } catch (error) {
       console.error('Fehler beim Laden der Prüfungsdaten:', error);
       setError('Fehler beim Laden der Daten');
