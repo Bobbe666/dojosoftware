@@ -117,8 +117,12 @@ router.get("/all", (req, res) => {
             SELECT msd.mitglied_id, g.name, g.reihenfolge
             FROM mitglied_stil_data msd
             JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
-            ORDER BY g.reihenfolge DESC
-            LIMIT 999999
+            WHERE (msd.mitglied_id, g.reihenfolge) IN (
+                SELECT msd2.mitglied_id, MAX(g2.reihenfolge)
+                FROM mitglied_stil_data msd2
+                JOIN graduierungen g2 ON msd2.current_graduierung_id = g2.graduierung_id
+                GROUP BY msd2.mitglied_id
+            )
         ) g_stil ON m.mitglied_id = g_stil.mitglied_id
         ${whereClause}
         GROUP BY m.mitglied_id
