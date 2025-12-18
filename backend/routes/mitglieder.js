@@ -529,7 +529,7 @@ router.get("/print", async (req, res) => {
       LEFT JOIN stile s ON ms.stil_id = s.stil_id
       LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
       LEFT JOIN tarife t ON v.tarif_id = t.id
-      WHERE m.archiviert = 0
+      WHERE m.aktiv = 1
     `;
 
     const params = [];
