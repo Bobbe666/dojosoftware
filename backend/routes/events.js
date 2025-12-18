@@ -797,7 +797,7 @@ router.get('/member/:mitglied_id', async (req, res) => {
  */
 router.post('/:id/admin-anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { mitglied_id, bemerkung } = req.body;
+  const { mitglied_id, bemerkung, bezahlt } = req.body;
 
   if (!mitglied_id) {
     return res.status(400).json({ error: 'Mitglied-ID fehlt' });
@@ -842,13 +842,14 @@ router.post('/:id/admin-anmelden', async (req, res) => {
     // - Keine Deadline-Prüfung
     // - Keine Max-Teilnehmer-Prüfung
     // - Status: bestaetigt
-    // - Bezahlt: true
-    // - Bezahldatum: NOW()
+    // - Bezahlt: Wert aus Request (true/false)
+    // - Bezahldatum: NOW() wenn bezahlt, sonst NULL
+    const bezahldatum = bezahlt ? 'NOW()' : 'NULL';
     const [result] = await db.promise().query(
       `INSERT INTO event_anmeldungen
        (event_id, mitglied_id, status, anmeldedatum, bezahlt, bezahldatum, bemerkung)
-       VALUES (?, ?, 'bestaetigt', NOW(), true, NOW(), ?)`,
-      [eventId, mitglied_id, bemerkung || 'Durch Admin hinzugefügt']
+       VALUES (?, ?, 'bestaetigt', NOW(), ?, ${bezahldatum}, ?)`,
+      [eventId, mitglied_id, bezahlt || false, bemerkung || 'Durch Admin hinzugefügt']
     );
 
     console.log(`✅ Admin hat Mitglied ${mitglied_id} zu Event ${eventId} hinzugefügt`);
@@ -860,7 +861,7 @@ router.post('/:id/admin-anmelden', async (req, res) => {
       console.log(`📧 Benachrichtigung an ${member.email}:`);
       console.log(`   Event: ${event.titel}`);
       console.log(`   Datum: ${new Date(event.datum).toLocaleDateString('de-DE')}`);
-      console.log(`   Status: Bestätigt und bezahlt`);
+      console.log(`   Status: Bestätigt - Zahlung: ${bezahlt ? 'Bezahlt' : 'Offen'}`);
 
       // Falls Email-Service existiert, hier aufrufen:
       // await sendEventNotification(member.email, event, 'admin-added');

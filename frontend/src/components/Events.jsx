@@ -30,6 +30,7 @@ const Events = () => {
   const [allMembers, setAllMembers] = useState([]);
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [participantBemerkung, setParticipantBemerkung] = useState('');
+  const [participantBezahlt, setParticipantBezahlt] = useState(false);
   const [eventRegistrations, setEventRegistrations] = useState({});
 
   // Form States
@@ -243,6 +244,7 @@ const Events = () => {
     setSelectedEventForParticipant(event);
     setSelectedMemberId('');
     setParticipantBemerkung('');
+    setParticipantBezahlt(false);
 
     // Lade existierende Anmeldungen für dieses Event
     try {
@@ -273,7 +275,8 @@ const Events = () => {
         `${config.apiBaseUrl}/events/${selectedEventForParticipant.event_id}/admin-anmelden`,
         {
           mitglied_id: parseInt(selectedMemberId),
-          bemerkung: participantBemerkung || undefined
+          bemerkung: participantBemerkung || undefined,
+          bezahlt: participantBezahlt
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -1187,8 +1190,34 @@ const Events = () => {
                 />
               </div>
 
+              <div className="form-group">
+                <label>Zahlungsstatus *</label>
+                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="bezahlt"
+                      checked={participantBezahlt === true}
+                      onChange={() => setParticipantBezahlt(true)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span>Bezahlt</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="bezahlt"
+                      checked={participantBezahlt === false}
+                      onChange={() => setParticipantBezahlt(false)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span>Offen</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="alert alert-info" style={{ marginTop: '1rem', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-                ℹ️ Wird automatisch als bezahlt markiert und das Mitglied erhält eine Benachrichtigung.
+                ℹ️ Das Mitglied erhält eine Benachrichtigung über die Anmeldung.
               </div>
             </div>
             <div className="modal-footer">
