@@ -82,24 +82,38 @@
 }
 
 .mitglied-sidebar.collapsed {
-  width: 70px;
-  padding: 0.75rem 0.5rem;
+  width: 80px;
+  padding: 2rem 0.5rem 0.75rem 0.5rem;
 }
 
-/* Toggle Button - TAB STYLE (nur Icon, zentriert) */
+/* Toggle Button - RUND und KLAR */
 .sidebar-toggle-btn {
   margin-top: auto;
   margin-bottom: 1rem;
   justify-content: center;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-left: auto;
+  margin-right: auto;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 100%) !important;
+  border: 2px solid rgba(255, 215, 0, 0.5) !important;
 }
 
 .sidebar-toggle-btn .tab-icon {
   margin: 0;
+  font-size: 1.25rem;
 }
 
-/* Hover für Toggle-Button - KEINE Padding-Änderung! */
+/* Hover für Toggle-Button */
 .sidebar-toggle-btn:hover {
-  /* Erbt von .tab-vertical-btn:hover - keine extra Styles nötig */
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.6) 0%, rgba(255, 215, 0, 0.3) 100%) !important;
+  border-color: rgba(255, 215, 0, 0.8) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5) !important;
 }
 
 .mitglied-content {
@@ -139,9 +153,10 @@
 }
 
 .mitglied-sidebar.collapsed .mitglied-avatar {
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 0;
+  width: 55px;
+  height: 55px;
+  margin: 0 auto 0.75rem;
+  border: 2px solid rgba(255, 215, 0, 0.3);
 }
 
 .avatar-image {
