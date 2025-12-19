@@ -471,7 +471,20 @@ try {
     });
 }
 
-// 12.5. FINANZÄMTER (Finanzamt-Datenbank für Dojo-Steuereinstellungen) - NEU
+// 12.5. DOJO LOGOS (Logo-Verwaltung für Dojos) - NEU
+try {
+  const dojoLogosRouter = require(path.join(__dirname, "routes", "dojo-logos.js"));
+  app.use("/api/dojos", dojoLogosRouter);
+  logger.success('Route gemountet', { path: '/api/dojos (logos)' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'dojo-logos',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 12.6. FINANZÄMTER (Finanzamt-Datenbank für Dojo-Steuereinstellungen) - NEU
 try {
   const finanzaemterRouter = require(path.join(__dirname, "routes", "finanzaemter.js"));
   app.use("/api/finanzaemter", finanzaemterRouter);

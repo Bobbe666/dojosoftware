@@ -4,6 +4,7 @@ import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import FinanzamtSelector from './FinanzamtSelector';
 import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
+import DojoLogos from './DojoLogos';
 import { useDojoContext } from '../context/DojoContext';
 import config from '../config/config.js';
 import '../styles/MitgliedDetail.css';
@@ -32,6 +33,7 @@ const DojoEdit = () => {
     { key: 'social', label: 'Social Media', icon: '📱' },
     { key: 'betrieb', label: 'Betrieb & Kontakte', icon: '☎️' },
     { key: 'dokumente', label: 'Dokumente', icon: '📄' },
+    { key: 'logos', label: 'Logos', icon: '🖼️' },
     { key: 'admins', label: 'Admin-Accounts', icon: '🔐' },
     { key: 'system', label: 'System', icon: '⚙️' },
     { key: 'design', label: 'Design', icon: '🎨' }
@@ -1435,6 +1437,13 @@ const DojoEdit = () => {
                 <h3 style={{ color: '#ffd700', marginBottom: '8px' }}>Dojo zuerst speichern</h3>
                 <p>Bankverbindungen können nach dem Erstellen des Dojos hinzugefügt werden.</p>
               </div>
+            </div>
+          )}
+
+          {/* Logos Tab */}
+          {activeTab === 'logos' && (
+            <div className="form-section" style={{ padding: 0, background: 'transparent' }}>
+              <DojoLogos dojoId={id} />
             </div>
           )}
 
