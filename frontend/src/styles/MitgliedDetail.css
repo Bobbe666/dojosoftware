@@ -3021,14 +3021,14 @@ input:focus {
 
 /* Stil hinzufügen Sektion - außerhalb der Karten */
 .add-style-section {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 107, 53, 0.1));
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.04), rgba(255, 107, 53, 0.04));
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
   backdrop-filter: blur(10px);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .add-style-section::before {
@@ -3044,42 +3044,44 @@ input:focus {
 }
 
 .add-style-header h3 {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .add-style-control {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   align-items: center;
   justify-content: center;
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .style-select {
   flex: 1;
   min-width: 200px;
+  max-width: 400px;
   background: var(--hintergrund-card) !important;
   color: rgba(255, 255, 255, 0.9) !important;
-  border: 2px solid rgba(255, 215, 0, 0.3) !important;
-  padding: 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  padding: 0.65rem 0.75rem;
   border-radius: var(--radius);
-  font-size: 1rem;
+  font-size: 0.95rem;
   backdrop-filter: blur(10px);
   transition: var(--transition);
 }
 
 .style-select:focus {
   border-color: var(--farbe-hauptfarbe) !important;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+  outline: none;
 }
 
 .style-select option {
@@ -3098,15 +3100,16 @@ input:focus {
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
   color: var(--farbe-weiss);
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.7rem 1.2rem;
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: var(--transition);
   position: relative;
   overflow: hidden;
-  min-width: 150px;
+  min-width: 130px;
+  flex-shrink: 0;
 }
 
 .add-style-btn::before {
@@ -3125,8 +3128,8 @@ input:focus {
 }
 
 .add-style-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.25);
 }
 
 .add-style-btn:disabled {
