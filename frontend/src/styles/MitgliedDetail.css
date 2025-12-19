@@ -40,7 +40,7 @@
   width: 280px;
   background: #000000;
   border-right: 1px solid rgba(255, 215, 0, 0.2);
-  padding: 2rem 0.75rem 0.75rem 1.25rem;
+  padding: 2rem 0.75rem 0.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -125,7 +125,7 @@
 
 .mitglied-content {
   flex: 1;
-  padding: 2rem;
+  padding: 2rem 2.5rem 2rem 2rem;
   background: #000000;
   min-height: 100vh;
   overflow-x: hidden;
@@ -3024,8 +3024,8 @@ input:focus {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.04), rgba(255, 107, 53, 0.04));
   border: 1px solid rgba(255, 215, 0, 0.15);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
   backdrop-filter: blur(10px);
   position: relative;
   overflow: visible;
@@ -3052,7 +3052,7 @@ input:focus {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   text-align: center;
 }
 
@@ -3145,12 +3145,12 @@ input:focus {
 /* Grid Container für Stil-Karten */
 .styles-grid-container {
   display: grid;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 /* Style Group Wrapper - enthält Header + 3 Karten */
 .style-group-wrapper {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 /* Stil-Gruppen Header */
@@ -3158,8 +3158,8 @@ input:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 107, 53, 0.1));
   border: 2px solid rgba(255, 215, 0, 0.3);
   border-radius: var(--radius-lg);
@@ -3219,7 +3219,7 @@ input:focus {
 .style-cards-group {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  gap: 1.25rem;
   margin-bottom: 0;
 }
 
@@ -3970,7 +3970,7 @@ input:focus {
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
   padding: 0;
 }
 
@@ -4017,6 +4017,8 @@ input:focus {
   flex: 0 0 auto;
   justify-content: center;
   min-width: 150px;
+  padding: 0.65rem 1rem;
+  font-size: 0.9rem;
 }
 
 /* Sub-Tabs Container (Stile/Prüfung) - Original Design */
