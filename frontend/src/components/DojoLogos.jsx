@@ -27,7 +27,7 @@ const DojoLogos = ({ dojoId }) => {
   const loadLogos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${config.API_BASE_URL}/dojos/${dojoId}/logos`);
+      const response = await axios.get(`${config.apiBaseUrl}/dojos/${dojoId}/logos`);
 
       // Convert array to object keyed by logo_type
       const logosObj = {};
@@ -73,7 +73,7 @@ const DojoLogos = ({ dojoId }) => {
       formData.append('logoType', logoType);
 
       const response = await axios.post(
-        `${config.API_BASE_URL}/dojos/${dojoId}/logos`,
+        `${config.apiBaseUrl}/dojos/${dojoId}/logos`,
         formData,
         {
           headers: {
@@ -99,7 +99,7 @@ const DojoLogos = ({ dojoId }) => {
 
     try {
       setLoading(true);
-      await axios.delete(`${config.API_BASE_URL}/dojos/${dojoId}/logos/${logoId}`);
+      await axios.delete(`${config.apiBaseUrl}/dojos/${dojoId}/logos/${logoId}`);
 
       showMessage('success', 'Logo erfolgreich gelöscht');
 
@@ -173,7 +173,7 @@ const DojoLogos = ({ dojoId }) => {
                   <>
                     <div className="logo-preview">
                       <img
-                        src={`${config.API_BASE_URL}${existingLogo.url}`}
+                        src={`${config.apiBaseUrl}${existingLogo.url}`}
                         alt={type.label}
                         className="logo-image"
                       />
