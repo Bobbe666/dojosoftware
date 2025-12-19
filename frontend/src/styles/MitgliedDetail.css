@@ -242,11 +242,11 @@
 }
 
 .tab-vertical-btn.active {
-  /* Gleicher Style wie normaler Tab - kein Unterschied */
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  /* Aktiver Tab hat Hover-Design */
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
+  color: #ffd700;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
 }
 
 .tab-vertical-btn .tab-icon {
@@ -3029,6 +3029,8 @@ input:focus {
   backdrop-filter: blur(10px);
   position: relative;
   overflow: visible;
+  z-index: 5;
+  pointer-events: auto;
 }
 
 .add-style-section::before {
@@ -3062,6 +3064,9 @@ input:focus {
   max-width: 600px;
   margin: 0 auto;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .style-select {
