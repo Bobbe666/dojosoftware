@@ -188,9 +188,9 @@
 }
 
 .tab-vertical-btn {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  color: rgba(255, 255, 255, 0.95);
+  border: none;
   padding: 10px 16px;
   text-align: left;
   cursor: pointer;
@@ -200,12 +200,12 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   width: 100%;
   position: relative;
   overflow: hidden;
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
   backdrop-filter: blur(10px);
 }
 
@@ -230,23 +230,23 @@
 }
 
 .tab-vertical-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  color: #ffd700;
 }
 
 .tab-vertical-btn:active {
   transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
 }
 
 .tab-vertical-btn.active {
-  /* Logout-Button Design für aktiven Tab */
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-  box-shadow: none;
+  /* Gleicher Style wie normaler Tab - kein Unterschied */
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
 }
 
 .tab-vertical-btn .tab-icon {
@@ -3973,6 +3973,29 @@ input:focus {
   flex: 1;
   width: auto;
   justify-content: center;
+  /* Weniger aggressive Farben für Stile/Prüfung Tabs */
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+}
+
+.sub-tabs-sidebar-style .tab-vertical-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: none !important;
+}
+
+.sub-tabs-sidebar-style .tab-vertical-btn.active {
+  /* Logout-Button Design für aktiven Tab */
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
 }
 
 /* Stil-Tabs Row - SIDEBAR STYLE (Horizontal) */
