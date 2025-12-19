@@ -3,6 +3,8 @@
 
 const puppeteer = require('puppeteer');
 const db = require('../db');
+const fs = require('fs');
+const path = require('path');
 
 // Promise-Wrapper für Datenbankabfragen
 const queryAsync = (sql, params = []) => {
@@ -12,6 +14,30 @@ const queryAsync = (sql, params = []) => {
       else resolve(results);
     });
   });
+};
+
+/**
+ * Lädt das Haupt-Logo des Dojos als base64
+ */
+const loadDojoLogo = async (dojoId) => {
+  try {
+    const logos = await queryAsync(
+      'SELECT file_path, mime_type FROM dojo_logos WHERE dojo_id = ? AND logo_type = ? LIMIT 1',
+      [dojoId, 'haupt']
+    );
+
+    if (logos.length > 0 && fs.existsSync(logos[0].file_path)) {
+      const imageBuffer = fs.readFileSync(logos[0].file_path);
+      const base64Image = imageBuffer.toString('base64');
+      const mimeType = logos[0].mime_type || 'image/png';
+      return `data:${mimeType};base64,${base64Image}`;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Fehler beim Laden des Logos:', error);
+    return null;
+  }
 };
 
 /**
@@ -47,7 +73,10 @@ async function generatePDFFromTemplate(templateId, mitglied, vertrag, dojo) {
 
     const template = templates[0];
 
-    // 2. Daten vorbereiten
+    // 2. Logo laden
+    const logoBase64 = await loadDojoLogo(dojo.id);
+
+    // 3. Daten vorbereiten
     const data = {
       mitglied: {
         vorname: mitglied.vorname || '',
@@ -90,10 +119,19 @@ async function generatePDFFromTemplate(templateId, mitglied, vertrag, dojo) {
       }
     };
 
-    // 3. Template rendern
-    const renderedHtml = renderTemplate(template.grapesjs_html, data);
+    // 4. Template rendern
+    let renderedHtml = renderTemplate(template.grapesjs_html, data);
 
-    // 4. Vollständiges HTML-Dokument erstellen
+    // 5. Logo-Platzhalter durch tatsächliches Logo ersetzen
+    if (logoBase64) {
+      const logoHtml = `<img src="${logoBase64}" alt="Dojo Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />`;
+      renderedHtml = renderedHtml.replace(
+        /<div class="logo-placeholder">[\s\S]*?<\/div>/,
+        `<div class="logo-placeholder">${logoHtml}</div>`
+      );
+    }
+
+    // 6. Vollständiges HTML-Dokument erstellen
     const fullHtml = `
       <!DOCTYPE html>
       <html>
