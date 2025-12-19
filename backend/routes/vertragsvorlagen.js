@@ -2,6 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const fs = require('fs');
+const path = require('path');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -14,6 +16,30 @@ const queryAsync = (sql, params = []) => {
       }
     });
   });
+};
+
+/**
+ * Lädt das Haupt-Logo des Dojos als base64
+ */
+const loadDojoLogo = async (dojoId) => {
+  try {
+    const logos = await queryAsync(
+      'SELECT file_path, mime_type FROM dojo_logos WHERE dojo_id = ? AND logo_type = ? LIMIT 1',
+      [dojoId, 'haupt']
+    );
+
+    if (logos.length > 0 && fs.existsSync(logos[0].file_path)) {
+      const imageBuffer = fs.readFileSync(logos[0].file_path);
+      const base64Image = imageBuffer.toString('base64');
+      const mimeType = logos[0].mime_type || 'image/png';
+      return `data:${mimeType};base64,${base64Image}`;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Fehler beim Laden des Logos:', error);
+    return null;
+  }
 };
 
 // GET /api/vertragsvorlagen - Alle Vorlagen für ein Dojo abrufen
@@ -414,6 +440,20 @@ router.get('/:id/preview', async (req, res) => {
       const regex = new RegExp(`{{${placeholder}}}`, 'g');
       html = html.replace(regex, value || '');
     });
+
+    // Logo laden und einfügen
+    const logoBase64 = await loadDojoLogo(template.dojo_id);
+    if (logoBase64) {
+      const logoHtml = `<img src="${logoBase64}" alt="Dojo Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />`;
+      // Robustere Regex die auch GrapesJS-generierte divs mit zusätzlichen Attributen matcht
+      html = html.replace(
+        /<div[^>]*class="[^"]*logo-placeholder[^"]*"[^>]*>[\s\S]*?<\/div>/g,
+        (match) => {
+          // Behalte die ursprünglichen Attribute, aber ersetze den Inhalt
+          return match.replace(/>[\s\S]*?<\/div>/, `>${logoHtml}</div>`);
+        }
+      );
+    }
 
     // HTML mit CSS kombinieren
     const fullHtml = `
