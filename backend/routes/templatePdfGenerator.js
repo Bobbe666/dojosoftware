@@ -125,9 +125,13 @@ async function generatePDFFromTemplate(templateId, mitglied, vertrag, dojo) {
     // 5. Logo-Platzhalter durch tatsächliches Logo ersetzen
     if (logoBase64) {
       const logoHtml = `<img src="${logoBase64}" alt="Dojo Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />`;
+      // Robustere Regex die auch GrapesJS-generierte divs mit zusätzlichen Attributen matcht
       renderedHtml = renderedHtml.replace(
-        /<div class="logo-placeholder">[\s\S]*?<\/div>/,
-        `<div class="logo-placeholder">${logoHtml}</div>`
+        /<div[^>]*class="[^"]*logo-placeholder[^"]*"[^>]*>[\s\S]*?<\/div>/g,
+        (match) => {
+          // Behalte die ursprünglichen Attribute, aber ersetze den Inhalt
+          return match.replace(/>[\s\S]*?<\/div>/, `>${logoHtml}</div>`);
+        }
       );
     }
 
