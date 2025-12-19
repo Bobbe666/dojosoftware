@@ -408,7 +408,7 @@ const Vertragsdokumente = () => {
         </div>
       )}
 
-      {/* Info Box */}
+      {/* Info Boxes */}
       <div className="info-box">
         <h4>💡 Verwendung von Platzhaltern</h4>
         <p>In Ihren Vorlagen können Sie dynamische Platzhalter verwenden:</p>
@@ -419,6 +419,16 @@ const Vertragsdokumente = () => {
           <li><code>{'{{system.datum}}'}</code> - Heutiges Datum</li>
         </ul>
         <p>Diese werden automatisch beim Generieren des PDFs ersetzt.</p>
+      </div>
+
+      <div className="info-box" style={{ marginTop: '1rem', background: 'rgba(76, 175, 80, 0.1)', borderColor: 'rgba(76, 175, 80, 0.3)' }}>
+        <h4>🖼️ Logo-Integration</h4>
+        <p>
+          Das <strong>Haupt-Logo</strong> Ihres Dojos wird automatisch rechts oben in allen Vertragsdokumenten angezeigt.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          📌 Logo-Verwaltung: <a href="/dashboard/dojos" style={{ color: '#4caf50', textDecoration: 'underline' }}>Dojo-Verwaltung → Logos-Tab</a>
+        </p>
       </div>
     </div>
   );
