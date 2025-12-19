@@ -105,16 +105,22 @@ const drawTableRow = (doc, x, y, labelWidth, valueWidth, height, label, value) =
 /**
  * SEITE 1: MITGLIEDSVERTRAG (Template-Design)
  */
-const generatePage1_Mitgliedsvertrag = (doc, dojo, mitglied, vertrag) => {
+const generatePage1_Mitgliedsvertrag = (doc, dojo, mitglied, vertrag, logoPath = null) => {
   const pageWidth = 595.28; // A4 width in points
   const margin = 50;
 
   // ========================================
   // LOGO (rechts oben)
   // ========================================
-  const logoPath = path.join(__dirname, '../../assets/dojo-logo.png');
-  if (fs.existsSync(logoPath)) {
-    doc.image(logoPath, pageWidth - margin - 80, margin, { width: 80 });
+  // Verwende dynamisches Logo aus dojo_logos oder Fallback
+  let actualLogoPath = logoPath;
+  if (!actualLogoPath || !fs.existsSync(actualLogoPath)) {
+    // Fallback auf Standard-Logo
+    actualLogoPath = path.join(__dirname, '../../assets/dojo-logo.png');
+  }
+
+  if (fs.existsSync(actualLogoPath)) {
+    doc.image(actualLogoPath, pageWidth - margin - 80, margin, { width: 80 });
   }
 
   // ========================================
@@ -993,6 +999,21 @@ async function generateCompleteVertragPDF(dojoId, mitglied, vertrag, options = {
       const dojoResults = await queryAsync('SELECT * FROM dojo WHERE id = ?', [dojoId]);
       const dojo = dojoResults[0] || {};
 
+      // Lade Haupt-Logo aus dojo_logos Tabelle
+      let logoPath = null;
+      try {
+        const logoResults = await queryAsync(
+          'SELECT file_path FROM dojo_logos WHERE dojo_id = ? AND logo_type = ? LIMIT 1',
+          [dojoId, 'haupt']
+        );
+        if (logoResults && logoResults.length > 0) {
+          logoPath = logoResults[0].file_path;
+          logger.info(`📷 Haupt-Logo gefunden: ${logoPath}`);
+        }
+      } catch (logoError) {
+        logger.warn('⚠️ Fehler beim Laden des Haupt-Logos:', { error: logoError.message });
+      }
+
       logger.info(`📄 Generiere vollständiges Vertragspaket (10+ Seiten)`);
 
       const doc = new PDFDocument({
@@ -1013,7 +1034,7 @@ async function generateCompleteVertragPDF(dojoId, mitglied, vertrag, options = {
       // ========================================
       // SEITE 1: MITGLIEDSVERTRAG
       // ========================================
-      generatePage1_Mitgliedsvertrag(doc, dojo, mitglied, vertrag);
+      generatePage1_Mitgliedsvertrag(doc, dojo, mitglied, vertrag, logoPath);
 
       // ========================================
       // SEITE 2: SEPA-LASTSCHRIFTMANDAT
