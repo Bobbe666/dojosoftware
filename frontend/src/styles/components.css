@@ -785,7 +785,6 @@ Glassmorphism-Design mit Theme-Variablen.
   letter-spacing: 0.3px;
 }
 
-.tab-vertical-btn.active,
 .tab.active {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
   color: rgba(255, 255, 255, 0.95);

@@ -106,7 +106,7 @@
   color: #ffd700;
 }
 
-.tab-vertical-btn.active {
+.events-container .tab-vertical-btn.active {
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
   color: #2a2a3e;
   font-weight: 600;
