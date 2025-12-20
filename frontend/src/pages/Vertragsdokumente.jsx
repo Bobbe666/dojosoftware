@@ -336,13 +336,22 @@ const Vertragsdokumente = () => {
       {/* Info Boxes - nur im Dokumente-Tab anzeigen */}
       {activeTab === 'dokumente' && (
         <>
-          <div className="info-box">
+          <div className="info-box" style={{ position: 'relative' }}>
             <h4
               onClick={() => setShowPlaceholders(!showPlaceholders)}
-              style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              style={{
+                cursor: 'pointer',
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                margin: 0,
+                padding: 0,
+                position: 'relative'
+              }}
             >
               <span>💡 Verfügbare Platzhalter</span>
-              <span style={{ fontSize: '0.8em' }}>{showPlaceholders ? '▼' : '▶'}</span>
+              <span style={{ fontSize: '1em', marginLeft: '10px' }}>{showPlaceholders ? '▼' : '▶'}</span>
             </h4>
             {showPlaceholders && (
               <>
