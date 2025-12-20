@@ -50,6 +50,7 @@ const DokumenteVerwaltung = () => {
     { value: 'hausordnung', label: 'Hausordnung', icon: '🏠' },
     { value: 'dojokun', label: 'Dojo Regeln (Dojokun)', icon: '🥋' },
     { value: 'haftung', label: 'Haftungsausschluss', icon: '⚠️' },
+    { value: 'kuendigung', label: 'Kündigungsschreiben', icon: '📤' },
     { value: 'sonstiges', label: 'Sonstige Dokumente', icon: '📄' }
   ];
 

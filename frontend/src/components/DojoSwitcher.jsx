@@ -51,14 +51,14 @@ const DojoSwitcher = () => {
     if (dojo.steuer_status === 'kleinunternehmer') {
       const prozent = (dojo.jahresumsatz_aktuell / dojo.kleinunternehmer_grenze) * 100;
       if (prozent >= 100) {
-        return <AlertTriangle size={12} className="status-icon warning" />;
+        return <AlertTriangle size={10} className="status-icon warning" />;
       } else if (prozent >= 80) {
-        return <TrendingUp size={12} className="status-icon caution" />;
+        return <TrendingUp size={10} className="status-icon caution" />;
       } else {
-        return <Check size={12} className="status-icon success" />;
+        return <Check size={10} className="status-icon success" />;
       }
     } else {
-      return <Building2 size={12} className="status-icon info" />;
+      return <Building2 size={10} className="status-icon info" />;
     }
   };
 
@@ -118,7 +118,7 @@ const DojoSwitcher = () => {
               <div className="dojo-switcher-label">Ansicht:</div>
               <div className="dojo-switcher-name">Alle Dojos</div>
             </div>
-            <Building2 size={14} className="status-icon info" />
+            <Building2 size={11} className="status-icon info" />
           </>
         ) : (
           <>
@@ -133,7 +133,7 @@ const DojoSwitcher = () => {
             {getStatusIcon(activeDojo)}
           </>
         )}
-        <ChevronDown size={16} className={`chevron ${isOpen ? 'open' : ''}`} />
+        <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
 
       {isOpen && (
@@ -177,7 +177,7 @@ const DojoSwitcher = () => {
                     <span className="dropdown-item-name">Alle Dojos</span>
                     <span className="badge badge-primary">Gesamt</span>
                     {showAllDojos && (
-                      <Check size={14} className="check-icon" />
+                      <Check size={12} className="check-icon" />
                     )}
                   </div>
                   <div className="dropdown-item-info">
@@ -212,7 +212,7 @@ const DojoSwitcher = () => {
                         <span className="badge badge-primary">Haupt</span>
                       )}
                       {!showAllDojos && activeDojo.id === dojo.id && (
-                        <Check size={14} className="check-icon" />
+                        <Check size={12} className="check-icon" />
                       )}
                     </div>
                     <div className="dropdown-item-info">
@@ -232,7 +232,7 @@ const DojoSwitcher = () => {
 
             <div className="dropdown-footer">
               <a href="/dashboard/dojos" className="link-manage-dojos">
-                <Building2 size={14} />
+                <Building2 size={12} />
                 Dojos verwalten
               </a>
             </div>
