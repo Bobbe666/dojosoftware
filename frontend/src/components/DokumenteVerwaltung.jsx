@@ -70,7 +70,9 @@ const DokumenteVerwaltung = () => {
   const loadDokumente = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Loading documents for dojo:', activeDojo?.id, activeDojo);
       const response = await axios.get(`/vertraege/dokumente/${activeDojo.id}`);
+      console.log('📦 Received documents:', response.data.data?.length, 'documents');
       setDokumente(response.data.data || []);
       setError('');
     } catch (err) {
