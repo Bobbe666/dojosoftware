@@ -11,6 +11,7 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
   const [templateType, setTemplateType] = useState('vertrag');
   const [saving, setSaving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [showPlaceholders, setShowPlaceholders] = useState(false);
 
   // Verfügbare Platzhalter
   const placeholders = {
@@ -1017,42 +1018,64 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
         padding: '15px',
         background: '#2d2d2d',
         borderRadius: '8px',
-        border: '1px solid #4a90e2'
+        border: '1px solid #4a90e2',
+        position: 'relative'
       }}>
-        <h4 style={{ marginTop: 0, color: '#64b5f6' }}>💡 Verfügbare Platzhalter:</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-          {Object.entries(placeholders).map(([category, items]) => (
-            <div key={category}>
-              <strong style={{ color: '#90caf9' }}>{category.charAt(0).toUpperCase() + category.slice(1)}:</strong>
-              <div style={{ fontSize: '0.85rem', marginTop: '5px' }}>
-                {items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      cursor: 'pointer',
-                      padding: '2px 5px',
-                      background: '#3a3a3a',
-                      margin: '2px 0',
-                      borderRadius: '4px',
-                      color: '#e0e0e0'
-                    }}
-                    onClick={() => insertPlaceholder(item.value)}
-                    title={`Klicken um ${item.value} einzufügen`}
-                  >
-                    {item.label}
+        <h4
+          onClick={() => setShowPlaceholders(!showPlaceholders)}
+          style={{
+            marginTop: 0,
+            marginBottom: showPlaceholders ? '1rem' : 0,
+            color: '#64b5f6',
+            cursor: 'pointer',
+            userSelect: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 0,
+            position: 'relative'
+          }}
+        >
+          <span>💡 Verfügbare Platzhalter</span>
+          <span style={{ fontSize: '1em', marginLeft: '10px' }}>{showPlaceholders ? '▼' : '▶'}</span>
+        </h4>
+        {showPlaceholders && (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+              {Object.entries(placeholders).map(([category, items]) => (
+                <div key={category}>
+                  <strong style={{ color: '#90caf9' }}>{category.charAt(0).toUpperCase() + category.slice(1)}:</strong>
+                  <div style={{ fontSize: '0.85rem', marginTop: '5px' }}>
+                    {items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '2px 5px',
+                          background: '#3a3a3a',
+                          margin: '2px 0',
+                          borderRadius: '4px',
+                          color: '#e0e0e0'
+                        }}
+                        onClick={() => insertPlaceholder(item.value)}
+                        title={`Klicken um ${item.value} einzufügen`}
+                      >
+                        {item.label}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p style={{ marginTop: '10px', marginBottom: 0, fontSize: '0.9rem', color: '#90caf9' }}>
-          <strong>Tipps:</strong><br/>
-          • Ziehen Sie die vorgefertigten Blöcke aus der rechten Sidebar<br/>
-          • Klicken Sie auf einen Platzhalter, um ihn einzufügen<br/>
-          • Verwenden Sie den "📝 Freier Text" Block, um beliebigen Text einzugeben<br/>
-          • Für Logos: Fügen Sie den "🖼️ Logo/Bild" Block ein, klicken Sie darauf, und ändern Sie dann die Bild-URL in den Einstellungen (rechts)
-        </p>
+            <p style={{ marginTop: '10px', marginBottom: 0, fontSize: '0.9rem', color: '#90caf9' }}>
+              <strong>Tipps:</strong><br/>
+              • Ziehen Sie die vorgefertigten Blöcke aus der rechten Sidebar<br/>
+              • Klicken Sie auf einen Platzhalter, um ihn einzufügen<br/>
+              • Verwenden Sie den "📝 Freier Text" Block, um beliebigen Text einzugeben<br/>
+              • Für Logos: Fügen Sie den "🖼️ Logo/Bild" Block ein, klicken Sie darauf, und ändern Sie dann die Bild-URL in den Einstellungen (rechts)
+            </p>
+          </>
+        )}
       </div>
 
       {/* GrapesJS Editor */}
