@@ -25,6 +25,7 @@ const DokumenteVerwaltung = () => {
   const [subTab, setSubTab] = useState('vorlagen'); // 'vorlagen' oder Dokumenttyp (agb, datenschutz, etc.)
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [selectedDokumenteForCopy, setSelectedDokumenteForCopy] = useState([]);
   const [targetDojoId, setTargetDojoId] = useState(null);
   const [vorlagenExpanded, setVorlagenExpanded] = useState(true);
   const [dokumenteExpanded, setDokumenteExpanded] = useState(true);
@@ -128,21 +129,54 @@ const DokumenteVerwaltung = () => {
       return;
     }
 
-    if (selectedDocuments.length === 0) {
+    const totalSelected = selectedDocuments.length + selectedDokumenteForCopy.length;
+    if (totalSelected === 0) {
       alert('Bitte wählen Sie mindestens ein Dokument aus');
       return;
     }
 
     try {
+      let copied = 0;
+      let errors = 0;
+
+      // Copy Vertragsvorlagen
       for (const docId of selectedDocuments) {
-        await axios.post(`/vertragsvorlagen/${docId}/copy`, {
-          target_dojo_id: targetDojoId
-        });
+        try {
+          await axios.post(`/vertragsvorlagen/${docId}/copy`, {
+            target_dojo_id: targetDojoId
+          });
+          copied++;
+        } catch (err) {
+          console.error(`Fehler beim Kopieren der Vorlage ${docId}:`, err);
+          errors++;
+        }
       }
-      alert(`✅ ${selectedDocuments.length} Dokument(e) erfolgreich kopiert`);
+
+      // Copy Vertragsdokumente (AGB, etc.)
+      for (const docId of selectedDokumenteForCopy) {
+        try {
+          await axios.post(`/vertraege/dokumente/${docId}/copy`, {
+            target_dojo_id: targetDojoId
+          });
+          copied++;
+        } catch (err) {
+          console.error(`Fehler beim Kopieren des Dokuments ${docId}:`, err);
+          errors++;
+        }
+      }
+
+      if (errors > 0) {
+        alert(`⚠️ ${copied} Dokument(e) kopiert, ${errors} Fehler`);
+      } else {
+        alert(`✅ ${copied} Dokument(e) erfolgreich kopiert`);
+      }
+
       setShowCopyModal(false);
       setSelectedDocuments([]);
+      setSelectedDokumenteForCopy([]);
       setTargetDojoId(null);
+      loadDokumente();
+      loadVorlagen();
     } catch (error) {
       console.error('Fehler beim Kopieren:', error);
       alert('❌ Fehler beim Kopieren der Dokumente');
@@ -1952,22 +1986,33 @@ const DokumenteVerwaltung = () => {
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{
                   display: 'block',
-                  marginBottom: '0.5rem',
+                  marginBottom: '1rem',
                   fontSize: '0.9rem',
                   fontWeight: '600',
                   color: '#ffd700'
                 }}>
                   Dokumente auswählen:
                 </label>
-                <div style={{
-                  maxHeight: '300px',
-                  overflow: 'auto',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  border: '1px solid rgba(255, 215, 0, 0.2)'
-                }}>
-                  {vorlagen.map((vorlage) => (
+
+                {/* Vertragsvorlagen */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h4 style={{ color: 'rgba(255, 215, 0, 0.9)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    📝 Vertragsvorlagen
+                  </h4>
+                  <div style={{
+                    maxHeight: '200px',
+                    overflow: 'auto',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    border: '1px solid rgba(255, 215, 0, 0.2)'
+                  }}>
+                    {vorlagen.length === 0 ? (
+                      <p style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', margin: 0 }}>
+                        Keine Vertragsvorlagen vorhanden
+                      </p>
+                    ) : (
+                      vorlagen.map((vorlage) => (
                     <div
                       key={vorlage.id}
                       style={{
@@ -2016,7 +2061,81 @@ const DokumenteVerwaltung = () => {
                         {vorlage.name} ({vorlage.template_type})
                       </label>
                     </div>
-                  ))}
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Rechtliche Dokumente */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h4 style={{ color: 'rgba(255, 215, 0, 0.9)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                    📄 Rechtliche Dokumente (AGB, Dojokun, etc.)
+                  </h4>
+                  <div style={{
+                    maxHeight: '200px',
+                    overflow: 'auto',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    border: '1px solid rgba(255, 215, 0, 0.2)'
+                  }}>
+                    {dokumente.length === 0 ? (
+                      <p style={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', margin: 0 }}>
+                        Keine rechtlichen Dokumente vorhanden
+                      </p>
+                    ) : (
+                      dokumente.map((dok) => (
+                        <div
+                          key={dok.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '0.75rem',
+                            marginBottom: '0.5rem',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255, 215, 0, 0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                          }}
+                          onClick={() => {
+                            setSelectedDokumenteForCopy(prev =>
+                              prev.includes(dok.id)
+                                ? prev.filter(id => id !== dok.id)
+                                : [...prev, dok.id]
+                            );
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 215, 0, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedDokumenteForCopy.includes(dok.id)}
+                            onChange={() => {}}
+                            style={{
+                              marginRight: '0.75rem',
+                              width: '18px',
+                              height: '18px',
+                              cursor: 'pointer'
+                            }}
+                          />
+                          <label style={{
+                            margin: 0,
+                            cursor: 'pointer',
+                            flex: 1,
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            fontSize: '0.9rem'
+                          }}>
+                            {getTypIcon(dok.dokumenttyp)} {dok.titel} (v{dok.version})
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -2028,40 +2147,41 @@ const DokumenteVerwaltung = () => {
               }}>
                 <button
                   onClick={handleCopyDocuments}
-                  disabled={!targetDojoId || selectedDocuments.length === 0}
+                  disabled={!targetDojoId || (selectedDocuments.length === 0 && selectedDokumenteForCopy.length === 0)}
                   style={{
                     padding: '0.75rem 1.5rem',
-                    background: !targetDojoId || selectedDocuments.length === 0
+                    background: !targetDojoId || (selectedDocuments.length === 0 && selectedDokumenteForCopy.length === 0)
                       ? 'rgba(255, 255, 255, 0.1)'
                       : 'linear-gradient(135deg, #22c55e, #10b981)',
                     border: 'none',
                     borderRadius: '8px',
-                    color: !targetDojoId || selectedDocuments.length === 0
+                    color: !targetDojoId || (selectedDocuments.length === 0 && selectedDokumenteForCopy.length === 0)
                       ? 'rgba(255, 255, 255, 0.3)'
                       : 'white',
                     fontSize: '0.95rem',
                     fontWeight: '600',
-                    cursor: !targetDojoId || selectedDocuments.length === 0
+                    cursor: !targetDojoId || (selectedDocuments.length === 0 && selectedDokumenteForCopy.length === 0)
                       ? 'not-allowed'
                       : 'pointer',
                     transition: 'transform 0.3s ease',
-                    boxShadow: !targetDojoId || selectedDocuments.length === 0
+                    boxShadow: !targetDojoId || (selectedDocuments.length === 0 && selectedDokumenteForCopy.length === 0)
                       ? 'none'
                       : '0 4px 15px rgba(34, 197, 94, 0.3)'
                   }}
                   onMouseEnter={(e) => {
-                    if (targetDojoId && selectedDocuments.length > 0) {
+                    if (targetDojoId && (selectedDocuments.length > 0 || selectedDokumenteForCopy.length > 0)) {
                       e.target.style.transform = 'translateY(-2px)';
                     }
                   }}
                   onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
                 >
-                  ✅ {selectedDocuments.length} Dokument(e) kopieren
+                  ✅ {selectedDocuments.length + selectedDokumenteForCopy.length} Dokument(e) kopieren
                 </button>
                 <button
                   onClick={() => {
                     setShowCopyModal(false);
                     setSelectedDocuments([]);
+                    setSelectedDokumenteForCopy([]);
                     setTargetDojoId(null);
                   }}
                   style={{
