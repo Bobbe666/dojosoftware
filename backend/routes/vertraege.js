@@ -1088,6 +1088,73 @@ router.post('/:id/historie', async (req, res) => {
     }
 });
 
+// POST /api/vertraege/dokumente/:id/copy - Copy document to another dojo
+router.post('/dokumente/:id/copy', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { target_dojo_id } = req.body;
+
+        if (!target_dojo_id) {
+            return res.status(400).json({ error: 'target_dojo_id ist erforderlich' });
+        }
+
+        // Get the original document
+        const original = await queryAsync(`
+            SELECT * FROM vertragsdokumente WHERE id = ?
+        `, [id]);
+
+        if (original.length === 0) {
+            return res.status(404).json({ error: 'Dokument nicht gefunden' });
+        }
+
+        const doc = original[0];
+
+        // Check if document with same type and version already exists in target dojo
+        const existing = await queryAsync(`
+            SELECT id FROM vertragsdokumente
+            WHERE dojo_id = ? AND dokumenttyp = ? AND version = ?
+        `, [target_dojo_id, doc.dokumenttyp, doc.version]);
+
+        if (existing.length > 0) {
+            return res.status(400).json({
+                error: `Dokument "${doc.titel}" (Version ${doc.version}) existiert bereits im Ziel-Dojo`
+            });
+        }
+
+        // Copy the document
+        const result = await queryAsync(`
+            INSERT INTO vertragsdokumente (
+                dojo_id,
+                dokumenttyp,
+                version,
+                titel,
+                inhalt,
+                gueltig_ab,
+                gueltig_bis,
+                aktiv
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            target_dojo_id,
+            doc.dokumenttyp,
+            doc.version,
+            doc.titel,
+            doc.inhalt,
+            doc.gueltig_ab,
+            doc.gueltig_bis,
+            doc.aktiv
+        ]);
+
+        res.json({
+            success: true,
+            message: `Dokument "${doc.titel}" erfolgreich kopiert`,
+            data: { id: result.insertId }
+        });
+    } catch (err) {
+        console.error('Fehler beim Kopieren des Dokuments:', err);
+        res.status(500).json({ error: 'Fehler beim Kopieren', details: err.message });
+    }
+});
+
 // POST /api/vertraege/dokumente/import-from-dojos - Import documents from dojo table
 router.post('/dokumente/import-from-dojos', async (req, res) => {
     try {
