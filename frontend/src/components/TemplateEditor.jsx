@@ -1104,9 +1104,9 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <h3 style={{ margin: 0 }}>👁️ Vorschau</h3>
+              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>👁️ Vorschau</h3>
               <button
-                className="btn btn-sm btn-danger"
+                className="btn btn-danger"
                 onClick={() => {
                   URL.revokeObjectURL(previewUrl);
                   setPreviewUrl(null);
@@ -1115,10 +1115,16 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
                   background: '#f44336',
                   border: 'none',
                   color: 'white',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
+                  padding: '12px 24px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  transition: 'all 0.2s'
                 }}
+                onMouseEnter={(e) => e.target.style.background = '#d32f2f'}
+                onMouseLeave={(e) => e.target.style.background = '#f44336'}
               >
                 ✕ Schließen
               </button>

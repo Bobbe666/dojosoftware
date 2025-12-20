@@ -462,12 +462,62 @@ router.get('/:id/preview', async (req, res) => {
       <head>
         <meta charset="UTF-8">
         <style>
-          body { font-family: Arial, sans-serif; margin: 40px; }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f5f5;
+          }
+
+          /* A4-Seiten-Simulation */
+          .page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto 20mm auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            page-break-after: always;
+          }
+
+          /* Seitenwechsel-Indikator (nur am Bildschirm sichtbar) */
+          .page:not(:last-child)::after {
+            content: '─────────── Seitenwechsel ───────────';
+            display: block;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20mm;
+            padding: 10px;
+            background: #f0f0f0;
+            border-top: 2px dashed #ccc;
+            border-bottom: 2px dashed #ccc;
+          }
+
+          /* Für Druckansicht */
+          @media print {
+            body {
+              background: white;
+              margin: 0;
+            }
+            .page {
+              margin: 0;
+              box-shadow: none;
+              width: 100%;
+              min-height: auto;
+            }
+            .page::after {
+              display: none !important;
+            }
+          }
+
           ${template.grapesjs_css || ''}
         </style>
       </head>
       <body>
-        ${html}
+        <div class="page">
+          ${html}
+        </div>
       </body>
       </html>
     `;
@@ -591,12 +641,62 @@ router.get('/:id/generate-pdf', async (req, res) => {
       <head>
         <meta charset="UTF-8">
         <style>
-          body { font-family: Arial, sans-serif; margin: 40px; }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f5f5;
+          }
+
+          /* A4-Seiten-Simulation */
+          .page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto 20mm auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            page-break-after: always;
+          }
+
+          /* Seitenwechsel-Indikator (nur am Bildschirm sichtbar) */
+          .page:not(:last-child)::after {
+            content: '─────────── Seitenwechsel ───────────';
+            display: block;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20mm;
+            padding: 10px;
+            background: #f0f0f0;
+            border-top: 2px dashed #ccc;
+            border-bottom: 2px dashed #ccc;
+          }
+
+          /* Für Druckansicht */
+          @media print {
+            body {
+              background: white;
+              margin: 0;
+            }
+            .page {
+              margin: 0;
+              box-shadow: none;
+              width: 100%;
+              min-height: auto;
+            }
+            .page::after {
+              display: none !important;
+            }
+          }
+
           ${template.grapesjs_css || ''}
         </style>
       </head>
       <body>
-        ${html}
+        <div class="page">
+          ${html}
+        </div>
       </body>
       </html>
     `;
