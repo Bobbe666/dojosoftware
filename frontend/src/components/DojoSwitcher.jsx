@@ -177,7 +177,7 @@ const DojoSwitcher = () => {
                     <span className="dropdown-item-name">Alle Dojos</span>
                     <span className="badge badge-primary">Gesamt</span>
                     {showAllDojos && (
-                      <Check size={16} className="check-icon" />
+                      <Check size={14} className="check-icon" />
                     )}
                   </div>
                   <div className="dropdown-item-info">
@@ -212,7 +212,7 @@ const DojoSwitcher = () => {
                         <span className="badge badge-primary">Haupt</span>
                       )}
                       {!showAllDojos && activeDojo.id === dojo.id && (
-                        <Check size={16} className="check-icon" />
+                        <Check size={14} className="check-icon" />
                       )}
                     </div>
                     <div className="dropdown-item-info">
@@ -232,7 +232,7 @@ const DojoSwitcher = () => {
 
             <div className="dropdown-footer">
               <a href="/dashboard/dojos" className="link-manage-dojos">
-                <Building2 size={16} />
+                <Building2 size={14} />
                 Dojos verwalten
               </a>
             </div>
