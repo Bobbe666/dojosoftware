@@ -231,6 +231,56 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
     // Aktiviere Pfeile nach Editor-Initialisierung
     editorInstance.on('load', () => {
       setTimeout(enableNumberInputArrows, 500);
+
+      // Füge Seitenwechsel-CSS in den Canvas ein
+      try {
+        const canvasDoc = editorInstance.Canvas.getDocument();
+        if (canvasDoc) {
+          const styleEl = canvasDoc.createElement('style');
+          styleEl.innerHTML = `
+            /* A4-Seiten-Simulation */
+            body {
+              background: #f5f5f5 !important;
+              padding: 20px !important;
+            }
+
+            /* Simuliere A4-Seiten */
+            body > div, body > section, body > article {
+              background: white;
+              max-width: 210mm;
+              min-height: 297mm;
+              margin: 0 auto 20mm auto;
+              padding: 20mm;
+              box-shadow: 0 0 10px rgba(0,0,0,0.1);
+              position: relative;
+            }
+
+            /* Seitenwechsel nach ca. 297mm Höhe */
+            body > div:not(:last-child)::after,
+            body > section:not(:last-child)::after,
+            body > article:not(:last-child)::after {
+              content: '─────────── Seitenwechsel ───────────';
+              display: block;
+              text-align: center;
+              color: #999;
+              font-size: 12px;
+              margin-top: 20mm;
+              padding: 10px;
+              background: #f0f0f0;
+              border-top: 2px dashed #ccc;
+              border-bottom: 2px dashed #ccc;
+              position: absolute;
+              bottom: -30px;
+              left: 0;
+              right: 0;
+              width: 100%;
+            }
+          `;
+          canvasDoc.head.appendChild(styleEl);
+        }
+      } catch (err) {
+        console.warn('Konnte Seitenwechsel-CSS nicht einfügen:', err);
+      }
     });
     
     // Aktiviere auch bei Style Manager Updates
