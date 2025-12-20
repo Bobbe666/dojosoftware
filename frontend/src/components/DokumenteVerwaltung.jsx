@@ -147,7 +147,7 @@ const DokumenteVerwaltung = () => {
           });
           copied++;
         } catch (err) {
-          console.error(`Fehler beim Kopieren der Vorlage ${docId}:`, err);
+          console.error(`Fehler beim Kopieren der Vorlage ${docId}:`, err.response?.data?.error || err.message);
           errors++;
         }
       }
@@ -160,7 +160,7 @@ const DokumenteVerwaltung = () => {
           });
           copied++;
         } catch (err) {
-          console.error(`Fehler beim Kopieren des Dokuments ${docId}:`, err);
+          console.error(`Fehler beim Kopieren des Dokuments ${docId}:`, err.response?.data?.error || err.message);
           errors++;
         }
       }
