@@ -17,6 +17,7 @@ const Vertragsdokumente = () => {
   const [targetDojoId, setTargetDojoId] = useState(null);
   const [activeTab, setActiveTab] = useState('dokumente'); // 'dokumente' oder 'editor'
   const [subTab, setSubTab] = useState('alle'); // 'alle', 'neumitglied', 'vertrag', 'sepa', etc.
+  const [showPlaceholders, setShowPlaceholders] = useState(false);
 
   const dojoId = activeDojo?.id || localStorage.getItem('dojo_id') || 1;
 
@@ -410,15 +411,58 @@ const Vertragsdokumente = () => {
 
       {/* Info Boxes */}
       <div className="info-box">
-        <h4>💡 Verwendung von Platzhaltern</h4>
-        <p>In Ihren Vorlagen können Sie dynamische Platzhalter verwenden:</p>
-        <ul>
-          <li><code>{'{{mitglied.vorname}}'}</code> - Vorname des Mitglieds</li>
-          <li><code>{'{{vertrag.monatsbeitrag}}'}</code> - Monatlicher Beitrag</li>
-          <li><code>{'{{dojo.dojoname}}'}</code> - Name Ihres Dojos</li>
-          <li><code>{'{{system.datum}}'}</code> - Heutiges Datum</li>
-        </ul>
-        <p>Diese werden automatisch beim Generieren des PDFs ersetzt.</p>
+        <h4
+          onClick={() => setShowPlaceholders(!showPlaceholders)}
+          style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <span>💡 Verfügbare Platzhalter</span>
+          <span style={{ fontSize: '0.8em' }}>{showPlaceholders ? '▼' : '▶'}</span>
+        </h4>
+        {showPlaceholders && (
+          <>
+            <p>In Ihren Vorlagen können Sie dynamische Platzhalter verwenden:</p>
+            <ul>
+              <li><code>{'{{mitglied.vorname}}'}</code> - Vorname des Mitglieds</li>
+              <li><code>{'{{mitglied.nachname}}'}</code> - Nachname des Mitglieds</li>
+              <li><code>{'{{mitglied.email}}'}</code> - E-Mail-Adresse</li>
+              <li><code>{'{{mitglied.telefon}}'}</code> - Telefonnummer</li>
+              <li><code>{'{{mitglied.strasse}}'}</code> - Straße</li>
+              <li><code>{'{{mitglied.hausnummer}}'}</code> - Hausnummer</li>
+              <li><code>{'{{mitglied.plz}}'}</code> - Postleitzahl</li>
+              <li><code>{'{{mitglied.ort}}'}</code> - Ort</li>
+              <li><code>{'{{mitglied.geburtsdatum}}'}</code> - Geburtsdatum</li>
+              <li><code>{'{{mitglied.anrede}}'}</code> - Anrede</li>
+              <li><code>{'{{mitglied.mitgliedsnummer}}'}</code> - Mitgliedsnummer</li>
+            </ul>
+            <ul style={{ marginTop: '0.5rem' }}>
+              <li><code>{'{{vertrag.vertragsnummer}}'}</code> - Vertragsnummer</li>
+              <li><code>{'{{vertrag.vertragsbeginn}}'}</code> - Vertragsbeginn</li>
+              <li><code>{'{{vertrag.vertragsende}}'}</code> - Vertragsende</li>
+              <li><code>{'{{vertrag.monatsbeitrag}}'}</code> - Monatlicher Beitrag</li>
+              <li><code>{'{{vertrag.billing_cycle}}'}</code> - Abrechnungszyklus</li>
+              <li><code>{'{{vertrag.mindestlaufzeit_monate}}'}</code> - Mindestlaufzeit</li>
+              <li><code>{'{{vertrag.kuendigungsfrist_monate}}'}</code> - Kündigungsfrist</li>
+              <li><code>{'{{vertrag.tarifname}}'}</code> - Tarifname</li>
+            </ul>
+            <ul style={{ marginTop: '0.5rem' }}>
+              <li><code>{'{{dojo.dojoname}}'}</code> - Name Ihres Dojos</li>
+              <li><code>{'{{dojo.strasse}}'}</code> - Straße des Dojos</li>
+              <li><code>{'{{dojo.hausnummer}}'}</code> - Hausnummer</li>
+              <li><code>{'{{dojo.plz}}'}</code> - PLZ des Dojos</li>
+              <li><code>{'{{dojo.ort}}'}</code> - Ort des Dojos</li>
+              <li><code>{'{{dojo.telefon}}'}</code> - Telefon</li>
+              <li><code>{'{{dojo.email}}'}</code> - E-Mail</li>
+              <li><code>{'{{dojo.internet}}'}</code> - Webseite</li>
+              <li><code>{'{{dojo.untertitel}}'}</code> - Untertitel</li>
+            </ul>
+            <ul style={{ marginTop: '0.5rem' }}>
+              <li><code>{'{{system.datum}}'}</code> - Heutiges Datum</li>
+              <li><code>{'{{system.jahr}}'}</code> - Aktuelles Jahr</li>
+              <li><code>{'{{system.monat}}'}</code> - Aktueller Monat</li>
+            </ul>
+            <p style={{ marginTop: '0.5rem' }}>Diese werden automatisch beim Generieren des PDFs ersetzt.</p>
+          </>
+        )}
       </div>
 
       <div className="info-box" style={{ marginTop: '1rem', background: 'rgba(76, 175, 80, 0.1)', borderColor: 'rgba(76, 175, 80, 0.3)' }}>
