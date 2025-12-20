@@ -102,6 +102,36 @@ const MemberDashboard = () => {
     }
   };
 
+  // Bestätige eine Benachrichtigung
+  const confirmNotification = async (notificationId) => {
+    try {
+      const response = await fetch(`/notifications/confirm/${notificationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          mitglied_id: memberData.id
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          alert('✅ Benachrichtigung bestätigt!');
+          // Benachrichtigungen neu laden
+          await loadNotifications(memberData.email || user?.email);
+        }
+      } else {
+        const error = await response.json();
+        alert('❌ Fehler: ' + (error.error || 'Konnte nicht bestätigt werden'));
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Bestätigen der Benachrichtigung:', error);
+      alert('❌ Fehler beim Bestätigen der Benachrichtigung');
+    }
+  };
+
   // Lade zugelassene Prüfungen für dieses Mitglied
   const loadApprovedExams = async (memberId) => {
     try {
@@ -1149,6 +1179,49 @@ const MemberDashboard = () => {
                       }}>
                         {notification.created_at ? new Date(notification.created_at).toLocaleString('de-DE') : 'Gerade eben'}
                       </div>
+                      {notification.requires_confirmation && !notification.confirmed_at && (
+                        <button
+                          onClick={() => confirmNotification(notification.id)}
+                          style={{
+                            marginTop: '0.5rem',
+                            padding: '0.4rem 0.8rem',
+                            background: 'linear-gradient(135deg, #22c55e, #10b981)',
+                            border: 'none',
+                            borderRadius: '6px',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
+                          }}
+                          onMouseOver={(e) => {
+                            e.target.style.transform = 'translateY(-1px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.4)';
+                          }}
+                          onMouseOut={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.3)';
+                          }}
+                        >
+                          ✓ Bestätigen
+                        </button>
+                      )}
+                      {notification.requires_confirmation && notification.confirmed_at && (
+                        <div style={{
+                          marginTop: '0.5rem',
+                          padding: '0.4rem 0.8rem',
+                          background: 'rgba(34, 197, 94, 0.2)',
+                          border: '1px solid rgba(34, 197, 94, 0.3)',
+                          borderRadius: '6px',
+                          color: '#22c55e',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          display: 'inline-block'
+                        }}>
+                          ✓ Bestätigt am {new Date(notification.confirmed_at).toLocaleString('de-DE')}
+                        </div>
+                      )}
                     </div>
                   ))}
                   {notifications.length > 3 && (
