@@ -856,27 +856,40 @@ router.get('/dokumente/:dojo_id', async (req, res) => {
     try {
         const { dojo_id } = req.params;
         const { aktiv_nur } = req.query;
-        let whereClause = 'WHERE dojo_id = ?';
-        if (aktiv_nur === 'true') {
-            whereClause += ' AND aktiv = TRUE';
+
+        let whereClause = '';
+        let queryParams = [];
+
+        // Wenn "all" ausgewählt ist, zeige alle Dokumente von allen Dojos
+        if (dojo_id === 'all') {
+            whereClause = aktiv_nur === 'true' ? 'WHERE aktiv = TRUE' : '';
+        } else {
+            whereClause = 'WHERE dojo_id = ?';
+            queryParams.push(parseInt(dojo_id));
+            if (aktiv_nur === 'true') {
+                whereClause += ' AND aktiv = TRUE';
+            }
         }
 
         const dokumente = await queryAsync(`
             SELECT
-                id,
-                dokumenttyp,
-                version,
-                titel,
-                inhalt,
-                gueltig_ab,
-                gueltig_bis,
-                aktiv,
-                erstellt_am,
-                aktualisiert_am
-            FROM vertragsdokumente
+                vd.id,
+                vd.dojo_id,
+                vd.dokumenttyp,
+                vd.version,
+                vd.titel,
+                vd.inhalt,
+                vd.gueltig_ab,
+                vd.gueltig_bis,
+                vd.aktiv,
+                vd.erstellt_am,
+                vd.aktualisiert_am,
+                d.dojoname
+            FROM vertragsdokumente vd
+            LEFT JOIN dojo d ON vd.dojo_id = d.id
             ${whereClause}
-            ORDER BY dokumenttyp, version DESC
-        `, [parseInt(dojo_id)]);
+            ORDER BY vd.dokumenttyp, vd.version DESC
+        `, queryParams);
         res.json({ success: true, data: dokumente });
     } catch (err) {
         console.error('Fehler beim Abrufen der Dokumente:', err);

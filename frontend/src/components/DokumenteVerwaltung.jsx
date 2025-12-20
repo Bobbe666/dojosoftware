@@ -30,6 +30,7 @@ const DokumenteVerwaltung = () => {
   const [vorlagenExpanded, setVorlagenExpanded] = useState(true);
   const [dokumenteExpanded, setDokumenteExpanded] = useState(true);
 
+  const [editingDokument, setEditingDokument] = useState(null);
   const [newDokument, setNewDokument] = useState({
     dokumenttyp: 'agb',
     version: '',
@@ -110,6 +111,21 @@ const DokumenteVerwaltung = () => {
     setSelectedTemplate(id);
     setShowTemplateEditor(true);
     setActiveTab('vorlagen'); // Wechsle zum Vorlagen-Tab, damit der Editor sichtbar wird
+  };
+
+  const handleEditDokument = (dokument) => {
+    setEditingDokument(dokument);
+    setNewDokument({
+      dokumenttyp: dokument.dokumenttyp,
+      version: dokument.version,
+      titel: dokument.titel,
+      inhalt: dokument.inhalt,
+      gueltig_ab: dokument.gueltig_ab,
+      gueltig_bis: dokument.gueltig_bis,
+      aktiv: dokument.aktiv,
+      dojo_id: dokument.dojo_id
+    });
+    setShowNewVersion(true);
   };
 
   const handleOpenCopyModal = () => {
@@ -249,14 +265,14 @@ const DokumenteVerwaltung = () => {
       }
 
       // Wenn "Alle Dojos" ausgewählt ist und kein Dojo manuell gewählt wurde, fragen
-      if (activeDojo.id === 'all' && !newDokument.dojo_id) {
+      if (activeDojo.id === 'all' && !newDokument.dojo_id && !editingDokument) {
         alert('Bitte wählen Sie ein Dojo aus, dem dieses Dokument zugeordnet werden soll.');
         return;
       }
 
       const payload = {
-        dojo_id: activeDojo.id === 'all' ? newDokument.dojo_id : activeDojo.id,
-        dokumenttyp: selectedDokumentTyp,
+        dojo_id: editingDokument ? editingDokument.dojo_id : (activeDojo.id === 'all' ? newDokument.dojo_id : activeDojo.id),
+        dokumenttyp: editingDokument ? editingDokument.dokumenttyp : selectedDokumentTyp,
         version: newDokument.version,
         titel: newDokument.titel,
         inhalt: newDokument.inhalt,
@@ -265,11 +281,19 @@ const DokumenteVerwaltung = () => {
         aktiv: newDokument.aktiv
       };
 
-      const response = await axios.post('/vertraege/dokumente', payload);
+      let response;
+      if (editingDokument) {
+        // Update existing document
+        response = await axios.put(`/vertraege/dokumente/${editingDokument.id}`, payload);
+      } else {
+        // Create new document
+        response = await axios.post('/vertraege/dokumente', payload);
+      }
 
       if (response.data.success) {
-        alert('✅ Dokumentversion erfolgreich erstellt!');
+        alert(editingDokument ? '✅ Dokument erfolgreich aktualisiert!' : '✅ Dokumentversion erfolgreich erstellt!');
         setShowNewVersion(false);
+        setEditingDokument(null);
         // Dokumente neu laden
         loadDokumente();
         // Formular zurücksetzen
@@ -280,12 +304,13 @@ const DokumenteVerwaltung = () => {
           inhalt: '',
           gueltig_ab: new Date().toISOString().split('T')[0],
           gueltig_bis: null,
-          aktiv: true
+          aktiv: true,
+          dojo_id: null
         });
       }
     } catch (err) {
-      console.error('Fehler beim Erstellen der Version:', err);
-      alert('Fehler beim Erstellen der Version: ' + (err.response?.data?.error || err.message));
+      console.error('Fehler beim Speichern:', err);
+      alert('Fehler beim Speichern: ' + (err.response?.data?.error || err.message));
     }
   };
 
@@ -1100,6 +1125,7 @@ const DokumenteVerwaltung = () => {
                           👁️ Anzeigen
                         </button>
                         <button
+                          onClick={() => handleEditDokument(dok)}
                           style={{
                             padding: '0.5rem 1rem',
                             background: 'transparent',
@@ -1208,7 +1234,7 @@ const DokumenteVerwaltung = () => {
                 marginBottom: '1.5rem',
                 color: '#FFD700'
               }}>
-                Neue Version erstellen: {getTypLabel(selectedDokumentTyp)}
+                {editingDokument ? '✏️ Dokument bearbeiten' : `Neue Version erstellen: ${getTypLabel(selectedDokumentTyp)}`}
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1350,7 +1376,10 @@ const DokumenteVerwaltung = () => {
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
                 <button
-                  onClick={() => setShowNewVersion(false)}
+                  onClick={() => {
+                    setShowNewVersion(false);
+                    setEditingDokument(null);
+                  }}
                   style={{
                     padding: '0.75rem 1.5rem',
                     background: 'transparent',
@@ -1398,7 +1427,7 @@ const DokumenteVerwaltung = () => {
                     e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.3)';
                   }}
                 >
-                  Version erstellen
+                  {editingDokument ? '💾 Speichern' : '✨ Version erstellen'}
                 </button>
               </div>
             </div>
