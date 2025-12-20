@@ -834,6 +834,54 @@ router.get('/member/:email', async (req, res) => {
   }
 });
 
+// Hole bestätigte Dokument-Benachrichtigungen für ein Mitglied (via ID)
+router.get('/member/:id/confirmed', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const notifications = await new Promise((resolve, reject) => {
+      db.query(`
+        SELECT
+          n.id,
+          n.subject,
+          n.message,
+          n.metadata,
+          n.confirmed_at,
+          n.created_at
+        FROM notifications n
+        WHERE n.recipient = ?
+          AND n.type = 'push'
+          AND n.requires_confirmation = TRUE
+          AND n.confirmed_at IS NOT NULL
+        ORDER BY n.confirmed_at DESC
+      `, [id.toString()], (err, results) => {
+        if (err) {
+          console.error('Fehler beim Laden der bestätigten Benachrichtigungen:', err);
+          resolve([]);
+        } else {
+          // Parse metadata JSON
+          const parsed = results.map(n => ({
+            ...n,
+            metadata: n.metadata ? JSON.parse(n.metadata) : null
+          }));
+          resolve(parsed);
+        }
+      });
+    });
+
+    res.json({
+      success: true,
+      data: notifications
+    });
+  } catch (error) {
+    console.error('Fehler beim Laden der bestätigten Benachrichtigungen:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Laden der bestätigten Benachrichtigungen'
+    });
+  }
+});
+
 // Benachrichtigung als gelesen markieren
 router.put('/member/:id/read', async (req, res) => {
   try {

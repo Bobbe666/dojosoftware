@@ -231,6 +231,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [verfügbareVorlagen, setVerfügbareVorlagen] = useState([]);
   const [generatingDocument, setGeneratingDocument] = useState(false);
   const [mitgliedDokumente, setMitgliedDokumente] = useState([]);
+  const [confirmedNotifications, setConfirmedNotifications] = useState([]);
 
   // Modal für SEPA-Mandat-Details
   const [selectedMandate, setSelectedMandate] = useState(null);
@@ -1649,11 +1650,27 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       };
       loadMitgliedDokumente();
 
+      // Bestätigte Dokument-Benachrichtigungen laden
+      const loadConfirmedNotifications = async () => {
+        try {
+          const response = await axios.get(`/notifications/member/${mitglied.id}/confirmed`, {
+            signal: controller.signal
+          });
+          setConfirmedNotifications(response.data.data || []);
+        } catch (error) {
+          if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+            return; // Request was cancelled, don't show error
+          }
+          console.error('Fehler beim Laden der bestätigten Benachrichtigungen:', error);
+        }
+      };
+      loadConfirmedNotifications();
+
       return () => {
         controller.abort();
       };
     }
-  }, [activeTab, mitglied?.dojo_id, isAdmin, id]);
+  }, [activeTab, mitglied?.dojo_id, mitglied?.id, isAdmin, id]);
 
   // Load member notifications when nachrichten tab is active
   useEffect(() => {
@@ -3609,6 +3626,73 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   ); // Ende des return
                 })()} {/* Ende der IIFE */}
               </div>
+
+              {/* Bestätigte Dokumenten-Benachrichtigungen */}
+              {confirmedNotifications.length > 0 && (
+                <div className="field-group card">
+                  <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>✅ Bestätigte Dokumente</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {confirmedNotifications.map((notification) => {
+                      const metadata = notification.metadata || {};
+                      return (
+                        <div
+                          key={notification.id}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '0.75rem',
+                            background: 'rgba(34, 197, 94, 0.1)',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(34, 197, 94, 0.3)'
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                              {notification.subject}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                              {metadata.document_title && `${metadata.document_title} `}
+                              {metadata.document_version && `(Version ${metadata.document_version})`}
+                            </div>
+                          </div>
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end',
+                            gap: '0.25rem'
+                          }}>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: 'rgba(34, 197, 94, 0.9)',
+                              fontWeight: 600,
+                              textTransform: 'uppercase'
+                            }}>
+                              ✓ Bestätigt
+                            </span>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.5)',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {new Date(notification.confirmed_at).toLocaleString('de-DE', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="info-box" style={{ marginTop: '1rem' }}>
+                    <p>ℹ️ <strong>Hinweis:</strong> Hier werden alle vom Mitglied bestätigten Dokumente mit Datum und Uhrzeit der Bestätigung angezeigt.</p>
+                  </div>
+                </div>
+              )}
 
               {/* 🔒 ADMIN-ONLY: SEPA-Lastschriftmandat (Banking Information) */}
               {isAdmin && sepaMandate && (
