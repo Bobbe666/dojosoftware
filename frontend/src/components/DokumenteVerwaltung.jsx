@@ -13,7 +13,7 @@ const DokumenteVerwaltung = () => {
   const [dokumente, setDokumente] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedDokumentTyp, setSelectedDokumentTyp] = useState('agb');
+  const [selectedDokumentTyp, setSelectedDokumentTyp] = useState('alle');
   const [showNewVersion, setShowNewVersion] = useState(false);
   const [viewingDokument, setViewingDokument] = useState(null);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
@@ -42,6 +42,7 @@ const DokumenteVerwaltung = () => {
   });
 
   const dokumentTypen = [
+    { value: 'alle', label: 'Alle Dokumente', icon: '📚' },
     { value: 'agb', label: 'AGB (Allgemeine Geschäftsbedingungen)', icon: '📋' },
     { value: 'datenschutz', label: 'Datenschutzerklärung', icon: '🔒' },
     { value: 'widerruf', label: 'Widerrufsbelehrung', icon: '↩️' },
@@ -214,7 +215,9 @@ const DokumenteVerwaltung = () => {
   };
 
   const filteredVorlagen = getFilteredVorlagen();
-  const filteredDokumente = dokumente.filter(d => d.dokumenttyp === selectedDokumentTyp);
+  const filteredDokumente = selectedDokumentTyp === 'alle'
+    ? dokumente
+    : dokumente.filter(d => d.dokumenttyp === selectedDokumentTyp);
 
   const handleImportFromDojos = async () => {
     if (!confirm('Möchten Sie die Dokumente aus den Dojo-Einstellungen importieren? Bereits vorhandene Dokumente werden übersprungen.')) {
