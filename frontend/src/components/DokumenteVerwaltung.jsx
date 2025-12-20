@@ -292,20 +292,25 @@ const DokumenteVerwaltung = () => {
         aktiv: newDokument.aktiv
       };
 
+      console.log('📤 Sending payload:', payload);
       let response;
       if (editingDokument) {
         // Update existing document
+        console.log('🔄 Updating document ID:', editingDokument.id);
         response = await axios.put(`/vertraege/dokumente/${editingDokument.id}`, payload);
       } else {
         // Create new document
+        console.log('✨ Creating new document');
         response = await axios.post('/vertraege/dokumente', payload);
       }
 
+      console.log('📥 Server response:', response.data);
       if (response.data.success) {
         alert(editingDokument ? '✅ Dokument erfolgreich aktualisiert!' : '✅ Dokumentversion erfolgreich erstellt!');
         setShowNewVersion(false);
         setEditingDokument(null);
         // Dokumente neu laden
+        console.log('🔄 Reloading documents...');
         loadDokumente();
         // Formular zurücksetzen
         setNewDokument({
