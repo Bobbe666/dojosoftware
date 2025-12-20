@@ -657,75 +657,77 @@ const NotificationSystem = () => {
         padding: '1.5rem'
       }}>
         <div className="dashboard-header" style={{ marginBottom: '1.5rem' }}>
-          <h2 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>📧 Newsletter & Benachrichtigungen</h2>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1.25rem',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{ 
+              fontSize: '2.5rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>📧</span>
+            <h2 style={{ 
+              fontSize: '2.5rem',
+              fontWeight: '700',
+              color: '#FFD700',
+              margin: 0,
+              textShadow: 'none',
+              WebkitTextFillColor: '#FFD700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              letterSpacing: '0.5px',
+              position: 'relative',
+              zIndex: 2
+            }}>Newsletter & Benachrichtigungen</h2>
+          </div>
           <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Verwalten Sie Email-Versand, Push-Nachrichten und Server-Einstellungen</p>
         </div>
 
         {/* Statistiken */}
-        <div className="stats-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2rem'
-        }}>
+        <div className="stats-grid">
           <div className="stat-card" style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(96, 165, 250, 0.3)',
-            borderRadius: '10px',
-            padding: '1.2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
+            border: '1px solid rgba(96, 165, 250, 0.3)'
           }}>
-            <div className="stat-icon" style={{ fontSize: '2.5rem' }}>📧</div>
+            <div className="stat-icon">📧</div>
             <div className="stat-content">
-              <h3 style={{ color: '#60a5fa', fontSize: '2rem', margin: 0 }}>{dashboardData.stats.email_notifications || 0}</h3>
-              <p style={{ color: '#a0a0b0', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>Emails gesendet (30 Tage)</p>
+              <h3 style={{ color: '#60a5fa', margin: 0 }}>{dashboardData.stats.email_notifications || 0}</h3>
+              <p>Emails gesendet (30 Tage)</p>
             </div>
           </div>
           <div className="stat-card" style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(34, 197, 94, 0.3)',
-            borderRadius: '10px',
-            padding: '1.2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
+            border: '1px solid rgba(34, 197, 94, 0.3)'
           }}>
-            <div className="stat-icon" style={{ fontSize: '2.5rem' }}>📱</div>
+            <div className="stat-icon">📱</div>
             <div className="stat-content">
-              <h3 style={{ color: '#22c55e', fontSize: '2rem', margin: 0 }}>{dashboardData.stats.push_notifications || 0}</h3>
-              <p style={{ color: '#a0a0b0', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>Push-Nachrichten</p>
+              <h3 style={{ color: '#22c55e', margin: 0 }}>{dashboardData.stats.push_notifications || 0}</h3>
+              <p>Push-Nachrichten</p>
             </div>
           </div>
           <div className="stat-card" style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(34, 197, 94, 0.3)',
-            borderRadius: '10px',
-            padding: '1.2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
+            border: '1px solid rgba(34, 197, 94, 0.3)'
           }}>
-            <div className="stat-icon" style={{ fontSize: '2.5rem' }}>✅</div>
+            <div className="stat-icon">✅</div>
             <div className="stat-content">
-              <h3 style={{ color: '#22c55e', fontSize: '2rem', margin: 0 }}>{dashboardData.stats.sent_notifications || 0}</h3>
-              <p style={{ color: '#a0a0b0', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>Erfolgreich gesendet</p>
+              <h3 style={{ color: '#22c55e', margin: 0 }}>{dashboardData.stats.sent_notifications || 0}</h3>
+              <p>Erfolgreich gesendet</p>
             </div>
           </div>
           <div className="stat-card" style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '10px',
-            padding: '1.2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
+            border: '1px solid rgba(239, 68, 68, 0.3)'
           }}>
-            <div className="stat-icon" style={{ fontSize: '2.5rem' }}>❌</div>
+            <div className="stat-icon">❌</div>
             <div className="stat-content">
-              <h3 style={{ color: '#ef4444', fontSize: '2rem', margin: 0 }}>{dashboardData.stats.failed_notifications || 0}</h3>
-              <p style={{ color: '#a0a0b0', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>Fehlgeschlagen</p>
+              <h3 style={{ color: '#ef4444', margin: 0 }}>{dashboardData.stats.failed_notifications || 0}</h3>
+              <p>Fehlgeschlagen</p>
             </div>
           </div>
         </div>
@@ -899,7 +901,38 @@ const NotificationSystem = () => {
       padding: '1.5rem'
     }}>
       <div className="settings-header" style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>⚙️ Server-Einstellungen</h3>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1.25rem',
+          marginBottom: '0.5rem'
+        }}>
+          <span style={{ 
+            fontSize: '2rem',
+            filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+            position: 'relative',
+            zIndex: 10,
+            lineHeight: 1,
+            display: 'inline-block',
+            flexShrink: 0
+          }}>⚙️</span>
+          <h3 style={{ 
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: '#FFD700',
+            margin: 0,
+            textShadow: 'none',
+            WebkitTextFillColor: '#FFD700',
+            background: 'none',
+            WebkitBackgroundClip: 'initial',
+            backgroundClip: 'initial',
+            WebkitFontSmoothing: 'antialiased',
+            MozOsxFontSmoothing: 'grayscale',
+            letterSpacing: '0.5px',
+            position: 'relative',
+            zIndex: 2
+          }}>Server-Einstellungen</h3>
+        </div>
         <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Konfigurieren Sie Email- und Push-Notification-Einstellungen</p>
       </div>
 
@@ -917,7 +950,30 @@ const NotificationSystem = () => {
           justifyContent: 'space-between',
           marginBottom: '1rem'
         }}>
-          <h4 style={{ color: '#ffd700', margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>📧 Email-Konfiguration</h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ 
+              fontSize: '1.1rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>📧</span>
+            <h4 style={{ 
+              color: '#ffd700', 
+              margin: 0, 
+              fontSize: '1.1rem', 
+              fontWeight: '600',
+              textShadow: 'none',
+              WebkitTextFillColor: '#ffd700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              position: 'relative',
+              zIndex: 2
+            }}>Email-Konfiguration</h4>
+          </div>
           <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
             <input
               type="checkbox"
@@ -1137,7 +1193,30 @@ const NotificationSystem = () => {
           justifyContent: 'space-between',
           marginBottom: '1rem'
         }}>
-          <h4 style={{ color: '#ffd700', margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>📱 Push-Notifications</h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ 
+              fontSize: '1.1rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>📱</span>
+            <h4 style={{ 
+              color: '#ffd700', 
+              margin: 0, 
+              fontSize: '1.1rem', 
+              fontWeight: '600',
+              textShadow: 'none',
+              WebkitTextFillColor: '#ffd700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              position: 'relative',
+              zIndex: 2
+            }}>Push-Notifications</h4>
+          </div>
           <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
             <input
               type="checkbox"

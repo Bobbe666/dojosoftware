@@ -1429,7 +1429,37 @@ function Dashboard() {
 
                     {/* Admin Quick Actions */}
                     <div className="nav-section">
-                      <h2 className="section-header">⚡ Schnellaktionen</h2>
+                      <h2 className="section-header quick-actions-header" style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '0.5rem',
+                        backgroundImage: 'none',
+                        WebkitBackgroundClip: 'unset',
+                        WebkitTextFillColor: '#FFD700',
+                        backgroundClip: 'unset',
+                        color: '#FFD700',
+                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                      }}>
+                        <span style={{ 
+                          fontSize: '1.5rem',
+                          filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+                          position: 'relative',
+                          zIndex: 10,
+                          lineHeight: 1,
+                          display: 'inline-block',
+                          flexShrink: 0
+                        }}>⚡</span>
+                        <span style={{ 
+                          WebkitFontSmoothing: 'antialiased',
+                          MozOsxFontSmoothing: 'grayscale',
+                          color: '#FFD700 !important',
+                          WebkitTextFillColor: '#FFD700 !important',
+                          backgroundImage: 'none !important',
+                          WebkitBackgroundClip: 'unset !important',
+                          backgroundClip: 'unset !important'
+                        }}>Schnellaktionen</span>
+                      </h2>
                       <div className="quick-actions">
                         {adminQuickActions.map((action, index) => (
                           <button 
@@ -1470,7 +1500,37 @@ function Dashboard() {
 
                     {/* Mitglieder Quick Actions */}
                     <div className="nav-section">
-                      <h2 className="section-header">⚡ Schnellaktionen</h2>
+                      <h2 className="section-header quick-actions-header" style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: '0.5rem',
+                        backgroundImage: 'none',
+                        WebkitBackgroundClip: 'unset',
+                        WebkitTextFillColor: '#FFD700',
+                        backgroundClip: 'unset',
+                        color: '#FFD700',
+                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+                      }}>
+                        <span style={{ 
+                          fontSize: '1.5rem',
+                          filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+                          position: 'relative',
+                          zIndex: 10,
+                          lineHeight: 1,
+                          display: 'inline-block',
+                          flexShrink: 0
+                        }}>⚡</span>
+                        <span style={{ 
+                          WebkitFontSmoothing: 'antialiased',
+                          MozOsxFontSmoothing: 'grayscale',
+                          color: '#FFD700 !important',
+                          WebkitTextFillColor: '#FFD700 !important',
+                          backgroundImage: 'none !important',
+                          WebkitBackgroundClip: 'unset !important',
+                          backgroundClip: 'unset !important'
+                        }}>Schnellaktionen</span>
+                      </h2>
                       <div className="quick-actions">
                         {mitgliedQuickActions.map((action, index) => (
                           <button 

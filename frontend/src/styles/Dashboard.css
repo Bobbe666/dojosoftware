@@ -771,6 +771,24 @@
   /* Kein text-shadow für Basis-Style, wird bei .collapsible überschrieben */
 }
 
+/* Schnellaktionen Header - Sichtbarer Text ohne Gradient */
+.section-header.quick-actions-header {
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #FFD700 !important;
+  background-clip: unset !important;
+  color: #FFD700 !important;
+}
+
+/* Text-Span in Schnellaktionen Header sichtbar machen */
+.section-header.quick-actions-header span:last-child {
+  color: #FFD700 !important;
+  -webkit-text-fill-color: #FFD700 !important;
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+}
+
 /* Collapsible Section Header - Gleicher Stil wie "DOJO ADMIN DASHBOARD" Titel */
 .section-header.collapsible {
   padding: 1rem 1.5rem;

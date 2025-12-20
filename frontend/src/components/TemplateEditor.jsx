@@ -80,6 +80,163 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
       }
     });
 
+    // Pfeile für numerische Inputs im Style Manager aktivieren
+    const enableNumberInputArrows = () => {
+      const styleManager = editorInstance.StyleManager;
+      if (!styleManager) return;
+      
+      // Observer für Änderungen im Style Manager DOM
+      const observer = new MutationObserver(() => {
+        const panels = styleManager.getPanels();
+        panels.forEach(panel => {
+          const panelEl = panel.get('el');
+          if (!panelEl) return;
+          
+          const inputs = panelEl.querySelectorAll('input[type="number"]');
+          inputs.forEach(input => {
+            // Prüfe ob bereits Pfeile hinzugefügt wurden
+            if (input.dataset.arrowsEnabled === 'true') return;
+            input.dataset.arrowsEnabled = 'true';
+            
+            // Finde das Parent-Element (normalerweise ein div mit der Input-Gruppe)
+            let inputWrapper = input.parentElement;
+            while (inputWrapper && !inputWrapper.classList.contains('gjs-sm-field')) {
+              inputWrapper = inputWrapper.parentElement;
+            }
+            
+            if (!inputWrapper) inputWrapper = input.parentElement;
+            
+            // Stelle sicher, dass das Wrapper-Element relative Position hat
+            if (getComputedStyle(inputWrapper).position === 'static') {
+              inputWrapper.style.position = 'relative';
+            }
+            
+            // Füge Pfeile hinzu, falls noch nicht vorhanden
+            if (!inputWrapper.querySelector('.gjs-number-arrows')) {
+              const arrowsContainer = document.createElement('div');
+              arrowsContainer.className = 'gjs-number-arrows';
+              arrowsContainer.style.cssText = `
+                position: absolute;
+                right: 2px;
+                top: 50%;
+                transform: translateY(-50%);
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                z-index: 10;
+                height: calc(100% - 4px);
+              `;
+              
+              const upArrow = document.createElement('button');
+              upArrow.type = 'button';
+              upArrow.innerHTML = '▲';
+              upArrow.style.cssText = `
+                background: rgba(0, 0, 0, 0.3);
+                border: none;
+                color: #fff;
+                cursor: pointer;
+                padding: 0;
+                font-size: 8px;
+                line-height: 1;
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 2px 2px 0 0;
+                min-height: 0;
+                transition: background 0.2s;
+              `;
+              upArrow.onmouseenter = () => upArrow.style.background = 'rgba(0, 0, 0, 0.5)';
+              upArrow.onmouseleave = () => upArrow.style.background = 'rgba(0, 0, 0, 0.3)';
+              upArrow.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const currentValue = parseFloat(input.value) || 0;
+                const step = parseFloat(input.step) || 1;
+                const max = input.max !== '' ? parseFloat(input.max) : undefined;
+                let newValue = currentValue + step;
+                if (max !== undefined && newValue > max) newValue = max;
+                input.value = newValue;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+              };
+              
+              const downArrow = document.createElement('button');
+              downArrow.type = 'button';
+              downArrow.innerHTML = '▼';
+              downArrow.style.cssText = `
+                background: rgba(0, 0, 0, 0.3);
+                border: none;
+                color: #fff;
+                cursor: pointer;
+                padding: 0;
+                font-size: 8px;
+                line-height: 1;
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 0 0 2px 2px;
+                min-height: 0;
+                transition: background 0.2s;
+              `;
+              downArrow.onmouseenter = () => downArrow.style.background = 'rgba(0, 0, 0, 0.5)';
+              downArrow.onmouseleave = () => downArrow.style.background = 'rgba(0, 0, 0, 0.3)';
+              downArrow.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const currentValue = parseFloat(input.value) || 0;
+                const step = parseFloat(input.step) || 1;
+                const min = input.min !== '' ? parseFloat(input.min) : undefined;
+                let newValue = currentValue - step;
+                if (min !== undefined && newValue < min) newValue = min;
+                input.value = newValue;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+              };
+              
+              arrowsContainer.appendChild(upArrow);
+              arrowsContainer.appendChild(downArrow);
+              inputWrapper.appendChild(arrowsContainer);
+            }
+          });
+        });
+      });
+      
+      // Beobachte Änderungen im Style Manager Container
+      const styleManagerEl = styleManager.getContainer();
+      if (styleManagerEl) {
+        observer.observe(styleManagerEl, {
+          childList: true,
+          subtree: true
+        });
+      }
+      
+      // Initial ausführen
+      setTimeout(() => {
+        const panels = styleManager.getPanels();
+        panels.forEach(panel => {
+          const panelEl = panel.get('el');
+          if (panelEl) {
+            observer.observe(panelEl, {
+              childList: true,
+              subtree: true
+            });
+          }
+        });
+      }, 500);
+    };
+    
+    // Aktiviere Pfeile nach Editor-Initialisierung
+    editorInstance.on('load', () => {
+      setTimeout(enableNumberInputArrows, 500);
+    });
+    
+    // Aktiviere auch bei Style Manager Updates
+    editorInstance.on('styleManager:update', () => {
+      setTimeout(enableNumberInputArrows, 100);
+    });
+
     // Custom Blocks für Vertragsdaten
     const blockManager = editorInstance.BlockManager;
 

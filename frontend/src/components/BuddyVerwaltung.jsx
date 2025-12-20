@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import config from '../config/config.js';
+import '../styles/Dashboard.css';
 
 const BuddyVerwaltung = () => {
     const { token } = useAuth();
@@ -250,7 +251,45 @@ const BuddyVerwaltung = () => {
         <div className="buddy-verwaltung">
             {/* Header */}
             <div className="page-header">
-                <h1>👥 Buddy-Gruppen Verwaltung</h1>
+                <h1 style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.5rem',
+                    position: 'relative',
+                    backgroundImage: 'none !important',
+                    WebkitBackgroundClip: 'unset !important',
+                    WebkitTextFillColor: 'unset !important',
+                    backgroundClip: 'unset !important',
+                    color: 'transparent'
+                }}>
+                    <span style={{ 
+                        fontSize: '2.5rem',
+                        filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+                        position: 'relative',
+                        zIndex: 1000,
+                        lineHeight: 1,
+                        display: 'inline-block',
+                        flexShrink: 0,
+                        textShadow: 'none',
+                        WebkitTextFillColor: 'unset',
+                        backgroundImage: 'none',
+                        WebkitBackgroundClip: 'unset',
+                        backgroundClip: 'unset'
+                    }}>👥</span>
+                    <span style={{ 
+                        WebkitFontSmoothing: 'antialiased',
+                        MozOsxFontSmoothing: 'grayscale',
+                        color: '#FFD700',
+                        WebkitTextFillColor: '#FFD700',
+                        backgroundImage: 'none',
+                        WebkitBackgroundClip: 'unset',
+                        backgroundClip: 'unset',
+                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                        position: 'relative',
+                        zIndex: 1
+                    }}>Buddy-Gruppen Verwaltung</span>
+                </h1>
                 <p>Verwalte Freunde-Gruppen und Einladungen</p>
             </div>
 
@@ -281,7 +320,7 @@ const BuddyVerwaltung = () => {
 
                         <button
                             onClick={loadBuddyGroups}
-                            className="btn btn-secondary"
+                            className="logout-button"
                             disabled={loading}
                         >
                             🔄 Aktualisieren

@@ -10,6 +10,7 @@ import { Check, X, ChevronUp, ChevronDown, Award, Save, Calendar, AlertCircle } 
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Buttons.css';
+import '../styles/Dashboard.css';
 
 const PruefungDurchfuehren = () => {
   const { getDojoFilterParam, activeDojo } = useDojoContext();
@@ -475,19 +476,130 @@ const PruefungDurchfuehren = () => {
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
             <button
               onClick={() => setDatumFilter('alle')}
-              className={`btn btn-primary ${datumFilter === 'alle' ? 'active' : ''}`}
+              className={datumFilter === 'alle' ? '' : 'logout-button'}
+              style={{
+                padding: datumFilter === 'alle' ? '0.75rem 1.25rem' : '10px 20px',
+                background: datumFilter === 'alle'
+                  ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                  : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                border: datumFilter === 'alle' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
+                borderRadius: '12px',
+                color: datumFilter === 'alle' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
+                fontSize: '0.9rem',
+                fontWeight: datumFilter === 'alle' ? '600' : '700',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: datumFilter === 'alle'
+                  ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                  : '0 2px 8px rgba(255, 215, 0, 0.2)',
+                backdropFilter: 'blur(10px)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                if (datumFilter !== 'alle') {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                  e.target.style.color = '#ffd700';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (datumFilter !== 'alle') {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                }
+              }}
             >
               Alle
             </button>
             <button
               onClick={() => setDatumFilter('zukuenftig')}
-              className={`btn btn-info ${datumFilter === 'zukuenftig' ? 'active' : ''}`}
+              className={datumFilter === 'zukuenftig' ? '' : 'logout-button'}
+              style={{
+                padding: datumFilter === 'zukuenftig' ? '0.75rem 1.25rem' : '10px 20px',
+                background: datumFilter === 'zukuenftig'
+                  ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                  : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                border: datumFilter === 'zukuenftig' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
+                borderRadius: '12px',
+                color: datumFilter === 'zukuenftig' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
+                fontSize: '0.9rem',
+                fontWeight: datumFilter === 'zukuenftig' ? '600' : '700',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: datumFilter === 'zukuenftig'
+                  ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                  : '0 2px 8px rgba(255, 215, 0, 0.2)',
+                backdropFilter: 'blur(10px)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                if (datumFilter !== 'zukuenftig') {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                  e.target.style.color = '#ffd700';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (datumFilter !== 'zukuenftig') {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                }
+              }}
             >
               Zukünftig
             </button>
             <button
               onClick={() => setDatumFilter('vergangen')}
-              className={`btn btn-neutral ${datumFilter === 'vergangen' ? 'active' : ''}`}
+              className={datumFilter === 'vergangen' ? '' : 'logout-button'}
+              style={{
+                padding: datumFilter === 'vergangen' ? '0.75rem 1.25rem' : '10px 20px',
+                background: datumFilter === 'vergangen'
+                  ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                  : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                border: datumFilter === 'vergangen' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
+                borderRadius: '12px',
+                color: datumFilter === 'vergangen' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
+                fontSize: '0.9rem',
+                fontWeight: datumFilter === 'vergangen' ? '600' : '700',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: datumFilter === 'vergangen'
+                  ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                  : '0 2px 8px rgba(255, 215, 0, 0.2)',
+                backdropFilter: 'blur(10px)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={(e) => {
+                if (datumFilter !== 'vergangen') {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                  e.target.style.color = '#ffd700';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (datumFilter !== 'vergangen') {
+                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                }
+              }}
             >
               Vergangen
             </button>
@@ -514,7 +626,11 @@ const PruefungDurchfuehren = () => {
             {selectedDatum && (
               <button
                 onClick={() => setSelectedDatum('')}
-                className="btn btn-sm btn-secondary"
+                className="logout-button"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.85rem'
+                }}
               >
                 Zurücksetzen
               </button>

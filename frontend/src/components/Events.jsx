@@ -6,6 +6,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Events.css';
+import '../styles/Dashboard.css';
 
 const Events = () => {
   const { token, isAdmin } = useAuth();

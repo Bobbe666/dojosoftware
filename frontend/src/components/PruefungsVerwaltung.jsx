@@ -10,6 +10,7 @@ import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, D
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Buttons.css';
+import '../styles/Dashboard.css';
 
 const PruefungsVerwaltung = () => {
   const { getDojoFilterParam, activeDojo } = useDojoContext();
@@ -1022,7 +1023,38 @@ const PruefungsVerwaltung = () => {
     <div className="content-card">
       <div className="page-header">
         <div>
-          <h1>🏆 Prüfungsverwaltung</h1>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1.25rem',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{ 
+              fontSize: '2.5rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>🎓</span>
+            <h1 style={{ 
+              fontSize: '2.5rem',
+              fontWeight: '700',
+              color: '#FFD700',
+              margin: 0,
+              textShadow: 'none',
+              WebkitTextFillColor: '#FFD700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              letterSpacing: '0.5px',
+              position: 'relative',
+              zIndex: 2
+            }}>Prüfungsverwaltung</h1>
+          </div>
           <p>Gurtprüfungen planen, durchführen und dokumentieren</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -1047,7 +1079,11 @@ const PruefungsVerwaltung = () => {
               else if (activeTab === 'abgeschlossen') fetchAbgeschlossenePruefungen();
               else if (activeTab === 'statistiken') fetchStatistiken();
             }}
-            className="btn btn-secondary"
+            className="logout-button"
+            style={{
+              padding: '12px 28px',
+              minWidth: '160px'
+            }}
           >
             🔄 Aktualisieren
           </button>

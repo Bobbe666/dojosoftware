@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import TemplateEditor from './TemplateEditor';
+import '../styles/Dashboard.css';
 
 /**
  * Erweiterte Dokumentenverwaltung mit Versionierung
@@ -246,83 +247,178 @@ const DokumenteVerwaltung = () => {
 
   return (
     <div style={{
-      padding: '2rem',
+      padding: '1rem 2rem 2rem 2rem',
       background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
       minHeight: '100vh',
       color: 'white'
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{
-            fontSize: '2rem',
-            fontWeight: '700',
-            marginBottom: '0.5rem',
-            background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
+        <div style={{ 
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '2rem',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.5rem',
+            flex: 1,
+            minWidth: 0
           }}>
-            📚 Dokumentenverwaltung
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>
-            Verwalten Sie rechtliche Dokumente mit Versionierung und Gültigkeitszeiträumen
-          </p>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              margin: 0,
+              background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              position: 'relative',
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <span style={{ 
+                filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+                position: 'relative',
+                zIndex: 2
+              }}>📚</span>
+              Dokumentenverwaltung
+            </h2>
+            <p style={{ 
+              color: 'rgba(255,255,255,0.6)', 
+              fontSize: '0.95rem',
+              margin: 0,
+              whiteSpace: 'nowrap',
+              position: 'relative',
+              zIndex: 2
+            }}>
+              Verwalten Sie rechtliche Dokumente mit Versionierung und Gültigkeitszeiträumen
+            </p>
+          </div>
         </div>
 
         {/* Tab-Navigation */}
         <div style={{
           display: 'flex',
-          gap: '1rem',
+          gap: '0.75rem',
           alignItems: 'center',
-          marginBottom: '2rem',
-          borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
-          paddingBottom: '0'
+          marginBottom: '1.5rem',
+          position: 'relative',
+          zIndex: 1
         }}>
           <button
             onClick={() => setActiveTab('dokumente')}
+            className={activeTab === 'dokumente' ? '' : 'logout-button'}
             style={{
-              padding: '1rem 2rem',
-              background: activeTab === 'dokumente' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'dokumente' ? '3px solid #FFD700' : '3px solid transparent',
-              color: activeTab === 'dokumente' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.7)',
-              fontSize: '1rem',
-              fontWeight: '600',
+              padding: activeTab === 'dokumente' ? '0.875rem 1.5rem' : '10px 20px',
+              background: activeTab === 'dokumente'
+                ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+              border: activeTab === 'dokumente' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
+              color: activeTab === 'dokumente' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
+              fontSize: '0.95rem',
+              fontWeight: activeTab === 'dokumente' ? '600' : '700',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
-              borderRadius: '8px 8px 0 0'
+              borderRadius: '12px',
+              position: 'relative',
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: activeTab === 'dokumente'
+                ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                : '0 2px 8px rgba(255, 215, 0, 0.2)',
+              backdropFilter: 'blur(10px)',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'dokumente') {
+                e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                e.target.style.color = '#ffd700';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'dokumente') {
+                e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+              }
             }}
           >
-            📄 Dokumente & Versionen
+            <span style={{ position: 'relative', zIndex: 2 }}>📄</span>
+            <span>Dokumente & Versionen</span>
           </button>
           <button
             onClick={() => setActiveTab('vorlagen')}
+            className={activeTab === 'vorlagen' ? '' : 'logout-button'}
             style={{
-              padding: '1rem 2rem',
-              background: activeTab === 'vorlagen' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'vorlagen' ? '3px solid #FFD700' : '3px solid transparent',
-              color: activeTab === 'vorlagen' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.7)',
-              fontSize: '1rem',
-              fontWeight: '600',
+              padding: activeTab === 'vorlagen' ? '0.875rem 1.5rem' : '10px 20px',
+              background: activeTab === 'vorlagen'
+                ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+              border: activeTab === 'vorlagen' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
+              color: activeTab === 'vorlagen' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
+              fontSize: '0.95rem',
+              fontWeight: activeTab === 'vorlagen' ? '600' : '700',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
-              borderRadius: '8px 8px 0 0',
-              position: 'relative'
+              borderRadius: '12px',
+              position: 'relative',
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: activeTab === 'vorlagen'
+                ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                : '0 2px 8px rgba(255, 215, 0, 0.2)',
+              backdropFilter: 'blur(10px)',
+              overflow: 'hidden'
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'vorlagen') {
+                e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                e.target.style.color = '#ffd700';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'vorlagen') {
+                e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+              }
             }}
           >
-            ✏️ Editor
+            <span style={{ position: 'relative', zIndex: 2 }}>✏️</span>
+            <span>Editor</span>
             <span style={{
               position: 'absolute',
-              top: '0.5rem',
-              right: '0.5rem',
+              top: '0.25rem',
+              right: '0.25rem',
               background: '#22c55e',
               color: 'white',
               fontSize: '0.6rem',
-              padding: '0.2rem 0.4rem',
+              padding: '0.15rem 0.35rem',
               borderRadius: '4px',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              zIndex: 3,
+              lineHeight: '1'
             }}>
               NEU
             </span>
@@ -330,21 +426,12 @@ const DokumenteVerwaltung = () => {
           {dojos && dojos.length > 1 && activeTab === 'dokumente' && (
             <button
               onClick={handleOpenCopyModal}
+              className="logout-button"
               style={{
-                padding: '0.75rem 1.5rem',
-                background: 'linear-gradient(135deg, #17a2b8, #138496)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '0.95rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'transform 0.3s ease',
-                boxShadow: '0 4px 15px rgba(23, 162, 184, 0.3)',
-                marginLeft: 'auto'
+                marginLeft: 'auto',
+                position: 'relative',
+                zIndex: 2
               }}
-              onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
             >
               📋 Dokumente kopieren
             </button>
@@ -356,12 +443,12 @@ const DokumenteVerwaltung = () => {
           <>
             {/* Filter-Container mit zwei Zeilen */}
             <div style={{
-              marginBottom: '2rem',
-              padding: '1.5rem',
-              background: 'rgba(255, 255, 255, 0.05)',
+              marginBottom: '1.5rem',
+              padding: '1.25rem',
+              background: 'rgba(255, 255, 255, 0.03)',
               borderRadius: '12px',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              border: '1px solid rgba(255, 215, 0, 0.1)'
             }}>
               {/* Zeile 1: Alle Vorlagen */}
               <div style={{
@@ -373,9 +460,11 @@ const DokumenteVerwaltung = () => {
                 <h4 style={{
                   margin: 0,
                   color: '#FFD700',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  minWidth: '140px'
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  minWidth: '130px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
                   📝 Alle Vorlagen
                 </h4>
@@ -392,38 +481,55 @@ const DokumenteVerwaltung = () => {
                         setSubTab(kategorie.value);
                         setActiveVorlagenKategorie(kategorie.value);
                       }}
+                      className={subTab === kategorie.value ? '' : 'logout-button'}
                       style={{
-                        padding: '0.75rem 1.25rem',
+                        padding: subTab === kategorie.value ? '0.75rem 1.25rem' : '10px 20px',
                         background: subTab === kategorie.value
                           ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                          : 'transparent',
+                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
                         border: subTab === kategorie.value
-                          ? '2px solid #FFD700'
-                          : '2px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '20px',
+                          ? 'none'
+                          : '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '12px',
                         color: subTab === kategorie.value
                           ? '#1a1a2e'
-                          : 'rgba(255, 255, 255, 0.7)',
+                          : 'rgba(255, 255, 255, 0.95)',
                         fontSize: '0.9rem',
-                        fontWeight: '600',
+                        fontWeight: subTab === kategorie.value ? '600' : '700',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        boxShadow: subTab === kategorie.value
+                          ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                          : '0 2px 8px rgba(255, 215, 0, 0.2)',
+                        backdropFilter: 'blur(10px)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
                       }}
                       onMouseEnter={(e) => {
                         if (subTab !== kategorie.value) {
-                          e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                          e.target.style.color = '#ffd700';
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (subTab !== kategorie.value) {
-                          e.target.style.background = 'transparent';
-                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                          e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
                         }
                       }}
                     >
-                      {kategorie.icon} {kategorie.label}
+                      <span>{kategorie.icon}</span>
+                      <span>{kategorie.label}</span>
                     </button>
                   ))}
                 </div>
@@ -438,9 +544,11 @@ const DokumenteVerwaltung = () => {
                 <h4 style={{
                   margin: 0,
                   color: '#FFD700',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  minWidth: '140px'
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  minWidth: '130px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
                   📄 Alle Dokumente
                 </h4>
@@ -457,51 +565,70 @@ const DokumenteVerwaltung = () => {
                         setSubTab(typ.value);
                         setSelectedDokumentTyp(typ.value);
                       }}
+                      className={subTab === typ.value ? '' : 'logout-button'}
                       style={{
-                    padding: '0.75rem 1.25rem',
-                    background: subTab === typ.value
-                      ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                      : 'transparent',
-                    border: subTab === typ.value
-                      ? '2px solid #FFD700'
-                      : '2px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '20px',
-                    color: subTab === typ.value ? '#1a1a2e' : 'rgba(255, 255, 255, 0.7)',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (subTab !== typ.value) {
-                      e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (subTab !== typ.value) {
-                      e.target.style.background = 'transparent';
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    }
-                  }}
-                >
-                  {typ.icon} {typ.label.replace(' (Allgemeine Geschäftsbedingungen)', '').replace('Dojo Regeln (Dojokun)', 'Dojokun')}
-                </button>
-              ))}
+                        padding: subTab === typ.value ? '0.75rem 1.25rem' : '10px 20px',
+                        background: subTab === typ.value
+                          ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                        border: subTab === typ.value
+                          ? 'none'
+                          : '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '12px',
+                        color: subTab === typ.value
+                          ? '#1a1a2e'
+                          : 'rgba(255, 255, 255, 0.95)',
+                        fontSize: '0.9rem',
+                        fontWeight: subTab === typ.value ? '600' : '700',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        whiteSpace: 'nowrap',
+                        boxShadow: subTab === typ.value
+                          ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+                          : '0 2px 8px rgba(255, 215, 0, 0.2)',
+                        backdropFilter: 'blur(10px)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (subTab !== typ.value) {
+                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                          e.target.style.color = '#ffd700';
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (subTab !== typ.value) {
+                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                          e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                        }
+                      }}
+                    >
+                      <span>{typ.icon}</span>
+                      <span>{typ.label.replace(' (Allgemeine Geschäftsbedingungen)', '').replace('Dojo Regeln (Dojokun)', 'Dojokun')}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* Vorlagen-Bereich */}
-            <div style={{ marginBottom: '3rem' }}>
+            <div style={{ marginBottom: '2rem' }}>
               <div
                 onClick={() => setVorlagenExpanded(!vorlagenExpanded)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '2rem',
-                  marginBottom: '1.5rem',
+                  marginBottom: '1rem',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease'
                 }}
@@ -655,14 +782,14 @@ const DokumenteVerwaltung = () => {
             </div>
 
             {/* Dokumente-Bereich */}
-            <div style={{ marginBottom: '3rem' }}>
+            <div style={{ marginBottom: '2rem' }}>
               <div
                 onClick={() => setDokumenteExpanded(!dokumenteExpanded)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '2rem',
-                  marginBottom: '1.5rem',
+                  marginBottom: '1rem',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease'
                 }}
