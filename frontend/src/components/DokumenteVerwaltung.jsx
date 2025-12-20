@@ -283,10 +283,12 @@ const DokumenteVerwaltung = () => {
               alignItems: 'center',
               gap: '0.75rem'
             }}>
-              <span style={{ 
+              <span style={{
                 filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
                 position: 'relative',
-                zIndex: 2
+                zIndex: 2,
+                WebkitTextFillColor: 'initial',
+                color: 'inherit'
               }}>📚</span>
               Dokumentenverwaltung
             </h2>
