@@ -116,10 +116,28 @@ const DokumenteVerwaltung = () => {
   };
 
   const handleEditDokument = (dokument) => {
-    setEditingDokument(dokument);
+    // Automatisch Version erhöhen (z.B. 1.0 → 1.1, 1.9 → 2.0, 2.5 → 2.6)
+    const incrementVersion = (currentVersion) => {
+      const parts = currentVersion.split('.');
+      if (parts.length === 2) {
+        const major = parseInt(parts[0]);
+        const minor = parseInt(parts[1]);
+        // Minor erhöhen, bei 9 → 0 und Major erhöhen
+        if (minor >= 9) {
+          return `${major + 1}.0`;
+        } else {
+          return `${major}.${minor + 1}`;
+        }
+      }
+      // Fallback: einfach ".1" anhängen
+      return currentVersion + '.1';
+    };
+
+    // NICHT setEditingDokument setzen, damit neue Version erstellt wird
+    setEditingDokument(null);
     setNewDokument({
       dokumenttyp: dokument.dokumenttyp,
-      version: dokument.version,
+      version: incrementVersion(dokument.version),
       titel: dokument.titel,
       inhalt: dokument.inhalt,
       gueltig_ab: dokument.gueltig_ab ? dokument.gueltig_ab.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -127,6 +145,7 @@ const DokumenteVerwaltung = () => {
       aktiv: dokument.aktiv,
       dojo_id: dokument.dojo_id
     });
+    setSelectedDokumentTyp(dokument.dokumenttyp);
     setShowNewVersion(true);
   };
 
@@ -282,8 +301,8 @@ const DokumenteVerwaltung = () => {
       };
 
       const payload = {
-        dojo_id: editingDokument ? editingDokument.dojo_id : (activeDojo.id === 'all' ? newDokument.dojo_id : activeDojo.id),
-        dokumenttyp: editingDokument ? editingDokument.dokumenttyp : selectedDokumentTyp,
+        dojo_id: activeDojo.id === 'all' ? newDokument.dojo_id : activeDojo.id,
+        dokumenttyp: selectedDokumentTyp,
         version: newDokument.version,
         titel: newDokument.titel,
         inhalt: newDokument.inhalt,
@@ -293,22 +312,13 @@ const DokumenteVerwaltung = () => {
       };
 
       console.log('📤 Sending payload:', payload);
-      let response;
-      if (editingDokument) {
-        // Update existing document
-        console.log('🔄 Updating document ID:', editingDokument.id);
-        response = await axios.put(`/vertraege/dokumente/${editingDokument.id}`, payload);
-      } else {
-        // Create new document
-        console.log('✨ Creating new document');
-        response = await axios.post('/vertraege/dokumente', payload);
-      }
+      console.log('✨ Creating new document version');
+      const response = await axios.post('/vertraege/dokumente', payload);
 
       console.log('📥 Server response:', response.data);
       if (response.data.success) {
-        alert(editingDokument ? '✅ Dokument erfolgreich aktualisiert!' : '✅ Dokumentversion erfolgreich erstellt!');
+        alert('✅ Neue Dokumentversion erfolgreich erstellt!');
         setShowNewVersion(false);
-        setEditingDokument(null);
         // Dokumente neu laden
         console.log('🔄 Reloading documents...');
         loadDokumente();
@@ -1250,7 +1260,7 @@ const DokumenteVerwaltung = () => {
                 marginBottom: '1.5rem',
                 color: '#FFD700'
               }}>
-                {editingDokument ? '✏️ Dokument bearbeiten' : `Neue Version erstellen: ${getTypLabel(selectedDokumentTyp)}`}
+                ✨ Neue Version erstellen: {getTypLabel(selectedDokumentTyp)}
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1285,21 +1295,22 @@ const DokumenteVerwaltung = () => {
 
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)' }}>
-                    Version *
+                    Version * <span style={{ fontSize: '0.75rem', color: 'rgba(255, 215, 0, 0.7)' }}>(automatisch erhöht)</span>
                   </label>
                   <input
                     type="text"
                     placeholder="z.B. 1.1, 2.0"
                     value={newDokument.version}
-                    onChange={(e) => setNewDokument({...newDokument, version: e.target.value})}
+                    readOnly
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '6px',
-                      color: 'white',
-                      fontSize: '0.95rem'
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      fontSize: '0.95rem',
+                      cursor: 'not-allowed'
                     }}
                   />
                 </div>
@@ -1394,7 +1405,6 @@ const DokumenteVerwaltung = () => {
                 <button
                   onClick={() => {
                     setShowNewVersion(false);
-                    setEditingDokument(null);
                   }}
                   style={{
                     padding: '0.75rem 1.5rem',
@@ -1443,7 +1453,7 @@ const DokumenteVerwaltung = () => {
                     e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.3)';
                   }}
                 >
-                  {editingDokument ? '💾 Speichern' : '✨ Version erstellen'}
+                  ✨ Version erstellen
                 </button>
               </div>
             </div>
