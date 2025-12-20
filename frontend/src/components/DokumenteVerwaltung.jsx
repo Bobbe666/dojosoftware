@@ -122,8 +122,8 @@ const DokumenteVerwaltung = () => {
       version: dokument.version,
       titel: dokument.titel,
       inhalt: dokument.inhalt,
-      gueltig_ab: dokument.gueltig_ab,
-      gueltig_bis: dokument.gueltig_bis,
+      gueltig_ab: dokument.gueltig_ab ? dokument.gueltig_ab.split('T')[0] : new Date().toISOString().split('T')[0],
+      gueltig_bis: dokument.gueltig_bis ? dokument.gueltig_bis.split('T')[0] : null,
       aktiv: dokument.aktiv,
       dojo_id: dokument.dojo_id
     });
@@ -272,14 +272,23 @@ const DokumenteVerwaltung = () => {
         return;
       }
 
+      // Formatiere Datumswerte korrekt für MySQL (YYYY-MM-DD)
+      const formatDate = (dateStr) => {
+        if (!dateStr) return null;
+        // Falls bereits im richtigen Format (YYYY-MM-DD), direkt zurückgeben
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+        // Sonst ISO-String zu YYYY-MM-DD konvertieren
+        return dateStr.split('T')[0];
+      };
+
       const payload = {
         dojo_id: editingDokument ? editingDokument.dojo_id : (activeDojo.id === 'all' ? newDokument.dojo_id : activeDojo.id),
         dokumenttyp: editingDokument ? editingDokument.dokumenttyp : selectedDokumentTyp,
         version: newDokument.version,
         titel: newDokument.titel,
         inhalt: newDokument.inhalt,
-        gueltig_ab: newDokument.gueltig_ab,
-        gueltig_bis: newDokument.gueltig_bis || null,
+        gueltig_ab: formatDate(newDokument.gueltig_ab),
+        gueltig_bis: formatDate(newDokument.gueltig_bis),
         aktiv: newDokument.aktiv
       };
 
