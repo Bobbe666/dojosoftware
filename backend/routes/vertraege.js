@@ -1088,4 +1088,82 @@ router.post('/:id/historie', async (req, res) => {
     }
 });
 
+// POST /api/vertraege/dokumente/import-from-dojos - Import documents from dojo table
+router.post('/dokumente/import-from-dojos', async (req, res) => {
+    try {
+        // Get all dojos with their document texts
+        const dojos = await queryAsync(`
+            SELECT
+                id,
+                dojoname,
+                agb_text,
+                dsgvo_text,
+                dojo_regeln_text,
+                hausordnung_text,
+                haftungsausschluss_text,
+                widerrufsbelehrung_text,
+                impressum_text,
+                vertragsbedingungen_text
+            FROM dojo
+        `);
+
+        let imported = 0;
+        let skipped = 0;
+
+        for (const dojo of dojos) {
+            const dokumentTypen = [
+                { typ: 'agb', text: dojo.agb_text, titel: 'AGB (Allgemeine Geschäftsbedingungen)' },
+                { typ: 'datenschutz', text: dojo.dsgvo_text, titel: 'Datenschutzerklärung' },
+                { typ: 'hausordnung', text: dojo.hausordnung_text || dojo.dojo_regeln_text, titel: dojo.dojo_regeln_text ? 'Dojo Regeln (Dojokun)' : 'Hausordnung' },
+                { typ: 'haftung', text: dojo.haftungsausschluss_text, titel: 'Haftungsausschluss' },
+                { typ: 'widerruf', text: dojo.widerrufsbelehrung_text, titel: 'Widerrufsbelehrung' },
+                { typ: 'sonstiges', text: dojo.impressum_text, titel: 'Impressum' },
+                { typ: 'sonstiges', text: dojo.vertragsbedingungen_text, titel: 'Vertragsbedingungen' }
+            ];
+
+            for (const dok of dokumentTypen) {
+                if (!dok.text || dok.text.trim() === '') {
+                    continue; // Skip empty documents
+                }
+
+                // Check if document already exists
+                const existing = await queryAsync(`
+                    SELECT id FROM vertragsdokumente
+                    WHERE dojo_id = ? AND dokumenttyp = ? AND version = '1.0'
+                `, [dojo.id, dok.typ]);
+
+                if (existing.length > 0) {
+                    skipped++;
+                    continue;
+                }
+
+                // Insert document
+                await queryAsync(`
+                    INSERT INTO vertragsdokumente (
+                        dojo_id,
+                        dokumenttyp,
+                        version,
+                        titel,
+                        inhalt,
+                        gueltig_ab,
+                        aktiv
+                    ) VALUES (?, ?, ?, ?, ?, CURDATE(), TRUE)
+                `, [dojo.id, dok.typ, '1.0', dok.titel, dok.text]);
+
+                imported++;
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `${imported} Dokumente importiert, ${skipped} übersprungen (bereits vorhanden)`,
+            imported,
+            skipped
+        });
+    } catch (err) {
+        console.error('Fehler beim Import der Dokumente:', err);
+        res.status(500).json({ error: 'Fehler beim Import', details: err.message });
+    }
+});
+
 module.exports = router;

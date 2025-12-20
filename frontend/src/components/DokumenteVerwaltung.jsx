@@ -182,6 +182,23 @@ const DokumenteVerwaltung = () => {
   const filteredVorlagen = getFilteredVorlagen();
   const filteredDokumente = dokumente.filter(d => d.dokumenttyp === selectedDokumentTyp);
 
+  const handleImportFromDojos = async () => {
+    if (!confirm('Möchten Sie die Dokumente aus den Dojo-Einstellungen importieren? Bereits vorhandene Dokumente werden übersprungen.')) {
+      return;
+    }
+
+    try {
+      const response = await axios.post('/vertraege/dokumente/import-from-dojos');
+      if (response.data.success) {
+        alert(`✅ ${response.data.message}`);
+        loadDokumente();
+      }
+    } catch (err) {
+      console.error('Fehler beim Import:', err);
+      alert('❌ Fehler beim Import: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
   const handleCreateVersion = async () => {
     try {
       if (!newDokument.version || !newDokument.titel || !newDokument.inhalt) {
@@ -436,6 +453,31 @@ const DokumenteVerwaltung = () => {
               }}
             >
               📋 Dokumente kopieren
+            </button>
+          )}
+          {activeTab === 'dokumente' && (
+            <button
+              onClick={handleImportFromDojos}
+              className="logout-button"
+              style={{
+                marginLeft: dojos && dojos.length > 1 ? '0.5rem' : 'auto',
+                position: 'relative',
+                zIndex: 2,
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 50%, transparent 100%)',
+                borderColor: 'rgba(34, 197, 94, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(34, 197, 94, 0.2) 50%, rgba(34, 197, 94, 0.1) 100%)';
+                e.target.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+                e.target.style.color = '#22c55e';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 50%, transparent 100%)';
+                e.target.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                e.target.style.color = 'rgba(255, 255, 255, 0.95)';
+              }}
+            >
+              📥 Dokumente importieren
             </button>
           )}
         </div>
