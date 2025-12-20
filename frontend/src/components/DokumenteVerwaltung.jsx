@@ -318,6 +318,32 @@ const DokumenteVerwaltung = () => {
       console.log('📥 Server response:', response.data);
       if (response.data.success) {
         alert('✅ Neue Dokumentversion erfolgreich erstellt!');
+
+        // Frage ob Mitglieder benachrichtigt werden sollen
+        const shouldNotify = confirm(
+          '📢 Möchten Sie alle Mitglieder über die neue Dokumentversion benachrichtigen?\n\n' +
+          'Die Mitglieder erhalten eine Push-Benachrichtigung, die sie bestätigen müssen.'
+        );
+
+        if (shouldNotify) {
+          try {
+            const dojoId = activeDojo.id === 'all' ? newDokument.dojo_id : activeDojo.id;
+            const notifyResponse = await axios.post('/notifications/document-update', {
+              dojo_id: dojoId,
+              document_type: selectedDokumentTyp,
+              document_title: newDokument.titel,
+              document_version: newDokument.version
+            });
+
+            if (notifyResponse.data.success) {
+              alert(`✅ ${notifyResponse.data.sent} Benachrichtigungen wurden versendet!`);
+            }
+          } catch (notifyErr) {
+            console.error('Fehler beim Versenden der Benachrichtigungen:', notifyErr);
+            alert('⚠️ Dokument wurde gespeichert, aber Benachrichtigungen konnten nicht versendet werden.');
+          }
+        }
+
         setShowNewVersion(false);
         // Dokumente neu laden
         console.log('🔄 Reloading documents...');
