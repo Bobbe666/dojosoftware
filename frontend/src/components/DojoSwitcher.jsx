@@ -51,14 +51,14 @@ const DojoSwitcher = () => {
     if (dojo.steuer_status === 'kleinunternehmer') {
       const prozent = (dojo.jahresumsatz_aktuell / dojo.kleinunternehmer_grenze) * 100;
       if (prozent >= 100) {
-        return <AlertTriangle size={14} className="status-icon warning" />;
+        return <AlertTriangle size={12} className="status-icon warning" />;
       } else if (prozent >= 80) {
-        return <TrendingUp size={14} className="status-icon caution" />;
+        return <TrendingUp size={12} className="status-icon caution" />;
       } else {
-        return <Check size={14} className="status-icon success" />;
+        return <Check size={12} className="status-icon success" />;
       }
     } else {
-      return <Building2 size={14} className="status-icon info" />;
+      return <Building2 size={12} className="status-icon info" />;
     }
   };
 
@@ -118,7 +118,7 @@ const DojoSwitcher = () => {
               <div className="dojo-switcher-label">Ansicht:</div>
               <div className="dojo-switcher-name">Alle Dojos</div>
             </div>
-            <Building2 size={18} className="status-icon info" />
+            <Building2 size={14} className="status-icon info" />
           </>
         ) : (
           <>
@@ -133,7 +133,7 @@ const DojoSwitcher = () => {
             {getStatusIcon(activeDojo)}
           </>
         )}
-        <ChevronDown size={20} className={`chevron ${isOpen ? 'open' : ''}`} />
+        <ChevronDown size={16} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
 
       {isOpen && (

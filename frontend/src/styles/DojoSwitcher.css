@@ -28,14 +28,14 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 12px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   transition: all 0.3s ease;
-  min-width: 250px;
+  min-width: 220px;
 }
 
 .dojo-switcher-trigger:hover {
@@ -61,13 +61,13 @@
 }
 
 .dojo-switcher-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
 }
 
 .dojo-switcher-name {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #ffffff;
 }
