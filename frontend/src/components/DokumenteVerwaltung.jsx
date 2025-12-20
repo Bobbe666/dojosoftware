@@ -443,38 +443,43 @@ const DokumenteVerwaltung = () => {
         {/* Dokumente-Tab */}
         {activeTab === 'dokumente' && (
           <>
-            {/* Filter-Container mit zwei Zeilen */}
+            {/* Filter-Container mit cleanerem Design */}
             <div style={{
               marginBottom: '1.5rem',
-              padding: '1.25rem',
               background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '12px',
+              borderRadius: '16px',
               backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 215, 0, 0.1)'
+              border: '1px solid rgba(255, 215, 0, 0.1)',
+              overflow: 'hidden'
             }}>
-              {/* Zeile 1: Alle Vorlagen */}
+              {/* Vertragsvorlagen-Sektion */}
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                marginBottom: '1rem'
+                padding: '1.25rem',
+                borderBottom: '1px solid rgba(255, 215, 0, 0.1)'
               }}>
-                <h4 style={{
-                  margin: 0,
-                  color: '#FFD700',
-                  fontSize: '0.95rem',
-                  fontWeight: '700',
-                  minWidth: '130px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem'
                 }}>
-                  📝 Alle Vorlagen
-                </h4>
+                  <span style={{ fontSize: '1.1rem' }}>📝</span>
+                  <h4 style={{
+                    margin: 0,
+                    color: '#FFD700',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    opacity: 0.9
+                  }}>
+                    Vertragsvorlagen
+                  </h4>
+                </div>
                 <div style={{
                   display: 'flex',
                   gap: '0.5rem',
-                  flexWrap: 'wrap',
-                  flex: 1
+                  flexWrap: 'wrap'
                 }}>
                   {vorlagenKategorien.map((kategorie) => (
                     <button
@@ -483,50 +488,42 @@ const DokumenteVerwaltung = () => {
                         setSubTab(kategorie.value);
                         setActiveVorlagenKategorie(kategorie.value);
                       }}
-                      className={subTab === kategorie.value ? '' : 'logout-button'}
                       style={{
-                        padding: subTab === kategorie.value ? '0.75rem 1.25rem' : '10px 20px',
+                        padding: '0.65rem 1.1rem',
                         background: subTab === kategorie.value
                           ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                          : 'rgba(255, 255, 255, 0.05)',
                         border: subTab === kategorie.value
                           ? 'none'
-                          : '1px solid rgba(255, 215, 0, 0.2)',
-                        borderRadius: '12px',
+                          : '1px solid rgba(255, 215, 0, 0.15)',
+                        borderRadius: '10px',
                         color: subTab === kategorie.value
                           ? '#1a1a2e'
-                          : 'rgba(255, 255, 255, 0.95)',
-                        fontSize: '0.9rem',
-                        fontWeight: subTab === kategorie.value ? '600' : '700',
+                          : 'rgba(255, 255, 255, 0.85)',
+                        fontSize: '0.875rem',
+                        fontWeight: subTab === kategorie.value ? '600' : '500',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease',
+                        transition: 'all 0.2s ease',
                         whiteSpace: 'nowrap',
                         boxShadow: subTab === kategorie.value
-                          ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-                          : '0 2px 8px rgba(255, 215, 0, 0.2)',
-                        backdropFilter: 'blur(10px)',
-                        position: 'relative',
-                        overflow: 'hidden',
+                          ? '0 4px 12px rgba(255, 215, 0, 0.25)'
+                          : 'none',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}
                       onMouseEnter={(e) => {
                         if (subTab !== kategorie.value) {
-                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
-                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                          e.target.style.color = '#ffd700';
-                          e.target.style.transform = 'translateY(-2px)';
-                          e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+                          e.target.style.background = 'rgba(255, 215, 0, 0.1)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                          e.target.style.color = '#FFD700';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (subTab !== kategorie.value) {
-                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                          e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                          e.target.style.transform = 'translateY(0)';
-                          e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                          e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.15)';
+                          e.target.style.color = 'rgba(255, 255, 255, 0.85)';
                         }
                       }}
                     >
@@ -537,28 +534,33 @@ const DokumenteVerwaltung = () => {
                 </div>
               </div>
 
-              {/* Zeile 2: Alle Dokumente */}
+              {/* Rechtliche Dokumente-Sektion */}
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem'
+                padding: '1.25rem'
               }}>
-                <h4 style={{
-                  margin: 0,
-                  color: '#FFD700',
-                  fontSize: '0.95rem',
-                  fontWeight: '700',
-                  minWidth: '130px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem'
                 }}>
-                  📄 Alle Dokumente
-                </h4>
+                  <span style={{ fontSize: '1.1rem' }}>📄</span>
+                  <h4 style={{
+                    margin: 0,
+                    color: '#FFD700',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    opacity: 0.9
+                  }}>
+                    Rechtliche Dokumente
+                  </h4>
+                </div>
                 <div style={{
                   display: 'flex',
                   gap: '0.5rem',
-                  flexWrap: 'wrap',
-                  flex: 1
+                  flexWrap: 'wrap'
                 }}>
                   {dokumentTypen.map(typ => (
                     <button
@@ -567,50 +569,42 @@ const DokumenteVerwaltung = () => {
                         setSubTab(typ.value);
                         setSelectedDokumentTyp(typ.value);
                       }}
-                      className={subTab === typ.value ? '' : 'logout-button'}
                       style={{
-                        padding: subTab === typ.value ? '0.75rem 1.25rem' : '10px 20px',
+                        padding: '0.65rem 1.1rem',
                         background: subTab === typ.value
                           ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
+                          : 'rgba(255, 255, 255, 0.05)',
                         border: subTab === typ.value
                           ? 'none'
-                          : '1px solid rgba(255, 215, 0, 0.2)',
-                        borderRadius: '12px',
+                          : '1px solid rgba(255, 215, 0, 0.15)',
+                        borderRadius: '10px',
                         color: subTab === typ.value
                           ? '#1a1a2e'
-                          : 'rgba(255, 255, 255, 0.95)',
-                        fontSize: '0.9rem',
-                        fontWeight: subTab === typ.value ? '600' : '700',
+                          : 'rgba(255, 255, 255, 0.85)',
+                        fontSize: '0.875rem',
+                        fontWeight: subTab === typ.value ? '600' : '500',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease',
+                        transition: 'all 0.2s ease',
                         whiteSpace: 'nowrap',
                         boxShadow: subTab === typ.value
-                          ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-                          : '0 2px 8px rgba(255, 215, 0, 0.2)',
-                        backdropFilter: 'blur(10px)',
-                        position: 'relative',
-                        overflow: 'hidden',
+                          ? '0 4px 12px rgba(255, 215, 0, 0.25)'
+                          : 'none',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem'
                       }}
                       onMouseEnter={(e) => {
                         if (subTab !== typ.value) {
-                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
-                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                          e.target.style.color = '#ffd700';
-                          e.target.style.transform = 'translateY(-2px)';
-                          e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
+                          e.target.style.background = 'rgba(255, 215, 0, 0.1)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                          e.target.style.color = '#FFD700';
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (subTab !== typ.value) {
-                          e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                          e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                          e.target.style.transform = 'translateY(0)';
-                          e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                          e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.15)';
+                          e.target.style.color = 'rgba(255, 255, 255, 0.85)';
                         }
                       }}
                     >
