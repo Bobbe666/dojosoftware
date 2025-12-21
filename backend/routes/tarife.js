@@ -127,11 +127,18 @@ router.patch('/:id/archivieren', async (req, res) => {
         const { id } = req.params;
         const { ist_archiviert } = req.body;
 
-        await queryAsync(`
+        console.log('Archiviere Tarif:', { id, ist_archiviert, type: typeof ist_archiviert });
+
+        // Boolean richtig konvertieren (MySQL erwartet 0 oder 1)
+        const archiviert = ist_archiviert ? 1 : 0;
+
+        const result = await queryAsync(`
             UPDATE tarife
             SET ist_archiviert = ?
             WHERE id = ?
-        `, [ist_archiviert, id]);
+        `, [archiviert, id]);
+
+        console.log('Update Ergebnis:', result);
 
         res.json({
             success: true,
