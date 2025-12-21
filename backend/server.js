@@ -277,6 +277,19 @@ try {
     });
 }
 
+// Temporärer Migrations-Endpoint
+try {
+  const migrateRouter = require(path.join(__dirname, "routes", "migrate.js"));
+  app.use("/api/migrate", migrateRouter);
+  logger.success('Route gemountet', { path: '/api/migrate' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'migrate',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 4. STIL-VERWALTUNG (Gürtel & Graduierungen) - NEU
 try {
   const stileguertelRouter = require(path.join(__dirname, "routes", "stileguertel.js"));
