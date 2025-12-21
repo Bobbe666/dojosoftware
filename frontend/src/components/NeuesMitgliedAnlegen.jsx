@@ -1770,11 +1770,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
-            backgroundColor: '#FEF3C7',
-            border: '1px solid #F59E0B',
+            background: 'rgba(120, 53, 15, 0.6)',
+            border: '2px solid rgba(245, 158, 11, 0.6)',
             borderRadius: '6px',
             fontSize: '0.85rem',
-            color: '#92400E',
+            color: 'rgba(255, 255, 255, 0.95)',
             textAlign: 'center'
           }}>
             ⚠️ Bitte füllen Sie alle Pflichtfelder im Vertrag aus (AGB, Datenschutz, Dojo-Regeln, Hausordnung, Tarif).
@@ -1819,11 +1819,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               <div style={{
                 marginTop: '1rem',
                 padding: '0.75rem',
-                backgroundColor: '#FEF3C7',
-                border: '1px solid #F59E0B',
+                background: 'rgba(120, 53, 15, 0.6)',
+                border: '2px solid rgba(245, 158, 11, 0.6)',
                 borderRadius: '6px',
                 fontSize: '0.85rem',
-                color: '#92400E',
+                color: 'rgba(255, 255, 255, 0.95)',
                 textAlign: 'center'
               }}>
                 Bitte geben Sie einen Benutzernamen mit mindestens 4 Zeichen ein.
@@ -1833,11 +1833,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               <div style={{
                 marginTop: '1rem',
                 padding: '0.75rem',
-                backgroundColor: '#FEF3C7',
-                border: '1px solid #F59E0B',
+                background: 'rgba(120, 53, 15, 0.6)',
+                border: '2px solid rgba(245, 158, 11, 0.6)',
                 borderRadius: '6px',
                 fontSize: '0.85rem',
-                color: '#92400E',
+                color: 'rgba(255, 255, 255, 0.95)',
                 textAlign: 'center'
               }}>
                 Das Passwort muss mindestens 8 Zeichen lang sein.
@@ -1847,11 +1847,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               <div style={{
                 marginTop: '1rem',
                 padding: '0.75rem',
-                backgroundColor: '#FEF3C7',
-                border: '1px solid #F59E0B',
+                background: 'rgba(120, 53, 15, 0.6)',
+                border: '2px solid rgba(245, 158, 11, 0.6)',
                 borderRadius: '6px',
                 fontSize: '0.85rem',
-                color: '#92400E',
+                color: 'rgba(255, 255, 255, 0.95)',
                 textAlign: 'center'
               }}>
                 Die Passwörter stimmen nicht überein.
