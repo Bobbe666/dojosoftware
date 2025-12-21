@@ -54,10 +54,7 @@ const VertragFormular = ({
     if (age === null) return allTarife;
 
     return allTarife.filter(tarif => {
-      // Wenn keine Altersgruppe definiert, zeige den Tarif
-      if (!tarif.altersgruppe) return true;
-
-      const gruppe = tarif.altersgruppe.toLowerCase();
+      const gruppe = tarif.altersgruppe ? tarif.altersgruppe.toLowerCase() : '';
 
       // Schüler/Studenten über 18 Jahre
       if (istSchuelerStudent && age >= 18) {
@@ -67,31 +64,46 @@ const VertragFormular = ({
             gruppe.includes('jugend')) {
           return true;
         }
+        // Auch Tarife ohne Altersgruppe für Schüler/Studenten
+        if (!tarif.altersgruppe) return true;
+        return false;
       }
 
       // Kinder (bis 12 Jahre)
-      if (gruppe.includes('kind') || gruppe.includes('kinder')) {
-        return age <= 12;
+      if (age <= 12) {
+        if (gruppe.includes('kind') || gruppe.includes('kinder')) {
+          return true;
+        }
+        // Tarife ohne Altersgruppe auch für Kinder
+        if (!tarif.altersgruppe) return true;
+        return false;
       }
 
       // Jugendliche (13-17 Jahre)
-      if (gruppe.includes('jugend')) {
-        return age >= 13 && age <= 17;
+      if (age >= 13 && age <= 17) {
+        if (gruppe.includes('jugend') || gruppe.includes('kind') || gruppe.includes('kinder')) {
+          return true;
+        }
+        // Tarife ohne Altersgruppe auch für Jugendliche
+        if (!tarif.altersgruppe) return true;
+        return false;
       }
 
-      // Schüler/Studenten - speziell für Ü18
-      if (gruppe.includes('schüler') || gruppe.includes('schueler') || gruppe.includes('student')) {
-        return istSchuelerStudent && age >= 18;
-      }
-
-      // Erwachsene (18+ Jahre) - NICHT für Schüler/Studenten
-      if (gruppe.includes('erwachsen') || gruppe.includes('adult')) {
-        return age >= 18 && !istSchuelerStudent;
+      // Erwachsene (18+ Jahre) - NICHT Schüler/Studenten
+      if (age >= 18 && !istSchuelerStudent) {
+        // NUR Erwachsenen-Tarife oder Tarife ohne Altersgruppe
+        if (gruppe.includes('erwachsen') || gruppe.includes('adult') || !tarif.altersgruppe) {
+          return true;
+        }
+        // KEINE Kinder/Jugend/Schüler-Tarife für normale Erwachsene
+        return false;
       }
 
       // Senioren (60+ Jahre)
-      if (gruppe.includes('senior')) {
-        return age >= 60;
+      if (age >= 60) {
+        if (gruppe.includes('senior')) {
+          return true;
+        }
       }
 
       // Familie/Familientarife - immer anzeigen
@@ -99,7 +111,7 @@ const VertragFormular = ({
         return true;
       }
 
-      return true;
+      return false;
     });
   };
 

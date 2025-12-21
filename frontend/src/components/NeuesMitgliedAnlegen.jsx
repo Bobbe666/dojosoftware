@@ -857,15 +857,15 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             <div style={{
               marginTop: '1rem',
               padding: '1rem',
-              background: '#fef3c7',
-              border: '2px solid #F59E0B',
+              background: 'rgba(31, 41, 55, 0.8)',
+              border: '2px solid rgba(59, 130, 246, 0.5)',
               borderRadius: '10px',
               fontSize: '0.95rem',
-              color: '#92400E',
+              color: 'rgba(255, 255, 255, 0.95)',
               lineHeight: '1.6',
               fontWeight: '500'
             }}>
-              ℹ️ <strong style={{ color: '#B45309' }}>Hinweis:</strong> Bitte laden Sie später einen gültigen Schülerausweis oder eine Immatrikulationsbescheinigung hoch. Der Upload kann nach der Registrierung im Mitgliederprofil erfolgen.
+              ℹ️ <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>Hinweis:</strong> Bitte laden Sie später einen gültigen Schülerausweis oder eine Immatrikulationsbescheinigung hoch. Der Upload kann nach der Registrierung im Mitgliederprofil erfolgen.
             </div>
           )}
         </div>
@@ -1344,22 +1344,23 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       <div style={{
         padding: '1.5rem',
-        background: 'rgba(255, 215, 0, 0.08)',
+        background: 'rgba(31, 41, 55, 0.8)',
         borderRadius: '12px',
-        border: '2px solid rgba(255, 215, 0, 0.3)',
+        border: '2px solid rgba(59, 130, 246, 0.5)',
         marginBottom: '2rem'
       }}>
-        <h4 style={{ color: '#ffd700', marginTop: 0 }}>⚖️ Wann möchten Sie mit dem Training beginnen?</h4>
+        <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0 }}>⚖️ Wann möchten Sie mit dem Training beginnen?</h4>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{
             display: 'block',
             padding: '1rem',
-            background: memberData.vertragsbeginn_option === 'sofort' ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-            border: `2px solid ${memberData.vertragsbeginn_option === 'sofort' ? 'rgba(255, 215, 0, 0.6)' : 'rgba(255, 215, 0, 0.2)'}`,
+            background: memberData.vertragsbeginn_option === 'sofort' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.6)',
+            border: `2px solid ${memberData.vertragsbeginn_option === 'sofort' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.3)'}`,
             borderRadius: '8px',
             cursor: 'pointer',
-            marginBottom: '1rem'
+            marginBottom: '1rem',
+            color: 'rgba(255, 255, 255, 0.95)'
           }}>
             <input
               type="radio"
@@ -1384,10 +1385,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <label style={{
             display: 'block',
             padding: '1rem',
-            background: memberData.vertragsbeginn_option === 'nach_widerruf' ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-            border: `2px solid ${memberData.vertragsbeginn_option === 'nach_widerruf' ? 'rgba(255, 215, 0, 0.6)' : 'rgba(255, 215, 0, 0.2)'}`,
+            background: memberData.vertragsbeginn_option === 'nach_widerruf' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.6)',
+            border: `2px solid ${memberData.vertragsbeginn_option === 'nach_widerruf' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.3)'}`,
             borderRadius: '8px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            color: 'rgba(255, 255, 255, 0.95)'
           }}>
             <input
               type="radio"
