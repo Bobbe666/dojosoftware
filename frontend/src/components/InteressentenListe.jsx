@@ -149,15 +149,15 @@ const InteressentenListe = () => {
             minWidth: '200px'
           }}
         >
-          <option value="">Alle Status</option>
-          <option value="neu">Neu</option>
-          <option value="kontaktiert">Kontaktiert</option>
-          <option value="probetraining_vereinbart">Probetraining vereinbart</option>
-          <option value="probetraining_absolviert">Probetraining absolviert</option>
-          <option value="angebot_gesendet">Angebot gesendet</option>
-          <option value="interessiert">Interessiert</option>
-          <option value="nicht_interessiert">Nicht interessiert</option>
-          <option value="konvertiert">Konvertiert</option>
+          <option value="" style={{ background: '#1f2937', color: 'white' }}>Alle Status</option>
+          <option value="neu" style={{ background: '#1f2937', color: 'white' }}>Neu</option>
+          <option value="kontaktiert" style={{ background: '#1f2937', color: 'white' }}>Kontaktiert</option>
+          <option value="probetraining_vereinbart" style={{ background: '#1f2937', color: 'white' }}>Probetraining vereinbart</option>
+          <option value="probetraining_absolviert" style={{ background: '#1f2937', color: 'white' }}>Probetraining absolviert</option>
+          <option value="angebot_gesendet" style={{ background: '#1f2937', color: 'white' }}>Angebot gesendet</option>
+          <option value="interessiert" style={{ background: '#1f2937', color: 'white' }}>Interessiert</option>
+          <option value="nicht_interessiert" style={{ background: '#1f2937', color: 'white' }}>Nicht interessiert</option>
+          <option value="konvertiert" style={{ background: '#1f2937', color: 'white' }}>Konvertiert</option>
         </select>
         <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
           {filteredInteressenten.length} von {interessenten.length} angezeigt
