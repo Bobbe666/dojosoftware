@@ -148,9 +148,21 @@ const VertragFormular = ({
         // Filtere archivierte Tarife heraus (alte Tarife nicht für neue Mitglieder)
         const aktiveTarife = allTarife.filter(tarif => !tarif.ist_archiviert);
 
+        // Nur Monatsverträge (3, 6, 12 Monate) und 10er-Karten anzeigen
+        const erlaubteTarife = aktiveTarife.filter(tarif => {
+          const is10erKarte = tarif.name && (
+            tarif.name.toLowerCase().includes('10er') ||
+            tarif.name.toLowerCase().includes('10-er') ||
+            tarif.name.toLowerCase().includes('zehnerkarte')
+          );
+          const istMonatsVertrag = [3, 6, 12].includes(parseInt(tarif.duration_months));
+
+          return is10erKarte || istMonatsVertrag;
+        });
+
         // Filtere nach Alter und Schüler/Student-Status
         const age = calculateAge(geburtsdatum);
-        const filteredTarife = filterTarifeByAge(aktiveTarife, age, schuelerStudent);
+        const filteredTarife = filterTarifeByAge(erlaubteTarife, age, schuelerStudent);
         const sortedTarife = sortTarifeByLaufzeit(filteredTarife);
         setTarife(sortedTarife);
 
