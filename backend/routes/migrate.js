@@ -237,4 +237,194 @@ router.get('/create-interessenten', async (req, res) => {
     }
 });
 
+// GET /api/migrate/move-archived-to-ehemalige - Verschiebe archivierte Mitglieder zu Ehemalige
+router.get('/move-archived-to-ehemalige', async (req, res) => {
+    try {
+        console.log('🔄 Starte Migration: move_archived_to_ehemalige');
+
+        // Prüfe ob ehemalige Tabelle existiert
+        const checkTable = await queryAsync(`
+            SELECT TABLE_NAME
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'ehemalige'
+        `);
+
+        if (checkTable.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Tabelle ehemalige existiert noch nicht. Bitte zuerst /api/migrate/create-ehemalige ausführen.'
+            });
+        }
+
+        // Finde alle archivierten Mitglieder
+        const archivierteMitglieder = await queryAsync(`
+            SELECT * FROM mitglieder WHERE aktiv = 0 OR aktiv = FALSE
+        `);
+
+        if (archivierteMitglieder.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Keine archivierten Mitglieder gefunden.',
+                moved: 0
+            });
+        }
+
+        console.log(`📊 Gefunden: ${archivierteMitglieder.length} archivierte Mitglieder`);
+
+        let movedCount = 0;
+        let skippedCount = 0;
+        const errors = [];
+
+        // Verschiebe jedes archivierte Mitglied
+        for (const mitglied of archivierteMitglieder) {
+            try {
+                // Prüfe ob bereits in ehemalige vorhanden (anhand urspruengliches_mitglied_id)
+                const existing = await queryAsync(`
+                    SELECT id FROM ehemalige WHERE urspruengliches_mitglied_id = ?
+                `, [mitglied.mitglied_id]);
+
+                if (existing.length > 0) {
+                    console.log(`⏭️ Überspringe Mitglied ${mitglied.mitglied_id} - bereits in ehemalige`);
+                    skippedCount++;
+                    continue;
+                }
+
+                // Hole letzte Stil- und Gürtel-Info wenn vorhanden
+                let letzterStil = null;
+                let letzterGuertel = null;
+
+                try {
+                    const stile = await queryAsync(`
+                        SELECT s.name
+                        FROM mitglieder_stile ms
+                        JOIN stile s ON ms.stil_id = s.id
+                        WHERE ms.mitglied_id = ?
+                        ORDER BY ms.created_at DESC
+                        LIMIT 1
+                    `, [mitglied.mitglied_id]);
+
+                    if (stile.length > 0) {
+                        letzterStil = stile[0].name;
+                    }
+
+                    const guertel = await queryAsync(`
+                        SELECT graduierung
+                        FROM mitglieder_stile
+                        WHERE mitglied_id = ?
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    `, [mitglied.mitglied_id]);
+
+                    if (guertel.length > 0) {
+                        letzterGuertel = guertel[0].graduierung;
+                    }
+                } catch (err) {
+                    console.log('ℹ️ Keine Stil/Gürtel-Info gefunden für Mitglied', mitglied.mitglied_id);
+                }
+
+                // Hole letzten Vertrag/Tarif
+                let letzterTarif = null;
+                try {
+                    const vertrag = await queryAsync(`
+                        SELECT t.name
+                        FROM vertraege v
+                        JOIN tarife t ON v.tarif_id = t.id
+                        WHERE v.mitglied_id = ?
+                        ORDER BY v.created_at DESC
+                        LIMIT 1
+                    `, [mitglied.mitglied_id]);
+
+                    if (vertrag.length > 0) {
+                        letzterTarif = vertrag[0].name;
+                    }
+                } catch (err) {
+                    console.log('ℹ️ Keine Vertrags-Info gefunden für Mitglied', mitglied.mitglied_id);
+                }
+
+                // Füge in ehemalige Tabelle ein
+                await queryAsync(`
+                    INSERT INTO ehemalige (
+                        urspruengliches_mitglied_id,
+                        dojo_id,
+                        vorname,
+                        nachname,
+                        geburtsdatum,
+                        geschlecht,
+                        email,
+                        telefon,
+                        telefon_mobil,
+                        strasse,
+                        hausnummer,
+                        plz,
+                        ort,
+                        urspruengliches_eintrittsdatum,
+                        austrittsdatum,
+                        austrittsgrund,
+                        letzter_tarif,
+                        letzter_guertel,
+                        letzter_stil,
+                        notizen
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'Automatisch migriert von archivierten Mitgliedern', ?, ?, ?, 'Automatisch migriert am ' || NOW())
+                `, [
+                    mitglied.mitglied_id,
+                    mitglied.dojo_id,
+                    mitglied.vorname,
+                    mitglied.nachname,
+                    mitglied.geburtsdatum,
+                    mitglied.geschlecht,
+                    mitglied.email,
+                    mitglied.telefon,
+                    mitglied.telefon_mobil,
+                    mitglied.strasse,
+                    mitglied.hausnummer,
+                    mitglied.plz,
+                    mitglied.ort,
+                    mitglied.eintrittsdatum,
+                    letzterTarif,
+                    letzterGuertel,
+                    letzterStil
+                ]);
+
+                console.log(`✅ Verschoben: ${mitglied.vorname} ${mitglied.nachname} (ID: ${mitglied.mitglied_id})`);
+                movedCount++;
+
+            } catch (err) {
+                console.error(`❌ Fehler bei Mitglied ${mitglied.mitglied_id}:`, err);
+                errors.push({
+                    mitglied_id: mitglied.mitglied_id,
+                    name: `${mitglied.vorname} ${mitglied.nachname}`,
+                    error: err.message
+                });
+            }
+        }
+
+        const summary = {
+            success: true,
+            message: `Migration abgeschlossen: ${movedCount} verschoben, ${skippedCount} übersprungen`,
+            details: {
+                total: archivierteMitglieder.length,
+                moved: movedCount,
+                skipped: skippedCount,
+                errors: errors.length
+            }
+        };
+
+        if (errors.length > 0) {
+            summary.errors = errors;
+        }
+
+        console.log('✅ Migration erfolgreich abgeschlossen!');
+        res.json(summary);
+
+    } catch (err) {
+        console.error('❌ Fehler bei Migration:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Fehler bei der Migration',
+            details: err.message
+        });
+    }
+});
+
 module.exports = router;
