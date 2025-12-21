@@ -46,6 +46,14 @@ jobs:
             npm install
             npm run build
 
+            # Wartungsseiten-Setup (einmalig)
+            echo "📝 Setting up maintenance page..."
+            cd ..
+            if [ -f "setup-maintenance-page.sh" ]; then
+              chmod +x setup-maintenance-page.sh
+              sudo bash setup-maintenance-page.sh || echo "⚠️ Maintenance page setup skipped (already configured or error)"
+            fi
+
             # PM2 Anwendung neu starten
             echo "🔄 Restarting application with PM2..."
             pm2 restart dojosoftware || pm2 start ecosystem.config.js
