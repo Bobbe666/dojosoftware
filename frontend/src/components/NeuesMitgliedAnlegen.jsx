@@ -1786,14 +1786,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
-            backgroundColor: '#FEF3C7',
-            border: '1px solid #F59E0B',
+            background: 'rgba(120, 53, 15, 0.6)',
+            border: '2px solid rgba(245, 158, 11, 0.6)',
             borderRadius: '6px',
             fontSize: '0.85rem',
-            color: '#92400E',
+            color: 'rgba(255, 255, 255, 0.95)',
             textAlign: 'center'
           }}>
-            ⚠️ Bitte wählen Sie eine Option für den Vertragsbeginn aus.
+            Bitte wählen Sie eine Option für den Vertragsbeginn aus.
           </div>
         )}
 
@@ -1801,14 +1801,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
-            backgroundColor: '#FEF3C7',
-            border: '1px solid #F59E0B',
+            background: 'rgba(120, 53, 15, 0.6)',
+            border: '2px solid rgba(245, 158, 11, 0.6)',
             borderRadius: '6px',
             fontSize: '0.85rem',
-            color: '#92400E',
+            color: 'rgba(255, 255, 255, 0.95)',
             textAlign: 'center'
           }}>
-            ⚠️ Für den Sofortbeginn müssen Sie beide Bestätigungen akzeptieren.
+            Für den Sofortbeginn müssen Sie beide Bestätigungen akzeptieren.
           </div>
         )}
 
