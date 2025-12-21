@@ -118,7 +118,6 @@ const DojoSwitcher = () => {
               <div className="dojo-switcher-label">Ansicht:</div>
               <div className="dojo-switcher-name">Alle Dojos</div>
             </div>
-            <Building2 size={11} className="status-icon info" />
           </>
         ) : (
           <>
@@ -130,10 +129,8 @@ const DojoSwitcher = () => {
               <div className="dojo-switcher-label">Aktives Dojo:</div>
               <div className="dojo-switcher-name">{activeDojo.dojoname}</div>
             </div>
-            {getStatusIcon(activeDojo)}
           </>
         )}
-        <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
 
       {isOpen && (
