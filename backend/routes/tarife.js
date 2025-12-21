@@ -121,6 +121,28 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// PATCH /api/tarife/:id/archivieren - Tarif archivieren/entarchivieren
+router.patch('/:id/archivieren', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { ist_archiviert } = req.body;
+
+        await queryAsync(`
+            UPDATE tarife
+            SET ist_archiviert = ?
+            WHERE id = ?
+        `, [ist_archiviert, id]);
+
+        res.json({
+            success: true,
+            message: ist_archiviert ? 'Tarif wurde archiviert' : 'Tarif wurde reaktiviert'
+        });
+    } catch (err) {
+        console.error('Fehler beim Archivieren des Tarifs:', err);
+        res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
+});
+
 // =============================================
 // RABATTE ENDPOINTS
 // =============================================

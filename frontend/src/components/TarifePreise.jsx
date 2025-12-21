@@ -57,6 +57,7 @@ const TarifePreise = () => {
   const [studentenCollapsed, setStudentenCollapsed] = useState(false);
   const [erwachseneCollapsed, setErwachseneCollapsed] = useState(false);
   const [individuellCollapsed, setIndividuellCollapsed] = useState(false);
+  const [alteTarifeCollapsed, setAlteTarifeCollapsed] = useState(true);
   const [showNewIndividuell, setShowNewIndividuell] = useState(false);
 
   const [newIndividuell, setNewIndividuell] = useState({
@@ -124,6 +125,7 @@ const TarifePreise = () => {
           billing_cycle: tarif.billing_cycle,
           payment_method: tarif.payment_method,
           active: tarif.active === 1,
+          ist_archiviert: tarif.ist_archiviert === 1 || tarif.ist_archiviert === true,
           // Helper für Kategorisierung - erweiterte Logik
           isChildRate: (tarif.name.toLowerCase().includes('kinder') ||
                        tarif.name.toLowerCase().includes('kids') ||
@@ -220,6 +222,30 @@ const TarifePreise = () => {
       } catch (error) {
         console.error('Fehler beim Löschen des Tarifs:', error);
         alert('Fehler beim Löschen des Tarifs');
+      }
+    }
+  };
+
+  const handleArchiveTarif = async (tarifId, currentStatus) => {
+    const newStatus = !currentStatus;
+    const confirmMessage = newStatus
+      ? 'Diesen Tarif als "Alter Tarif" markieren? Er wird dann nicht mehr für neue Mitglieder verfügbar sein.'
+      : 'Diesen Tarif reaktivieren? Er wird dann wieder für neue Mitglieder verfügbar sein.';
+
+    if (window.confirm(confirmMessage)) {
+      try {
+        const response = await axios.patch(`/tarife/${tarifId}/archivieren`, {
+          ist_archiviert: newStatus
+        });
+
+        if (response.data.success) {
+          await loadTarifeUndRabatte();
+        } else {
+          alert('Fehler beim Archivieren: ' + response.data.error);
+        }
+      } catch (error) {
+        console.error('Fehler beim Archivieren des Tarifs:', error);
+        alert('Fehler beim Archivieren des Tarifs');
       }
     }
   };
@@ -353,6 +379,17 @@ const TarifePreise = () => {
                     >
                       <Trash2 size={16} />
                     </button>
+                    <button
+                      className="action-btn archive"
+                      onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
+                      title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
+                      style={{
+                        backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
+                        color: 'white'
+                      }}
+                    >
+                      {tarif.ist_archiviert ? '↺' : '📦'}
+                    </button>
                   </div>
                 </div>
 
@@ -458,6 +495,17 @@ const TarifePreise = () => {
                     >
                       <Trash2 size={16} />
                     </button>
+                    <button
+                      className="action-btn archive"
+                      onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
+                      title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
+                      style={{
+                        backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
+                        color: 'white'
+                      }}
+                    >
+                      {tarif.ist_archiviert ? '↺' : '📦'}
+                    </button>
                   </div>
                 </div>
 
@@ -520,7 +568,7 @@ const TarifePreise = () => {
         >
           <h2>
             <User size={24} /> Erwachsenen-Tarife (18+)
-            <span className="tarif-count">({tarife.filter(t => t.isAdultRate).length})</span>
+            <span className="tarif-count">({tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length})</span>
           </h2>
           <div className="header-actions">
             <button
@@ -539,7 +587,7 @@ const TarifePreise = () => {
 
         {!erwachseneCollapsed && (
           <div className="tarife-grid">
-            {tarife.filter(tarif => tarif.isAdultRate).map(tarif => (
+            {tarife.filter(tarif => tarif.isAdultRate && !tarif.ist_archiviert).map(tarif => (
               <div key={tarif.id} className="tarif-card">
                 <div className="tarif-header">
                   <div className="tarif-title">
@@ -562,6 +610,17 @@ const TarifePreise = () => {
                       title="Löschen"
                     >
                       <Trash2 size={16} />
+                    </button>
+                    <button
+                      className="action-btn archive"
+                      onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
+                      title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
+                      style={{
+                        backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
+                        color: 'white'
+                      }}
+                    >
+                      {tarif.ist_archiviert ? '↺' : '📦'}
                     </button>
                   </div>
                 </div>
@@ -614,6 +673,126 @@ const TarifePreise = () => {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Alte Tarife Sektion */}
+      <div className="section">
+        <div
+          className="section-header collapsible"
+          onClick={() => setAlteTarifeCollapsed(!alteTarifeCollapsed)}
+          style={{
+            background: 'rgba(107, 114, 128, 0.1)',
+            borderLeft: '4px solid #6b7280'
+          }}
+        >
+          <h2 style={{ color: '#6b7280' }}>
+            <Package size={24} /> Alte Tarife (Archiviert)
+            <span className="tarif-count">({tarife.filter(t => t.ist_archiviert).length})</span>
+          </h2>
+          <div className="header-actions">
+            {alteTarifeCollapsed ? <ChevronDown size={24} /> : <ChevronUp size={24} />}
+          </div>
+        </div>
+
+        {!alteTarifeCollapsed && (
+          <>
+            {tarife.filter(t => t.ist_archiviert).length === 0 ? (
+              <div className="info-box" style={{ background: 'rgba(107, 114, 128, 0.05)' }}>
+                <p style={{ color: '#6b7280' }}>
+                  Keine archivierten Tarife vorhanden. Tarife können über den 📦-Button archiviert werden.
+                </p>
+              </div>
+            ) : (
+              <div className="tarife-grid">
+                {tarife.filter(tarif => tarif.ist_archiviert).map(tarif => (
+                  <div key={tarif.id} className="tarif-card" style={{ opacity: 0.7, border: '2px solid #6b7280' }}>
+                    <div className="tarif-header">
+                      <div className="tarif-title">
+                        <h3>{tarif.name}</h3>
+                        <span className="status-badge" style={{ background: '#6b7280' }}>
+                          Archiviert
+                        </span>
+                      </div>
+                      <div className="tarif-actions">
+                        <button
+                          className="action-btn edit"
+                          onClick={() => setEditingTarif(tarif)}
+                          title="Bearbeiten"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className="action-btn delete"
+                          onClick={() => handleDeleteTarif(tarif.id)}
+                          title="Löschen"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                        <button
+                          className="action-btn archive"
+                          onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
+                          title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
+                          style={{
+                            backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
+                            color: 'white'
+                          }}
+                        >
+                          {tarif.ist_archiviert ? '↺' : '📦'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="tarif-price">
+                      <span className="currency">€</span>{tarif.price_euros}
+                      <span className="period">/Monat</span>
+                    </div>
+
+                    <div className="tarif-details">
+                      <div className="detail-item">
+                        <span className="label">
+                          <DollarSign size={14} /> Aufnahmegebühr
+                        </span>
+                        <div className="value">€{tarif.aufnahmegebuehr_euros}</div>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">
+                          <Calendar size={14} /> Laufzeit
+                        </span>
+                        <div className="value">{tarif.duration_months} Monate</div>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">
+                          <CreditCard size={14} /> Zahlungsmethode
+                        </span>
+                        <div className="value">
+                          {tarif.payment_method === 'SEPA' ? 'SEPA-Lastschrift' :
+                           tarif.payment_method === 'BANK_TRANSFER' ? 'Banküberweisung' :
+                           tarif.payment_method === 'CARD' ? 'Kreditkarte' :
+                           tarif.payment_method === 'PAYPAL' ? 'PayPal' :
+                           tarif.payment_method}
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">
+                          <Clock size={14} /> Abrechnung
+                        </span>
+                        <div className="value">
+                          {translateBillingCycle(tarif.billing_cycle)}
+                        </div>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">
+                          <Tag size={14} /> Währung
+                        </span>
+                        <div className="value">{tarif.currency}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 

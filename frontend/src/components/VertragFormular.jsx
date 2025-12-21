@@ -145,9 +145,12 @@ const VertragFormular = ({
         const tarifeRes = await axios.get('/tarife');
         let allTarife = tarifeRes.data?.data || tarifeRes.data || [];
 
+        // Filtere archivierte Tarife heraus (alte Tarife nicht für neue Mitglieder)
+        const aktiveTarife = allTarife.filter(tarif => !tarif.ist_archiviert);
+
         // Filtere nach Alter und Schüler/Student-Status
         const age = calculateAge(geburtsdatum);
-        const filteredTarife = filterTarifeByAge(allTarife, age, schuelerStudent);
+        const filteredTarife = filterTarifeByAge(aktiveTarife, age, schuelerStudent);
         const sortedTarife = sortTarifeByLaufzeit(filteredTarife);
         setTarife(sortedTarife);
 
