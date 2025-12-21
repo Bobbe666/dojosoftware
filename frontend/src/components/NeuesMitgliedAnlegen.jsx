@@ -847,7 +847,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             <span style={{
               fontSize: '1.05rem',
               fontWeight: '700',
-              color: '#1E40AF',
+              color: '#1F2937',
               letterSpacing: '0.01em'
             }}>
               🎓 Ich bin Schüler/in oder Student/in
