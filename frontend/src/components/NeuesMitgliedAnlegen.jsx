@@ -1826,7 +1826,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 color: '#92400E',
                 textAlign: 'center'
               }}>
-                ⚠️ Bitte geben Sie einen Benutzernamen mit mindestens 4 Zeichen ein.
+                Bitte geben Sie einen Benutzernamen mit mindestens 4 Zeichen ein.
               </div>
             )}
             {(!memberData.passwort || memberData.passwort.length < 8) && (
@@ -1840,7 +1840,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 color: '#92400E',
                 textAlign: 'center'
               }}>
-                ⚠️ Das Passwort muss mindestens 8 Zeichen lang sein.
+                Das Passwort muss mindestens 8 Zeichen lang sein.
               </div>
             )}
             {memberData.passwort && memberData.passwort_wiederholen && memberData.passwort !== memberData.passwort_wiederholen && (
@@ -1854,7 +1854,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 color: '#92400E',
                 textAlign: 'center'
               }}>
-                ⚠️ Die Passwörter stimmen nicht überein.
+                Die Passwörter stimmen nicht überein.
               </div>
             )}
           </>
