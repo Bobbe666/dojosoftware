@@ -56,7 +56,7 @@ const Login = () => {
       detectLoginType(value);
     }
 
-    // Error und Success-Messages zur�cksetzen bei Eingabe
+    // Error und Success-Messages zurücksetzen bei Eingabe
     if (error) setError('');
     if (successMessage) setSuccessMessage('');
   };
@@ -119,13 +119,13 @@ const Login = () => {
       console.error('? Login-Fehler:', err);
       
       if (err.response?.status === 401) {
-        setError('Ung�ltige Anmeldedaten. Bitte pr�fen Sie Username/Email und Passwort.');
+        setError('Ungültige Anmeldedaten. Bitte prüfen Sie Username/Email und Passwort.');
       } else if (err.response?.status === 400) {
-        setError('Bitte f�llen Sie alle Felder korrekt aus.');
+        setError('Bitte füllen Sie alle Felder korrekt aus.');
       } else if (err.response?.status === 500) {
-        setError('Server-Fehler. Bitte versuchen Sie es sp�ter erneut.');
+        setError('Server-Fehler. Bitte versuchen Sie es später erneut.');
       } else if (err.code === 'ERR_NETWORK') {
-        setError('Verbindung zum Server fehlgeschlagen. Pr�fen Sie Ihre Internetverbindung.');
+        setError('Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Internetverbindung.');
       } else {
         setError(err.response?.data?.message || 'Ein unbekannter Fehler ist aufgetreten.');
       }
@@ -156,7 +156,7 @@ const Login = () => {
           </div>
           <div className="security-badge">
             <Shield size={16} />
-            <span>Sicher verschl�sselt</span>
+            <span>Sicher verschlüsselt</span>
           </div>
         </div>
 
@@ -188,7 +188,7 @@ const Login = () => {
             />
             <small className="input-hint">
               <Info size={12} />
-              Sie k�nnen sich mit E-Mail oder Benutzername anmelden
+              Sie können sich mit E-Mail oder Benutzername anmelden
             </small>
           </div>
 
@@ -269,7 +269,7 @@ const Login = () => {
             onClick={() => navigate('/password-reset')}
             disabled={loading}
           >
-            Passwort vergessen? Passwort zur�cksetzen
+            Passwort vergessen? Passwort zurücksetzen
           </button>
         </div>
 
@@ -289,18 +289,18 @@ const Login = () => {
           </button>
           <p className="registration-info">
             <Info size={12} />
-            Vollst�ndige Registrierung inkl. Vertrag erforderlich
+            Vollständige Registrierung inkl. Vertrag erforderlich
           </p>
         </div>
 
         {/* Footer */}
         <div className="login-footer">
           <p className="version-info">
-            DojoSoftware v2.0 | � 2024-2025
+            DojoSoftware v2.0 | © 2024-2025
           </p>
           <div className="security-info">
             <Shield size={12} />
-            <span>JWT-Authentication | bcrypt-Verschl�sselung</span>
+            <span>JWT-Authentication | bcrypt-Verschlüsselung</span>
           </div>
         </div>
       </div>
@@ -313,7 +313,7 @@ const Login = () => {
           onRegistrationComplete={(success) => {
             if (success) {
               setShowRegistrationModal(false);
-              setSuccessMessage('Registrierung erfolgreich abgeschlossen! Sie k�nnen sich jetzt anmelden.');
+              setSuccessMessage('Registrierung erfolgreich abgeschlossen! Sie können sich jetzt anmelden.');
             }
           }}
         />
