@@ -11,11 +11,8 @@ router.get('/', async (req, res) => {
     const { dojo_id } = req.query;
 
     let query = `
-      SELECT
-        e.*,
-        d.name as dojo_name
+      SELECT e.*
       FROM ehemalige e
-      LEFT JOIN dojos d ON e.dojo_id = d.id
       WHERE e.archiviert = FALSE
     `;
 
@@ -63,11 +60,8 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     const query = `
-      SELECT
-        e.*,
-        d.name as dojo_name
+      SELECT e.*
       FROM ehemalige e
-      LEFT JOIN dojos d ON e.dojo_id = d.id
       WHERE e.id = ?
     `;
 
