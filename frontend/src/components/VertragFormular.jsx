@@ -358,6 +358,7 @@ const VertragFormular = ({
                 {tarif.name} - €{(tarif.price_cents / 100).toFixed(2)}/{translateBillingCycle(tarif.billing_cycle)}
                 {tarif.mindestlaufzeit_monate && ` (${tarif.mindestlaufzeit_monate} Monate)`}
                 {tarif.altersgruppe && ` - ${tarif.altersgruppe}`}
+                {tarif.aufnahmegebuehr_cents > 0 && ` + €${(tarif.aufnahmegebuehr_cents / 100).toFixed(2)} Aufnahmegebühr`}
               </option>
             ))}
           </select>
