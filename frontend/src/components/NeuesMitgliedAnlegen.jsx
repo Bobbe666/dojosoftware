@@ -1473,12 +1473,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       <div style={{
         padding: '1.5rem',
-        background: 'rgba(16, 185, 129, 0.08)',
+        background: 'rgba(31, 41, 55, 0.8)',
         borderRadius: '12px',
-        border: '2px solid rgba(16, 185, 129, 0.3)',
+        border: '2px solid rgba(59, 130, 246, 0.5)',
         marginBottom: '2rem'
       }}>
-        <h4 style={{ color: '#10b981', marginTop: 0, marginBottom: '1rem' }}>🔐 Erstellen Sie Ihren Login-Zugang</h4>
+        <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>🔐 Erstellen Sie Ihren Login-Zugang</h4>
         <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
           Mit diesen Zugangsdaten können Sie sich später im Mitgliederportal anmelden und Ihre Daten verwalten.
         </p>
@@ -1537,10 +1537,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
+            background: 'rgba(127, 29, 29, 0.6)',
+            border: '2px solid rgba(239, 68, 68, 0.6)',
             borderRadius: '6px',
-            color: '#ef4444',
+            color: 'rgba(255, 255, 255, 0.95)',
             fontSize: '0.85rem'
           }}>
             ⚠️ Die Passwörter stimmen nicht überein
@@ -1551,10 +1551,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
-            background: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
+            background: 'rgba(120, 53, 15, 0.6)',
+            border: '2px solid rgba(245, 158, 11, 0.6)',
             borderRadius: '6px',
-            color: '#f59e0b',
+            color: 'rgba(255, 255, 255, 0.95)',
             fontSize: '0.85rem'
           }}>
             ⚠️ Das Passwort muss mindestens 8 Zeichen lang sein
