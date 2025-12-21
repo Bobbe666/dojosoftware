@@ -4563,6 +4563,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                vertrag.payment_method || 'Keine Angabe'}
                             </strong>
                           </div>
+                          {/* Aufnahmegebühr */}
+                          {vertrag.aufnahmegebuehr_cents && vertrag.aufnahmegebuehr_cents > 0 && (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              fontSize: '0.9rem'
+                            }}>
+                              <span style={{ fontSize: '1.1rem' }}>💵</span>
+                              <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>AUFNAHME:</span>
+                              <strong style={{ color: '#ff9800' }}>
+                                €{(vertrag.aufnahmegebuehr_cents / 100).toFixed(2)}
+                              </strong>
+                            </div>
+                          )}
                           {/* Kündigungsfrist */}
                           {vertrag.kuendigungsfrist_monate && (
                             <div style={{
@@ -5164,6 +5179,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         <div className="stat-item">
                           <label>Zahlungsmethode:</label>
                           <span className="stat-value">{mitglied?.zahlungsmethode || "Nicht angegeben"}</span>
+                        </div>
+                        <div className="stat-item">
+                          <label>Aufnahmegebühren (gesamt):</label>
+                          <span className="stat-value" style={{ color: '#ff9800' }}>
+                            {vertraege && vertraege.length > 0 ?
+                              `${(vertraege.reduce((sum, v) => sum + (v.aufnahmegebuehr_cents || 0), 0) / 100).toFixed(2)} €` :
+                              "0,00 €"}
+                          </span>
                         </div>
                       </div>
                     </div>
