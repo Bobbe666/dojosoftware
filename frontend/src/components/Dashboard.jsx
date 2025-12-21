@@ -255,6 +255,22 @@ function Dashboard() {
       path: '/dashboard/notifications',
       badge: 'NEU',
       featured: true
+    },
+    {
+      icon: '👋',
+      title: 'Ehemalige',
+      description: 'Ehemalige Mitglieder verwalten',
+      path: '/dashboard/ehemalige',
+      badge: 'NEU',
+      count: stats.ehemalige || 0
+    },
+    {
+      icon: '💼',
+      title: 'Interessenten',
+      description: 'Potenzielle Mitglieder und Leads',
+      path: '/dashboard/interessenten',
+      badge: 'NEU',
+      count: stats.interessenten || 0
     }
   ];
 

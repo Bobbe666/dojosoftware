@@ -13,6 +13,8 @@ import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import MitgliederListe from "./components/MitgliederListe";
 import MitgliedDetail from "./components/MitgliedDetail";
+import EhemaligenListe from "./components/EhemaligenListe";
+import InteressentenListe from "./components/InteressentenListe";
 import Anwesenheit from "./components/Anwesenheit";
 import Stundenplan from "./components/Stundenplan";
 import Kurse from "./components/Kurse";
@@ -350,6 +352,10 @@ const App = () => {
               {/* Mitglieder-Management */}
               <Route path="mitglieder" element={<MitgliederListe />} />
               <Route path="mitglieder/:id" element={<MitgliedDetail />} />
+
+              {/* Ehemalige & Interessenten */}
+              <Route path="ehemalige" element={<EhemaligenListe />} />
+              <Route path="interessenten" element={<InteressentenListe />} />
               
               {/* Check-In System */}
               <Route path="checkin" element={<CheckinSystem />} />

@@ -166,6 +166,32 @@ try {
     });
 }
 
+// EHEMALIGE MITGLIEDER ROUTES
+try {
+  const ehemaligeRoutes = require('./routes/ehemalige');
+  app.use('/api/ehemalige', ehemaligeRoutes);
+  logger.success('Route gemountet', { path: '/api/ehemalige' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'ehemalige',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// INTERESSENTEN ROUTES
+try {
+  const interessentenRoutes = require('./routes/interessenten');
+  app.use('/api/interessenten', interessentenRoutes);
+  logger.success('Route gemountet', { path: '/api/interessenten' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'interessenten',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 10ER-KARTEN ROUTES
 try {
   const zehnerkartenRoutes = require('./routes/zehnerkarten');

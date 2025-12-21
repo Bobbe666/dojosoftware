@@ -44,7 +44,9 @@ async function getDashboardStats(dojo_id) {
     buddy_gruppen: 0,
     tarife: 0,
     zahlungszyklen: 0,
-    termine: 0
+    termine: 0,
+    ehemalige: 0,
+    interessenten: 0
   };
 
   try {
@@ -68,7 +70,9 @@ async function getDashboardStats(dojo_id) {
       db.promise().query('SELECT COUNT(*) as count FROM stile').catch(() => [[]]), // Global, kein Filter
       db.promise().query('SELECT COUNT(*) as count FROM tarife').catch(() => [[]]), // Global, kein Filter
       db.promise().query('SELECT COUNT(*) as count FROM zahlungszyklen').catch(() => [[]]), // Global, kein Filter
-      db.promise().query(`SELECT COUNT(*) as count FROM pruefungstermin_vorlagen WHERE 1=1${dojoFilter}`).catch(() => [[]]) // Prüfungstermine
+      db.promise().query(`SELECT COUNT(*) as count FROM pruefungstermin_vorlagen WHERE 1=1${dojoFilter}`).catch(() => [[]]), // Prüfungstermine
+      db.promise().query(`SELECT COUNT(*) as count FROM ehemalige WHERE archiviert = FALSE${dojoFilter}`).catch(() => [[]]), // Ehemalige Mitglieder
+      db.promise().query(`SELECT COUNT(*) as count FROM interessenten WHERE archiviert = FALSE${dojoFilter}`).catch(() => [[]]) // Interessenten
     ]);
 
     stats.mitglieder = queries[0][0][0]?.count || 0;
@@ -82,6 +86,8 @@ async function getDashboardStats(dojo_id) {
     stats.tarife = queries[7][0][0]?.count || 0;
     stats.zahlungszyklen = queries[8][0][0]?.count || 0;
     stats.termine = queries[9][0][0]?.count || 0;
+    stats.ehemalige = queries[10][0][0]?.count || 0;
+    stats.interessenten = queries[11][0][0]?.count || 0;
   } catch (error) {
     console.error('❌ Stats Query Fehler:', error);
   }
