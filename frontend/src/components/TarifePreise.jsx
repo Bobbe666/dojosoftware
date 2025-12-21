@@ -287,7 +287,7 @@ const TarifePreise = () => {
           </div>
           <div className="stat-info">
             <h3>Kinder-Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.isChildRate).length}</p>
+            <p className="stat-value">{tarife.filter(t => t.isChildRate && !t.ist_archiviert).length}</p>
             <span className="stat-trend">verfügbar</span>
           </div>
         </div>
@@ -298,7 +298,7 @@ const TarifePreise = () => {
           </div>
           <div className="stat-info">
             <h3>Studenten-Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.isStudentRate).length}</p>
+            <p className="stat-value">{tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length}</p>
             <span className="stat-trend">verfügbar</span>
           </div>
         </div>
@@ -309,7 +309,7 @@ const TarifePreise = () => {
           </div>
           <div className="stat-info">
             <h3>Erwachsenen-Tarife</h3>
-            <p className="stat-value">{tarife.filter(t => t.isAdultRate).length}</p>
+            <p className="stat-value">{tarife.filter(t => t.isAdultRate && !t.ist_archiviert).length}</p>
             <span className="stat-trend">verfügbar</span>
           </div>
         </div>
@@ -336,7 +336,7 @@ const TarifePreise = () => {
         >
           <h2>
             <Baby size={24} /> Kinder & Jugendliche (6-17 Jahre)
-            <span className="tarif-count">({tarife.filter(t => t.isChildRate).length})</span>
+            <span className="tarif-count">({tarife.filter(t => t.isChildRate && !t.ist_archiviert).length})</span>
           </h2>
           <div className="header-actions">
             <button
@@ -355,7 +355,7 @@ const TarifePreise = () => {
 
         {!kinderCollapsed && (
           <div className="tarife-grid">
-            {tarife.filter(tarif => tarif.isChildRate).map(tarif => (
+            {tarife.filter(tarif => tarif.isChildRate && !tarif.ist_archiviert).map(tarif => (
               <div key={tarif.id} className="tarif-card">
                 <div className="tarif-header">
                   <div className="tarif-title">
@@ -452,7 +452,7 @@ const TarifePreise = () => {
         >
           <h2>
             <GraduationCap size={24} /> Studenten & Schüler Tarife (18+)
-            <span className="tarif-count">({tarife.filter(t => t.isStudentRate).length})</span>
+            <span className="tarif-count">({tarife.filter(t => t.isStudentRate && !t.ist_archiviert).length})</span>
           </h2>
           <div className="header-actions">
             <button
@@ -471,7 +471,7 @@ const TarifePreise = () => {
 
         {!studentenCollapsed && (
           <div className="tarife-grid">
-            {tarife.filter(tarif => tarif.isStudentRate).map(tarif => (
+            {tarife.filter(tarif => tarif.isStudentRate && !tarif.ist_archiviert).map(tarif => (
               <div key={tarif.id} className="tarif-card">
                 <div className="tarif-header">
                   <div className="tarif-title">
