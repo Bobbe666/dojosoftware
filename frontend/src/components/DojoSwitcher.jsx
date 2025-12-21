@@ -131,6 +131,7 @@ const DojoSwitcher = () => {
             </div>
           </>
         )}
+        <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
 
       {isOpen && (
@@ -215,7 +216,6 @@ const DojoSwitcher = () => {
                     <div className="dropdown-item-info">
                       <span className="dropdown-item-inhaber">{dojo.inhaber}</span>
                       <span className="dropdown-item-status">
-                        {getStatusIcon(dojo)}
                         {getStatusText(dojo)}
                       </span>
                     </div>
