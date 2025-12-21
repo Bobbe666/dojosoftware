@@ -90,7 +90,7 @@ router.post('/', async (req, res) => {
 
     const query = `
       INSERT INTO interessenten (
-        dojo_id, vorname, nachname, geburtsdatum, `alter`,
+        dojo_id, vorname, nachname, geburtsdatum, \`alter\`,
         email, telefon, telefon_mobil, strasse, hausnummer, plz, ort,
         interessiert_an, erfahrung, gewuenschter_tarif,
         erstkontakt_datum, erstkontakt_quelle, letzter_kontakt_datum, naechster_kontakt_datum,
