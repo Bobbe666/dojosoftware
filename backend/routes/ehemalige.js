@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 
     const params = [];
 
-    if (dojo_id) {
+    if (dojo_id && dojo_id !== 'all') {
       query += ` AND e.dojo_id = ?`;
       params.push(dojo_id);
     }
@@ -44,7 +44,7 @@ router.get('/count', async (req, res) => {
     let query = `SELECT COUNT(*) as count FROM ehemalige WHERE archiviert = FALSE`;
     const params = [];
 
-    if (dojo_id) {
+    if (dojo_id && dojo_id !== 'all') {
       query += ` AND dojo_id = ?`;
       params.push(dojo_id);
     }
