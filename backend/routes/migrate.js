@@ -172,7 +172,7 @@ router.get('/create-interessenten', async (req, res) => {
                 vorname VARCHAR(100) NOT NULL,
                 nachname VARCHAR(100) NOT NULL,
                 geburtsdatum DATE NULL,
-                alter INT NULL COMMENT 'Alter des Interessenten',
+                `alter` INT NULL COMMENT 'Alter des Interessenten',
                 email VARCHAR(255) NULL,
                 telefon VARCHAR(50) NULL,
                 telefon_mobil VARCHAR(50) NULL,
