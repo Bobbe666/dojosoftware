@@ -24,8 +24,13 @@ const NotificationSystem = () => {
     email_enabled: false,
     push_enabled: false,
     email_config: {
-      smtp_host: '',
+      protocol: 'smtp', // smtp, pop3, imap
+      smtp_host: '', // Postausgangsserver
       smtp_port: 587,
+      imap_host: '', // Posteingangsserver (IMAP)
+      imap_port: 993,
+      pop3_host: '', // Posteingangsserver (POP3)
+      pop3_port: 995,
       smtp_secure: false,
       smtp_user: '',
       smtp_password: ''
@@ -123,19 +128,26 @@ const NotificationSystem = () => {
       const response = await fetch(`${config.apiBaseUrl}/email-service/settings`);
       const data = await response.json();
       if (data.success && data.settings) {
+        const emailConfig = data.settings.email_config
+          ? (typeof data.settings.email_config === 'string'
+              ? JSON.parse(data.settings.email_config)
+              : data.settings.email_config)
+          : {};
+
         const loadedSettings = {
           ...data.settings,
-          email_config: data.settings.email_config 
-            ? (typeof data.settings.email_config === 'string' 
-                ? JSON.parse(data.settings.email_config) 
-                : data.settings.email_config)
-            : {
-                smtp_host: 'smtp.alfahosting.de',
-                smtp_port: 587,
-                smtp_secure: false,
-                smtp_user: '',
-                smtp_password: ''
-              }
+          email_config: {
+            protocol: emailConfig.protocol || 'smtp',
+            smtp_host: emailConfig.smtp_host || 'smtp.alfahosting.de',
+            smtp_port: emailConfig.smtp_port || 587,
+            imap_host: emailConfig.imap_host || '',
+            imap_port: emailConfig.imap_port || 993,
+            pop3_host: emailConfig.pop3_host || '',
+            pop3_port: emailConfig.pop3_port || 995,
+            smtp_secure: emailConfig.smtp_secure || false,
+            smtp_user: emailConfig.smtp_user || '',
+            smtp_password: emailConfig.smtp_password || ''
+          }
         };
         setSettings(loadedSettings);
         return;
@@ -149,14 +161,21 @@ const NotificationSystem = () => {
       const response = await fetch(`${config.apiBaseUrl}/notifications/settings`);
       const data = await response.json();
       if (data.success) {
+        const emailConfig = data.settings.email_config ? JSON.parse(data.settings.email_config) : {};
+
         const loadedSettings = {
           ...data.settings,
-          email_config: data.settings.email_config ? JSON.parse(data.settings.email_config) : {
-            smtp_host: 'smtp.alfahosting.de',
-            smtp_port: 587,
-            smtp_secure: false,
-            smtp_user: '',
-            smtp_password: ''
+          email_config: {
+            protocol: emailConfig.protocol || 'smtp',
+            smtp_host: emailConfig.smtp_host || 'smtp.alfahosting.de',
+            smtp_port: emailConfig.smtp_port || 587,
+            imap_host: emailConfig.imap_host || '',
+            imap_port: emailConfig.imap_port || 993,
+            pop3_host: emailConfig.pop3_host || '',
+            pop3_port: emailConfig.pop3_port || 995,
+            smtp_secure: emailConfig.smtp_secure || false,
+            smtp_user: emailConfig.smtp_user || '',
+            smtp_password: emailConfig.smtp_password || ''
           }
         };
         setSettings(loadedSettings);
@@ -167,8 +186,13 @@ const NotificationSystem = () => {
       setSettings(prev => ({
         ...prev,
         email_config: {
+          protocol: 'smtp',
           smtp_host: 'smtp.alfahosting.de',
           smtp_port: 587,
+          imap_host: '',
+          imap_port: 993,
+          pop3_host: '',
+          pop3_port: 995,
           smtp_secure: false,
           smtp_user: '',
           smtp_password: ''
@@ -997,9 +1021,37 @@ const NotificationSystem = () => {
 
         {settings.email_enabled && (
           <div className="email-config">
+            {/* Protokoll-Auswahl */}
+            <div className="form-row" style={{ marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>E-Mail Protokoll</label>
+                <select
+                  value={settings.email_config.protocol || 'smtp'}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {...settings.email_config, protocol: e.target.value}
+                  })}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <option value="smtp">SMTP (Postausgang)</option>
+                  <option value="pop3">POP3 (Posteingang)</option>
+                  <option value="imap">IMAP (Posteingang)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Postausgangsserver (SMTP) */}
             <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>SMTP Host</label>
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Postausgangsserver (SMTP)</label>
                 <input
                   type="text"
                   value={settings.email_config.smtp_host}
@@ -1020,7 +1072,7 @@ const NotificationSystem = () => {
                 />
               </div>
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>SMTP Port</label>
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Postausgangsserver Port</label>
                 <input
                   type="number"
                   value={settings.email_config.smtp_port}
@@ -1029,6 +1081,64 @@ const NotificationSystem = () => {
                     email_config: {...settings.email_config, smtp_port: parseInt(e.target.value)}
                   })}
                   placeholder="587"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Posteingangsserver (IMAP/POP3) */}
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                  Posteingangsserver ({settings.email_config.protocol === 'imap' ? 'IMAP' : settings.email_config.protocol === 'pop3' ? 'POP3' : 'IMAP/POP3'})
+                </label>
+                <input
+                  type="text"
+                  value={settings.email_config.protocol === 'imap' ? settings.email_config.imap_host : settings.email_config.pop3_host}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {
+                      ...settings.email_config,
+                      ...(settings.email_config.protocol === 'imap'
+                        ? { imap_host: e.target.value }
+                        : { pop3_host: e.target.value })
+                    }
+                  })}
+                  placeholder={settings.email_config.protocol === 'imap' ? 'imap.alfahosting.de' : 'pop3.alfahosting.de'}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Posteingangsserver Port</label>
+                <input
+                  type="number"
+                  value={settings.email_config.protocol === 'imap' ? settings.email_config.imap_port : settings.email_config.pop3_port}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {
+                      ...settings.email_config,
+                      ...(settings.email_config.protocol === 'imap'
+                        ? { imap_port: parseInt(e.target.value) }
+                        : { pop3_port: parseInt(e.target.value) })
+                    }
+                  })}
+                  placeholder={settings.email_config.protocol === 'imap' ? '993' : '995'}
                   style={{
                     width: '100%',
                     padding: '0.6rem',
