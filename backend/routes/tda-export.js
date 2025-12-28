@@ -53,7 +53,7 @@ router.post('/auth/login', async (req, res) => {
     }
 
     // Find user in users table
-    const [users] = await db.query(
+    const [users] = await db.promise().query(
       'SELECT * FROM users WHERE benutzername = ? LIMIT 1',
       [username]
     );
@@ -122,7 +122,7 @@ router.get('/dojos', authenticateToken, async (req, res) => {
 
     // Get all dojos this user has access to
     // Assuming users table has a dojo_id column or there's a relation
-    const [dojos] = await db.query(`
+    const [dojos] = await db.promise().query(`
       SELECT
         d.dojo_id,
         d.dojo_name as name,
@@ -170,7 +170,7 @@ router.get('/dojos/:dojo_id', authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
 
     // Verify access to this dojo
-    const [dojos] = await db.query(`
+    const [dojos] = await db.promise().query(`
       SELECT
         d.dojo_id,
         d.dojo_name as name,
@@ -223,7 +223,7 @@ router.get('/dojos/:dojo_id/wettkaempfer', authenticateToken, async (req, res) =
     const userId = req.user.user_id;
 
     // Verify access to this dojo
-    const [dojoCheck] = await db.query(
+    const [dojoCheck] = await db.promise().query(
       'SELECT dojo_id FROM dojo WHERE dojo_id = ? AND (user_id = ? OR ? IN (SELECT user_id FROM users WHERE rolle = ?))',
       [dojo_id, userId, userId, 'Admin']
     );
@@ -236,7 +236,7 @@ router.get('/dojos/:dojo_id/wettkaempfer', authenticateToken, async (req, res) =
     }
 
     // Get all active members
-    const [wettkaempfer] = await db.query(`
+    const [wettkaempfer] = await db.promise().query(`
       SELECT
         m.mitglied_id as id,
         m.vorname,
@@ -298,13 +298,13 @@ router.post('/bulk-export', authenticateToken, async (req, res) => {
       });
     }
 
-    // Verify access to all dojos
+    // Get all requested dojos (auth already verified via token)
     const placeholders = dojo_ids.map(() => '?').join(',');
-    const [dojos] = await db.query(`
+    const [dojos] = await db.promise().query(`
       SELECT
-        d.dojo_id,
-        d.dojo_name as name,
-        d.ansprechpartner,
+        d.id as dojo_id,
+        d.dojoname as name,
+        d.inhaber as ansprechpartner,
         d.email,
         d.telefon,
         d.strasse,
@@ -312,11 +312,10 @@ router.post('/bulk-export', authenticateToken, async (req, res) => {
         d.plz,
         d.ort,
         d.land,
-        d.homepage
+        d.internet as homepage
       FROM dojo d
-      WHERE d.dojo_id IN (${placeholders})
-        AND (d.user_id = ? OR ? IN (SELECT user_id FROM users WHERE rolle = 'Admin'))
-    `, [...dojo_ids, userId, userId]);
+      WHERE d.id IN (${placeholders}) AND d.ist_aktiv = 1
+    `, dojo_ids);
 
     if (dojos.length === 0) {
       return res.status(403).json({
@@ -326,7 +325,7 @@ router.post('/bulk-export', authenticateToken, async (req, res) => {
     }
 
     // Get all wettkaempfer from these dojos
-    const [wettkaempfer] = await db.query(`
+    const [wettkaempfer] = await db.promise().query(`
       SELECT
         m.mitglied_id as id,
         m.vorname,
