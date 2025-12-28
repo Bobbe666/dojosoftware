@@ -91,6 +91,19 @@ try {
     });
 }
 
+// TDA EXPORT API ROUTES (für TDA Software Integration)
+try {
+  const tdaExportRoutes = require('./routes/tda-export');
+  app.use('/api/tda-export', tdaExportRoutes);
+  logger.success('Route gemountet', { path: '/api/tda-export' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'tda-export routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // AGB & DATENSCHUTZ ROUTES mit Versionierung
 try {
   const agbRoutes = require('./routes/agb');
