@@ -35,6 +35,7 @@ const DojoEdit = () => {
     { key: 'dokumente', label: 'Dokumente', icon: '📄' },
     { key: 'logos', label: 'Logos', icon: '🖼️' },
     { key: 'admins', label: 'Admin-Accounts', icon: '🔐' },
+    { key: 'api', label: 'API-Zugang', icon: '🔗' },
     { key: 'system', label: 'System', icon: '⚙️' },
     { key: 'design', label: 'Design', icon: '🎨' }
   ];
@@ -1451,6 +1452,142 @@ const DojoEdit = () => {
           {activeTab === 'admins' && (
             <div className="form-section" style={{ padding: 0, background: 'transparent' }}>
               <AdminVerwaltung />
+            </div>
+          )}
+
+          {/* API-Zugang Tab */}
+          {activeTab === 'api' && (
+            <div className="form-section">
+              <h3>🔗 API-Zugangsdaten für TDA-Turnierverwaltung</h3>
+
+              <div className="api-info-box" style={{
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '2px solid #ffd700',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginBottom: '2rem'
+              }}>
+                <p style={{ margin: 0, lineHeight: '1.6', color: '#e0e0e0' }}>
+                  <strong style={{ color: '#ffd700' }}>ℹ️ Hinweis:</strong><br />
+                  Diese Zugangsdaten benötigen Sie für die Registrierung in der TDA-Turnierverwaltung (Schritt 2).
+                  Damit können Sie Ihre Mitglieder automatisch aus dieser Dojosoftware importieren.
+                </p>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>🌐 API Base URL</span>
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    type="text"
+                    value={window.location.origin + '/api'}
+                    readOnly
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      cursor: 'text'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.origin + '/api');
+                      setMessage('✅ API URL kopiert!');
+                      setTimeout(() => setMessage(''), 2000);
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#ffd700',
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    📋 Kopieren
+                  </button>
+                </div>
+                <small style={{ color: '#999', display: 'block', marginTop: '0.5rem' }}>
+                  Diese URL verwenden Sie im Schritt 2 der TDA-Registrierung
+                </small>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span>👤 Benutzername</span>
+                  </label>
+                  <input
+                    type="text"
+                    value="admin"
+                    readOnly
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      cursor: 'text'
+                    }}
+                  />
+                  <small style={{ color: '#999', display: 'block', marginTop: '0.5rem' }}>
+                    Standard Admin-Benutzername
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span>🔑 Passwort</span>
+                  </label>
+                  <input
+                    type="password"
+                    value="admin123"
+                    readOnly
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      cursor: 'text'
+                    }}
+                  />
+                  <small style={{ color: '#999', display: 'block', marginTop: '0.5rem' }}>
+                    Ihr Admin-Passwort (ändern Sie dies in Admin-Accounts)
+                  </small>
+                </div>
+              </div>
+
+              <div className="api-instructions" style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '2px solid #3b82f6',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginTop: '2rem'
+              }}>
+                <h4 style={{ color: '#3b82f6', marginBottom: '1rem' }}>📝 So verwenden Sie die Zugangsdaten:</h4>
+                <ol style={{ marginLeft: '1.5rem', lineHeight: '1.8', color: '#e0e0e0' }}>
+                  <li>Öffnen Sie die TDA-Turnierverwaltung Registrierung</li>
+                  <li>Geben Sie im <strong>Schritt 2</strong> folgende Daten ein:
+                    <ul style={{ marginTop: '0.5rem', marginLeft: '1rem' }}>
+                      <li><strong>API-URL:</strong> {window.location.origin}/api</li>
+                      <li><strong>Benutzername:</strong> admin (oder Ihr Admin-Username)</li>
+                      <li><strong>Passwort:</strong> Ihr Admin-Passwort</li>
+                    </ul>
+                  </li>
+                  <li>Klicken Sie auf "Verbindung testen"</li>
+                  <li>Wählen Sie Ihre Dojos aus, die Sie synchronisieren möchten</li>
+                  <li>Schließen Sie die Registrierung ab</li>
+                </ol>
+              </div>
+
+              <div className="api-security-note" style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '2px solid #ef4444',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginTop: '1.5rem'
+              }}>
+                <p style={{ margin: 0, lineHeight: '1.6', color: '#e0e0e0' }}>
+                  <strong style={{ color: '#ef4444' }}>🔒 Sicherheitshinweis:</strong><br />
+                  Geben Sie Ihre API-Zugangsdaten niemals an Dritte weiter. Die TDA-Turnierverwaltung verwendet
+                  diese nur für die sichere Verbindung zu Ihrer Dojosoftware.
+                </p>
+              </div>
             </div>
           )}
 
