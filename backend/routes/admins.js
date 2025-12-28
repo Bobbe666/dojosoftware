@@ -205,6 +205,13 @@ router.post('/', async (req, res) => {
     });
   }
 
+  // ✅ SCHUTZ: "admin" Benutzername ist reserviert
+  if (username.toLowerCase() === 'admin') {
+    return res.status(400).json({
+      error: 'Der Benutzername "admin" ist reserviert. Bitte wählen Sie einen anderen.'
+    });
+  }
+
   try {
     // Prüfen ob Username oder Email bereits existiert
     const checkSql = `

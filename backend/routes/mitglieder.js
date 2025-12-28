@@ -2226,6 +2226,13 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
         console.log('🔐 Erstelle User-Account für öffentliche Registrierung...');
 
         try {
+            // ✅ SCHUTZ: "admin" Benutzername ist reserviert
+            if (memberData.benutzername.trim().toLowerCase() === 'admin') {
+                console.error('❌ Versuch, reservierten Benutzernamen "admin" zu verwenden');
+                // Callback mit Fehler - Mitglied wurde erstellt, aber kein User-Account
+                return callback();
+            }
+
             // Passwort hashen
             const hashedPassword = await bcrypt.hash(memberData.passwort, 10);
 
