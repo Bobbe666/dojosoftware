@@ -638,4 +638,86 @@ router.post('/migrate/add-bank-fields', (req, res) => {
   });
 });
 
+// =====================================================
+// POST /api/dojos/:id/generate-api-token - Generate/Regenerate API Token
+// =====================================================
+router.post('/:id/generate-api-token', (req, res) => {
+  const { id } = req.params;
+  const crypto = require('crypto');
+
+  // Generate a secure random token (UUID v4 format)
+  const apiToken = crypto.randomUUID();
+  const now = new Date();
+
+  const query = `
+    UPDATE dojo
+    SET api_token = ?,
+        api_token_created_at = ?
+    WHERE id = ?
+  `;
+
+  req.db.query(query, [apiToken, now, id], (err, result) => {
+    if (err) {
+      console.error('Error generating API token:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Fehler beim Generieren des API-Tokens'
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Dojo nicht gefunden'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'API-Token erfolgreich generiert',
+      token: apiToken,
+      created_at: now
+    });
+  });
+});
+
+// =====================================================
+// GET /api/dojos/:id/api-token - Get current API Token
+// =====================================================
+router.get('/:id/api-token', (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT api_token, api_token_created_at, api_token_last_used
+    FROM dojo
+    WHERE id = ?
+  `;
+
+  req.db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error fetching API token:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Fehler beim Abrufen des API-Tokens'
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Dojo nicht gefunden'
+      });
+    }
+
+    const dojo = results[0];
+
+    res.json({
+      success: true,
+      token: dojo.api_token,
+      created_at: dojo.api_token_created_at,
+      last_used: dojo.api_token_last_used
+    });
+  });
+});
+
 module.exports = router;

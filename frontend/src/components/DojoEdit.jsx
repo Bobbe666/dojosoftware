@@ -18,6 +18,10 @@ const DojoEdit = () => {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('grunddaten');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [apiToken, setApiToken] = useState(null);
+  const [apiTokenCreatedAt, setApiTokenCreatedAt] = useState(null);
+  const [apiTokenLastUsed, setApiTokenLastUsed] = useState(null);
+  const [tokenLoading, setTokenLoading] = useState(false);
   const isNewDojo = id === 'new';
 
   // Tab-Konfiguration mit Icons
@@ -400,6 +404,79 @@ const DojoEdit = () => {
       setLoading(false);
     }
   };
+
+  // ===================================================================
+  // API TOKEN HANDLERS
+  // ===================================================================
+
+  const loadApiToken = async () => {
+    if (isNewDojo) return;
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}/api-token`);
+      const data = await response.json();
+
+      if (data.success && data.token) {
+        setApiToken(data.token);
+        setApiTokenCreatedAt(data.created_at);
+        setApiTokenLastUsed(data.last_used);
+      }
+    } catch (error) {
+      console.error('Error loading API token:', error);
+    }
+  };
+
+  const generateApiToken = async () => {
+    if (isNewDojo) {
+      setMessage('⚠️ Bitte speichern Sie das Dojo zuerst, bevor Sie einen API-Token generieren.');
+      return;
+    }
+
+    const confirmMsg = apiToken
+      ? '⚠️ WARNUNG: Dies wird Ihren bestehenden API-Token ungültig machen!\n\nAlle TDA-Turniere, die den alten Token verwenden, müssen aktualisiert werden.\n\nMöchten Sie wirklich einen neuen Token generieren?'
+      : 'Möchten Sie einen neuen API-Token generieren?';
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setTokenLoading(true);
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}/generate-api-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setApiToken(data.token);
+        setApiTokenCreatedAt(data.created_at);
+        setApiTokenLastUsed(null);
+        setMessage('✅ API-Token erfolgreich generiert!');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        throw new Error(data.error || 'Token-Generierung fehlgeschlagen');
+      }
+    } catch (error) {
+      console.error('Error generating API token:', error);
+      setMessage('❌ Fehler beim Generieren des Tokens: ' + error.message);
+    } finally {
+      setTokenLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    setMessage(`✅ ${label} kopiert!`);
+    setTimeout(() => setMessage(''), 2000);
+  };
+
+  // Load API token when component mounts or id changes
+  useEffect(() => {
+    if (!isNewDojo && activeTab === 'api') {
+      loadApiToken();
+    }
+  }, [id, isNewDojo, activeTab]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1458,7 +1535,7 @@ const DojoEdit = () => {
           {/* API-Zugang Tab */}
           {activeTab === 'api' && (
             <div className="form-section">
-              <h3>🔗 API-Zugangsdaten für TDA-Turnierverwaltung</h3>
+              <h3>🔗 API-Token für TDA-Turnierverwaltung</h3>
 
               <div className="api-info-box" style={{
                 background: 'rgba(255, 215, 0, 0.1)',
@@ -1468,12 +1545,13 @@ const DojoEdit = () => {
                 marginBottom: '2rem'
               }}>
                 <p style={{ margin: 0, lineHeight: '1.6', color: '#e0e0e0' }}>
-                  <strong style={{ color: '#ffd700' }}>ℹ️ Hinweis:</strong><br />
-                  Diese Zugangsdaten benötigen Sie für die Registrierung in der TDA-Turnierverwaltung (Schritt 2).
-                  Damit können Sie Ihre Mitglieder automatisch aus dieser Dojosoftware importieren.
+                  <strong style={{ color: '#ffd700' }}>ℹ️ Sicherer API-Zugang</strong><br />
+                  Jedes Dojo hat einen eindeutigen API-Token für die sichere Verbindung zur TDA-Turnierverwaltung.
+                  Dieser Token ermöglicht den automatischen Import Ihrer Mitglieder.
                 </p>
               </div>
 
+              {/* API Base URL */}
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span>🌐 API Base URL</span>
@@ -1491,11 +1569,7 @@ const DojoEdit = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.origin + '/api');
-                      setMessage('✅ API URL kopiert!');
-                      setTimeout(() => setMessage(''), 2000);
-                    }}
+                    onClick={() => copyToClipboard(window.location.origin + '/api', 'API URL')}
                     style={{
                       padding: '0.5rem 1rem',
                       background: '#ffd700',
@@ -1514,44 +1588,145 @@ const DojoEdit = () => {
                 </small>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span>👤 Benutzername</span>
-                  </label>
-                  <input
-                    type="text"
-                    value="admin"
-                    readOnly
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      cursor: 'text'
-                    }}
-                  />
-                  <small style={{ color: '#999', display: 'block', marginTop: '0.5rem' }}>
-                    Standard Admin-Benutzername
-                  </small>
-                </div>
+              {/* API Token Section */}
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <span>🔑 API-Token</span>
+                  {apiToken && (
+                    <span style={{
+                      background: '#2ed573',
+                      color: '#fff',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      ✓ Aktiv
+                    </span>
+                  )}
+                </label>
 
-                <div className="form-group">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span>🔑 Passwort</span>
-                  </label>
-                  <input
-                    type="password"
-                    value="admin123"
-                    readOnly
-                    style={{
+                {apiToken ? (
+                  <>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <input
+                        type="text"
+                        value={apiToken}
+                        readOnly
+                        style={{
+                          flex: 1,
+                          background: 'rgba(46, 213, 115, 0.1)',
+                          border: '2px solid #2ed573',
+                          cursor: 'text',
+                          fontFamily: 'monospace',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(apiToken, 'API-Token')}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#2ed573',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        📋 Kopieren
+                      </button>
+                    </div>
+
+                    {/* Token Metadata */}
+                    <div style={{
                       background: 'rgba(255, 255, 255, 0.05)',
-                      cursor: 'text'
-                    }}
-                  />
-                  <small style={{ color: '#999', display: 'block', marginTop: '0.5rem' }}>
-                    Ihr Admin-Passwort (ändern Sie dies in Admin-Accounts)
-                  </small>
-                </div>
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem' }}>
+                        <div>
+                          <strong style={{ color: '#ffd700' }}>Erstellt am:</strong>
+                          <div style={{ color: '#e0e0e0', marginTop: '0.25rem' }}>
+                            {apiTokenCreatedAt ? new Date(apiTokenCreatedAt).toLocaleString('de-DE') : 'N/A'}
+                          </div>
+                        </div>
+                        <div>
+                          <strong style={{ color: '#ffd700' }}>Zuletzt verwendet:</strong>
+                          <div style={{ color: '#e0e0e0', marginTop: '0.25rem' }}>
+                            {apiTokenLastUsed ? new Date(apiTokenLastUsed).toLocaleString('de-DE') : 'Noch nie'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Regenerate Button */}
+                    <button
+                      type="button"
+                      onClick={generateApiToken}
+                      disabled={tokenLoading}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: 'rgba(239, 68, 68, 0.8)',
+                        color: '#fff',
+                        border: '2px solid #ef4444',
+                        borderRadius: '8px',
+                        cursor: tokenLoading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        opacity: tokenLoading ? 0.6 : 1
+                      }}
+                    >
+                      {tokenLoading ? '⏳ Generiere...' : '🔄 Token regenerieren'}
+                    </button>
+                    <small style={{ color: '#ff6b6b', display: 'block', marginTop: '0.5rem' }}>
+                      ⚠️ Warnung: Das Regenerieren macht den alten Token ungültig!
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <div style={{
+                      background: 'rgba(255, 107, 53, 0.1)',
+                      border: '2px dashed #ff6b35',
+                      borderRadius: '8px',
+                      padding: '2rem',
+                      textAlign: 'center',
+                      marginBottom: '1rem'
+                    }}>
+                      <p style={{ color: '#e0e0e0', marginBottom: '1rem' }}>
+                        <strong>Kein API-Token vorhanden</strong><br />
+                        Generieren Sie einen Token, um die TDA-Integration zu nutzen.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={generateApiToken}
+                        disabled={tokenLoading || isNewDojo}
+                        style={{
+                          padding: '0.75rem 2rem',
+                          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: (tokenLoading || isNewDojo) ? 'not-allowed' : 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '1rem',
+                          opacity: (tokenLoading || isNewDojo) ? 0.6 : 1
+                        }}
+                      >
+                        {tokenLoading ? '⏳ Generiere...' : '🔑 API-Token generieren'}
+                      </button>
+                      {isNewDojo && (
+                        <small style={{ color: '#ff6b35', display: 'block', marginTop: '0.75rem' }}>
+                          Bitte speichern Sie das Dojo zuerst
+                        </small>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
+              {/* Instructions */}
               <div className="api-instructions" style={{
                 background: 'rgba(59, 130, 246, 0.1)',
                 border: '2px solid #3b82f6',
@@ -1559,14 +1734,14 @@ const DojoEdit = () => {
                 padding: '1.5rem',
                 marginTop: '2rem'
               }}>
-                <h4 style={{ color: '#3b82f6', marginBottom: '1rem' }}>📝 So verwenden Sie die Zugangsdaten:</h4>
+                <h4 style={{ color: '#3b82f6', marginBottom: '1rem' }}>📝 So verwenden Sie den API-Token:</h4>
                 <ol style={{ marginLeft: '1.5rem', lineHeight: '1.8', color: '#e0e0e0' }}>
+                  <li>Generieren Sie einen API-Token (falls noch nicht vorhanden)</li>
                   <li>Öffnen Sie die TDA-Turnierverwaltung Registrierung</li>
                   <li>Geben Sie im <strong>Schritt 2</strong> folgende Daten ein:
                     <ul style={{ marginTop: '0.5rem', marginLeft: '1rem' }}>
                       <li><strong>API-URL:</strong> {window.location.origin}/api</li>
-                      <li><strong>Benutzername:</strong> admin (oder Ihr Admin-Username)</li>
-                      <li><strong>Passwort:</strong> Ihr Admin-Passwort</li>
+                      <li><strong>API-Token:</strong> Ihr generierter Token (kopieren Sie ihn mit dem Button)</li>
                     </ul>
                   </li>
                   <li>Klicken Sie auf "Verbindung testen"</li>
@@ -1575,6 +1750,7 @@ const DojoEdit = () => {
                 </ol>
               </div>
 
+              {/* Security Note */}
               <div className="api-security-note" style={{
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '2px solid #ef4444',
@@ -1583,9 +1759,11 @@ const DojoEdit = () => {
                 marginTop: '1.5rem'
               }}>
                 <p style={{ margin: 0, lineHeight: '1.6', color: '#e0e0e0' }}>
-                  <strong style={{ color: '#ef4444' }}>🔒 Sicherheitshinweis:</strong><br />
-                  Geben Sie Ihre API-Zugangsdaten niemals an Dritte weiter. Die TDA-Turnierverwaltung verwendet
-                  diese nur für die sichere Verbindung zu Ihrer Dojosoftware.
+                  <strong style={{ color: '#ef4444' }}>🔒 Sicherheitshinweise:</strong><br />
+                  • Jedes Dojo hat einen eindeutigen, sicheren Token<br />
+                  • Geben Sie Ihren Token niemals an Dritte weiter<br />
+                  • Bei Verdacht auf Kompromittierung: Token sofort regenerieren<br />
+                  • Der alte Token wird ungültig, sobald Sie einen neuen generieren
                 </p>
               </div>
             </div>

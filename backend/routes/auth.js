@@ -512,6 +512,114 @@ router.delete('/users/:id', (req, res) => {
 });
 
 // ===================================================================
+// TOKEN-BASED AUTHENTICATION (for TDA Integration)
+// ===================================================================
+
+/**
+ * POST /api/auth/token-login
+ * Authenticate using Dojo API Token
+ * Used by TDA Tournament Software for secure integration
+ */
+router.post('/token-login', async (req, res) => {
+  const { api_token } = req.body;
+
+  if (!api_token) {
+    return res.status(400).json({
+      success: false,
+      login: false,
+      message: "API-Token ist erforderlich"
+    });
+  }
+
+  try {
+    // Query to find dojo by API token
+    const dojoQuery = `
+      SELECT
+        id,
+        dojoname,
+        email,
+        api_token,
+        api_token_created_at,
+        ist_aktiv
+      FROM dojo
+      WHERE api_token = ?
+      AND ist_aktiv = TRUE
+      LIMIT 1
+    `;
+
+    db.query(dojoQuery, [api_token], async (err, results) => {
+      if (err) {
+        console.error('💥 Database error during token authentication:', err);
+        return res.status(500).json({
+          success: false,
+          login: false,
+          message: "Server-Fehler bei der Token-Validierung",
+          error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(401).json({
+          success: false,
+          login: false,
+          message: "Ungültiger API-Token oder Dojo nicht aktiv"
+        });
+      }
+
+      const dojo = results[0];
+
+      // Update last_used timestamp
+      const updateQuery = `
+        UPDATE dojo
+        SET api_token_last_used = NOW()
+        WHERE id = ?
+      `;
+
+      db.query(updateQuery, [dojo.id], (updateErr) => {
+        if (updateErr) {
+          console.error('Warning: Failed to update token last_used:', updateErr);
+        }
+      });
+
+      // Create JWT token for session
+      const jwtToken = jwt.sign(
+        {
+          id: dojo.id,
+          dojoname: dojo.dojoname,
+          email: dojo.email,
+          role: 'dojo',
+          auth_type: 'api_token'
+        },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      return res.json({
+        success: true,
+        login: true,
+        message: "Token-Authentifizierung erfolgreich",
+        token: jwtToken,
+        dojo: {
+          id: dojo.id,
+          dojoname: dojo.dojoname,
+          email: dojo.email,
+          role: 'dojo'
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('💥 Error in token-login:', error);
+    res.status(500).json({
+      success: false,
+      login: false,
+      message: "Server-Fehler beim Token-Login",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// ===================================================================
 // ERROR HANDLING
 // ===================================================================
 
@@ -524,8 +632,9 @@ router.use('*', (req, res) => {
     url: req.originalUrl,
     availableRoutes: [
       'GET /api/auth/health',
-      'GET /api/auth/test', 
+      'GET /api/auth/test',
       'POST /api/auth/login',
+      'POST /api/auth/token-login',
       'GET /api/auth/me',
       'POST /api/auth/logout',
       'GET /api/auth/users (dev only)',
