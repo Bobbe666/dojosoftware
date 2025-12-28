@@ -248,7 +248,7 @@ router.get('/dojos/:dojo_id/wettkaempfer', authenticateToken, async (req, res) =
         m.gurtfarbe,
         m.email,
         m.telefon_mobil as handy,
-        s.stil_name as kampfstil,
+        s.name as kampfstil,
         m.dojo_id
       FROM mitglieder m
       LEFT JOIN stile s ON m.stil_id = s.stil_id
@@ -337,7 +337,7 @@ router.post('/bulk-export', authenticateToken, async (req, res) => {
         m.gurtfarbe,
         m.email,
         m.telefon_mobil as handy,
-        s.stil_name as kampfstil,
+        s.name as kampfstil,
         m.dojo_id
       FROM mitglieder m
       LEFT JOIN stile s ON m.stil_id = s.stil_id
