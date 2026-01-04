@@ -49,6 +49,78 @@ function translateBillingCycle(cycle) {
 
 // Mapping dojo_id zu Dojo-Namen - wird in der Komponente definiert
 
+// Custom Dropdown Component with full dark mode styling
+function CustomSelect({ value, onChange, options, className = "", style = {}, disabled = false }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState('');
+  const dropdownRef = React.useRef(null);
+
+  useEffect(() => {
+    const selected = options.find(opt => opt.value === value);
+    setSelectedLabel(selected ? selected.label : '');
+  }, [value, options]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (optionValue) => {
+    onChange({ target: { value: optionValue } });
+    setIsOpen(false);
+  };
+
+  return (
+    <div
+      className={`custom-select ${className} ${disabled ? 'disabled' : ''}`}
+      ref={dropdownRef}
+      style={style}
+    >
+      <div
+        className="custom-select-trigger"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+      >
+        <span>{selectedLabel || 'Bitte wählen...'}</span>
+        <span className="custom-select-arrow">{isOpen ? '▲' : '▼'}</span>
+      </div>
+      {isOpen && !disabled && (
+        <div
+          className="custom-select-options"
+          style={{
+            backgroundColor: '#1a1a1a',
+            backgroundImage: 'none',
+            opacity: 1,
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none'
+          }}
+        >
+          {options.map((option) => (
+            <div
+              key={option.value}
+              className={`custom-select-option ${option.value === value ? 'selected' : ''}`}
+              onClick={() => handleSelect(option.value)}
+              style={{
+                backgroundColor: option.value === value ? '#2a2a2a' : '#1a1a1a',
+                backgroundImage: 'none',
+                opacity: 1,
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+              }}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * BeltPreview - Zeigt eine visuelle Darstellung eines Gürtels an
  * @param {string} primaer - Hauptfarbe des Gürtels (HEX)
@@ -124,6 +196,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   // Beiträge Ansichts-Filter State
   const [beitraegeViewMode, setBeiträgeViewMode] = useState("monat"); // "monat", "quartal", "jahr"
   const [collapsedPeriods, setCollapsedPeriods] = useState({});
+  const [expandedBeitraege, setExpandedBeitraege] = useState({});
 
   // SEPA-Mandate State
   const [sepaMandate, setSepaMandate] = useState(null);
@@ -132,6 +205,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   
   // Allergie-Management State
   const [allergien, setAllergien] = useState([]);
+  const [allergienArchiv, setAllergienArchiv] = useState([]);
   const [newAllergie, setNewAllergie] = useState({ type: '', custom: '' });
   
   // Neue State-Variablen für stilspezifische Daten
@@ -193,10 +267,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   });
   const [showRuhepauseModal, setShowRuhepauseModal] = useState(false);
   const [showKündigungModal, setShowKündigungModal] = useState(false);
+  const [showKündigungBestätigungModal, setShowKündigungBestätigungModal] = useState(false);
+  const [vertragZumKündigen, setVertragZumKündigen] = useState(null);
   
   // Foto-Upload State
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   
   // Stil & Gurt Verwaltung
   const [stile, setStile] = useState([]);
@@ -232,6 +309,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [generatingDocument, setGeneratingDocument] = useState(false);
   const [mitgliedDokumente, setMitgliedDokumente] = useState([]);
   const [confirmedNotifications, setConfirmedNotifications] = useState([]);
+  const [rechnungen, setRechnungen] = useState([]);
 
   // Modal für SEPA-Mandat-Details
   const [selectedMandate, setSelectedMandate] = useState(null);
@@ -312,10 +390,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     try {
       // Alle benötigten APIs laden
       const config = signal ? { signal } : {};
-      const [tarifeResponse, zahlungszyklenResponse, beitraegeResponse] = await Promise.all([
+      // Beiträge-Endpoint benötigt mitglied_id, daher weglassen wenn id nicht verfügbar
+      const [tarifeResponse, zahlungszyklenResponse] = await Promise.all([
         axios.get('/tarife', config).catch(() => null),
-        axios.get('/zahlungszyklen', config).catch(() => null),
-        axios.get('/beitraege', config).catch(() => null)
+        axios.get('/zahlungszyklen', config).catch(() => null)
       ]);
 
       if (tarifeResponse?.data) {
@@ -328,11 +406,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       if (zahlungszyklenResponse?.data) {
         const zahlungszyklenData = zahlungszyklenResponse.data;
         setZahlungszyklen(zahlungszyklenData.data || []);
-      }
-
-      if (beitraegeResponse?.data) {
-        const beitraegeData = beitraegeResponse.data;
-        setBeiträge(beitraegeData.data || []);
       }
     } catch (error) {
       if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
@@ -845,14 +918,25 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       const response = await axios.get(`/vertraege/${vertragId}/pdf`, { responseType: 'blob' });
       const blob = response.data;
       const url = window.URL.createObjectURL(blob);
+      
+      // PDF im neuen Tab öffnen (Viewer)
+      const pdfWindow = window.open('', '_blank');
+      if (pdfWindow) {
+        pdfWindow.location.href = url;
+      }
+      
+      // PDF auch herunterladen
       const a = document.createElement('a');
       a.href = url;
       a.download = `Vertrag_${mitglied?.nachname}_${mitglied?.vorname}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      console.log('✅ Vertrag erfolgreich heruntergeladen');
+      
+      // URL nicht sofort freigeben, damit der Tab funktioniert
+      // Wird automatisch freigegeben wenn der Tab geschlossen wird
+      
+      console.log('✅ Vertrag erfolgreich heruntergeladen und angezeigt');
     } catch (error) {
       console.error('❌ Fehler beim Download des Vertrags:', error);
       alert('Fehler beim Download des Vertrags. Bitte versuchen Sie es erneut.');
@@ -1005,21 +1089,97 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   };
 
   // Dokument löschen (nur Admin)
-  const deleteMitgliedDokument = async (dokumentId) => {
+  const deleteMitgliedDokument = async (dokument) => {
+    // Prüfe Aufbewahrungsfrist (10 Jahre nach § 147 AO)
+    const erstelltDate = new Date(dokument.erstellt_am);
+    const erstelltJahr = erstelltDate.getFullYear();
+    const ablaufJahr = erstelltJahr + 10;
+    const ablaufDatum = new Date(ablaufJahr, 11, 31, 23, 59, 59); // 31.12. um 23:59:59
+    const heute = new Date();
+
+    if (heute <= ablaufDatum) {
+      // Noch Aufbewahrungspflicht
+      const ablaufText = `31.12.${ablaufJahr}`;
+      alert(`⚠️ Dieses Dokument kann noch nicht gelöscht werden.\n\n` +
+            `Grund: Gesetzliche Aufbewahrungspflicht nach § 147 AO\n` +
+            `Aufbewahrungsfrist: 10 Jahre\n` +
+            `Erstellt am: ${new Date(dokument.erstellt_am).toLocaleDateString('de-DE')}\n` +
+            `Löschung möglich ab: ${ablaufText}\n\n` +
+            `Das Dokument wird automatisch nach Ablauf der Frist gelöscht.`);
+      return;
+    }
+
+    // Frist ist abgelaufen - Löschung möglich
     if (!confirm('Möchten Sie dieses Dokument wirklich löschen?')) {
       return;
     }
 
     try {
-      await axios.delete(`/mitglieder/${id}/dokumente/${dokumentId}`);
-      alert('? Dokument gelöscht');
+      await axios.delete(`/mitglieder/${id}/dokumente/${dokument.id}`);
+      alert('✅ Dokument gelöscht');
 
       // Liste neu laden
       const response = await axios.get(`/mitglieder/${id}/dokumente`);
       setMitgliedDokumente(response.data.data || []);
     } catch (error) {
       console.error('Fehler beim Löschen des Dokuments:', error);
-      alert('? Fehler beim Löschen');
+      alert('❌ Fehler beim Löschen: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  // Rechnungen laden
+  const loadRechnungen = async (signal = null) => {
+    try {
+      const response = await axios.get(`/rechnungen`, {
+        params: { mitglied_id: id },
+        signal: signal || undefined
+      });
+      if (response.data.success) {
+        setRechnungen(response.data.data || []);
+      }
+    } catch (error) {
+      if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        return;
+      }
+      console.error('Fehler beim Laden der Rechnungen:', error);
+    }
+  };
+
+  // Rechnung löschen
+  const deleteRechnung = async (rechnung) => {
+    // Prüfe Aufbewahrungsfrist (10 Jahre nach § 147 AO)
+    const rechnungsDatum = new Date(rechnung.datum);
+    const rechnungsJahr = rechnungsDatum.getFullYear();
+    const ablaufJahr = rechnungsJahr + 10;
+    const ablaufDatum = new Date(ablaufJahr, 11, 31, 23, 59, 59); // 31.12. um 23:59:59
+    const heute = new Date();
+
+    if (heute <= ablaufDatum) {
+      // Noch Aufbewahrungspflicht
+      const ablaufText = `31.12.${ablaufJahr}`;
+      alert(`⚠️ Diese Rechnung kann noch nicht gelöscht werden.\n\n` +
+            `Grund: Gesetzliche Aufbewahrungspflicht nach § 147 AO\n` +
+            `Aufbewahrungsfrist: 10 Jahre\n` +
+            `Rechnungsnummer: ${rechnung.rechnungsnummer}\n` +
+            `Rechnungsdatum: ${new Date(rechnung.datum).toLocaleDateString('de-DE')}\n` +
+            `Löschung möglich ab: ${ablaufText}\n\n` +
+            `Die Rechnung wird automatisch nach Ablauf der Frist gelöscht.`);
+      return;
+    }
+
+    // Frist ist abgelaufen - Löschung möglich
+    if (!window.confirm('Möchten Sie diese Rechnung wirklich löschen?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/rechnungen/${rechnung.rechnung_id}`);
+      alert('✅ Rechnung gelöscht');
+      // Liste neu laden
+      await loadRechnungen();
+    } catch (error) {
+      console.error('Fehler beim Löschen der Rechnung:', error);
+      alert('❌ Fehler beim Löschen der Rechnung');
     }
   };
 
@@ -1273,9 +1433,54 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   };
 
+  const handleKündigungBestätigen = async () => {
+    if (!vertragZumKündigen) return;
+
+    try {
+      await axios.put(`/vertraege/${vertragZumKündigen.id}/kuendigen`, {
+        kuendigungsdatum: new Date().toISOString().split('T')[0],
+        kuendigung_eingegangen: new Date().toISOString().split('T')[0],
+        status: 'gekuendigt'
+      });
+
+      alert('✅ Vertrag wurde erfolgreich gekündigt und archiviert.');
+      setShowKündigungBestätigungModal(false);
+      setVertragZumKündigen(null);
+      await fetchVerträge();
+    } catch (error) {
+      console.error('Fehler beim Kündigen des Vertrags:', error);
+      alert('Fehler beim Kündigen des Vertrags. Bitte versuchen Sie es erneut.');
+    }
+  };
+
   const handleVertragLöschen = async (vertrag) => {
+    // Prüfe ob Vertrag bereits beendet ist
+    const heute = new Date();
+    heute.setHours(0, 0, 0, 0);
+    
+    let istBeendet = false;
+    if (vertrag.vertragsende) {
+      const vertragsende = new Date(vertrag.vertragsende);
+      vertragsende.setHours(0, 0, 0, 0);
+      istBeendet = vertragsende < heute;
+    }
+    
+    // Vertrag ist beendet wenn: vertragsende in der Vergangenheit, status nicht aktiv, oder bereits gekündigt
+    istBeendet = istBeendet || 
+                 vertrag.status !== 'aktiv' || 
+                 vertrag.kuendigung_eingegangen || 
+                 vertrag.kuendigungsdatum;
+
+    if (!istBeendet) {
+      // Vertrag ist noch aktiv - Modal mit Ja/Nein anzeigen
+      setVertragZumKündigen(vertrag);
+      setShowKündigungBestätigungModal(true);
+      return;
+    }
+
+    // Vertrag ist bereits beendet - normale Löschung/Archivierung
     const grund = window.prompt(
-      `⚠️ ACHTUNG: Vertrag #${vertrag.personenVertragNr} wirklich löschen?\n\n` +
+      `⚠️ Vertrag #${vertrag.personenVertragNr} löschen?\n\n` +
       `Der Vertrag wird archiviert und kann nicht wiederhergestellt werden.\n` +
       `Er bleibt zur Ansicht sichtbar.\n\n` +
       `Bitte Grund für Löschung eingeben (optional):`
@@ -1291,6 +1496,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           }
         });
 
+        alert('✅ Vertrag wurde erfolgreich archiviert.');
         // Verträge vom Backend neu laden
         await fetchVerträge();
       } catch (error) {
@@ -1541,6 +1747,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       if (mitglied?.allergien) {
         setAllergien(initializeAllergien(mitglied.allergien));
       }
+
+      // Archivierte Allergien initialisieren
+      if (mitglied?.allergien_archiv) {
+        try {
+          const archiv = typeof mitglied.allergien_archiv === 'string'
+            ? JSON.parse(mitglied.allergien_archiv)
+            : mitglied.allergien_archiv;
+          setAllergienArchiv(archiv || []);
+        } catch (e) {
+          console.error('Fehler beim Parsen von allergien_archiv:', e);
+          setAllergienArchiv([]);
+        }
+      }
     }
   }, [mitglied, memberStile, stile]); // ✅ Entfernt: selectedStilId, activeStyleTab, activeExamTab (werden nur intern geprüft)
 
@@ -1561,6 +1780,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       const controller = new AbortController();
       fetchFinanzDaten(controller.signal);
       fetchTarifeUndZahlungszyklen(controller.signal);
+      fetchVerträge(controller.signal); // Verträge für Beitragsgenerierung laden
       return () => {
         controller.abort();
       };
@@ -1650,6 +1870,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       };
       loadMitgliedDokumente();
 
+      // Rechnungen laden
+      loadRechnungen(controller.signal);
+
       // Bestätigte Dokument-Benachrichtigungen laden
       const loadConfirmedNotifications = async () => {
         try {
@@ -1696,6 +1919,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       value = e.target.checked;
     }
     
+    // Debug: Log für Vertreter-Felder
+    if (key.includes('vertreter')) {
+      console.log(`🔄 handleChange: ${key} = ${value}`);
+    }
+    
     setUpdatedData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -1739,14 +1967,37 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     setNewAllergie({ type: '', custom: '' });
   };
 
-  const removeAllergie = (id) => {
-    const updatedAllergien = allergien.filter(a => a.id !== id);
-    setAllergien(updatedAllergien);
-    
-    const allergienString = updatedAllergien.length > 0 
-      ? updatedAllergien.map(a => a.value).join('; ')
-      : '';
-    setUpdatedData({ ...updatedData, allergien: allergienString });
+  const removeAllergie = async (id) => {
+    try {
+      // Archiviere die Allergie über API
+      const response = await fetch(`http://localhost:3000/api/mitglieddetail/${mitglied.id}/archive-allergie`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allergieId: id })
+      });
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Archivieren der Allergie');
+      }
+
+      const result = await response.json();
+
+      // Update lokalen State mit den vom Server zurückgegebenen Daten
+      setAllergien(result.allergien);
+      setAllergienArchiv(result.allergien_archiv);
+
+      const allergienString = result.allergien.length > 0
+        ? result.allergien.map(a => a.value).join('; ')
+        : '';
+      setUpdatedData({ ...updatedData, allergien: allergienString });
+
+      // Zeige Erfolgs-Nachricht
+      console.log('✅ Allergie archiviert:', result.message);
+
+    } catch (error) {
+      console.error('Fehler beim Archivieren der Allergie:', error);
+      alert('Fehler beim Archivieren der Allergie');
+    }
   };
 
   const handleSave = async () => {
@@ -1773,7 +2024,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
         dataToSend.vereinsordnung_datum = toMySqlDate(dataToSend.vereinsordnung_datum);
       }
 
-      const res = await axios.put(`/mitglieder/${id}`, dataToSend);
+      // Debug: Log welche Vertreter-Felder gespeichert werden
+      if (dataToSend.vertreter1_typ || dataToSend.vertreter2_typ) {
+        console.log('💾 Speichere Vertreter-Daten:', {
+          vertreter1_typ: dataToSend.vertreter1_typ,
+          vertreter2_typ: dataToSend.vertreter2_typ,
+          vertreter1_name: dataToSend.vertreter1_name,
+          vertreter2_name: dataToSend.vertreter2_name
+        });
+      }
+      
+      const res = await axios.put(`/mitglieddetail/${id}`, dataToSend);
       const data = res.data;
       console.log('✅ Speichern erfolgreich:', data);
       setMitglied(data && Object.keys(data).length ? data : dataToSend);
@@ -1897,9 +2158,62 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   };
 
-  // Drucken-Funktion
-  const handlePrint = () => {
-    window.print();
+  // PDF-Export-Funktion
+  const handlePrint = async () => {
+    if (generatingPdf) return; // Verhindere Mehrfach-Klicks
+
+    setGeneratingPdf(true);
+
+    try {
+      console.log(`📄 Starte PDF-Download für Mitglied ${mitglied.mitglied_id}...`);
+
+      // API-Aufruf zum PDF-Generator
+      const response = await axios.post(
+        `/mitglieddetail/${mitglied.mitglied_id}/pdf`,
+        { save_to_db: false },
+        {
+          responseType: 'blob',
+          timeout: 30000 // 30 Sekunden Timeout
+        }
+      );
+
+      // Download erstellen
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Mitglied_${mitglied.mitgliedsnummer || mitglied.mitglied_id}_Details.pdf`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ PDF erfolgreich heruntergeladen');
+      alert('✅ PDF erfolgreich erstellt und heruntergeladen!');
+
+    } catch (error) {
+      console.error('❌ Fehler bei PDF-Generierung:', error);
+
+      let errorMessage = 'Fehler bei PDF-Generierung';
+      if (error.response?.data) {
+        // Wenn der Fehler JSON ist
+        try {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const errorData = JSON.parse(reader.result);
+            alert(`❌ ${errorMessage}: ${errorData.details || errorData.error || 'Unbekannter Fehler'}`);
+          };
+          reader.readAsText(error.response.data);
+        } catch {
+          alert(`❌ ${errorMessage}: ${error.message}`);
+        }
+      } else {
+        alert(`❌ ${errorMessage}: ${error.message}`);
+      }
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   if (loading) return <p>Lade Mitgliedsdaten...</p>;
@@ -1990,18 +2304,22 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {/* Foto und Name oben */}
           <div className="mitglied-header">
-            <div className="mitglied-avatar" style={{ position: 'relative', background: avatarLoaded ? 'transparent' : 'linear-gradient(90deg, #2a2a4e 25%, #3a3a6e 50%, #2a2a4e 75%)', backgroundSize: '200% 100%', animation: avatarLoaded ? 'none' : 'shimmer 1.5s infinite' }}>
+            <div className="mitglied-avatar" style={{ position: 'relative', backgroundColor: avatarLoaded ? 'transparent' : '#2a2a4e', backgroundImage: avatarLoaded ? 'none' : 'linear-gradient(90deg, #2a2a4e 25%, #3a3a6e 50%, #2a2a4e 75%)', backgroundSize: '200% 100%', animation: avatarLoaded ? 'none' : 'shimmer 1.5s infinite' }}>
               <img
                 key={mitglied?.mitglied_id}
-                src={mitglied?.foto_pfad ? `/uploads/${mitglied.foto_pfad.replace('uploads/', '')}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
+                src={mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                 alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                 className="avatar-image"
                 style={{
                   opacity: avatarLoaded ? 1 : 0,
                   transition: 'opacity 0.3s ease-in-out'
                 }}
-                onLoad={() => setAvatarLoaded(true)}
+                onLoad={() => {
+                  console.log('🖼️ Avatar onLoad gefeuert für:', mitglied?.foto_pfad);
+                  setAvatarLoaded(true);
+                }}
                 onError={(e) => {
+                  console.log('❌ Avatar onError gefeuert für:', mitglied?.foto_pfad, 'Event:', e);
                   e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
                   setAvatarLoaded(true);
                 }}
@@ -2046,14 +2364,59 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             paddingRight: '1rem',
             paddingTop: '0.5rem'
           }}>
-            {/* Status-Badges - nebeneinander */}
+            {/* Linke Seite: Zurück-Button und Status-Badges */}
             <div style={{
               display: 'flex',
-              gap: '0.75rem',
+              gap: '1rem',
               flex: 1,
-              flexWrap: 'nowrap',
-              alignItems: 'center'
+              alignItems: 'center',
+              flexWrap: 'wrap'
             }}>
+              {/* Zurück-Button - nur für Admin */}
+              {isAdmin && (
+                <button
+                  className="back-button"
+                  onClick={() => navigate("/dashboard/mitglieder")}
+                  style={{
+                    background: 'rgba(255, 215, 0, 0.15)',
+                    border: '2px solid rgba(255, 215, 0, 0.4)',
+                    borderRadius: '10px',
+                    padding: '10px 16px',
+                    cursor: 'pointer',
+                    color: '#FFD700',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.25)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.6)';
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
+                  }}
+                >
+                  ← Zurück
+                </button>
+              )}
+              
+              {/* Status-Badges - nebeneinander */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                flexWrap: 'nowrap',
+                alignItems: 'center'
+              }}>
               <div style={{
                 background: 'rgba(255, 215, 0, 0.1)',
                 border: '1px solid rgba(255, 215, 0, 0.2)',
@@ -2096,6 +2459,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Beiträge:</span>
                 <span style={{ color: offeneBeiträge > 0 ? '#e74c3c' : '#FFD700', fontWeight: 'bold' }}>{offeneBeiträge}</span>
               </div>
+            </div>
             </div>
 
             {/* Drei-Punkte-Menü */}
@@ -2227,6 +2591,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           handlePrint();
                           setShowActionsMenu(false);
                         }}
+                        disabled={generatingPdf}
                         style={{
                           width: '100%',
                           background: 'transparent',
@@ -2234,19 +2599,20 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           color: '#fff',
                           padding: '12px 16px',
                           textAlign: 'left',
-                          cursor: 'pointer',
+                          cursor: generatingPdf ? 'not-allowed' : 'pointer',
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '12px',
                           fontSize: '0.95rem',
-                          transition: 'background 0.2s ease'
+                          transition: 'background 0.2s ease',
+                          opacity: generatingPdf ? 0.6 : 1
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(52, 152, 219, 0.1)'}
+                        onMouseEnter={(e) => !generatingPdf && (e.currentTarget.style.background = 'rgba(52, 152, 219, 0.1)')}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontSize: '1.2rem' }}>🖨️</span>
-                        <span>Drucken</span>
+                        <span style={{ fontSize: '1.2rem' }}>{generatingPdf ? '⏳' : '📄'}</span>
+                        <span>{generatingPdf ? 'Generiere PDF...' : 'PDF exportieren'}</span>
                       </button>
 
                       <div style={{
@@ -2479,32 +2845,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 {/* Sicherheitsfrage */}
                 <div style={{ marginBottom: '1.25rem' }}>
                   <label>Sicherheitsfrage:</label>
-                  <select
+                  <CustomSelect
                     value={securityQuestion}
                     onChange={(e) => setSecurityQuestion(e.target.value)}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '2px solid rgba(255, 215, 0, 0.2)',
-                      transition: 'all 0.3s ease',
-                      color: '#ffffff'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                      e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 215, 0, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  >
-                    <option style={{ background: '#1a1a2e', color: '#ffffff' }}>Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?</option>
-                    <option style={{ background: '#1a1a2e', color: '#ffffff' }}>Wie heißt Ihr erstes Haustier?</option>
-                    <option style={{ background: '#1a1a2e', color: '#ffffff' }}>In welcher Stadt wurden Sie geboren?</option>
-                    <option style={{ background: '#1a1a2e', color: '#ffffff' }}>Wie lautet der Name Ihrer Grundschule?</option>
-                    <option style={{ background: '#1a1a2e', color: '#ffffff' }}>Wie lautet der zweite Vorname Ihres Vaters?</option>
-                  </select>
+                    options={[
+                      { value: 'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?', label: 'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?' },
+                      { value: 'Wie heißt Ihr erstes Haustier?', label: 'Wie heißt Ihr erstes Haustier?' },
+                      { value: 'In welcher Stadt wurden Sie geboren?', label: 'In welcher Stadt wurden Sie geboren?' },
+                      { value: 'Wie lautet der Name Ihrer Grundschule?', label: 'Wie lautet der Name Ihrer Grundschule?' },
+                      { value: 'Wie lautet der zweite Vorname Ihres Vaters?', label: 'Wie lautet der zweite Vorname Ihres Vaters?' }
+                    ]}
+                  />
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -2649,7 +3000,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     {(mitglied?.foto_pfad || photoPreview) ? (
                       <div className="foto-preview">
                         <img
-                          src={photoPreview || (mitglied?.foto_pfad ? `/uploads/${mitglied.foto_pfad.replace('uploads/', '')}` : '/src/assets/default-avatar.png')}
+                          src={photoPreview || (mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}
                           alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                           className="mitglied-foto-small"
                           onClick={() => {
@@ -2658,7 +3009,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               <html>
                                 <head><title>${mitglied?.vorname} ${mitglied?.nachname}</title></head>
                                 <body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-                                  <img src="${photoPreview || (mitglied?.foto_pfad ? `/uploads/${mitglied.foto_pfad.replace('uploads/', '')}` : '/src/assets/default-avatar.png')}"
+                                  <img src="${photoPreview || (mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}"
                                        style="max-width:90vw; max-height:90vh; object-fit:contain;" />
                                 </body>
                               </html>
@@ -2675,36 +3026,36 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             style={{ display: 'none' }}
                             disabled={uploadingPhoto}
                           />
-                          <label htmlFor="photo-upload" style={{
-                            background: 'transparent',
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            color: '#ffd700',
-                            padding: '8px 16px',
-                            fontSize: '0.85rem',
-                            borderRadius: '8px',
-                            cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.3s ease',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            opacity: uploadingPhoto ? 0.5 : 1
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!uploadingPhoto) {
-                              e.target.style.background = 'rgba(255, 215, 0, 0.15)';
-                              e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                              e.target.style.color = '#ffed4e';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.background = 'transparent';
-                            e.target.style.borderColor = 'rgba(255, 215, 0, 0.3)';
-                            e.target.style.color = '#ffd700';
-                          }}>
-                            {uploadingPhoto ? '⏳ Hochladen...' : '📷 Ändern'}
-                          </label>
+                          <button
+                            onClick={() => document.getElementById('photo-upload').click()}
+                            disabled={uploadingPhoto}
+                            style={{
+                              background: 'rgba(42, 42, 78, 0.6)',
+                              border: '1px solid rgba(255, 215, 0, 0.3)',
+                              color: '#ffd700',
+                              padding: '8px 16px',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              borderRadius: '8px',
+                              cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
+                              opacity: uploadingPhoto ? 0.5 : 1,
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!uploadingPhoto) {
+                                e.target.style.background = 'rgba(255, 215, 0, 0.15)';
+                                e.target.style.borderColor = 'rgba(255, 215, 0, 0.6)';
+                                e.target.style.color = '#ffed4e';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = 'rgba(42, 42, 78, 0.6)';
+                              e.target.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+                              e.target.style.color = '#ffd700';
+                            }}
+                          >
+                            {uploadingPhoto ? '⏳ Hochladen...' : '📷 Foto ändern'}
+                          </button>
                           <button
                             onClick={handlePhotoDelete}
                             className="btn btn-sm"
@@ -2998,13 +3349,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <div>
                   <label>Newsletter-Abonnement:</label>
                   {editMode ? (
-                    <select
+                    <CustomSelect
                       value={updatedData.newsletter_abo || "1"}
                       onChange={(e) => handleChange(e, "newsletter_abo")}
-                    >
-                      <option value="1">Ja, Newsletter erhalten</option>
-                      <option value="0">Nein, kein Newsletter</option>
-                    </select>
+                      options={[
+                        { value: '1', label: 'Ja, Newsletter erhalten' },
+                        { value: '0', label: 'Nein, kein Newsletter' }
+                      ]}
+                    />
                   ) : (
                     <span>{mitglied.newsletter_abo ? "? Abonniert" : "? Nicht abonniert"}</span>
                   )}
@@ -3015,20 +3367,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <div>
                     <label>Marketing-Quelle:</label>
                     {editMode ? (
-                      <select
+                      <CustomSelect
                         value={updatedData.marketing_quelle || ""}
                         onChange={(e) => handleChange(e, "marketing_quelle")}
-                    >
-                      <option value="">Bitte auswählen...</option>
-                      <option value="Google">Google-Suche</option>
-                      <option value="Facebook">Facebook</option>
-                      <option value="Instagram">Instagram</option>
-                      <option value="Empfehlung">Empfehlung von Freunden</option>
-                      <option value="Flyer">Flyer/Werbung</option>
-                      <option value="Website">Eigene Website</option>
-                      <option value="Vorbeikommen">Vorbeigelaufen</option>
-                      <option value="Sonstiges">Sonstiges</option>
-                    </select>
+                        options={[
+                          { value: '', label: 'Bitte auswählen...' },
+                          { value: 'Google', label: 'Google-Suche' },
+                          { value: 'Facebook', label: 'Facebook' },
+                          { value: 'Instagram', label: 'Instagram' },
+                          { value: 'Empfehlung', label: 'Empfehlung von Freunden' },
+                          { value: 'Flyer', label: 'Flyer/Werbung' },
+                          { value: 'Website', label: 'Eigene Website' },
+                          { value: 'Vorbeikommen', label: 'Vorbeigelaufen' },
+                          { value: 'Sonstiges', label: 'Sonstiges' }
+                        ]}
+                      />
                     ) : (
                       <span>{mitglied.marketing_quelle || "Nicht angegeben"}</span>
                     )}
@@ -3054,13 +3407,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <div>
                     <label>Online-Portal:</label>
                     {editMode ? (
-                      <select
+                      <CustomSelect
                         value={updatedData.online_portal_aktiv || "0"}
                         onChange={(e) => handleChange(e, "online_portal_aktiv")}
-                      >
-                        <option value="1">Aktiv</option>
-                        <option value="0">Inaktiv</option>
-                      </select>
+                        options={[
+                          { value: '1', label: 'Aktiv' },
+                          { value: '0', label: 'Inaktiv' }
+                        ]}
+                      />
                     ) : (
                       <span>{mitglied.online_portal_aktiv ? "✅ Aktiv" : "? Inaktiv"}</span>
                     )}
@@ -3088,18 +3442,152 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <div className="field-group card kontostand-card">
                   <h3>Kontostand</h3>
                   {editMode ? (
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={updatedData.kontostand ?? 0}
-                      onChange={(e) => handleChange(e, "kontostand")}
-                    />
+                    <div>
+                      <label>Aktueller Kontostand:</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={updatedData.kontostand ?? 0}
+                        onChange={(e) => handleChange(e, "kontostand")}
+                      />
+                    </div>
                   ) : (
-                    <span>
-                      {mitglied.kontostand != null
-                        ? `${mitglied.kontostand.toFixed(2)} €`
-                        : "0.00 €"}
-                    </span>
+                    <div className="kontostand-details" style={{
+                      display: 'grid',
+                      gap: '1rem',
+                      marginTop: '1rem'
+                    }}>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 215, 0, 0.2)'
+                      }}>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          marginBottom: '0.5rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          Aktueller offener Betrag
+                        </div>
+                        <div style={{
+                          color: (() => {
+                            // Berechne Kontostand aus finanzDaten - nur unbezahlte Beiträge
+                            const kontostand = finanzDaten
+                              .filter(item => !item.bezahlt)
+                              .reduce((sum, item) => sum + (parseFloat(item.betrag) || 0), 0);
+                            return kontostand > 0 ? '#ef4444' : '#10b981';
+                          })(),
+                          fontSize: '1.2rem',
+                          fontWeight: '600'
+                        }}>
+                          {(() => {
+                            // Berechne offenen Betrag aus unbezahlten Beiträgen
+                            const kontostand = finanzDaten
+                              .filter(item => !item.bezahlt)
+                              .reduce((sum, item) => sum + (parseFloat(item.betrag) || 0), 0);
+                            return `${kontostand.toFixed(2)} €`;
+                          })()}
+                        </div>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.4)',
+                          marginTop: '0.5rem'
+                        }}>
+                          {(() => {
+                            const unbezahlt = finanzDaten.filter(item => !item.bezahlt).length;
+                            const bezahlt = finanzDaten.filter(item => item.bezahlt).length;
+                            return `${unbezahlt} offen, ${bezahlt} bezahlt`;
+                          })()}
+                        </div>
+                      </div>
+
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 215, 0, 0.2)'
+                      }}>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          marginBottom: '0.5rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          Letzter bezahlter Betrag
+                        </div>
+                        <div style={{
+                          color: '#ffffff',
+                          fontSize: '1.1rem',
+                          fontWeight: '600'
+                        }}>
+                          {(() => {
+                            const letzteZahlung = finanzDaten
+                              .filter(z => z.bezahlt && z.zahlungsdatum)
+                              .sort((a, b) => new Date(b.zahlungsdatum) - new Date(a.zahlungsdatum))[0];
+
+                            if (letzteZahlung) {
+                              return (
+                                <>
+                                  <div style={{fontSize: '1.2rem', marginBottom: '0.25rem'}}>
+                                    {parseFloat(letzteZahlung.betrag).toFixed(2)} €
+                                  </div>
+                                  <div style={{fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)'}}>
+                                    am {new Date(letzteZahlung.zahlungsdatum).toLocaleDateString('de-DE')}
+                                  </div>
+                                </>
+                              );
+                            }
+                            return <div style={{color: 'rgba(255, 255, 255, 0.5)'}}>Keine Zahlungen vorhanden</div>;
+                          })()}
+                        </div>
+                      </div>
+
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 215, 0, 0.2)'
+                      }}>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          marginBottom: '0.5rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          Kommender Betrag
+                        </div>
+                        <div style={{
+                          color: '#ffffff',
+                          fontSize: '1.1rem',
+                          fontWeight: '600'
+                        }}>
+                          {(() => {
+                            const aktiveVertraege = verträge.filter(v => v.status === 'aktiv');
+                            if (aktiveVertraege.length > 0) {
+                              const gesamtBeitrag = aktiveVertraege.reduce((sum, v) => {
+                                return sum + (parseFloat(v.monatsbeitrag) || 0);
+                              }, 0);
+                              return (
+                                <>
+                                  <div style={{fontSize: '1.2rem', marginBottom: '0.25rem'}}>
+                                    {gesamtBeitrag.toFixed(2)} €
+                                  </div>
+                                  <div style={{fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)'}}>
+                                    monatlich ({aktiveVertraege.length} {aktiveVertraege.length === 1 ? 'Vertrag' : 'Verträge'})
+                                  </div>
+                                </>
+                              );
+                            }
+                            return <div style={{color: 'rgba(255, 255, 255, 0.5)'}}>Kein aktiver Vertrag</div>;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -3107,9 +3595,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "medizinisch" && (
-            <div className="grid-container zwei-spalten">
+            <div className="medizinisch-container">
               <div className="field-group card">
-                <h3>🏥 Medizinische Informationen</h3>
+                <h3>Medizinische Informationen</h3>
                 <div className="allergie-management">
                   <label>⚠️ Allergien:</label>
                   {editMode ? (
@@ -3122,13 +3610,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           allergien.map((allergie) => (
                             <div key={allergie.id} className="allergie-tag">
                               <span className="allergie-name">{allergie.value}</span>
-                              <button 
+                              <button
                                 type="button"
                                 className="allergie-remove"
                                 onClick={() => removeAllergie(allergie.id)}
-                                title="Allergie entfernen"
+                                title="Allergie archivieren"
                               >
-                                ?
+                                ×
                               </button>
                             </div>
                           ))
@@ -3138,16 +3626,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       {/* Neue Allergie hinzufügen */}
                       <div className="allergie-add-form">
                         <div className="add-form-controls">
-                          <select
+                          <CustomSelect
                             value={newAllergie.type}
                             onChange={(e) => setNewAllergie({...newAllergie, type: e.target.value})}
                             className="allergie-select"
-                          >
-                            <option value="">Allergie auswählen...</option>
-                            {commonAllergies.map((allergy) => (
-                              <option key={allergy} value={allergy}>{allergy}</option>
-                            ))}
-                          </select>
+                            options={[
+                              { value: '', label: 'Allergie auswählen...' },
+                              ...commonAllergies.map(allergy => ({ value: allergy, label: allergy }))
+                            ]}
+                          />
                           
                           {newAllergie.type === 'Sonstiges' && (
                             <input
@@ -3159,14 +3646,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             />
                           )}
                           
-                          <button 
+                          <button
                             type="button"
                             onClick={addAllergie}
                             className="allergie-add-btn"
                             disabled={!newAllergie.type || (newAllergie.type === 'Sonstiges' && !newAllergie.custom.trim())}
                             title="Allergie hinzufügen"
                           >
-                            ? Hinzufügen
+                            + Hinzufügen
                           </button>
                         </div>
                       </div>
@@ -3187,6 +3674,57 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     </div>
                   )}
                 </div>
+
+                {/* Archivierte Allergien anzeigen */}
+                {allergienArchiv && allergienArchiv.length > 0 && (
+                  <div className="allergie-archiv" style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    background: 'rgba(255, 165, 0, 0.05)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 165, 0, 0.2)'
+                  }}>
+                    <label style={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255, 165, 0, 0.8)',
+                      fontWeight: '600',
+                      display: 'block',
+                      marginBottom: '0.5rem'
+                    }}>
+                      📋 Archivierte Allergien (gelöscht):
+                    </label>
+                    <div className="allergien-archiv-liste" style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem'
+                    }}>
+                      {allergienArchiv.map((allergie, index) => (
+                        <div key={index} style={{
+                          background: 'rgba(255, 165, 0, 0.1)',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(255, 165, 0, 0.3)',
+                          fontSize: '0.85rem'
+                        }}>
+                          <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                            {allergie.value}
+                          </span>
+                          {allergie.geloescht_am_readable && (
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              fontSize: '0.75rem',
+                              color: 'rgba(255, 165, 0, 0.6)',
+                              fontStyle: 'italic'
+                            }}>
+                              (gelöscht: {allergie.geloescht_am_readable})
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label>Medizinische Hinweise:</label>
                   {editMode ? (
@@ -3203,12 +3741,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               <div className="field-group card">
-                <h3>🚨 Notfallkontakte</h3>
+                <h3>Notfallkontakte</h3>
                 
                 {/* Notfallkontakt 1 */}
                 <div className="emergency-contact-section">
-                  <h4>🚨 Notfallkontakt 1 (Primär)</h4>
                   <div className="contact-grid">
+                    <div className="contact-header">
+                      <h4>🚨 Notfallkontakt 1 <span className="primary-badge">Primär</span></h4>
+                    </div>
                     <div>
                       <label>Name:</label>
                       {editMode ? (
@@ -3238,18 +3778,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     <div>
                       <label>Verhältnis:</label>
                       {editMode ? (
-                        <select
+                        <CustomSelect
                           value={updatedData.notfallkontakt_verhaeltnis || ""}
                           onChange={(e) => handleChange(e, "notfallkontakt_verhaeltnis")}
-                        >
-                          <option value="">Bitte wählen</option>
-                          <option value="Elternteil">Elternteil</option>
-                          <option value="Partner/in">Partner/in</option>
-                          <option value="Geschwister">Geschwister</option>
-                          <option value="Freund/in">Freund/in</option>
-                          <option value="Arzt">Hausarzt</option>
-                          <option value="Sonstiges">Sonstiges</option>
-                        </select>
+                          options={[
+                            { value: '', label: 'Bitte wählen' },
+                            { value: 'Elternteil', label: 'Elternteil' },
+                            { value: 'Partner/in', label: 'Partner/in' },
+                            { value: 'Geschwister', label: 'Geschwister' },
+                            { value: 'Freund/in', label: 'Freund/in' },
+                            { value: 'Arzt', label: 'Hausarzt' },
+                            { value: 'Sonstiges', label: 'Sonstiges' }
+                          ]}
+                        />
                       ) : (
                         <span>{mitglied.notfallkontakt_verhaeltnis || "Nicht angegeben"}</span>
                       )}
@@ -3259,8 +3800,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 {/* Notfallkontakt 2 */}
                 <div className="emergency-contact-section">
-                  <h4>📞 Notfallkontakt 2</h4>
                   <div className="contact-grid">
+                    <div className="contact-header">
+                      <h4>📞 Notfallkontakt 2</h4>
+                    </div>
                     <div>
                       <label>Name:</label>
                       {editMode ? (
@@ -3290,18 +3833,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     <div>
                       <label>Verhältnis:</label>
                       {editMode ? (
-                        <select
+                        <CustomSelect
                           value={updatedData.notfallkontakt2_verhaeltnis || ""}
                           onChange={(e) => handleChange(e, "notfallkontakt2_verhaeltnis")}
-                        >
-                          <option value="">Bitte wählen</option>
-                          <option value="Elternteil">Elternteil</option>
-                          <option value="Partner/in">Partner/in</option>
-                          <option value="Geschwister">Geschwister</option>
-                          <option value="Freund/in">Freund/in</option>
-                          <option value="Arzt">Hausarzt</option>
-                          <option value="Sonstiges">Sonstiges</option>
-                        </select>
+                          options={[
+                            { value: '', label: 'Bitte wählen' },
+                            { value: 'Elternteil', label: 'Elternteil' },
+                            { value: 'Partner/in', label: 'Partner/in' },
+                            { value: 'Geschwister', label: 'Geschwister' },
+                            { value: 'Freund/in', label: 'Freund/in' },
+                            { value: 'Arzt', label: 'Hausarzt' },
+                            { value: 'Sonstiges', label: 'Sonstiges' }
+                          ]}
+                        />
                       ) : (
                         <span>{mitglied.notfallkontakt2_verhaeltnis || "Nicht angegeben"}</span>
                       )}
@@ -3311,8 +3855,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 {/* Notfallkontakt 3 */}
                 <div className="emergency-contact-section">
-                  <h4>📞 Notfallkontakt 3</h4>
                   <div className="contact-grid">
+                    <div className="contact-header">
+                      <h4>📞 Notfallkontakt 3</h4>
+                    </div>
                     <div>
                       <label>Name:</label>
                       {editMode ? (
@@ -3342,18 +3888,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     <div>
                       <label>Verhältnis:</label>
                       {editMode ? (
-                        <select
+                        <CustomSelect
                           value={updatedData.notfallkontakt3_verhaeltnis || ""}
                           onChange={(e) => handleChange(e, "notfallkontakt3_verhaeltnis")}
-                        >
-                          <option value="">Bitte wählen</option>
-                          <option value="Elternteil">Elternteil</option>
-                          <option value="Partner/in">Partner/in</option>
-                          <option value="Geschwister">Geschwister</option>
-                          <option value="Freund/in">Freund/in</option>
-                          <option value="Arzt">Hausarzt</option>
-                          <option value="Sonstiges">Sonstiges</option>
-                        </select>
+                          options={[
+                            { value: '', label: 'Bitte wählen' },
+                            { value: 'Elternteil', label: 'Elternteil' },
+                            { value: 'Partner/in', label: 'Partner/in' },
+                            { value: 'Geschwister', label: 'Geschwister' },
+                            { value: 'Freund/in', label: 'Freund/in' },
+                            { value: 'Arzt', label: 'Hausarzt' },
+                            { value: 'Sonstiges', label: 'Sonstiges' }
+                          ]}
+                        />
                       ) : (
                         <span>{mitglied.notfallkontakt3_verhaeltnis || "Nicht angegeben"}</span>
                       )}
@@ -3377,7 +3924,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           {activeTab === "dokumente" && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div className="field-group card">
-                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>📋 Dokumente & Einverständnisse</h3>
+                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Dokumente & Einverständnisse</h3>
                 {(() => {
                   // 🔍 Hole Daten aus dem aktiven Vertrag (falls vorhanden), sonst aus mitglied
                   const activeContract = verträge.find(v => v.status === 'aktiv') || verträge[0];
@@ -3696,40 +4243,134 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* 🔒 ADMIN-ONLY: SEPA-Lastschriftmandat (Banking Information) */}
               {isAdmin && sepaMandate && (
-                <div className="field-group card">
-                  <h3>🏦 Aktuelles SEPA-Lastschriftmandat</h3>
-                  <div className="aktuelles-mandat-item">
-                    <div className="mandat-info">
-                      <div className="mandat-header">
-                        <span className="mandatsreferenz aktiv">
-                          🔖 {sepaMandate.mandatsreferenz}
+                <div className="field-group card bank-sub-tab-content">
+                  <h3 style={{ 
+                    fontSize: '0.8rem', 
+                    color: '#FFD700', 
+                    marginBottom: '1rem',
+                    textTransform: 'uppercase',
+                    fontWeight: '700',
+                    letterSpacing: '0.5px',
+                    borderBottom: '1px solid rgba(255, 215, 0, 0.3)',
+                    paddingBottom: '0.75rem'
+                  }}>
+                    Aktuelles SEPA-Lastschriftmandat
+                  </h3>
+                  
+                  <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  gap: '1.5rem',
+                  padding: '1.25rem',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Header mit Referenz und Status */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <span style={{ 
+                          fontSize: '0.8rem', 
+                          color: '#e74c3c',
+                          fontWeight: '600'
+                        }}>
+                          {sepaMandate.mandatsreferenz}
                         </span>
-                        <span className="status-badge active">
-                          Status: Aktiv
+                        <span style={{ 
+                          fontSize: '0.8rem', 
+                          color: 'rgba(255, 255, 255, 0.7)'
+                        }}>
+                          STATUS: AKTIV
                         </span>
-                      </div>
-                      <div className="mandat-details">
-                        <span>Erstellt: {new Date(sepaMandate.erstellungsdatum).toLocaleDateString('de-DE')}</span>
-                        <span>Gläubiger-ID: {sepaMandate.glaeubiger_id}</span>
-                        <span>IBAN: {sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)}****${sepaMandate.iban.slice(-4)}` : 'N/A'}</span>
-                      </div>
-                      <div className="mandat-banking">
-                        <span>Kontoinhaber: {sepaMandate.kontoinhaber}</span>
-                        <span>BIC: {sepaMandate.bic}</span>
                       </div>
                     </div>
-                    <div className="mandat-actions">
-                      <button 
-                        className="btn btn-primary btn-sm"
-                        onClick={() => downloadSepaMandate()}
-                        title="PDF herunterladen"
-                      >
-                        📄 PDF
-                      </button>
+
+                    {/* Mandat Details */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr',
+                      gap: '0.75rem 1rem',
+                      fontSize: '0.8rem'
+                    }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>Erstellt:</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                        {new Date(sepaMandate.erstellungsdatum).toLocaleDateString('de-DE', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </span>
+
+                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>Gläubiger-ID:</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)', wordBreak: 'break-word' }}>
+                        {sepaMandate.glaeubiger_id || 'N/A'}
+                      </span>
+
+                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>IBAN:</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'monospace' }}>
+                        {sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)} **** ${sepaMandate.iban.slice(-4)}` : 'N/A'}
+                      </span>
+
+                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>Kontoinhaber:</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                        {sepaMandate.kontoinhaber || 'N/A'}
+                      </span>
+
+                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>BIC:</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'monospace' }}>
+                        {sepaMandate.bic || 'N/A'}
+                      </span>
                     </div>
                   </div>
-                  <div className="info-box">
-                    <p>ℹ️ <strong>Hinweis:</strong> Dieses Mandat ist derzeit aktiv und wird für SEPA-Lastschriften verwendet.</p>
+
+                  {/* Actions */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
+                    gap: '0.5rem'
+                  }}>
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => downloadSepaMandate()}
+                      title="PDF herunterladen"
+                      style={{
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        whiteSpace: 'nowrap',
+                        background: 'transparent',
+                        border: '1px solid rgba(255, 215, 0, 0.2)',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                      }}
+                    >
+                      PDF
+                    </button>
+                  </div>
+                </div>
+
+                  <div className="info-box" style={{ marginTop: '1rem' }}>
+                    <p style={{ fontSize: '0.8rem', margin: 0 }}>
+                      <strong>Hinweis:</strong> Dieses Mandat ist derzeit aktiv und wird für SEPA-Lastschriften verwendet.
+                    </p>
                   </div>
                 </div>
               )}
@@ -3737,7 +4378,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* 🔒 ADMIN-ONLY: Archivierte SEPA-Mandate */}
               {isAdmin && archivierteMandate.length > 0 && (
                 <div className="field-group card">
-                  <h3>📦 Archivierte & Widerrufene SEPA-Mandate</h3>
+                  <h3>Archivierte & Widerrufene SEPA-Mandate</h3>
                   <div className="archivierte-mandate-liste">
                     {archivierteMandate.map((mandat, index) => (
                       <div key={mandat.mandat_id} className="archiviertes-mandat-item">
@@ -3793,7 +4434,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* Dokumente aus Vorlagen generieren - NUR FÜR ADMINS */}
               {isAdmin && (
                 <div className="field-group card">
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>📝 Dokumente aus Vorlagen generieren</h3>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Dokumente aus Vorlagen generieren</h3>
                   {verfügbareVorlagen.length === 0 ? (
                     <div className="info-box">
                       <p>ℹ️ Keine Vorlagen verfügbar. Erstellen Sie zuerst Vorlagen im Bereich "Vertragsdokumente".</p>
@@ -3881,17 +4522,53 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                 className="btn btn-primary btn-sm"
                                 onClick={() => generateDocumentFromTemplate(vorlage.id, vorlage.name)}
                                 disabled={generatingDocument}
-                                style={{ flex: 1 }}
+                                style={{ 
+                                  flex: 1,
+                                  background: 'transparent',
+                                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                                  color: 'rgba(255, 255, 255, 0.7)',
+                                  transition: 'all 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!e.currentTarget.disabled) {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!e.currentTarget.disabled) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                                  }
+                                }}
                               >
-                                {generatingDocument ? '⏳ Generiere...' : '📄 PDF erstellen'}
+                                {generatingDocument ? 'Generiere...' : 'PDF erstellen'}
                               </button>
                               <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => downloadTemplateAsPDF(vorlage.id, vorlage.name)}
-                                style={{ flex: 1 }}
+                                style={{ 
+                                  flex: 1,
+                                  background: 'transparent',
+                                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                                  color: 'rgba(255, 255, 255, 0.7)',
+                                  transition: 'all 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                  e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = 'transparent';
+                                  e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                                }}
                                 title="Vorlage als PDF herunterladen"
                               >
-                                ⬇️ Vorlage
+                                Vorlage
                               </button>
                             </div>
                           </div>
@@ -3904,14 +4581,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Liste der gespeicherten Dokumente */}
               <div className="field-group card">
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>📁 Gespeicherte Dokumente</h3>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Gespeicherte Dokumente</h3>
                 {mitgliedDokumente.length === 0 ? (
                   <div className="info-box">
                     <p>ℹ️ Keine Dokumente vorhanden. {isAdmin ? 'Generieren Sie Dokumente aus den Vorlagen oben.' : 'Es wurden noch keine Dokumente für Sie erstellt.'}</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {mitgliedDokumente.map((dok) => (
+                    {mitgliedDokumente.filter(dok => !dok.dokumentname.startsWith('Rechnung')).map((dok) => (
                       <div
                         key={dok.id}
                         style={{
@@ -3926,7 +4603,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       >
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
-                            📄 {dok.dokumentname}
+                            {dok.dokumentname}
                           </div>
                           <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
                             Erstellt: {new Date(dok.erstellt_am).toLocaleDateString('de-DE', {
@@ -3941,19 +4618,75 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button
-                            className="btn btn-primary btn-sm"
+                            className="dashboard-button"
                             onClick={() => downloadMitgliedDokument(dok.id, dok.dokumentname)}
                             title="Dokument herunterladen"
                           >
-                            ⬇️ Download
+                            Download
                           </button>
                           {isAdmin && (
                             <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => deleteMitgliedDokument(dok.id)}
+                              className="dashboard-button"
+                              onClick={() => deleteMitgliedDokument(dok)}
                               title="Dokument löschen"
                             >
-                              👁️
+                              Löschen
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Rechnungen */}
+              <div className="field-group card">
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Rechnungen</h3>
+                {rechnungen.length === 0 ? (
+                  <div className="info-box">
+                    <p>ℹ️ Keine Rechnungen vorhanden.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {rechnungen.map((rechnung) => (
+                      <div
+                        key={rechnung.rechnung_id}
+                        style={{
+                          padding: '1rem',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          background: '#f9fafb',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                            {rechnung.rechnungsnummer}
+                          </div>
+                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                            Datum: {new Date(rechnung.datum).toLocaleDateString('de-DE')} | 
+                            Betrag: {Number(rechnung.betrag).toFixed(2)} € | 
+                            Status: {rechnung.status_text || rechnung.status}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="dashboard-button"
+                            onClick={() => window.open(`/api/rechnungen/${rechnung.rechnung_id}/pdf`, '_blank')}
+                            title="Rechnung als PDF anzeigen"
+                          >
+                            PDF anzeigen
+                          </button>
+                          {isAdmin && (
+                            <button
+                              className="dashboard-button"
+                              onClick={() => deleteRechnung(rechnung)}
+                              title="Rechnung löschen"
+                            >
+                              Löschen
                             </button>
                           )}
                         </div>
@@ -4127,9 +4860,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
                     {activeTab === "familie" && (
-            <div className="grid-container">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div className="field-group card">
-                <h3>👨‍👩‍👧‍👦 Familienmanagement</h3>
+                <h3>Familienmanagement</h3>
                 <div>
                   <label>Familien-ID:</label>
                   {editMode ? (
@@ -4167,17 +4900,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <div>
                   <label>Rabatt-Grund:</label>
                   {editMode ? (
-                    <select
+                    <CustomSelect
                       value={updatedData.rabatt_grund || ""}
                       onChange={(e) => handleChange(e, "rabatt_grund")}
-                    >
-                      <option value="">Kein Rabatt</option>
-                      <option value="Familie">Familienrabatt</option>
-                      <option value="Student">Studenten-Rabatt</option>
-                      <option value="Senior">Senioren-Rabatt</option>
-                      <option value="Geschwister">Geschwister-Rabatt</option>
-                      <option value="Sonstiges">Sonstiges</option>
-                    </select>
+                      options={[
+                        { value: '', label: 'Kein Rabatt' },
+                        { value: 'Familie', label: 'Familienrabatt' },
+                        { value: 'Student', label: 'Studenten-Rabatt' },
+                        { value: 'Senior', label: 'Senioren-Rabatt' },
+                        { value: 'Geschwister', label: 'Geschwister-Rabatt' },
+                        { value: 'Sonstiges', label: 'Sonstiges' }
+                      ]}
+                    />
                   ) : (
                     <span>{mitglied.rabatt_grund || "Kein Rabatt"}</span>
                   )}
@@ -4189,87 +4923,315 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 )}
               </div>
 
-              <div className="field-group card">
-                <h3>👤 Gesetzliche Vertreter</h3>
-                <div>
-                  <label>Vertreter 1 - Name:</label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      value={updatedData.vertreter1_name || ""}
-                      onChange={(e) => handleChange(e, "vertreter1_name")}
-                      placeholder="Vor- und Nachname"
-                    />
-                  ) : (
-                    <span>{mitglied.vertreter1_name || "Nicht angegeben"}</span>
-                  )}
-                </div>
-                <div>
-                  <label>Vertreter 1 - Telefon:</label>
-                  {editMode ? (
-                    <input
-                      type="tel"
-                      value={updatedData.vertreter1_telefon || ""}
-                      onChange={(e) => handleChange(e, "vertreter1_telefon")}
-                      placeholder="+49 123 456789"
-                    />
-                  ) : (
-                    <span>{mitglied.vertreter1_telefon || "Nicht angegeben"}</span>
-                  )}
-                </div>
-                <div>
-                  <label>Vertreter 1 - E-Mail:</label>
-                  {editMode ? (
-                    <input
-                      type="email"
-                      value={updatedData.vertreter1_email || ""}
-                      onChange={(e) => handleChange(e, "vertreter1_email")}
-                      placeholder="vertreter@example.com"
-                    />
-                  ) : (
-                    <span>{mitglied.vertreter1_email || "Nicht angegeben"}</span>
-                  )}
-                </div>
-                <div>
-                  <label>Vertreter 2 - Name:</label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      value={updatedData.vertreter2_name || ""}
-                      onChange={(e) => handleChange(e, "vertreter2_name")}
-                      placeholder="Vor- und Nachname (optional)"
-                    />
-                  ) : (
-                    <span>{mitglied.vertreter2_name || "Nicht angegeben"}</span>
-                  )}
-                </div>
-                <div>
-                  <label>Vertreter 2 - Telefon:</label>
-                  {editMode ? (
-                    <input
-                      type="tel"
-                      value={updatedData.vertreter2_telefon || ""}
-                      onChange={(e) => handleChange(e, "vertreter2_telefon")}
-                      placeholder="+49 123 456789"
-                    />
-                  ) : (
-                    <span>{mitglied.vertreter2_telefon || "Nicht angegeben"}</span>
-                  )}
-                </div>
-                <div>
-                  <label>Vertreter 2 - E-Mail:</label>
-                  {editMode ? (
-                    <input
-                      type="email"
-                      value={updatedData.vertreter2_email || ""}
-                      onChange={(e) => handleChange(e, "vertreter2_email")}
-                      placeholder="vertreter2@example.com"
-                    />
-                  ) : (
-                    <span>{mitglied.vertreter2_email || "Nicht angegeben"}</span>
-                  )}
-                </div>
-                <div className="info-box">
+              <div className="field-group card" style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ marginBottom: '1.5rem' }}>Gesetzliche Vertreter</h3>
+                {editMode ? (
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '1.5rem'
+                  }}>
+                    {/* Vertreter 1 */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '200px 1fr 250px 1fr',
+                      gap: '1rem',
+                      alignItems: 'center',
+                      padding: '1rem',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>Vertreter:</label>
+                      <select
+                        value={updatedData.vertreter1_typ || ""}
+                        onChange={(e) => {
+                          handleChange(e, "vertreter1_typ");
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        <option value="">Bitte wählen</option>
+                        <option value="Vater">Vater</option>
+                        <option value="Mutter">Mutter</option>
+                        <option value="Opa">Opa</option>
+                        <option value="Oma">Oma</option>
+                        <option value="sonstiger gesetzl. Vertreter">Sonstiger gesetzl. Vertreter</option>
+                      </select>
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>Telefon:</label>
+                      <input
+                        type="tel"
+                        value={updatedData.vertreter1_telefon || ""}
+                        onChange={(e) => handleChange(e, "vertreter1_telefon")}
+                        placeholder="+49 123 456789"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>Name:</label>
+                      <input
+                        type="text"
+                        value={updatedData.vertreter1_name || ""}
+                        onChange={(e) => handleChange(e, "vertreter1_name")}
+                        placeholder="Vor- und Nachname"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>E-Mail:</label>
+                      <input
+                        type="email"
+                        value={updatedData.vertreter1_email || ""}
+                        onChange={(e) => handleChange(e, "vertreter1_email")}
+                        placeholder="vertreter@example.com"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+
+                    {/* Vertreter 2 */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '200px 1fr 250px 1fr',
+                      gap: '1rem',
+                      alignItems: 'center',
+                      padding: '1rem',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>Vertreter:</label>
+                      <select
+                        value={updatedData.vertreter2_typ || ""}
+                        onChange={(e) => {
+                          handleChange(e, "vertreter2_typ");
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        <option value="">Bitte wählen</option>
+                        <option value="Vater">Vater</option>
+                        <option value="Mutter">Mutter</option>
+                        <option value="Opa">Opa</option>
+                        <option value="Oma">Oma</option>
+                        <option value="sonstiger gesetzl. Vertreter">Sonstiger gesetzl. Vertreter</option>
+                      </select>
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>Telefon:</label>
+                      <input
+                        type="tel"
+                        value={updatedData.vertreter2_telefon || ""}
+                        onChange={(e) => handleChange(e, "vertreter2_telefon")}
+                        placeholder="+49 123 456789"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>Name:</label>
+                      <input
+                        type="text"
+                        value={updatedData.vertreter2_name || ""}
+                        onChange={(e) => handleChange(e, "vertreter2_name")}
+                        placeholder="Vor- und Nachname (optional)"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <label style={{ 
+                        color: 'rgba(255, 255, 255, 0.7)', 
+                        fontWeight: '500',
+                        fontSize: '0.9rem'
+                      }}>E-Mail:</label>
+                      <input
+                        type="email"
+                        value={updatedData.vertreter2_email || ""}
+                        onChange={(e) => handleChange(e, "vertreter2_email")}
+                        placeholder="vertreter2@example.com"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '4px',
+                          color: '#fff',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: '0.9rem',
+                      minWidth: '600px'
+                    }}>
+                      <thead>
+                        <tr style={{
+                          borderBottom: '2px solid rgba(255, 215, 0, 0.3)',
+                          background: 'rgba(255, 215, 0, 0.05)'
+                        }}>
+                          <th style={{
+                            padding: '1rem',
+                            textAlign: 'left',
+                            color: '#FFD700',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            minWidth: '200px'
+                          }}>Vertreter</th>
+                          <th style={{
+                            padding: '1rem',
+                            textAlign: 'left',
+                            color: '#FFD700',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            minWidth: '200px'
+                          }}>Name</th>
+                          <th style={{
+                            padding: '1rem',
+                            textAlign: 'left',
+                            color: '#FFD700',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            minWidth: '180px'
+                          }}>Telefon</th>
+                          <th style={{
+                            padding: '1rem',
+                            textAlign: 'left',
+                            color: '#FFD700',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            minWidth: '250px'
+                          }}>E-Mail</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(mitglied.vertreter1_name || mitglied.vertreter1_typ) && (
+                          <tr style={{
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                          }}>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter1_typ || 'Nicht angegeben'}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter1_name || 'Nicht angegeben'}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter1_telefon || 'Nicht angegeben'}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter1_email || 'Nicht angegeben'}
+                            </td>
+                          </tr>
+                        )}
+                        {(mitglied.vertreter2_name || mitglied.vertreter2_typ) && (
+                          <tr style={{
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                          }}>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter2_typ || 'Nicht angegeben'}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter2_name || 'Nicht angegeben'}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter2_telefon || 'Nicht angegeben'}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              {mitglied.vertreter2_email || 'Nicht angegeben'}
+                            </td>
+                          </tr>
+                        )}
+                        {(!mitglied.vertreter1_name && !mitglied.vertreter1_typ && !mitglied.vertreter2_name && !mitglied.vertreter2_typ) && (
+                          <tr>
+                            <td colSpan="4" style={{ 
+                              padding: '2rem', 
+                              textAlign: 'center', 
+                              color: 'rgba(255, 255, 255, 0.5)',
+                              fontStyle: 'italic'
+                            }}>
+                              Keine Vertreter eingetragen
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <div className="info-box" style={{ marginTop: '1rem' }}>
                   <p>ℹ️ <strong>Hinweis:</strong> Vertreter-Informationen sind nur für minderjährige Mitglieder erforderlich oder wenn eine gesetzliche Vertretung vorliegt.</p>
                 </div>
               </div>
@@ -4310,15 +5272,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text'
                   }}>
-                    📄 Vertragsverwaltung
+                    Vertragsverwaltung
                   </h3>
 
                   {isAdmin && (
                     <>
                       <button
-                        className={`btn ${
-                          mitglied?.vertragsfrei ? 'btn-success' : 'btn-warning'
-                        }`}
+                        className={`vertragsfrei-button ${mitglied?.vertragsfrei ? 'vertragsfrei-button-active' : ''}`}
                         onClick={async () => {
                           const isVertragsfrei = !mitglied?.vertragsfrei;
                           const grund = isVertragsfrei
@@ -4357,33 +5317,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       </button>
 
                       <button
+                        className="neuer-vertrag-button"
                         onClick={() => setShowNewVertrag(true)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(255, 215, 0, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%)';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.2)';
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%)',
-                          color: '#FFD700',
-                          border: '1px solid rgba(255, 215, 0, 0.4)',
-                          borderRadius: '10px',
-                          padding: '0.75rem 1.5rem',
-                          fontSize: '0.95rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          boxShadow: '0 4px 12px rgba(255, 215, 0, 0.2)',
-                          marginLeft: '0.75rem'
-                        }}
                       >
                         ➕ Neuer Vertrag
                       </button>
@@ -4934,32 +5869,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     </p>
                     {isAdmin && (
                       <button
+                        className="neuer-vertrag-button"
                         onClick={() => setShowNewVertrag(true)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 8px 20px rgba(255, 215, 0, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%)';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.2)';
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%)',
-                          color: '#FFD700',
-                          border: '1px solid rgba(255, 215, 0, 0.4)',
-                          borderRadius: '10px',
-                          padding: '0.75rem 1.5rem',
-                          fontSize: '0.95rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          boxShadow: '0 4px 12px rgba(255, 215, 0, 0.2)'
-                        }}
                       >
                         ➕ Ersten Vertrag erstellen
                       </button>
@@ -5062,7 +5973,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* Monatliche Übersicht */}
               {statistikDaten.monthlyStats && statistikDaten.monthlyStats.length > 0 && (
                 <div className="monthly-overview">
-                  <h3>📅 Monatliche Übersicht</h3>
+                  <h3>Monatliche Übersicht</h3>
                   <div className="monthly-grid">
                     {statistikDaten.monthlyStats.map((monthStat, index) => (
                       <div key={index} className={`month-item ${monthStat.count === 0 ? 'no-data' : ''}`}>
@@ -5078,7 +5989,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Anwesenheitsliste */}
               <div className="anwesenheit-liste">
-                <h3>📋 Letzte Anwesenheiten</h3>
+                <h3>Letzte Anwesenheiten</h3>
                 <div className="attendance-grid">
                   {anwesenheitsDaten.filter(a => a.anwesend).length > 0 ? (
                     anwesenheitsDaten
@@ -5104,28 +6015,33 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {activeTab === "finanzen" && (
             <div className="finance-management-container">
-              {/* Sub-Tabs für Finanzen */}
-              <div className="sub-tabs">
+              {/* Sub-Tabs für Finanzen - Horizontal mit Sidebar-Design */}
+              <div className="finance-sub-tabs" style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginBottom: '1.5rem',
+                flexWrap: 'wrap'
+              }}>
                 <button
-                  className={`sub-tab-btn ${financeSubTab === "finanzübersicht" ? "active" : ""}`}
+                  className={`finance-sub-tab-btn ${financeSubTab === "finanzübersicht" ? "active" : ""}`}
                   onClick={() => setFinanceSubTab("finanzübersicht")}
                 >
-                  💰 FinanzÜbersicht
+                  💰 Finanzübersicht
                 </button>
                 <button
-                  className={`sub-tab-btn ${financeSubTab === "zahlungshistorie" ? "active" : ""}`}
+                  className={`finance-sub-tab-btn ${financeSubTab === "zahlungshistorie" ? "active" : ""}`}
                   onClick={() => setFinanceSubTab("zahlungshistorie")}
                 >
                   📊 Zahlungshistorie
                 </button>
                 <button
-                  className={`sub-tab-btn ${financeSubTab === "beitraege" ? "active" : ""}`}
+                  className={`finance-sub-tab-btn ${financeSubTab === "beitraege" ? "active" : ""}`}
                   onClick={() => setFinanceSubTab("beitraege")}
                 >
                   💳 Beiträge
                 </button>
                 <button
-                  className={`sub-tab-btn ${financeSubTab === "bank" ? "active" : ""}`}
+                  className={`finance-sub-tab-btn ${financeSubTab === "bank" ? "active" : ""}`}
                   onClick={() => setFinanceSubTab("bank")}
                 >
                   🏦 Bank & SEPA
@@ -5134,147 +6050,304 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {financeSubTab === "finanzübersicht" && (
                 <div className="finanzübersicht-sub-tab-content">
-                  <div className="grid-container">
-                    <div className="field-group card">
-                      <h3>💰 FinanzÜbersicht</h3>
-                      <div className="finance-stats">
-                        <div className="stat-item">
-                          <label>Gesamte Zahlungen:</label>
-                          <span className="stat-value positive">
-                            {finanzDaten.length > 0 ?
-                              `${finanzDaten.filter(f => f.bezahlt).reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0).toFixed(2)} €` :
-                              "0,00 €"}
-                          </span>
+                  {(() => {
+                    // Berechnungen für die Finanzübersicht
+                    const bezahlteZahlungen = finanzDaten.filter(f => f.bezahlt);
+                    const offeneZahlungen = finanzDaten.filter(f => !f.bezahlt);
+                    const gesamtBezahlt = bezahlteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                    const gesamtOffen = offeneZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                    const gesamtBetrag = gesamtBezahlt + gesamtOffen;
+                    const durchschnittBeitrag = finanzDaten.length > 0 ? gesamtBetrag / finanzDaten.length : 0;
+                    const aufnahmegebuehren = verträge && verträge.length > 0 
+                      ? verträge.reduce((sum, v) => sum + (v.aufnahmegebuehr_cents || 0), 0) / 100 
+                      : 0;
+                    
+                    // Letzte Zahlung
+                    const letzteZahlung = bezahlteZahlungen.length > 0
+                      ? bezahlteZahlungen.sort((a, b) => new Date(b.zahlungsdatum || b.datum) - new Date(a.zahlungsdatum || a.datum))[0]
+                      : null;
+                    
+                    // Kommende Zahlung (nächste ausstehende)
+                    const kommendeZahlung = offeneZahlungen.length > 0
+                      ? offeneZahlungen.sort((a, b) => {
+                          const dateA = new Date(a.datum || a.zahlungsdatum);
+                          const dateB = new Date(b.datum || b.zahlungsdatum);
+                          return dateA - dateB;
+                        })[0]
+                      : null;
+                    
+                    // Jahresstatistiken
+                    const jetzt = new Date();
+                    const aktuellesJahr = jetzt.getFullYear();
+                    const jahresZahlungen = bezahlteZahlungen.filter(f => {
+                      const date = new Date(f.zahlungsdatum || f.datum);
+                      return date.getFullYear() === aktuellesJahr;
+                    });
+                    const jahresEinnahmen = jahresZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                    
+                    // Durchschnittliche Zahlungsdauer (Tage zwischen Fälligkeit und Zahlung)
+                    // Nur für generierte Einträge relevant (haben datum/faelligkeitsdatum)
+                    const zahlungenMitDauer = bezahlteZahlungen
+                      .filter(f => f.datum && f.zahlungsdatum && f.generiert)
+                      .map(f => {
+                        const faellig = new Date(f.datum); // Bei generierten ist datum = faelligkeitsdatum
+                        const bezahlt = new Date(f.zahlungsdatum);
+                        return Math.max(0, Math.floor((bezahlt - faellig) / (1000 * 60 * 60 * 24)));
+                      });
+                    const durchschnittlicheZahlungsdauer = zahlungenMitDauer.length > 0
+                      ? Math.round(zahlungenMitDauer.reduce((a, b) => a + b, 0) / zahlungenMitDauer.length)
+                      : 0;
+                    
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {/* KPI-Karten */}
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                          gap: '1.25rem' 
+                        }}>
+                          <div className="finance-kpi-card" style={{
+                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '12px',
+                            padding: '1.5rem',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                              <span style={{ fontSize: '2rem' }}>⚠️</span>
+                              <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+                                Offene Beträge
+                              </h4>
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ef4444', marginBottom: '0.25rem' }}>
+                              {gesamtOffen.toFixed(2)} €
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                              {offeneZahlungen.length} ausstehende Beiträge
+                            </div>
+                          </div>
+                          
+                          <div className="finance-kpi-card" style={{
+                            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%)',
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            borderRadius: '12px',
+                            padding: '1.5rem',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                              <span style={{ fontSize: '2rem' }}>📊</span>
+                              <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+                                Ø Beitrag
+                              </h4>
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ffd700', marginBottom: '0.25rem' }}>
+                              {durchschnittBeitrag.toFixed(2)} €
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                              Pro Zahlung
+                            </div>
+                          </div>
+                          
+                          {letzteZahlung && (
+                            <div className="finance-kpi-card" style={{
+                              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)',
+                              border: '1px solid rgba(34, 197, 94, 0.3)',
+                              borderRadius: '12px',
+                              padding: '1.5rem',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                <span style={{ fontSize: '2rem' }}>✅</span>
+                                <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+                                  Letzte Zahlung
+                                </h4>
+                              </div>
+                              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#22c55e', marginBottom: '0.25rem' }}>
+                                {parseFloat(letzteZahlung.betrag || 0).toFixed(2)} €
+                              </div>
+                              <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                                {new Date(letzteZahlung.zahlungsdatum || letzteZahlung.datum).toLocaleDateString("de-DE")}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="finance-kpi-card" style={{
+                            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: '12px',
+                            padding: '1.5rem',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                              <span style={{ fontSize: '2rem' }}>📅</span>
+                              <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+                                Nächste Zahlung
+                              </h4>
+                            </div>
+                            {kommendeZahlung ? (
+                              <>
+                                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#3b82f6', marginBottom: '0.25rem' }}>
+                                  {parseFloat(kommendeZahlung.betrag || 0).toFixed(2)} €
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                                  {new Date(kommendeZahlung.datum || kommendeZahlung.zahlungsdatum).toLocaleDateString("de-DE")}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#3b82f6', marginBottom: '0.25rem' }}>
+                                  -
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                                  Keine ausstehenden Zahlungen
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div className="stat-item">
-                          <label>Offene Beträge:</label>
-                          <span className="stat-value negative">
-                            {finanzDaten.length > 0 ?
-                              `${finanzDaten.filter(f => !f.bezahlt).reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0).toFixed(2)} €` :
-                              "0,00 €"}
-                          </span>
-                        </div>
-                        <div className="stat-item">
-                          <label>Durchschnittlicher Beitrag:</label>
-                          <span className="stat-value">
-                            {finanzDaten.length > 0 ?
-                              `${(finanzDaten.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0) / finanzDaten.length).toFixed(2)} €` :
-                              "0,00 €"}
-                          </span>
-                        </div>
-                        <div className="stat-item">
-                          <label>Letzter Zahlungseingang:</label>
-                          <span className="stat-value">
-                            {finanzDaten.length > 0 ?
-                              new Date(Math.max(...finanzDaten.map(f => new Date(f.zahlungsdatum || f.datum)))).toLocaleDateString("de-DE") :
-                              "Keine Daten"}
-                          </span>
-                        </div>
-                        <div className="stat-item">
-                          <label>Anzahl Zahlungen:</label>
-                          <span className="stat-value">
-                            {finanzDaten.length} Zahlungen
-                          </span>
-                        </div>
-                        <div className="stat-item">
-                          <label>Zahlungsmethode:</label>
-                          <span className="stat-value">{mitglied?.zahlungsmethode || "Nicht angegeben"}</span>
-                        </div>
-                        <div className="stat-item">
-                          <label>Aufnahmegebühren (gesamt):</label>
-                          <span className="stat-value" style={{ color: '#ff9800' }}>
-                            {vertraege && vertraege.length > 0 ?
-                              `${(vertraege.reduce((sum, v) => sum + (v.aufnahmegebuehr_cents || 0), 0) / 100).toFixed(2)} €` :
-                              "0,00 €"}
-                          </span>
+                        
+                        {/* Detaillierte Statistiken */}
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                          gap: '1.25rem' 
+                        }}>
+                          <div className="field-group card">
+                            <h3 style={{ 
+                              marginTop: 0, 
+                              marginBottom: '1rem',
+                              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text'
+                            }}>
+                              Zahlungsinformationen
+                            </h3>
+                            <div className="finance-stats">
+                              <div className="stat-item">
+                                <label>Zahlungsmethode:</label>
+                                <span className="stat-value">
+                                  {mitglied?.zahlungsmethode || "Nicht angegeben"}
+                                </span>
+                              </div>
+                              {letzteZahlung && (
+                                <div className="stat-item">
+                                  <label>Letzter Zahlungseingang:</label>
+                                  <span className="stat-value">
+                                    {new Date(letzteZahlung.zahlungsdatum || letzteZahlung.datum).toLocaleDateString("de-DE")}
+                                  </span>
+                                </div>
+                              )}
+                              {durchschnittlicheZahlungsdauer > 0 && (
+                                <div className="stat-item">
+                                  <label>Ø Zahlungsdauer:</label>
+                                  <span className="stat-value">
+                                    {durchschnittlicheZahlungsdauer} Tage
+                                  </span>
+                                </div>
+                              )}
+                              {aufnahmegebuehren > 0 && (
+                                <div className="stat-item">
+                                  <label>Aufnahmegebühren:</label>
+                                  <span className="stat-value" style={{ color: '#ff9800' }}>
+                                    {aufnahmegebuehren.toFixed(2)} €
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               )}
 
               {financeSubTab === "zahlungshistorie" && (
                 <div className="zahlungshistorie-sub-tab-content">
-                  <div className="grid-container">
-                    <div className="field-group card">
-                      <h3>📊 Zahlungshistorie</h3>
-                      <div className="payment-list-clean">
-                        {finanzDaten.length > 0 ? (
-                          finanzDaten
-                            .sort((a, b) => new Date(b.zahlungsdatum || b.datum) - new Date(a.zahlungsdatum || a.datum))
-                            .map((payment, index) => (
-                              <div key={index} className="payment-entry">
-                                <div className="payment-date">
-                                  {new Date(payment.zahlungsdatum || payment.datum).toLocaleDateString("de-DE")}
-                                </div>
-                                <div className="payment-details">
-                                  <div className="payment-title">Monatlicher Beitrag</div>
-                                  <div className="payment-method">
-                                    {payment.zahlungsart?.toLowerCase() === 'überweisung' || payment.zahlungsart?.toLowerCase() === 'Überweisung' ? '💳 Überweisung' :
-                                     payment.zahlungsart?.toLowerCase() === 'lastschrift' ? '🏦 Lastschrift' :
-                                     payment.zahlungsart?.toLowerCase() === 'bar' ? '💵 Bar' :
-                                     payment.zahlungsart || 'Unbekannt'}
-                                  </div>
-                                </div>
-                                <div className="payment-amount">
-                                  {payment.betrag ? `${parseFloat(payment.betrag).toFixed(2)} €` : "0,00 €"}
-                                </div>
-                                <div className="payment-status">
-                                  {payment.bezahlt ? '? Bezahlt' : '? Ausstehend'}
-                                </div>
-                              </div>
-                            ))
-                        ) : (
-                          <div className="no-data-message">
-                            <p>ℹ️ Keine Zahlungshistorie verfügbar</p>
-                            <small>Es wurden noch keine Zahlungen erfasst.</small>
-                          </div>
-                        )}
+                  <div className="field-group card" style={{ width: '100%' }}>
+                    <h3>Zahlungshistorie</h3>
+                    {finanzDaten.length > 0 ? (
+                      <div className="zahlungshistorie-table-wrapper">
+                        <table className="zahlungshistorie-table">
+                          <thead>
+                            <tr>
+                              <th>Zahlungsdatum</th>
+                              <th>Fälligkeitsdatum</th>
+                              <th>Betrag</th>
+                              <th>Zahlungsart</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {finanzDaten
+                              .sort((a, b) => {
+                                const dateA = new Date(b.zahlungsdatum || b.datum);
+                                const dateB = new Date(a.zahlungsdatum || a.datum);
+                                return dateA - dateB;
+                              })
+                              .map((payment, index) => {
+                                // Gleiche Logik wie in calculatePeriodSums für bezahlt-Status
+                                const isPaid = payment.bezahlt === true || payment.bezahlt === 1 || payment.bezahlt === "1" || String(payment.bezahlt) === "1";
+                                
+                                return (
+                                  <tr key={payment.beitrag_id || index} className={isPaid ? 'paid-row' : 'unpaid-row'}>
+                                    <td>
+                                      {payment.zahlungsdatum 
+                                        ? new Date(payment.zahlungsdatum).toLocaleDateString("de-DE")
+                                        : "-"}
+                                    </td>
+                                    <td>
+                                      {payment.datum
+                                        ? new Date(payment.datum).toLocaleDateString("de-DE")
+                                        : payment.zahlungsdatum
+                                          ? new Date(payment.zahlungsdatum).toLocaleDateString("de-DE")
+                                          : "-"}
+                                    </td>
+                                    <td className="betrag">
+                                      {payment.betrag ? `${parseFloat(payment.betrag).toFixed(2)} €` : "0,00 €"}
+                                    </td>
+                                    <td>
+                                      {payment.zahlungsart?.toLowerCase() === 'überweisung' || payment.zahlungsart?.toLowerCase() === 'Überweisung' ? '💳 Überweisung' :
+                                       payment.zahlungsart?.toLowerCase() === 'lastschrift' || payment.zahlungsart?.toLowerCase() === 'direct_debit' ? '🏦 Lastschrift' :
+                                       payment.zahlungsart?.toLowerCase() === 'bar' ? '💵 Bar' :
+                                       payment.zahlungsart || 'Unbekannt'}
+                                    </td>
+                                    <td>
+                                      <span className={`status-badge ${isPaid ? 'status-paid' : 'status-unpaid'}`}>
+                                        {isPaid ? '✅ Bezahlt' : '⏳ Ausstehend'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="no-data-message">
+                        <p>ℹ️ Keine Zahlungshistorie verfügbar</p>
+                        <small>Es wurden noch keine Zahlungen erfasst.</small>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {financeSubTab === "beitraege" && (
                 <div className="beitraege-sub-tab-content">
-                  {/* Ansichtsfilter für Beiträge - außerhalb der Card */}
-                  <div className="beitraege-view-filter">
-                    <button
-                      className={`view-filter-btn ${beitraegeViewMode === "monat" ? "active" : ""}`}
-                      onClick={() => setBeiträgeViewMode("monat")}
-                    >
-                      📅 Monat
-                    </button>
-                    <button
-                      className={`view-filter-btn ${beitraegeViewMode === "quartal" ? "active" : ""}`}
-                      onClick={() => setBeiträgeViewMode("quartal")}
-                    >
-                      📊 Quartal
-                    </button>
-                    <button
-                      className={`view-filter-btn ${beitraegeViewMode === "jahr" ? "active" : ""}`}
-                      onClick={() => setBeiträgeViewMode("jahr")}
-                    >
-                      📆 Jahr
-                    </button>
-                  </div>
-
-                  <div className="field-group card" style={{ width: '100%' }}>
-                    <h3>💳 Beiträge & Zahlungen</h3>
-
-                    {/* Gruppierte Beiträge-Ansicht */}
-                      {(() => {
+                  {(() => {
                         // Funktion zum Gruppieren der Beiträge
                         const groupBeiträge = (data, mode) => {
                           const groups = {};
-                          const sortedData = [...data].sort((a, b) =>
-                            new Date(b.zahlungsdatum || b.datum) - new Date(a.zahlungsdatum || a.datum)
-                          );
+                          const sortedData = [...data].sort((a, b) => {
+                            const dateA = new Date(a.datum || a.zahlungsdatum);
+                            const dateB = new Date(b.datum || b.zahlungsdatum);
+                            return dateB - dateA;
+                          });
 
                           sortedData.forEach(beitrag => {
-                            const date = new Date(beitrag.zahlungsdatum || beitrag.datum);
+                            const date = new Date(beitrag.datum || beitrag.zahlungsdatum);
                             let key = '';
 
                             if (mode === 'monat') {
@@ -5310,26 +6383,271 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                         // Berechne Summen für einen Zeitraum
                         const calculatePeriodSums = (beitraege) => {
-                          const total = beitraege.reduce((sum, b) => sum + parseFloat(b.betrag), 0);
-                          const paid = beitraege.filter(b => b.bezahlt).reduce((sum, b) => sum + parseFloat(b.betrag), 0);
-                          const unpaid = beitraege.filter(b => !b.bezahlt).reduce((sum, b) => sum + parseFloat(b.betrag), 0);
+                          let total = 0;
+                          let paid = 0;
+                          let unpaid = 0;
+                          
+                          beitraege.forEach(b => {
+                            const betrag = parseFloat(b.betrag || 0);
+                            if (isNaN(betrag)) return; // Überspringe ungültige Beträge
+                            
+                            total += betrag;
+                            
+                            // Prüfe bezahlt-Status: MySQL gibt TINYINT(1) als 0 oder 1 zurück
+                            // Konvertiere zu Number für sichere Prüfung - handle auch String "0"/"1"
+                            const bezahltValue = b.bezahlt === true || b.bezahlt === 1 || b.bezahlt === "1" || String(b.bezahlt) === "1";
+                            
+                            if (bezahltValue) {
+                              paid += betrag;
+                            } else {
+                              unpaid += betrag;
+                            }
+                          });
+                          
                           return { total, paid, unpaid };
                         };
 
-                        if (finanzDaten.length === 0) {
-                          return (
-                            <div className="no-data-message">
-                              <p>📭 Keine Beiträge vorhanden</p>
-                              <small>Es wurden noch keine Beiträge erfasst.</small>
-                            </div>
-                          );
-                        }
+                        // Funktion zum Generieren zukünftiger Beiträge basierend auf Vertragsdaten
+                        const generateZukuenftigeBeitraege = () => {
+                          const generierteBeitraege = [];
+                          const jetzt = new Date();
+                          jetzt.setHours(0, 0, 0, 0);
+                          
+                          // Aktive Verträge finden (auch gekündigte, aber noch laufende)
+                          const aktiveVertraege = verträge.filter(v => {
+                            if (v.status !== 'aktiv') return false;
+                            if (!v.vertragsbeginn) return false;
+                            return true;
+                          });
 
-                        const grouped = groupBeiträge(finanzDaten, beitraegeViewMode);
+                          
+                          aktiveVertraege.forEach(vertrag => {
+                            const vertragsbeginn = new Date(vertrag.vertragsbeginn);
+                            vertragsbeginn.setHours(0, 0, 0, 0);
+                            
+                            // Bestimme das tatsächliche Vertragsende
+                            let vertragsende = null;
+                            let kuendigungsdatum = null; // Speichere Kündigungsdatum für anteilige Berechnung (vor setHours)
+                            let vertragsendeOriginal = null; // Speichere originales Vertragsende für Monatsvergleiche
+                            
+                            // Wenn gekündigt, verwende Kündigungsdatum
+                            if (vertrag.kuendigung_eingegangen || vertrag.kuendigungsdatum) {
+                              kuendigungsdatum = vertrag.kuendigungsdatum 
+                                ? new Date(vertrag.kuendigungsdatum)
+                                : vertrag.kuendigung_eingegangen 
+                                  ? new Date(vertrag.kuendigung_eingegangen)
+                                  : null;
+                              if (kuendigungsdatum) {
+                                vertragsendeOriginal = new Date(kuendigungsdatum);
+                                vertragsende = new Date(kuendigungsdatum);
+                              }
+                            } else if (vertrag.vertragsende) {
+                              vertragsendeOriginal = new Date(vertrag.vertragsende);
+                              vertragsende = new Date(vertrag.vertragsende);
+                            }
+                            
+                            // Prüfe ob Vertrag verlängert wurde (vertragsende überschritten, nicht gekündigt, automatische Verlängerung)
+                            if (vertragsende && vertrag.automatische_verlaengerung && !vertrag.kuendigung_eingegangen) {
+                              const heute = new Date();
+                              heute.setHours(0, 0, 0, 0);
+                              
+                              if (heute > vertragsende) {
+                                // Vertrag wurde verlängert - berechne neues Ende
+                                const verlaengerungMonate = vertrag.verlaengerung_monate || 12;
+                                vertragsende = new Date(vertragsende);
+                                vertragsende.setMonth(vertragsende.getMonth() + verlaengerungMonate);
+                                vertragsendeOriginal = new Date(vertragsende);
+                              }
+                            }
+                            
+                            // Wenn kein vertragsende, verwende aktuelles Datum + 12 Monate
+                            if (!vertragsende) {
+                              vertragsende = new Date();
+                              vertragsende.setMonth(vertragsende.getMonth() + 12);
+                              vertragsendeOriginal = new Date(vertragsende);
+                            }
+                            
+                            vertragsende.setHours(23, 59, 59, 999);
+                            
+                            // Monatlicher Beitrag
+                            const monatsbeitrag = parseFloat(vertrag.monatsbeitrag || vertrag.monatlicher_beitrag || 0);
+                            if (monatsbeitrag <= 0) return;
+                            
+                            // Fälligkeitstag im Monat
+                            const faelligkeitTag = vertrag.faelligkeit_tag || 1;
+                            
+                            // Starte ab dem ersten Monat nach Vertragsbeginn
+                            let aktuellesDatum = new Date(vertragsbeginn);
+                            aktuellesDatum.setDate(faelligkeitTag);
+                            
+                            // Wenn Vertragsbeginn in der Vergangenheit liegt, starte ab heute
+                            if (aktuellesDatum < jetzt) {
+                              aktuellesDatum = new Date(jetzt);
+                              aktuellesDatum.setDate(faelligkeitTag);
+                              // Wenn der Tag bereits vorbei ist, nächsten Monat
+                              if (aktuellesDatum < jetzt) {
+                                aktuellesDatum.setMonth(aktuellesDatum.getMonth() + 1);
+                              }
+                            }
+                            
+                            // Generiere Beiträge bis zum Vertragsende
+                            while (aktuellesDatum <= vertragsende) {
+                              // Prüfe ob dieser Beitrag bereits existiert (auch bezahlt)
+                              // Prüfe nach Monat/Jahr und Betrag, nicht nur exaktes Datum
+                              const aktuellerMonat = aktuellesDatum.getMonth();
+                              const aktuellesJahr = aktuellesDatum.getFullYear();
+                              
+                              // Prüfe ob bereits ein Beitrag für diesen Monat existiert
+                              const existiertBereits = finanzDaten.some(f => {
+                                // Nur zahlungsdatum prüfen (einziges Datumsfeld in beitraege-Tabelle)
+                                // Ignoriere Artikel-Verkäufe (haben magicline_description)
+                                if (f.magicline_description) {
+                                  return false; // Artikel-Verkäufe nicht als Monatsbeitrag zählen
+                                }
+
+                                const fDatumZahlung = f.zahlungsdatum ? new Date(f.zahlungsdatum) : null;
+
+                                if (!fDatumZahlung || isNaN(fDatumZahlung.getTime())) {
+                                  return false;
+                                }
+
+                                // Prüfe ob im gleichen Monat/Jahr
+                                return fDatumZahlung.getMonth() === aktuellerMonat &&
+                                       fDatumZahlung.getFullYear() === aktuellesJahr;
+                              });
+                              
+                              if (!existiertBereits) {
+                                // Prüfe ob letzter Monat und Kündigung - dann anteilig berechnen
+                                let betrag = monatsbeitrag;
+                                
+                                // Prüfe ob es der letzte Monat ist (verwende kuendigungsdatum oder vertragsendeOriginal vor setHours)
+                                const endeDatum = kuendigungsdatum || vertragsendeOriginal;
+                                const istLetzterMonat = endeDatum && 
+                                                         aktuellesDatum.getMonth() === endeDatum.getMonth() &&
+                                                         aktuellesDatum.getFullYear() === endeDatum.getFullYear();
+                                
+                                if (istLetzterMonat && kuendigungsdatum) {
+                                  // Anteilsmäßige Berechnung für letzten Monat
+                                  const monatsAnfang = new Date(aktuellesDatum.getFullYear(), aktuellesDatum.getMonth(), 1);
+                                  const monatsEnde = new Date(aktuellesDatum.getFullYear(), aktuellesDatum.getMonth() + 1, 0);
+                                  const tageImMonat = monatsEnde.getDate();
+                                  
+                                  // Verwende das ursprüngliche Kündigungsdatum (vor setHours) für korrekte Tag-Berechnung
+                                  const kuendigungsTag = kuendigungsdatum.getDate();
+                                  const tageBisKündigung = Math.min(kuendigungsTag, tageImMonat);
+                                  
+                                  // Berechne anteiligen Betrag: Anzahl Tage bis Kündigung / Gesamttage im Monat
+                                  const anteil = tageBisKündigung / tageImMonat;
+                                  betrag = Math.round(monatsbeitrag * anteil * 100) / 100; // Runde auf 2 Dezimalstellen
+                                }
+                                
+                                // Datum in Lokalzeit formatieren (NICHT UTC um Timezone-Verschiebung zu vermeiden)
+                                const year = aktuellesDatum.getFullYear();
+                                const month = String(aktuellesDatum.getMonth() + 1).padStart(2, '0');
+                                const day = String(aktuellesDatum.getDate()).padStart(2, '0');
+                                const localDateString = `${year}-${month}-${day}`;
+
+                                generierteBeitraege.push({
+                                  beitrag_id: `generated_${vertrag.id}_${aktuellesDatum.getTime()}`,
+                                  betrag: betrag.toFixed(2),
+                                  zahlungsdatum: null,
+                                  faelligkeitsdatum: localDateString,
+                                  datum: localDateString,
+                                  zahlungsart: vertrag.payment_method === 'direct_debit' ? 'Lastschrift' :
+                                              vertrag.payment_method === 'transfer' ? 'Überweisung' :
+                                              vertrag.payment_method || 'Unbekannt',
+                                  bezahlt: 0,
+                                  generiert: true, // Flag um zu markieren dass es generiert wurde
+                                  vertrag_id: vertrag.id,
+                                  anteilig: istLetzterMonat && kuendigungsdatum !== null
+                                });
+                              }
+                              
+                              // Nächsten Monat
+                              aktuellesDatum.setMonth(aktuellesDatum.getMonth() + 1);
+                            }
+                          });
+                          
+                          return generierteBeitraege;
+                        };
+                        
+                        // Kombiniere vorhandene und generierte Beiträge
+                        const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
+                        const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
+                        
+                        // Sortiere nach Datum (neueste zuerst)
+                        alleBeitraege.sort((a, b) => {
+                          // Generierte Beiträge haben 'datum', echte Beiträge haben 'zahlungsdatum'
+                          const dateA = new Date(a.datum || a.zahlungsdatum);
+                          const dateB = new Date(b.datum || b.zahlungsdatum);
+                          return dateB - dateA;
+                        });
+                        
+                        const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
                         const periodKeys = Object.keys(grouped).sort().reverse();
-
+                        
                         return (
-                          <div className="beitraege-grouped-view">
+                          <>
+                            {/* Ansichtsfilter für Beiträge - außerhalb der Card */}
+                            <div className="beitraege-view-filter" style={{ marginBottom: '1rem' }}>
+                              <button
+                                className={`view-filter-btn ${beitraegeViewMode === "monat" ? "active" : ""}`}
+                                onClick={() => setBeiträgeViewMode("monat")}
+                              >
+                                📅 Monat
+                              </button>
+                              <button
+                                className={`view-filter-btn ${beitraegeViewMode === "quartal" ? "active" : ""}`}
+                                onClick={() => setBeiträgeViewMode("quartal")}
+                              >
+                                📊 Quartal
+                              </button>
+                              <button
+                                className={`view-filter-btn ${beitraegeViewMode === "jahr" ? "active" : ""}`}
+                                onClick={() => setBeiträgeViewMode("jahr")}
+                              >
+                                📆 Jahr
+                              </button>
+                              <button
+                                className="view-filter-btn"
+                                onClick={() => {
+                                  // Berechne periodKeys neu für den Button
+                                  const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
+                                  const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
+                                  const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
+                                  const periodKeys = Object.keys(grouped).sort().reverse();
+                                  
+                                  const allCollapsed = periodKeys.length > 0 && periodKeys.every(key => collapsedPeriods[key] === true);
+                                  const newState = {};
+                                  periodKeys.forEach(key => {
+                                    newState[key] = !allCollapsed;
+                                  });
+                                  setCollapsedPeriods(newState);
+                                }}
+                                style={{ whiteSpace: 'nowrap' }}
+                              >
+                                {(() => {
+                                  const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
+                                  const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
+                                  const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
+                                  const periodKeys = Object.keys(grouped).sort().reverse();
+                                  const allCollapsed = periodKeys.length > 0 && periodKeys.every(key => collapsedPeriods[key] === true);
+                                  return allCollapsed ? '📂 Alle ausklappen' : '📁 Alle einklappen';
+                                })()}
+                              </button>
+                            </div>
+
+                            <div className="field-group card" style={{ width: '100%' }}>
+                              <h3>Beiträge & Zahlungen</h3>
+
+                              {/* Gruppierte Beiträge-Ansicht */}
+                              {alleBeitraege.length === 0 ? (
+                                <div className="no-data-message">
+                                  <p>📭 Keine Beiträge vorhanden</p>
+                                  <small>Es wurden noch keine Beiträge erfasst und es gibt keinen aktiven Vertrag.</small>
+                                </div>
+                              ) : (
+                                <div className="beitraege-grouped-view">
                             {periodKeys.map(periodKey => {
                               const beitraege = grouped[periodKey];
                               const sums = calculatePeriodSums(beitraege);
@@ -5375,6 +6693,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                       <table className="beitraege-table">
                                         <thead>
                                           <tr>
+                                            <th style={{width: '1px', padding: '0.5rem 0'}}></th>
                                             <th>Datum</th>
                                             <th>Betrag</th>
                                             <th>Zahlungsart</th>
@@ -5383,12 +6702,66 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          {beitraege.map((beitrag) => (
-                                            <tr key={beitrag.beitrag_id} className={beitrag.bezahlt ? 'paid' : 'unpaid'}>
-                                              <td>{new Date(beitrag.zahlungsdatum || beitrag.datum).toLocaleDateString("de-DE")}</td>
-                                              <td className="betrag">{parseFloat(beitrag.betrag).toFixed(2)} €</td>
+                                          {beitraege.map((beitrag) => {
+                                            const isExpanded = expandedBeitraege[beitrag.beitrag_id];
+                                            return (
+                                              <React.Fragment key={beitrag.beitrag_id}>
+                                            <tr className={beitrag.bezahlt ? 'paid' : 'unpaid'} style={{
+                                              opacity: beitrag.generiert ? 0.8 : 1
+                                            }}>
+                                              <td style={{textAlign: 'center', padding: '0.5rem 0.1rem', whiteSpace: 'nowrap', width: '1px'}}>
+                                                {!beitrag.generiert && beitrag.beitrag_id && (
+                                                  <button
+                                                    onClick={() => setExpandedBeitraege(prev => ({
+                                                      ...prev,
+                                                      [beitrag.beitrag_id]: !prev[beitrag.beitrag_id]
+                                                    }))}
+                                                    style={{
+                                                      background: 'none',
+                                                      border: 'none',
+                                                      cursor: 'pointer',
+                                                      fontSize: '0.65rem',
+                                                      color: 'rgba(255, 215, 0, 0.8)',
+                                                      transition: 'transform 0.2s',
+                                                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                                      padding: 0,
+                                                      lineHeight: 1,
+                                                      display: 'inline-block',
+                                                      width: 'auto'
+                                                    }}
+                                                    title="Details anzeigen"
+                                                  >
+                                                    ▶
+                                                  </button>
+                                                )}
+                                              </td>
                                               <td>
-                                                {beitrag.zahlungsart?.toLowerCase() === 'überweisung' || beitrag.zahlungsart?.toLowerCase() === 'überweisung' ? '💳 Überweisung' :
+                                                {new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString("de-DE")}
+                                                {beitrag.generiert && (
+                                                  <span style={{ 
+                                                    fontSize: '0.75rem', 
+                                                    color: 'rgba(255, 215, 0, 0.7)',
+                                                    marginLeft: '0.5rem'
+                                                  }} title="Automatisch generiert basierend auf Vertragsdaten">
+                                                    🔮
+                                                  </span>
+                                                )}
+                                              </td>
+                                              <td className="betrag">
+                                                {parseFloat(beitrag.betrag).toFixed(2)} €
+                                                {beitrag.anteilig && (
+                                                  <span style={{ 
+                                                    fontSize: '0.75rem', 
+                                                    color: 'rgba(255, 215, 0, 0.7)',
+                                                    marginLeft: '0.5rem',
+                                                    fontStyle: 'italic'
+                                                  }} title="Anteiliger Beitrag für letzten Monat bei Kündigung">
+                                                    (anteilig)
+                                                  </span>
+                                                )}
+                                              </td>
+                                              <td>
+                                                {beitrag.zahlungsart?.toLowerCase() === 'überweisung' || beitrag.zahlungsart?.toLowerCase() === 'Überweisung' ? '💳 Überweisung' :
                                                  beitrag.zahlungsart?.toLowerCase() === 'lastschrift' ? '🏦 Lastschrift' :
                                                  beitrag.zahlungsart?.toLowerCase() === 'bar' ? '💵 Bar' :
                                                  beitrag.zahlungsart || 'Unbekannt'}
@@ -5404,24 +6777,38 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                                     className={`btn-toggle-payment ${beitrag.bezahlt ? 'btn-mark-unpaid' : 'btn-mark-paid'}`}
                                                     onClick={async () => {
                                                       try {
-                                                        console.log('🔄 Ändere Bezahlt-Status für Beitrag:', beitrag.beitrag_id);
-                                                        console.log('📦 Aktuelles Beitrag-Objekt:', beitrag);
+                                                        // Für generierte Beiträge: Erstelle neuen Beitrag in DB
+                                                        if (beitrag.generiert) {
+                                                          const zahlungsdatum = beitrag.bezahlt 
+                                                            ? null 
+                                                            : new Date().toISOString().split('T')[0];
+                                                          
+                                                          const newBeitrag = {
+                                                            mitglied_id: mitglied.mitglied_id,
+                                                            betrag: parseFloat(beitrag.betrag),
+                                                            zahlungsart: beitrag.zahlungsart,
+                                                            zahlungsdatum: zahlungsdatum,
+                                                            bezahlt: beitrag.bezahlt ? 0 : 1
+                                                          };
+                                                          
+                                                          await axios.post('/beitraege', newBeitrag);
+                                                          fetchFinanzDaten();
+                                                        } else {
+                                                          // Für vorhandene Beiträge: Update
+                                                          const zahlungsdatum = beitrag.zahlungsdatum 
+                                                            ? new Date(beitrag.zahlungsdatum).toISOString().split('T')[0]
+                                                            : (beitrag.bezahlt ? null : new Date().toISOString().split('T')[0]);
 
-                                                        // Datum im richtigen Format (YYYY-MM-DD)
-                                                        const zahlungsdatum = new Date(beitrag.zahlungsdatum).toISOString().split('T')[0];
+                                                          const updateData = {
+                                                            betrag: parseFloat(beitrag.betrag),
+                                                            zahlungsart: beitrag.zahlungsart,
+                                                            zahlungsdatum: zahlungsdatum,
+                                                            bezahlt: beitrag.bezahlt ? 0 : 1
+                                                          };
 
-                                                        const updateData = {
-                                                          betrag: parseFloat(beitrag.betrag),
-                                                          zahlungsart: beitrag.zahlungsart,
-                                                          zahlungsdatum: zahlungsdatum,
-                                                          bezahlt: beitrag.bezahlt ? 0 : 1
-                                                        };
-
-                                                        console.log('📤 Sende Update:', updateData);
-
-                                                        const response = await axios.put(`/beitraege/${beitrag.beitrag_id}`, updateData);
-                                                        console.log('✅ Status geändert:', response.data);
-                                                        fetchFinanzDaten();
+                                                          await axios.put(`/beitraege/${beitrag.beitrag_id}`, updateData);
+                                                          fetchFinanzDaten();
+                                                        }
                                                       } catch (err) {
                                                         console.error('❌ Fehler beim Aktualisieren:', err);
                                                         console.error('❌ Error Details:', err.response?.data || err.message);
@@ -5433,7 +6820,69 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                                 )}
                                               </td>
                                             </tr>
-                                          ))}
+                                            {isExpanded && !beitrag.generiert && (
+                                              <tr className="beitrag-details-row">
+                                                <td colSpan="6" style={{
+                                                  padding: '1rem 1.5rem',
+                                                  background: 'rgba(255, 215, 0, 0.05)',
+                                                  borderLeft: '3px solid rgba(255, 215, 0, 0.5)'
+                                                }}>
+                                                  <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                                                    gap: '0.75rem',
+                                                    fontSize: '0.85rem',
+                                                    color: 'rgba(255, 255, 255, 0.9)'
+                                                  }}>
+                                                    <div>
+                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Beitrags-ID:</strong>
+                                                      <span>#{beitrag.beitrag_id}</span>
+                                                    </div>
+                                                    {beitrag.magicline_description && (
+                                                      <div style={{gridColumn: '1 / -1'}}>
+                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Beschreibung:</strong>
+                                                        <span>{beitrag.magicline_description}</span>
+                                                      </div>
+                                                    )}
+                                                    {(beitrag.datum || beitrag.zahlungsdatum) && (
+                                                      <div>
+                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Datum:</strong>
+                                                        <span>{new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</span>
+                                                      </div>
+                                                    )}
+                                                    {beitrag.zahlungsdatum && (
+                                                      <div>
+                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Zahlungsdatum:</strong>
+                                                        <span>{new Date(beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</span>
+                                                      </div>
+                                                    )}
+                                                    <div>
+                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Betrag (brutto):</strong>
+                                                      <span>{parseFloat(beitrag.betrag).toFixed(2)} €</span>
+                                                    </div>
+                                                    <div>
+                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Zahlungsart:</strong>
+                                                      <span>{beitrag.zahlungsart || 'Nicht angegeben'}</span>
+                                                    </div>
+                                                    <div>
+                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Status:</strong>
+                                                      <span style={{color: beitrag.bezahlt ? '#4caf50' : '#ff9800'}}>
+                                                        {beitrag.bezahlt ? 'Bezahlt' : 'Ausstehend'}
+                                                      </span>
+                                                    </div>
+                                                    {beitrag.dojo_id && (
+                                                      <div>
+                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Dojo-ID:</strong>
+                                                        <span>#{beitrag.dojo_id}</span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            )}
+                                              </React.Fragment>
+                                            );
+                                          })}
                                         </tbody>
                                       </table>
                                     </div>
@@ -5441,18 +6890,20 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                 </div>
                               );
                             })}
-                          </div>
+                                </div>
+                              )}
+                            </div>
+                          </>
                         );
                       })()}
-                  </div>
                 </div>
               )}
 
               {financeSubTab === "bank" && (
                 <div className="bank-sub-tab-content">
                   <div className="grid-container">
-                    <div className="field-group card">
-                      <h3>🏦 Bankdaten</h3>
+                    <div className="field-group card bank-sepa-card">
+                      <h3 className="bank-sepa-heading">Bankdaten</h3>
                       <div>
                         <label>IBAN:</label>
                         {editMode ? (
@@ -5508,15 +6959,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       <div>
                         <label>Zahlungsmethode:</label>
                         {editMode ? (
-                          <select
+                          <CustomSelect
                             value={updatedData.zahlungsmethode || ""}
                             onChange={(e) => handleChange(e, "zahlungsmethode")}
-                          >
-                            <option value="SEPA-Lastschrift">SEPA-Lastschrift</option>
-                            <option value="Lastschrift">Lastschrift</option>
-                            <option value="Bar">Bar</option>
-                            <option value="Überweisung">Überweisung</option>
-                          </select>
+                            options={[
+                              { value: 'SEPA-Lastschrift', label: 'SEPA-Lastschrift' },
+                              { value: 'Lastschrift', label: 'Lastschrift' },
+                              { value: 'Bar', label: 'Bar' },
+                              { value: 'Überweisung', label: 'Überweisung' }
+                            ]}
+                          />
                         ) : (
                           <span>{mitglied.zahlungsmethode || "Nicht angegeben"}</span>
                         )}
@@ -5536,8 +6988,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       </div>
                     </div>
 
-                    <div className="field-group card">
-                      <h3>🏦 SEPA-Lastschriftmandat</h3>
+                    <div className="field-group card bank-sepa-card">
+                      <h3 className="bank-sepa-heading">SEPA-Lastschriftmandat</h3>
                       {sepaMandate ? (
                         <div className="sepa-mandate-info">
                           <div className="mandate-status">
@@ -5555,10 +7007,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             <p><strong>Kontoinhaber:</strong> {sepaMandate.kontoinhaber}</p>
                           </div>
                           <div className="mandate-actions">
-                            <button className="btn btn-secondary" onClick={() => downloadSepaMandate()}>
+                            <button className="bank-sepa-button" onClick={() => downloadSepaMandate()}>
                               📥 Mandat herunterladen
                             </button>
-                            <button className="btn btn-warning" onClick={() => revokeSepaMandate()}>
+                            <button className="bank-sepa-button bank-sepa-button-warning" onClick={() => revokeSepaMandate()}>
                               ? Mandat widerrufen
                             </button>
                           </div>
@@ -5568,7 +7020,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           <p>Kein SEPA-Lastschriftmandat vorhanden.</p>
                           {mitglied?.iban && mitglied?.bic ? (
                             <button 
-                              className="btn btn-primary"
+                              className="bank-sepa-button bank-sepa-button-primary"
                               onClick={() => generateSepaMandate()}
                               disabled={generatingMandate}
                             >
@@ -6326,7 +7778,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           <div className="grid-container zwei-spalten">
                             {/* Karte 1: Aktuelle Graduierung */}
                             <div className="field-group card">
-                              <h3>🎖️ Aktuelle Graduierung</h3>
+                              <h3>Aktuelle Graduierung</h3>
                               <div>
                                 <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Gurtfarbe:</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
@@ -6447,7 +7899,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                             {/* Karte 2: Beschreibung */}
                             <div className="field-group card">
-                              <h3>📋 Beschreibung</h3>
+                              <h3>Beschreibung</h3>
                               <div>
                                 <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Über diesen Stil:</label>
                                 <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.6', marginTop: '0.5rem' }}>
@@ -6555,7 +8007,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   ) : (
                     <div className="grid-container">
                       <div className="field-group card">
-                        <h3>🥋 Stil-Verwaltung</h3>
+                        <h3>Stil-Verwaltung</h3>
                         <p style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>
                           Keine Stile zugeordnet
                         </p>
@@ -6584,35 +8036,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Button Container innerhalb des scrollbaren Bereichs */}
-          <div className="button-container" style={{
-            marginTop: '2rem',
-            paddingBottom: '2rem',
-            display: 'flex',
-            gap: '1rem',
-            justifyContent: 'flex-start'
-          }}>
-            {/* Edit/Save buttons - für Admin und Member */}
-            {!editMode ? (
-              <button className="edit-button" onClick={() => setEditMode(true)}>
-                {isAdmin ? 'Bearbeiten' : 'Meine Daten bearbeiten'}
-              </button>
-            ) : (
-              <button className="save-button" onClick={handleSave}>
-                Speichern
-              </button>
-            )}
-
-            {/* Back button - nur für Admin */}
-            {isAdmin && (
-              <button
-                className="back-button"
-                onClick={() => navigate("/dashboard/mitglieder")}
-              >
-                Zurück
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
@@ -6629,7 +8052,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             }}
           >
             <div className="modal-header">
-              <h3>➕ Neuer Vertrag</h3>
+              <h3>Neuer Vertrag</h3>
               <button
                 className="close-btn"
                 onClick={() => setShowNewVertrag(false)}
@@ -6719,7 +8142,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             }}
           >
             <div className="modal-header">
-              <h3>✏️ Vertrag bearbeiten</h3>
+              <h3>Vertrag bearbeiten</h3>
               <button 
                 className="close-btn"
                 onClick={() => setEditingVertrag(null)}
@@ -6731,15 +8154,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             <div className="form-grid">
               <div className="form-group">
                 <label>Status</label>
-                <select
+                <CustomSelect
                   value={editingVertrag.status}
                   onChange={(e) => setEditingVertrag({...editingVertrag, status: e.target.value})}
-                >
-                  <option value="aktiv">Aktiv</option>
-                  <option value="ruhepause">Ruhepause</option>
-                  <option value="gekuendigt">Gekündigt</option>
-                  <option value="beendet">Beendet</option>
-                </select>
+                  options={[
+                    { value: 'aktiv', label: 'Aktiv' },
+                    { value: 'ruhepause', label: 'Ruhepause' },
+                    { value: 'gekuendigt', label: 'Gekündigt' },
+                    { value: 'beendet', label: 'Beendet' }
+                  ]}
+                />
               </div>
               
               <div className="form-group">
@@ -6821,19 +8245,20 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             <div className="ruhepause-config-container">
               <div className="ruhepause-duration-selection">
                 <label>Dauer der Ruhepause *</label>
-                <select
+                <CustomSelect
                   value={ruhepauseDauer}
                   onChange={(e) => setRuhepauseDauer(parseInt(e.target.value))}
-                >
-                  <option value={1}>1 Monat</option>
-                  <option value={2}>2 Monate</option>
-                  <option value={3}>3 Monate</option>
-                  <option value={4}>4 Monate</option>
-                  <option value={5}>5 Monate</option>
-                  <option value={6}>6 Monate</option>
-                  <option value={9}>9 Monate</option>
-                  <option value={12}>12 Monate</option>
-                </select>
+                  options={[
+                    { value: 1, label: '1 Monat' },
+                    { value: 2, label: '2 Monate' },
+                    { value: 3, label: '3 Monate' },
+                    { value: 4, label: '4 Monate' },
+                    { value: 5, label: '5 Monate' },
+                    { value: 6, label: '6 Monate' },
+                    { value: 9, label: '9 Monate' },
+                    { value: 12, label: '12 Monate' }
+                  ]}
+                />
                 <small>Ruhepausen gelten immer für volle Monate</small>
               </div>
 
@@ -6943,19 +8368,20 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               <div className="form-group">
                 <label>Kündigungsgrund (Optional)</label>
-                <select
+                <CustomSelect
                   value={kuendigungsgrund}
                   onChange={(e) => setKündigungsgrund(e.target.value)}
-                >
-                  <option value="">Bitte wählen...</option>
-                  <option value="umzug">Umzug</option>
-                  <option value="finanzielle-gruende">Finanzielle Gründe</option>
-                  <option value="zeitmangel">Zeitmangel</option>
-                  <option value="krankheit">Krankheit/Verletzung</option>
-                  <option value="unzufriedenheit">Unzufriedenheit mit Service</option>
-                  <option value="anderer-verein">Wechsel zu anderem Verein</option>
-                  <option value="sonstiges">Sonstiges</option>
-                </select>
+                  options={[
+                    { value: '', label: 'Bitte wählen...' },
+                    { value: 'umzug', label: 'Umzug' },
+                    { value: 'finanzielle-gruende', label: 'Finanzielle Gründe' },
+                    { value: 'zeitmangel', label: 'Zeitmangel' },
+                    { value: 'krankheit', label: 'Krankheit/Verletzung' },
+                    { value: 'unzufriedenheit', label: 'Unzufriedenheit mit Service' },
+                    { value: 'anderer-verein', label: 'Wechsel zu anderem Verein' },
+                    { value: 'sonstiges', label: 'Sonstiges' }
+                  ]}
+                />
               </div>
 
               <div className="confirmation-section-inline">
@@ -7206,7 +8632,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         marginLeft: '0.5rem'
                       }}
                     >
-                      📥 Vollständigen Vertrag herunterladen
+                      📄 PDF
                     </button>
                   </div>
                 </div>
@@ -8410,6 +9836,136 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           </div>
         </div>
       )}
+
+      {/* Kündigungsbestätigung Modal */}
+      {showKündigungBestätigungModal && vertragZumKündigen && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowKündigungBestätigungModal(false);
+            setVertragZumKündigen(null);
+          }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '2rem'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '100%',
+              border: '1px solid rgba(255, 193, 7, 0.3)',
+              boxShadow: 'none'
+            }}
+          >
+            {/* Warnsymbol oben */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: '1.5rem',
+              fontSize: '4rem'
+            }}>
+              ⚠️
+            </div>
+
+            {/* Zentrierte Überschrift */}
+            <h2 style={{ 
+              color: '#ffc107', 
+              marginBottom: '1.5rem', 
+              fontSize: '1.3rem',
+              textAlign: 'center',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              ACHTUNG: VERTRAG IST NOCH AKTIV!
+            </h2>
+
+            <div style={{ marginBottom: '1.5rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <p style={{ textAlign: 'left' }}>
+                Vertrag <strong style={{ color: '#FFD700' }}>#{vertragZumKündigen.personenVertragNr}</strong> ist noch aktiv!
+              </p>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '1rem', textAlign: 'left' }}>
+                Möchten Sie den Vertrag trotzdem kündigen?
+              </p>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.5rem', textAlign: 'left' }}>
+                Bei <strong style={{ color: '#FFD700' }}>"Ja"</strong> wird der Vertrag gekündigt und in die Archivierten/Ehemaligen verschoben.
+              </p>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.5rem', textAlign: 'left' }}>
+                Bei <strong style={{ color: '#FFD700' }}>"Nein"</strong> wird die Aktion abgebrochen.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowKündigungBestätigungModal(false);
+                  setVertragZumKündigen(null);
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                Nein
+              </button>
+
+              <button
+                onClick={handleKündigungBestätigen}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 12px rgba(255, 193, 7, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #ff9800 0%, #ffc107 100%)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 193, 7, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 193, 7, 0.3)';
+                }}
+              >
+                Ja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -11,6 +11,9 @@ const logger = require("./utils/logger");
 
 const app = express();
 
+// Statische Dateien für Uploads servieren - MUSS VOR Content-Type Middleware kommen!
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // UTF-8 Encoding für alle Responses - ERWEITERT
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -23,12 +26,9 @@ app.use(cors({
   exposedHeaders: ['Content-Type', 'Content-Length', 'X-Content-Type-Options']
 }));
 
-// Body-Parser mit expliziter UTF-8 Konfiguration
-app.use(express.json({ charset: 'utf-8' }));
-app.use(express.urlencoded({ extended: true, charset: 'utf-8' }));
-
-// Statische Dateien für Uploads servieren
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Body-Parser mit expliziter UTF-8 Konfiguration und 10MB Limit für PDF-HTML
+app.use(express.json({ charset: 'utf-8', limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '10mb' }));
 
 // Database connection test
 db.getConnection((err, connection) => {
@@ -262,6 +262,19 @@ try {
 } catch (error) {
   logger.error('Checkin-Loading fehlgeschlagen', { error: error.message });
   logger.error('Checkin Stack-Trace', { stack: error.stack });
+}
+
+// 3.1. ANWESENHEIT ROUTE
+try {
+  const anwesenheitRoutes = require('./routes/anwesenheit');
+  app.use('/api/anwesenheit', anwesenheitRoutes);
+  logger.success('Route geladen', { path: '/api/anwesenheit' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'anwesenheit routes',
+    error: error.message,
+    stack: error.stack
+  });
 }
 
 // 4. KURS-BEWERTUNG ROUTES
@@ -637,7 +650,20 @@ try {
       route: 'beitraege',
       error: error.message,
       stack: error.stack
-    });
+  });
+}
+
+// Monatsreport Route
+try {
+  const monatsreportRouter = require(path.join(__dirname, "routes", "monatsreport.js"));
+  app.use("/api/monatsreport", monatsreportRouter);
+  logger.success('Route gemountet', { path: '/api/monatsreport' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'monatsreport',
+      error: error.message,
+      stack: error.stack
+  });
 }
 
 // Mahnwesen Route

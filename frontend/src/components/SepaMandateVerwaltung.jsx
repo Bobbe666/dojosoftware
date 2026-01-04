@@ -25,6 +25,22 @@ const SepaMandateVerwaltung = () => {
   const [filteredMandate, setFilteredMandate] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all, aktiv, widerrufen, abgelaufen
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showNewMandatModal, setShowNewMandatModal] = useState(false);
+  const [selectedMandat, setSelectedMandat] = useState(null);
+
+  // Für neues Mandat
+  const [mitgliederListe, setMitgliederListe] = useState([]);
+  const [loadingMitglieder, setLoadingMitglieder] = useState(false);
+  const [neuesMandatData, setNeuesMandatData] = useState({
+    mitglied_id: '',
+    iban: '',
+    bic: '',
+    bank_name: '',
+    kontoinhaber: '',
+    mandatsreferenz: ''
+  });
 
   useEffect(() => {
     loadMandate();
@@ -118,6 +134,84 @@ const SepaMandateVerwaltung = () => {
     }
   };
 
+  const loadMitgliederListe = async () => {
+    try {
+      setLoadingMitglieder(true);
+      const response = await fetch(`${config.apiBaseUrl}/mitglieder`);
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden der Mitgliederliste');
+      }
+
+      const data = await response.json();
+      setMitgliederListe(data.data || []);
+      setLoadingMitglieder(false);
+    } catch (error) {
+      console.error('Fehler beim Laden der Mitgliederliste:', error);
+      alert('Fehler beim Laden der Mitgliederliste: ' + error.message);
+      setLoadingMitglieder(false);
+    }
+  };
+
+  const handleOpenNewMandatModal = () => {
+    loadMitgliederListe();
+    setShowNewMandatModal(true);
+    setNeuesMandatData({
+      mitglied_id: '',
+      iban: '',
+      bic: '',
+      bank_name: '',
+      kontoinhaber: '',
+      mandatsreferenz: ''
+    });
+  };
+
+  const handleSaveNewMandat = async () => {
+    // Validierung
+    if (!neuesMandatData.mitglied_id) {
+      alert('Bitte wählen Sie ein Mitglied aus');
+      return;
+    }
+    if (!neuesMandatData.iban) {
+      alert('Bitte geben Sie eine IBAN ein');
+      return;
+    }
+    if (!neuesMandatData.kontoinhaber) {
+      alert('Bitte geben Sie einen Kontoinhaber ein');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${config.apiBaseUrl}/mitglieder/${neuesMandatData.mitglied_id}/sepa-mandate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            iban: neuesMandatData.iban,
+            bic: neuesMandatData.bic,
+            bank_name: neuesMandatData.bank_name,
+            kontoinhaber: neuesMandatData.kontoinhaber,
+            mandatsreferenz: neuesMandatData.mandatsreferenz || undefined
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Erstellen des Mandats');
+      }
+
+      const result = await response.json();
+      alert('✅ SEPA-Mandat erfolgreich erstellt!');
+      setShowNewMandatModal(false);
+      loadMandate();
+    } catch (error) {
+      console.error('Fehler beim Erstellen:', error);
+      alert('❌ Fehler beim Erstellen: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="sepa-mandate-container">
@@ -143,7 +237,7 @@ const SepaMandateVerwaltung = () => {
         </div>
         <button
           className="btn btn-primary"
-          onClick={() => alert('Neues SEPA-Mandat wird implementiert')}
+          onClick={handleOpenNewMandatModal}
         >
           <Plus size={20} />
           Neues Mandat
@@ -290,15 +384,18 @@ const SepaMandateVerwaltung = () => {
                     <div className="action-buttons">
                       <button
                         className="btn-icon btn-info"
-                        onClick={() => alert('Mandat-Details anzeigen')}
+                        onClick={() => {
+                          setSelectedMandat(mandat);
+                          setShowDetailsModal(true);
+                        }}
                         title="Details anzeigen"
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         className="btn-icon btn-secondary"
-                        onClick={() => alert('Mandat bearbeiten')}
-                        title="Bearbeiten"
+                        onClick={() => navigate(`/dashboard/mitglieder/${mandat.mitglied_id}`)}
+                        title="Mitglied bearbeiten"
                       >
                         <Edit size={16} />
                       </button>
@@ -317,6 +414,217 @@ const SepaMandateVerwaltung = () => {
           </table>
         )}
       </div>
+
+      {/* Details Modal */}
+      {showDetailsModal && selectedMandat && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📋 SEPA-Mandat Details</h2>
+              <button className="btn-close" onClick={() => setShowDetailsModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-grid">
+                <div className="detail-item">
+                  <label>Mitglied</label>
+                  <div className="detail-value">
+                    <strong>{selectedMandat.mitglied_name || `Mitglied #${selectedMandat.mitglied_id}`}</strong>
+                    <br />
+                    <small>ID: {selectedMandat.mitglied_id}</small>
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Status</label>
+                  <div className="detail-value">
+                    {getStatusBadge(selectedMandat)}
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Mandatsreferenz</label>
+                  <div className="detail-value">
+                    <code>{selectedMandat.mandatsreferenz}</code>
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Gläubiger-ID</label>
+                  <div className="detail-value">
+                    <code>{selectedMandat.glaeubiger_id || '-'}</code>
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>IBAN</label>
+                  <div className="detail-value">
+                    <code>{selectedMandat.iban || '-'}</code>
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>BIC</label>
+                  <div className="detail-value">
+                    {selectedMandat.bic || '-'}
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Bankname</label>
+                  <div className="detail-value">
+                    {selectedMandat.bankname || '-'}
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Kontoinhaber</label>
+                  <div className="detail-value">
+                    {selectedMandat.kontoinhaber || '-'}
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Erstellt am</label>
+                  <div className="detail-value">
+                    {formatDate(selectedMandat.erstellungsdatum)}
+                  </div>
+                </div>
+
+                <div className="detail-item">
+                  <label>Letzte Änderung</label>
+                  <div className="detail-value">
+                    {formatDate(selectedMandat.aktualisiert_am)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDetailsModal(false)}>
+                Schließen
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  navigate(`/dashboard/mitglieder/${selectedMandat.mitglied_id}`);
+                }}
+              >
+                Mitglied öffnen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Neues Mandat Modal */}
+      {showNewMandatModal && (
+        <div className="modal-overlay" onClick={() => setShowNewMandatModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>➕ Neues SEPA-Mandat erstellen</h2>
+              <button className="btn-close" onClick={() => setShowNewMandatModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Mitglied auswählen *</label>
+                {loadingMitglieder ? (
+                  <p>Lade Mitglieder...</p>
+                ) : (
+                  <select
+                    value={neuesMandatData.mitglied_id}
+                    onChange={(e) => {
+                      const mitgliedId = e.target.value;
+                      const mitglied = mitgliederListe.find(m => m.mitglied_id == mitgliedId);
+                      setNeuesMandatData({
+                        ...neuesMandatData,
+                        mitglied_id: mitgliedId,
+                        kontoinhaber: mitglied ? `${mitglied.vorname} ${mitglied.nachname}` : ''
+                      });
+                    }}
+                    className="form-control"
+                  >
+                    <option value="">-- Mitglied wählen --</option>
+                    {mitgliederListe.map(mitglied => (
+                      <option key={mitglied.mitglied_id} value={mitglied.mitglied_id}>
+                        {mitglied.vorname} {mitglied.nachname} (ID: {mitglied.mitglied_id})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label>IBAN *</label>
+                <input
+                  type="text"
+                  placeholder="DE89 3704 0044 0532 0130 00"
+                  value={neuesMandatData.iban}
+                  onChange={(e) => setNeuesMandatData({ ...neuesMandatData, iban: e.target.value.replace(/\s/g, '').toUpperCase() })}
+                  className="form-control"
+                  maxLength="34"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>BIC</label>
+                <input
+                  type="text"
+                  placeholder="COBADEFFXXX"
+                  value={neuesMandatData.bic}
+                  onChange={(e) => setNeuesMandatData({ ...neuesMandatData, bic: e.target.value.toUpperCase() })}
+                  className="form-control"
+                  maxLength="11"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Bankname</label>
+                <input
+                  type="text"
+                  placeholder="z.B. Commerzbank"
+                  value={neuesMandatData.bank_name}
+                  onChange={(e) => setNeuesMandatData({ ...neuesMandatData, bank_name: e.target.value })}
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Kontoinhaber *</label>
+                <input
+                  type="text"
+                  placeholder="Max Mustermann"
+                  value={neuesMandatData.kontoinhaber}
+                  onChange={(e) => setNeuesMandatData({ ...neuesMandatData, kontoinhaber: e.target.value })}
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Mandatsreferenz (optional)</label>
+                <input
+                  type="text"
+                  placeholder="Wird automatisch generiert"
+                  value={neuesMandatData.mandatsreferenz}
+                  onChange={(e) => setNeuesMandatData({ ...neuesMandatData, mandatsreferenz: e.target.value })}
+                  className="form-control"
+                />
+                <small style={{ color: '#888', fontSize: '0.85rem' }}>
+                  Leer lassen für automatische Generierung (MANDAT-ID-Timestamp)
+                </small>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowNewMandatModal(false)}>
+                Abbrechen
+              </button>
+              <button className="btn btn-primary" onClick={handleSaveNewMandat}>
+                <Plus size={18} />
+                Mandat erstellen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
