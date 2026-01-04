@@ -10,12 +10,13 @@ router.get("/", async (req, res) => {
     try {
         console.log('📦 Starting SEPA batch file generation...');
 
-        // Query für alle aktiven Verträge mit SEPA-Mandat
+        // Query für alle aktiven Verträge mit SEPA-Mandat (inkl. offene Rechnungen)
         const query = `
             SELECT
                 v.id as vertrag_id,
                 v.mitglied_id,
                 v.monatsbeitrag as monatlicher_beitrag,
+                COALESCE(SUM(r.betrag), 0) as offene_rechnungen,
                 v.billing_cycle as zahlungszyklus,
                 v.vertragsbeginn,
                 m.vorname,
@@ -34,10 +35,17 @@ router.get("/", async (req, res) => {
             JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
             LEFT JOIN tarife t ON v.tarif_id = t.id
             LEFT JOIN sepa_mandate sm ON v.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            LEFT JOIN rechnungen r ON v.mitglied_id = r.mitglied_id
+                AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
+                AND r.archiviert = 0
             WHERE v.status = 'aktiv'
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+            GROUP BY v.id, v.mitglied_id, v.monatsbeitrag, v.billing_cycle, v.vertragsbeginn,
+                     m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
+                     sm.bankname, m.zahlungsmethode, t.name, t.price_cents,
+                     sm.mandatsreferenz, sm.glaeubiger_id, sm.erstellungsdatum
             ORDER BY m.nachname, m.vorname
         `;
 
@@ -176,66 +184,96 @@ router.get("/missing-mandates", (req, res) => {
  * GET /api/lastschriftlauf/preview
  */
 router.get("/preview", (req, res) => {
-    const query = `
-        SELECT
-            m.mitglied_id,
-            m.vorname,
-            m.nachname,
-            m.iban,
-            m.bic,
-            m.kontoinhaber,
-            m.zahlungsmethode,
-            sm.bankname,
-            sm.mandatsreferenz,
-            sm.glaeubiger_id,
-            (SELECT SUM(monatsbeitrag)
-             FROM vertraege
-             WHERE mitglied_id = m.mitglied_id AND status = 'aktiv') as monatlicher_beitrag,
-            (SELECT GROUP_CONCAT(DISTINCT name SEPARATOR ', ')
-             FROM tarife t
-             JOIN vertraege v ON v.tarif_id = t.id
-             WHERE v.mitglied_id = m.mitglied_id AND v.status = 'aktiv') as tarif_name,
-            'monatlich' as zahlungszyklus
-        FROM mitglieder m
-        JOIN vertraege v ON m.mitglied_id = v.mitglied_id
-        INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv' AND sm.mandatsreferenz IS NOT NULL
-        WHERE v.status = 'aktiv'
-          AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
-          AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
-        GROUP BY m.mitglied_id
-        ORDER BY m.nachname, m.vorname
-    `;
+    try {
+        console.log('📢 Preview-Route aufgerufen');
+        const query = `
+            SELECT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                m.iban,
+                m.bic,
+                m.kontoinhaber,
+                m.zahlungsmethode,
+                sm.bankname,
+                sm.mandatsreferenz,
+                sm.glaeubiger_id,
+                COALESCE(SUM(v.monatsbeitrag), 0) as monatlicher_beitrag,
+                COALESCE(SUM(r.betrag), 0) as offene_rechnungen,
+                COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ', '), 'Kein Tarif') as tarif_name,
+                'monatlich' as zahlungszyklus
+            FROM mitglieder m
+            JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+            LEFT JOIN tarife t ON v.tarif_id = t.id
+            LEFT JOIN rechnungen r ON m.mitglied_id = r.mitglied_id
+                AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
+                AND r.archiviert = 0
+            INNER JOIN (
+                SELECT mitglied_id, bankname, mandatsreferenz, glaeubiger_id
+                FROM sepa_mandate
+                WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
+                ORDER BY erstellungsdatum DESC
+                LIMIT 18446744073709551615
+            ) sm ON m.mitglied_id = sm.mitglied_id
+            WHERE v.status = 'aktiv'
+              AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+            GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber, m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id
+            ORDER BY m.nachname, m.vorname
+        `;
 
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error('❌ Database error:', err);
-            return res.status(500).json({
-                error: 'Datenbankfehler',
-                details: err.message
-            });
-        }
+        db.query(query, (err, results) => {
+            if (err) {
+                console.error('❌ Database error in /preview:', err);
+                console.error('❌ SQL Query:', query);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Datenbankfehler',
+                    details: err.message,
+                    sqlState: err.sqlState,
+                    sqlMessage: err.sqlMessage
+                });
+            }
 
-        // Ermittle häufigste Bank
-        const mostCommonBank = getMostCommonBank(results);
+            try {
+                // Ermittle häufigste Bank
+                const mostCommonBank = getMostCommonBank(results);
 
-        const preview = results.map(r => ({
-            mitglied_id: r.mitglied_id,
-            name: `${r.vorname} ${r.nachname}`,
-            iban: maskIBAN(r.iban),
-            betrag: calculateAmount(r),
-            mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
-            tarif: r.tarif_name || 'Kein Tarif',
-            zahlungszyklus: r.zahlungszyklus,
-            bank: r.bankname
-        }));
+                const preview = results.map(r => ({
+                    mitglied_id: r.mitglied_id,
+                    name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
+                    iban: maskIBAN(r.iban),
+                    betrag: calculateAmount(r),
+                    mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
+                    tarif: r.tarif_name || 'Kein Tarif',
+                    zahlungszyklus: r.zahlungszyklus || 'monatlich',
+                    bank: r.bankname || 'Unbekannt'
+                }));
 
-        res.json({
-            count: results.length,
-            total_amount: calculateTotalAmount(results),
-            primary_bank: mostCommonBank || 'Gemischte Banken',
-            preview: preview
+                res.json({
+                    success: true,
+                    count: results.length,
+                    total_amount: calculateTotalAmount(results),
+                    primary_bank: mostCommonBank || 'Gemischte Banken',
+                    preview: preview
+                });
+            } catch (processingError) {
+                console.error('❌ Error processing preview results:', processingError);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Fehler bei der Verarbeitung der Daten',
+                    details: processingError.message
+                });
+            }
         });
-    });
+    } catch (error) {
+        console.error('❌ Error in /preview route:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler in der Preview-Route',
+            details: error.message
+        });
+    }
 });
 
 /**
@@ -282,20 +320,39 @@ function generateSepaCSV(contracts) {
 }
 
 /**
- * Berechne Betrag für einen Vertrag
+ * Berechne Betrag für einen Vertrag (inkl. offene Rechnungen)
  */
 function calculateAmount(contract) {
-    // Verwende monatlicher_beitrag wenn vorhanden, sonst tarif price
-    if (contract.monatlicher_beitrag && contract.monatlicher_beitrag > 0) {
-        return parseFloat(contract.monatlicher_beitrag);
-    }
+    try {
+        let totalAmount = 0;
 
-    // Fallback zu Tarif-Preis
-    if (contract.price_cents) {
-        return parseFloat(contract.price_cents) / 100;
-    }
+        // 1. Monatsbeitrag
+        if (contract.monatlicher_beitrag != null && contract.monatlicher_beitrag !== undefined) {
+            const amount = parseFloat(contract.monatlicher_beitrag);
+            if (!isNaN(amount) && amount > 0) {
+                totalAmount += amount;
+            }
+        } else if (contract.price_cents != null && contract.price_cents !== undefined) {
+            // Fallback zu Tarif-Preis
+            const amount = parseFloat(contract.price_cents) / 100;
+            if (!isNaN(amount) && amount > 0) {
+                totalAmount += amount;
+            }
+        }
 
-    return 0.00;
+        // 2. Offene Rechnungen hinzufügen
+        if (contract.offene_rechnungen != null && contract.offene_rechnungen !== undefined) {
+            const invoiceAmount = parseFloat(contract.offene_rechnungen);
+            if (!isNaN(invoiceAmount) && invoiceAmount > 0) {
+                totalAmount += invoiceAmount;
+            }
+        }
+
+        return totalAmount;
+    } catch (error) {
+        console.error('❌ Error calculating amount for contract:', contract, error);
+        return 0.00;
+    }
 }
 
 /**

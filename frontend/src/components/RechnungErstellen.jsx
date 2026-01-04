@@ -3,6 +3,7 @@ import axios from 'axios';
 import config from '../config/config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
+import { QRCodeSVG } from 'qrcode.react';
 import '../styles/RechnungErstellen.css';
 
 const RechnungErstellen = () => {
@@ -13,15 +14,33 @@ const RechnungErstellen = () => {
   const [mitglieder, setMitglieder] = useState([]);
   const [artikel, setArtikel] = useState([]);
   const [selectedMitglied, setSelectedMitglied] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [bankDaten, setBankDaten] = useState({
+    bank_name: '',
+    iban: '',
+    bic: '',
+    kontoinhaber: ''
+  });
+
+  // Berechne Zahlungsfrist (7 Tage nach Belegdatum)
+  const calculateZahlungsfrist = (belegdatum) => {
+    if (!belegdatum) return '';
+    const datum = new Date(belegdatum);
+    datum.setDate(datum.getDate() + 7);
+    return datum.toISOString().split('T')[0];
+  };
 
   const [rechnungsDaten, setRechnungsDaten] = useState({
     rechnungsnummer: 'Wird geladen...',
     kundennummer: '',
     belegdatum: new Date().toISOString().split('T')[0],
     leistungsdatum: new Date().toISOString().split('T')[0],
-    zahlungsfrist: '',
+    zahlungsfrist: calculateZahlungsfrist(new Date().toISOString().split('T')[0]),
     rabatt_prozent: 0,
-    rabatt_auf_betrag: 0
+    rabatt_auf_betrag: 0,
+    skonto_prozent: 0,
+    skonto_tage: 0
   });
 
   const [positionen, setPositionen] = useState([]);
@@ -31,18 +50,66 @@ const RechnungErstellen = () => {
     artikelnummer: '',
     menge: 1,
     einzelpreis: 0,
-    ust_prozent: 19
+    ust_prozent: 19,
+    ist_rabattfaehig: false,
+    rabatt_prozent: 0
   });
+  const [showRabattHinweis, setShowRabattHinweis] = useState(false);
 
   useEffect(() => {
-    loadMitglieder();
-    loadArtikel();
-    loadRechnungsnummer(rechnungsDaten.belegdatum);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([
+          loadMitglieder(),
+          loadArtikel(),
+          loadRechnungsnummer(rechnungsDaten.belegdatum),
+          loadBankDaten()
+        ]);
+        setError(null);
+      } catch (err) {
+        console.error('Fehler beim Laden der Daten:', err);
+        setError('Fehler beim Laden der Daten: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
+
+  // Lade Bankdaten neu, wenn sich activeDojo ändert
+  useEffect(() => {
+    if (activeDojo) {
+      console.log('🔄 activeDojo geändert, lade Bankdaten neu...');
+      loadBankDaten();
+    }
+  }, [activeDojo?.dojo_id, activeDojo?.id]);
+
+  // Debug: Logge Bankdaten, wenn sie sich ändern
+  useEffect(() => {
+    console.log('📊 bankDaten State geändert:', bankDaten);
+  }, [bankDaten]);
 
   useEffect(() => {
     loadRechnungsnummer(rechnungsDaten.belegdatum);
   }, [rechnungsDaten.belegdatum]);
+
+  // Berechne Skonto-Tage automatisch aus Zahlungsziel
+  useEffect(() => {
+    if (rechnungsDaten.belegdatum && rechnungsDaten.zahlungsfrist) {
+      const belegdatum = new Date(rechnungsDaten.belegdatum);
+      const zahlungsfrist = new Date(rechnungsDaten.zahlungsfrist);
+      const diffTime = zahlungsfrist - belegdatum;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 0) {
+        setRechnungsDaten(prev => ({
+          ...prev,
+          skonto_tage: diffDays
+        }));
+      }
+    }
+  }, [rechnungsDaten.belegdatum, rechnungsDaten.zahlungsfrist]);
 
   const loadMitglieder = async () => {
     try {
@@ -63,6 +130,141 @@ const RechnungErstellen = () => {
       setArtikel(response.data.data || []);
     } catch (error) {
       console.error('Fehler beim Laden der Artikel:', error);
+    }
+  };
+
+  const loadBankDaten = async () => {
+    try {
+      console.log('🔍 loadBankDaten aufgerufen, activeDojo:', activeDojo);
+      
+      if (!activeDojo?.dojo_id && !activeDojo?.id) {
+        console.log('⚠️ Keine dojo_id gefunden');
+        return;
+      }
+      
+      const dojoId = activeDojo.dojo_id || activeDojo.id;
+      console.log('🔍 Lade Bankdaten für Dojo:', dojoId);
+      
+      // Versuche zuerst die Standard-Bank aus dojo_banken zu holen
+      const response = await axios.get(`${config.apiBaseUrl}/dojo-banken/${dojoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('🔍 Bankdaten-Response:', response.data);
+      
+      if (response.data && response.data.length > 0) {
+        // Suche Standard-Bank oder erste aktive Bank
+        const standardBank = response.data.find(b => b.ist_standard && b.ist_aktiv && b.bank_typ === 'bank') ||
+                            response.data.find(b => b.ist_aktiv && b.bank_typ === 'bank');
+        
+        console.log('🔍 Gefundene Standard-Bank:', standardBank);
+        
+        if (standardBank && standardBank.iban && standardBank.bic && standardBank.kontoinhaber) {
+          const bankDatenNeu = {
+            bank_name: standardBank.bank_name || '',
+            iban: standardBank.iban.replace(/\s/g, '').toUpperCase(),
+            bic: standardBank.bic.toUpperCase(),
+            kontoinhaber: standardBank.kontoinhaber
+          };
+          console.log('✅ Bankdaten gesetzt:', bankDatenNeu);
+          setBankDaten(bankDatenNeu);
+          return;
+        }
+      }
+      
+      // Fallback: Verwende Bankdaten aus Dojo-Objekt (verschiedene Feldnamen prüfen)
+      console.log('🔍 Prüfe Dojo-Objekt für Bankdaten:', {
+        dojo_id: dojoId,
+        bank_iban: activeDojo.bank_iban,
+        iban: activeDojo.iban,
+        bank_bic: activeDojo.bank_bic,
+        bic: activeDojo.bic,
+        bank_inhaber: activeDojo.bank_inhaber,
+        inhaber: activeDojo.inhaber,
+        dojoname: activeDojo.dojoname,
+        allKeys: Object.keys(activeDojo)
+      });
+      
+      const dojoIban = activeDojo.bank_iban || activeDojo.iban;
+      const dojoBic = activeDojo.bank_bic || activeDojo.bic;
+      const dojoInhaber = activeDojo.bank_inhaber || activeDojo.inhaber || activeDojo.dojoname;
+      const dojoBankName = activeDojo.bank_name || '';
+      
+      console.log('🔍 Extrahierte Werte:', { dojoIban, dojoBic, dojoInhaber, dojoBankName });
+      
+      if (dojoIban && dojoBic && dojoInhaber) {
+        const bankDatenNeu = {
+          bank_name: dojoBankName,
+          iban: dojoIban.replace(/\s/g, '').toUpperCase(),
+          bic: dojoBic.toUpperCase(),
+          kontoinhaber: dojoInhaber
+        };
+        console.log('✅ Bankdaten aus Dojo-Objekt gesetzt:', bankDatenNeu);
+        setBankDaten(bankDatenNeu);
+      } else {
+        console.warn('⚠️ Keine Bankdaten gefunden. Verfügbare Felder:', {
+          bank_iban: activeDojo.bank_iban,
+          iban: activeDojo.iban,
+          bank_bic: activeDojo.bank_bic,
+          bic: activeDojo.bic,
+          bank_inhaber: activeDojo.bank_inhaber,
+          inhaber: activeDojo.inhaber,
+          dojoname: activeDojo.dojoname
+        });
+        
+        // Versuche Migration durchzuführen
+        console.log('🔄 Versuche automatische Migration der Bankdaten...');
+        try {
+          const migrateResponse = await axios.post(`${config.apiBaseUrl}/dojo-banken/migrate`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('✅ Migration-Ergebnis:', migrateResponse.data);
+          
+          // Nach Migration erneut versuchen, Bankdaten zu laden
+          if (migrateResponse.data.success) {
+            const retryResponse = await axios.get(`${config.apiBaseUrl}/dojo-banken/${dojoId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (retryResponse.data && retryResponse.data.length > 0) {
+              const standardBank = retryResponse.data.find(b => b.ist_standard && b.ist_aktiv && b.bank_typ === 'bank') ||
+                                  retryResponse.data.find(b => b.ist_aktiv && b.bank_typ === 'bank');
+              
+              if (standardBank && standardBank.iban && standardBank.bic && standardBank.kontoinhaber) {
+                const bankDatenNeu = {
+                  bank_name: standardBank.bank_name || '',
+                  iban: standardBank.iban.replace(/\s/g, '').toUpperCase(),
+                  bic: standardBank.bic.toUpperCase(),
+                  kontoinhaber: standardBank.kontoinhaber
+                };
+                console.log('✅ Bankdaten nach Migration gesetzt:', bankDatenNeu);
+                setBankDaten(bankDatenNeu);
+                return;
+              }
+            }
+          }
+        } catch (migrateError) {
+          console.error('❌ Fehler bei der Migration:', migrateError);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Laden der Bankdaten:', error);
+      // Fallback: Verwende Bankdaten aus Dojo-Objekt (verschiedene Feldnamen prüfen)
+      const dojoIban = activeDojo?.bank_iban || activeDojo?.iban;
+      const dojoBic = activeDojo?.bank_bic || activeDojo?.bic;
+      const dojoInhaber = activeDojo?.bank_inhaber || activeDojo?.inhaber || activeDojo?.dojoname;
+      const dojoBankName = activeDojo?.bank_name || '';
+      
+      if (dojoIban && dojoBic && dojoInhaber) {
+        const bankDatenNeu = {
+          bank_name: dojoBankName,
+          iban: dojoIban.replace(/\s/g, '').toUpperCase(),
+          bic: dojoBic.toUpperCase(),
+          kontoinhaber: dojoInhaber
+        };
+        console.log('✅ Bankdaten aus Dojo-Objekt (Fallback) gesetzt:', bankDatenNeu);
+        setBankDaten(bankDatenNeu);
+      }
     }
   };
 
@@ -104,8 +306,8 @@ const RechnungErstellen = () => {
         artikel_id: art.artikel_id,
         bezeichnung: art.name,
         artikelnummer: art.artikel_nummer || '',
-        einzelpreis: art.verkaufspreis_cent / 100,
-        ust_prozent: art.mwst_prozent || 19
+        einzelpreis: Number(art.verkaufspreis_cent) / 100,
+        ust_prozent: Number(art.mwst_prozent) || 19
       });
     }
   };
@@ -113,18 +315,50 @@ const RechnungErstellen = () => {
   const addPosition = () => {
     if (!neuePosition.bezeichnung || neuePosition.menge <= 0) return;
 
-    setPositionen([...positionen, {
-      ...neuePosition,
-      pos: positionen.length + 1
-    }]);
+    // Prüfe, ob der Artikel bereits in der Liste ist
+    // Vergleich nach artikel_id (wenn vorhanden) oder nach bezeichnung
+    const existingIndex = positionen.findIndex(pos => {
+      if (neuePosition.artikel_id && pos.artikel_id) {
+        // Beide haben artikel_id - vergleiche nach ID
+        return pos.artikel_id === neuePosition.artikel_id;
+      } else {
+        // Fallback: vergleiche nach Bezeichnung und Einzelpreis
+        return pos.bezeichnung === neuePosition.bezeichnung && 
+               pos.einzelpreis === neuePosition.einzelpreis;
+      }
+    });
 
+    if (existingIndex !== -1) {
+      // Artikel existiert bereits - erhöhe nur die Menge
+      const updatedPositionen = [...positionen];
+      updatedPositionen[existingIndex] = {
+        ...updatedPositionen[existingIndex],
+        menge: Number(updatedPositionen[existingIndex].menge) + Number(neuePosition.menge)
+      };
+      setPositionen(updatedPositionen);
+    } else {
+      // Neuer Artikel - füge hinzu
+      setPositionen([...positionen, {
+        ...neuePosition,
+        pos: positionen.length + 1,
+        menge: Number(neuePosition.menge),
+        einzelpreis: Number(neuePosition.einzelpreis),
+        ust_prozent: Number(neuePosition.ust_prozent),
+        ist_rabattfaehig: neuePosition.ist_rabattfaehig,
+        rabatt_prozent: Number(neuePosition.rabatt_prozent) || 0
+      }]);
+    }
+
+    // Formular zurücksetzen
     setNeuePosition({
       artikel_id: '',
       bezeichnung: '',
       artikelnummer: '',
       menge: 1,
       einzelpreis: 0,
-      ust_prozent: 19
+      ust_prozent: 19,
+      ist_rabattfaehig: false,
+      rabatt_prozent: 0
     });
   };
 
@@ -135,7 +369,12 @@ const RechnungErstellen = () => {
 
   // Berechnungen
   const calculateZwischensumme = () => {
-    return positionen.reduce((sum, pos) => sum + (pos.einzelpreis * pos.menge), 0);
+    return positionen.reduce((sum, pos) => {
+      const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+      const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+      const nettoPreis = bruttoPreis - rabattBetrag;
+      return sum + nettoPreis;
+    }, 0);
   };
 
   const calculateRabatt = () => {
@@ -151,14 +390,351 @@ const RechnungErstellen = () => {
     return calculateZwischensumme() - calculateRabatt();
   };
 
-  const calculateUSt = () => {
+  const calculateSkonto = () => {
     const summe = calculateSumme();
+    if (rechnungsDaten.skonto_prozent > 0 && rechnungsDaten.skonto_tage > 0) {
+      return (summe * rechnungsDaten.skonto_prozent) / 100;
+    }
+    return 0;
+  };
+
+  const calculateUSt = () => {
+    const summe = calculateSumme(); // Nur Rabatt berücksichtigen, NICHT Skonto
     // Vereinfacht: nehmen wir an alle Positionen haben 19% USt
     return (summe * 19) / 100;
   };
 
   const calculateEndbetrag = () => {
-    return calculateSumme() + calculateUSt();
+    return calculateSumme() + calculateUSt(); // Nur Rabatt berücksichtigen, NICHT Skonto
+  };
+
+  // Formatiere Datum im Format dd.mm.yyyy
+  const formatDateDDMMYYYY = (dateString, addDays = 0) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (addDays > 0) {
+      date.setDate(date.getDate() + addDays);
+    }
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
+
+  // Generiere EPC QR-Code-String (SEPA Credit Transfer)
+  const generateEPCQRCode = (betrag, mitSkonto = false) => {
+    console.log('🔍 generateEPCQRCode aufgerufen:', { betrag, mitSkonto, bankDaten });
+    
+    const hasIban = bankDaten.iban && bankDaten.iban.trim() !== '';
+    const hasBic = bankDaten.bic && bankDaten.bic.trim() !== '';
+    const hasKontoinhaber = bankDaten.kontoinhaber && bankDaten.kontoinhaber.trim() !== '';
+    
+    if (!hasIban || !hasBic || !hasKontoinhaber) {
+      console.warn('⚠️ Bankdaten unvollständig:', {
+        iban: bankDaten.iban,
+        bic: bankDaten.bic,
+        kontoinhaber: bankDaten.kontoinhaber,
+        hasIban,
+        hasBic,
+        hasKontoinhaber
+      });
+      return '';
+    }
+
+    if (!betrag || isNaN(betrag) || betrag <= 0) {
+      console.warn('⚠️ Ungültiger Betrag:', betrag);
+      return '';
+    }
+
+    // Verwende den übergebenen Betrag
+    const verwendungszweck = `Rechnung ${rechnungsDaten.rechnungsnummer || ''}`.substring(0, 140);
+    const referenz = rechnungsDaten.rechnungsnummer || '';
+    
+    // EPC QR-Code Format nach SEPA-Standard
+    const epcString = [
+      'BCD',                    // Service Tag
+      '002',                    // Version
+      '1',                      // Character Set (1 = UTF-8)
+      'SCT',                    // Identification (SEPA Credit Transfer)
+      bankDaten.bic.trim(),           // BIC (max 11 Zeichen)
+      bankDaten.kontoinhaber.trim().substring(0, 70), // Name (max 70 Zeichen)
+      bankDaten.iban.trim(),           // IBAN (max 34 Zeichen)
+      `EUR${Number(betrag).toFixed(2)}`, // Betrag (EUR + Betrag)
+      '',                       // Purpose (optional)
+      verwendungszweck,         // Verwendungszweck (max 140 Zeichen)
+      referenz.substring(0, 35), // Reference (max 35 Zeichen)
+      '',                       // Text (optional)
+      ''                        // End of data
+    ].join('\n');
+
+    console.log('✅ EPC QR-Code generiert (Länge:', epcString.length, '):', epcString.substring(0, 150) + '...');
+    return epcString;
+  };
+
+  // Funktion: Extrahiere CSS für PDF-Generierung
+  const getInvoiceCSS = () => {
+    return `
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 10pt;
+        line-height: 1.4;
+        color: #000;
+        background: white;
+      }
+
+      .invoice-page {
+        background: white;
+        max-width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto;
+        padding: 20mm;
+        padding-bottom: 50mm;
+        position: relative;
+        font-family: Arial, sans-serif;
+        font-size: 10pt;
+        line-height: 1.4;
+        color: #000000;
+      }
+
+      .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+      }
+
+      .company-info {
+        flex: 1;
+      }
+
+      .company-small {
+        font-size: 8pt;
+        color: #666;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #000;
+      }
+
+      .recipient-address {
+        margin-top: 1rem;
+        line-height: 1.6;
+      }
+
+      .invoice-meta {
+        text-align: right;
+        min-width: 250px;
+      }
+
+      .logo-placeholder {
+        width: 120px;
+        height: 120px;
+        border: 2px solid #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        margin-bottom: 1rem;
+        font-weight: bold;
+        color: #666;
+      }
+
+      .invoice-numbers {
+        font-size: 9pt;
+        line-height: 1.8;
+      }
+
+      .invoice-title {
+        margin-bottom: 2rem;
+      }
+
+      .invoice-title h1 {
+        font-size: 18pt;
+        font-weight: bold;
+        margin: 0 0 0.5rem 0;
+        color: #000000;
+      }
+
+      .page-number {
+        text-align: right;
+        font-size: 9pt;
+        color: #666;
+      }
+
+      .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+        font-size: 9pt;
+      }
+
+      .invoice-table thead {
+        background: #f3f4f6;
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+      }
+
+      .invoice-table th {
+        padding: 0.5rem 0.25rem;
+        text-align: left;
+        font-weight: bold;
+        font-size: 8pt;
+      }
+
+      .invoice-table th:nth-child(3),
+      .invoice-table th:nth-child(4),
+      .invoice-table th:nth-child(6),
+      .invoice-table th:nth-child(7),
+      .invoice-table th:nth-child(8) {
+        text-align: right;
+      }
+
+      .invoice-table td {
+        padding: 0.5rem 0.25rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .invoice-table td:nth-child(3),
+      .invoice-table td:nth-child(4),
+      .invoice-table td:nth-child(6),
+      .invoice-table td:nth-child(7),
+      .invoice-table td:nth-child(8) {
+        text-align: right;
+      }
+
+      .invoice-totals {
+        margin-left: auto;
+        width: 50%;
+        font-size: 10pt;
+      }
+
+      .totals-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .totals-row.total-final {
+        font-weight: bold;
+        font-size: 11pt;
+        border-top: 2px solid #000;
+        border-bottom: 2px solid #000;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+      }
+
+      .payment-terms {
+        margin-top: 2rem;
+        font-size: 9pt;
+      }
+
+      .payment-terms p {
+        margin: 0.25rem 0;
+      }
+
+      .qr-code-title {
+        color: #000000;
+        font-size: 0.85rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      .qr-codes-section {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+      }
+
+      .qr-codes-section > div {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+      }
+
+      .rechnung-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 0.75rem 20mm 0.5rem 20mm;
+        border-top: 1px solid rgba(0, 0, 0, 0.2);
+        font-size: 7pt;
+        color: #000000;
+        line-height: 1.6;
+        text-align: center;
+        background: white;
+      }
+
+      @page {
+        margin: 0;
+        size: A4 portrait;
+      }
+
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+      }
+    `;
+  };
+
+  // Funktion: Serialisiere Vorschau zu HTML für PDF-Generierung
+  const serializePreviewToHTML = () => {
+    // Hole das DOM-Element der Vorschau
+    const previewElement = document.querySelector('.invoice-page');
+    if (!previewElement) {
+      console.error('Vorschau-Element nicht gefunden');
+      return null;
+    }
+
+    // Clone das Element
+    const clone = previewElement.cloneNode(true);
+
+    // Konvertiere alle QRCodeSVG zu Base64 Data URIs
+    const qrCodeSvgs = clone.querySelectorAll('svg');
+    qrCodeSvgs.forEach(svg => {
+      try {
+        // Serialisiere SVG zu String
+        const svgData = new XMLSerializer().serializeToString(svg);
+
+        // Konvertiere zu Base64
+        const svgBase64 = btoa(unescape(encodeURIComponent(svgData)));
+        const dataUri = `data:image/svg+xml;base64,${svgBase64}`;
+
+        // Ersetze SVG durch IMG mit Data URI
+        const img = document.createElement('img');
+        img.src = dataUri;
+        img.style.width = '150px';
+        img.style.height = '150px';
+        img.style.display = 'block';
+        img.style.margin = '0 auto';
+
+        // Ersetze im DOM
+        svg.parentNode.replaceChild(img, svg);
+      } catch (error) {
+        console.error('Fehler bei QR-Code Konvertierung:', error);
+      }
+    });
+
+    // Hole CSS und erstelle vollständiges HTML-Dokument
+    const cssContent = getInvoiceCSS();
+    const fullHTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Rechnung ${rechnungsDaten.rechnungsnummer}</title>
+  <style>${cssContent}</style>
+</head>
+<body>${clone.outerHTML}</body>
+</html>`;
+
+    return fullHTML;
   };
 
   const handleSpeichern = async () => {
@@ -167,21 +743,37 @@ const RechnungErstellen = () => {
       return;
     }
 
+    // NEU: Serialisiere HTML für PDF-Generierung
+    const serializedHTML = serializePreviewToHTML();
+    if (!serializedHTML) {
+      alert('Fehler beim Erstellen der PDF-Vorschau');
+      return;
+    }
+
     const rechnungData = {
       mitglied_id: selectedMitglied.mitglied_id,
       datum: rechnungsDaten.belegdatum,
       faelligkeitsdatum: rechnungsDaten.zahlungsfrist,
-      art: 'Verkauf',
+      art: 'sonstiges',
       beschreibung: 'Rechnung',
       notizen: '',
-      positionen: positionen.map(pos => ({
-        bezeichnung: pos.bezeichnung,
-        menge: pos.menge,
-        einzelpreis: pos.einzelpreis,
-        gesamtpreis: pos.einzelpreis * pos.menge,
-        mwst_satz: pos.ust_prozent
-      })),
-      mwst_satz: 19
+      positionen: positionen.map(pos => {
+        const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+        const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+        const nettoPreis = bruttoPreis - rabattBetrag;
+
+        return {
+          bezeichnung: pos.bezeichnung,
+          menge: pos.menge,
+          einzelpreis: pos.einzelpreis,
+          gesamtpreis: nettoPreis,
+          mwst_satz: pos.ust_prozent,
+          ist_rabattfaehig: pos.ist_rabattfaehig || false,
+          rabatt_prozent: pos.rabatt_prozent || 0
+        };
+      }),
+      mwst_satz: 19,
+      pdfHtml: serializedHTML  // NEU: HTML für PDF-Generierung
     };
 
     try {
@@ -200,7 +792,7 @@ const RechnungErstellen = () => {
           kundennummer: '',
           belegdatum: neueDatum,
           leistungsdatum: neueDatum,
-          zahlungsfrist: '',
+          zahlungsfrist: calculateZahlungsfrist(neueDatum),
           rabatt_prozent: 0,
           rabatt_auf_betrag: 0
         });
@@ -212,6 +804,30 @@ const RechnungErstellen = () => {
       alert('Fehler beim Erstellen der Rechnung');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="rechnung-erstellen-container">
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#ffffff' }}>
+          Lade Daten...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rechnung-erstellen-container">
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
+          <h2>Fehler</h2>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+            Seite neu laden
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rechnung-erstellen-container">
@@ -232,31 +848,52 @@ const RechnungErstellen = () => {
             </select>
           </div>
 
-          <div className="form-section">
-            <h3>Rechnungsdaten</h3>
-            <div className="form-grid">
-              <div>
-                <label>Belegdatum</label>
+          <div className="form-section" style={{ marginBottom: '0.4rem', paddingBottom: '0.4rem' }}>
+            <h3 style={{ margin: '0 0 0.3rem 0', fontSize: '0.75rem' }}>Rechnungsdaten</h3>
+            <div className="form-grid" style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '0.5rem 0.6rem', 
+              marginBottom: '0',
+              alignItems: 'start'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
+                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Belegdatum</label>
                 <input
                   type="date"
                   value={rechnungsDaten.belegdatum}
-                  onChange={(e) => setRechnungsDaten({...rechnungsDaten, belegdatum: e.target.value})}
+                  onChange={(e) => {
+                    const neuesBelegdatum = e.target.value;
+                    setRechnungsDaten({
+                      ...rechnungsDaten, 
+                      belegdatum: neuesBelegdatum,
+                      zahlungsfrist: calculateZahlungsfrist(neuesBelegdatum)
+                    });
+                  }}
+                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
                 />
               </div>
-              <div>
-                <label>Leistungsdatum</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
+                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Leistungsdatum</label>
                 <input
                   type="date"
                   value={rechnungsDaten.leistungsdatum}
                   onChange={(e) => setRechnungsDaten({...rechnungsDaten, leistungsdatum: e.target.value})}
+                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
                 />
               </div>
-              <div>
-                <label>Zahlungsfrist</label>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '0.1rem',
+                minWidth: '0'
+              }}>
+                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Zahlungsfrist</label>
                 <input
                   type="date"
                   value={rechnungsDaten.zahlungsfrist}
                   onChange={(e) => setRechnungsDaten({...rechnungsDaten, zahlungsfrist: e.target.value})}
+                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -264,8 +901,12 @@ const RechnungErstellen = () => {
 
           <div className="form-section">
             <h3>Position hinzufügen</h3>
-            <div className="position-input">
-              <select onChange={(e) => handleArtikelChange(e.target.value)} value={neuePosition.artikel_id}>
+            <div className="position-input" style={{ display: 'grid', gridTemplateColumns: '1fr 60px auto', gap: '0.5rem', alignItems: 'end' }}>
+              <select
+                onChange={(e) => handleArtikelChange(e.target.value)}
+                value={neuePosition.artikel_id}
+                style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+              >
                 <option value="">Artikel wählen...</option>
                 {artikel.map(a => (
                   <option key={a.artikel_id} value={a.artikel_id}>
@@ -279,16 +920,259 @@ const RechnungErstellen = () => {
                 value={neuePosition.menge}
                 onChange={(e) => setNeuePosition({...neuePosition, menge: parseInt(e.target.value)})}
                 min="1"
+                style={{ padding: '0.3rem 0.35rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
               />
-              <button onClick={addPosition} className="btn-add">Hinzufügen</button>
+              <button onClick={addPosition} className="btn-add" style={{ whiteSpace: 'nowrap' }}>Hinzufügen</button>
             </div>
+
+            {/* Rabattfähigkeit */}
+            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={neuePosition.ist_rabattfaehig}
+                  onChange={(e) => setNeuePosition({...neuePosition, ist_rabattfaehig: e.target.checked, rabatt_prozent: e.target.checked ? neuePosition.rabatt_prozent : 0})}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.85)' }}>Rabattfähig</span>
+              </label>
+
+              {neuePosition.ist_rabattfaehig && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>Rabatt %:</label>
+                  <input
+                    type="number"
+                    value={neuePosition.rabatt_prozent}
+                    onChange={(e) => setNeuePosition({...neuePosition, rabatt_prozent: parseFloat(e.target.value) || 0})}
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    style={{
+                      padding: '0.3rem 0.45rem',
+                      fontSize: '0.75rem',
+                      width: '80px',
+                      background: 'rgba(255, 215, 0, 0.1)',
+                      border: '1px solid rgba(255, 215, 0, 0.3)',
+                      borderRadius: '4px',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Hinzugefügte Positionen */}
+            {positionen.length > 0 && (
+              <div style={{ marginTop: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
+                <h4 style={{ fontSize: '0.85rem', color: '#ffd700', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Hinzugefügte Positionen:</h4>
+                {positionen.map((pos, index) => (
+                  <div key={index} style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 215, 0, 0.2)',
+                    borderRadius: '6px',
+                    padding: '0.75rem',
+                    marginBottom: '0.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem'
+                  }}>
+                    {/* Erste Zeile: Produkt-Info und Entfernen-Button */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{
+                        fontSize: '0.8rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        flex: 1,
+                        paddingRight: '0.5rem'
+                      }}>
+                        <strong>{pos.bezeichnung}</strong> - {pos.menge}x {Number(pos.einzelpreis).toFixed(2)} €
+                      </div>
+
+                      <button
+                        onClick={() => removePosition(index)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.2)',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                          borderRadius: '4px',
+                          color: '#ef4444',
+                          width: '24px',
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                          padding: 0,
+                          flexShrink: 0,
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                        title="Position entfernen"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    {/* Zweite Zeile: Rabatt-Einstellungen */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      paddingTop: '0.25rem',
+                      borderTop: '1px solid rgba(255, 215, 0, 0.1)',
+                      alignItems: 'flex-start'
+                    }}>
+                      <label style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        cursor: 'pointer',
+                        width: 'auto'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={pos.ist_rabattfaehig || false}
+                          onChange={(e) => {
+                            const updatedPositionen = [...positionen];
+                            updatedPositionen[index] = {
+                              ...updatedPositionen[index],
+                              ist_rabattfaehig: e.target.checked,
+                              rabatt_prozent: e.target.checked ? updatedPositionen[index].rabatt_prozent : 0
+                            };
+                            setPositionen(updatedPositionen);
+                          }}
+                          style={{ cursor: 'pointer', width: '12px', height: '12px', flexShrink: 0 }}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', whiteSpace: 'nowrap' }}>Rabattfähig</span>
+                      </label>
+
+                      {pos.ist_rabattfaehig && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          paddingLeft: '1.25rem'
+                        }}>
+                          <label style={{
+                            fontSize: '0.7rem',
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            minWidth: '60px'
+                          }}>Rabatt %:</label>
+                          <input
+                            type="number"
+                            value={pos.rabatt_prozent || 0}
+                            onChange={(e) => {
+                              const updatedPositionen = [...positionen];
+                              updatedPositionen[index] = {
+                                ...updatedPositionen[index],
+                                rabatt_prozent: parseFloat(e.target.value) || 0
+                              };
+                              setPositionen(updatedPositionen);
+                            }}
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            style={{
+                              padding: '0.3rem 0.5rem',
+                              fontSize: '0.75rem',
+                              width: '80px',
+                              background: 'rgba(255, 215, 0, 0.1)',
+                              border: '1px solid rgba(255, 215, 0, 0.3)',
+                              borderRadius: '4px',
+                              color: 'rgba(255, 255, 255, 0.95)'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="form-section">
-            <h3>Rabatt</h3>
-            <div className="form-grid">
-              <div>
-                <label>Rabatt %</label>
+            <h3>Rabatt & Skonto</h3>
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem 0.6rem', marginBottom: '0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0', position: 'relative', overflow: 'visible' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0' }}>
+                  <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Rabatt %</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowRabattHinweis(!showRabattHinweis)}
+                    style={{
+                      background: 'rgba(255, 215, 0, 0.2)',
+                      border: '1px solid rgba(255, 215, 0, 0.4)',
+                      borderRadius: '50%',
+                      color: '#ffd700',
+                      width: '14px',
+                      height: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: '0.65rem',
+                      fontWeight: 'bold',
+                      padding: 0,
+                      flexShrink: 0
+                    }}
+                    title="Info anzeigen"
+                  >
+                    ?
+                  </button>
+                </div>
+                {showRabattHinweis && (
+                  <div style={{
+                    position: 'fixed',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 9999,
+                    padding: '1rem',
+                    background: 'rgba(255, 215, 0, 0.98)',
+                    border: '2px solid rgba(255, 215, 0, 1)',
+                    borderRadius: '8px',
+                    color: '#000000',
+                    fontSize: '0.85rem',
+                    lineHeight: '1.5',
+                    maxWidth: '320px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                    whiteSpace: 'normal'
+                  }}>
+                    <strong>Globaler Rabatt:</strong> Dieser Rabatt wird auf die gesamte Rechnung angewendet.
+                    <br /><br />
+                    Für <strong>einzelne Positionen</strong> können Sie den Rabatt oben in der Positionsliste festlegen.
+                    <button
+                      onClick={() => setShowRabattHinweis(false)}
+                      style={{
+                        marginTop: '0.75rem',
+                        padding: '0.4rem 0.75rem',
+                        background: '#000000',
+                        color: '#ffd700',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        width: '100%'
+                      }}
+                    >
+                      Verstanden
+                    </button>
+                  </div>
+                )}
+                {showRabattHinweis && (
+                  <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    zIndex: 9998
+                  }} onClick={() => setShowRabattHinweis(false)} />
+                )}
                 <input
                   type="number"
                   value={rechnungsDaten.rabatt_prozent}
@@ -296,12 +1180,36 @@ const RechnungErstellen = () => {
                   min="0"
                   max="100"
                   step="0.01"
+                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
+                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Skonto %</label>
+                <input
+                  type="number"
+                  value={rechnungsDaten.skonto_prozent}
+                  onChange={(e) => setRechnungsDaten({...rechnungsDaten, skonto_prozent: parseFloat(e.target.value) || 0})}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
+                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Skonto Tage</label>
+                <input
+                  type="number"
+                  value={rechnungsDaten.skonto_tage}
+                  readOnly
+                  min="0"
+                  placeholder="Automatisch aus Zahlungsziel"
+                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box', backgroundColor: 'rgba(255, 255, 255, 0.03)', cursor: 'not-allowed' }}
                 />
               </div>
             </div>
           </div>
 
-          <button onClick={handleSpeichern} className="btn-save">Rechnung speichern</button>
+          <button onClick={handleSpeichern} className="btn-save" style={{ marginTop: '0.5rem', padding: '0.6rem', fontSize: '0.9rem' }}>Rechnung speichern</button>
         </div>
 
         {/* Rechnungsvorschau */}
@@ -311,7 +1219,7 @@ const RechnungErstellen = () => {
             <div className="invoice-header">
               <div className="company-info">
                 <div className="company-small">
-                  {activeDojo?.dojoname} | {activeDojo?.adresse} | {activeDojo?.ort}
+                  {activeDojo?.dojoname} | {activeDojo?.strasse} {activeDojo?.hausnummer} | {activeDojo?.plz} {activeDojo?.ort}
                 </div>
                 <div className="recipient-address">
                   {selectedMitglied ? (
@@ -339,7 +1247,7 @@ const RechnungErstellen = () => {
 
             {/* Title */}
             <div className="invoice-title">
-              <h1>Rechnung</h1>
+              <h1 style={{ color: '#000000', fontWeight: 'bold', textShadow: 'none', boxShadow: 'none' }}>Rechnung</h1>
               <div className="page-number">Seite 1 von 1</div>
             </div>
 
@@ -353,23 +1261,31 @@ const RechnungErstellen = () => {
                   <th>Menge</th>
                   <th>Einheit</th>
                   <th>Preis</th>
-                  <th>USt</th>
+                  <th>Rabatt %</th>
+                  <th>USt %</th>
                   <th>Betrag EUR</th>
                 </tr>
               </thead>
               <tbody>
-                {positionen.map((pos, index) => (
-                  <tr key={index}>
-                    <td>{pos.pos}</td>
-                    <td>{pos.bezeichnung}</td>
-                    <td>{pos.artikelnummer}</td>
-                    <td>{pos.menge}</td>
-                    <td>Stk.</td>
-                    <td>{pos.einzelpreis.toFixed(2)}</td>
-                    <td>{pos.ust_prozent.toFixed(2)} %</td>
-                    <td>{(pos.einzelpreis * pos.menge).toFixed(2)}</td>
-                  </tr>
-                ))}
+                {positionen.map((pos, index) => {
+                  const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+                  const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+                  const nettoPreis = bruttoPreis - rabattBetrag;
+
+                  return (
+                    <tr key={index}>
+                      <td>{pos.pos}</td>
+                      <td>{pos.bezeichnung}</td>
+                      <td>{pos.artikelnummer}</td>
+                      <td>{pos.menge}</td>
+                      <td>Stk.</td>
+                      <td>{Number(pos.einzelpreis).toFixed(2)}</td>
+                      <td>{pos.ist_rabattfaehig ? `${Number(pos.rabatt_prozent).toFixed(2)} %` : '-'}</td>
+                      <td>{Number(pos.ust_prozent).toFixed(2)} %</td>
+                      <td>{nettoPreis.toFixed(2)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -399,10 +1315,200 @@ const RechnungErstellen = () => {
               </div>
             </div>
 
-            {/* Payment Terms */}
-            <div className="payment-terms">
-              <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
-              <p>Ohne Abzug bis zum {rechnungsDaten.zahlungsfrist || '___________'}.</p>
+            {/* Payment Terms und QR Codes nebeneinander */}
+            <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', alignItems: 'flex-start' }}>
+              {/* Payment Terms - Links */}
+              <div className="payment-terms" style={{ flex: '1', minWidth: '300px' }}>
+                <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
+                {rechnungsDaten.zahlungsfrist ? (
+                  <>
+                    {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
+                      <p>
+                        {Number(rechnungsDaten.skonto_prozent).toFixed(2)} % Skonto bei Zahlung innerhalb von {rechnungsDaten.skonto_tage} Tagen (bis zum {formatDateDDMMYYYY(rechnungsDaten.belegdatum, rechnungsDaten.skonto_tage)}). 
+                        <br />
+                        Ohne Abzug bis zum {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}. 
+                        <br />
+                        Skonto-Betrag: {calculateSkonto().toFixed(2)} €
+                        <br />
+                        Zu überweisender Betrag: {(calculateEndbetrag() - calculateSkonto()).toFixed(2)} €
+                      </p>
+                    ) : (
+                      <p>Ohne Abzug bis zum {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}.</p>
+                    )}
+                  </>
+                ) : (
+                  <p>Ohne Abzug bis zum ___________.</p>
+                )}
+              </div>
+
+              {/* QR Codes für Überweisung - Rechts */}
+            {(() => {
+              const hasIban = bankDaten.iban && bankDaten.iban.trim() !== '';
+              const hasBic = bankDaten.bic && bankDaten.bic.trim() !== '';
+              const hasKontoinhaber = bankDaten.kontoinhaber && bankDaten.kontoinhaber.trim() !== '';
+              const hasBankData = hasIban && hasBic && hasKontoinhaber;
+              
+              console.log('🔍 QR-Code Anzeige-Check:', { 
+                hasBankData, 
+                hasIban, 
+                hasBic, 
+                hasKontoinhaber,
+                iban: bankDaten.iban,
+                bic: bankDaten.bic,
+                kontoinhaber: bankDaten.kontoinhaber,
+                bankDaten 
+              });
+              
+              if (!hasBankData) {
+                console.warn('⚠️ QR-Codes können nicht angezeigt werden - Bankdaten fehlen:', {
+                  iban: bankDaten.iban,
+                  bic: bankDaten.bic,
+                  kontoinhaber: bankDaten.kontoinhaber,
+                  ibanEmpty: !hasIban,
+                  bicEmpty: !hasBic,
+                  kontoinhaberEmpty: !hasKontoinhaber
+                });
+              }
+              return hasBankData;
+            })() ? (
+              <div className="qr-codes-section" style={{ flex: '1', display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', minWidth: '400px' }}>
+                {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
+                  <>
+                    {/* QR-Code mit Skonto */}
+                    {(() => {
+                      const betragMitSkonto = calculateEndbetrag() - calculateSkonto();
+                      const qrCodeMitSkonto = generateEPCQRCode(betragMitSkonto, true);
+                      if (!qrCodeMitSkonto || qrCodeMitSkonto.trim() === '') {
+                        console.warn('⚠️ QR-Code mit Skonto konnte nicht generiert werden');
+                        return null;
+                      }
+                      const skontoDatum = formatDateDDMMYYYY(rechnungsDaten.belegdatum, Number(rechnungsDaten.skonto_tage));
+                      return (
+                        <div style={{ textAlign: 'center', flex: '1', minWidth: '200px' }}>
+                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
+                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                            <QRCodeSVG 
+                              value={qrCodeMitSkonto} 
+                              size={70}
+                              level="M"
+                            />
+                          </div>
+                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            Betrag: {betragMitSkonto.toFixed(2)} €
+                          </p>
+                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            bis zum {skontoDatum} zu zahlen
+                          </p>
+                        </div>
+                      );
+                    })()}
+                    {/* QR-Code ohne Skonto */}
+                    {(() => {
+                      const betragOhneSkonto = calculateEndbetrag();
+                      const qrCodeOhneSkonto = generateEPCQRCode(betragOhneSkonto, false);
+                      if (!qrCodeOhneSkonto || qrCodeOhneSkonto.trim() === '') {
+                        console.warn('⚠️ QR-Code ohne Skonto konnte nicht generiert werden');
+                        return null;
+                      }
+                      const zahlungsfristDatum = formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist);
+                      return (
+                        <div style={{ textAlign: 'center', flex: '1', minWidth: '200px' }}>
+                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
+                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                            <QRCodeSVG 
+                              value={qrCodeOhneSkonto} 
+                              size={70}
+                              level="M"
+                            />
+                          </div>
+                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            Betrag: {betragOhneSkonto.toFixed(2)} €
+                          </p>
+                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            ab {zahlungsfristDatum} zu zahlen
+                          </p>
+                        </div>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  /* QR-Code ohne Skonto (wenn kein Skonto definiert) */
+                  (() => {
+                    const betrag = calculateEndbetrag();
+                    const qrCode = generateEPCQRCode(betrag, false);
+                    if (!qrCode || qrCode.trim() === '') {
+                      console.warn('⚠️ QR-Code konnte nicht generiert werden');
+                      return null;
+                    }
+                    const zahlungsfristDatum = formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist);
+                    return (
+                      <div style={{ textAlign: 'center', flex: '1', minWidth: '200px' }}>
+                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
+                        <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                          <QRCodeSVG 
+                            value={qrCode} 
+                            size={70}
+                            level="M"
+                          />
+                        </div>
+                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          Betrag: {betrag.toFixed(2)} €
+                        </p>
+                        {zahlungsfristDatum && (
+                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            bis zum {zahlungsfristDatum} zu zahlen
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+            ) : (
+              <div style={{ flex: '1', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', textAlign: 'center', minWidth: '400px' }}>
+                <p style={{ color: '#ef4444', margin: 0 }}>
+                  ⚠️ QR-Codes können nicht angezeigt werden. Bitte stellen Sie sicher, dass Bankdaten (IBAN, BIC, Kontoinhaber) in den Dojo-Einstellungen hinterlegt sind.
+                </p>
+              </div>
+            )}
+            </div>
+
+            {/* Fußzeile mit Dojo-Daten und Bankdaten */}
+            <div className="rechnung-footer" style={{
+              position: 'absolute',
+              bottom: '0',
+              left: '20mm',
+              right: '20mm',
+              paddingTop: '0.75rem',
+              paddingBottom: '0.5rem',
+              borderTop: '1px solid rgba(0, 0, 0, 0.2)',
+              fontSize: '7pt',
+              color: '#000000',
+              lineHeight: '1.6',
+              textAlign: 'center'
+            }}>
+              {/* Zeile 1: Dojo-Informationen */}
+              <div style={{ marginBottom: '0.3rem' }}>
+                {[
+                  activeDojo?.dojoname,
+                  activeDojo?.strasse && activeDojo?.hausnummer ? `${activeDojo.strasse} ${activeDojo.hausnummer}` : null,
+                  activeDojo?.plz && activeDojo?.ort ? `${activeDojo.plz} ${activeDojo.ort}` : null,
+                  activeDojo?.email,
+                  activeDojo?.homepage,
+                  activeDojo?.telefon
+                ].filter(Boolean).join(' | ')}
+              </div>
+              {/* Zeile 2: Bankdaten */}
+              {bankDaten.iban && bankDaten.bic && bankDaten.kontoinhaber && (
+                <div>
+                  {[
+                    bankDaten.bank_name,
+                    bankDaten.kontoinhaber,
+                    bankDaten.iban,
+                    bankDaten.bic
+                  ].filter(Boolean).join(' | ')}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -360,5 +360,116 @@ router.post('/:dojoId/init-defaults', async (req, res) => {
   }
 });
 
+// POST /api/dojo-banken/migrate - Migriere Bankdaten von dojo Tabelle zu dojo_banken
+router.post('/migrate', async (req, res) => {
+  try {
+    console.log('🔄 Starte Migration der Bankdaten...');
+    
+    // Prüfe und migriere Bankdaten für jedes Dojo
+    const insertResult = await queryAsync(`
+      INSERT INTO dojo_banken (
+        dojo_id,
+        bank_name,
+        bank_typ,
+        ist_aktiv,
+        ist_standard,
+        iban,
+        bic,
+        kontoinhaber,
+        sepa_glaeubiger_id,
+        sortierung,
+        created_at,
+        updated_at
+      )
+      SELECT 
+        d.id AS dojo_id,
+        COALESCE(d.bank, d.dojoname, 'Hauptkonto') AS bank_name,
+        'bank' AS bank_typ,
+        1 AS ist_aktiv,
+        1 AS ist_standard,
+        COALESCE(d.bank_iban, d.iban) AS iban,
+        COALESCE(d.bank_bic, d.bic) AS bic,
+        COALESCE(d.bank_inhaber, d.inhaber, d.dojoname) AS kontoinhaber,
+        d.sepa_glaeubiger_id,
+        0 AS sortierung,
+        NOW() AS created_at,
+        NOW() AS updated_at
+      FROM dojo d
+      WHERE 
+        (COALESCE(d.bank_iban, d.iban) IS NOT NULL 
+         AND COALESCE(d.bank_iban, d.iban) != '')
+        AND (COALESCE(d.bank_bic, d.bic) IS NOT NULL 
+             AND COALESCE(d.bank_bic, d.bic) != '')
+        AND NOT EXISTS (
+          SELECT 1 
+          FROM dojo_banken db 
+          WHERE db.dojo_id = d.id 
+          AND db.bank_typ = 'bank'
+          AND db.ist_aktiv = 1
+        )
+    `);
+    
+    console.log('✅ Insert-Ergebnis:', insertResult);
+    
+    // Aktualisiere bestehende Einträge
+    const updateResult = await queryAsync(`
+      UPDATE dojo_banken db
+      INNER JOIN dojo d ON db.dojo_id = d.id
+      SET 
+        db.iban = COALESCE(NULLIF(db.iban, ''), COALESCE(d.bank_iban, d.iban)),
+        db.bic = COALESCE(NULLIF(db.bic, ''), COALESCE(d.bank_bic, d.bic)),
+        db.kontoinhaber = COALESCE(NULLIF(db.kontoinhaber, ''), COALESCE(d.bank_inhaber, d.inhaber, d.dojoname)),
+        db.sepa_glaeubiger_id = COALESCE(NULLIF(db.sepa_glaeubiger_id, ''), d.sepa_glaeubiger_id),
+        db.updated_at = NOW()
+      WHERE 
+        db.bank_typ = 'bank'
+        AND db.ist_aktiv = 1
+        AND (
+          db.iban IS NULL OR db.iban = '' OR
+          db.bic IS NULL OR db.bic = '' OR
+          db.kontoinhaber IS NULL OR db.kontoinhaber = ''
+        )
+        AND (
+          (COALESCE(d.bank_iban, d.iban) IS NOT NULL AND COALESCE(d.bank_iban, d.iban) != '') OR
+          (COALESCE(d.bank_bic, d.bic) IS NOT NULL AND COALESCE(d.bank_bic, d.bic) != '')
+        )
+    `);
+    
+    console.log('✅ Update-Ergebnis:', updateResult);
+    
+    // Prüfe, welche Dojos Bankdaten haben
+    const dojosMitBankdaten = await queryAsync(`
+      SELECT 
+        d.id,
+        d.dojoname,
+        COALESCE(d.bank_iban, d.iban) AS iban,
+        COALESCE(d.bank_bic, d.bic) AS bic,
+        COALESCE(d.bank_inhaber, d.inhaber, d.dojoname) AS kontoinhaber,
+        (SELECT COUNT(*) FROM dojo_banken db WHERE db.dojo_id = d.id AND db.bank_typ = 'bank' AND db.ist_aktiv = 1) AS anzahl_banken
+      FROM dojo d
+      WHERE 
+        (COALESCE(d.bank_iban, d.iban) IS NOT NULL 
+         AND COALESCE(d.bank_iban, d.iban) != '')
+        AND (COALESCE(d.bank_bic, d.bic) IS NOT NULL 
+             AND COALESCE(d.bank_bic, d.bic) != '')
+    `);
+    
+    res.json({
+      success: true,
+      message: 'Migration abgeschlossen',
+      inserted: insertResult.affectedRows || 0,
+      updated: updateResult.affectedRows || 0,
+      dojosMitBankdaten: dojosMitBankdaten
+    });
+  } catch (error) {
+    console.error('❌ Fehler bei der Migration:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Fehler bei der Migration',
+      details: error.message 
+    });
+  }
+});
+
 module.exports = router;
 

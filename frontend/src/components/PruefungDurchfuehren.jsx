@@ -440,7 +440,7 @@ const PruefungDurchfuehren = () => {
     <div className="content-card">
       <div className="page-header">
         <div>
-          <h1>🏆 Prüfung durchführen</h1>
+          <h1>Prüfung durchführen</h1>
           <p>Live-Ansicht für den Prüfungstag - Ergebnisse direkt eintragen</p>
         </div>
       </div>
@@ -459,7 +459,7 @@ const PruefungDurchfuehren = () => {
         </div>
       )}
 
-      {/* Filter-Bereich */}
+      {/* Filter-Bereich - Alles in einer Zeile */}
       <div style={{
         background: 'rgba(255, 255, 255, 0.03)',
         padding: '1.5rem',
@@ -467,147 +467,55 @@ const PruefungDurchfuehren = () => {
         marginBottom: '2rem',
         border: '1px solid rgba(255, 215, 0, 0.2)'
       }}>
-        {/* Datum-Filter und Auswahl */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', color: '#FFD700', fontSize: '1rem' }}>
-            <Calendar size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Zeitraum
-          </label>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <button
-              onClick={() => setDatumFilter('alle')}
-              className={datumFilter === 'alle' ? '' : 'logout-button'}
-              style={{
-                padding: datumFilter === 'alle' ? '0.75rem 1.25rem' : '10px 20px',
-                background: datumFilter === 'alle'
-                  ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                  : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
-                border: datumFilter === 'alle' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                color: datumFilter === 'alle' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
-                fontSize: '0.9rem',
-                fontWeight: datumFilter === 'alle' ? '600' : '700',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: datumFilter === 'alle'
-                  ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-                  : '0 2px 8px rgba(255, 215, 0, 0.2)',
-                backdropFilter: 'blur(10px)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                if (datumFilter !== 'alle') {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                  e.target.style.color = '#ffd700';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (datumFilter !== 'alle') {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-                }
-              }}
-            >
-              Alle
-            </button>
-            <button
-              onClick={() => setDatumFilter('zukuenftig')}
-              className={datumFilter === 'zukuenftig' ? '' : 'logout-button'}
-              style={{
-                padding: datumFilter === 'zukuenftig' ? '0.75rem 1.25rem' : '10px 20px',
-                background: datumFilter === 'zukuenftig'
-                  ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                  : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
-                border: datumFilter === 'zukuenftig' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                color: datumFilter === 'zukuenftig' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
-                fontSize: '0.9rem',
-                fontWeight: datumFilter === 'zukuenftig' ? '600' : '700',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: datumFilter === 'zukuenftig'
-                  ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-                  : '0 2px 8px rgba(255, 215, 0, 0.2)',
-                backdropFilter: 'blur(10px)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                if (datumFilter !== 'zukuenftig') {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                  e.target.style.color = '#ffd700';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (datumFilter !== 'zukuenftig') {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-                }
-              }}
-            >
-              Zukünftig
-            </button>
-            <button
-              onClick={() => setDatumFilter('vergangen')}
-              className={datumFilter === 'vergangen' ? '' : 'logout-button'}
-              style={{
-                padding: datumFilter === 'vergangen' ? '0.75rem 1.25rem' : '10px 20px',
-                background: datumFilter === 'vergangen'
-                  ? 'linear-gradient(135deg, #FFD700, #FFA500)'
-                  : 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
-                border: datumFilter === 'vergangen' ? 'none' : '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                color: datumFilter === 'vergangen' ? '#1a1a2e' : 'rgba(255, 255, 255, 0.95)',
-                fontSize: '0.9rem',
-                fontWeight: datumFilter === 'vergangen' ? '600' : '700',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: datumFilter === 'vergangen'
-                  ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-                  : '0 2px 8px rgba(255, 215, 0, 0.2)',
-                backdropFilter: 'blur(10px)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              onMouseEnter={(e) => {
-                if (datumFilter !== 'vergangen') {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                  e.target.style.color = '#ffd700';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.4)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (datumFilter !== 'vergangen') {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-                }
-              }}
-            >
-              Vergangen
-            </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+          {/* Zeitraum-Label und Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <label style={{ fontWeight: '600', color: '#FFD700', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+              Zeitraum
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => setDatumFilter('alle')}
+                className="logout-button"
+                style={{
+                  background: datumFilter === 'alle' 
+                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
+                    : undefined,
+                  color: datumFilter === 'alle' ? '#1a1a2e' : undefined
+                }}
+              >
+                Alle
+              </button>
+              <button
+                onClick={() => setDatumFilter('zukuenftig')}
+                className="logout-button"
+                style={{
+                  background: datumFilter === 'zukuenftig' 
+                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
+                    : undefined,
+                  color: datumFilter === 'zukuenftig' ? '#1a1a2e' : undefined
+                }}
+              >
+                Zukünftig
+              </button>
+              <button
+                onClick={() => setDatumFilter('vergangen')}
+                className="logout-button"
+                style={{
+                  background: datumFilter === 'vergangen' 
+                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
+                    : undefined,
+                  color: datumFilter === 'vergangen' ? '#1a1a2e' : undefined
+                }}
+              >
+                Vergangen
+              </button>
+            </div>
           </div>
 
-          {/* Datumsauswahl für direkte Navigation */}
+          {/* Datumsauswahl */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+            <label style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)', whiteSpace: 'nowrap' }}>
               Zu Datum springen:
             </label>
             <input
@@ -636,34 +544,35 @@ const PruefungDurchfuehren = () => {
               </button>
             )}
           </div>
-        </div>
 
-        {/* Stil-Filter */}
-        <div>
-          <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600', color: '#FFD700', fontSize: '1rem' }}>
-            Kampfkunst-Stil
-          </label>
-          <select
-            value={selectedStil}
-            onChange={(e) => setSelectedStil(e.target.value)}
-            style={{
-              padding: '0.6rem 1rem',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'white',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              minWidth: '200px'
-            }}
-          >
-            <option value="all" style={{ background: '#1a1a2e' }}>Alle Stile</option>
-            {stile.map(stil => (
-              <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#1a1a2e' }}>
-                {stil.name}
-              </option>
-            ))}
-          </select>
+          {/* Stil-Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ fontWeight: '600', color: '#FFD700', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+              Kampfkunst-Stil
+            </label>
+            <select
+              value={selectedStil}
+              onChange={(e) => setSelectedStil(e.target.value)}
+              style={{
+                padding: '0.5rem 0.8rem',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: 'white',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                minWidth: '180px',
+                height: '38px'
+              }}
+            >
+              <option value="all" style={{ background: '#1a1a2e' }}>Alle Stile</option>
+              {stile.map(stil => (
+                <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#1a1a2e' }}>
+                  {stil.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

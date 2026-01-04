@@ -57,6 +57,7 @@ router.get('/', (req, res) => {
     if (err) {
       console.error('DB-Verbindungsfehler:', err);
       return res.status(500).json({
+        success: false,
         error: 'Datenbankverbindung fehlgeschlagen',
         details: err.message
       });
@@ -94,6 +95,7 @@ router.get('/', (req, res) => {
         console.error('Fehler beim Abrufen der Stile:', stilError);
         connection.release();
         return res.status(500).json({ 
+          success: false,
           error: 'Fehler beim Abrufen der Stile',
           details: stilError.message 
         });
@@ -106,6 +108,16 @@ router.get('/', (req, res) => {
 
       // Graduierungen für alle Stile abrufen - ERWEITERTE FELDER
       const stilIds = stilRows.map(stil => stil.stil_id);
+      
+      // Prüfe ob stilIds leer ist
+      if (stilIds.length === 0) {
+        connection.release();
+        return res.json(stilRows.map(stil => ({
+          ...stil,
+          graduierungen: []
+        })));
+      }
+
       const graduierungQuery = `
         SELECT 
           graduierung_id,
@@ -132,6 +144,7 @@ router.get('/', (req, res) => {
         if (graduierungError) {
           console.error('Fehler beim Abrufen der Graduierungen:', graduierungError);
           return res.status(500).json({ 
+            success: false,
             error: 'Fehler beim Abrufen der Graduierungen',
             details: graduierungError.message 
           });

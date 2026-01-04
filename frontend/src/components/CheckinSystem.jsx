@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart
+  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText
 } from 'lucide-react';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import VerkaufKasse from './VerkaufKasse';
@@ -63,6 +64,7 @@ const aggregateCheckinsByMember = (checkins = []) => {
 const CheckinSystem = () => {
   // Refs für automatische Fokussierung
   const searchInputRef = useRef(null);
+  const navigate = useNavigate();
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
 
   // State Management
@@ -86,6 +88,14 @@ const CheckinSystem = () => {
   // Verkauf State
   const [showVerkauf, setShowVerkauf] = useState(false);
   const [verkaufKunde, setVerkaufKunde] = useState(null);
+
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    member: null
+  });
 
   // API Configuration
   const API_BASE = config.apiBaseUrl;
@@ -135,6 +145,11 @@ const CheckinSystem = () => {
 
       const data = await response.json();
       const membersList = Array.isArray(data) ? data : (data.data || []);
+      console.log('📥 Mitglieder geladen:', membersList.length);
+      console.log('📸 Erste 3 Mitglieder mit foto_pfad:', membersList.slice(0, 3).map(m => ({
+        name: `${m.vorname} ${m.nachname}`,
+        foto_pfad: m.foto_pfad
+      })));
       setMembers(membersList);
     } catch (err) {
       console.error('Fehler beim Laden der Mitglieder:', err);
@@ -276,10 +291,7 @@ const CheckinSystem = () => {
 
   // Proceed to confirmation
   const proceedToConfirmation = () => {
-    if (selectedCourses.length === 0) {
-      setError('Bitte mindestens einen Kurs auswählen');
-      return;
-    }
+    // Check-in ohne Kurs ist jetzt erlaubt (Freies Training)
     setStep(3);
     setError('');
   };
@@ -392,6 +404,9 @@ const CheckinSystem = () => {
         checkin_method: 'touch'
       };
 
+      console.log('🔄 Check-in Request:', requestBody);
+      console.log('📡 API Base:', API_BASE);
+
       const response = await fetch(`${API_BASE}/checkin/multi-course`, {
         method: 'POST',
         headers: {
@@ -400,6 +415,8 @@ const CheckinSystem = () => {
         },
         body: JSON.stringify(requestBody)
       });
+
+      console.log('📥 Response Status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -417,21 +434,27 @@ const CheckinSystem = () => {
       const successMessage = result.message || `Check-in erfolgreich für ${selectedMember.vorname} ${selectedMember.nachname}!`;
       setSuccess(`✅ ${successMessage}`);
 
+      console.log('✅ Check-in erfolgreich!', result);
+
       // Modal sofort schließen und Workflow zurücksetzen
       resetWorkflow();
-      
-      // Daten im Hintergrund neu laden für Statistik-Update
-      setTimeout(async () => {
-        try {
-          await Promise.all([
-            loadTodayCheckins(),
-            loadCoursesToday()
-          ]);
-          setSuccess('');
-        } catch (err) {
-          console.error('Fehler beim Neuladen der Daten:', err);
-        }
-      }, 1000);
+
+      // Daten SOFORT neu laden für Statistik-Update
+      console.log('🔄 Lade Check-in-Daten neu...');
+      try {
+        await Promise.all([
+          loadTodayCheckins(),
+          loadCoursesToday()
+        ]);
+        console.log('✅ Check-in-Daten neu geladen!');
+      } catch (err) {
+        console.error('❌ Fehler beim Neuladen der Daten:', err);
+      }
+
+      // Success-Nachricht nach 5 Sekunden ausblenden
+      setTimeout(() => {
+        setSuccess('');
+      }, 5000);
       
     } catch (err) {
       console.error('Check-in Fehler:', err);
@@ -459,6 +482,58 @@ const CheckinSystem = () => {
       }
     }, 150);
   };
+
+  // Context Menu Handler
+  const handleContextMenu = (e, checkin) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🔍 Context Menu - Checkin Daten:', checkin);
+    
+    // Berechne optimale Position (verhindert Scrollen)
+    const menuHeight = 400; // Geschätzte Höhe des Menüs
+    const windowHeight = window.innerHeight;
+    const clickY = e.clientY;
+    
+    // Wenn das Menü unten abgeschnitten würde, zeige es oberhalb des Klicks
+    let menuY = e.clientY;
+    if (clickY + menuHeight > windowHeight) {
+      menuY = Math.max(10, clickY - menuHeight);
+    }
+    
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: menuY,
+      member: checkin
+    });
+  };
+
+  // Context Menu schließen
+  const closeContextMenu = () => {
+    setContextMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      member: null
+    });
+  };
+
+  // Context Menu schließen bei Klick außerhalb
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        closeContextMenu();
+      }
+    };
+
+    if (contextMenu.visible) {
+      document.addEventListener('click', handleClickOutside);
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [contextMenu.visible]);
 
   // Modal schließen
   const closeCheckinModal = () => {
@@ -494,9 +569,10 @@ const CheckinSystem = () => {
 
   return (
     <div className="checkin-system">
-      {/* Header */}
+      {/* Header mit Step-Header links und Stats rechts */}
       <div className="checkin-header">
         <div className="checkin-header-content">
+          {/* Step Header links */}
           <div className="step-header">
             <div className="checkin-logo">
               <CheckCircle size={24} />
@@ -504,8 +580,6 @@ const CheckinSystem = () => {
             <div>
               <h1 className="checkin-title">Check-in Terminal</h1>
               <div className="checkin-subtitle">
-                <span>Schritt {step} von 3</span>
-                <span>•</span>
                 <span>{new Date().toLocaleDateString('de-DE', { 
                   weekday: 'long', 
                   year: 'numeric', 
@@ -515,22 +589,43 @@ const CheckinSystem = () => {
               </div>
             </div>
           </div>
-          
-          <div className="header-actions">
-            {/* Progress Indicator */}
-            <div className="progress-indicator">
-              {[1, 2, 3].map(num => (
-                <div key={num}>
-                  <div className={`progress-step ${
-                    step > num ? 'completed' : step === num ? 'active' : 'inactive'
-                  }`}>
-                    {step > num ? <Check size={16} /> : num}
-                  </div>
-                  {num < 3 && <div className={`progress-line ${step > num ? 'completed' : 'inactive'}`} />}
+
+          {/* Stats Grid rechts */}
+          <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <span className="stat-icon">👥</span>
+                  <span className="stat-value">{members.length}</span>
                 </div>
-              ))}
-            </div>
-            
+                <div className="stat-label">Mitglieder</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <CheckCircle size={18} className="stat-icon-lucide" />
+                  <span className="stat-value">{todayCheckins.length}</span>
+                </div>
+                <div className="stat-label">Check-ins heute</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <Calendar size={18} className="stat-icon-lucide" />
+                  <span className="stat-value">{coursesToday.length}</span>
+                </div>
+                <div className="stat-label">Kurse heute</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-content">
+                  <Clock size={18} className="stat-icon-lucide" />
+                  <span className="stat-value">
+                    {new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <div className="stat-label">Uhrzeit</div>
+              </div>
+          </div>
+
+          {/* Header Actions rechts */}
+          <div className="header-actions">
             {/* Reset Button */}
             {step > 1 && (
               <button onClick={resetWorkflow} className="btn btn-secondary">
@@ -539,40 +634,69 @@ const CheckinSystem = () => {
             )}
           </div>
         </div>
-        
-        {/* Today's Stats im Header - Dashboard-Style */}
-        <div className="stats-container">
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <span className="stat-icon">👥</span>
-                <span className="stat-value">{members.length}</span>
+
+        {/* Search Field im Header unter dem gelben Strich */}
+        <div className="header-search-row">
+          <div className="header-search-container">
+            <Search className="search-icon" size={22} />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Mitglied suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="header-search-input"
+            />
+            {searchTerm && (
+              <X
+                className="search-clear"
+                size={18}
+                onClick={() => setSearchTerm('')}
+              />
+            )}
+
+            {/* Dropdown Results */}
+            {searchTerm && filteredMembers.length > 0 && (
+              <div className="search-dropdown">
+                {filteredMembers.map(member => {
+                  const checkedIn = isCheckedIn(member.mitglied_id);
+
+                  return (
+                    <div
+                      key={member.mitglied_id}
+                      onClick={() => selectMemberFromSearch(member)}
+                      className={`search-dropdown-item ${checkedIn ? 'checked-in' : ''}`}
+                    >
+                      {/* Avatar: Foto oder Initialen */}
+                      {member.foto_pfad ? (
+                        <img
+                          src={`http://localhost:3000${member.foto_pfad}`}
+                          alt={`${member.vorname} ${member.nachname}`}
+                          className="dropdown-avatar"
+                        />
+                      ) : (
+                        <div className="dropdown-avatar-placeholder">
+                          {member.vorname?.charAt(0)}{member.nachname?.charAt(0)}
+                        </div>
+                      )}
+
+                      <div className="dropdown-member-info">
+                        <div className="dropdown-member-name">
+                          {member.vorname} {member.nachname}
+                        </div>
+                        {member.gurtfarbe && (
+                          <div className="dropdown-member-belt">{member.gurtfarbe}</div>
+                        )}
+                      </div>
+
+                      {checkedIn && (
+                        <CheckCircle size={16} className="dropdown-check-icon" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div className="stat-label">Mitglieder</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <CheckCircle size={18} className="stat-icon-lucide" />
-                <span className="stat-value">{todayCheckins.length}</span>
-              </div>
-              <div className="stat-label">Check-ins heute</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <Calendar size={18} className="stat-icon-lucide" />
-                <span className="stat-value">{coursesToday.length}</span>
-              </div>
-              <div className="stat-label">Kurse heute</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card-content">
-                <Clock size={18} className="stat-icon-lucide" />
-                <span className="stat-value">
-                  {new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-              <div className="stat-label">Uhrzeit</div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -593,248 +717,106 @@ const CheckinSystem = () => {
           </div>
         )}
 
-        {/* 2-Spalten Layout */}
+        {/* Check-ins Liste */}
         <div className="checkin-main-layout">
-          {/* Linke Spalte: Suche + Mitglieder */}
-          <div className="checkin-left-column">
-            {/* Step 1: Member Selection via Search - immer sichtbar */}
-          <div className="fade-in">
-            {/* Search */}
-            <div className="search-container compact">
-              <Search className="search-icon" size={24} />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Mitglied suchen und auswählen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-              {searchTerm && (
-                <X 
-                  className="search-clear" 
-                  size={24}
-                  onClick={() => setSearchTerm('')}
-                />
-              )}
-            </div>
+          <div className="checkin-full-column">
+            {/* Today's Check-ins - Smaller Cards */}
+            {aggregatedTodayCheckins.length > 0 ? (
+              <div className="checkins-list-container">
+                <div className="checkins-header">
+                  <h3>
+                    <CheckCircle size={24} />
+                    Heute eingecheckt ({aggregatedTodayCheckins.length})
+                  </h3>
+                  <button
+                    onClick={executeCheckoutAll}
+                    disabled={loading}
+                    className="checkout-all-btn"
+                    title="Alle Personen auschecken"
+                  >
+                    <X size={16} />
+                    Alle Auschecken
+                  </button>
+                </div>
 
-            {/* Search Results - nur wenn gesucht wird */}
-            {searchTerm && (
-              <div className="search-results">
-                <h3>
-                  <Search size={20} />
-                  Suchergebnisse für "{searchTerm}" ({filteredMembers.length})
-                </h3>
-                
-                <div className="member-grid">
-                  {filteredMembers.map(member => {
-                    const checkedIn = isCheckedIn(member.mitglied_id);
-                    
+                {/* Kleinere Card Grid für eingecheckte Personen */}
+                <div className="member-grid compact">
+                  {aggregatedTodayCheckins.map((checkin) => {
+                    const primaryCheckin = checkin.primaryCheckin || checkin.checkins?.[0];
+                    const checkoutTargetId = primaryCheckin?.checkin_id;
+                    const checkoutName = checkin.full_name || `${checkin.vorname || ""} ${checkin.nachname || ""}`.trim();
                     return (
-                      <div
-                        key={member.mitglied_id}
-                        onClick={() => selectMemberFromSearch(member)}
-                        className={`member-card clickable ${checkedIn ? 'checked-in' : ''}`}
+                      <div 
+                        key={checkin.mitglied_id || checkoutTargetId} 
+                        className="member-card checked-in-card compact"
+                        onClick={() => {
+                          // Linksklick öffnet Verkauf
+                          const memberData = {
+                            mitglied_id: checkin.mitglied_id,
+                            vorname: checkin.vorname,
+                            nachname: checkin.nachname,
+                            foto_pfad: checkin.foto_pfad,
+                            gurtfarbe: checkin.gurtfarbe,
+                            mitgliedsnummer: checkin.mitgliedsnummer
+                          };
+                          startVerkauf(memberData);
+                        }}
+                        onContextMenu={(e) => handleContextMenu(e, checkin)}
                       >
-                        <div className="member-card-content">
+                        <div className="member-card-content-simple">
                           {/* Avatar: Foto oder Initialen */}
-                          {member.foto_pfad ? (
+                          {checkin.foto_pfad ? (
                             <img
-                              src={`http://localhost:3002/${member.foto_pfad}`}
-                              alt={`${member.vorname} ${member.nachname}`}
-                              className="member-avatar"
-                              style={{ borderRadius: '0.5rem', objectFit: 'cover' }}
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              src={checkin.foto_pfad.startsWith('http') ? checkin.foto_pfad : `http://localhost:3000/${checkin.foto_pfad.startsWith('/') ? checkin.foto_pfad.slice(1) : checkin.foto_pfad}`}
+                              alt={`${checkin.vorname} ${checkin.nachname}`}
+                              className="member-avatar-checkin"
+                              onError={(e) => {
+                                console.error('❌ Check-in Bild konnte nicht geladen werden:', checkin.foto_pfad);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              onLoad={() => {
+                                console.log('✅ Check-in Bild geladen:', checkin.foto_pfad);
+                              }}
                             />
                           ) : (
-                            <div className="member-avatar">
-                              {member.vorname?.charAt(0)}{member.nachname?.charAt(0)}
+                            <div className="member-avatar-checkin">
+                              {checkin.vorname?.charAt(0)}{checkin.nachname?.charAt(0)}
                             </div>
                           )}
                           
                           {/* Name */}
-                          <h3 className="member-name">{member.vorname}</h3>
-                          <p className="member-surname">{member.nachname}</p>
-                          
-                          {/* Belt */}
-                          {member.gurtfarbe && (
-                            <div className={`member-belt ${getBeltColorClass(member.gurtfarbe)}`}>
-                              {member.gurtfarbe}
-                            </div>
-                          )}
-                          
-                          {/* Status */}
-                          <div className={`member-status ${checkedIn ? 'checked-in' : 'available'}`}>
-                            {checkedIn ? (
-                              <>
-                                <CheckCircle size={20} />
-                                <span>Bereits angemeldet</span>
-                              </>
-                            ) : (
-                              <>
-                                <ArrowRight size={20} />
-                                <span>Auswählen</span>
-                              </>
-                            )}
+                          <div className="member-name-checkin">
+                            <span>{checkin.vorname} {checkin.nachname}</span>
                           </div>
+                          
+                          {/* Auschecken Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (checkoutTargetId) {
+                                executeCheckout(checkoutTargetId, checkoutName);
+                              }
+                            }}
+                            disabled={loading || !checkoutTargetId}
+                            className="checkout-button-checkin"
+                            title="Auschecken"
+                          >
+                            <X size={18} />
+                            <span>Auschecken</span>
+                          </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
-                {filteredMembers.length === 0 && (
-                  <div className="empty-state">
-                    <User className="empty-state-icon" size={80} />
-                    <h3>Kein Mitglied gefunden</h3>
-                    <p>Versuchen Sie einen anderen Suchbegriff</p>
-                  </div>
-                )}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <CheckCircle className="empty-state-icon" size={80} />
+                <h3>Noch keine Check-ins heute</h3>
+                <p>Sobald sich Mitglieder einchecken, erscheinen sie hier.</p>
               </div>
             )}
-          </div>
-          </div>
-
-          {/* Rechte Spalte: Heutige Check-ins */}
-          <div className="checkin-right-column">
-            {/* Today's Check-ins - Smaller Cards */}
-            {aggregatedTodayCheckins.length > 0 && (
-          <div className="checkins-list-container">
-            <div className="checkins-header">
-              <h3>
-                <CheckCircle size={24} />
-                Heute eingecheckt ({aggregatedTodayCheckins.length})
-              </h3>
-              <button
-                onClick={executeCheckoutAll}
-                disabled={loading}
-                className="checkout-all-btn"
-                title="Alle Personen auschecken"
-              >
-                <X size={16} />
-                Alle Auschecken
-              </button>
-            </div>
-
-            {/* Kleinere Card Grid für eingecheckte Personen */}
-            <div className="member-grid compact">
-              {aggregatedTodayCheckins.map((checkin) => {
-                const primaryCheckin = checkin.primaryCheckin || checkin.checkins?.[0];
-                const checkoutTargetId = primaryCheckin?.checkin_id;
-                const checkoutName = checkin.full_name || `${checkin.vorname || ""} ${checkin.nachname || ""}`.trim();
-                return (
-                  <div 
-                  key={checkin.mitglied_id || checkoutTargetId} 
-                  className="member-card checked-in-card compact clickable"
-                  onClick={() => startVerkauf({
-                    mitglied_id: checkin.mitglied_id,
-                    vorname: checkin.vorname,
-                    nachname: checkin.nachname,
-                    mitgliedsnummer: checkin.mitgliedsnummer
-                  })}
-                >
-                  <div className="member-card-content">
-                    {/* Avatar kleiner: Foto oder Initialen */}
-                    {checkin.foto_pfad ? (
-                      <img
-                        src={`http://localhost:3002/${checkin.foto_pfad}`}
-                        alt={`${checkin.vorname} ${checkin.nachname}`}
-                        className="member-avatar small"
-                        style={{ borderRadius: '0.5rem', objectFit: 'cover' }}
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : (
-                      <div className="member-avatar small">
-                        {checkin.vorname?.charAt(0)}{checkin.nachname?.charAt(0)}
-                      </div>
-                    )}
-                    
-                    {/* Name nebeneinander */}
-                    <div className="member-name-row">
-                      <span className="member-firstname">{checkin.vorname} </span>
-                      <span className="member-lastname">{checkin.nachname}</span>
-                    </div>
-                    
-                    {/* Belt kompakter */}
-                    {checkin.gurtfarbe && (
-                      <div className={`member-belt compact ${getBeltColorClass(checkin.gurtfarbe)}`}>
-                        {checkin.gurtfarbe}
-                      </div>
-                    )}
-                    
-                    {/* Kursliste */}
-                    {checkin.kurse?.length > 0 && (
-                      <div className="checkin-course-tags">
-                        {checkin.kurse.map((kurs) => (
-                          <span key={kurs.checkin_id} className="checkin-course-tag">
-                            <span className="name">{kurs.kurs_name || 'Kurs'}</span>
-                            {kurs.checkin_time && (
-                              <span className="zeit">
-                                {new Date(kurs.checkin_time).toLocaleTimeString('de-DE', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            )}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Check-in Info kompakter */}
-                    <div className="checkin-info-card compact">
-                      <div className="checkin-time-display compact">
-                        <Clock size={14} />
-                        <span>
-                          {primaryCheckin?.checkin_time
-                            ? new Date(primaryCheckin.checkin_time).toLocaleTimeString('de-DE', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })
-                            : '--:--'}
-                        </span>
-                      </div>
-                      <div className="checkin-duration-display compact">
-                        {primaryCheckin?.minutes_since_checkin != null
-                          ? `vor ${primaryCheckin.minutes_since_checkin} Min.`
-                          : ''}
-                      </div>
-                    </div>
-                    
-                    {/* Status & Actions kompakter */}
-                    <div className="member-actions compact">
-                      <div className="member-status checked-in compact">
-                        <CheckCircle size={16} />
-                        <span>
-                          {checkin.kurse?.length || 0} Kurs
-                          {checkin.kurse?.length === 1 ? '' : 'e'}
-                        </span>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (checkoutTargetId) {
-                            executeCheckout(checkoutTargetId, checkoutName);
-                          }
-                        }}
-                        disabled={loading || !checkoutTargetId}
-                        className="member-status checkout-status compact"
-                        title="Auschecken"
-                      >
-                        <X size={16} />
-                        <span>Auschecken</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            </div>
-          </div>
-        )}
           </div>
         </div>
       </div>
@@ -867,8 +849,18 @@ const CheckinSystem = () => {
                   {coursesToday.filter(course => !memberCheckedInCourses.includes(course.stundenplan_id)).length === 0 ? (
                     <div className="empty-state">
                       <CheckCircle className="empty-state-icon" size={80} />
-                      <h3>Bereits für alle Kurse eingecheckt</h3>
-                      <p>Sie sind heute bereits für alle verfügbaren Kurse eingecheckt.</p>
+                      <h3>
+                        {coursesToday.length === 0
+                          ? 'Keine Kurse heute'
+                          : 'Bereits für alle Kurse eingecheckt'
+                        }
+                      </h3>
+                      <p>
+                        {coursesToday.length === 0
+                          ? 'Sie können sich für freies Training einchecken.'
+                          : 'Sie sind heute bereits für alle verfügbaren Kurse eingecheckt. Sie können sich für freies Training einchecken.'
+                        }
+                      </p>
                     </div>
                   ) : (
                     <div className="course-grid">
@@ -911,8 +903,8 @@ const CheckinSystem = () => {
                     <button onClick={closeCheckinModal} className="btn btn-secondary">
                       Abbrechen
                     </button>
-                    <button onClick={() => setStep(3)} disabled={selectedCourses.length === 0} className="btn btn-primary">
-                      Weiter →
+                    <button onClick={() => setStep(3)} className="btn btn-primary">
+                      {selectedCourses.length === 0 ? 'Freies Training →' : 'Weiter →'}
                     </button>
                   </div>
                 </div>
@@ -923,17 +915,28 @@ const CheckinSystem = () => {
                 <div className="confirmation-container">
                   <div className="confirmation-title">Check-in bestätigen</div>
                   <div className="confirmation-subtitle">
-                    {selectedCourses.length} Kurs{selectedCourses.length !== 1 ? 'e' : ''} ausgewählt
+                    {selectedCourses.length === 0
+                      ? 'Freies Training (ohne Kurs)'
+                      : `${selectedCourses.length} Kurs${selectedCourses.length !== 1 ? 'e' : ''} ausgewählt`
+                    }
                   </div>
 
-                  <div className="course-summary">
-                    {selectedCourses.map((course, index) => (
-                      <div key={index} className="course-summary-item">
-                        <span>{course.kurs_name}</span>
-                        <span>{course.zeit}</span>
+                  {selectedCourses.length === 0 ? (
+                    <div className="course-summary">
+                      <div className="course-summary-item" style={{justifyContent: 'center', fontStyle: 'italic', color: '#888'}}>
+                        <span>Check-in ohne Kurs - Freies Training</span>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="course-summary">
+                      {selectedCourses.map((course, index) => (
+                        <div key={index} className="course-summary-item">
+                          <span>{course.kurs_name}</span>
+                          <span>{course.zeit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="action-buttons">
                     <button onClick={() => setStep(2)} className="btn btn-secondary">
@@ -956,6 +959,118 @@ const CheckinSystem = () => {
           kunde={verkaufKunde}
           onClose={closeVerkauf}
         />
+      )}
+
+      {/* Context Menu */}
+      {contextMenu.visible && contextMenu.member && (
+        <div 
+          className="checkin-context-menu"
+          style={{
+            position: 'fixed',
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+            zIndex: 10000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="context-menu-header">
+            <User size={18} />
+            <span>{contextMenu.member.vorname || ''} {contextMenu.member.nachname || ''}</span>
+          </div>
+          
+          <div className="context-menu-section">
+            <div className="context-menu-title">
+              <Clock size={16} />
+              <span>Check-in Daten</span>
+            </div>
+            <div className="context-menu-content">
+              {(() => {
+                const checkinTime = contextMenu.member.primaryCheckin?.checkin_time || 
+                                   contextMenu.member.checkins?.[0]?.checkin_time ||
+                                   contextMenu.member.checkin_time;
+                
+                if (checkinTime) {
+                  return (
+                    <>
+                      <div className="context-menu-item">
+                        <span className="context-menu-label">Eingecheckt um:</span>
+                        <span className="context-menu-value">
+                          {new Date(checkinTime).toLocaleString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      {contextMenu.member.minutes_since_checkin != null && (
+                        <div className="context-menu-item">
+                          <span className="context-menu-label">Vor:</span>
+                          <span className="context-menu-value">
+                            {contextMenu.member.minutes_since_checkin} Minuten
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  );
+                } else {
+                  return (
+                    <div className="context-menu-item">
+                      <span className="context-menu-label">Keine Check-in-Zeit verfügbar</span>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+          </div>
+
+          <div className="context-menu-section">
+            <div className="context-menu-title">
+              <Calendar size={16} />
+              <span>Kurse</span>
+            </div>
+            <div className="context-menu-content">
+              {(() => {
+                const kurse = contextMenu.member.kurse || [];
+                if (kurse.length > 0) {
+                  return kurse.map((kurs, index) => {
+                    const kursName = kurs.kurs_name || 
+                                   (kurs.kurs && kurs.kurs.gruppenname) ||
+                                   'Kurs';
+                    return (
+                      <div key={index} className="context-menu-item">
+                        <span className="context-menu-label">{kursName}</span>
+                      </div>
+                    );
+                  });
+                } else {
+                  return (
+                    <div className="context-menu-item">
+                      <span className="context-menu-label">Keine Kurse gefunden</span>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="context-menu-actions">
+            <button
+              className="context-menu-action-btn"
+              onClick={() => {
+                if (contextMenu.member?.mitglied_id) {
+                  navigate(`/dashboard/mitglieder/${contextMenu.member.mitglied_id}`);
+                  closeContextMenu();
+                }
+              }}
+            >
+              <FileText size={16} />
+              <span>Mitglied-Details öffnen</span>
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

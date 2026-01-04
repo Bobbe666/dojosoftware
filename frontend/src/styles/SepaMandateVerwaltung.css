@@ -123,6 +123,9 @@
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 150px;
+  height: 46px;
+  display: flex;
+  align-items: center;
 }
 
 .status-filter:hover {
@@ -305,6 +308,133 @@
   font-size: 0.9rem;
 }
 
+/* ===== MODAL ===== */
+.sepa-mandate-container .modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+  padding: 1rem !important;
+}
+
+.sepa-mandate-container .modal-content {
+  background: #1a1a2e !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8) !important;
+  max-width: 800px !important;
+  width: 100% !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  position: relative !important;
+}
+
+.sepa-mandate-container .modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1.5rem !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2) !important;
+  background: transparent !important;
+}
+
+.sepa-mandate-container .modal-header h2 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  color: #3b82f6 !important;
+  margin: 0 !important;
+}
+
+.sepa-mandate-container .btn-close {
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 2rem !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.sepa-mandate-container .btn-close:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.sepa-mandate-container .modal-body {
+  padding: 1.5rem !important;
+  background: transparent !important;
+}
+
+.sepa-mandate-container .detail-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+  gap: 1.5rem !important;
+}
+
+.sepa-mandate-container .detail-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+}
+
+.sepa-mandate-container .detail-item label {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.sepa-mandate-container .detail-value {
+  font-size: 0.95rem !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  padding: 0.75rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  border-radius: 8px !important;
+}
+
+.sepa-mandate-container .detail-value code {
+  font-family: 'Courier New', monospace !important;
+  font-size: 0.9rem !important;
+  color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  padding: 0.2rem 0.4rem !important;
+  border-radius: 4px !important;
+}
+
+.sepa-mandate-container .detail-value strong {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.sepa-mandate-container .detail-value small {
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.sepa-mandate-container .modal-footer {
+  display: flex !important;
+  gap: 1rem !important;
+  justify-content: flex-end !important;
+  padding: 1.5rem !important;
+  border-top: 1px solid rgba(59, 130, 246, 0.2) !important;
+  background: transparent !important;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .sepa-mandate-container {
@@ -330,5 +460,21 @@
 
   .mandate-table {
     min-width: 900px;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
   }
 }

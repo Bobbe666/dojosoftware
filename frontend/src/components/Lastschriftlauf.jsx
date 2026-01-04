@@ -33,14 +33,32 @@ const Lastschriftlauf = ({ embedded = false }) => {
       const response = await fetch(`${config.apiBaseUrl}/lastschriftlauf/preview`);
 
       if (!response.ok) {
-        throw new Error('Fehler beim Laden der Vorschau');
+        let errorMessage = 'Fehler beim Laden der Vorschau';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.details || errorData.error || errorMessage;
+          console.error('❌ API Error Response:', errorData);
+        } catch (e) {
+          console.error('❌ Response Status:', response.status, response.statusText);
+        }
+        throw new Error(errorMessage);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Ungültige Antwort vom Server');
       }
 
       const data = await response.json();
+      if (!data.success && data.error) {
+        throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+      }
+      
       setPreview(data);
       setLoading(false);
     } catch (error) {
-      console.error('Fehler beim Laden der Vorschau:', error);
+      console.error('❌ Fehler beim Laden der Vorschau:', error);
+      console.error('❌ Error Stack:', error.stack);
       alert('Fehler beim Laden der Vorschau: ' + error.message);
       setLoading(false);
     }
@@ -107,8 +125,8 @@ const Lastschriftlauf = ({ embedded = false }) => {
       {/* Header - nur anzeigen wenn nicht embedded */}
       {!embedded && (
       <div className="lastschriftlauf-header">
-        <button className="btn btn-secondary" onClick={() => navigate('/dashboard/beitraege')}>
-          <ArrowLeft size={20} />
+        <button className="btn btn-secondary" onClick={() => navigate('/dashboard/beitraege')} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
+          <ArrowLeft size={16} />
           Zurück
         </button>
         <div>
@@ -119,204 +137,210 @@ const Lastschriftlauf = ({ embedded = false }) => {
           <button
             className="btn btn-secondary"
             onClick={() => navigate('/dashboard/zahllaeufe')}
+            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
           >
-            <FileText size={20} />
+            <FileText size={16} />
             Zahlläufe-Übersicht
           </button>
           <button
             className="btn btn-info"
             onClick={loadPreview}
             disabled={loading}
+            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
           >
-            <RefreshCw size={20} />
+            <RefreshCw size={16} />
             Aktualisieren
           </button>
         </div>
       </div>
       )}
 
-      {/* Info Box */}
-      <div className="info-box">
-        <AlertCircle size={24} />
-        <div>
-          <h3>SEPA-Lastschriftverfahren</h3>
-          <p>
-            Der Lastschriftlauf generiert eine Datei mit allen aktiven SEPA-Mandaten.
-            Diese Datei kann direkt in Ihre Online-Banking Software oder bei Ihrer Bank importiert werden.
-            <strong> Nur Mitglieder mit aktivem SEPA-Mandat und Zahlungsmethode "SEPA-Lastschrift" werden berücksichtigt.</strong>
-          </p>
-        </div>
-      </div>
-
-      {/* Warning Box - Fehlende SEPA-Mandate */}
-      {missingMandates.length > 0 && (
-        <div className="warning-box">
-          <AlertCircle size={24} />
-          <div>
-            <h3>⚠️ Fehlende SEPA-Mandate ({missingMandates.length})</h3>
-            <p>
-              Die folgenden Mitglieder haben Verträge mit Zahlungsmethode "Lastschrift",
-              aber <strong>kein aktives SEPA-Mandat</strong>.
-              Lastschriften können für diese Mitglieder nicht durchgeführt werden:
-            </p>
-            <div className="missing-mandates-list">
-              {missingMandates.slice(0, 5).map(member => (
-                <div
-                  key={member.mitglied_id}
-                  className="missing-mandate-item"
-                  onClick={() => navigate(`/dashboard/mitglieder/${member.mitglied_id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <span className="member-name">
-                    {member.vorname} {member.nachname} (ID: {member.mitglied_id})
-                  </span>
-                  <span className="contract-count">
-                    {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege > 1 ? 'e' : ''}
-                  </span>
-                </div>
-              ))}
-              {missingMandates.length > 5 && (
-                <div className="more-info">
-                  ... und {missingMandates.length - 5} weitere
-                </div>
-              )}
-            </div>
-            <button
-              className="btn btn-warning"
-              onClick={() => navigate('/dashboard/sepa-mandate')}
-              style={{ marginTop: '1rem' }}
-            >
-              SEPA-Mandate verwalten
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Statistiken */}
-      {preview && (
-        <div className="stats-grid">
-          <div className="stat-card success">
-            <div className="stat-icon">
-              <Users size={16} />
-            </div>
-            <div className="stat-info">
-              <h3>Aktive Mandate</h3>
-              <p className="stat-value">{preview.count}</p>
-              <span className="stat-trend">SEPA-Lastschriften</span>
-            </div>
-          </div>
-
-          <div className="stat-card info">
-            <div className="stat-icon">
-              <DollarSign size={16} />
-            </div>
-            <div className="stat-info">
-              <h3>Gesamtbetrag</h3>
-              <p className="stat-value">{formatCurrency(preview.total_amount)}</p>
-              <span className="stat-trend">Monatlich</span>
-            </div>
-          </div>
-
-          <div className="stat-card warning">
-            <div className="stat-icon">
-              <Calendar size={16} />
-            </div>
-            <div className="stat-info">
-              <h3>Abrechnungsmonat</h3>
-              <p className="stat-value">{getMonthName(selectedMonth)}</p>
-              <span className="stat-trend">{selectedYear}</span>
-            </div>
-          </div>
-
-          <div className="stat-card positive">
-            <div className="stat-icon">
-              <CreditCard size={16} />
-            </div>
-            <div className="stat-info">
-              <h3>Bank / Anbieter</h3>
-              <p className="stat-value">
-                {preview.primary_bank || 'Gemischte Banken'}
+      {/* Hauptcontainer: Links Info + Stats, Rechts Warning */}
+      <div className="main-layout-container">
+        {/* Linke Seite: Info-Box oben, Statistik-Karten darunter */}
+        <div className="left-section">
+          {/* Info Box */}
+          <div className="info-box compact">
+            <AlertCircle size={20} />
+            <div>
+              <h3>SEPA-Lastschriftverfahren</h3>
+              <p>
+                Der Lastschriftlauf generiert eine Datei mit allen aktiven SEPA-Mandaten.
+                Diese Datei kann direkt in Ihre Online-Banking Software oder bei Ihrer Bank importiert werden.
+                <strong> Nur Mitglieder mit aktivem SEPA-Mandat und Zahlungsmethode "SEPA-Lastschrift" werden berücksichtigt.</strong>
               </p>
-              <span className="stat-trend">
-                {preview.count > 0 ? 'Export bereit' : 'Keine Mandate'}
-              </span>
             </div>
           </div>
+
+          {/* Statistiken - 2x2 Grid */}
+          {preview && (
+            <div className="stats-grid-compact">
+              <div className="stat-card success">
+                <div className="stat-icon">
+                  <Users size={16} />
+                </div>
+                <div className="stat-info">
+                  <h3>Aktive Mandate</h3>
+                  <p className="stat-value">{preview.count}</p>
+                  <span className="stat-trend">SEPA-Lastschriften</span>
+                </div>
+              </div>
+
+              <div className="stat-card info">
+                <div className="stat-icon">
+                  <DollarSign size={16} />
+                </div>
+                <div className="stat-info">
+                  <h3>Gesamtbetrag</h3>
+                  <p className="stat-value">{formatCurrency(preview.total_amount)}</p>
+                  <span className="stat-trend">Monatlich</span>
+                </div>
+              </div>
+
+              <div className="stat-card warning">
+                <div className="stat-icon">
+                  <Calendar size={16} />
+                </div>
+                <div className="stat-info">
+                  <h3>Abrechnungsmonat</h3>
+                  <p className="stat-value">{getMonthName(selectedMonth)}</p>
+                  <span className="stat-trend">{selectedYear}</span>
+                </div>
+              </div>
+
+              <div className="stat-card positive">
+                <div className="stat-icon">
+                  <CreditCard size={16} />
+                </div>
+                <div className="stat-info">
+                  <h3>Bank / Anbieter</h3>
+                  <p className="stat-value">
+                    {preview.primary_bank || 'Gemischte Banken'}
+                  </p>
+                  <span className="stat-trend">
+                    {preview.count > 0 ? 'Export bereit' : 'Keine Mandate'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Rechte Seite: Warning Box oben */}
+        {missingMandates.length > 0 && (
+          <div className="right-section">
+            <div className="warning-box">
+              <AlertCircle size={24} />
+              <div>
+                <h3>⚠️ Fehlende SEPA-Mandate ({missingMandates.length})</h3>
+                <p>
+                  Die folgenden Mitglieder haben Verträge mit Zahlungsmethode "Lastschrift",
+                  aber <strong>kein aktives SEPA-Mandat</strong>.
+                  Lastschriften können für diese Mitglieder nicht durchgeführt werden:
+                </p>
+                <div className="missing-mandates-list">
+                  {missingMandates.slice(0, 5).map(member => (
+                    <div
+                      key={member.mitglied_id}
+                      className="missing-mandate-item"
+                      onClick={() => navigate(`/dashboard/mitglieder/${member.mitglied_id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <span className="member-name">
+                        {member.vorname} {member.nachname} (ID: {member.mitglied_id})
+                      </span>
+                      <span className="contract-count">
+                        {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege > 1 ? 'e' : ''}
+                      </span>
+                    </div>
+                  ))}
+                  {missingMandates.length > 5 && (
+                    <div className="more-info">
+                      ... und {missingMandates.length - 5} weitere
+                    </div>
+                  )}
+                </div>
+                <button
+                  className="logout-button"
+                  onClick={() => navigate('/dashboard/sepa-mandate')}
+                  style={{ marginTop: '1rem' }}
+                >
+                  SEPA-Mandate verwalten
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Export Konfiguration */}
       <div className="export-config-card">
         <h2>Export Konfiguration</h2>
 
-        <div className="config-grid">
-          <div className="form-group">
+        <div className="config-single-row">
+          <div className="form-field-inline">
             <label>
-              <FileText size={16} />
+              <FileText size={14} />
               Export Format
             </label>
             <select
               value={selectedFormat}
               onChange={(e) => setSelectedFormat(e.target.value)}
-              className="form-select"
+              className="form-select-compact"
             >
-              <option value="csv">CSV (Deutsche Bank / Sparkasse)</option>
+              <option value="csv">CSV</option>
               <option value="xml">SEPA XML pain.008 (Standard)</option>
             </select>
-            <small>
-              {selectedFormat === 'csv' && 'Kompatibel mit den meisten deutschen Banken'}
-              {selectedFormat === 'xml' && 'SEPA-konformes XML-Format (pain.008.001.02)'}
-            </small>
           </div>
 
-          <div className="form-group">
+          <div className="form-field-inline">
             <label>
-              <Calendar size={16} />
+              <Calendar size={14} />
               Abrechnungsmonat
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="form-select"
-                style={{ flex: 1 }}
-              >
-                {[...Array(12)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {getMonthName(i + 1)}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="form-select"
-                style={{ flex: 1 }}
-              >
-                <option value={2024}>2024</option>
-                <option value={2025}>2025</option>
-                <option value={2026}>2026</option>
-              </select>
-            </div>
-            <small>Wählen Sie den Monat für den Lastschrifteinzug</small>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="form-select-compact"
+            >
+              {[...Array(12)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {getMonthName(i + 1)}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        <div className="export-actions">
+          <div className="form-field-inline">
+            <label>Jahr</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="form-select-compact"
+            >
+              <option value={2024}>2024</option>
+              <option value={2025}>2025</option>
+              <option value={2026}>2026</option>
+            </select>
+          </div>
+
           <button
-            className="btn btn-info btn-large"
+            className="logout-button"
             onClick={loadPreview}
             disabled={loading}
+            style={{ whiteSpace: 'nowrap' }}
           >
-            <Eye size={20} />
+            <Eye size={16} />
             {loading ? 'Lädt...' : 'Vorschau aktualisieren'}
           </button>
+
           <button
-            className="btn btn-success btn-large"
+            className="logout-button"
             onClick={handleExport}
             disabled={loading || !preview || preview.count === 0}
+            style={{ whiteSpace: 'nowrap' }}
           >
-            <Download size={20} />
+            <Download size={16} />
             Jetzt exportieren
           </button>
         </div>

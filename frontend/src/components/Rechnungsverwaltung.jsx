@@ -30,6 +30,9 @@ const Rechnungsverwaltung = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [rechnungen, setRechnungen] = useState([]);
   const [filteredRechnungen, setFilteredRechnungen] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [modalRechnung, setModalRechnung] = useState(null);
+  const [modalActiveTab, setModalActiveTab] = useState('details');
   const [statistiken, setStatistiken] = useState({
     gesamt_rechnungen: 0,
     offene_rechnungen: 0,
@@ -153,6 +156,27 @@ const Rechnungsverwaltung = () => {
       console.error('Fehler beim Löschen:', error);
       alert('Fehler beim Löschen');
     }
+  };
+
+  const handleShowDetails = async (rechnung_id) => {
+    try {
+      const res = await fetch(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setModalRechnung(data.data);
+        setModalActiveTab('details');
+        setShowModal(true);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Rechnung:', error);
+      alert('Fehler beim Laden der Rechnung');
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setModalRechnung(null);
+    setModalActiveTab('details');
   };
 
   const getStatusBadge = (rechnung) => {
@@ -363,7 +387,7 @@ const Rechnungsverwaltung = () => {
                     <div className="action-buttons">
                       <button
                         className="btn-icon btn-info"
-                        onClick={() => navigate(`/dashboard/rechnungen/${rechnung.rechnung_id}`)}
+                        onClick={() => handleShowDetails(rechnung.rechnung_id)}
                         title="Details anzeigen"
                       >
                         <Eye size={16} />
@@ -400,6 +424,161 @@ const Rechnungsverwaltung = () => {
           </table>
         )}
       </div>
+
+      {/* Modal für Rechnungsdetails */}
+      {showModal && modalRechnung && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content extra-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Rechnungsdetails</h2>
+              <button className="close-btn" onClick={closeModal} title="Schließen">
+                ×
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="tabs-container">
+              <button
+                className={`tab ${modalActiveTab === 'details' ? 'active' : ''}`}
+                onClick={() => setModalActiveTab('details')}
+              >
+                <FileText size={18} className="tab-icon" />
+                <span className="tab-label">Details</span>
+              </button>
+              <button
+                className={`tab ${modalActiveTab === 'positionen' ? 'active' : ''}`}
+                onClick={() => setModalActiveTab('positionen')}
+              >
+                <DollarSign size={18} className="tab-icon" />
+                <span className="tab-label">Positionen</span>
+              </button>
+              <button
+                className={`tab ${modalActiveTab === 'zahlungen' ? 'active' : ''}`}
+                onClick={() => setModalActiveTab('zahlungen')}
+              >
+                <CheckCircle size={18} className="tab-icon" />
+                <span className="tab-label">Zahlungen</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="modal-body">
+              {modalActiveTab === 'details' && (
+                <div className="detail-section">
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <label>Rechnungsnummer</label>
+                      <div className="detail-value"><strong>{modalRechnung.rechnungsnummer}</strong></div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Mitglied</label>
+                      <div className="detail-value">{modalRechnung.mitglied_name}</div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Datum</label>
+                      <div className="detail-value">{formatDate(modalRechnung.datum)}</div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Fälligkeitsdatum</label>
+                      <div className="detail-value">{formatDate(modalRechnung.faelligkeitsdatum)}</div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Art</label>
+                      <div className="detail-value">
+                        {modalRechnung.art === 'mitgliedsbeitrag' && 'Mitgliedsbeitrag'}
+                        {modalRechnung.art === 'pruefungsgebuehr' && 'Prüfungsgebühr'}
+                        {modalRechnung.art === 'kursgebuehr' && 'Kursgebühr'}
+                        {modalRechnung.art === 'ausruestung' && 'Ausrüstung'}
+                        {modalRechnung.art === 'sonstiges' && 'Sonstiges'}
+                      </div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Status</label>
+                      <div className="detail-value">{getStatusBadge(modalRechnung)}</div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Betrag</label>
+                      <div className="detail-value"><strong>{formatCurrency(modalRechnung.betrag)}</strong></div>
+                    </div>
+                    <div className="detail-item">
+                      <label>Beschreibung</label>
+                      <div className="detail-value">{modalRechnung.beschreibung || '-'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {modalActiveTab === 'positionen' && (
+                <div className="detail-section">
+                  <h3>Rechnungspositionen</h3>
+                  {modalRechnung.positionen && modalRechnung.positionen.length > 0 ? (
+                    <table className="rechnungen-table">
+                      <thead>
+                        <tr>
+                          <th>Pos.</th>
+                          <th>Beschreibung</th>
+                          <th>Menge</th>
+                          <th>Einzelpreis</th>
+                          <th>Gesamt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {modalRechnung.positionen.map((pos, idx) => (
+                          <tr key={idx}>
+                            <td>{pos.position_nr}</td>
+                            <td>{pos.bezeichnung}</td>
+                            <td>{pos.menge}</td>
+                            <td>{formatCurrency(pos.einzelpreis)}</td>
+                            <td><strong>{formatCurrency(pos.gesamtpreis || (pos.menge * pos.einzelpreis))}</strong></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="info-text">Keine Positionen vorhanden</p>
+                  )}
+                </div>
+              )}
+
+              {modalActiveTab === 'zahlungen' && (
+                <div className="detail-section">
+                  <h3>Zahlungshistorie</h3>
+                  {modalRechnung.zahlungen && modalRechnung.zahlungen.length > 0 ? (
+                    <table className="rechnungen-table">
+                      <thead>
+                        <tr>
+                          <th>Datum</th>
+                          <th>Betrag</th>
+                          <th>Methode</th>
+                          <th>Notiz</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {modalRechnung.zahlungen.map((zahlung, idx) => (
+                          <tr key={idx}>
+                            <td>{formatDate(zahlung.zahlungsdatum)}</td>
+                            <td><strong>{formatCurrency(zahlung.betrag)}</strong></td>
+                            <td>{zahlung.zahlungsmethode}</td>
+                            <td>{zahlung.notiz || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="info-text">Keine Zahlungen vorhanden</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={closeModal}>
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

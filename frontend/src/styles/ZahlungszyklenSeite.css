@@ -17,19 +17,34 @@
   margin-bottom: 1.5rem;
   padding: 1rem 1.5rem;
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: none;
-  border-radius: 12px;
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.zahlungszyklen-seite .page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 215, 0, 0.6), 
+    transparent);
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  position: relative;
+  z-index: 2;
 }
 
 .header-title {
@@ -39,23 +54,31 @@
 }
 
 .header-title svg {
-  color: #f59e0b;
+  color: #ffd700;
 }
 
 .zahlungszyklen-seite .header-title h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #f59e0b;
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
-  text-shadow: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 215, 0, 0.6);
+  position: relative;
+  z-index: 2;
+  display: inline-block;
 }
 
 .header-title p {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: 500;
 }
 
 .header-actions {
@@ -63,6 +86,8 @@
   gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
 }
 
 /* ===== STATISTICS OVERVIEW ===== */
@@ -79,23 +104,20 @@
   align-items: center !important;
   gap: 0.625rem !important;
   padding: 0.625rem !important;
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: none !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
   transition: all 0.3s ease !important;
   cursor: default !important;
   overflow: visible !important;
-  -webkit-backface-visibility: hidden !important;
-  backface-visibility: hidden !important;
-  transform: translateZ(0) !important;
 }
 
 .zahlungszyklen-seite .stats-overview .stat-card:hover {
-  transform: translateY(-2px) translateZ(0) !important;
-  border-color: rgba(245, 158, 11, 0.4) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-2px) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2) !important;
 }
 
 .zahlungszyklen-seite .stats-overview .stat-card .stat-icon {
@@ -106,8 +128,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(245, 158, 11, 0.15) !important;
-  color: #f59e0b !important;
+  background: rgba(255, 215, 0, 0.15) !important;
+  color: #ffd700 !important;
   flex-shrink: 0 !important;
   padding: 0 !important;
   font-size: 1rem !important;
@@ -167,33 +189,58 @@
 
 /* ===== ADD FORM CARD ===== */
 
-.add-form-card {
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: none;
-  border-radius: 12px;
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+.zahlungszyklen-seite .add-form-card {
+  margin-bottom: 1.5rem !important;
+  padding: 1.5rem !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  animation: fadeInUp 0.8s ease-out !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
-.add-form-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+.zahlungszyklen-seite .add-form-card::after {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
 }
 
-.add-form-card .card-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #f59e0b;
-  margin: 0;
+.zahlungszyklen-seite .add-form-card .card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 1rem !important;
+  padding: 0 !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  position: relative !important;
+  z-index: 2 !important;
+  background: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+.zahlungszyklen-seite .add-form-card .card-header::before {
+  display: none !important;
+}
+
+.zahlungszyklen-seite .add-form-card .card-header::after {
+  display: none !important;
+}
+
+.zahlungszyklen-seite .add-form-card .card-header h3 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  margin: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.95) !important;
 }
 
 /* ===== FORM STYLING ===== */
@@ -225,7 +272,7 @@
 
 .input-field {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 8px;
   padding: 0.75rem;
   color: #ffffff;
@@ -235,8 +282,8 @@
 
 .input-field:focus {
   outline: none;
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  border-color: #ffd700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -256,6 +303,9 @@
   cursor: pointer;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -266,18 +316,19 @@
   width: 20px;
   height: 20px;
   background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(245, 158, 11, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   margin-right: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark {
-  background: #f59e0b;
-  border-color: #f59e0b;
+  background: #ffd700;
+  border-color: #ffd700;
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
@@ -285,6 +336,13 @@
   color: #1a1a2e;
   font-weight: bold;
   font-size: 12px;
+}
+
+.checkbox-group {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 /* ===== FORM ACTIONS ===== */
@@ -295,7 +353,7 @@
   justify-content: flex-end;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(245, 158, 11, 0.1);
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
 }
 
 /* ===== ZAHLUNGSZYKLEN GRID ===== */
@@ -303,110 +361,147 @@
 .zahlungszyklen-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
   margin-top: 1rem;
 }
 
-/* ===== CARD STYLING ===== */
+/* ===== ZYKLUS CARD STYLING - EIGENE KLASSE OHNE KONFLIKTE ===== */
 
-.zahlungszyklen-seite .standard-card {
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: none !important;
-  border-radius: 12px;
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  padding: 1.25rem;
+.zyklus-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
   transition: all 0.3s ease;
-  -webkit-backface-visibility: hidden !important;
-  backface-visibility: hidden !important;
-  transform: translateZ(0) !important;
-  filter: none !important;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease-out;
+  cursor: default;
 }
 
-.zahlungszyklen-seite .standard-card:hover {
-  transform: translateY(-2px) translateZ(0) !important;
-  border-color: rgba(245, 158, 11, 0.4);
-  backdrop-filter: none !important;
-  filter: none !important;
+.zyklus-card::before {
+  display: none;
 }
 
-.card-header {
+.zyklus-card::after {
+  display: none;
+  content: none;
+}
+
+.zyklus-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.zyklus-card:hover::after {
+  display: none;
+  opacity: 0;
+}
+
+.zyklus-card .card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
+  padding: 0;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-.zahlungszyklen-seite .card-header h3 {
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  margin: 0 !important;
-  text-shadow: none !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 2;
   background: none !important;
   background-image: none !important;
-  background-clip: initial !important;
-  -webkit-background-clip: initial !important;
-  -webkit-text-fill-color: rgba(255, 255, 255, 0.95) !important;
-  filter: none !important;
-  transform: none !important;
-  will-change: auto !important;
+  background-color: transparent !important;
 }
 
-.status-badge {
+.zyklus-card .card-header::before {
+  display: none !important;
+}
+
+.zyklus-card .card-header::after {
+  display: none !important;
+}
+
+.zyklus-card .card-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.zahlungszyklen-seite .status-badge,
+.zyklus-card .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
+  gap: 0.25rem;
+  padding: 0 !important;
+  border-radius: 0 !important;
   font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
 }
 
-.status-badge.active {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+.zahlungszyklen-seite .status-badge.active,
+.zyklus-card .status-badge.active {
+  color: #ffd700 !important;
+  text-shadow: none !important;
+  background: none !important;
+  border: none !important;
 }
 
-.status-badge.inactive {
-  background: rgba(107, 114, 128, 0.15);
-  color: #9ca3af;
-  border: 1px solid rgba(107, 114, 128, 0.3);
+.zahlungszyklen-seite .status-badge.inactive,
+.zyklus-card .status-badge.inactive {
+  background: none !important;
+  color: #9ca3af !important;
+  border: none !important;
 }
 
-.card-content {
+.zyklus-card .card-content {
   margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 2;
 }
 
-.zyklus-info {
+.zyklus-card .zyklus-info {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-/* .info-item rules removed - using inline styles in component */
-
-.card-actions {
+.zyklus-card .card-actions {
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
-  border-top: 1px solid rgba(245, 158, 11, 0.1);
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
   padding-top: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 /* ===== EDIT FORM ===== */
 
-.edit-form {
+.zyklus-card .edit-form {
   width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
-.edit-form .input-container {
+.zyklus-card .edit-form .input-container {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -415,14 +510,18 @@
 
 /* ===== INACTIVE CARD STYLING ===== */
 
-.zahlungszyklen-seite .standard-card.inactive {
+.zyklus-card.inactive {
   opacity: 0.6;
   border-color: rgba(107, 114, 128, 0.2);
-  backdrop-filter: none !important;
 }
 
-.standard-card.inactive .card-header h3 {
+.zyklus-card.inactive .card-header h3 {
   color: #9ca3af;
+}
+
+.zyklus-card.inactive::after {
+  display: none;
+  opacity: 0;
 }
 
 /* ===== EMPTY STATE ===== */
@@ -430,19 +529,22 @@
 .empty-state {
   text-align: center;
   padding: 3rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   margin-top: 1.5rem;
+  animation: fadeInUp 0.8s ease-out;
 }
 
 .empty-state svg {
-  color: rgba(245, 158, 11, 0.5);
+  color: rgba(255, 215, 0, 0.5);
   margin-bottom: 1rem;
 }
 
 .empty-state h3 {
-  color: #f59e0b;
+  color: #ffd700;
   margin-bottom: 0.5rem;
   font-size: 1.25rem;
 }
@@ -454,6 +556,26 @@
 }
 
 /* ===== ANIMATIONS ===== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
 
 @keyframes spin {
   from {
@@ -480,8 +602,8 @@
 .loading-spinner-large {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(245, 158, 11, 0.2);
-  border-top: 4px solid #f59e0b;
+  border: 4px solid rgba(255, 215, 0, 0.2);
+  border-top: 4px solid #ffd700;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -502,14 +624,11 @@
 }
 
 .message.success {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: #f59e0b;
-  color: #f59e0b;
-  backdrop-filter: none;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+  color: #ffd700;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
 }
 
 .error-message {
@@ -527,9 +646,122 @@
   align-items: center;
   gap: 0.75rem;
   justify-content: center;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
+}
+
+/* ===== BUTTON STYLING - Logout Button Design ===== */
+
+.zahlungszyklen-seite .btn-primary,
+.zahlungszyklen-seite .btn-secondary,
+.zahlungszyklen-seite .btn-danger,
+.zahlungszyklen-seite .btn-ghost,
+.zahlungszyklen-seite .btn-small,
+.zahlungszyklen-seite button.btn {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.zahlungszyklen-seite .btn-small {
+  padding: 8px 16px !important;
+  font-size: 0.85rem !important;
+}
+
+.zahlungszyklen-seite .btn-primary::before,
+.zahlungszyklen-seite .btn-secondary::before,
+.zahlungszyklen-seite .btn-danger::before,
+.zahlungszyklen-seite .btn-ghost::before,
+.zahlungszyklen-seite button.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.zahlungszyklen-seite .btn-primary:hover::before,
+.zahlungszyklen-seite .btn-secondary:hover::before,
+.zahlungszyklen-seite .btn-danger:hover::before,
+.zahlungszyklen-seite .btn-ghost:hover::before,
+.zahlungszyklen-seite button.btn:hover::before {
+  left: 100%;
+}
+
+.zahlungszyklen-seite .btn-primary:hover,
+.zahlungszyklen-seite .btn-secondary:hover,
+.zahlungszyklen-seite button.btn:hover:not(.btn-danger) {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+  color: #ffd700 !important;
+}
+
+.zahlungszyklen-seite .btn-danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.1) 50%, transparent 100%) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2) !important;
+}
+
+.zahlungszyklen-seite .btn-danger:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.5) 0%, rgba(239, 68, 68, 0.3) 50%, rgba(239, 68, 68, 0.1) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.zahlungszyklen-seite .btn-danger::before {
+  background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.2), transparent) !important;
+}
+
+.zahlungszyklen-seite .btn-ghost {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 8px !important;
+}
+
+.zahlungszyklen-seite .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
+}
+
+.zahlungszyklen-seite .btn-primary:active,
+.zahlungszyklen-seite .btn-secondary:active,
+.zahlungszyklen-seite .btn-danger:active,
+.zahlungszyklen-seite .btn-ghost:active,
+.zahlungszyklen-seite button.btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2) !important;
+}
+
+.zahlungszyklen-seite .btn-danger:active {
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2) !important;
+}
+
+.zahlungszyklen-seite .btn-primary:disabled,
+.zahlungszyklen-seite .btn-secondary:disabled,
+.zahlungszyklen-seite .btn-danger:disabled,
+.zahlungszyklen-seite button.btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
@@ -618,62 +850,4 @@
     gap: 0.5rem;
     align-items: flex-start;
   }
-  
-  /* .info-item styles removed - using inline styles */
-}
-
-/* ===== FINAL OVERRIDES - HÖCHSTE PRIORITÄT ===== */
-/* Diese Regeln müssen ALLE anderen überschreiben */
-
-body .zahlungszyklen-seite .stats-overview {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
-  gap: 0.625rem !important;
-}
-
-body .zahlungszyklen-seite .stats-overview .stat-card {
-  padding: 0.625rem !important;
-  gap: 0.625rem !important;
-}
-
-body .zahlungszyklen-seite .stats-overview .stat-card .stat-icon {
-  width: 36px !important;
-  height: 36px !important;
-  min-width: 36px !important;
-  padding: 0 !important;
-  font-size: 1rem !important;
-}
-
-body .zahlungszyklen-seite .stats-overview .stat-card .stat-info h3 {
-  font-size: 0.7rem !important;
-  margin: 0 0 0.15rem 0 !important;
-  text-shadow: none !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-}
-
-body .zahlungszyklen-seite .stats-overview .stat-card .stat-info .stat-value,
-body .zahlungszyklen-seite .stats-overview .stat-card .stat-info p.stat-value {
-  font-size: 1.1rem !important;
-  text-shadow: none !important;
-  margin: 0 !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-}
-
-/* .info-highlight rules removed - using inline styles in component */
-
-body .zahlungszyklen-seite .card-header h3 {
-  font-size: 1rem !important;
-  color: #f59e0b !important;
-  text-shadow: none !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  background: none !important;
-  background-image: none !important;
-  background-clip: initial !important;
-  -webkit-background-clip: initial !important;
-  -webkit-text-fill-color: #f59e0b !important;
-  filter: none !important;
-  transform: none !important;
-  will-change: auto !important;
 }

@@ -1478,7 +1478,10 @@ router.get('/', (req, res) => {
   db.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Fehler beim Abrufen der Prüfungen:', err);
+      console.error('SQL Query:', query);
+      console.error('Query Params:', queryParams);
       return res.status(500).json({
+        success: false,
         error: 'Fehler beim Laden der Prüfungen',
         details: err.message
       });

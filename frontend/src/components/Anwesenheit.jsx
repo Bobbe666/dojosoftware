@@ -33,6 +33,30 @@ const Anwesenheit = () => {
     loadKurseForDate(ausgewaehltesDatum);
   }, [ausgewaehltesDatum]);
 
+  // Hilfsfunktion für sichere API-Aufrufe mit Fehlerbehandlung
+  const fetchKursMitglieder = async (url) => {
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText || `HTTP ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || errorData.details || `HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("❌ Fehler beim Laden der Kursmitglieder:", error);
+      throw error;
+    }
+  };
+
   // 🔧 FIX: Statistiken basierend auf aktuellen Daten berechnen
   const berechneKursStatistiken = (stundenplan_id) => {
     const istAusgewaehlt = ausgewaehlteStunde && 
@@ -151,10 +175,9 @@ const Anwesenheit = () => {
       const stundenplan_id = stunde.stundenplan_id || stunde.id;
 
       // Standard: Kurs-Mitglieder laden (ohne Parameter)
-      const membersResponse = await fetch(
+      const membersData = await fetchKursMitglieder(
         `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}`
       );
-      const membersData = await membersResponse.json();
       
       if (membersData.success) {
         const members = membersData.members;
@@ -206,10 +229,9 @@ const Anwesenheit = () => {
             queryParams = '?show_style_only=true';
           }
 
-          const membersResponse = await fetch(
+          const membersData = await fetchKursMitglieder(
             `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}${queryParams}`
           );
-          const membersData = await membersResponse.json();
           
           if (membersData.success) {
             const members = membersData.members;
@@ -244,10 +266,9 @@ const Anwesenheit = () => {
   // 🆕 NEU: Alle Mitglieder für intelligente Suche laden
   const loadAllMembersForSearch = async (stundenplan_id) => {
     try {
-      const allMembersResponse = await fetch(
+      const allMembersData = await fetchKursMitglieder(
         `/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`
       );
-      const allMembersData = await allMembersResponse.json();
       
       if (allMembersData.success) {
         setAllMembersForSearch(allMembersData.members);
@@ -605,8 +626,7 @@ const Anwesenheit = () => {
                   setLoading(true);
 
                   const stundenplan_id = ausgewaehlteStunde.stundenplan_id || ausgewaehlteStunde.id;
-                  const membersResponse = await fetch(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}`);
-                  const membersData = await membersResponse.json();
+                  const membersData = await fetchKursMitglieder(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}`);
 
                   if (membersData.success) {
                     setMitglieder(membersData.members);
@@ -650,8 +670,7 @@ const Anwesenheit = () => {
                   setLoading(true);
 
                   const stundenplan_id = ausgewaehlteStunde.stundenplan_id || ausgewaehlteStunde.id;
-                  const membersResponse = await fetch(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_style_only=true`);
-                  const membersData = await membersResponse.json();
+                  const membersData = await fetchKursMitglieder(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_style_only=true`);
 
                   if (membersData.success) {
                     setMitglieder(membersData.members);
@@ -695,8 +714,7 @@ const Anwesenheit = () => {
                   setLoading(true);
 
                   const stundenplan_id = ausgewaehlteStunde.stundenplan_id || ausgewaehlteStunde.id;
-                  const membersResponse = await fetch(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`);
-                  const membersData = await membersResponse.json();
+                  const membersData = await fetchKursMitglieder(`/api/anwesenheit/kurs/${stundenplan_id}/${ausgewaehltesDatum}?show_all=true`);
 
                   if (membersData.success) {
                     setMitglieder(membersData.members);

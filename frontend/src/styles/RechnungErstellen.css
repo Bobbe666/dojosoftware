@@ -14,51 +14,58 @@
 }
 
 /* Formular Bereich */
-.rechnung-form {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  height: fit-content;
-  position: sticky;
-  top: 2rem;
+.rechnung-erstellen-container .rechnung-form {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 0.75rem 1rem !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  height: fit-content !important;
+  position: sticky !important;
+  top: 2rem !important;
 }
 
-.rechnung-form h2 {
-  margin: 0 0 1.5rem 0;
-  color: #ffd700;
-  font-size: 1.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+.rechnung-erstellen-container .rechnung-form h2 {
+  margin: 0 0 0.5rem 0 !important;
+  color: #ffffff !important;
+  font-size: 1rem !important;
+  text-shadow: none !important;
 }
 
-.form-section {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+.rechnung-erstellen-container .form-section {
+  margin-bottom: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
 }
 
-.form-section:last-of-type {
-  border-bottom: none;
+.rechnung-erstellen-container .form-section:last-of-type {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
 }
 
-.form-section h3 {
-  margin: 0 0 1rem 0;
-  color: #ffd700;
-  font-size: 1rem;
-  font-weight: 600;
+.rechnung-erstellen-container .form-section:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
 }
 
-.form-section select,
-.form-section input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 6px;
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.05);
+.rechnung-erstellen-container .form-section h3 {
+  margin: 0 0 0.3rem 0 !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+.rechnung-erstellen-container .form-section select,
+.rechnung-erstellen-container .form-section input {
+  width: 100% !important;
+  padding: 0.3rem 0.45rem !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .form-section select option {
@@ -74,24 +81,37 @@
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+.rechnung-erstellen-container .form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.5rem 0.4rem !important;
+  align-items: start !important;
 }
 
-.form-grid label {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.875rem;
-  font-weight: 600;
+.rechnung-erstellen-container .form-grid > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.1rem !important;
+}
+
+.rechnung-erstellen-container .form-grid label {
+  display: block !important;
+  margin-bottom: 0 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
+/* Wenn nur ein Feld in der Zeile sein soll (z.B. Zahlungsfrist) */
+.rechnung-erstellen-container .form-grid .full-width {
+  grid-column: 1 / -1 !important;
 }
 
 .position-input {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 0.5rem;
+  gap: 0.35rem;
   align-items: end;
 }
 
@@ -109,18 +129,22 @@
 }
 
 .position-input input {
-  width: 80px;
+  width: 70px;
+  padding: 0.35rem 0.5rem;
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 4px;
+  font-size: 0.75rem;
 }
 
 .btn-add {
-  padding: 0.75rem 1rem;
+  padding: 0.35rem 0.6rem;
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -133,18 +157,18 @@
   transform: translateY(-1px);
 }
 
-.btn-save {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #ffd700, #f59e0b);
-  color: #1a1a2e;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: all 0.2s ease;
+.rechnung-erstellen-container .btn-save {
+  width: 100% !important;
+  padding: 0.6rem !important;
+  background: linear-gradient(135deg, #ffd700, #f59e0b) !important;
+  color: #1a1a2e !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border-radius: 8px !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin-top: 0.5rem !important;
+  transition: all 0.2s ease !important;
 }
 
 .btn-save:hover {
@@ -168,6 +192,8 @@
   min-height: 297mm;
   margin: 0 auto;
   padding: 20mm;
+  padding-bottom: 50mm; /* Platz für Fußzeile (15mm vom unteren Rand + 35mm für Inhalt) */
+  position: relative; /* Für absolute Positionierung der Fußzeile */
   font-family: Arial, sans-serif;
   font-size: 10pt;
   line-height: 1.4;
@@ -231,6 +257,10 @@
   font-size: 18pt;
   font-weight: bold;
   margin: 0 0 0.5rem 0;
+  color: #000000 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .page-number {
@@ -312,6 +342,45 @@
 
 .payment-terms p {
   margin: 0.25rem 0;
+}
+
+/* QR-Code Überschriften - schwarz ohne Effekte */
+.qr-code-title {
+  color: #000000 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* QR-Codes Sektion - nebeneinander */
+.qr-codes-section {
+  display: flex !important;
+  gap: 2rem !important;
+  justify-content: center !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+}
+
+.qr-codes-section > div {
+  flex: 1 !important;
+  min-width: 200px !important;
+  text-align: center !important;
+}
+
+/* Bankdaten Fußzeile */
+.bank-daten-footer {
+  font-size: 8pt !important;
+  color: #000000 !important;
+}
+
+.bank-daten-footer p {
+  font-size: 8pt !important;
+  color: #000000 !important;
+}
+
+.bank-daten-footer strong {
+  font-size: 8pt !important;
+  color: #000000 !important;
 }
 
 /* Responsive */

@@ -93,13 +93,7 @@ const createLagerbewegung = (artikel_id, bewegungsart, menge, alter_bestand, neu
 
 // GET /api/artikel/kategorien - Alle Kategorien abrufen
 router.get('/kategorien', (req, res) => {
-  // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-  if (isDevelopment) {
-    console.log('🔧 Development Mode: Verwende Mock-Kategorien');
-    return res.json({ success: true, data: MOCK_KATEGORIEN, _dev: true });
-  }
-
-  // PRODUCTION MODE: Datenbank verwenden
+  // Datenbank verwenden
   const query = `
     SELECT
       kategorie_id,
@@ -162,28 +156,7 @@ router.post('/kategorien', (req, res) => {
 router.get('/', (req, res) => {
   const { kategorie_id, aktiv, sichtbar_kasse } = req.query;
 
-  // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-  if (isDevelopment) {
-    console.log('🔧 Development Mode: Verwende Mock-Artikel');
-    let filtered = [...MOCK_ARTIKEL];
-
-    if (kategorie_id) {
-      filtered = filtered.filter(a => a.kategorie_id === parseInt(kategorie_id));
-    }
-
-    if (aktiv !== undefined) {
-      filtered = filtered.filter(a => a.aktiv === (aktiv === 'true'));
-    }
-
-    if (sichtbar_kasse !== undefined) {
-      filtered = filtered.filter(a => a.sichtbar_kasse === (sichtbar_kasse === 'true'));
-    }
-
-    const formattedResults = filtered.map(formatArtikel);
-    return res.json({ success: true, data: formattedResults, _dev: true });
-  }
-
-  // PRODUCTION MODE: Datenbank verwenden
+  // Datenbank verwenden
   let query = `
     SELECT
       a.*,
@@ -257,13 +230,22 @@ router.get('/kasse', (req, res) => {
     LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
     WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
-    ORDER BY ag.sortierung ASC, ak.reihenfolge ASC, a.name ASC
+    ORDER BY ak.reihenfolge ASC, a.name ASC
   `;
   
   db.query(query, (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Kassen-Artikel:', error);
-      return res.status(500).json({ error: 'Fehler beim Abrufen der Kassen-Artikel' });
+      console.error('SQL Fehler Details:', {
+        message: error.message,
+        sqlState: error.sqlState,
+        sqlMessage: error.sqlMessage,
+        code: error.code
+      });
+      return res.status(500).json({ 
+        error: 'Fehler beim Abrufen der Kassen-Artikel',
+        details: error.message 
+      });
     }
     
     // Gruppiere nach Kategorien für Touch-Interface

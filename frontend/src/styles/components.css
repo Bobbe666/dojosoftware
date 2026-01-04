@@ -362,7 +362,7 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .stat-info h3 {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 500;
   margin: 0 0 0.15rem 0;
   text-transform: uppercase;
@@ -387,7 +387,7 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .stat-trend {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   margin: 0;
   text-shadow: none;
   -webkit-font-smoothing: antialiased;

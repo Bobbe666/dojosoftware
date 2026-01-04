@@ -22,7 +22,7 @@ router.get("/", (req, res) => {
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
 
     const query = `
-        SELECT 
+        SELECT
             b.beitrag_id,
             b.mitglied_id,
             b.betrag,
@@ -30,6 +30,8 @@ router.get("/", (req, res) => {
             b.zahlungsdatum,
             b.bezahlt,
             b.dojo_id,
+            b.magicline_description,
+            b.magicline_transaction_id,
             CONCAT(m.vorname, ' ', m.nachname) as mitglied_name
         FROM beitraege b
         JOIN mitglieder m ON b.mitglied_id = m.mitglied_id

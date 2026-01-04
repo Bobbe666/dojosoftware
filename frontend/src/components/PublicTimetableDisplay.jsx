@@ -7,6 +7,7 @@ const PublicTimetableDisplay = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentView, setCurrentView] = useState(0); // 0 = heute, 1 = nächste Stunde, 2 = Wochenübersicht
   const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState('');
 
   const viewNames = ['Heute', 'Nächste Stunde', 'Wochenübersicht'];
   const viewDuration = 10000; // 10 Sekunden pro Ansicht
@@ -51,6 +52,26 @@ const PublicTimetableDisplay = () => {
     };
   }, []);
 
+  // Separater useEffect für Countdown-Update
+  useEffect(() => {
+    const updateCountdown = () => {
+      const nextClass = getNextClass();
+      if (nextClass) {
+        const countdownStr = calculateCountdown(nextClass);
+        setCountdown(countdownStr);
+      } else {
+        setCountdown('');
+      }
+    };
+    
+    updateCountdown(); // Initial update
+    const countdownInterval = setInterval(updateCountdown, 1000);
+    
+    return () => {
+      clearInterval(countdownInterval);
+    };
+  }, [timetableData, currentTime]);
+
   const formatTime = (timeString) => {
     return timeString ? timeString.substring(0, 5) : '';
   };
@@ -89,22 +110,86 @@ const PublicTimetableDisplay = () => {
     
     // Finde nächste Klasse heute
     const nextToday = todaysClasses.find(item => item.uhrzeit_start > currentTimeStr);
-    if (nextToday) return nextToday;
+    if (nextToday) {
+      return { ...nextToday, isNextDay: false, tag: today };
+    }
 
-    // Wenn keine Klasse mehr heute, finde erste Klasse morgen
+    // Wenn keine Klasse mehr heute, finde erste Klasse in den nächsten Tagen
     const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-    let dayIndex = (currentTime.getDay() + 1) % 7;
+    const currentDayIndex = currentTime.getDay();
+    let dayIndex = (currentDayIndex + 1) % 7;
     
+    // Suche die nächsten 7 Tage nach der ersten verfügbaren Klasse
     for (let i = 0; i < 7; i++) {
       const nextDay = days[dayIndex];
       const nextDayClasses = timetableData.filter(item => item.tag === nextDay);
       if (nextDayClasses.length > 0) {
-        return { ...nextDayClasses[0], isNextDay: true };
+        // Sortiere nach Uhrzeit und nimm die erste
+        const sortedClasses = nextDayClasses.sort((a, b) => {
+          const timeA = a.uhrzeit_start || '00:00';
+          const timeB = b.uhrzeit_start || '00:00';
+          return timeA.localeCompare(timeB);
+        });
+        const isTomorrow = (dayIndex === (currentDayIndex + 1) % 7);
+        return { ...sortedClasses[0], isNextDay: isTomorrow, tag: nextDay };
       }
       dayIndex = (dayIndex + 1) % 7;
     }
     
     return null;
+  };
+
+  const calculateCountdown = (nextClass) => {
+    if (!nextClass || !nextClass.uhrzeit_start || !nextClass.tag) return '';
+    
+    const now = new Date();
+    const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const currentDayIndex = now.getDay();
+    const targetDayIndex = days.indexOf(nextClass.tag);
+    
+    if (targetDayIndex === -1) return '';
+    
+    // Berechne die Anzahl der Tage bis zum Zieltag
+    let daysUntilTarget = targetDayIndex - currentDayIndex;
+    if (daysUntilTarget < 0) {
+      daysUntilTarget += 7; // Nächste Woche
+    }
+    
+    // Wenn es heute ist, prüfe ob die Zeit bereits vorbei ist
+    if (daysUntilTarget === 0) {
+      const [hours, minutes] = nextClass.uhrzeit_start.split(':');
+      const targetTime = new Date(now);
+      targetTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+      
+      if (targetTime < now) {
+        // Zeit ist heute vorbei, nimm nächste Woche
+        daysUntilTarget = 7;
+      }
+    }
+    
+    // Erstelle das Ziel-Datum
+    const targetDate = new Date(now);
+    targetDate.setDate(targetDate.getDate() + daysUntilTarget);
+    
+    // Setze die Uhrzeit
+    const [hours, minutes] = nextClass.uhrzeit_start.split(':');
+    targetDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+    
+    const diff = targetDate - now;
+    
+    if (diff <= 0) return 'Bereits gestartet';
+    
+    const daysRemaining = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hoursRemaining = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (daysRemaining > 0) {
+      return `${daysRemaining} Tag${daysRemaining > 1 ? 'e' : ''}, ${hoursRemaining} Stunde${hoursRemaining !== 1 ? 'n' : ''}`;
+    } else if (hoursRemaining > 0) {
+      return `${hoursRemaining} Stunde${hoursRemaining !== 1 ? 'n' : ''}, ${mins} Minute${mins !== 1 ? 'n' : ''}`;
+    } else {
+      return `${mins} Minute${mins !== 1 ? 'n' : ''}`;
+    }
   };
 
   const getWeeklyOverview = () => {
@@ -120,8 +205,6 @@ const PublicTimetableDisplay = () => {
     
     return (
       <div className="view-content today-view">
-        <h2 className="view-title">📅 Heute - {getCurrentDay()}</h2>
-        
         {todaysClasses.length === 0 ? (
           <div className="no-classes">
             <div className="no-classes-icon">🏮</div>
@@ -159,58 +242,12 @@ const PublicTimetableDisplay = () => {
     );
   };
 
-  const renderNextClassView = () => {
-    const nextClass = getNextClass();
-    
-    return (
-      <div className="view-content next-class-view">
-        <h2 className="view-title">⏰ Nächste Stunde</h2>
-        
-        {!nextClass ? (
-          <div className="no-classes">
-            <div className="no-classes-icon">📅</div>
-            <h3>Keine weiteren Kurse geplant</h3>
-            <p>Schaut später wieder vorbei!</p>
-          </div>
-        ) : (
-          <div className="next-class-card">
-            <div className="next-class-header">
-              <div className="next-class-day">
-                {nextClass.isNextDay ? `Morgen - ${nextClass.tag}` : 'Heute'}
-              </div>
-            </div>
-            
-            <div className="next-class-time">
-              <span className="big-time">{formatTime(nextClass.uhrzeit_start)}</span>
-              <span className="time-separator">-</span>
-              <span className="big-time">{formatTime(nextClass.uhrzeit_ende)}</span>
-            </div>
-            
-            <div className="next-class-details">
-              <div className="next-class-name">{nextClass.kursname}</div>
-              <div className="next-class-style">🥋 {nextClass.stil}</div>
-              <div className="next-class-trainer">
-                👨‍🏫 {nextClass.trainer_vorname} {nextClass.trainer_nachname}
-              </div>
-            </div>
-            
-            <div className="countdown-section">
-              <div className="countdown-label">Beginnt in</div>
-              <div className="countdown-timer">⏱️ Berechnung läuft...</div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const renderWeeklyView = () => {
     const weeklyOverview = getWeeklyOverview();
     
     return (
       <div className="view-content weekly-view">
-        <h2 className="view-title">📊 Wochenübersicht</h2>
-        
         <div className="weekly-grid">
           {weeklyOverview.map((dayData, dayIndex) => (
             <div 
@@ -241,6 +278,49 @@ const PublicTimetableDisplay = () => {
             </div>
           ))}
         </div>
+      </div>
+    );
+  };
+
+  const renderNextClassView = () => {
+    const nextClass = getNextClass();
+    
+    return (
+      <div className="view-content next-class-view">
+        {!nextClass ? (
+          <div className="no-classes">
+            <div className="no-classes-icon">📅</div>
+            <h3>Keine weiteren Kurse geplant</h3>
+            <p>Schaut später wieder vorbei!</p>
+          </div>
+        ) : (
+          <div className="next-class-card">
+            <div className="next-class-header">
+              <div className="next-class-day">
+                {nextClass.isNextDay ? `Morgen - ${nextClass.tag}` : nextClass.tag === getCurrentDay() ? `Heute - ${nextClass.tag}` : nextClass.tag}
+              </div>
+            </div>
+            
+            <div className="next-class-time">
+              <span className="big-time">{formatTime(nextClass.uhrzeit_start)}</span>
+              <span className="time-separator">-</span>
+              <span className="big-time">{formatTime(nextClass.uhrzeit_ende)}</span>
+            </div>
+            
+            <div className="next-class-details">
+              <div className="next-class-name">{nextClass.kursname}</div>
+              <div className="next-class-style">🥋 {nextClass.stil}</div>
+              <div className="next-class-trainer">
+                👨‍🏫 {nextClass.trainer_vorname} {nextClass.trainer_nachname}
+              </div>
+            </div>
+            
+            <div className="countdown-section">
+              <div className="countdown-label">Beginnt in</div>
+              <div className="countdown-timer">⏱️ {countdown || 'Berechnung läuft...'}</div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

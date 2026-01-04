@@ -613,7 +613,7 @@ function Dashboard() {
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="dashboard-header-left">
-          <img src={logo} alt="TDA Logo" className="dashboard-logo" />
+          <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
           <h2>{headerTitle}</h2>
         </div>
         <div className="dashboard-header-right">

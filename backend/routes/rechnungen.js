@@ -2,6 +2,319 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { createRechnungForBeitrag } = require('../utils/rechnungAutomation');
+const puppeteer = require('puppeteer');
+const path = require('path');
+const fs = require('fs').promises;
+const QRCode = require('qrcode');
+const generateInvoiceHTML = require('../utils/invoicePdfTemplate');
+
+// Helper: Erstelle documents Verzeichnis falls nicht vorhanden
+async function ensureDocumentsDir() {
+  const docsDir = path.join(__dirname, '..', 'generated_documents');
+  try {
+    await fs.access(docsDir);
+  } catch {
+    await fs.mkdir(docsDir, { recursive: true });
+  }
+  return docsDir;
+}
+
+// Helper: Generiere EPC QR-Code String für SEPA-Überweisung
+function generateEPCQRCodeString(bankDaten, betrag, rechnungsnummer, verwendungszweck) {
+  if (!bankDaten || !bankDaten.iban || !bankDaten.bic || !bankDaten.kontoinhaber) {
+    return null;
+  }
+
+  const epcString = [
+    'BCD',                    // Service Tag
+    '002',                    // Version
+    '1',                      // Character Set (1 = UTF-8)
+    'SCT',                    // Identification (SEPA Credit Transfer)
+    bankDaten.bic.trim(),     // BIC (max 11 Zeichen)
+    bankDaten.kontoinhaber.trim().substring(0, 70), // Name (max 70 Zeichen)
+    bankDaten.iban.trim(),    // IBAN (max 34 Zeichen)
+    `EUR${Number(betrag).toFixed(2)}`, // Betrag (EUR + Betrag)
+    '',                       // Purpose (optional)
+    verwendungszweck.substring(0, 140), // Verwendungszweck (max 140 Zeichen)
+    (rechnungsnummer || '').substring(0, 35), // Reference (max 35 Zeichen)
+    '',                       // Text (optional)
+    ''                        // End of data
+  ].join('\n');
+
+  return epcString;
+}
+
+// Helper: Generiere QR-Code als Data URI
+async function generateQRCodeDataURI(text) {
+  if (!text) return null;
+  try {
+    const dataURI = await QRCode.toDataURL(text, {
+      errorCorrectionLevel: 'M',
+      width: 150,
+      margin: 1
+    });
+    return dataURI;
+  } catch (error) {
+    console.error('Fehler bei QR-Code-Generierung:', error);
+    return null;
+  }
+}
+
+// Helper: Formatiere Datum im Format dd.mm.yyyy
+function formatDateDDMMYYYY(dateString, addDays = 0) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (addDays > 0) {
+    date.setDate(date.getDate() + addDays);
+  }
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+// Helper: Generiere und speichere Rechnungs-PDF
+async function generateAndSaveRechnungPDF(rechnungId) {
+  try {
+    // Lade Rechnung mit allen Details
+    const rechnungQuery = `
+      SELECT
+        r.*,
+        CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
+        m.email,
+        m.strasse,
+        m.hausnummer,
+        m.plz,
+        m.ort,
+        m.dojo_id,
+        d.dojoname,
+        d.strasse AS dojo_strasse,
+        d.hausnummer AS dojo_hausnummer,
+        d.plz AS dojo_plz,
+        d.ort AS dojo_ort,
+        d.telefon AS dojo_telefon,
+        d.email AS dojo_email,
+        db.bank_name,
+        db.kontoinhaber,
+        db.iban,
+        db.bic
+      FROM rechnungen r
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      LEFT JOIN dojo d ON m.dojo_id = d.id
+      LEFT JOIN dojo_banken db ON d.id = db.dojo_id AND db.ist_aktiv = 1
+      WHERE r.rechnung_id = ?
+    `;
+
+    const rechnung = await new Promise((resolve, reject) => {
+      db.query(rechnungQuery, [rechnungId], (err, results) => {
+        if (err) reject(err);
+        else if (results.length === 0) reject(new Error('Rechnung nicht gefunden'));
+        else resolve(results[0]);
+      });
+    });
+
+    // Lade Positionen
+    const positionen = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr', [rechnungId], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    // Generiere QR-Codes für Zahlung
+    const qrCodeDataURIs = [];
+    const bankDaten = {
+      iban: rechnung.iban,
+      bic: rechnung.bic,
+      kontoinhaber: rechnung.kontoinhaber,
+      bank_name: rechnung.bank_name
+    };
+
+    // Berechne Endbetrag und Skonto
+    const calculateTotal = () => {
+      return positionen.reduce((sum, pos) => {
+        const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+        const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+        return sum + (bruttoPreis - rabattBetrag);
+      }, 0);
+    };
+
+    const zwischensumme = calculateTotal();
+    const rabatt = Number(rechnung.rabatt_prozent) > 0
+      ? ((rechnung.rabatt_auf_betrag || zwischensumme) * Number(rechnung.rabatt_prozent)) / 100
+      : 0;
+    const summe = zwischensumme - rabatt;
+    const ust = (summe * 19) / 100;
+    const endbetrag = summe + ust;
+    const skonto = Number(rechnung.skonto_prozent) > 0
+      ? (endbetrag * Number(rechnung.skonto_prozent)) / 100
+      : 0;
+
+    const hasSkonto = Number(rechnung.skonto_prozent) > 0 && Number(rechnung.skonto_tage) > 0;
+    const betragMitSkonto = endbetrag - skonto;
+    const betragOhneSkonto = endbetrag;
+
+    if (bankDaten.iban && bankDaten.bic && bankDaten.kontoinhaber) {
+      const verwendungszweck = `Rechnung ${rechnung.rechnungsnummer}`;
+
+      // QR-Code mit Skonto (falls vorhanden)
+      if (hasSkonto) {
+        const epcStringMitSkonto = generateEPCQRCodeString(
+          bankDaten,
+          betragMitSkonto,
+          rechnung.rechnungsnummer,
+          verwendungszweck
+        );
+        if (epcStringMitSkonto) {
+          const qrMitSkonto = await generateQRCodeDataURI(epcStringMitSkonto);
+          if (qrMitSkonto) qrCodeDataURIs.push(qrMitSkonto);
+        }
+      }
+
+      // QR-Code ohne Skonto (immer)
+      const epcStringOhneSkonto = generateEPCQRCodeString(
+        bankDaten,
+        betragOhneSkonto,
+        rechnung.rechnungsnummer,
+        verwendungszweck
+      );
+      if (epcStringOhneSkonto) {
+        const qrOhneSkonto = await generateQRCodeDataURI(epcStringOhneSkonto);
+        if (qrOhneSkonto) qrCodeDataURIs.push(qrOhneSkonto);
+      }
+    }
+
+    // Generiere HTML mit neuem Template
+    const html = generateInvoiceHTML(rechnung, positionen, qrCodeDataURIs, formatDateDDMMYYYY);
+
+    // Generiere PDF
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const docsDir = await ensureDocumentsDir();
+    const filename = `Rechnung_${rechnung.rechnungsnummer.replace(/[\/\\]/g, '_')}_${Date.now()}.pdf`;
+    const filepath = path.join(docsDir, filename);
+
+    await page.pdf({
+      path: filepath,
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' }
+    });
+
+    await browser.close();
+
+    // Speichere in mitglied_dokumente
+    const dokumentname = `Rechnung ${rechnung.rechnungsnummer}`;
+    const relativePath = `generated_documents/${filename}`;
+
+    await new Promise((resolve, reject) => {
+      const insertQuery = `
+        INSERT INTO mitglied_dokumente
+        (mitglied_id, dojo_id, vorlage_id, dokumentname, dateipfad, erstellt_am)
+        VALUES (?, ?, NULL, ?, ?, NOW())
+      `;
+      db.query(insertQuery, [rechnung.mitglied_id, rechnung.dojo_id, dokumentname, relativePath], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    console.log(`✅ PDF für Rechnung ${rechnung.rechnungsnummer} erstellt und gespeichert`);
+    return { success: true, filepath };
+  } catch (error) {
+    console.error('Fehler bei PDF-Generierung:', error);
+    throw error;
+  }
+}
+
+// Helper: Generiere PDF aus Frontend-HTML
+async function generatePDFFromHTML(rechnungId, htmlContent) {
+  try {
+    // Lade Rechnungs-Metadaten für Dateinamen und DB-Eintrag
+    const rechnungQuery = `
+      SELECT
+        r.rechnungsnummer,
+        r.mitglied_id,
+        m.dojo_id
+      FROM rechnungen r
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE r.rechnung_id = ?
+    `;
+
+    const rechnung = await new Promise((resolve, reject) => {
+      db.query(rechnungQuery, [rechnungId], (err, results) => {
+        if (err) reject(err);
+        else if (results.length === 0) reject(new Error('Rechnung nicht gefunden'));
+        else resolve(results[0]);
+      });
+    });
+
+    // Generiere PDF mit Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+
+    // Setze HTML-Content
+    await page.setContent(htmlContent, {
+      waitUntil: 'networkidle0'
+    });
+
+    // Warte bis alle Bilder geladen sind (wichtig für QR-Codes)
+    await page.waitForFunction(() => {
+      const images = Array.from(document.images);
+      return images.every(img => img.complete);
+    }, { timeout: 5000 }).catch(() => {
+      console.warn('⚠️ Timeout beim Laden der Bilder, fahre trotzdem fort');
+    });
+
+    // Bereite Speicherort vor
+    const docsDir = await ensureDocumentsDir();
+    const filename = `Rechnung_${rechnung.rechnungsnummer.replace(/[\/\\]/g, '_')}_${Date.now()}.pdf`;
+    const filepath = path.join(docsDir, filename);
+
+    // Generiere PDF
+    await page.pdf({
+      path: filepath,
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '0mm',
+        right: '0mm',
+        bottom: '0mm',
+        left: '0mm'
+      }
+    });
+
+    await browser.close();
+
+    // Speichere in mitglied_dokumente
+    const dokumentname = `Rechnung ${rechnung.rechnungsnummer}`;
+    const relativePath = `generated_documents/${filename}`;
+
+    await new Promise((resolve, reject) => {
+      const insertQuery = `
+        INSERT INTO mitglied_dokumente
+        (mitglied_id, dojo_id, vorlage_id, dokumentname, dateipfad, erstellt_am)
+        VALUES (?, ?, NULL, ?, ?, NOW())
+      `;
+      db.query(insertQuery, [rechnung.mitglied_id, rechnung.dojo_id, dokumentname, relativePath], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    console.log(`✅ PDF aus Frontend-HTML für Rechnung ${rechnung.rechnungsnummer} erstellt`);
+    return { success: true, filepath };
+  } catch (error) {
+    console.error('Fehler bei PDF-Generierung aus HTML:', error);
+    throw error;
+  }
+}
 
 // ===== RECHNUNGEN ÜBERSICHT =====
 // GET /api/rechnungen - Alle Rechnungen mit Filter
@@ -135,7 +448,6 @@ router.get('/:id', (req, res) => {
       CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
       m.email,
       m.telefon,
-      m.adresse,
       m.plz,
       m.ort
     FROM rechnungen r
@@ -192,7 +504,8 @@ router.post('/', (req, res) => {
     beschreibung,
     notizen,
     positionen,
-    mwst_satz
+    mwst_satz,
+    pdfHtml  // NEU: HTML für PDF-Generierung aus Frontend
   } = req.body;
 
   // Validierung
@@ -279,7 +592,23 @@ router.post('/', (req, res) => {
       });
 
       Promise.all(positionenInserts)
-        .then(() => {
+        .then(async () => {
+          // Generiere und speichere PDF im Hintergrund
+          try {
+            if (pdfHtml) {
+              // Nutze Frontend-HTML für PDF-Generierung
+              await generatePDFFromHTML(rechnung_id, pdfHtml);
+              console.log(`📄 PDF aus Frontend-HTML für Rechnung ${rechnungsnummer} wurde erstellt`);
+            } else {
+              // Fallback: Nutze Backend-Template
+              await generateAndSaveRechnungPDF(rechnung_id);
+              console.log(`📄 PDF für Rechnung ${rechnungsnummer} wurde erstellt`);
+            }
+          } catch (pdfErr) {
+            console.error('⚠️ PDF-Generierung fehlgeschlagen (Rechnung wurde trotzdem erstellt):', pdfErr);
+            // Fehler nicht weitergeben, da Rechnung erfolgreich erstellt wurde
+          }
+
           res.json({
             success: true,
             message: 'Rechnung erfolgreich erstellt',
@@ -666,8 +995,8 @@ router.get('/:id/vorschau', (req, res) => {
           <td>${pos.position_nr}</td>
           <td>${pos.bezeichnung}</td>
           <td>${pos.menge}</td>
-          <td>${(pos.einzelpreis || 0).toFixed(2)}</td>
-          <td>${(pos.gesamtpreis || 0).toFixed(2)}</td>
+          <td>${parseFloat(pos.einzelpreis || 0).toFixed(2)}</td>
+          <td>${parseFloat(pos.gesamtpreis || 0).toFixed(2)}</td>
         </tr>
       `).join('')}
     </tbody>
@@ -676,15 +1005,15 @@ router.get('/:id/vorschau', (req, res) => {
   <div class="totals">
     <div class="totals-row">
       <span>Nettobetrag:</span>
-      <span>${(rechnung.netto_betrag || 0).toFixed(2)} €</span>
+      <span>${parseFloat(rechnung.netto_betrag || 0).toFixed(2)} €</span>
     </div>
     <div class="totals-row">
       <span>${rechnung.mwst_satz || 19}% MwSt.:</span>
-      <span>${(rechnung.mwst_betrag || 0).toFixed(2)} €</span>
+      <span>${parseFloat(rechnung.mwst_betrag || 0).toFixed(2)} €</span>
     </div>
     <div class="totals-row final">
       <span>Endbetrag:</span>
-      <span>${(rechnung.brutto_betrag || rechnung.betrag || 0).toFixed(2)} €</span>
+      <span>${parseFloat(rechnung.brutto_betrag || rechnung.betrag || 0).toFixed(2)} €</span>
     </div>
   </div>
 
@@ -699,6 +1028,105 @@ router.get('/:id/vorschau', (req, res) => {
       res.send(html);
     });
   });
+});
+
+// GET /api/rechnungen/:id/pdf - PDF-Download für Rechnung (aus gespeichertem Dokument)
+router.get('/:id/pdf', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Hole Rechnungsnummer für Suche
+    const rechnungQuery = 'SELECT rechnungsnummer, mitglied_id FROM rechnungen WHERE rechnung_id = ?';
+    const rechnung = await new Promise((resolve, reject) => {
+      db.query(rechnungQuery, [id], (err, results) => {
+        if (err) reject(err);
+        else if (results.length === 0) reject(new Error('Rechnung nicht gefunden'));
+        else resolve(results[0]);
+      });
+    });
+
+    // Suche nach gespeichertem PDF in mitglied_dokumente
+    const dokumentQuery = `
+      SELECT dateipfad, dokumentname
+      FROM mitglied_dokumente
+      WHERE mitglied_id = ?
+        AND dokumentname LIKE ?
+      ORDER BY erstellt_am DESC
+      LIMIT 1
+    `;
+
+    const dokument = await new Promise((resolve, reject) => {
+      db.query(dokumentQuery, [rechnung.mitglied_id, `Rechnung ${rechnung.rechnungsnummer}%`], (err, results) => {
+        if (err) reject(err);
+        else resolve(results.length > 0 ? results[0] : null);
+      });
+    });
+
+    if (!dokument) {
+      return res.status(404).json({
+        error: 'PDF nicht gefunden',
+        message: 'Für diese Rechnung wurde noch kein PDF gespeichert. Bitte erstellen Sie die Rechnung neu.'
+      });
+    }
+
+    // Erstelle vollständigen Dateipfad
+    const filepath = path.join(__dirname, '..', dokument.dateipfad);
+
+    // Prüfe ob Datei existiert
+    const fileExists = await fs.access(filepath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (!fileExists) {
+      return res.status(404).json({
+        error: 'PDF-Datei nicht gefunden',
+        message: 'Die PDF-Datei existiert nicht mehr auf dem Server.'
+      });
+    }
+
+    // Lese PDF-Datei
+    const pdfBuffer = await fs.readFile(filepath);
+
+    // Sende PDF mit korrekten Headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Rechnung_${rechnung.rechnungsnummer.replace(/[\/\\]/g, '_')}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(pdfBuffer);
+
+    console.log(`✅ PDF für Rechnung ${rechnung.rechnungsnummer} erfolgreich gesendet`);
+
+  } catch (error) {
+    console.error('Fehler beim PDF-Abruf:', error);
+    res.status(500).json({ error: 'Fehler beim PDF-Abruf', details: error.message });
+  }
+});
+
+// ===== AUTOMATISCHE RECHNUNGSERSTELLUNG AUS BEITRÄGEN =====
+const { createRechnungenFromBeitraege, syncRechnungStatus } = require('../services/rechnungAutomationFromBeitraege');
+
+// POST /api/rechnungen/auto-create - Erstellt Rechnungen für offene Lastschrift-Beiträge
+router.post('/auto-create', async (req, res) => {
+  try {
+    const { dojo_id } = req.body;
+    const result = await createRechnungenFromBeitraege(dojo_id);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Fehler bei automatischer Rechnungserstellung:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/rechnungen/:id/sync-status - Synchronisiert Status mit Beiträgen
+router.post('/:id/sync-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await syncRechnungStatus(id);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Fehler bei Status-Synchronisation:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;

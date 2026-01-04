@@ -34,7 +34,7 @@ const aggregateAnwesendeByMitglied = (eintraege = []) => {
 
     const aggregiert = map.get(schluessel);
     aggregiert.kurse.push({
-      kurs_name: person.kurs_name,
+      kurs_name: person.kurs_name || 'Freies Training',
       kurs_zeit: person.kurs_zeit,
       anwesenheits_typ: person.anwesenheits_typ,
       selbst_checkin_time: person.selbst_checkin_time,
@@ -95,14 +95,35 @@ const TresenUebersicht = () => {
       
       console.log(`📢 Lade Tresen-Daten für ${datum}...`);
       
-      const response = await fetch(`/checkin/tresen/${datum}`);
+      const response = await fetch(`${config.apiBaseUrl}/checkin/tresen/${datum}`);
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`❌ HTTP ${response.status}: ${text.substring(0, 200)}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error(`❌ Ungültiger Content-Type: ${contentType}`);
+        console.error(`Response: ${text.substring(0, 500)}`);
+        throw new Error('Server hat kein JSON zurückgegeben');
+      }
+      
       const data = await response.json();
       
       if (data.success) {
-        setAnwesende(data.anwesende);
-        setStats(data.stats);
-        console.log(`✅ ${data.anwesende.length} Anwesende geladen`);
+        console.log(`📦 Rohe Daten vom Server:`, data);
+        console.log(`📋 Anwesende Array:`, data.anwesende);
+        console.log(`📊 Anzahl Anwesende:`, (data.anwesende || []).length);
+        setAnwesende(data.anwesende || []);
+        setStats(data.stats || {});
+        console.log(`✅ ${(data.anwesende || []).length} Anwesende geladen`);
         console.log(`📊 Stats:`, data.stats);
+        if ((data.anwesende || []).length > 0) {
+          console.log(`👥 Erste 3 Anwesende:`, data.anwesende.slice(0, 3));
+        }
       } else {
         setError(data.message || 'Fehler beim Laden der Daten');
         setAnwesende([]);
@@ -110,7 +131,7 @@ const TresenUebersicht = () => {
       }
     } catch (error) {
       console.error("❌ Fehler beim Laden der Tresen-Daten:", error);
-      setError('Verbindungsfehler zum Server');
+      setError(`Verbindungsfehler: ${error.message}`);
       setAnwesende([]);
       setStats({});
     } finally {

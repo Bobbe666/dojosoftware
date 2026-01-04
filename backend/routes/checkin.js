@@ -105,15 +105,20 @@ const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_m
   
   for (const stundenplan_id of stundenplan_ids) {
     try {
-      // Prüfe auf ALLE Check-ins heute (active UND completed)
+      // Prüfe nur auf AKTIVE Check-ins heute
       const existing = await queryAsync(
-        'SELECT checkin_id, status FROM checkins WHERE mitglied_id = ? AND stundenplan_id = ? AND DATE(checkin_time) = CURDATE()',
+        'SELECT checkin_id, status FROM checkins WHERE mitglied_id = ? AND stundenplan_id = ? AND DATE(checkin_time) = CURDATE() AND status = "active"',
         [mitglied_id, stundenplan_id]
       );
 
       if (existing.length > 0) {
-
-        throw new Error('Sie sind bereits für diesen Kurs heute eingecheckt');
+        // Bereits eingecheckt - gebe vorhandenen Check-in zurück
+        checkinResults.push({
+          checkin_id: existing[0].checkin_id,
+          stundenplan_id: stundenplan_id,
+          status: 'bereits_angemeldet'
+        });
+        continue; // Nächsten Kurs verarbeiten
       }
       
       // Create new check-in (auch wenn bereits heute completed war)
@@ -304,19 +309,7 @@ router.get('/courses-today', async (req, res) => {
 
     console.log(`🔍 Lade Kurse für: ${todayName} (dojo_id=${dojo_id || 'all'})`);
 
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Verwende Mock-Kurse');
-      return res.json({
-        success: true,
-        date: today.toISOString().split('T')[0],
-        weekday: todayName,
-        courses: MOCK_COURSES_TODAY,
-        _dev: true
-      });
-    }
-
-    // PRODUCTION MODE: Datenbank verwenden
+    // Datenbank verwenden
     const query = `
       SELECT
         s.stundenplan_id,
@@ -360,25 +353,78 @@ router.get('/courses-today', async (req, res) => {
   }
 });
 
-// Multi-Course Check-in - GEÄNDERT: Re-Check-in nach Checkout möglich
+// Multi-Course Check-in - GEÄNDERT: Re-Check-in nach Checkout möglich, Check-in ohne Kurs erlaubt
 router.post('/multi-course', async (req, res) => {
   try {
     const { mitglied_id, stundenplan_ids, checkin_method } = req.body;
-    
+
     // Basic validation
-    if (!mitglied_id || !stundenplan_ids || !Array.isArray(stundenplan_ids) || stundenplan_ids.length === 0) {
+    if (!mitglied_id) {
       return res.status(400).json({
         success: false,
-        error: 'Ungültige Anfrage: mitglied_id und stundenplan_ids erforderlich'
+        error: 'Ungültige Anfrage: mitglied_id erforderlich'
       });
     }
-    
+
+    // Wenn keine Kurse ausgewählt wurden, erstelle Check-in ohne Kurs (Freies Training)
+    if (!stundenplan_ids || !Array.isArray(stundenplan_ids) || stundenplan_ids.length === 0) {
+      const checkinTime = new Date();
+
+      // Hole Mitgliedsdaten
+      const members = await queryAsync(
+        'SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id = ?',
+        [mitglied_id]
+      );
+
+      if (members.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Mitglied nicht gefunden'
+        });
+      }
+
+      if (!members[0].aktiv) {
+        return res.status(400).json({
+          success: false,
+          error: 'Mitglied ist nicht aktiv'
+        });
+      }
+
+      const member = members[0];
+
+      // Erstelle Check-in ohne Kurs (stundenplan_id = NULL, status = active)
+      const insertResult = await queryAsync(
+        `INSERT INTO checkins
+         (mitglied_id, stundenplan_id, checkin_time, checkin_method, status, created_at, updated_at)
+         VALUES (?, NULL, ?, ?, 'active', NOW(), NOW())`,
+        [mitglied_id, checkinTime, checkin_method || 'manual']
+      );
+
+      return res.json({
+        success: true,
+        message: 'Check-in ohne Kurs erfolgreich (Freies Training)',
+        data: {
+          member: {
+            id: member.mitglied_id,
+            name: `${member.vorname} ${member.nachname}`
+          },
+          checkin_time: checkinTime.toISOString(),
+          results: [{
+            status: 'erfolg',
+            checkin_id: insertResult.insertId,
+            kurs_name: 'Freies Training',
+            message: 'Check-in ohne Kurs erfolgreich'
+          }]
+        }
+      });
+    }
+
     const result = await performMultiCourseCheckin(mitglied_id, stundenplan_ids, checkin_method);
     const { member, checkinTime, checkinResults } = result;
-    
+
     const successCount = checkinResults.filter(r => r.status === 'erfolg').length;
     const alreadyCount = checkinResults.filter(r => r.status === 'bereits_angemeldet').length;
-    
+
     res.json({
       success: true,
       message: `${successCount} neue Check-ins, ${alreadyCount} bereits angemeldet`,
@@ -391,7 +437,7 @@ router.post('/multi-course', async (req, res) => {
         results: checkinResults
       }
     });
-    
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -421,15 +467,20 @@ router.get('/today', async (req, res) => {
         m.vorname,
         m.nachname,
         CONCAT(m.vorname, ' ', m.nachname) as full_name,
-        COALESCE(m.gurtfarbe, 'Unbekannt') as gurtfarbe,
+        m.gurtfarbe,
+        m.foto_pfad,
+        m.profilbild,
         c.stundenplan_id,
         c.checkin_time,
         c.checkout_time,
         c.checkin_method,
         c.status,
-        TIMESTAMPDIFF(MINUTE, c.checkin_time, NOW()) as minutes_since_checkin
+        TIMESTAMPDIFF(MINUTE, c.checkin_time, NOW()) as minutes_since_checkin,
+        k.gruppenname as kurs_name
       FROM checkins c
       JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+      LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
+      LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
       WHERE DATE(c.checkin_time) = CURDATE()
         AND m.aktiv = 1
         AND c.status = 'active'
@@ -500,95 +551,117 @@ router.get('/tresen/:datum', async (req, res) => {
         const datum = req.params.datum;
         const heute = new Date(datum);
         const wochentag = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][heute.getDay()];
-
-        const query = `
-            SELECT DISTINCT
-                m.mitglied_id,
+        console.log(`📢 Tresen-Query für Datum: ${datum} (${wochentag})`);
+        
+        // Sehr einfache Query: Finde ALLE aktiven Check-ins für heute
+        console.log(`🔍 Suche Check-ins für Datum: ${datum}`);
+        
+        // Zuerst: Prüfe ob überhaupt Check-ins existieren
+        const testQuery = `SELECT COUNT(*) as count FROM checkins WHERE DATE(checkin_time) = ? AND status = 'active'`;
+        const testResult = await queryAsync(testQuery, [datum]);
+        console.log(`📊 Anzahl aktive Check-ins in DB: ${testResult[0]?.count || 0}`);
+        
+        // Dann: Hole alle Check-ins mit Mitglied-Daten
+        const checkinsQuery = `
+            SELECT 
+                c.checkin_id,
+                c.mitglied_id,
+                c.stundenplan_id,
+                c.checkin_time,
+                c.checkout_time,
+                c.status,
                 m.vorname,
                 m.nachname,
                 CONCAT(m.vorname, ' ', m.nachname) as full_name,
                 m.gurtfarbe,
-                s.stundenplan_id,
-                k.gruppenname as kurs_name,
-                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
+                COALESCE(k.gruppenname, 'Freies Training') as kurs_name,
+                CASE 
+                    WHEN s.uhrzeit_start IS NOT NULL AND s.uhrzeit_ende IS NOT NULL 
+                    THEN CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i'))
+                    ELSE NULL
+                END as kurs_zeit,
                 s.uhrzeit_start,
-                s.uhrzeit_ende,
-                
-                -- Check-in Status (verschiedene Quellen)
-                CASE 
-                    WHEN latest_c.checkin_id IS NOT NULL THEN 'selbst_eingecheckt'
-                    WHEN a.anwesend = 1 THEN 'trainer_hinzugefuegt'
-                    ELSE 'unbekannt'
-                END as anwesenheits_typ,
-                
-                -- Check-in Details
-                latest_c.checkin_time as selbst_checkin_time,
-                latest_c.checkout_time,
-                latest_c.status as checkin_status,
-                
-                -- Anwesenheits-Details  
-                a.anwesend as trainer_anwesend,
-                a.erstellt_am as trainer_hinzugefuegt_am,
-                
-                -- Priorität für Sortierung (niedrigere Zahl = höhere Priorität)
-                CASE 
-                    WHEN latest_c.checkin_id IS NOT NULL THEN 1  -- Selbst eingecheckt = höchste Priorität
-                    WHEN a.anwesend = 1 THEN 2                   -- Trainer hinzugefügt = zweite Priorität
-                    ELSE 3
-                END as anwesenheits_prioritaet
-                
-            FROM mitglieder m
-            
-            -- Aktuelle Check-ins für heute
-            LEFT JOIN (
-                SELECT 
-                    c1.mitglied_id,
-                    c1.stundenplan_id,
-                    c1.checkin_time,
-                    c1.checkout_time,
-                    c1.status,
-                    c1.checkin_id
-                FROM checkins c1
-                INNER JOIN (
-                    SELECT 
-                        mitglied_id,
-                        stundenplan_id,
-                        MAX(checkin_time) as max_checkin_time
-                    FROM checkins 
-                    WHERE DATE(checkin_time) = ?
-                    GROUP BY mitglied_id, stundenplan_id
-                ) c2 ON c1.mitglied_id = c2.mitglied_id 
-                    AND c1.stundenplan_id = c2.stundenplan_id 
-                    AND c1.checkin_time = c2.max_checkin_time
-            ) latest_c ON m.mitglied_id = latest_c.mitglied_id
-            
-            -- Trainer-Anwesenheit für heute
-            LEFT JOIN anwesenheit a ON (
-                m.mitglied_id = a.mitglied_id 
-                AND a.datum = ?
-                AND a.anwesend = 1
-            )
-            
-            -- Kurs-Informationen
-            LEFT JOIN stundenplan s ON (
-                s.stundenplan_id = COALESCE(latest_c.stundenplan_id, a.stundenplan_id)
-                AND LOWER(s.tag) = LOWER(?)
-            )
+                s.uhrzeit_ende
+            FROM checkins c
+            INNER JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+            LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
             LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-            
-            WHERE m.aktiv = 1
-                AND (
-                    latest_c.checkin_id IS NOT NULL    -- Hat sich heute eingecheckt
-                    OR a.anwesend = 1                   -- Oder wurde vom Trainer hinzugefügt
-                )
-                
-            ORDER BY 
-                anwesenheits_prioritaet ASC,    -- Selbst eingecheckt zuerst
-                s.uhrzeit_start ASC,            -- Dann nach Kurszeit
-                m.nachname, m.vorname           -- Dann alphabetisch
+            WHERE DATE(c.checkin_time) = ?
+                AND c.status = 'active'
+                AND m.aktiv = 1
+            ORDER BY c.checkin_time DESC
         `;
-
-        const results = await queryAsync(query, [datum, datum, wochentag]);
+        
+        console.log(`🔍 Führe Query aus mit Datum: ${datum}`);
+        let checkins;
+        try {
+            checkins = await queryAsync(checkinsQuery, [datum]);
+            console.log(`✅ Query erfolgreich ausgeführt. Gefundene Check-ins nach JOIN: ${checkins.length}`);
+        } catch (queryError) {
+            console.error(`❌ Query-Fehler:`, queryError);
+            throw queryError;
+        }
+        
+        if (checkins.length === 0) {
+            console.log(`⚠️ Keine Check-ins gefunden! Prüfe ob Check-ins für ${datum} existieren...`);
+            // Debug: Prüfe alle Check-ins heute
+            const allCheckins = await queryAsync(
+                `SELECT checkin_id, mitglied_id, checkin_time, status FROM checkins WHERE DATE(checkin_time) = ?`,
+                [datum]
+            );
+            console.log(`📋 Alle Check-ins für ${datum} (alle Status): ${allCheckins.length}`);
+            if (allCheckins.length > 0) {
+                console.log(`📋 Check-ins Details:`, allCheckins);
+                // Prüfe warum sie nicht gefunden werden
+                const mitgliedIds = allCheckins.map(c => c.mitglied_id);
+                const members = await queryAsync(
+                    `SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id IN (${mitgliedIds.join(',')})`,
+                    []
+                );
+                console.log(`👥 Mitglieder-Daten:`, members);
+            }
+        } else {
+            console.log(`📋 Erste 3 Check-ins:`, checkins.slice(0, 3).map(c => ({
+                mitglied_id: c.mitglied_id,
+                name: c.full_name,
+                checkin_time: c.checkin_time,
+                status: c.status,
+                stundenplan_id: c.stundenplan_id,
+                kurs_name: c.kurs_name
+            })));
+        }
+        
+        // Gruppiere nach Mitglied (nimm den neuesten Check-in pro Mitglied)
+        const memberMap = new Map();
+        checkins.forEach(c => {
+            if (!memberMap.has(c.mitglied_id) || 
+                new Date(c.checkin_time) > new Date(memberMap.get(c.mitglied_id).checkin_time)) {
+                memberMap.set(c.mitglied_id, c);
+            }
+        });
+        
+        const results = Array.from(memberMap.values()).map(c => ({
+            mitglied_id: c.mitglied_id,
+            vorname: c.vorname,
+            nachname: c.nachname,
+            full_name: c.full_name,
+            gurtfarbe: c.gurtfarbe,
+            stundenplan_id: c.stundenplan_id,
+            kurs_name: c.kurs_name || 'Freies Training',
+            kurs_zeit: c.kurs_zeit,
+            uhrzeit_start: c.uhrzeit_start,
+            uhrzeit_ende: c.uhrzeit_ende,
+            anwesenheits_typ: 'selbst_eingecheckt',
+            selbst_checkin_time: c.checkin_time,
+            checkout_time: c.checkout_time,
+            checkin_status: c.status,
+            anwesenheits_prioritaet: 1
+        }));
+        
+        console.log(`📊 Gruppierte Ergebnisse: ${results.length} Mitglieder`);
+        if (results.length > 0) {
+            console.log(`📋 Mitglieder:`, results.map(r => `${r.full_name} (ID: ${r.mitglied_id})`));
+        }
 
         // Statistiken berechnen
         const stats = {

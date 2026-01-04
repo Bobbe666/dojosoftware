@@ -199,32 +199,88 @@ const BankTabs = ({ dojoId }) => {
               </select>
             </div>
 
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.ist_aktiv}
-                  onChange={(e) => setFormData({ ...formData, ist_aktiv: e.target.checked })}
-                />
-                <span>Aktiv (sichtbar für Mitglieder)</span>
-              </label>
+            <div className="form-group">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, ist_aktiv: !formData.ist_aktiv })}
+                className={`logout-button checkbox-button ${formData.ist_aktiv ? 'active' : ''}`}
+                style={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  background: formData.ist_aktiv 
+                    ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))' 
+                    : 'transparent',
+                  borderColor: formData.ist_aktiv ? '#ffd700' : 'rgba(255, 215, 0, 0.2)',
+                  color: formData.ist_aktiv ? '#ffd700' : 'rgba(255, 255, 255, 0.7)'
+                }}
+              >
+                <div 
+                  className="checkbox-indicator"
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid',
+                    borderColor: formData.ist_aktiv ? '#ffd700' : 'rgba(255, 215, 0, 0.4)',
+                    borderRadius: '4px',
+                    background: formData.ist_aktiv ? '#ffd700' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '10px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {formData.ist_aktiv && (
+                    <Check size={12} color="#1a1a2e" style={{ strokeWidth: 3 }} />
+                  )}
+                </div>
+                <span>AKTIV (SICHTBAR FÜR MITGLIEDER)</span>
+              </button>
             </div>
 
-            <div className="form-group checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.ist_standard}
-                  onChange={(e) => setFormData({ ...formData, ist_standard: e.target.checked })}
-                />
-                <span>Standard-Konto</span>
+            <div className="form-group">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, ist_standard: !formData.ist_standard })}
+                className={`logout-button checkbox-button ${formData.ist_standard ? 'active' : ''}`}
+                style={{
+                  width: '100%',
+                  justifyContent: 'flex-start',
+                  background: formData.ist_standard 
+                    ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))' 
+                    : 'transparent',
+                  borderColor: formData.ist_standard ? '#ffd700' : 'rgba(255, 215, 0, 0.2)',
+                  color: formData.ist_standard ? '#ffd700' : 'rgba(255, 255, 255, 0.7)'
+                }}
+              >
+                <div 
+                  className="checkbox-indicator"
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid',
+                    borderColor: formData.ist_standard ? '#ffd700' : 'rgba(255, 215, 0, 0.4)',
+                    borderRadius: '4px',
+                    background: formData.ist_standard ? '#ffd700' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '10px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {formData.ist_standard && (
+                    <Check size={12} color="#1a1a2e" style={{ strokeWidth: 3 }} />
+                  )}
+                </div>
+                <span>STANDARD-KONTO</span>
                 <Star 
-                  size={14} 
+                  size={16} 
                   fill={formData.ist_standard ? '#ffd700' : 'none'}
                   color="#ffd700"
-                  style={{ marginLeft: '6px' }}
+                  style={{ marginLeft: '8px' }}
                 />
-              </label>
+              </button>
             </div>
           </div>
 
@@ -280,8 +336,8 @@ const BankTabs = ({ dojoId }) => {
             <h3>Notizen</h3>
             <div className="form-group">
               <textarea
-                value={formData.notiz}
-                onChange={(e) => setFormData({ ...formData, notiz: e.target.value })}
+                value={formData.notizen}
+                onChange={(e) => setFormData({ ...formData, notizen: e.target.value })}
                 placeholder="Interne Notizen, Hinweise..."
                 rows="6"
               />
@@ -339,8 +395,8 @@ const BankTabs = ({ dojoId }) => {
               <h3>Notizen</h3>
               <div className="form-group">
                 <textarea
-                  value={formData.notiz}
-                  onChange={(e) => setFormData({ ...formData, notiz: e.target.value })}
+                  value={formData.notizen}
+                  onChange={(e) => setFormData({ ...formData, notizen: e.target.value })}
                   placeholder="Interne Notizen, Hinweise..."
                   rows="6"
                 />
@@ -399,8 +455,8 @@ const BankTabs = ({ dojoId }) => {
               <h3>Notizen</h3>
               <div className="form-group">
                 <textarea
-                  value={formData.notiz}
-                  onChange={(e) => setFormData({ ...formData, notiz: e.target.value })}
+                  value={formData.notizen}
+                  onChange={(e) => setFormData({ ...formData, notizen: e.target.value })}
                   placeholder="Interne Notizen, Hinweise..."
                   rows="6"
                 />
@@ -408,30 +464,6 @@ const BankTabs = ({ dojoId }) => {
             </div>
           </div>
         )}
-
-
-        {/* Aktionsbuttons */}
-        <div className="form-actions">
-          <button
-            onClick={handleSaveBank}
-            disabled={loading}
-            className="btn btn-primary"
-          >
-            <Check size={16} />
-            Speichern
-          </button>
-
-          {banken.length > 2 && (
-            <button
-              onClick={() => handleDeleteBank(activeTab)}
-              disabled={loading}
-              className="btn btn-danger"
-            >
-              <X size={16} />
-              Löschen
-            </button>
-          )}
-        </div>
       </div>
     );
   };
@@ -496,20 +528,63 @@ const BankTabs = ({ dojoId }) => {
           <div className="loading">Lädt...</div>
         ) : showNewBankDialog ? (
           <div className="bank-form">
-            <h2>Neue Bankverbindung hinzufügen</h2>
+            <h2 className="bank-form-title">NEUE BANKVERBINDUNG HINZUFÜGEN</h2>
             {renderBankForm()}
             <div className="form-actions">
-              <button onClick={handleAddBank} className="btn btn-primary">
+              <button onClick={handleAddBank} className="logout-button">
                 <Plus size={16} />
-                Hinzufügen
+                Speichern
               </button>
-              <button onClick={() => setShowNewBankDialog(false)} className="btn btn-secondary">
+              <button onClick={() => setShowNewBankDialog(false)} className="logout-button">
                 Abbrechen
               </button>
             </div>
           </div>
         ) : (
-          renderBankForm()
+          <div className="bank-form">
+            {renderBankForm()}
+            <div className="form-actions">
+              <button
+                onClick={handleSaveBank}
+                disabled={loading}
+                className="logout-button"
+              >
+                <Check size={16} />
+                Speichern
+              </button>
+
+              {banken.length > 2 && (
+                <button
+                  onClick={() => handleDeleteBank(activeTab)}
+                  disabled={loading}
+                  className="logout-button"
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    borderColor: 'rgba(239, 68, 68, 0.4)',
+                    color: '#ef4444'
+                  }}
+                >
+                  <X size={16} />
+                  Löschen
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  if (activeTab) {
+                    const currentBank = banken.find(b => b.id === activeTab);
+                    if (currentBank) {
+                      loadBankData(currentBank);
+                    }
+                  }
+                }}
+                disabled={loading}
+                className="logout-button"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

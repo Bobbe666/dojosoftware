@@ -119,23 +119,29 @@ router.post('/', async (req, res) => {
     bemerkung,
     verkauft_von_name
   } = req.body;
-  
+
   // Validierung
   if (!artikel || artikel.length === 0) {
     return res.status(400).json({ error: 'Mindestens ein Artikel erforderlich' });
   }
-  
+
   if (!zahlungsart) {
     return res.status(400).json({ error: 'Zahlungsart erforderlich' });
   }
-  
+
+  // Get connection from pool
+  let connection;
   try {
+    connection = await new Promise((resolve, reject) => {
+      db.getConnection((error, conn) => error ? reject(error) : resolve(conn));
+    });
+
     // Bonnummer generieren
     const bonNummer = await generateBonNumber();
-    
+
     // Transaction starten
     await new Promise((resolve, reject) => {
-      db.beginTransaction(error => error ? reject(error) : resolve());
+      connection.beginTransaction(error => error ? reject(error) : resolve());
     });
     
     try {
@@ -151,7 +157,7 @@ router.post('/', async (req, res) => {
         `;
         
         const artikelResult = await new Promise((resolve, reject) => {
-          db.query(artikelQuery, [item.artikel_id], (error, results) => {
+          connection.query(artikelQuery, [item.artikel_id], (error, results) => {
             if (error) return reject(error);
             resolve(results);
           });
@@ -212,7 +218,7 @@ router.post('/', async (req, res) => {
       `;
       
       const verkaufResult = await new Promise((resolve, reject) => {
-        db.query(verkaufQuery, [
+        connection.query(verkaufQuery, [
           bonNummer, 'KASSE_01', mitglied_id || null, kunde_name || null,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, gegeben_cent || null, rueckgeld_cent,
@@ -238,7 +244,7 @@ router.post('/', async (req, res) => {
         `;
         
         await new Promise((resolve, reject) => {
-          db.query(positionQuery, [
+          connection.query(positionQuery, [
             verkauf_id, item.artikel_id, item.name, item.artikel_nummer,
             item.menge, item.einzelpreis_cent, item.mwst_prozent,
             item.netto_cent, item.mwst_cent, item.brutto_cent, i + 1
@@ -258,11 +264,36 @@ router.post('/', async (req, res) => {
           verkauf_id
         );
       }
-      
+
+      // Beitrag erstellen (nur bei Lastschrift/digital)
+      if (zahlungsart === 'digital' && mitglied_id) {
+        const artikelNamen = artikelDetails.map(item =>
+          `${item.name} (${item.menge}x)`
+        ).join(', ');
+
+        const beschreibung = `Artikelverkauf (Bon: ${bonNummer}): ${artikelNamen}`;
+
+        await new Promise((resolve, reject) => {
+          connection.query(
+            `INSERT INTO beitraege
+             (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+             VALUES (?, ?, CURDATE(), 'Lastschrift', 0, 1, ?)`,
+            [mitglied_id, brutto_gesamt_cent / 100, beschreibung],
+            (error, results) => {
+              if (error) return reject(error);
+              resolve(results);
+            }
+          );
+        });
+      }
+
       // Transaction bestätigen
       await new Promise((resolve, reject) => {
-        db.commit(error => error ? reject(error) : resolve());
+        connection.commit(error => error ? reject(error) : resolve());
       });
+
+      // Release connection back to pool
+      connection.release();
 
       // ✅ AUTOMATISCHE RECHNUNGSERSTELLUNG FÜR VERKAUF
       let rechnungInfo = null;
@@ -304,13 +335,22 @@ router.post('/', async (req, res) => {
     } catch (error) {
       // Rollback bei Fehlern
       await new Promise((resolve) => {
-        db.rollback(() => resolve());
+        connection.rollback(() => resolve());
       });
+      connection.release();
       throw error;
     }
-    
+
   } catch (error) {
     console.error('Fehler beim Verkauf:', error);
+    // Release connection if it was acquired but not released
+    if (connection) {
+      try {
+        connection.release();
+      } catch (releaseError) {
+        // Connection already released
+      }
+    }
     res.status(400).json({ error: error.message });
   }
 });

@@ -20,10 +20,28 @@ const PublicCheckinDisplay = () => {
         const data = response.data;
         
         if (data.success) {
-          setCheckins(data.checkins || []);
+          const checkinsData = data.checkins || [];
+          // Stabilisiere die Check-ins: Nur aktualisieren wenn sich wirklich etwas geändert hat
+          setCheckins(prevCheckins => {
+            // Prüfe ob sich die Anzahl oder IDs geändert haben
+            if (prevCheckins.length === 0) {
+              return checkinsData; // Erste Ladung
+            }
+            
+            const prevIds = new Set(prevCheckins.map(c => `${c.mitglied_id}-${c.checkin_id || c.checkin_time}`));
+            const newIds = new Set(checkinsData.map(c => `${c.mitglied_id}-${c.checkin_id || c.checkin_time}`));
+            
+            // Nur aktualisieren wenn sich etwas geändert hat
+            if (prevIds.size !== newIds.size || 
+                ![...prevIds].every(id => newIds.has(id)) ||
+                ![...newIds].every(id => prevIds.has(id))) {
+              return checkinsData;
+            }
+            return prevCheckins; // Behalte alte Daten um Blinken zu vermeiden
+          });
           setStats({
-            total: data.checkins?.length || 0,
-            today: data.checkins?.filter(c => c.status === 'active').length || 0
+            total: checkinsData.length || 0,
+            today: checkinsData.filter(c => c.status === 'active').length || 0
           });
         }
       } catch (error) {
@@ -80,39 +98,43 @@ const PublicCheckinDisplay = () => {
 
   return (
     <div className="public-checkin-display">
-      {/* Header */}
-      <div className="public-header">
-        <div className="dojo-logo">
-          <h1>🥋 DOJO CHECK-IN</h1>
-          <p className="welcome-text">Willkommen im Training!</p>
-        </div>
-        <div className="current-time">
-          <div className="time">{formatCurrentTime()}</div>
-          <div className="date">{formatCurrentDate()}</div>
-        </div>
-      </div>
-
-      {/* Statistiken */}
-      <div className="public-stats">
-        <div className="stat-item">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <div className="stat-number">{stats.today}</div>
-            <div className="stat-label">Heute Eingecheckt</div>
+      {/* Header mit Logo, Titel, Datum und Stats */}
+      <div className="public-header-compact">
+        <div className="header-left">
+          <div className="dojo-logo-compact">
+            <h1>DOJO CHECK-IN</h1>
+            <p className="welcome-text">Willkommen im Training!</p>
           </div>
         </div>
-        <div className="stat-item">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <div className="stat-number">{stats.total}</div>
-            <div className="stat-label">Check-ins Gesamt</div>
+        
+        {/* Statistiken im Header mit Uhrzeit oben rechts */}
+        <div className="header-right-section">
+          <div className="current-time-compact">
+            <div className="time">{formatCurrentTime()}</div>
+            <div className="date">{formatCurrentDate()}</div>
           </div>
-        </div>
-        <div className="stat-item">
-          <div className="stat-icon">🔄</div>
-          <div className="stat-content">
-            <div className="stat-number">LIVE</div>
-            <div className="stat-label">Updates alle 3s</div>
+          <div className="public-stats-compact">
+            <div className="stat-item-compact">
+              <div className="stat-icon">👥</div>
+              <div className="stat-content">
+                <div className="stat-number">{stats.today}</div>
+                <div className="stat-label">Heute Eingecheckt</div>
+              </div>
+            </div>
+            <div className="stat-item-compact">
+              <div className="stat-icon">📅</div>
+              <div className="stat-content">
+                <div className="stat-number">{stats.total}</div>
+                <div className="stat-label">Check-ins Gesamt</div>
+              </div>
+            </div>
+            <div className="stat-item-compact">
+              <div className="stat-icon">🔄</div>
+              <div className="stat-content">
+                <div className="stat-number">LIVE</div>
+                <div className="stat-label">Updates alle 3s</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -127,10 +149,6 @@ const PublicCheckinDisplay = () => {
 
       {/* Check-ins Liste */}
       <div className="checkins-section">
-        <div className="section-header">
-          <h2>🟢 Aktuell Eingecheckt ({activeCheckins.length})</h2>
-        </div>
-        
         {activeCheckins.length === 0 ? (
           <div className="no-checkins">
             <div className="no-checkins-icon">📅</div>
@@ -141,16 +159,31 @@ const PublicCheckinDisplay = () => {
           <div className="checkins-grid">
             {activeCheckins.map((checkin, index) => (
               <div 
-                key={`${checkin.mitglied_id}-${checkin.checkin_time}`}
+                key={`${checkin.mitglied_id}-${checkin.checkin_id || checkin.checkin_time}`}
                 className="checkin-item"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="checkin-avatar">
-                  <img 
-                    src={checkin.profilbild || '/default-user.png'} 
-                    alt="Profil"
-                    onError={(e) => { e.target.src = '/default-user.png'; }}
-                  />
+                  {(checkin.foto_pfad || checkin.profilbild) ? (
+                    <img 
+                      key={`img-${checkin.mitglied_id}-${checkin.checkin_id || checkin.checkin_time}`}
+                      src={`http://localhost:3000/${(checkin.foto_pfad || checkin.profilbild).startsWith('/') ? (checkin.foto_pfad || checkin.profilbild).slice(1) : (checkin.foto_pfad || checkin.profilbild)}`}
+                      alt={`${checkin.vorname} ${checkin.nachname}`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const placeholder = e.currentTarget.nextSibling;
+                        if (placeholder) placeholder.style.display = 'flex';
+                      }}
+                      onLoad={(e) => {
+                        const placeholder = e.currentTarget.nextSibling;
+                        if (placeholder) placeholder.style.display = 'none';
+                      }}
+                      style={{ display: 'block' }}
+                    />
+                  ) : null}
+                  <div className="avatar-placeholder" style={{ display: (checkin.foto_pfad || checkin.profilbild) ? 'none' : 'flex' }}>
+                    {checkin.vorname?.charAt(0)}{checkin.nachname?.charAt(0)}
+                  </div>
                 </div>
                 <div className="checkin-info">
                   <div className="member-name">
@@ -160,7 +193,7 @@ const PublicCheckinDisplay = () => {
                     <span className="checkin-time">
                       🕐 {formatTime(checkin.checkin_time)}
                     </span>
-                    {checkin.gurtfarbe && (
+                    {checkin.gurtfarbe && checkin.gurtfarbe !== 'Unbekannt' && checkin.gurtfarbe.trim() !== '' && (
                       <span className="belt-info">
                         🥋 {checkin.gurtfarbe}
                       </span>

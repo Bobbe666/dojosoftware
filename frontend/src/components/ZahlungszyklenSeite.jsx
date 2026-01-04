@@ -303,14 +303,11 @@ const ZahlungszyklenSeite = () => {
                 alignItems: 'center',
                 gap: '0.625rem',
                 padding: '0.625rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'none',
-                borderRadius: '8px',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-                WebkitBackfaceVisibility: 'hidden',
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)'
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 215, 0, 0.2)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
               }}>
                 <div style={{
                   width: '36px',
@@ -320,8 +317,8 @@ const ZahlungszyklenSeite = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  color: '#f59e0b',
+                  background: 'rgba(255, 215, 0, 0.15)',
+                  color: '#ffd700',
                   padding: '0'
                 }}>
                   <Calendar size={18} />
@@ -355,14 +352,11 @@ const ZahlungszyklenSeite = () => {
                 alignItems: 'center',
                 gap: '0.625rem',
                 padding: '0.625rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'none',
-                borderRadius: '8px',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-                WebkitBackfaceVisibility: 'hidden',
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)'
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 215, 0, 0.2)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
               }}>
                 <div style={{
                   width: '36px',
@@ -372,8 +366,8 @@ const ZahlungszyklenSeite = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  color: '#f59e0b',
+                  background: 'rgba(255, 215, 0, 0.15)',
+                  color: '#ffd700',
                   padding: '0'
                 }}>
                   <Check size={18} />
@@ -407,14 +401,11 @@ const ZahlungszyklenSeite = () => {
                 alignItems: 'center',
                 gap: '0.625rem',
                 padding: '0.625rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'none',
-                borderRadius: '8px',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-                WebkitBackfaceVisibility: 'hidden',
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)'
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 215, 0, 0.2)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
               }}>
                 <div style={{
                   width: '36px',
@@ -424,8 +415,8 @@ const ZahlungszyklenSeite = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'rgba(245, 158, 11, 0.15)',
-                  color: '#f59e0b',
+                  background: 'rgba(255, 215, 0, 0.15)',
+                  color: '#ffd700',
                   padding: '0'
                 }}>
                   <Clock size={18} />
@@ -466,7 +457,7 @@ const ZahlungszyklenSeite = () => {
               {zahlungszyklen.map((zyklus) => (
                 <div 
                   key={zyklus.zyklus_id} 
-                  className={`standard-card ${!zyklus.aktiv ? 'inactive' : ''}`}
+                  className={`zyklus-card ${!zyklus.aktiv ? 'inactive' : ''}`}
                 >
                   {editingId === zyklus.zyklus_id ? (
                     <ZyklusEditForm
@@ -617,9 +608,9 @@ const ZyklusDisplayCard = ({ zyklus, formatIntervall, onEdit, onDelete }) => {
             borderRadius: '6px',
             fontSize: '0.875rem'
           }}>
-            <Clock size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <Clock size={16} style={{ color: '#ffd700', flexShrink: 0 }} />
             <span style={{
-              color: '#f59e0b',
+              color: '#ffd700',
               fontSize: '0.875rem',
               fontWeight: 600,
               textShadow: 'none',
@@ -637,7 +628,7 @@ const ZyklusDisplayCard = ({ zyklus, formatIntervall, onEdit, onDelete }) => {
             borderRadius: '6px',
             fontSize: '0.875rem'
           }}>
-            <Calendar size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
+            <Calendar size={16} style={{ color: '#ffd700', flexShrink: 0 }} />
             <span>Alle {zyklus.intervall_tage} Tage</span>
           </div>
           {zyklus.beschreibung && (

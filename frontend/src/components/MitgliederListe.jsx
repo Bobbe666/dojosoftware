@@ -483,38 +483,14 @@ const MitgliederListe = () => {
                 <button
                   ref={menuButtonRef}
                   onClick={handleMenuToggle}
+                  className="logout-button"
                   style={{
-                    padding: '0.3rem 0.6rem',
-                    fontSize: '0.75rem',
-                    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))',
-                    color: '#ffd700',
-                    border: '2px solid rgba(255, 215, 0, 0.5)',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
+                    padding: '10px 20px',
+                    fontSize: '0.95rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.3rem',
-                    fontWeight: '700',
-                    boxShadow: '0 2px 6px rgba(255, 215, 0, 0.2)',
-                    transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(8px)',
-                    boxSizing: 'border-box',
-                    height: '28px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(255, 215, 0, 0.3))';
-                    e.target.style.color = '#fff';
-                    e.target.style.borderColor = '#ffd700';
-                    e.target.style.transform = 'translateY(-1px)';
-                    e.target.style.boxShadow = '0 3px 10px rgba(255, 215, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
-                    e.target.style.color = '#ffd700';
-                    e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 2px 6px rgba(255, 215, 0, 0.2)';
+                    gap: '0.5rem',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   <span style={{ fontSize: '1rem', fontWeight: '900' }}>⋮</span>
@@ -638,8 +614,8 @@ const MitgliederListe = () => {
                 value={filterStil}
                 onChange={(e) => setFilterStil(e.target.value)}
                 style={{
-                  padding: '0.3rem 0.6rem',
-                  fontSize: '0.75rem',
+                  padding: '0.5rem 0.8rem',
+                  fontSize: '0.85rem',
                   background: 'rgba(255, 255, 255, 0.1)',
                   color: '#ffffff',
                   border: filterStil ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
@@ -648,10 +624,12 @@ const MitgliederListe = () => {
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
                   backdropFilter: 'blur(8px)',
-                  height: '28px',
+                  height: '38px',
+                  minHeight: '38px',
                   outline: 'none',
                   width: 'auto',
-                  paddingRight: '2rem'
+                  paddingRight: '2rem',
+                  lineHeight: '1.4'
                 }}
               >
                 <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🎯 Alle Stile</option>
@@ -668,8 +646,8 @@ const MitgliederListe = () => {
                 value={filterAlter}
                 onChange={(e) => setFilterAlter(e.target.value)}
                 style={{
-                  padding: '0.3rem 0.6rem',
-                  fontSize: '0.75rem',
+                  padding: '0.5rem 0.8rem',
+                  fontSize: '0.85rem',
                   background: 'rgba(255, 255, 255, 0.1)',
                   color: '#ffffff',
                   border: filterAlter ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
@@ -678,10 +656,12 @@ const MitgliederListe = () => {
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
                   backdropFilter: 'blur(8px)',
-                  height: '28px',
+                  height: '38px',
+                  minHeight: '38px',
                   outline: 'none',
                   width: 'auto',
-                  paddingRight: '2rem'
+                  paddingRight: '2rem',
+                  lineHeight: '1.4'
                 }}
               >
                 <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>📅 Alle Altersgruppen</option>
@@ -698,8 +678,8 @@ const MitgliederListe = () => {
                 value={filterGurt}
                 onChange={(e) => setFilterGurt(e.target.value)}
                 style={{
-                  padding: '0.3rem 0.6rem',
-                  fontSize: '0.75rem',
+                  padding: '0.5rem 0.8rem',
+                  fontSize: '0.85rem',
                   background: 'rgba(255, 255, 255, 0.1)',
                   color: '#ffffff',
                   border: filterGurt ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
@@ -708,10 +688,12 @@ const MitgliederListe = () => {
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
                   backdropFilter: 'blur(8px)',
-                  height: '28px',
+                  height: '38px',
+                  minHeight: '38px',
                   outline: 'none',
                   width: 'auto',
-                  paddingRight: '2rem'
+                  paddingRight: '2rem',
+                  lineHeight: '1.4'
                 }}
               >
                 <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🥋 Alle Gurte</option>
@@ -1035,7 +1017,7 @@ const MitgliederListe = () => {
                   }}>
                     <img
                       key={mitglied.mitglied_id}
-                      src={mitglied.foto_pfad ? `http://localhost:3002/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
+                      src={mitglied.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                       alt={`${mitglied.vorname} ${mitglied.nachname}`}
                       style={{
                         width: '40px',

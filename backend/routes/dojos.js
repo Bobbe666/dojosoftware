@@ -46,6 +46,10 @@ router.get('/', (req, res) => {
       d.iban,
       d.bic,
       d.bank,
+      d.bank_iban,
+      d.bank_bic,
+      d.bank_inhaber,
+      d.bank_name,
       d.aktualisiert_am
     FROM dojo d
     WHERE d.ist_aktiv = TRUE

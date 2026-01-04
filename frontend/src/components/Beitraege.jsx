@@ -33,12 +33,45 @@ const Beitraege = () => {
   });
   
   const [loading, setLoading] = useState(true);
+  const [showMonatsreport, setShowMonatsreport] = useState(false);
+  const [monatsreportData, setMonatsreportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
   
   useEffect(() => {
     loadBeitraegeStats();
     // 🔄 AUTOMATISCHES UPDATE: Lädt neu wenn sich Mitglieder ändern
     // 🔒 TAX COMPLIANCE: Lädt neu wenn Dojo-Filter ändert
   }, [updateTrigger, activeDojo, filter]);
+  
+  const loadMonatsreport = async () => {
+    try {
+      setReportLoading(true);
+      const dojoFilterParam = getDojoFilterParam();
+      const separator = dojoFilterParam ? '&' : '?';
+      const response = await fetch(`${config.apiBaseUrl}/monatsreport${dojoFilterParam ? `?${dojoFilterParam}` : ''}${separator}${dojoFilterParam ? '' : '?'}`);
+      const data = await response.json();
+      if (data.success) {
+        setMonatsreportData(data);
+        setShowMonatsreport(true);
+      } else {
+        alert('Fehler beim Laden des Monatsreports: ' + (data.error || 'Unbekannter Fehler'));
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden des Monatsreports:', error);
+      alert('Fehler beim Laden des Monatsreports');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+  
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+  };
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('de-DE');
+  };
 
   const loadBeitraegeStats = async () => {
     try {
@@ -300,9 +333,10 @@ const Beitraege = () => {
             <div className="card-actions">
               <button 
                 className="btn btn-info"
-                onClick={() => alert('Monatsreport wird generiert...')}
+                onClick={loadMonatsreport}
+                disabled={reportLoading}
               >
-                Monatsreport
+                {reportLoading ? 'Lädt...' : 'Monatsreport'}
               </button>
               <button 
                 className="btn btn-secondary"
@@ -375,40 +409,232 @@ const Beitraege = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>Schnellzugriff</h2>
-        <div className="action-buttons">
-          <button 
-            className="action-btn success"
-            onClick={() => alert('Schnelle Zahlungserfassung wird geöffnet')}
+      {/* Monatsreport Modal */}
+      {showMonatsreport && monatsreportData && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setShowMonatsreport(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem'
+          }}
+        >
+          <div 
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'rgba(26, 26, 46, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 215, 0, 0.3)',
+              borderRadius: '20px',
+              padding: '2rem',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+            }}
           >
-            <DollarSign size={20} />
-            Schnelle Zahlung erfassen
-          </button>
-          <button 
-            className="action-btn primary"
-            onClick={() => alert('Sammelrechnungserstellung wird geöffnet')}
-          >
-            <Receipt size={20} />
-            Sammelrechnung erstellen
-          </button>
-          <button 
-            className="action-btn warning"
-            onClick={() => alert('Mahnungsversand wird vorbereitet')}
-          >
-            <AlertCircle size={20} />
-            Mahnungen versenden
-          </button>
-          <button 
-            className="action-btn info"
-            onClick={() => alert('Monatsabschluss wird durchgeführt')}
-          >
-            <FileText size={20} />
-            Monatsabschluss
-          </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 style={{ 
+                color: '#ffd700', 
+                fontSize: '1.75rem', 
+                margin: 0,
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 215, 0, 0.6)'
+              }}>
+                Monatsreport {new Date(monatsreportData.jahr, monatsreportData.monat - 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+              </h2>
+              <button
+                onClick={() => setShowMonatsreport(false)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  padding: '0.5rem 1rem',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Umsätze */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>Umsätze</h3>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: '1rem',
+                marginBottom: '1rem'
+              }}>
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)'
+                }}>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gesamtumsatz</div>
+                  <div style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                    {formatCurrency(monatsreportData.umsaetze.gesamt)}
+                  </div>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)'
+                }}>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Umsatz Verkauf</div>
+                  <div style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                    {formatCurrency(monatsreportData.umsaetze.verkauf.brutto)}
+                  </div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {monatsreportData.umsaetze.verkauf.anzahl} Verkäufe
+                  </div>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)'
+                }}>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Umsatz Beiträge</div>
+                  <div style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                    {formatCurrency(monatsreportData.umsaetze.beitraege.gesamt)}
+                  </div>
+                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {monatsreportData.umsaetze.beitraege.anzahl} Rechnungen
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Neue Verträge */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>
+                Neue Verträge ({monatsreportData.neueVertraege.anzahl})
+              </h3>
+              {monatsreportData.neueVertraege.liste.length > 0 ? (
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  maxHeight: '200px',
+                  overflow: 'auto'
+                }}>
+                  {monatsreportData.neueVertraege.liste.map((vertrag) => (
+                    <div key={vertrag.vertrag_id} style={{ 
+                      padding: '0.75rem', 
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{ color: '#fff', fontWeight: '600' }}>{vertrag.mitglied_name}</div>
+                        <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
+                          {vertrag.vertragsnummer} • {formatDate(vertrag.vertragsbeginn)}
+                        </div>
+                      </div>
+                      <div style={{ color: '#ffd700', fontWeight: 'bold' }}>
+                        {formatCurrency(vertrag.monatsbeitrag)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>Keine neuen Verträge</div>
+              )}
+            </div>
+
+            {/* Kündigungen */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>
+                Kündigungen ({monatsreportData.kuendigungen.anzahl})
+              </h3>
+              {monatsreportData.kuendigungen.liste.length > 0 ? (
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  maxHeight: '200px',
+                  overflow: 'auto'
+                }}>
+                  {monatsreportData.kuendigungen.liste.map((kuendigung) => (
+                    <div key={kuendigung.vertrag_id} style={{ 
+                      padding: '0.75rem', 
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <div style={{ color: '#fff', fontWeight: '600' }}>{kuendigung.mitglied_name}</div>
+                      <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
+                        {kuendigung.vertragsnummer} • Kündigungsdatum: {formatDate(kuendigung.kuendigungsdatum)}
+                      </div>
+                      {kuendigung.kuendigungsgrund && (
+                        <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                          Grund: {kuendigung.kuendigungsgrund}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>Keine Kündigungen</div>
+              )}
+            </div>
+
+            {/* Pausen */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>
+                Pausen ({monatsreportData.pausen.anzahl})
+              </h3>
+              {monatsreportData.pausen.liste.length > 0 ? (
+                <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  padding: '1rem', 
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  maxHeight: '200px',
+                  overflow: 'auto'
+                }}>
+                  {monatsreportData.pausen.liste.map((pause) => (
+                    <div key={pause.vertrag_id} style={{ 
+                      padding: '0.75rem', 
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <div style={{ color: '#fff', fontWeight: '600' }}>{pause.mitglied_name}</div>
+                      <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
+                        {pause.vertragsnummer} • Von: {formatDate(pause.ruhepause_von)} bis: {formatDate(pause.ruhepause_bis)}
+                      </div>
+                      {pause.ruhepause_dauer_monate && (
+                        <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                          Dauer: {pause.ruhepause_dauer_monate} Monate
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>Keine Pausen</div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 };

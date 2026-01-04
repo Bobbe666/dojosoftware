@@ -6,6 +6,7 @@ import Zahllaeufe from "./Zahllaeufe";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/LastschriftManagement.css";
+import "../styles/MitgliedDetail.css";
 
 const LastschriftManagement = () => {
   const navigate = useNavigate();
@@ -20,20 +21,20 @@ const LastschriftManagement = () => {
           Zurück zu Beiträge
         </button>
 
-        <div className="tabs-container">
+        <div className="sub-tabs-sidebar-style">
           <button
-            className={`tab-button ${activeTab === 'lastschriftlauf' ? 'active' : ''}`}
+            className={`tab-vertical-btn ${activeTab === 'lastschriftlauf' ? 'active' : ''}`}
             onClick={() => setActiveTab('lastschriftlauf')}
           >
-            <CreditCard size={20} />
-            <span>Neuer Lastschriftlauf</span>
+            <span className="tab-icon"><CreditCard size={20} /></span>
+            <span className="tab-label">Neuer Lastschriftlauf</span>
           </button>
           <button
-            className={`tab-button ${activeTab === 'zahllaeufe' ? 'active' : ''}`}
+            className={`tab-vertical-btn ${activeTab === 'zahllaeufe' ? 'active' : ''}`}
             onClick={() => setActiveTab('zahllaeufe')}
           >
-            <FileText size={20} />
-            <span>Zahlläufe-Übersicht</span>
+            <span className="tab-icon"><FileText size={20} /></span>
+            <span className="tab-label">Zahlläufe-Übersicht</span>
           </button>
         </div>
       </div>

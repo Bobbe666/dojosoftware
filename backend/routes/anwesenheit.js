@@ -25,18 +25,35 @@ router.get("/", (req, res) => {
 
 // FIXED: UNION-basierte Query für Kurs-Mitglieder
 router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
-    const stundenplan_id = parseInt(req.params.stundenplan_id, 10);
-    const datum = req.params.datum;
-    const show_all = req.query.show_all === 'true'; // Optional: alle Mitglieder anzeigen
-    const show_style_only = req.query.show_style_only === 'true'; // NEU: Nur Stil-Filter (ohne Gruppe)
+    console.log("🔍 Anwesenheit Route aufgerufen:", {
+        stundenplan_id: req.params.stundenplan_id,
+        datum: req.params.datum,
+        show_all: req.query.show_all,
+        show_style_only: req.query.show_style_only
+    });
+    
+    try {
+        const stundenplan_id = parseInt(req.params.stundenplan_id, 10);
+        const datum = req.params.datum;
+        const show_all = req.query.show_all === 'true'; // Optional: alle Mitglieder anzeigen
+        const show_style_only = req.query.show_style_only === 'true'; // NEU: Nur Stil-Filter (ohne Gruppe)
 
-    if (isNaN(stundenplan_id)) {
+        if (isNaN(stundenplan_id)) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Ungültige Stundenplan-ID" 
+            });
+        }
 
-        return res.status(400).json({ error: "Ungültige Stundenplan-ID" });
-    }
+        if (!datum || !datum.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return res.status(400).json({ 
+                success: false,
+                error: "Ungültiges Datumsformat. Erwartet: YYYY-MM-DD" 
+            });
+        }
 
-    let query;
-    let params;
+        let query;
+        let params;
 
     if (show_all) {
         // ALLE aktiven Mitglieder anzeigen (für Suche)
@@ -86,11 +103,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                         MAX(checkin_time) as max_checkin_time
                     FROM checkins 
                     WHERE stundenplan_id = ? 
-                        AND DATE(checkin_time) = ?
+                        AND DATE(checkin_time) = DATE(?)
+                        AND status = 'active'
                     GROUP BY mitglied_id, stundenplan_id
                 ) c2 ON c1.mitglied_id = c2.mitglied_id 
                     AND c1.stundenplan_id = c2.stundenplan_id 
                     AND c1.checkin_time = c2.max_checkin_time
+                    AND c1.status = 'active'
             ) latest_c ON (
                 m.mitglied_id = latest_c.mitglied_id 
                 AND latest_c.stundenplan_id = ?
@@ -98,7 +117,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             LEFT JOIN anwesenheit a ON (
                 m.mitglied_id = a.mitglied_id 
                 AND a.stundenplan_id = ? 
-                AND a.datum = ?
+                AND DATE(a.datum) = DATE(?)
             )
             LEFT JOIN stundenplan s ON s.stundenplan_id = ?
             LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
@@ -111,8 +130,8 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
         params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id];
 
     } else if (show_style_only) {
-        // NEU: Alle Mitglieder des Stils anzeigen (über mitglied_stile Tabelle)
-        // Zeigt ALLE Mitglieder die den gleichen Stil trainieren wie der Kurs, unabhängig von der Altersgruppe
+        // NEU: Alle Mitglieder des Stils anzeigen (vereinfacht ohne mitglied_stile)
+        // Zeigt ALLE aktiven Mitglieder, unabhängig von Stil und Altersgruppe
         query = `
             SELECT DISTINCT
                 m.mitglied_id,
@@ -140,17 +159,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 -- Kurs-Info
                 k.gruppenname as kurs_name,
                 CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
-                k.stil as kurs_stil,
-                ms.stil as mitglied_stil
+                k.stil as kurs_stil
 
             FROM mitglieder m
 
             -- Join mit Kurs-Info um den Stil zu ermitteln
             INNER JOIN stundenplan s ON s.stundenplan_id = ?
             INNER JOIN kurse k ON s.kurs_id = k.kurs_id
-
-            -- Join mit mitglied_stile für Stil-Zuordnung
-            INNER JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
 
             -- Check-in Status für heute
             LEFT JOIN (
@@ -169,11 +184,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                         MAX(checkin_time) as max_checkin_time
                     FROM checkins
                     WHERE stundenplan_id = ?
-                        AND DATE(checkin_time) = ?
+                        AND DATE(checkin_time) = DATE(?)
+                        AND status = 'active'
                     GROUP BY mitglied_id, stundenplan_id
                 ) c2 ON c1.mitglied_id = c2.mitglied_id
                     AND c1.stundenplan_id = c2.stundenplan_id
                     AND c1.checkin_time = c2.max_checkin_time
+                    AND c1.status = 'active'
             ) latest_c ON (
                 m.mitglied_id = latest_c.mitglied_id
                 AND latest_c.stundenplan_id = ?
@@ -186,15 +203,8 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 AND a.datum = ?
             )
 
-            -- Nur Mitglieder mit dem gleichen Stil wie der Kurs
+            -- Alle aktiven Mitglieder
             WHERE m.aktiv = 1
-                AND (
-                    -- Exakter Match (z.B. "Karate" = "Karate")
-                    ms.stil = k.stil
-                    -- Oder Karate-Varianten (Enso Karate enthält Karate)
-                    OR (k.stil LIKE CONCAT('%', ms.stil, '%'))
-                    OR (ms.stil LIKE CONCAT('%', k.stil, '%'))
-                )
 
             ORDER BY
                 CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
@@ -235,7 +245,6 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 k.gruppenname as kurs_name,
                 CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
                 k.stil as kurs_stil,
-                ms.stil as mitglied_stil,
                 TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) as mitglied_alter
 
             FROM mitglieder m
@@ -243,9 +252,6 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             -- Join mit Kurs-Info
             INNER JOIN stundenplan s ON s.stundenplan_id = ?
             INNER JOIN kurse k ON s.kurs_id = k.kurs_id
-
-            -- Join mit mitglied_stile für Stil-Zuordnung
-            INNER JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
 
             -- Check-in Status
             LEFT JOIN (
@@ -264,11 +270,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                         MAX(checkin_time) as max_checkin_time
                     FROM checkins
                     WHERE stundenplan_id = ?
-                        AND DATE(checkin_time) = ?
+                        AND DATE(checkin_time) = DATE(?)
+                        AND status = 'active'
                     GROUP BY mitglied_id, stundenplan_id
                 ) c2 ON c1.mitglied_id = c2.mitglied_id
                     AND c1.stundenplan_id = c2.stundenplan_id
                     AND c1.checkin_time = c2.max_checkin_time
+                    AND c1.status = 'active'
             ) latest_c ON (
                 m.mitglied_id = latest_c.mitglied_id
                 AND latest_c.stundenplan_id = ?
@@ -282,12 +290,6 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             )
 
             WHERE m.aktiv = 1
-                -- Stil-Match
-                AND (
-                    ms.stil = k.stil
-                    OR k.stil LIKE CONCAT('%', ms.stil, '%')
-                    OR ms.stil LIKE CONCAT('%', k.stil, '%')
-                )
                 -- Altersgruppen-Match (vereinfacht)
                 AND (
                     -- Erwachsene: 16+
@@ -308,36 +310,62 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 m.nachname, m.vorname
         `;
         params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
-    }
+        }
 
-    db.query(query, params, (err, results) => {
-        if (err) {
-            console.error("Fehler beim Abrufen der Kursmitglieder:", err);
+        // Sicherstellen, dass query und params definiert sind
+        if (!query || !params) {
+            console.error("Query oder Params nicht definiert für stundenplan_id:", stundenplan_id);
             return res.status(500).json({ 
-                error: "Fehler beim Abrufen der Kursmitglieder", 
-                details: err.message 
+                success: false,
+                error: "Interner Fehler: Query konnte nicht erstellt werden" 
             });
         }
 
-        // FIXED: Statistiken aus den UNION-Ergebnissen berechnen
-        const stats = {
-            total_members: results.length,
-            eingecheckt: results.filter(r => r.checkin_status === 'eingecheckt').length,
-            anwesend_markiert: results.filter(r => r.anwesend === 1).length,
-            noch_aktiv: results.filter(r => r.checkin_db_status === 'active').length,
-            trainer_hinzugefuegt: results.filter(r => r.checkin_status === 'nicht_eingecheckt' && r.anwesend === 1).length
-        };
+        db.query(query, params, (err, results) => {
+            if (err) {
+                console.error("Fehler beim Abrufen der Kursmitglieder:", err);
+                console.error("SQL Fehler Details:", {
+                    message: err.message,
+                    sqlState: err.sqlState,
+                    sqlMessage: err.sqlMessage,
+                    code: err.code,
+                    query: query.substring(0, 200) + '...',
+                    params: params
+                });
+                return res.status(500).json({ 
+                    success: false,
+                    error: "Fehler beim Abrufen der Kursmitglieder", 
+                    details: err.message 
+                });
+            }
 
-        res.json({
-            success: true,
-            stundenplan_id: stundenplan_id,
-            datum: datum,
-            show_all: show_all,
-            show_style_only: show_style_only,
-            stats: stats,
-            members: results
+            // FIXED: Statistiken aus den UNION-Ergebnissen berechnen
+            const stats = {
+                total_members: results ? results.length : 0,
+                eingecheckt: results ? results.filter(r => r.checkin_status === 'eingecheckt').length : 0,
+                anwesend_markiert: results ? results.filter(r => r.anwesend === 1).length : 0,
+                noch_aktiv: results ? results.filter(r => r.checkin_db_status === 'active').length : 0,
+                trainer_hinzugefuegt: results ? results.filter(r => r.checkin_status === 'nicht_eingecheckt' && r.anwesend === 1).length : 0
+            };
+
+            res.json({
+                success: true,
+                stundenplan_id: stundenplan_id,
+                datum: datum,
+                show_all: show_all,
+                show_style_only: show_style_only,
+                stats: stats,
+                members: results || []
+            });
         });
-    });
+    } catch (error) {
+        console.error("Unerwarteter Fehler in /kurs/:stundenplan_id/:datum:", error);
+        return res.status(500).json({ 
+            success: false,
+            error: "Unerwarteter Fehler beim Abrufen der Kursmitglieder", 
+            details: error.message 
+        });
+    }
 });
 
 // 🆕 NEU: Kursliste für Datum abrufen (für Frontend Dropdown)

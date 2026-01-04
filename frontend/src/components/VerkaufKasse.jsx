@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, ShoppingCart, User, CreditCard, Euro } from 'lucide-react';
+import config from '../config/config.js';
 import '../styles/VerkaufKasse.css';
 import '../styles/CheckinSystem.css';
 
@@ -133,18 +134,29 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   
   const apiCall = async (endpoint, options = {}) => {
     try {
-      const response = await fetch(`/api${endpoint}`, {
+      const API_BASE = config.apiBaseUrl;
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
         },
         ...options
       });
-      
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to get the error message from the response body
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (jsonError) {
+          // If response body is not JSON, use the default error message
+        }
+        throw new Error(errorMessage);
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -199,7 +211,7 @@ const VerkaufKasse = ({ kunde, onClose }) => {
         artikel: warenkorb.map(item => ({
           artikel_id: item.artikel_id,
           menge: item.menge,
-          einzelpreis_cent: item.einzelpreis_cent
+          einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100)
         })),
         zahlungsart,
         gegeben_cent: zahlungsart === 'bar' ? Math.round(parseFloat(gegebenBetrag) * 100) : null,
@@ -290,9 +302,30 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   // =====================================================================================
   // CALCULATIONS
   // =====================================================================================
-  
-  const warenkorbSumme = warenkorb.reduce((sum, item) => sum + (item.brutto_cent * item.menge), 0);
-  const warenkorbSummeEuro = warenkorbSumme / 100;
+
+  // Berechne Summen gruppiert nach Steuersatz
+  const steuerBerechnung = warenkorb.reduce((acc, item) => {
+    const mwstSatz = item.mwst_prozent || 19;
+    const brutto = (item.verkaufspreis_euro || 0) * item.menge;
+    const netto = brutto / (1 + mwstSatz / 100);
+    const steuer = brutto - netto;
+
+    if (!acc[mwstSatz]) {
+      acc[mwstSatz] = { netto: 0, steuer: 0, brutto: 0 };
+    }
+
+    acc[mwstSatz].netto += netto;
+    acc[mwstSatz].steuer += steuer;
+    acc[mwstSatz].brutto += brutto;
+
+    return acc;
+  }, {});
+
+  const warenkorbSummeEuro = warenkorb.reduce((sum, item) =>
+    sum + ((item.verkaufspreis_euro || 0) * item.menge), 0);
+
+  const gesamtNetto = Object.values(steuerBerechnung).reduce((sum, s) => sum + s.netto, 0);
+  const gesamtSteuer = Object.values(steuerBerechnung).reduce((sum, s) => sum + s.steuer, 0);
   
   const rueckgeld = zahlungsart === 'bar' && gegebenBetrag 
     ? Math.max(0, parseFloat(gegebenBetrag) - warenkorbSummeEuro)
@@ -370,34 +403,23 @@ const VerkaufKasse = ({ kunde, onClose }) => {
           <div key={item.artikel_id} className="warenkorb-item">
             <div className="item-info">
               <div className="item-name">{item.name}</div>
-              <div className="item-preis">
-                {(item.einzelpreis_cent / 100).toFixed(2)}€
+              <div className="item-details">
+                <span className="item-preis">
+                  {item.verkaufspreis_euro?.toFixed(2) || '0.00'}€
+                </span>
+                <span className="item-separator">×</span>
+                <span className="item-menge-display">{item.menge}</span>
               </div>
             </div>
-            
-            <div className="item-menge">
-              <button 
-                className="btn btn-sm"
-                onClick={() => updateMenge(item.artikel_id, item.menge - 1)}
-              >
-                -
-              </button>
-              <span className="menge">{item.menge}</span>
-              <button 
-                className="btn btn-sm"
-                onClick={() => updateMenge(item.artikel_id, item.menge + 1)}
-              >
-                +
-              </button>
-            </div>
-            
+
             <div className="item-summe">
-              {(item.brutto_cent * item.menge / 100).toFixed(2)}€
+              {((item.verkaufspreis_euro || 0) * item.menge).toFixed(2)}€
             </div>
-            
-            <button 
-              className="btn btn-sm btn-danger"
+
+            <button
+              className="item-remove-btn"
               onClick={() => removeFromWarenkorb(item.artikel_id)}
+              title="Entfernen"
             >
               ×
             </button>
@@ -408,11 +430,17 @@ const VerkaufKasse = ({ kunde, onClose }) => {
       {warenkorb.length > 0 && (
         <div className="warenkorb-summe">
           <div className="summe-row">
-            <span>Zwischensumme:</span>
-            <span>{warenkorbSummeEuro.toFixed(2)}€</span>
+            <span>Netto:</span>
+            <span>{gesamtNetto.toFixed(2)}€</span>
           </div>
+          {Object.keys(steuerBerechnung).sort().map(mwstSatz => (
+            <div key={mwstSatz} className="summe-row tax">
+              <span>MwSt. {parseFloat(mwstSatz).toFixed(0)}%:</span>
+              <span>{steuerBerechnung[mwstSatz].steuer.toFixed(2)}€</span>
+            </div>
+          ))}
           <div className="summe-row total">
-            <span>Gesamt:</span>
+            <span>Gesamt (Brutto):</span>
             <span>{warenkorbSummeEuro.toFixed(2)}€</span>
           </div>
         </div>
@@ -456,60 +484,77 @@ const VerkaufKasse = ({ kunde, onClose }) => {
               checked={zahlungsart === 'digital'}
               onChange={(e) => setZahlungsart(e.target.value)}
             />
-            <span>📱 Digital</span>
+            <span>💳 Lastschrift</span>
           </label>
         </div>
         
         {zahlungsart === 'bar' && (
           <div className="bar-zahlung">
-            <div className="form-group">
-              <label>Gegebener Betrag (€):</label>
-              <input
-                type="number"
-                value={gegebenBetrag}
-                onChange={(e) => setGegebenBetrag(e.target.value)}
-                step="0.01"
-                min={warenkorbSummeEuro}
-                placeholder={warenkorbSummeEuro.toFixed(2)}
-              />
-            </div>
-            
-            {rueckgeld > 0 && (
-              <div className="rueckgeld">
-                Rückgeld: <strong>{rueckgeld.toFixed(2)}€</strong>
+            <div className="betrag-row">
+              <div className="form-group">
+                <label>Zu zahlen (€):</label>
+                <input
+                  type="text"
+                  value={warenkorbSummeEuro.toFixed(2)}
+                  readOnly
+                  className="betrag-readonly"
+                />
               </div>
-            )}
+
+              <div className="form-group">
+                <label>Gegebener Betrag (€):</label>
+                <input
+                  type="number"
+                  value={gegebenBetrag}
+                  onChange={(e) => setGegebenBetrag(e.target.value)}
+                  step="0.01"
+                  min={warenkorbSummeEuro}
+                  placeholder={warenkorbSummeEuro.toFixed(2)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Rückgeld (€):</label>
+                <div className="rueckgeld-inline">
+                  {rueckgeld > 0 ? rueckgeld.toFixed(2) : '0.00'}
+                </div>
+              </div>
+            </div>
           </div>
         )}
-        
-        <div className="form-group">
-          <label>Kunde (optional):</label>
-          <input
-            type="text"
-            value={kundeName}
-            onChange={(e) => setKundeName(e.target.value)}
-            placeholder="Name des Kunden"
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Mitgliedsnummer (optional):</label>
-          <input
-            type="text"
-            value={mitgliedId}
-            onChange={(e) => setMitgliedId(e.target.value)}
-            placeholder="Mitgliedsnummer"
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Bemerkung (optional):</label>
-          <textarea
-            value={bemerkung}
-            onChange={(e) => setBemerkung(e.target.value)}
-            placeholder="Zusätzliche Informationen"
-            rows="2"
-          />
+
+        <div className="zahlung-form-section">
+          <div className="kunde-mitglied-row">
+            <div className="form-group">
+              <label>Kunde:</label>
+              <input
+                type="text"
+                value={kundeName}
+                onChange={(e) => setKundeName(e.target.value)}
+                placeholder="Name des Kunden"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Mitgliedsnummer:</label>
+              <input
+                type="text"
+                value={mitgliedId}
+                onChange={(e) => setMitgliedId(e.target.value)}
+                placeholder="Mitgliedsnummer"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Bemerkung:</label>
+            <textarea
+              value={bemerkung}
+              onChange={(e) => setBemerkung(e.target.value)}
+              placeholder="Zusätzliche Informationen"
+              rows="2"
+            />
+          </div>
         </div>
         
         <div className="zahlung-actions">
@@ -607,41 +652,6 @@ const VerkaufKasse = ({ kunde, onClose }) => {
       </div>
       
       <div className="checkin-container compact">
-        {aktivePerson?.kurse?.length > 0 && (
-          <div className="kasse-kunde-kurse">
-            <div className="kasse-kunde-kurse-header">
-              <span className="kasse-kunde-name">
-                {aktivePerson.full_name ||
-                  `${aktivePerson.vorname || ''} ${aktivePerson.nachname || ''}`.trim()}
-              </span>
-              {selectedMitglied && (
-                <button
-                  type="button"
-                  className="kasse-kunde-reset"
-                  onClick={() => selectMitglied(null)}
-                >
-                  Auswahl entfernen
-                </button>
-              )}
-            </div>
-            <div className="kasse-kurs-tag-liste">
-              {aktivePerson.kurse.map((kurs, index) => (
-                <span
-                  key={`${aktivePerson.mitglied_id || index}-${kurs.kurs_name || index}`}
-                  className={`kasse-kurs-tag ${
-                    kurs.anwesenheits_typ === 'trainer_hinzugefuegt'
-                      ? 'trainer'
-                      : 'checkin'
-                  }`}
-                >
-                  <span className="name">{kurs.kurs_name || 'Kurs'}</span>
-                  {kurs.kurs_zeit && <span className="zeit">{kurs.kurs_zeit}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
         {aggregierteCheckins.length > 0 && (
           <div className="kasse-checkins-leiste">
             <div className="kasse-checkins-header">
@@ -669,7 +679,7 @@ const VerkaufKasse = ({ kunde, onClose }) => {
                     <div className="avatar">
                       {person.foto_pfad ? (
                         <img
-                          src={`http://localhost:3002/${person.foto_pfad}`}
+                          src={`http://localhost:3000/${person.foto_pfad}`}
                           alt={name}
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';

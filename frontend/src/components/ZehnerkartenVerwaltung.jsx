@@ -265,50 +265,26 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
         alignItems: 'center',
         marginBottom: '2rem',
         paddingBottom: '1rem',
-        borderBottom: '2px solid rgba(16, 185, 129, 0.2)'
+        borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
       }}>
         <h3 style={{
           margin: 0,
           fontSize: '1.8rem',
           fontWeight: '700',
-          background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
+          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          🎫 10er-Karten Verwaltung
+          10er-Karten Verwaltung
         </h3>
 
         {isAdmin && (
           <button
+            className="neue-zehnerkarte-button"
             onClick={() => setShowNewKarte(true)}
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)',
-              color: '#10B981',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '10px',
-              padding: '0.75rem 1.5rem',
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #10B981 0%, #34D399 100%)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
           >
-            <Plus size={20} />
-            Neue 10er-Karte
+            ➕ Neue 10er-Karte
           </button>
         )}
       </div>
