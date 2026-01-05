@@ -6,6 +6,15 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/featureAccess');
+
+// ============================================================================
+// FEATURE PROTECTION: Events-Verwaltung
+// ============================================================================
+// Alle Events-Routes erfordern das 'events' Feature (ab Professional Plan)
+router.use(authenticateToken);
+router.use(requireFeature('events'));
 
 // ============================================================================
 // HILFSFUNKTIONEN

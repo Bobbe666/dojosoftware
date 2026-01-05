@@ -14,12 +14,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3002',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'http://localhost:3002',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       }
@@ -28,9 +28,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false, // Für Production auf false setzen
+    sourcemap: false, // Fï¿½r Production auf false setzen
     minify: 'terser',
-    // CSS Minify auf esbuild umstellen (unterdrückt die Warnungen)
+    // CSS Minify auf esbuild umstellen (unterdrï¿½ckt die Warnungen)
     cssMinify: 'esbuild',
     rollupOptions: {
       output: {

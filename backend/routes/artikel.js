@@ -8,9 +8,18 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/featureAccess');
 // const multer = require('multer'); // TODO: Später für Bild-Uploads hinzufügen
 // const path = require('path');
 // const fs = require('fs');
+
+// =====================================================================================
+// FEATURE PROTECTION: Verkauf & Lagerhaltung
+// =====================================================================================
+// Alle Artikel-Routes erfordern das 'verkauf' Feature (ab Professional Plan)
+router.use(authenticateToken);
+router.use(requireFeature('verkauf'));
 
 // =====================================================================================
 // DEVELOPMENT MODE CHECK

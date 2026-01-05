@@ -8,8 +8,17 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/featureAccess');
 const { generateKassenbon, generateStornoBon } = require('../templates/kassenbon_template');
 const { createRechnungForVerkauf } = require('../utils/rechnungAutomation');
+
+// =====================================================================================
+// FEATURE PROTECTION: Verkauf & Kassensystem
+// =====================================================================================
+// Alle Verkaufs-Routes erfordern das 'verkauf' Feature (ab Professional Plan)
+router.use(authenticateToken);
+router.use(requireFeature('verkauf'));
 
 // =====================================================================================
 // HILFSFUNKTIONEN

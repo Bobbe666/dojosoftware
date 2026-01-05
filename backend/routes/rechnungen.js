@@ -1,12 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/featureAccess');
 const { createRechnungForBeitrag } = require('../utils/rechnungAutomation');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs').promises;
 const QRCode = require('qrcode');
 const generateInvoiceHTML = require('../utils/invoicePdfTemplate');
+
+// =====================================================================================
+// FEATURE PROTECTION: Buchführung & Rechnungswesen
+// =====================================================================================
+// Alle Rechnungs-Routes erfordern das 'buchfuehrung' Feature (ab Premium Plan)
+router.use(authenticateToken);
+router.use(requireFeature('buchfuehrung'));
 
 // Helper: Erstelle documents Verzeichnis falls nicht vorhanden
 async function ensureDocumentsDir() {

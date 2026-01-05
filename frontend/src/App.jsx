@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { KursProvider } from "./context/KursContext.jsx";
 import { DojoProvider } from "./context/DojoContext.jsx";
 import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx";
+import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 
 // Bestehende Komponenten
 import Login from "./components/Login";
@@ -131,16 +132,29 @@ import MeineEvents from "./components/MeineEvents";
 // MagicLine Import
 import MagicLineImport from "./pages/MagicLineImport";
 
+// Public Marketing Pages
+import LandingPage from "./pages/LandingPage";
+import PricingPage from "./pages/PricingPage";
+import RegisterPage from "./pages/RegisterPage";
+import ContactPage from "./pages/ContactPage";
+import ImpressumPage from "./pages/ImpressumPage";
+import AboutPage from "./pages/AboutPage";
+import DatenschutzPage from "./pages/DatenschutzPage";
+import AGBPage from "./pages/AGBPage";
+import HelpPage from "./pages/HelpPage";
+import GaleriePage from "./pages/GaleriePage";
+import DemoPage from "./pages/DemoPage";
+
 // Protected Route Komponente mit AuthContext
 const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
 
-  // 🔧 DEVELOPMENT BYPASS - Login umgehen während der Entwicklung
-  const isDevelopment = import.meta.env.MODE === 'development';
-  if (isDevelopment) {
-    console.log('🔧 Development Mode: Login-Bypass aktiv');
-    return children;
-  }
+  // 🔧 DEVELOPMENT BYPASS - Temporär deaktiviert für Multi-Tenant Testing
+  // const isDevelopment = import.meta.env.MODE === 'development';
+  // if (isDevelopment) {
+  //   console.log('🔧 Development Mode: Login-Bypass aktiv');
+  //   return children;
+  // }
 
   if (loading) {
     return (
@@ -202,15 +216,20 @@ const MemberOnlyRoute = ({ children }) => {
   return children;
 };
 
-// Root Redirect basierend auf Rolle
+// Root Redirect basierend auf Authentifizierungsstatus
 const RootRedirect = () => {
-  const { user, loading } = useAuth();
-  
+  const { token, user, loading } = useAuth();
+
   if (loading) {
     return <div>Lade...</div>;
   }
-  
-  // Basierend auf Rolle weiterleiten - alle zu /dashboard
+
+  // Wenn nicht eingeloggt, zeige Landing Page
+  if (!token) {
+    return <LandingPage />;
+  }
+
+  // Wenn eingeloggt, weiter zum Dashboard
   return <Navigate to="/dashboard" replace />;
 };
 
@@ -218,13 +237,26 @@ const RootRedirect = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <DojoProvider>
-        <KursProvider>
-          <MitgliederUpdateProvider>
-            <BrowserRouter>
-            <Routes>
-            {/* ======== PUBLIC ROUTES ======== */}
-            <Route path="/login" element={<Login />} />
+      <SubscriptionProvider>
+        <DojoProvider>
+          <KursProvider>
+            <MitgliederUpdateProvider>
+              <BrowserRouter>
+              <Routes>
+              {/* ======== PUBLIC ROUTES ======== */}
+              <Route path="/login" element={<Login />} />
+
+              {/* Public Marketing Pages */}
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/impressum" element={<ImpressumPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/datenschutz" element={<DatenschutzPage />} />
+              <Route path="/agb" element={<AGBPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/galerie" element={<GaleriePage />} />
+              <Route path="/demo" element={<DemoPage />} />
 
             {/* Public Homepage - No authentication required */}
             <Route path="/home" element={<Homepage />} />
@@ -315,15 +347,8 @@ const App = () => {
               }
             />
 
-            {/* Standard-Weiterleitung basierend auf Rolle */}
-            <Route 
-              path="/" 
-              element={
-                <ProtectedRoute>
-                  <RootRedirect />
-                </ProtectedRoute>
-              } 
-            />
+            {/* Standard-Weiterleitung basierend auf Authentifizierung */}
+            <Route path="/" element={<RootRedirect />} />
             
             {/* ======== PROTECTED DASHBOARD ROUTES ======== */}
             <Route 
@@ -524,11 +549,12 @@ const App = () => {
                 </div>
               } 
             />
-            </Routes>
-          </BrowserRouter>
-          </MitgliederUpdateProvider>
-        </KursProvider>
-      </DojoProvider>
+              </Routes>
+            </BrowserRouter>
+            </MitgliederUpdateProvider>
+          </KursProvider>
+        </DojoProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 };

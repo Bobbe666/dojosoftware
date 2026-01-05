@@ -65,6 +65,32 @@ try {
   });
 }
 
+// 1.1 DOJO ONBOARDING (SaaS Multi-Tenant Registration)
+try {
+  const dojoOnboardingRoutes = require('./routes/dojo-onboarding');
+  app.use('/api/onboarding', dojoOnboardingRoutes);
+  logger.success('Route geladen', { path: '/api/onboarding' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'dojo-onboarding',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
+// 1.2 SUBSCRIPTION MANAGEMENT
+try {
+  const subscriptionRoutes = require('./routes/subscription');
+  app.use('/api/subscription', subscriptionRoutes);
+  logger.success('Route geladen', { path: '/api/subscription' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'subscription',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // 1.1 BUDDY-GRUPPEN & EINLADUNGEN
 try {
   const buddyRoutes = require(path.join(__dirname, 'routes', 'buddy.js'));
