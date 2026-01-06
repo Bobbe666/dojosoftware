@@ -171,16 +171,6 @@ function RegisterPage() {
         console.log('✅ Registrierung erfolgreich!');
         setRegisteredData(response.data);
         setSuccess(true);
-
-        // Redirect nach 5 Sekunden
-        setTimeout(() => {
-          // Bei lokaler Entwicklung zu /login, sonst zur Subdomain
-          const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-          const redirectUrl = isLocalhost ? '/login' : response.data.login_url;
-
-          console.log('🔄 Redirect zu:', redirectUrl);
-          window.location.href = redirectUrl;
-        }, 5000);
       }
 
     } catch (error) {
@@ -222,8 +212,13 @@ function RegisterPage() {
             </div>
           </div>
 
-          <div className="redirect-info">
-            <p>Du wirst in 5 Sekunden automatisch weitergeleitet...</p>
+          <div className="next-steps">
+            <h3><span className="section-icon">🚀</span> Nächste Schritte</h3>
+            <ol style={{ textAlign: 'left', margin: '1rem auto', maxWidth: '500px' }}>
+              <li>Logge dich mit deiner E-Mail und deinem Passwort ein</li>
+              <li>Vervollständige dein Dojo-Profil</li>
+              <li>Lade deine ersten Mitglieder ein</li>
+            </ol>
             <button
               className="cta-btn"
               onClick={() => {
@@ -231,7 +226,7 @@ function RegisterPage() {
                 window.location.href = isLocalhost ? '/login' : registeredData.login_url;
               }}
             >
-              Jetzt zum Login
+              Jetzt zum Login und loslegen
             </button>
           </div>
         </div>
