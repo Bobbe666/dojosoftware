@@ -581,12 +581,27 @@ const authenticateToken = (req, res, next) => {
 const tenantIsolationMiddleware = async (req, res, next) => {
   const subdomain = req.headers['x-tenant-subdomain'];
 
-  // Hauptdomain (kein Subdomain-Header) → keine Einschränkung
+  // Hauptdomain (kein Subdomain-Header)
   if (!subdomain || subdomain === '') {
-    logger.debug('Hauptdomain-Request - Multi-Dojo erlaubt', {
-      url: req.url,
-      dojo_id: req.query.dojo_id
-    });
+    // Prüfe ob User eine dojo_id hat (aus JWT Token)
+    const userDojoId = req.user?.dojo_id;
+    const userRole = req.user?.role || req.user?.rolle;
+
+    if (userDojoId && userRole !== 'super_admin') {
+      // User mit dojo_id → erzwinge seine dojo_id auch bei Hauptdomain
+      req.query.dojo_id = userDojoId.toString();
+      logger.debug('Hauptdomain-Request - User dojo_id erzwungen', {
+        url: req.url,
+        user_dojo_id: userDojoId,
+        forced_dojo_id: req.query.dojo_id
+      });
+    } else {
+      logger.debug('Hauptdomain-Request - Multi-Dojo erlaubt', {
+        url: req.url,
+        dojo_id: req.query.dojo_id,
+        user_role: userRole
+      });
+    }
     return next();
   }
 

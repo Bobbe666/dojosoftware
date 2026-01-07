@@ -130,30 +130,47 @@ router.post('/login', async (req, res) => {
 
         // 🔒 TENANT ISOLATION: Prüfe ob User zur Subdomain gehört
         const subdomain = req.headers['x-tenant-subdomain'];
-        if (subdomain && subdomain !== '') {
-          // Subdomain-Login → User muss zu diesem Dojo gehören
-          if (!user.dojo_id) {
-            // User hat keine dojo_id (super_admin) → darf überall einloggen (OK)
-          } else {
-            // User hat dojo_id → muss zur Subdomain passen
-            const [dojos] = await db.promise().query(
-              'SELECT id FROM dojo WHERE subdomain = ? LIMIT 1',
-              [subdomain]
-            );
 
-            if (dojos.length === 0) {
-              return res.status(403).json({
-                login: false,
-                message: 'Ungültige Subdomain'
-              });
-            }
+        if (user.dojo_id && user.role !== 'super_admin') {
+          // User mit dojo_id (kein super_admin) → MUSS bei seiner Subdomain einloggen
+          if (!subdomain || subdomain === '') {
+            return res.status(403).json({
+              login: false,
+              message: 'Sie müssen sich bei Ihrer Dojo-Subdomain anmelden'
+            });
+          }
 
-            if (user.dojo_id !== dojos[0].id) {
-              return res.status(403).json({
-                login: false,
-                message: 'Sie haben keine Berechtigung, sich bei diesem Dojo anzumelden'
-              });
-            }
+          // Prüfe ob Subdomain zur dojo_id passt
+          const [dojos] = await db.promise().query(
+            'SELECT id FROM dojo WHERE subdomain = ? LIMIT 1',
+            [subdomain]
+          );
+
+          if (dojos.length === 0) {
+            return res.status(403).json({
+              login: false,
+              message: 'Ungültige Subdomain'
+            });
+          }
+
+          if (user.dojo_id !== dojos[0].id) {
+            return res.status(403).json({
+              login: false,
+              message: 'Sie haben keine Berechtigung, sich bei diesem Dojo anzumelden'
+            });
+          }
+        } else if (subdomain && subdomain !== '' && !user.dojo_id) {
+          // Super-Admin bei Subdomain → erlaubt, aber validiere Subdomain
+          const [dojos] = await db.promise().query(
+            'SELECT id FROM dojo WHERE subdomain = ? LIMIT 1',
+            [subdomain]
+          );
+
+          if (dojos.length === 0) {
+            return res.status(403).json({
+              login: false,
+              message: 'Ungültige Subdomain'
+            });
           }
         }
 
