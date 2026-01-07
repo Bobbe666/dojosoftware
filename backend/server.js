@@ -34,6 +34,12 @@ app.use(cors({
 app.use(express.json({ charset: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '10mb' }));
 
+// =============================================
+// TENANT ISOLATION MIDDLEWARE (GLOBAL)
+// =============================================
+// Wird später definiert, aber hier bereits als Platzhalter referenziert
+// Die eigentliche Funktion wird weiter unten im Code definiert
+
 // Database connection test
 db.getConnection((err, connection) => {
   if (err) {
@@ -566,6 +572,71 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// =============================================
+// TENANT ISOLATION MIDDLEWARE
+// =============================================
+// Subdomains → strikte Dojo-Zuordnung
+// Hauptdomain → freie Dojo-Wahl via Switcher
+const tenantIsolationMiddleware = async (req, res, next) => {
+  const subdomain = req.headers['x-tenant-subdomain'];
+
+  // Hauptdomain (kein Subdomain-Header) → keine Einschränkung
+  if (!subdomain || subdomain === '') {
+    logger.debug('Hauptdomain-Request - Multi-Dojo erlaubt', {
+      url: req.url,
+      dojo_id: req.query.dojo_id
+    });
+    return next();
+  }
+
+  // Subdomain → Tenant-Isolation aktivieren
+  try {
+    const [dojos] = await db.promise().query(
+      'SELECT id, dojoname, subdomain FROM dojo WHERE subdomain = ? AND ist_aktiv = TRUE LIMIT 1',
+      [subdomain]
+    );
+
+    if (dojos.length === 0) {
+      logger.error('Ungültige Subdomain', { subdomain });
+      return res.status(403).json({
+        error: 'Ungültige Subdomain',
+        message: 'Dieses Dojo existiert nicht oder ist nicht aktiv'
+      });
+    }
+
+    const dojo = dojos[0];
+    req.tenant = {
+      dojo_id: dojo.id,
+      subdomain: dojo.subdomain,
+      dojoname: dojo.dojoname
+    };
+
+    // Query-Parameter überschreiben für Tenant-Isolation
+    req.query.dojo_id = dojo.id.toString();
+
+    logger.debug('Tenant-Isolation aktiv', {
+      subdomain,
+      dojo_id: dojo.id,
+      dojoname: dojo.dojoname
+    });
+
+    next();
+  } catch (error) {
+    logger.error('Fehler bei Tenant-Lookup', { error: error.message, subdomain });
+    return res.status(500).json({ error: 'Interner Fehler bei Tenant-Validierung' });
+  }
+};
+
+// Tenant-Isolation global für alle /api/* Routes aktivieren (außer /api/auth)
+app.use('/api', (req, res, next) => {
+  // Auth-Routes überspringen (Login, Logout sollten nicht tenant-isoliert sein)
+  if (req.path.startsWith('/auth')) {
+    return next();
+  }
+  // Für alle anderen API-Routes: Tenant-Isolation anwenden
+  tenantIsolationMiddleware(req, res, next);
+});
 
 // 12. DOJOS (Multi-Dojo-Verwaltung & Steuer-Tracking) - NEU
 try {
