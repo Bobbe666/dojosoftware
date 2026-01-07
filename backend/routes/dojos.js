@@ -7,64 +7,107 @@ const router = express.Router();
 // =====================================================
 // GET /api/dojos - Alle Dojos abrufen
 // =====================================================
-router.get('/', (req, res) => {
-  const query = `
-    SELECT
-      d.id,
-      d.dojoname,
-      d.inhaber,
-      d.strasse,
-      d.hausnummer,
-      d.plz,
-      d.ort,
-      d.telefon,
-      d.email,
-      d.internet,
-      d.steuer_status,
-      d.ust_satz,
-      d.kleinunternehmer_grenze,
-      COALESCE(
-        (SELECT SUM(v.monatsbeitrag * 12)
-         FROM vertraege v
-         INNER JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-         WHERE v.dojo_id = d.id
-         AND v.status = 'aktiv'),
-        0
-      ) as jahresumsatz_aktuell,
-      d.jahresumsatz_vorjahr,
-      d.steuer_jahr,
-      d.steuer_warnung_80_prozent,
-      d.steuer_warnung_100_prozent,
-      d.ist_aktiv,
-      d.ist_hauptdojo,
-      d.sortierung,
-      d.farbe,
-      d.finanzamt_name,
-      d.steuernummer,
-      d.ust_id,
-      d.sepa_glaeubiger_id,
-      d.iban,
-      d.bic,
-      d.bank,
-      d.bank_iban,
-      d.bank_bic,
-      d.bank_inhaber,
-      d.bank_name,
-      d.aktualisiert_am
-    FROM dojo d
-    WHERE d.ist_aktiv = TRUE
-    ORDER BY d.sortierung ASC, d.id ASC
-  `;
+router.get('/', async (req, res) => {
+  // 🔒 MULTI-DOJO USER ISOLATION
+  // Priority:
+  // 1. Check admin_user_dojos table (m:n relationship) → show only linked dojos
+  // 2. If user has dojo_id → show only that dojo
+  // 3. If user is super_admin → show all dojos
 
-  req.db.query(query, (err, results) => {
-    if (err) {
-      console.error('Fehler beim Abrufen der Dojos:', err);
-      return res.status(500).json({ error: 'Fehler beim Laden der Dojos' });
+  const userId = req.user?.id;
+  const userDojoId = req.user?.dojo_id;
+  const userRole = req.user?.role || req.user?.rolle;
+  const isSuperAdmin = userRole === 'super_admin';
+
+  try {
+    // Step 1: Check if user has specific dojo assignments in admin_user_dojos
+    let assignedDojoIds = null;
+    if (userId) {
+      const [assignments] = await req.db.promise().query(
+        'SELECT dojo_id FROM admin_user_dojos WHERE admin_user_id = ?',
+        [userId]
+      );
+      
+      if (assignments.length > 0) {
+        assignedDojoIds = assignments.map(a => a.dojo_id);
+      }
     }
 
+    // Build WHERE clause based on user permissions
+    let whereClause = 'WHERE d.ist_aktiv = TRUE';
+    let queryParams = [];
+
+    if (assignedDojoIds && assignedDojoIds.length > 0) {
+      // User has specific dojo assignments → show only those
+      const placeholders = assignedDojoIds.map(() => '?').join(',');
+      whereClause += ` AND d.id IN (${placeholders})`;
+      queryParams = assignedDojoIds;
+    } else if (userDojoId) {
+      // User has dojo_id field → show only that dojo
+      whereClause += ' AND d.id = ?';
+      queryParams.push(userDojoId);
+    } else if (!isSuperAdmin) {
+      // User has no assignments and is not super_admin → show nothing
+      return res.json([]);
+    }
+    // If super_admin → no additional filter (show all active dojos)
+
+    const query = `
+      SELECT
+        d.id,
+        d.dojoname,
+        d.inhaber,
+        d.strasse,
+        d.hausnummer,
+        d.plz,
+        d.ort,
+        d.telefon,
+        d.email,
+        d.internet,
+        d.steuer_status,
+        d.ust_satz,
+        d.kleinunternehmer_grenze,
+        COALESCE(
+          (SELECT SUM(v.monatsbeitrag * 12)
+           FROM vertraege v
+           INNER JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+           WHERE v.dojo_id = d.id
+           AND v.status = 'aktiv'),
+          0
+        ) as jahresumsatz_aktuell,
+        d.jahresumsatz_vorjahr,
+        d.steuer_jahr,
+        d.steuer_warnung_80_prozent,
+        d.steuer_warnung_100_prozent,
+        d.ist_aktiv,
+        d.ist_hauptdojo,
+        d.sortierung,
+        d.farbe,
+        d.finanzamt_name,
+        d.steuernummer,
+        d.ust_id,
+        d.sepa_glaeubiger_id,
+        d.iban,
+        d.bic,
+        d.bank,
+        d.bank_iban,
+        d.bank_bic,
+        d.bank_inhaber,
+        d.bank_name,
+        d.aktualisiert_am
+      FROM dojo d
+      ${whereClause}
+      ORDER BY d.sortierung ASC, d.id ASC
+    `;
+
+    const [results] = await req.db.promise().query(query, queryParams);
     res.json(results);
-  });
-});
+    
+  } catch (err) {
+    console.error('Fehler beim Abrufen der Dojos:', err);
+    return res.status(500).json({ error: 'Fehler beim Laden der Dojos' });
+  }
+})
 
 // =====================================================
 // GET /api/dojos/:id - Einzelnes Dojo abrufen (alle Felder)

@@ -6,6 +6,10 @@ const path = require("path");
 const fs = require("fs");
 require("dotenv").config();
 
+// JWT für Authentication
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'DojoSoftware2024SecretKeyChangeThis!';
+
 // Strukturierter Logger
 const logger = require("./utils/logger");
 
@@ -543,12 +547,32 @@ try {
     });
 }
 
+// =============================================
+// JWT AUTHENTICATION MIDDLEWARE
+// =============================================
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Kein Token vorhanden" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Token ungültig oder abgelaufen" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
 // 12. DOJOS (Multi-Dojo-Verwaltung & Steuer-Tracking) - NEU
 try {
   const dojosRouter = require(path.join(__dirname, "routes", "dojos.js"));
 
-  // Middleware um DB-Connection zu den Routes zu geben
-  app.use("/api/dojos", (req, res, next) => {
+  // Middleware um DB-Connection zu den Routes zu geben + JWT Auth
+  app.use("/api/dojos", authenticateToken, (req, res, next) => {
     req.db = db;
     next();
   }, dojosRouter);
