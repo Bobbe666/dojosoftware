@@ -128,15 +128,15 @@ router.post('/login', async (req, res) => {
           });
         }
 
-        // 🔒 TENANT ISOLATION: Prüfe ob User zur Subdomain gehört
+        // 🔒 TENANT ISOLATION: Strikte Subdomain-Zuordnung
         const subdomain = req.headers['x-tenant-subdomain'];
 
-        if (user.dojo_id && user.role !== 'super_admin') {
-          // User mit dojo_id (kein super_admin) → MUSS bei seiner Subdomain einloggen
-          if (!subdomain || subdomain === '') {
+        if (subdomain && subdomain !== '') {
+          // SUBDOMAIN-LOGIN → User MUSS dojo_id haben und zur Subdomain passen
+          if (!user.dojo_id) {
             return res.status(403).json({
               login: false,
-              message: 'Sie müssen sich bei Ihrer Dojo-Subdomain anmelden'
+              message: 'Bitte melden Sie sich bei der Hauptdomain (dojo.tda-intl.org) an'
             });
           }
 
@@ -159,17 +159,12 @@ router.post('/login', async (req, res) => {
               message: 'Sie haben keine Berechtigung, sich bei diesem Dojo anzumelden'
             });
           }
-        } else if (subdomain && subdomain !== '' && !user.dojo_id) {
-          // Super-Admin bei Subdomain → erlaubt, aber validiere Subdomain
-          const [dojos] = await db.promise().query(
-            'SELECT id FROM dojo WHERE subdomain = ? LIMIT 1',
-            [subdomain]
-          );
-
-          if (dojos.length === 0) {
+        } else {
+          // HAUPTDOMAIN-LOGIN → User MUSS super_admin sein oder Multi-Dojo-Zuordnung haben
+          if (user.dojo_id && user.role !== 'super_admin') {
             return res.status(403).json({
               login: false,
-              message: 'Ungültige Subdomain'
+              message: 'Sie müssen sich bei Ihrer Dojo-Subdomain anmelden'
             });
           }
         }
