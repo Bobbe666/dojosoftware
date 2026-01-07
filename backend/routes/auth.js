@@ -5,7 +5,7 @@ const db = require('../db'); // Verwenden Sie Ihr bestehendes DB-System
 const router = express.Router();
 
 // JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'DojoSoftware2024SecretKeyChangeThis!';
 
 // ===================================================================
 // 🧪 TEST-ROUTEN
