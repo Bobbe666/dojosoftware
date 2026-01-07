@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
 
     // Dann in admin_users Tabelle suchen (Admins/Trainer)
     const adminQuery = `
-      SELECT id, username, email, password, rolle as role, vorname, nachname, berechtigungen, aktiv, erstellt_am
+      SELECT id, username, email, password, rolle as role, dojo_id, vorname, nachname, berechtigungen, aktiv, erstellt_am
       FROM admin_users
       WHERE email = ? OR username = ?
       LIMIT 1
@@ -122,10 +122,39 @@ router.post('/login', async (req, res) => {
 
         if (!match) {
 
-          return res.status(401).json({ 
-            login: false, 
-            message: "Ungültiges Passwort" 
+          return res.status(401).json({
+            login: false,
+            message: "Ungültiges Passwort"
           });
+        }
+
+        // 🔒 TENANT ISOLATION: Prüfe ob User zur Subdomain gehört
+        const subdomain = req.headers['x-tenant-subdomain'];
+        if (subdomain && subdomain !== '') {
+          // Subdomain-Login → User muss zu diesem Dojo gehören
+          if (!user.dojo_id) {
+            // User hat keine dojo_id (super_admin) → darf überall einloggen (OK)
+          } else {
+            // User hat dojo_id → muss zur Subdomain passen
+            const [dojos] = await db.promise().query(
+              'SELECT id FROM dojo WHERE subdomain = ? LIMIT 1',
+              [subdomain]
+            );
+
+            if (dojos.length === 0) {
+              return res.status(403).json({
+                login: false,
+                message: 'Ungültige Subdomain'
+              });
+            }
+
+            if (user.dojo_id !== dojos[0].id) {
+              return res.status(403).json({
+                login: false,
+                message: 'Sie haben keine Berechtigung, sich bei diesem Dojo anzumelden'
+              });
+            }
+          }
         }
 
         // Create JWT token
@@ -135,6 +164,7 @@ router.post('/login', async (req, res) => {
           email: user.email,
           role: user.role,
           rolle: user.role, // Für Kompatibilität
+          dojo_id: user.dojo_id || null,
           mitglied_id: user.mitglied_id || null,
           vorname: user.vorname || null,
           nachname: user.nachname || null,
@@ -151,6 +181,7 @@ router.post('/login', async (req, res) => {
           email: user.email,
           role: user.role,
           rolle: user.role, // Für Kompatibilität
+          dojo_id: user.dojo_id || null,
           mitglied_id: user.mitglied_id || null,
           vorname: user.vorname || null,
           nachname: user.nachname || null,
