@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useDojoContext } from '../context/DojoContext';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import '../styles/themes.css';
 import '../styles/components.css';
@@ -22,6 +23,7 @@ const Login = () => {
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
   const { login, isAuthenticated, loading: authLoading } = useAuth();
+  const { refreshDojos } = useDojoContext();
   const navigate = useNavigate();
 
   // Redirect wenn bereits eingeloggt - basierend auf Rolle
@@ -105,6 +107,10 @@ const Login = () => {
         username: userData.username
       });
 
+      // 🔑 Lade Dojos nach erfolgreichem Login
+      console.log('🔑 Login erfolgreich - lade Dojos neu');
+      await refreshDojos();
+
       // Weiterleitung basierend auf Rolle (prüfe beide Eigenschaften für Kompatibilität)
       const userRole = userData.rolle || userData.role;
       if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && userData.username === 'TrainerloginTDA') {
@@ -147,6 +153,26 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      {/* Navigation */}
+      <nav className="login-nav">
+        <div className="nav-container">
+          <div className="nav-logo" onClick={() => navigate('/')}>
+            <img src={dojoLogo} alt="DojoSoftware Logo" className="nav-logo-image" />
+            <span className="logo-text">DojoSoftware</span>
+          </div>
+          <div className="nav-links">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
+            <a href="/#features">Features</a>
+            <a href="/galerie">Galerie</a>
+            <a href="/pricing">Preise</a>
+            <a href="/#testimonials">Referenzen</a>
+            <button className="nav-login-btn" onClick={() => navigate('/register')}>
+              Registrieren
+            </button>
+          </div>
+        </div>
+      </nav>
+
       <div className="login-card">
         <div className="login-header">
           <div className="japanese-title">Tiger & Dragon Association - International</div>

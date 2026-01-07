@@ -100,13 +100,19 @@ export const DojoProvider = ({ children }) => {
 
     try {
       const token = localStorage.getItem('dojo_auth_token');
-      const headers = {
-        'Content-Type': 'application/json'
-      };
 
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      // 🔒 Nur laden wenn User eingeloggt ist
+      if (!token) {
+        console.log('⚠️ Kein Token vorhanden - Dojos werden nicht geladen');
+        setDojos([]);
+        setLoading(false);
+        return;
       }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
 
       const response = await fetch(`${config.apiBaseUrl}/dojos`, {
         headers
