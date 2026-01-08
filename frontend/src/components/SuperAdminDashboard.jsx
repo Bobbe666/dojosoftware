@@ -15,6 +15,7 @@ import {
 import StatisticsTab from './StatisticsTab';
 import FinanceTab from './FinanceTab';
 import ContractsTab from './ContractsTab';
+import UsersTab from './UsersTab';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -700,11 +701,7 @@ const SuperAdminDashboard = () => {
 
         {/* Benutzer Tab */}
         {activeTab === 'users' && (
-          <div className="tab-placeholder">
-            <UserCog size={64} />
-            <h2>Benutzer</h2>
-            <p>Admin-Accounts Verwaltung kommt hier rein.</p>
-          </div>
+          <UsersTab token={token} />
         )}
       </div>
 

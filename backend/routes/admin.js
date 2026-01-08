@@ -1374,4 +1374,204 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// ==============================================
+// GET /api/admin/users
+// Benutzer-Übersicht für Super-Admin
+// ==============================================
+router.get('/users', requireSuperAdmin, async (req, res) => {
+  try {
+    // 1. Alle Admin-Benutzer laden (falls admin_users Tabelle existiert)
+    let adminUsers = [];
+    let userStats = {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      byRole: {}
+    };
+
+    try {
+      const [users] = await db.promise().query(`
+        SELECT
+          id,
+          username,
+          email,
+          vorname,
+          nachname,
+          rolle,
+          aktiv,
+          email_verifiziert,
+          letzter_login,
+          login_versuche,
+          gesperrt_bis,
+          erstellt_am
+        FROM admin_users
+        ORDER BY erstellt_am DESC
+      `);
+
+      adminUsers = users.map(u => ({
+        ...u,
+        aktiv: Boolean(u.aktiv),
+        email_verifiziert: Boolean(u.email_verifiziert),
+        letzter_login: u.letzter_login,
+        gesperrt_bis: u.gesperrt_bis,
+        erstellt_am: u.erstellt_am
+      }));
+
+      // User Statistics
+      userStats.total = users.length;
+      userStats.active = users.filter(u => u.aktiv).length;
+      userStats.inactive = users.filter(u => !u.aktiv).length;
+
+      // By Role
+      users.forEach(u => {
+        if (!userStats.byRole[u.rolle]) {
+          userStats.byRole[u.rolle] = 0;
+        }
+        userStats.byRole[u.rolle]++;
+      });
+    } catch (err) {
+      console.log('⚠️ admin_users Tabelle nicht gefunden, nutze Fallback');
+    }
+
+    // 2. Dojo-Admin Benutzer (aus benutzer Tabelle)
+    const [dojoUsers] = await db.promise().query(`
+      SELECT
+        b.benutzer_id,
+        b.benutzername,
+        b.email,
+        b.dojo_id,
+        d.dojoname,
+        b.erstellt_am as created_at,
+        COALESCE(
+          (SELECT COUNT(DISTINCT DATE(erstellt_am))
+           FROM mitglieder m
+           WHERE m.erstellt_von = b.benutzer_id
+           AND m.erstellt_am >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)),
+          0
+        ) as activity_last_30_days
+      FROM benutzer b
+      LEFT JOIN dojos d ON b.dojo_id = d.dojo_id
+      WHERE b.rolle = 'admin'
+      ORDER BY d.dojoname, b.benutzername
+    `);
+
+    // 3. Recent Activity Log (falls vorhanden)
+    let recentActivity = [];
+    try {
+      const [activity] = await db.promise().query(`
+        SELECT
+          al.id,
+          al.admin_id,
+          al.aktion,
+          al.bereich,
+          al.beschreibung,
+          al.erstellt_am,
+          au.username,
+          au.vorname,
+          au.nachname
+        FROM admin_activity_log al
+        JOIN admin_users au ON al.admin_id = au.id
+        ORDER BY al.erstellt_am DESC
+        LIMIT 50
+      `);
+
+      recentActivity = activity.map(a => ({
+        ...a,
+        erstellt_am: a.erstellt_am
+      }));
+    } catch (err) {
+      console.log('⚠️ admin_activity_log Tabelle nicht gefunden');
+    }
+
+    // 4. Login-Statistiken (letzte 30 Tage)
+    let loginStats = {
+      total_logins: 0,
+      unique_users: 0,
+      avg_per_day: 0
+    };
+
+    try {
+      const [logins] = await db.promise().query(`
+        SELECT
+          COUNT(*) as total_logins,
+          COUNT(DISTINCT admin_id) as unique_users
+        FROM admin_activity_log
+        WHERE aktion = 'login'
+          AND erstellt_am >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      `);
+
+      if (logins[0]) {
+        loginStats.total_logins = parseInt(logins[0].total_logins);
+        loginStats.unique_users = parseInt(logins[0].unique_users);
+        loginStats.avg_per_day = Math.round(loginStats.total_logins / 30);
+      }
+    } catch (err) {
+      console.log('⚠️ Keine Login-Statistiken verfügbar');
+    }
+
+    // 5. Benutzer nach Dojo (Gruppierung)
+    const usersByDojo = {};
+    dojoUsers.forEach(user => {
+      const dojoName = user.dojoname || 'Unzugeordnet';
+      if (!usersByDojo[dojoName]) {
+        usersByDojo[dojoName] = [];
+      }
+      usersByDojo[dojoName].push(user);
+    });
+
+    // 6. Aktive Benutzer (letzte 7 Tage Login)
+    let activeUsers = [];
+    try {
+      const [active] = await db.promise().query(`
+        SELECT
+          au.id,
+          au.username,
+          au.vorname,
+          au.nachname,
+          au.letzter_login,
+          DATEDIFF(CURDATE(), DATE(au.letzter_login)) as tage_seit_login
+        FROM admin_users au
+        WHERE au.letzter_login >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        ORDER BY au.letzter_login DESC
+      `);
+
+      activeUsers = active.map(u => ({
+        ...u,
+        letzter_login: u.letzter_login
+      }));
+    } catch (err) {
+      console.log('⚠️ Keine aktiven Benutzer-Daten verfügbar');
+    }
+
+    // Response zusammenstellen
+    const users = {
+      adminUsers: adminUsers,
+      dojoUsers: dojoUsers,
+      usersByDojo: usersByDojo,
+      userStats: userStats,
+      recentActivity: recentActivity,
+      loginStats: loginStats,
+      activeUsers: activeUsers
+    };
+
+    logger.success('Benutzerdaten geladen', {
+      adminUsers: users.adminUsers.length,
+      dojoUsers: users.dojoUsers.length,
+      recentActivity: users.recentActivity.length
+    });
+
+    res.json({
+      success: true,
+      users: users
+    });
+  } catch (err) {
+    logger.error('Fehler beim Laden der Benutzerdaten', { error: err.message });
+    res.status(500).json({
+      success: false,
+      message: 'Fehler beim Laden der Benutzerdaten',
+      error: err.message
+    });
+  }
+});
+
 module.exports = router;
