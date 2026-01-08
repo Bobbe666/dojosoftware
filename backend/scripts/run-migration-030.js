@@ -61,6 +61,29 @@ async function runMigration() {
     `);
     console.log('✅ Daten nach gesamtsumme kopiert');
 
+    // 5. Add rechnungsdatum column
+    try {
+      await connection.query(`
+        ALTER TABLE rechnungen
+        ADD COLUMN rechnungsdatum DATE NULL AFTER datum
+      `);
+      console.log('✅ Spalte rechnungsdatum hinzugefügt');
+    } catch (err) {
+      if (err.code === 'ER_DUP_FIELDNAME') {
+        console.log('ℹ️  Spalte rechnungsdatum existiert bereits');
+      } else {
+        throw err;
+      }
+    }
+
+    // 6. Copy data from datum to rechnungsdatum
+    await connection.query(`
+      UPDATE rechnungen
+      SET rechnungsdatum = datum
+      WHERE rechnungsdatum IS NULL AND datum IS NOT NULL
+    `);
+    console.log('✅ Daten von datum nach rechnungsdatum kopiert');
+
     console.log('\n✅ Migration 030 erfolgreich abgeschlossen!');
 
   } catch (error) {
