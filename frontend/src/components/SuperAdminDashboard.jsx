@@ -13,6 +13,7 @@ import {
   ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
+import FinanceTab from './FinanceTab';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -688,11 +689,7 @@ const SuperAdminDashboard = () => {
 
         {/* Finanzen Tab */}
         {activeTab === 'finance' && (
-          <div className="tab-placeholder">
-            <DollarSign size={64} />
-            <h2>Finanzen</h2>
-            <p>Finanzübersicht, Umsätze und Zahlungen kommen hier rein.</p>
-          </div>
+          <FinanceTab token={token} />
         )}
 
         {/* Verträge Tab */}

@@ -944,4 +944,201 @@ router.get('/statistics', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// =============================================
+// GET /api/admin/finance - Finanz-Übersicht und Analysen
+// =============================================
+router.get('/finance', requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('💰 Lade Finanzdaten...');
+
+    const currentYear = new Date().getFullYear();
+
+    // 1. Gesamt-Umsatz und KPIs
+    const [overallStats] = await db.promise().query(`
+      SELECT
+        SUM(gesamtsumme) as gesamt_umsatz,
+        COUNT(*) as anzahl_rechnungen,
+        AVG(gesamtsumme) as durchschnitt_rechnung,
+        SUM(CASE WHEN bezahlt = 1 THEN gesamtsumme ELSE 0 END) as bezahlt_summe,
+        SUM(CASE WHEN bezahlt = 0 THEN gesamtsumme ELSE 0 END) as offen_summe,
+        COUNT(CASE WHEN bezahlt = 1 THEN 1 END) as bezahlt_anzahl,
+        COUNT(CASE WHEN bezahlt = 0 THEN 1 END) as offen_anzahl
+      FROM rechnungen
+      WHERE YEAR(rechnungsdatum) = ?
+    `, [currentYear]);
+
+    // 2. Monatliche Einnahmen (aktuelles Jahr)
+    const [monthlyRevenue] = await db.promise().query(`
+      SELECT
+        MONTH(rechnungsdatum) as monat,
+        SUM(gesamtsumme) as umsatz,
+        COUNT(*) as anzahl_rechnungen,
+        SUM(CASE WHEN bezahlt = 1 THEN gesamtsumme ELSE 0 END) as bezahlt,
+        SUM(CASE WHEN bezahlt = 0 THEN gesamtsumme ELSE 0 END) as offen
+      FROM rechnungen
+      WHERE YEAR(rechnungsdatum) = ?
+      GROUP BY MONTH(rechnungsdatum)
+      ORDER BY monat ASC
+    `, [currentYear]);
+
+    // 3. Umsatz pro Dojo (aktuelles Jahr)
+    const [revenuePerDojo] = await db.promise().query(`
+      SELECT
+        d.id,
+        d.dojoname,
+        COALESCE(SUM(r.gesamtsumme), 0) as umsatz,
+        COUNT(r.rechnung_id) as anzahl_rechnungen,
+        COALESCE(SUM(CASE WHEN r.bezahlt = 1 THEN r.gesamtsumme ELSE 0 END), 0) as bezahlt,
+        COALESCE(SUM(CASE WHEN r.bezahlt = 0 THEN r.gesamtsumme ELSE 0 END), 0) as offen
+      FROM dojo d
+      LEFT JOIN rechnungen r ON d.id = r.dojo_id AND YEAR(r.rechnungsdatum) = ?
+      GROUP BY d.id, d.dojoname
+      ORDER BY umsatz DESC
+    `, [currentYear]);
+
+    // 4. Subscription Einnahmen (monatlich)
+    const [subscriptionRevenue] = await db.promise().query(`
+      SELECT
+        d.subscription_plan,
+        d.payment_interval,
+        COUNT(*) as anzahl,
+        CASE
+          WHEN d.subscription_plan = 'free' THEN 0
+          WHEN d.subscription_plan = 'basic' THEN 29
+          WHEN d.subscription_plan = 'premium' THEN 49
+          WHEN d.subscription_plan = 'enterprise' THEN 99
+          ELSE 0
+        END as preis_monatlich
+      FROM dojo d
+      WHERE subscription_status = 'active'
+      GROUP BY d.subscription_plan, d.payment_interval
+    `);
+
+    // Berechne monatliche und jährliche Recurring Revenue
+    let monthlyRecurringRevenue = 0;
+    subscriptionRevenue.forEach(row => {
+      const preis = parseFloat(row.preis_monatlich);
+      const anzahl = parseInt(row.anzahl);
+      monthlyRecurringRevenue += preis * anzahl;
+    });
+    const annualRecurringRevenue = monthlyRecurringRevenue * 12;
+
+    // 5. Aktuelle offene Rechnungen (Top 10)
+    const [openInvoices] = await db.promise().query(`
+      SELECT
+        r.rechnung_id,
+        r.rechnungsnummer,
+        r.rechnungsdatum,
+        r.faelligkeitsdatum,
+        r.gesamtsumme,
+        d.dojoname,
+        m.vorname,
+        m.nachname,
+        DATEDIFF(NOW(), r.faelligkeitsdatum) as tage_ueberfaellig
+      FROM rechnungen r
+      JOIN dojo d ON r.dojo_id = d.id
+      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE r.bezahlt = 0
+      ORDER BY r.faelligkeitsdatum ASC
+      LIMIT 10
+    `);
+
+    // 6. Zahlungsmoral (% pünktliche Zahlungen)
+    const [paymentBehavior] = await db.promise().query(`
+      SELECT
+        COUNT(*) as gesamt,
+        COUNT(CASE WHEN bezahlt = 1 AND bezahlt_am <= faelligkeitsdatum THEN 1 END) as puenktlich,
+        COUNT(CASE WHEN bezahlt = 1 AND bezahlt_am > faelligkeitsdatum THEN 1 END) as verspaetet,
+        COUNT(CASE WHEN bezahlt = 0 AND faelligkeitsdatum < NOW() THEN 1 END) as ueberfaellig
+      FROM rechnungen
+      WHERE YEAR(rechnungsdatum) = ?
+    `, [currentYear]);
+
+    const paymentStats = paymentBehavior[0];
+    const puenktlichRate = paymentStats.gesamt > 0
+      ? ((paymentStats.puenktlich / paymentStats.gesamt) * 100).toFixed(1)
+      : 0;
+
+    // 7. Durchschnittlicher Umsatz pro Mitglied
+    const [avgRevenuePerMember] = await db.promise().query(`
+      SELECT
+        COUNT(DISTINCT m.mitglied_id) as anzahl_mitglieder,
+        COALESCE(SUM(r.gesamtsumme), 0) as gesamt_umsatz
+      FROM mitglieder m
+      LEFT JOIN rechnungen r ON m.mitglied_id = r.mitglied_id AND YEAR(r.rechnungsdatum) = ?
+      WHERE m.ist_aktiv = 1
+    `, [currentYear]);
+
+    const avgPerMember = avgRevenuePerMember[0].anzahl_mitglieder > 0
+      ? (avgRevenuePerMember[0].gesamt_umsatz / avgRevenuePerMember[0].anzahl_mitglieder).toFixed(2)
+      : 0;
+
+    res.json({
+      success: true,
+      finance: {
+        overview: {
+          gesamt_umsatz: parseFloat(overallStats[0].gesamt_umsatz || 0),
+          anzahl_rechnungen: parseInt(overallStats[0].anzahl_rechnungen || 0),
+          durchschnitt_rechnung: parseFloat(overallStats[0].durchschnitt_rechnung || 0),
+          bezahlt_summe: parseFloat(overallStats[0].bezahlt_summe || 0),
+          offen_summe: parseFloat(overallStats[0].offen_summe || 0),
+          bezahlt_anzahl: parseInt(overallStats[0].bezahlt_anzahl || 0),
+          offen_anzahl: parseInt(overallStats[0].offen_anzahl || 0)
+        },
+        monthlyRevenue: monthlyRevenue.map(row => ({
+          monat: parseInt(row.monat),
+          umsatz: parseFloat(row.umsatz || 0),
+          anzahl: parseInt(row.anzahl_rechnungen || 0),
+          bezahlt: parseFloat(row.bezahlt || 0),
+          offen: parseFloat(row.offen || 0)
+        })),
+        revenuePerDojo: revenuePerDojo.map(row => ({
+          dojoname: row.dojoname,
+          umsatz: parseFloat(row.umsatz || 0),
+          anzahl: parseInt(row.anzahl_rechnungen || 0),
+          bezahlt: parseFloat(row.bezahlt || 0),
+          offen: parseFloat(row.offen || 0)
+        })),
+        subscriptionRevenue: {
+          mrr: parseFloat(monthlyRecurringRevenue.toFixed(2)),
+          arr: parseFloat(annualRecurringRevenue.toFixed(2)),
+          breakdown: subscriptionRevenue.map(row => ({
+            plan: row.subscription_plan,
+            interval: row.payment_interval,
+            anzahl: parseInt(row.anzahl),
+            preis: parseFloat(row.preis_monatlich)
+          }))
+        },
+        openInvoices: openInvoices.map(row => ({
+          rechnung_id: row.rechnung_id,
+          rechnungsnummer: row.rechnungsnummer,
+          datum: row.rechnungsdatum,
+          faelligkeit: row.faelligkeitsdatum,
+          betrag: parseFloat(row.gesamtsumme),
+          dojo: row.dojoname,
+          kunde: row.vorname && row.nachname ? `${row.vorname} ${row.nachname}` : 'N/A',
+          tage_ueberfaellig: parseInt(row.tage_ueberfaellig || 0)
+        })),
+        paymentBehavior: {
+          gesamt: parseInt(paymentStats.gesamt),
+          puenktlich: parseInt(paymentStats.puenktlich),
+          verspaetet: parseInt(paymentStats.verspaetet),
+          ueberfaellig: parseInt(paymentStats.ueberfaellig),
+          puenktlich_rate: parseFloat(puenktlichRate)
+        },
+        avgRevenuePerMember: parseFloat(avgPerMember)
+      }
+    });
+
+    console.log('✅ Finanzdaten erfolgreich geladen');
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Finanzdaten:', error);
+    res.status(500).json({
+      error: 'Fehler beim Laden der Finanzdaten',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;

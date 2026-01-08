@@ -982,3 +982,257 @@
     flex-direction: column;
   }
 }
+
+/* =============================================
+   FINANCE TAB SPECIFIC STYLES
+   ============================================= */
+
+.finance-tab {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Chart Wide Layout */
+.chart-wide {
+  grid-column: span 2;
+}
+
+/* Finance Sections */
+.finance-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #ffd700;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+/* Subscription Grid */
+.subscription-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.subscription-card {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.subscription-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 215, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.sub-plan {
+  color: #ffd700;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.sub-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sub-count {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.sub-price {
+  color: #4ecdc4;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.sub-total {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+/* Finance Table */
+.finance-table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #fff;
+}
+
+.finance-table thead {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.finance-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #ffd700;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.finance-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.finance-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.finance-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.finance-table tbody tr.overdue {
+  background: rgba(255, 107, 53, 0.1);
+  border-left: 3px solid #ff6b35;
+}
+
+.finance-table .invoice-number {
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.finance-table .amount {
+  text-align: right;
+  font-weight: 600;
+  color: #4ecdc4;
+}
+
+.finance-table .overdue-days {
+  color: #ff6b35;
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background: rgba(255, 165, 0, 0.2);
+  color: #ffa500;
+  border: 1px solid #ffa500;
+}
+
+.status-badge.overdue {
+  background: rgba(255, 107, 53, 0.2);
+  color: #ff6b35;
+  border: 1px solid #ff6b35;
+}
+
+/* Average Revenue Grid */
+.avg-revenue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.avg-revenue-card {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.avg-revenue-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.avg-revenue-card .dojo-name {
+  color: #ffd700;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.avg-revenue-card .avg-amount {
+  color: #4ecdc4;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.avg-revenue-card .member-count {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+/* Payment Stats */
+.payment-stats {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+}
+
+.stat-value {
+  color: #4ecdc4;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Responsive for Finance Tab */
+@media (max-width: 1200px) {
+  .chart-wide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .subscription-grid,
+  .avg-revenue-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-table {
+    font-size: 0.85rem;
+  }
+
+  .finance-table th,
+  .finance-table td {
+    padding: 0.75rem 0.5rem;
+  }
+}
