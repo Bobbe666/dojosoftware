@@ -612,7 +612,8 @@ function Dashboard() {
   }
 
   // 🏆 Super-Admin Dashboard: Zeige erweiterte Ansicht für TDA Int'l Org
-  if (role === 'admin' && selectedDojo === 'super-admin' && isMainDashboard) {
+  console.log('🔍 Super-Admin Dashboard Check:', { role, selectedDojo, isMainDashboard, pathname: location.pathname });
+  if (role === 'admin' && selectedDojo === 'super-admin') {
     console.log('✅ Zeige Super-Admin Dashboard für TDA Int\'l Org');
     return (
       <div className="dashboard-container">
