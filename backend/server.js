@@ -35,6 +35,27 @@ app.use(express.json({ charset: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '10mb' }));
 
 // =============================================
+// JWT AUTHENTICATION MIDDLEWARE
+// =============================================
+// MUSS VOR allen Routen definiert werden!
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Kein Token vorhanden" });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Token ungültig oder abgelaufen" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+
+// =============================================
 // TENANT ISOLATION MIDDLEWARE (GLOBAL)
 // =============================================
 // Wird später definiert, aber hier bereits als Platzhalter referenziert
@@ -127,6 +148,19 @@ try {
     });
 }
 
+// ADMIN ROUTES (Super-Admin Dashboard für TDA International)
+try {
+  const adminRoutes = require('./routes/admin');
+  app.use('/api/admin', authenticateToken, adminRoutes);
+  logger.success('Route gemountet', { path: '/api/admin' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'admin routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // TDA EXPORT API ROUTES (für TDA Software Integration)
 try {
   const tdaExportRoutes = require('./routes/tda-export');
@@ -194,7 +228,7 @@ try {
 
 try {
   const mitgliederRoutes = require('./routes/mitglieder');
-  app.use('/api/mitglieder', mitgliederRoutes);
+  app.use('/api/mitglieder', authenticateToken, mitgliederRoutes);
   logger.success('Route gemountet', { path: '/api/mitglieder' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -273,7 +307,7 @@ try {
 // 2.1 STUNDENPLAN ROUTES
 try {
   const stundenplanRoutes = require('./routes/stundenplan');
-  app.use('/api/stundenplan', stundenplanRoutes);
+  app.use('/api/stundenplan', authenticateToken, stundenplanRoutes);
   logger.success('Route geladen', { path: '/api/stundenplan' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -341,9 +375,9 @@ try {
 
 // 2.1 ADMIN-VERWALTUNG
 try {
-  const adminsRoutes = require(path.join(__dirname, "routes", "admins.js"));
-  app.use("/api/admins", adminsRoutes);
-  logger.success('Route gemountet', { path: '/api/admins' });
+  const adminRoutes = require(path.join(__dirname, "routes", "admin.js"));
+  app.use("/api/admin", authenticateToken, adminRoutes);
+  logger.success('Route gemountet', { path: '/api/admin' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'admins',
@@ -433,7 +467,7 @@ try {
 // 7. DASHBOARD (Statistiken & Recent Activities) - NEU
 try {
   const dashboardRouter = require(path.join(__dirname, "routes", "dashboard.js"));
-  app.use("/api/dashboard", dashboardRouter);
+  app.use("/api/dashboard", authenticateToken, dashboardRouter);
   logger.success('Route gemountet', { path: '/api/dashboard' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -552,26 +586,6 @@ try {
       stack: error.stack
     });
 }
-
-// =============================================
-// JWT AUTHENTICATION MIDDLEWARE
-// =============================================
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Kein Token vorhanden" });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(403).json({ message: "Token ungültig oder abgelaufen" });
-    }
-    req.user = decoded;
-    next();
-  });
-};
 
 // =============================================
 // TENANT ISOLATION MIDDLEWARE

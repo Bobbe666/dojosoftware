@@ -9,7 +9,8 @@ import { useAuth } from '../context/AuthContext';
 import config from '../config/config';
 import {
   Building2, Users, TrendingUp, Globe, Plus, Edit, Trash2,
-  CheckCircle, XCircle, BarChart3, Activity, Award, Calendar, HardDrive, Clock, AlertTriangle
+  CheckCircle, XCircle, BarChart3, Activity, Award, Calendar, HardDrive, Clock, AlertTriangle,
+  ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog
 } from 'lucide-react';
 import '../styles/SuperAdminDashboard.css';
 
@@ -38,6 +39,10 @@ const SuperAdminDashboard = () => {
   const [customPrice, setCustomPrice] = useState('');
   const [customNotes, setCustomNotes] = useState('');
   const [isMainSuperAdmin, setIsMainSuperAdmin] = useState(false);
+  const [expandedDojos, setExpandedDojos] = useState(new Set());
+
+  // State für Tab-Navigation
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Prüfe ob Main Super-Admin (nur für den Hauptadministrator)
   useEffect(() => {
@@ -234,6 +239,18 @@ const SuperAdminDashboard = () => {
     return '-';
   };
 
+  const toggleDojoExpand = (dojoId) => {
+    setExpandedDojos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dojoId)) {
+        newSet.delete(dojoId);
+      } else {
+        newSet.add(dojoId);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return (
       <div className="super-admin-dashboard">
@@ -260,23 +277,37 @@ const SuperAdminDashboard = () => {
     );
   }
 
+  // Tab Definitions
+  const tabs = [
+    { id: 'overview', label: 'Übersicht', icon: <LayoutDashboard size={18} /> },
+    { id: 'statistics', label: 'Statistiken', icon: <PieChart size={18} /> },
+    { id: 'finance', label: 'Finanzen', icon: <DollarSign size={18} /> },
+    { id: 'contracts', label: 'Verträge', icon: <FileText size={18} /> },
+    { id: 'users', label: 'Benutzer', icon: <UserCog size={18} /> }
+  ];
+
   return (
     <div className="super-admin-dashboard">
-      {/* Header */}
-      <div className="dashboard-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <Award size={48} />
-          </div>
-          <div className="header-text">
-            <h1>Tiger & Dragon Association - International</h1>
-            <p className="subtitle">Super-Admin Verwaltungsdashboard</p>
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div className="tab-navigation">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* TDA International Statistiken */}
-      <section className="stats-section">
+      {/* Tab Content */}
+      <div className="tab-content">
+        {activeTab === 'overview' && (
+          <>
+            {/* TDA International Statistiken */}
+            <section className="stats-section">
         <h2 className="section-title">
           <Building2 size={20} />
           TDA International Statistiken
@@ -402,16 +433,19 @@ const SuperAdminDashboard = () => {
             <BarChart3 size={20} />
             Dojo-Verwaltung
           </h2>
-          <button onClick={handleCreateDojo} className="btn btn-primary">
-            <Plus size={16} />
-            Neues Dojo anlegen
-          </button>
+          <div className="header-actions">
+            <button onClick={handleCreateDojo} className="btn btn-primary">
+              <Plus size={16} />
+              Neues Dojo anlegen
+            </button>
+          </div>
         </div>
 
         <div className="dojos-table-container">
           <table className="dojos-table">
             <thead>
               <tr>
+                <th style={{ width: '40px' }}></th>
                 <th>Status</th>
                 <th>Dojo-Name</th>
                 <th>Subdomain</th>
@@ -423,83 +457,190 @@ const SuperAdminDashboard = () => {
                 <th className="text-center">Speicher</th>
                 <th className="text-center">Abo-Status</th>
                 <th className="text-center">Trial/Abo Ende</th>
-                <th className="text-right">Aktionen</th>
               </tr>
             </thead>
             <tbody>
-              {dojos.map((dojo) => (
-                <tr key={dojo.id} className={!dojo.ist_aktiv ? 'inactive' : ''}>
-                  <td>
-                    {dojo.ist_aktiv ? (
-                      <span className="status-badge active">
-                        <CheckCircle size={14} /> Aktiv
-                      </span>
-                    ) : (
-                      <span className="status-badge inactive">
-                        <XCircle size={14} /> Inaktiv
-                      </span>
+              {dojos.map((dojo) => {
+                const isExpanded = expandedDojos.has(dojo.id);
+                return (
+                  <React.Fragment key={dojo.id}>
+                    <tr 
+                      className={`dojo-row ${!dojo.ist_aktiv ? 'inactive' : ''} ${isExpanded ? 'expanded' : ''}`}
+                      onClick={() => toggleDojoExpand(dojo.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td>
+                        <button 
+                          className="expand-toggle"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDojoExpand(dojo.id);
+                          }}
+                        >
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
+                      </td>
+                      <td>
+                        {dojo.ist_aktiv ? (
+                          <span className="status-badge active">
+                            <CheckCircle size={14} /> Aktiv
+                          </span>
+                        ) : (
+                          <span className="status-badge inactive">
+                            <XCircle size={14} /> Inaktiv
+                          </span>
+                        )}
+                      </td>
+                      <td className="font-bold">{dojo.dojoname}</td>
+                      <td>
+                        <code className="subdomain">{dojo.subdomain}</code>
+                      </td>
+                      <td>{dojo.inhaber}</td>
+                      <td>{dojo.ort || '-'}</td>
+                      <td className="text-center">{dojo.mitglieder_count || 0}</td>
+                      <td className="text-center">{dojo.kurse_count || 0}</td>
+                      <td className="text-center">{dojo.trainer_count || 0}</td>
+                      <td className="text-center">
+                        {dojo.storage_mb >= 1024
+                          ? `${dojo.storage_gb} GB`
+                          : `${dojo.storage_mb} MB`}
+                      </td>
+                      <td className="text-center">
+                        {getSubscriptionStatusBadge(dojo)}
+                      </td>
+                      <td className="text-center">
+                        {getSubscriptionEndInfo(dojo)}
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="expandable-row">
+                        <td colSpan={12} className="expandable-cell">
+                          <div className="expandable-content">
+                            <div className="expandable-section">
+                              <h4>Kontaktdaten</h4>
+                              <div className="info-grid">
+                                <div className="info-item">
+                                  <strong>E-Mail:</strong> {dojo.email || '-'}
+                                </div>
+                                <div className="info-item">
+                                  <strong>Telefon:</strong> {dojo.telefon || '-'}
+                                </div>
+                                <div className="info-item">
+                                  <strong>Straße:</strong> {dojo.strasse || '-'} {dojo.hausnummer || ''}
+                                </div>
+                                <div className="info-item">
+                                  <strong>PLZ:</strong> {dojo.plz || '-'}
+                                </div>
+                                <div className="info-item">
+                                  <strong>Ort:</strong> {dojo.ort || '-'}
+                                </div>
+                                <div className="info-item">
+                                  <strong>Land:</strong> {dojo.land || '-'}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="expandable-section">
+                              <h4>Abonnement Details</h4>
+                              <div className="info-grid">
+                                <div className="info-item">
+                                  <strong>Status:</strong> {getSubscriptionStatusBadge(dojo)}
+                                </div>
+                                {dojo.subscription_status === 'trial' && (
+                                  <>
+                                    <div className="info-item">
+                                      <strong>Trial Start:</strong> {dojo.trial_starts_at ? new Date(dojo.trial_starts_at).toLocaleDateString('de-DE') : '-'}
+                                    </div>
+                                    <div className="info-item">
+                                      <strong>Trial Ende:</strong> {dojo.trial_ends_at ? new Date(dojo.trial_ends_at).toLocaleDateString('de-DE') : '-'}
+                                    </div>
+                                    <div className="info-item">
+                                      <strong>Verbleibende Tage:</strong> {dojo.trial_days_remaining !== null ? `${dojo.trial_days_remaining} Tage` : '-'}
+                                    </div>
+                                  </>
+                                )}
+                                {dojo.subscription_status === 'active' && (
+                                  <>
+                                    <div className="info-item">
+                                      <strong>Plan:</strong> {dojo.subscription_plan || '-'}
+                                    </div>
+                                    <div className="info-item">
+                                      <strong>Intervall:</strong> {dojo.subscription_interval || '-'}
+                                    </div>
+                                    <div className="info-item">
+                                      <strong>Abo Start:</strong> {dojo.subscription_starts_at ? new Date(dojo.subscription_starts_at).toLocaleDateString('de-DE') : '-'}
+                                    </div>
+                                    <div className="info-item">
+                                      <strong>Abo Ende:</strong> {dojo.subscription_ends_at ? new Date(dojo.subscription_ends_at).toLocaleDateString('de-DE') : '-'}
+                                    </div>
+                                    {dojo.subscription_days_remaining !== null && (
+                                      <div className="info-item">
+                                        <strong>Verbleibende Tage:</strong> {dojo.subscription_days_remaining} Tage
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="expandable-section">
+                              <h4>Aktionen</h4>
+                              <div className="action-buttons">
+                                {dojo.subscription_status === 'trial' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleExtendTrial(dojo);
+                                    }}
+                                    className="btn btn-sm btn-warning"
+                                    title="Trial verlängern"
+                                  >
+                                    <Clock size={14} /> Trial verlängern
+                                  </button>
+                                )}
+                                {(dojo.subscription_status === 'trial' || dojo.subscription_status === 'expired') && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleActivateSubscription(dojo);
+                                    }}
+                                    className="btn btn-sm btn-success"
+                                    title="Abo aktivieren"
+                                  >
+                                    <CheckCircle size={14} /> Abo aktivieren
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditDojo(dojo);
+                                  }}
+                                  className="btn btn-sm btn-secondary"
+                                  title="Bearbeiten"
+                                >
+                                  <Edit size={14} /> Bearbeiten
+                                </button>
+                                {dojo.id !== 2 && ( // TDA International nicht löschbar
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteDojo(dojo);
+                                    }}
+                                    className="btn btn-sm btn-danger"
+                                    title="Deaktivieren"
+                                  >
+                                    <Trash2 size={14} /> Deaktivieren
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="font-bold">{dojo.dojoname}</td>
-                  <td>
-                    <code className="subdomain">{dojo.subdomain}</code>
-                  </td>
-                  <td>{dojo.inhaber}</td>
-                  <td>{dojo.ort || '-'}</td>
-                  <td className="text-center">{dojo.mitglieder_count || 0}</td>
-                  <td className="text-center">{dojo.kurse_count || 0}</td>
-                  <td className="text-center">{dojo.trainer_count || 0}</td>
-                  <td className="text-center">
-                    {dojo.storage_mb >= 1024
-                      ? `${dojo.storage_gb} GB`
-                      : `${dojo.storage_mb} MB`}
-                  </td>
-                  <td className="text-center">
-                    {getSubscriptionStatusBadge(dojo)}
-                  </td>
-                  <td className="text-center">
-                    {getSubscriptionEndInfo(dojo)}
-                  </td>
-                  <td className="text-right">
-                    <div className="action-buttons">
-                      {dojo.subscription_status === 'trial' && (
-                        <button
-                          onClick={() => handleExtendTrial(dojo)}
-                          className="btn btn-sm btn-warning"
-                          title="Trial verlängern"
-                        >
-                          <Clock size={14} /> +
-                        </button>
-                      )}
-                      {(dojo.subscription_status === 'trial' || dojo.subscription_status === 'expired') && (
-                        <button
-                          onClick={() => handleActivateSubscription(dojo)}
-                          className="btn btn-sm btn-success"
-                          title="Abo aktivieren"
-                        >
-                          <CheckCircle size={14} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleEditDojo(dojo)}
-                        className="btn btn-sm btn-secondary"
-                        title="Bearbeiten"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      {dojo.id !== 2 && ( // TDA International nicht löschbar
-                        <button
-                          onClick={() => handleDeleteDojo(dojo)}
-                          className="btn btn-sm btn-danger"
-                          title="Deaktivieren"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
 
@@ -536,6 +677,45 @@ const SuperAdminDashboard = () => {
           </div>
         </section>
       )}
+          </>
+        )}
+
+        {/* Statistiken Tab */}
+        {activeTab === 'statistics' && (
+          <div className="tab-placeholder">
+            <PieChart size={64} />
+            <h2>Statistiken</h2>
+            <p>Detaillierte Statistiken und Analysen kommen hier rein.</p>
+          </div>
+        )}
+
+        {/* Finanzen Tab */}
+        {activeTab === 'finance' && (
+          <div className="tab-placeholder">
+            <DollarSign size={64} />
+            <h2>Finanzen</h2>
+            <p>Finanzübersicht, Umsätze und Zahlungen kommen hier rein.</p>
+          </div>
+        )}
+
+        {/* Verträge Tab */}
+        {activeTab === 'contracts' && (
+          <div className="tab-placeholder">
+            <FileText size={64} />
+            <h2>Verträge</h2>
+            <p>Vertrags-Management und Laufzeiten kommen hier rein.</p>
+          </div>
+        )}
+
+        {/* Benutzer Tab */}
+        {activeTab === 'users' && (
+          <div className="tab-placeholder">
+            <UserCog size={64} />
+            <h2>Benutzer</h2>
+            <p>Admin-Accounts Verwaltung kommt hier rein.</p>
+          </div>
+        )}
+      </div>
 
       {/* Modals für Create/Edit */}
       {showCreateModal && (
