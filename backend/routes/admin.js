@@ -864,7 +864,7 @@ router.get('/statistics', requireSuperAdmin, async (req, res) => {
         COUNT(m.mitglied_id) as mitglieder_anzahl,
         d.jahresumsatz_aktuell as umsatz
       FROM dojo d
-      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.ist_aktiv = 1
+      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.aktiv = 1
       GROUP BY d.id, d.dojoname, d.jahresumsatz_aktuell
       ORDER BY mitglieder_anzahl DESC
       LIMIT 10
@@ -1066,7 +1066,7 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
         COALESCE(SUM(r.gesamtsumme), 0) as gesamt_umsatz
       FROM mitglieder m
       LEFT JOIN rechnungen r ON m.mitglied_id = r.mitglied_id AND YEAR(r.rechnungsdatum) = ?
-      WHERE m.ist_aktiv = 1
+      WHERE m.aktiv = 1
     `, [currentYear]);
 
     const avgPerMember = avgRevenuePerMember[0].anzahl_mitglieder > 0
@@ -1153,7 +1153,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
     // 1. Aktive Verträge
     const [activeContracts] = await db.promise().query(`
       SELECT
-        d.dojo_id,
+        d.id,
         d.dojoname,
         d.subscription_status,
         d.subscription_plan,
@@ -1164,23 +1164,23 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         d.custom_notes,
         DATEDIFF(d.subscription_end, CURDATE()) as tage_bis_ende,
         COUNT(DISTINCT m.mitglied_id) as mitglied_count
-      FROM dojos d
-      LEFT JOIN mitglieder m ON d.dojo_id = m.dojo_id AND m.status = 'aktiv'
+      FROM dojo d
+      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.status = 'aktiv'
       WHERE d.subscription_status IN ('trial', 'active')
-      GROUP BY d.dojo_id
+      GROUP BY d.id
       ORDER BY d.subscription_end ASC
     `);
 
     // 2. Bald ablaufende Verträge (nächste 30, 60, 90 Tage)
     const [upcomingRenewals30] = await db.promise().query(`
       SELECT
-        d.dojo_id,
+        d.id,
         d.dojoname,
         d.subscription_plan,
         d.subscription_end,
         d.custom_pricing,
         DATEDIFF(d.subscription_end, CURDATE()) as tage_bis_ende
-      FROM dojos d
+      FROM dojo d
       WHERE d.subscription_status = 'active'
         AND d.subscription_end BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
       ORDER BY d.subscription_end ASC
@@ -1203,13 +1203,13 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
     // 3. Abgelaufene Verträge (letzten 90 Tage)
     const [expiredContracts] = await db.promise().query(`
       SELECT
-        d.dojo_id,
+        d.id,
         d.dojoname,
         d.subscription_plan,
         d.subscription_end,
         d.subscription_status,
         ABS(DATEDIFF(CURDATE(), d.subscription_end)) as tage_abgelaufen
-      FROM dojos d
+      FROM dojo d
       WHERE d.subscription_status = 'expired'
         AND d.subscription_end >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
       ORDER BY d.subscription_end DESC
@@ -1218,7 +1218,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
     // 4. Custom Pricing Verträge
     const [customContracts] = await db.promise().query(`
       SELECT
-        d.dojo_id,
+        d.id,
         d.dojoname,
         d.subscription_plan,
         d.subscription_status,
@@ -1226,7 +1226,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         d.custom_notes,
         d.subscription_start,
         d.subscription_end
-      FROM dojos d
+      FROM dojo d
       WHERE d.custom_pricing IS NOT NULL
       ORDER BY d.dojoname ASC
     `);
@@ -1244,12 +1244,12 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
     // 6. Trial Conversions (letzten 90 Tage)
     const [trialConversions] = await db.promise().query(`
       SELECT
-        d.dojo_id,
+        d.id,
         d.dojoname,
         d.subscription_start,
         d.trial_end,
         DATEDIFF(d.subscription_start, d.created_at) as trial_dauer_tage
-      FROM dojos d
+      FROM dojo d
       WHERE d.subscription_status = 'active'
         AND d.trial_end IS NOT NULL
         AND d.subscription_start >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
@@ -1450,7 +1450,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
           0
         ) as activity_last_30_days
       FROM benutzer b
-      LEFT JOIN dojos d ON b.dojo_id = d.dojo_id
+      LEFT JOIN dojos d ON b.dojo_id = d.id
       WHERE b.rolle = 'admin'
       ORDER BY d.dojoname, b.benutzername
     `);
