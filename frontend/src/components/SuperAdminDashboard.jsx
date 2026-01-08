@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
 import FinanceTab from './FinanceTab';
+import ContractsTab from './ContractsTab';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -694,11 +695,7 @@ const SuperAdminDashboard = () => {
 
         {/* Verträge Tab */}
         {activeTab === 'contracts' && (
-          <div className="tab-placeholder">
-            <FileText size={64} />
-            <h2>Verträge</h2>
-            <p>Vertrags-Management und Laufzeiten kommen hier rein.</p>
-          </div>
+          <ContractsTab token={token} />
         )}
 
         {/* Benutzer Tab */}
