@@ -6,7 +6,14 @@ const db = require('../db');
 // GET /api/dashboard/batch - Optimized batch endpoint for all dashboard data
 router.get('/batch', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
+    let { dojo_id } = req.query;
+
+    // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
+    if (req.user && req.user.dojo_id) {
+        dojo_id = req.user.dojo_id.toString();
+        console.log("🔒 Tenant-Filter erzwungen:", { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+    }
+
     console.log(`🚀 Dashboard-Batch-Endpoint wird geladen (dojo_id=${dojo_id || 'all'})...`);
 
     const [stats, activities, tarife, zahlungszyklen] = await Promise.all([

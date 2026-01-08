@@ -1,57 +1,50 @@
-const mysql = require('mysql2');
-const fs = require('fs');
+// Migration 029: Trial & Subscription Management ausführen
+const mysql = require('mysql2/promise');
+const fs = require('fs').promises;
 const path = require('path');
-require('dotenv').config();
 
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'dojo',
+const config = {
+  host: 'localhost',
+  user: 'dojoUser',
+  password: 'DojoServer2025!',
+  database: 'dojo',
   multipleStatements: true
-});
+};
 
-console.log('🔄 Starte Migration 029: Subscription System...\n');
+async function runMigration() {
+  let connection;
 
-const migrationPath = path.join(__dirname, '..', 'migrations', '029_add_subscription_system.sql');
-const sql = fs.readFileSync(migrationPath, 'utf8');
+  try {
+    console.log('🔄 Verbinde mit Datenbank...');
+    connection = await mysql.createConnection(config);
 
-db.connect((err) => {
-  if (err) {
-    console.error('❌ Datenbankverbindung fehlgeschlagen:', err);
+    console.log('📖 Lese Migration 029...');
+    const migrationPath = path.join(__dirname, '..', 'migrations', '029_add_trial_subscription_fields.sql');
+    const sql = await fs.readFile(migrationPath, 'utf8');
+
+    console.log('⚡ Führe Migration aus...');
+    await connection.query(sql);
+
+    console.log('✅ Migration 029 erfolgreich ausgeführt!');
+    console.log('');
+    console.log('Neue Felder:');
+    console.log('- trial_ends_at: Ablaufdatum der Testphase (14 Tage)');
+    console.log('- subscription_status: trial, active, expired, cancelled, suspended');
+    console.log('- subscription_plan: basic, premium, enterprise');
+    console.log('- subscription_started_at: Wann wurde das Abo gestartet');
+    console.log('- subscription_ends_at: Wann endet das Abo');
+    console.log('- last_payment_at: Letzte Zahlung');
+    console.log('- payment_interval: monthly, quarterly, yearly');
+
+  } catch (error) {
+    console.error('❌ Fehler bei Migration:', error.message);
+    console.error(error);
     process.exit(1);
-  }
-
-  console.log('✅ Mit Datenbank verbunden\n');
-
-  db.query(sql, (error, results) => {
-    if (error) {
-      console.error('❌ Migration fehlgeschlagen:', error);
-      db.end();
-      process.exit(1);
+  } finally {
+    if (connection) {
+      await connection.end();
     }
+  }
+}
 
-    console.log('✅ Migration 029 erfolgreich ausgeführt!\n');
-    console.log('📋 Änderungen:');
-    console.log('   - dojos Tabelle erweitert (subdomain, onboarding_completed, registration_date)');
-    console.log('   - dojo_subscriptions Tabelle erstellt');
-    console.log('   - subscription_plans Tabelle erstellt (mit Standard-Plänen)');
-    console.log('   - subscription_audit_log Tabelle erstellt');
-    console.log('   - admins Tabelle erweitert (role, email_verified, verification_token)');
-    console.log('   - Bestehendes Dojo auf Premium-Plan gesetzt\n');
-
-    // Zeige erstellte Pläne
-    db.query('SELECT plan_name, display_name, price_monthly, max_members FROM subscription_plans ORDER BY sort_order', (err, plans) => {
-      if (!err && plans.length > 0) {
-        console.log('📦 Verfügbare Pläne:');
-        plans.forEach(plan => {
-          console.log(`   - ${plan.display_name}: €${plan.price_monthly}/Monat (bis ${plan.max_members} Mitglieder)`);
-        });
-      }
-
-      db.end();
-      console.log('\n✅ Migration abgeschlossen!');
-      process.exit(0);
-    });
-  });
-});
+runMigration();

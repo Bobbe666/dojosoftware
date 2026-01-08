@@ -16,12 +16,14 @@ import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown } f
 import DojoSwitcher from './DojoSwitcher';
 import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
+import SuperAdminDashboard from './SuperAdminDashboard';
+import TrialBanner from './TrialBanner';
 
 function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { token, logout } = useAuth();
-  const { getDojoFilterParam } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
+  const { getDojoFilterParam, selectedDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
   
   // State für echte Daten
@@ -609,6 +611,37 @@ function Dashboard() {
     return <MemberDashboard />;
   }
 
+  // 🏆 Super-Admin Dashboard: Zeige erweiterte Ansicht für TDA Int'l Org
+  if (role === 'admin' && selectedDojo === 'super-admin' && isMainDashboard) {
+    console.log('✅ Zeige Super-Admin Dashboard für TDA Int\'l Org');
+    return (
+      <div className="dashboard-container">
+        <header className="dashboard-header">
+          <div className="dashboard-header-left">
+            <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
+            <h2>🏆 TDA Int'l Org - Super-Admin</h2>
+          </div>
+          <div className="dashboard-header-right">
+            <DojoSwitcher />
+            {userDisplayName && (
+              <div className="user-display">
+                <span className="user-greeting">Willkommen</span>
+                <span className="user-name">{userDisplayName}</span>
+              </div>
+            )}
+            <button onClick={logout} className="logout-button">
+              Abmelden
+            </button>
+          </div>
+        </header>
+
+        <main className="dashboard-main">
+          <SuperAdminDashboard />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -668,6 +701,9 @@ function Dashboard() {
                   </button>
                 </div>
               )}
+
+              {/* 🔔 Trial/Subscription Banner */}
+              <TrialBanner stats={stats} />
 
               {/* ✨ ERWEITERTE Statistiken Übersicht mit Stilen ✨ */}
               <div 
@@ -890,6 +926,77 @@ function Dashboard() {
                     Beiträge
                   </div>
                 </div>
+
+                {/* ✨ ABO/TRIAL STATUS KARTE ✨ */}
+                {stats.subscription_status && (
+                  <div
+                    className={`stat-card ${loading ? 'loading' : ''}`}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      textAlign: 'center',
+                      minHeight: '60px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      background: stats.subscription_status === 'trial'
+                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)'
+                        : stats.subscription_status === 'active'
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
+                        : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      marginBottom: '0.1rem'
+                    }}>
+                      <span style={{ fontSize: '1.2rem' }}>
+                        {stats.subscription_status === 'trial' ? '⏰' :
+                         stats.subscription_status === 'active' ? '✓' : '⚠️'}
+                      </span>
+                      <span style={{
+                        fontSize: '1.3rem',
+                        fontWeight: 'bold',
+                        color: stats.subscription_status === 'trial'
+                          ? '#3b82f6'
+                          : stats.subscription_status === 'active'
+                          ? '#10b981'
+                          : '#ef4444'
+                      }}>
+                        {loading ? '...' :
+                         stats.subscription_status === 'trial'
+                           ? stats.trial_days_remaining
+                           : stats.subscription_days_remaining || '∞'}
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: '0.7rem',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.3px',
+                      marginBottom: '0.2rem'
+                    }}>
+                      {stats.subscription_status === 'trial' ? 'Trial' :
+                       stats.subscription_status === 'active' ? (stats.subscription_plan || 'Aktiv').toUpperCase() :
+                       'Abgelaufen'}
+                    </div>
+                    <div style={{
+                      fontSize: '0.6rem',
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      lineHeight: '1'
+                    }}>
+                      {stats.subscription_status === 'trial'
+                        ? `${stats.trial_days_remaining} Tage`
+                        : stats.subscription_status === 'active' && stats.subscription_ends_at
+                        ? `bis ${new Date(stats.subscription_ends_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`
+                        : ''}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Navigation basierend auf Rolle */}
