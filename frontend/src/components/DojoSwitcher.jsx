@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Building2, ChevronDown, Check, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Building2, ChevronDown, Check, AlertTriangle, TrendingUp, Award } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
+import { useAuth } from '../context/AuthContext';
 import '../styles/DojoSwitcher.css';
 
 const DojoSwitcher = () => {
   const { dojos, activeDojo, switchDojo, loading, filter, setFilter } = useDojoContext();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef(null);
@@ -77,10 +79,27 @@ const DojoSwitcher = () => {
     setIsOpen(false);
   };
 
+  const handleSwitchToSuperAdmin = () => {
+    switchDojo('super-admin');
+    setFilter('current');
+    setIsOpen(false);
+  };
+
   const handleShowAll = () => {
     setFilter('all');
     setIsOpen(false);
   };
+
+  // Prüfe ob User Super-Admin ist (Admin mit dojo_id=null)
+  const isSuperAdmin = (user?.rolle === 'admin' || user?.role === 'admin') && user?.dojo_id === null;
+  const isInSuperAdminMode = activeDojo === 'super-admin';
+
+  console.log('🔍 DojoSwitcher Super-Admin Check:', {
+    role: user?.role,
+    rolle: user?.rolle,
+    dojo_id: user?.dojo_id,
+    isSuperAdmin
+  });
 
   const calculateDropdownPosition = () => {
     if (triggerRef.current) {
@@ -109,7 +128,17 @@ const DojoSwitcher = () => {
         title="Zwischen Dojos wechseln"
         type="button"
       >
-        {showAllDojos ? (
+        {isInSuperAdminMode ? (
+          <>
+            <div className="dojo-color-indicator" style={{
+              background: 'linear-gradient(135deg, #DAA520 0%, #B8860B 100%)'
+            }} />
+            <div className="dojo-switcher-content">
+              <div className="dojo-switcher-label">Verwaltung:</div>
+              <div className="dojo-switcher-name">🏆 TDA Int'l Org</div>
+            </div>
+          </>
+        ) : showAllDojos ? (
           <>
             <div className="dojo-color-indicator" style={{
               background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
@@ -157,6 +186,38 @@ const DojoSwitcher = () => {
             </div>
 
             <div className="dropdown-list">
+              {/* TDA Int'l Org Option (nur für Super-Admin) */}
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  className={`dropdown-item super-admin ${isInSuperAdminMode ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSwitchToSuperAdmin();
+                  }}
+                >
+                  <div className="dojo-color-indicator" style={{
+                    background: 'linear-gradient(135deg, #DAA520 0%, #B8860B 100%)'
+                  }} />
+                  <div className="dropdown-item-content">
+                    <div className="dropdown-item-header">
+                      <span className="dropdown-item-name">🏆 TDA Int'l Org</span>
+                      <span className="badge badge-gold">Super-Admin</span>
+                      {isInSuperAdminMode && (
+                        <Check size={12} className="check-icon" />
+                      )}
+                    </div>
+                    <div className="dropdown-item-info">
+                      <span className="dropdown-item-inhaber">Verwaltung aller Dojos & Subdomains</span>
+                    </div>
+                    <div className="dropdown-item-umsatz">
+                      Globale Statistiken, Dojo-Management & Verbandsübersicht
+                    </div>
+                  </div>
+                </button>
+              )}
+
               {/* Alle Dojos Option */}
               <button
                 type="button"
