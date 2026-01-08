@@ -804,4 +804,144 @@ router.put('/dojos/:id/subscription-status', requireSuperAdmin, async (req, res)
   }
 });
 
+// =============================================
+// GET /api/admin/statistics - Erweiterte Statistiken für Charts
+// =============================================
+router.get('/statistics', requireSuperAdmin, async (req, res) => {
+  try {
+    console.log('📊 Lade erweiterte Statistiken...');
+
+    // 1. Mitglieder-Entwicklung (letzte 12 Monate)
+    const [memberTrend] = await db.promise().query(`
+      SELECT
+        DATE_FORMAT(beigetreten_am, '%Y-%m') as monat,
+        COUNT(*) as neue_mitglieder
+      FROM mitglieder
+      WHERE beigetreten_am >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+      GROUP BY DATE_FORMAT(beigetreten_am, '%Y-%m')
+      ORDER BY monat ASC
+    `);
+
+    // 2. Umsatz pro Dojo (aktuelles Jahr)
+    const [revenuePerDojo] = await db.promise().query(`
+      SELECT
+        d.id,
+        d.dojoname,
+        d.jahresumsatz_aktuell as umsatz,
+        d.steuer_status,
+        COUNT(DISTINCT m.mitglied_id) as mitglieder_anzahl
+      FROM dojo d
+      LEFT JOIN mitglieder m ON d.id = m.dojo_id
+      GROUP BY d.id, d.dojoname, d.jahresumsatz_aktuell, d.steuer_status
+      ORDER BY d.jahresumsatz_aktuell DESC
+    `);
+
+    // 3. Subscription Status Verteilung
+    const [subscriptionDistribution] = await db.promise().query(`
+      SELECT
+        subscription_status,
+        COUNT(*) as anzahl
+      FROM dojo
+      GROUP BY subscription_status
+    `);
+
+    // 4. Umsatz-Entwicklung (letzte 12 Monate) - Aggregiert aus allen Dojos
+    const currentYear = new Date().getFullYear();
+    const [revenueTrend] = await db.promise().query(`
+      SELECT
+        MONTH(r.rechnungsdatum) as monat,
+        SUM(r.gesamtsumme) as umsatz
+      FROM rechnungen r
+      WHERE YEAR(r.rechnungsdatum) = ?
+      GROUP BY MONTH(r.rechnungsdatum)
+      ORDER BY monat ASC
+    `, [currentYear]);
+
+    // 5. Top Dojos nach Mitgliedern
+    const [topDojosByMembers] = await db.promise().query(`
+      SELECT
+        d.dojoname,
+        COUNT(m.mitglied_id) as mitglieder_anzahl,
+        d.jahresumsatz_aktuell as umsatz
+      FROM dojo d
+      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.ist_aktiv = 1
+      GROUP BY d.id, d.dojoname, d.jahresumsatz_aktuell
+      ORDER BY mitglieder_anzahl DESC
+      LIMIT 10
+    `);
+
+    // 6. Aktiv vs. Inaktiv Mitglieder (Gesamt)
+    const [memberStatus] = await db.promise().query(`
+      SELECT
+        ist_aktiv,
+        COUNT(*) as anzahl
+      FROM mitglieder
+      GROUP BY ist_aktiv
+    `);
+
+    // 7. Trial Conversion Rate
+    const [trialStats] = await db.promise().query(`
+      SELECT
+        COUNT(CASE WHEN subscription_status = 'trial' THEN 1 END) as trial_count,
+        COUNT(CASE WHEN subscription_status = 'active' THEN 1 END) as active_count,
+        COUNT(CASE WHEN subscription_status = 'expired' THEN 1 END) as expired_count,
+        COUNT(*) as total_count
+      FROM dojo
+    `);
+
+    const stats = trialStats[0];
+    const conversionRate = stats.total_count > 0
+      ? ((stats.active_count / (stats.active_count + stats.expired_count)) * 100).toFixed(1)
+      : 0;
+
+    res.json({
+      success: true,
+      statistics: {
+        memberTrend: memberTrend.map(row => ({
+          monat: row.monat,
+          neue_mitglieder: parseInt(row.neue_mitglieder)
+        })),
+        revenuePerDojo: revenuePerDojo.map(row => ({
+          dojoname: row.dojoname,
+          umsatz: parseFloat(row.umsatz || 0),
+          mitglieder: parseInt(row.mitglieder_anzahl || 0),
+          steuer_status: row.steuer_status
+        })),
+        subscriptionDistribution: subscriptionDistribution.map(row => ({
+          status: row.subscription_status,
+          anzahl: parseInt(row.anzahl)
+        })),
+        revenueTrend: revenueTrend.map(row => ({
+          monat: parseInt(row.monat),
+          umsatz: parseFloat(row.umsatz || 0)
+        })),
+        topDojos: topDojosByMembers.map(row => ({
+          dojoname: row.dojoname,
+          mitglieder: parseInt(row.mitglieder_anzahl),
+          umsatz: parseFloat(row.umsatz || 0)
+        })),
+        memberStatus: {
+          aktiv: memberStatus.find(s => s.ist_aktiv === 1)?.anzahl || 0,
+          inaktiv: memberStatus.find(s => s.ist_aktiv === 0)?.anzahl || 0
+        },
+        conversionRate: parseFloat(conversionRate),
+        trialStats: {
+          trial: stats.trial_count,
+          active: stats.active_count,
+          expired: stats.expired_count
+        }
+      }
+    });
+
+    console.log('✅ Statistiken erfolgreich geladen');
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Statistiken:', error);
+    res.status(500).json({
+      error: 'Fehler beim Laden der Statistiken',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;

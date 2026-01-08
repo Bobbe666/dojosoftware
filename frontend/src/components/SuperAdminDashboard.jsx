@@ -12,6 +12,7 @@ import {
   CheckCircle, XCircle, BarChart3, Activity, Award, Calendar, HardDrive, Clock, AlertTriangle,
   ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog
 } from 'lucide-react';
+import StatisticsTab from './StatisticsTab';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -682,11 +683,7 @@ const SuperAdminDashboard = () => {
 
         {/* Statistiken Tab */}
         {activeTab === 'statistics' && (
-          <div className="tab-placeholder">
-            <PieChart size={64} />
-            <h2>Statistiken</h2>
-            <p>Detaillierte Statistiken und Analysen kommen hier rein.</p>
-          </div>
+          <StatisticsTab token={token} />
         )}
 
         {/* Finanzen Tab */}
