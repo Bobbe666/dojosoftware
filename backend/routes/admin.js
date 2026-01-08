@@ -626,19 +626,57 @@ router.put('/dojos/:id/extend-trial', requireSuperAdmin, async (req, res) => {
 router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { plan, interval, duration_months } = req.body;
+    const { plan, interval, duration_months, is_free, custom_price, custom_notes } = req.body;
 
     // Validierung
-    const validPlans = ['basic', 'premium', 'enterprise'];
+    const validPlans = ['basic', 'premium', 'enterprise', 'free', 'custom'];
     const validIntervals = ['monthly', 'quarterly', 'yearly'];
 
     if (!plan || !validPlans.includes(plan)) {
       return res.status(400).json({
         error: 'Ungültiger Plan',
-        message: 'Plan muss basic, premium oder enterprise sein'
+        message: 'Plan muss basic, premium, enterprise, free oder custom sein'
       });
     }
 
+    // Free Account - unbegrenzt
+    if (plan === 'free' || is_free) {
+      const [dojos] = await db.promise().query(
+        'SELECT id, dojoname FROM dojo WHERE id = ?',
+        [id]
+      );
+
+      if (dojos.length === 0) {
+        return res.status(404).json({ error: 'Dojo nicht gefunden' });
+      }
+
+      const dojo = dojos[0];
+
+      await db.promise().query(
+        `UPDATE dojo
+        SET subscription_status = 'active',
+            subscription_plan = 'free',
+            payment_interval = NULL,
+            subscription_started_at = NOW(),
+            subscription_ends_at = NULL,
+            last_payment_at = NOW()
+        WHERE id = ?`,
+        [id]
+      );
+
+      console.log(`✅ Admin: KOSTENLOSER Account aktiviert für Dojo ${dojo.dojoname}`);
+
+      return res.json({
+        success: true,
+        message: `Kostenloser Account aktiviert`,
+        dojo_id: id,
+        dojoname: dojo.dojoname,
+        subscription_plan: 'free',
+        is_lifetime: true
+      });
+    }
+
+    // Custom oder Standard Plan
     if (!interval || !validIntervals.includes(interval)) {
       return res.status(400).json({
         error: 'Ungültiges Intervall',
@@ -684,7 +722,12 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
       [plan, interval, subscriptionStartDate, subscriptionEndDate, id]
     );
 
-    console.log(`✅ Admin: Abonnement aktiviert für Dojo ${dojo.dojoname} - Plan: ${plan}, ${months} Monate`);
+    // Log mit Custom-Info wenn vorhanden
+    const logMessage = plan === 'custom'
+      ? `✅ Admin: CUSTOM Abonnement aktiviert für Dojo ${dojo.dojoname} - Preis: ${custom_price}€, ${months} Monate, Notizen: ${custom_notes || 'keine'}`
+      : `✅ Admin: Abonnement aktiviert für Dojo ${dojo.dojoname} - Plan: ${plan}, ${months} Monate`;
+
+    console.log(logMessage);
 
     res.json({
       success: true,
@@ -695,7 +738,8 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
       payment_interval: interval,
       subscription_started_at: subscriptionStartDate,
       subscription_ends_at: subscriptionEndDate,
-      duration_months: months
+      duration_months: months,
+      ...(plan === 'custom' && { custom_price, custom_notes })
     });
 
   } catch (error) {

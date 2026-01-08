@@ -35,6 +35,22 @@ const SuperAdminDashboard = () => {
   const [subscriptionPlan, setSubscriptionPlan] = useState('basic');
   const [subscriptionInterval, setSubscriptionInterval] = useState('monthly');
   const [subscriptionDuration, setSubscriptionDuration] = useState(12);
+  const [customPrice, setCustomPrice] = useState('');
+  const [customNotes, setCustomNotes] = useState('');
+  const [isMainSuperAdmin, setIsMainSuperAdmin] = useState(false);
+
+  // Prüfe ob Main Super-Admin (nur für den Hauptadministrator)
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        // Nur für username="admin" oder user_id=1
+        setIsMainSuperAdmin(decoded.username === 'admin' || decoded.user_id === 1);
+      } catch (err) {
+        console.error('Token decode error:', err);
+      }
+    }
+  }, [token]);
 
   // Daten laden beim Mount
   useEffect(() => {
@@ -112,6 +128,8 @@ const SuperAdminDashboard = () => {
     setSubscriptionPlan('basic');
     setSubscriptionInterval('monthly');
     setSubscriptionDuration(12);
+    setCustomPrice('');
+    setCustomNotes('');
     setShowActivateSubscriptionModal(true);
   };
 
@@ -138,17 +156,35 @@ const SuperAdminDashboard = () => {
     if (!selectedDojo) return;
 
     try {
+      const requestData = {
+        plan: subscriptionPlan,
+        interval: subscriptionInterval,
+        duration_months: subscriptionDuration
+      };
+
+      // Zusätzliche Felder für custom/free (nur für Main Super-Admin)
+      if (isMainSuperAdmin) {
+        if (subscriptionPlan === 'free') {
+          requestData.is_free = true;
+        } else if (subscriptionPlan === 'custom') {
+          requestData.custom_price = customPrice;
+          requestData.custom_notes = customNotes;
+        }
+      }
+
       await axios.put(
         `/admin/dojos/${selectedDojo.id}/activate-subscription`,
-        {
-          plan: subscriptionPlan,
-          interval: subscriptionInterval,
-          duration_months: subscriptionDuration
-        },
+        requestData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert(`Abonnement für "${selectedDojo.dojoname}" aktiviert (${subscriptionPlan}, ${subscriptionDuration} Monate)`);
+      const message = subscriptionPlan === 'free'
+        ? `Kostenloser Account für "${selectedDojo.dojoname}" aktiviert (unbegrenzt)`
+        : subscriptionPlan === 'custom'
+        ? `Custom Abo für "${selectedDojo.dojoname}" aktiviert (${customPrice}€, ${subscriptionDuration} Monate)`
+        : `Abonnement für "${selectedDojo.dojoname}" aktiviert (${subscriptionPlan}, ${subscriptionDuration} Monate)`;
+
+      alert(message);
       setShowActivateSubscriptionModal(false);
       loadAllData();
     } catch (err) {
@@ -599,36 +635,92 @@ const SuperAdminDashboard = () => {
                   <option value="basic">Basic (29€/Monat)</option>
                   <option value="premium">Premium (49€/Monat)</option>
                   <option value="enterprise">Enterprise (99€/Monat)</option>
+                  {isMainSuperAdmin && (
+                    <>
+                      <option value="free">🎁 Kostenloser Account (Lifetime)</option>
+                      <option value="custom">⚙️ Flexibel/Custom</option>
+                    </>
+                  )}
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Zahlungsintervall:</label>
-                <select
-                  value={subscriptionInterval}
-                  onChange={(e) => setSubscriptionInterval(e.target.value)}
-                  className="form-control"
-                >
-                  <option value="monthly">Monatlich</option>
-                  <option value="quarterly">Quartalsweise</option>
-                  <option value="yearly">Jährlich</option>
-                </select>
-              </div>
+              {/* Custom Pricing Felder - nur bei Plan "custom" */}
+              {subscriptionPlan === 'custom' && isMainSuperAdmin && (
+                <>
+                  <div className="form-group">
+                    <label>Custom Preis (€):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={customPrice}
+                      onChange={(e) => setCustomPrice(e.target.value)}
+                      className="form-control"
+                      placeholder="z.B. 39.99"
+                    />
+                  </div>
 
-              <div className="form-group">
-                <label>Laufzeit (Monate):</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  value={subscriptionDuration}
-                  onChange={(e) => setSubscriptionDuration(parseInt(e.target.value))}
-                  className="form-control"
-                />
-                <small style={{ color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem', display: 'block' }}>
-                  Abo-Ende: {new Date(new Date().setMonth(new Date().getMonth() + subscriptionDuration)).toLocaleDateString('de-DE')}
-                </small>
-              </div>
+                  <div className="form-group">
+                    <label>Notizen/Details:</label>
+                    <textarea
+                      value={customNotes}
+                      onChange={(e) => setCustomNotes(e.target.value)}
+                      className="form-control"
+                      rows="3"
+                      placeholder="z.B. Sonderkonditionen, Rabatte, besondere Vereinbarungen..."
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Zahlungsintervall - nicht bei free */}
+              {subscriptionPlan !== 'free' && (
+                <div className="form-group">
+                  <label>Zahlungsintervall:</label>
+                  <select
+                    value={subscriptionInterval}
+                    onChange={(e) => setSubscriptionInterval(e.target.value)}
+                    className="form-control"
+                  >
+                    <option value="monthly">Monatlich</option>
+                    <option value="quarterly">Quartalsweise</option>
+                    <option value="yearly">Jährlich</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Laufzeit - nicht bei free */}
+              {subscriptionPlan !== 'free' && (
+                <div className="form-group">
+                  <label>Laufzeit (Monate):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={subscriptionDuration}
+                    onChange={(e) => setSubscriptionDuration(parseInt(e.target.value))}
+                    className="form-control"
+                  />
+                  <small style={{ color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem', display: 'block' }}>
+                    Abo-Ende: {new Date(new Date().setMonth(new Date().getMonth() + subscriptionDuration)).toLocaleDateString('de-DE')}
+                  </small>
+                </div>
+              )}
+
+              {/* Hinweis bei Free */}
+              {subscriptionPlan === 'free' && (
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginTop: '1rem',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}>
+                  <strong>🎁 Kostenloser Account</strong><br />
+                  Dieser Account hat unbegrenzten Zugriff ohne Ablaufdatum.
+                </div>
+              )}
             </div>
 
             <div className="modal-actions">
