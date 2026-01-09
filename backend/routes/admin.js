@@ -873,10 +873,10 @@ router.get('/statistics', requireSuperAdmin, async (req, res) => {
     // 6. Aktiv vs. Inaktiv Mitglieder (Gesamt)
     const [memberStatus] = await db.promise().query(`
       SELECT
-        ist_aktiv,
+        aktiv,
         COUNT(*) as anzahl
       FROM mitglieder
-      GROUP BY ist_aktiv
+      GROUP BY aktiv
     `);
 
     // 7. Trial Conversion Rate
@@ -921,8 +921,8 @@ router.get('/statistics', requireSuperAdmin, async (req, res) => {
           umsatz: parseFloat(row.umsatz || 0)
         })),
         memberStatus: {
-          aktiv: memberStatus.find(s => s.ist_aktiv === 1)?.anzahl || 0,
-          inaktiv: memberStatus.find(s => s.ist_aktiv === 0)?.anzahl || 0
+          aktiv: memberStatus.find(s => s.aktiv === 1)?.anzahl || 0,
+          inaktiv: memberStatus.find(s => s.aktiv === 0)?.anzahl || 0
         },
         conversionRate: parseFloat(conversionRate),
         trialStats: {
