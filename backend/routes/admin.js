@@ -1190,7 +1190,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         DATEDIFF(d.subscription_end, CURDATE()) as tage_bis_ende,
         COUNT(DISTINCT m.mitglied_id) as mitglied_count
       FROM dojo d
-      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.status = 'aktiv'
+      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.aktiv = 1
       WHERE d.subscription_status IN ('trial', 'active')
       GROUP BY d.id
       ORDER BY d.subscription_end ASC
@@ -1213,14 +1213,14 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
 
     const [upcomingRenewals60] = await db.promise().query(`
       SELECT COUNT(*) as count
-      FROM dojos
+      FROM dojo
       WHERE subscription_status = 'active'
         AND subscription_end BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)
     `);
 
     const [upcomingRenewals90] = await db.promise().query(`
       SELECT COUNT(*) as count
-      FROM dojos
+      FROM dojo
       WHERE subscription_status = 'active'
         AND subscription_end BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 90 DAY)
     `);
@@ -1262,7 +1262,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         subscription_status,
         COUNT(*) as anzahl,
         SUM(CASE WHEN custom_pricing IS NOT NULL THEN 1 ELSE 0 END) as custom_count
-      FROM dojos
+      FROM dojo
       GROUP BY subscription_status
     `);
 
@@ -1287,7 +1287,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         AVG(DATEDIFF(subscription_end, subscription_start)) as avg_tage,
         MIN(DATEDIFF(subscription_end, subscription_start)) as min_tage,
         MAX(DATEDIFF(subscription_end, subscription_start)) as max_tage
-      FROM dojos
+      FROM dojo
       WHERE subscription_status IN ('active', 'expired')
         AND subscription_start IS NOT NULL
         AND subscription_end IS NOT NULL
@@ -1300,7 +1300,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         COUNT(*) as anzahl_vertraege,
         COUNT(CASE WHEN subscription_status = 'active' THEN 1 END) as aktiv,
         COUNT(CASE WHEN subscription_status = 'expired' THEN 1 END) as abgelaufen
-      FROM dojos
+      FROM dojo
       WHERE YEAR(subscription_start) = ?
         AND subscription_start IS NOT NULL
       GROUP BY MONTH(subscription_start)
@@ -1317,7 +1317,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
           THEN 1
           ELSE 0
         END) as renewed
-      FROM dojos
+      FROM dojo
       WHERE subscription_end IS NOT NULL
     `);
 
@@ -1475,7 +1475,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
           0
         ) as activity_last_30_days
       FROM benutzer b
-      LEFT JOIN dojos d ON b.dojo_id = d.id
+      LEFT JOIN dojo d ON b.dojo_id = d.id
       WHERE b.rolle = 'admin'
       ORDER BY d.dojoname, b.benutzername
     `);
