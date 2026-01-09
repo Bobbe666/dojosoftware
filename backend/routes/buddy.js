@@ -615,6 +615,93 @@ router.delete('/invitations/:id', async (req, res) => {
 });
 
 // =============================================================================
+// GEMEINSAME AKTIVITÄTEN
+// =============================================================================
+
+// GET /api/buddy/groups/:id/aktivitaeten - Gemeinsame Aktivitäten einer Gruppe
+router.get('/groups/:id/aktivitaeten', async (req, res) => {
+    try {
+        const groupId = req.params.id;
+        const { limit = 20, offset = 0 } = req.query;
+
+        // Prüfe ob Gruppe existiert
+        const [group] = await queryAsync(req.db, `
+            SELECT id, gruppe_name FROM buddy_gruppen
+            WHERE id = ? AND status != 'geloescht'
+        `, [groupId]);
+
+        if (!group) {
+            return res.status(404).json({ error: 'Buddy-Gruppe nicht gefunden' });
+        }
+
+        // Lade Aktivitäten mit Details
+        const aktivitaeten = await queryAsync(req.db, `
+            SELECT
+                ba.*,
+                be.freund_name,
+                be.freund_email,
+                m.vorname as mitglied_vorname,
+                m.nachname as mitglied_nachname
+            FROM buddy_aktivitaeten ba
+            LEFT JOIN buddy_einladungen be ON ba.buddy_einladung_id = be.id
+            LEFT JOIN mitglieder m ON be.mitglied_id = m.mitglied_id
+            WHERE ba.buddy_gruppe_id = ?
+            ORDER BY ba.erstellt_am DESC
+            LIMIT ? OFFSET ?
+        `, [groupId, parseInt(limit), parseInt(offset)]);
+
+        // Gesamtanzahl für Pagination
+        const [countResult] = await queryAsync(req.db, `
+            SELECT COUNT(*) as total FROM buddy_aktivitaeten
+            WHERE buddy_gruppe_id = ?
+        `, [groupId]);
+
+        res.json({
+            gruppe: {
+                id: group.id,
+                name: group.gruppe_name
+            },
+            aktivitaeten: aktivitaeten,
+            total: countResult[0].total,
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Aktivitäten:', error);
+        res.status(500).json({ error: 'Serverfehler beim Abrufen der Aktivitäten' });
+    }
+});
+
+// GET /api/buddy/member/:memberId/gruppen - Buddy-Gruppen eines Mitglieds
+router.get('/member/:memberId/gruppen', async (req, res) => {
+    try {
+        const memberId = req.params.memberId;
+
+        // Finde alle Gruppen, in denen das Mitglied aktiv ist
+        const gruppen = await queryAsync(req.db, `
+            SELECT DISTINCT
+                bg.*,
+                COUNT(DISTINCT be2.id) as gesamt_einladungen,
+                SUM(CASE WHEN be2.status = 'aktiviert' THEN 1 ELSE 0 END) as aktive_mitglieder,
+                SUM(CASE WHEN be2.status IN ('eingeladen', 'email_gesendet') THEN 1 ELSE 0 END) as pending_einladungen
+            FROM buddy_gruppen bg
+            JOIN buddy_einladungen be ON bg.id = be.buddy_gruppe_id
+            LEFT JOIN buddy_einladungen be2 ON bg.id = be2.buddy_gruppe_id
+            WHERE be.mitglied_id = ?
+              AND be.status = 'aktiviert'
+              AND bg.status = 'aktiv'
+            GROUP BY bg.id
+            ORDER BY bg.erstellt_am DESC
+        `, [memberId]);
+
+        res.json(gruppen);
+    } catch (error) {
+        console.error('Fehler beim Abrufen der Mitglieds-Gruppen:', error);
+        res.status(500).json({ error: 'Serverfehler beim Abrufen der Gruppen' });
+    }
+});
+
+// =============================================================================
 // AUTOMATISCHE AUFGABEN (Cron-Jobs)
 // =============================================================================
 

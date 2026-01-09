@@ -586,6 +586,23 @@
 }
 
 @media (max-width: 768px) {
+  .pricing-nav .nav-container {
+    padding: 0 1rem;
+  }
+
+  .pricing-nav .nav-links {
+    gap: 1rem;
+  }
+
+  .pricing-nav .nav-links a {
+    font-size: 0.9rem;
+  }
+
+  .pricing-nav .nav-login-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
   .pricing-header {
     padding-top: 120px;
   }

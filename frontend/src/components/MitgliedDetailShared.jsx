@@ -9,6 +9,7 @@ import VertragFormular from './VertragFormular';
 import ZehnerkartenVerwaltung from './ZehnerkartenVerwaltung';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🏢 TAX COMPLIANCE
 import { useAuth } from '../context/AuthContext.jsx'; // For member ID
+import ReferralCodeVerwaltung from './ReferralCodeVerwaltung';
 import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
 import "../styles/MitgliedDetail.css";
@@ -164,7 +165,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const { id: urlId } = useParams();
   const navigate = useNavigate();
   const { activeDojo, dojos } = useDojoContext(); // 🏢 TAX COMPLIANCE
-  const { user } = useAuth(); // Get logged-in user for member view
+  const { user, token } = useAuth(); // Get logged-in user for member view
 
   // Helper function to get dojo name by ID
   const getDojoName = (dojoId) => {
@@ -184,6 +185,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [avatarLoaded, setAvatarLoaded] = useState(false);
+  const [buddyGroups, setBuddyGroups] = useState([]);
+  const [buddyGroupsLoading, setBuddyGroupsLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState("allgemein");
   const [styleSubTab, setStyleSubTab] = useState("stile");
@@ -224,6 +227,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   // Nachrichten State
   const [memberNotifications, setMemberNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  
   const [showNewVertrag, setShowNewVertrag] = useState(false);
   const [editingVertrag, setEditingVertrag] = useState(null);
   const [showVertragDetails, setShowVertragDetails] = useState(false);
@@ -1907,6 +1911,46 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   }, [activeTab, mitglied?.email]);
 
+  // Load buddy groups when buddy_gruppen tab is active
+  useEffect(() => {
+    if (activeTab === "buddy_gruppen" && mitglied?.mitglied_id && token) {
+      const controller = new AbortController();
+      
+      const loadBuddyGroups = async () => {
+        try {
+          setBuddyGroupsLoading(true);
+          
+          const response = await fetch(`${config.apiBaseUrl}/buddy/member/${mitglied.mitglied_id}/gruppen`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            signal: controller.signal
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setBuddyGroups(data || []);
+          } else {
+            setBuddyGroups([]);
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.error('Fehler beim Laden der Buddy-Gruppen:', err);
+            setBuddyGroups([]);
+          }
+        } finally {
+          setBuddyGroupsLoading(false);
+        }
+      };
+
+      loadBuddyGroups();
+
+      return () => {
+        controller.abort();
+      };
+    }
+  }, [activeTab, mitglied?.mitglied_id, token]);
+
   const handleChange = (e, key) => {
     let value = e.target.value;
     
@@ -2231,6 +2275,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     { key: "dokumente", label: "Dokumente", icon: "📁" },
     { key: "familie", label: "Familie & Vertreter", icon: "👨‍👩‍👧‍👦" },
     { key: "gurt_stil", label: "Gurt & Stil / Prüfung", icon: "🥋" },
+    { key: "buddy_gruppen", label: "Buddy-Gruppen", icon: "👥" },
     { key: "nachrichten", label: "Nachrichten", icon: "📬" },
     { key: "statistiken", label: "Statistiken", icon: "📊" },
     { key: "sicherheit", label: "Sicherheit", icon: "🔒" },
@@ -7049,6 +7094,169 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === "buddy_gruppen" && (
+            <div style={{padding: '1.5rem', background: 'transparent'}}>
+              <div style={{marginBottom: '1.5rem'}}>
+                <h3 style={{color: '#ffd700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                  👥 Buddy-Gruppen
+                </h3>
+                <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem'}}>
+                  Gruppen, in denen {mitglied?.vorname} {mitglied?.nachname} Mitglied ist
+                </p>
+              </div>
+
+              {/* Buddy-Gruppen Liste */}
+              {buddyGroupsLoading ? (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{fontSize: '2rem', marginBottom: '1rem'}}>⏳</div>
+                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem'}}>
+                    Buddy-Gruppen werden geladen...
+                  </p>
+                </div>
+              ) : buddyGroups.length === 0 ? (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{fontSize: '2.5rem', marginBottom: '1rem'}}>👥</div>
+                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '0.5rem'}}>
+                    Keine Buddy-Gruppen gefunden
+                  </p>
+                  <p style={{color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem'}}>
+                    {mitglied?.vorname} ist noch in keiner Buddy-Gruppe.
+                  </p>
+                </div>
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  marginBottom: '2rem'
+                }}>
+                  {buddyGroups.map((group) => (
+                    <div
+                      key={group.id}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 215, 0, 0.2)',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '1rem'
+                      }}>
+                        <div>
+                          <h4 style={{
+                            color: '#ffd700',
+                            fontSize: '1.2rem',
+                            margin: '0 0 0.5rem 0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}>
+                            <span>👥</span>
+                            {group.gruppe_name || `Gruppe #${group.id}`}
+                          </h4>
+                          <div style={{
+                            display: 'flex',
+                            gap: '1rem',
+                            flexWrap: 'wrap',
+                            fontSize: '0.9rem',
+                            color: 'rgba(255, 255, 255, 0.7)'
+                          }}>
+                            <span>📅 Erstellt: {new Date(group.erstellt_am).toLocaleDateString('de-DE')}</span>
+                            <span>👥 Mitglieder: {group.aktive_mitglieder || 0}/{group.max_mitglieder || '∞'}</span>
+                            {group.gesamt_einladungen > 0 && (
+                              <span>📧 Einladungen: {group.gesamt_einladungen}</span>
+                            )}
+                          </div>
+                        </div>
+                        <span style={{
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          background: group.status === 'aktiv' 
+                            ? 'rgba(34, 197, 94, 0.2)' 
+                            : 'rgba(107, 114, 128, 0.2)',
+                          color: group.status === 'aktiv' ? '#22c55e' : '#6b7280',
+                          border: `1px solid ${group.status === 'aktiv' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(107, 114, 128, 0.3)'}`
+                        }}>
+                          {group.status === 'aktiv' ? 'Aktiv' : group.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Referral-Code Verwaltung */}
+              {mitglied?.mitglied_id && (
+                <div style={{
+                  marginTop: '2rem',
+                  paddingTop: '2rem',
+                  borderTop: '1px solid rgba(255, 215, 0, 0.2)'
+                }}>
+                  <ReferralCodeVerwaltung
+                    mitgliedId={mitglied.mitglied_id}
+                    buddyGruppeId={buddyGroups[0]?.id || null}
+                    marketingAktionId={null}
+                  />
+                </div>
+              )}
+
+              {/* Platzhalter für Marketing-Aktionen */}
+              <div style={{
+                marginTop: '2rem',
+                paddingTop: '2rem',
+                borderTop: '1px solid rgba(255, 215, 0, 0.2)'
+              }}>
+                <h4 style={{color: '#ffd700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                  📅 Marketing-Aktionen
+                </h4>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px dashed rgba(255, 215, 0, 0.3)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  textAlign: 'center'
+                }}>
+                  <div style={{fontSize: '2rem', marginBottom: '0.75rem'}}>📅</div>
+                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem'}}>
+                    Teilnahme an Marketing-Aktionen wird hier angezeigt
+                  </p>
+                  <p style={{color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem', marginTop: '0.5rem'}}>
+                    Diese Funktion wird in Kürze verfügbar sein.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

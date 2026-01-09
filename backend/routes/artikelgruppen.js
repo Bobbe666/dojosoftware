@@ -175,6 +175,11 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 // ============================================
 router.get('/', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
         if (isDevelopment) {
             console.log('🔧 Development Mode: Verwende Mock-Artikelgruppen');
@@ -225,7 +230,7 @@ router.get('/', async (req, res) => {
                 ag.aktualisiert_am
             FROM artikelgruppen ag
             LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
-            WHERE ag.aktiv = TRUE
+            WHERE ag.aktiv = TRUE AND ag.dojo_id = ?
             ORDER BY
                 COALESCE(ag.parent_id, ag.id),
                 ag.sortierung,
@@ -233,7 +238,7 @@ router.get('/', async (req, res) => {
         `;
 
         const gruppen = await new Promise((resolve, reject) => {
-            db.query(query, (error, results) => {
+            db.query(query, [req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -274,6 +279,11 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/hauptkategorien', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         // 🔧 DEVELOPMENT MODE
         if (isDevelopment) {
             const hauptkategorien = MOCK_ARTIKELGRUPPEN
@@ -295,14 +305,14 @@ router.get('/hauptkategorien', async (req, res) => {
             SELECT
                 ag.*,
                 0 AS artikel_anzahl,
-                (SELECT COUNT(*) FROM artikelgruppen u WHERE u.parent_id = ag.id AND u.aktiv = TRUE) AS unterkategorien_anzahl
+                (SELECT COUNT(*) FROM artikelgruppen u WHERE u.parent_id = ag.id AND u.aktiv = TRUE AND u.dojo_id = ?) AS unterkategorien_anzahl
             FROM artikelgruppen ag
-            WHERE ag.parent_id IS NULL AND ag.aktiv = TRUE
+            WHERE ag.parent_id IS NULL AND ag.aktiv = TRUE AND ag.dojo_id = ?
             ORDER BY ag.sortierung, ag.name
         `;
 
         const hauptkategorien = await new Promise((resolve, reject) => {
-            db.query(query, (error, results) => {
+            db.query(query, [req.tenant.dojo_id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -328,6 +338,11 @@ router.get('/hauptkategorien', async (req, res) => {
 // ============================================
 router.get('/unterkategorien/:parentId', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { parentId } = req.params;
 
         // 🔧 DEVELOPMENT MODE
@@ -349,12 +364,12 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
                 ag.*,
                 0 AS artikel_anzahl
             FROM artikelgruppen ag
-            WHERE ag.parent_id = ? AND ag.aktiv = TRUE
+            WHERE ag.parent_id = ? AND ag.aktiv = TRUE AND ag.dojo_id = ?
             ORDER BY ag.sortierung, ag.name
         `;
 
         const unterkategorien = await new Promise((resolve, reject) => {
-            db.query(query, [parentId], (error, results) => {
+            db.query(query, [parentId, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -380,6 +395,11 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
 
         // 🔧 DEVELOPMENT MODE
@@ -415,11 +435,11 @@ router.get('/:id', async (req, res) => {
                 0 AS artikel_anzahl
             FROM artikelgruppen ag
             LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
-            WHERE ag.id = ?
+            WHERE ag.id = ? AND ag.dojo_id = ?
         `;
 
         const gruppen = await new Promise((resolve, reject) => {
-            db.query(query, [id], (error, results) => {
+            db.query(query, [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -452,6 +472,11 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.post('/', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const {
             name,
             beschreibung,
@@ -490,8 +515,8 @@ router.post('/', async (req, res) => {
         if (parent_id) {
             const parentCheck = await new Promise((resolve, reject) => {
                 db.query(
-                    'SELECT id FROM artikelgruppen WHERE id = ? AND parent_id IS NULL',
-                    [parent_id],
+                    'SELECT id FROM artikelgruppen WHERE id = ? AND parent_id IS NULL AND dojo_id = ?',
+                    [parent_id, req.tenant.dojo_id],
                     (error, results) => {
                         if (error) reject(error);
                         else resolve(results);
@@ -508,8 +533,8 @@ router.post('/', async (req, res) => {
         }
 
         const query = `
-            INSERT INTO artikelgruppen (name, beschreibung, parent_id, sortierung, icon, farbe)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO artikelgruppen (name, beschreibung, parent_id, sortierung, icon, farbe, dojo_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
         const result = await new Promise((resolve, reject) => {
@@ -519,7 +544,8 @@ router.post('/', async (req, res) => {
                 parent_id || null,
                 sortierung,
                 icon || null,
-                farbe || null
+                farbe || null,
+                req.tenant.dojo_id
             ], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
@@ -559,6 +585,11 @@ router.post('/', async (req, res) => {
 // ============================================
 router.put('/:id', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
         const { name, beschreibung, parent_id, sortierung, icon, farbe, aktiv } = req.body;
 
@@ -574,7 +605,7 @@ router.put('/:id', async (req, res) => {
 
         // PRODUCTION MODE
         const existingGroup = await new Promise((resolve, reject) => {
-            db.query('SELECT * FROM artikelgruppen WHERE id = ?', [id], (error, results) => {
+            db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -590,8 +621,8 @@ router.put('/:id', async (req, res) => {
         if (parent_id) {
             const parentCheck = await new Promise((resolve, reject) => {
                 db.query(
-                    'SELECT id FROM artikelgruppen WHERE id = ? AND parent_id IS NULL',
-                    [parent_id],
+                    'SELECT id FROM artikelgruppen WHERE id = ? AND parent_id IS NULL AND dojo_id = ?',
+                    [parent_id, req.tenant.dojo_id],
                     (error, results) => {
                         if (error) reject(error);
                         else resolve(results);
@@ -611,7 +642,7 @@ router.put('/:id', async (req, res) => {
             UPDATE artikelgruppen
             SET name = ?, beschreibung = ?, parent_id = ?, sortierung = ?,
                 icon = ?, farbe = ?, aktiv = ?
-            WHERE id = ?
+            WHERE id = ? AND dojo_id = ?
         `;
 
         await new Promise((resolve, reject) => {
@@ -623,7 +654,8 @@ router.put('/:id', async (req, res) => {
                 icon || existingGroup[0].icon,
                 farbe || existingGroup[0].farbe,
                 aktiv !== undefined ? aktiv : existingGroup[0].aktiv,
-                id
+                id,
+                req.tenant.dojo_id
             ], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
@@ -658,6 +690,11 @@ router.put('/:id', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
     try {
+        // Tenant check (skip in dev mode)
+        if (!isDevelopment && !req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
 
         // 🔧 DEVELOPMENT MODE
@@ -672,7 +709,7 @@ router.delete('/:id', async (req, res) => {
 
         // PRODUCTION MODE
         const existingGroup = await new Promise((resolve, reject) => {
-            db.query('SELECT * FROM artikelgruppen WHERE id = ?', [id], (error, results) => {
+            db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -686,7 +723,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         const artikelCheck = await new Promise((resolve, reject) => {
-            db.query('SELECT COUNT(*) as count FROM artikel WHERE 1=0', (error, results) => {
+            db.query('SELECT COUNT(*) as count FROM artikel WHERE artikelgruppe_id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -701,8 +738,8 @@ router.delete('/:id', async (req, res) => {
 
         const unterkategorienCheck = await new Promise((resolve, reject) => {
             db.query(
-                'SELECT COUNT(*) as count FROM artikelgruppen WHERE parent_id = ? AND aktiv = TRUE',
-                [id],
+                'SELECT COUNT(*) as count FROM artikelgruppen WHERE parent_id = ? AND aktiv = TRUE AND dojo_id = ?',
+                [id, req.tenant.dojo_id],
                 (error, results) => {
                     if (error) reject(error);
                     else resolve(results);
@@ -718,7 +755,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         await new Promise((resolve, reject) => {
-            db.query('UPDATE artikelgruppen SET aktiv = FALSE WHERE id = ?', [id], (error, results) => {
+            db.query('UPDATE artikelgruppen SET aktiv = FALSE WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });

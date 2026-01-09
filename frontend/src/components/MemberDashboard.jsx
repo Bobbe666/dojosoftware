@@ -19,6 +19,7 @@ import MemberCheckin from './MemberCheckin.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
 import WeatherWidget from './WeatherWidget.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
+import BuddyGruppenWidget from './BuddyGruppenWidget.jsx';
 import '../styles/themes.css';
 import '../styles/Dashboard.css';
 import '../styles/DashboardStart.css';
@@ -861,6 +862,9 @@ const MemberDashboard = () => {
                 </div>
               </div>
             )}
+
+            {/* Buddy-Gruppen Widget */}
+            <BuddyGruppenWidget compact={true} />
 
             {/* Wetter-Integration */}
             <WeatherWidget compact={true} />

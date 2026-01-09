@@ -4,30 +4,60 @@ const router = express.Router();
 
 // Stundenplan abrufen
 router.get("/", async (req, res) => {
+  // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
+  let dojo_id = req.query.dojo_id;
+  const { standort_id } = req.query; // Optional standort filter
+
+  if (req.user && req.user.dojo_id) {
+      dojo_id = req.user.dojo_id.toString();
+      console.log("🔒 Stundenplan Tenant-Filter erzwungen:", { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+  }
+
+  // 🔒 DOJO-FILTER: Baue WHERE-Bedingung
+  const whereConditions = [];
+  const queryParams = [];
+
+  if (dojo_id) {
+    whereConditions.push('k.dojo_id = ?');
+    queryParams.push(parseInt(dojo_id));
+  }
+
+  // Add standort filter if provided
+  if (standort_id && standort_id !== 'all') {
+    whereConditions.push('s.standort_id = ?');
+    queryParams.push(parseInt(standort_id));
+  }
+
+  const whereClause = whereConditions.length > 0 ? ` WHERE ${whereConditions.join(' AND ')}` : '';
 
   const query = `
-    SELECT 
-      s.stundenplan_id AS id, 
-      s.tag, 
-      s.uhrzeit_start, 
-      s.uhrzeit_ende, 
+    SELECT
+      s.stundenplan_id AS id,
+      s.tag,
+      s.uhrzeit_start,
+      s.uhrzeit_ende,
       s.kurs_id,
       s.raum_id,
-      k.gruppenname AS kursname, 
+      s.standort_id,
+      k.gruppenname AS kursname,
       k.stil,
-      t.vorname AS trainer_vorname, 
+      t.vorname AS trainer_vorname,
       t.nachname AS trainer_nachname,
-      r.name AS raumname
+      r.name AS raumname,
+      st.name AS standort_name,
+      st.farbe AS standort_farbe
     FROM stundenplan s
     LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
     LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
     LEFT JOIN raeume r ON s.raum_id = r.id
-    ORDER BY FIELD(s.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), 
+    LEFT JOIN standorte st ON s.standort_id = st.standort_id
+    ${whereClause}
+    ORDER BY FIELD(s.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'),
              s.uhrzeit_start;
   `;
 
   try {
-    const [rows, fields] = await db.promise().query(query); // Use promise-based query with mysql2
+    const [rows, fields] = await db.promise().query(query, queryParams); // Use promise-based query with mysql2
 
     // Leere Liste ist OK, kein Fehler - Frontend kann damit umgehen
     res.json(rows);
@@ -44,18 +74,28 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Alle Felder müssen ausgefüllt werden." });
   }
 
-  const sql = `
-    INSERT INTO stundenplan (tag, uhrzeit_start, uhrzeit_ende, kurs_id, raum_id)
-    VALUES (?, ?, ?, ?, ?)
-  `;
-
   try {
+    // Get standort_id from the selected kurs
+    const [kursRows] = await db.promise().query('SELECT standort_id FROM kurse WHERE kurs_id = ?', [kurs_id]);
+
+    if (kursRows.length === 0) {
+      return res.status(400).json({ error: "Kurs nicht gefunden" });
+    }
+
+    const standort_id = kursRows[0].standort_id;
+
+    const sql = `
+      INSERT INTO stundenplan (tag, uhrzeit_start, uhrzeit_ende, kurs_id, raum_id, standort_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
     const [result] = await db.promise().query(sql, [
       tag,
       uhrzeit_start,
       uhrzeit_ende,
       kurs_id,
       raum_id || null,
+      standort_id
     ]);
 
     // Hole die vollständigen Daten mit JOINs für die Response
@@ -67,15 +107,19 @@ router.post("/", async (req, res) => {
         s.uhrzeit_ende,
         s.kurs_id,
         s.raum_id,
+        s.standort_id,
         k.gruppenname AS kursname,
         k.stil,
         t.vorname AS trainer_vorname,
         t.nachname AS trainer_nachname,
-        r.name AS raumname
+        r.name AS raumname,
+        st.name AS standort_name,
+        st.farbe AS standort_farbe
       FROM stundenplan s
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
       LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
       LEFT JOIN raeume r ON s.raum_id = r.id
+      LEFT JOIN standorte st ON s.standort_id = st.standort_id
       WHERE s.stundenplan_id = ?
     `, [result.insertId]);
 

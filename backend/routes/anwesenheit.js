@@ -5,10 +5,20 @@ const router = express.Router();
 
 // Alle Anwesenheiten abrufen (unverändert)
 router.get("/", (req, res) => {
+    // Tenant check
+    if (!req.tenant?.dojo_id) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
 
-    const query = "SELECT * FROM anwesenheit ORDER BY datum DESC";
+    const query = `
+        SELECT a.*
+        FROM anwesenheit a
+        JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
+        WHERE m.dojo_id = ?
+        ORDER BY a.datum DESC
+    `;
 
-    db.query(query, (err, results) => {
+    db.query(query, [req.tenant.dojo_id], (err, results) => {
         if (err) {
             console.error("Fehler beim Abrufen der Anwesenheitsdaten:", err);
             return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheitsdaten", details: err.message });
@@ -25,13 +35,18 @@ router.get("/", (req, res) => {
 
 // FIXED: UNION-basierte Query für Kurs-Mitglieder
 router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
+    // Tenant check
+    if (!req.tenant?.dojo_id) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
+
     console.log("🔍 Anwesenheit Route aufgerufen:", {
         stundenplan_id: req.params.stundenplan_id,
         datum: req.params.datum,
         show_all: req.query.show_all,
         show_style_only: req.query.show_style_only
     });
-    
+
     try {
         const stundenplan_id = parseInt(req.params.stundenplan_id, 10);
         const datum = req.params.datum;
@@ -121,13 +136,13 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             )
             LEFT JOIN stundenplan s ON s.stundenplan_id = ?
             LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-            
-            WHERE m.aktiv = 1
-            ORDER BY 
+
+            WHERE m.aktiv = 1 AND m.dojo_id = ?
+            ORDER BY
                 CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
                 m.nachname, m.vorname
         `;
-        params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id];
+        params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id, req.tenant.dojo_id];
 
     } else if (show_style_only) {
         // NEU: Alle Mitglieder des Stils anzeigen (vereinfacht ohne mitglied_stile)
@@ -204,14 +219,14 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             )
 
             -- Alle aktiven Mitglieder
-            WHERE m.aktiv = 1
+            WHERE m.aktiv = 1 AND m.dojo_id = ?
 
             ORDER BY
                 CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
                 CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END,  -- Dann anwesend markierte
                 m.nachname, m.vorname
         `;
-        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
+        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, req.tenant.dojo_id];
 
     } else {
         // Standard: Kurs-Mitglieder (Stil + Altersgruppe)
@@ -290,6 +305,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             )
 
             WHERE m.aktiv = 1
+                AND m.dojo_id = ?
                 -- Altersgruppen-Match (vereinfacht)
                 AND (
                     -- Erwachsene: 16+
@@ -309,7 +325,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
                 CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END,
                 m.nachname, m.vorname
         `;
-        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
+        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, req.tenant.dojo_id];
         }
 
         // Sicherstellen, dass query und params definiert sind
@@ -370,13 +386,18 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
 
 // 🆕 NEU: Kursliste für Datum abrufen (für Frontend Dropdown)
 router.get("/kurse/:datum", (req, res) => {
+    // Tenant check
+    if (!req.tenant?.dojo_id) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
+
     const datum = req.params.datum;
     const today = new Date(datum);
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     const todayName = dayNames[today.getDay()];
 
     const query = `
-        SELECT 
+        SELECT
             s.stundenplan_id,
             s.tag as wochentag,
             s.uhrzeit_start,
@@ -385,25 +406,25 @@ router.get("/kurse/:datum", (req, res) => {
             k.gruppenname as kurs_name,
             k.stil,
             CONCAT(t.vorname, ' ', t.nachname) as trainer_name,
-            
+
             -- Check-in Statistiken für heute
-            (SELECT COUNT(*) FROM checkins c 
-             WHERE c.stundenplan_id = s.stundenplan_id 
+            (SELECT COUNT(*) FROM checkins c
+             WHERE c.stundenplan_id = s.stundenplan_id
              AND DATE(c.checkin_time) = ?) as checkins_heute,
-             
-            (SELECT COUNT(*) FROM checkins c 
-             WHERE c.stundenplan_id = s.stundenplan_id 
+
+            (SELECT COUNT(*) FROM checkins c
+             WHERE c.stundenplan_id = s.stundenplan_id
              AND DATE(c.checkin_time) = ?
              AND c.status = 'active') as aktive_checkins
-             
+
         FROM stundenplan s
         LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
         LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
-        WHERE LOWER(s.tag) = LOWER(?)
+        WHERE LOWER(s.tag) = LOWER(?) AND k.dojo_id = ?
         ORDER BY s.uhrzeit_start
     `;
 
-    db.query(query, [datum, datum, todayName], (err, results) => {
+    db.query(query, [datum, datum, todayName, req.tenant.dojo_id], (err, results) => {
         if (err) {
             console.error("Fehler beim Abrufen der Kurse:", err);
             return res.status(500).json({ 
@@ -423,6 +444,11 @@ router.get("/kurse/:datum", (req, res) => {
 
 // Anwesenheit für ein bestimmtes Mitglied abrufen (STIL-SPEZIFISCH)
 router.get("/:mitglied_id", (req, res) => {
+    // Tenant check
+    if (!req.tenant?.dojo_id) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
+
     const mitglied_id = parseInt(req.params.mitglied_id, 10);
     const { stil_id } = req.query; // Optional: Filter nach Stil
 
@@ -433,7 +459,7 @@ router.get("/:mitglied_id", (req, res) => {
 
     // Erweiterte Query mit Stil-Informationen
     let query = `
-        SELECT 
+        SELECT
             a.*,
             s.stundenplan_id,
             s.tag,
@@ -445,13 +471,14 @@ router.get("/:mitglied_id", (req, res) => {
             t.vorname as trainer_vorname,
             t.nachname as trainer_nachname
         FROM anwesenheit a
+        JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
         LEFT JOIN stundenplan s ON a.stundenplan_id = s.stundenplan_id
         LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
         LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
-        WHERE a.mitglied_id = ?
+        WHERE a.mitglied_id = ? AND m.dojo_id = ?
     `;
-    
-    let params = [mitglied_id];
+
+    let params = [mitglied_id, req.tenant.dojo_id];
     
     // Optional: Filter nach Stil
     if (stil_id) {
@@ -478,6 +505,11 @@ router.get("/:mitglied_id", (req, res) => {
 
 // Anwesenheit eintragen (erweitert für stundenplan_id)
 router.post("/", (req, res) => {
+    // Tenant check
+    if (!req.tenant?.dojo_id) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
+
     const { mitglied_id, stundenplan_id, datum, anwesend, bemerkung } = req.body;
 
     if (!mitglied_id || !datum) {

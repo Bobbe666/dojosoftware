@@ -135,6 +135,32 @@ try {
     });
 }
 
+// 1.2 MARKETING-AKTIONEN
+try {
+  const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
+  app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db; next(); }, marketingAktionenRoutes);
+  logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'marketing-aktionen',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 1.3 REFERRAL-CODES
+try {
+  const referralCodesRoutes = require(path.join(__dirname, 'routes', 'referral-codes.js'));
+  app.use('/api/referral-codes', authenticateToken, (req, res, next) => { req.db = db; next(); }, referralCodesRoutes);
+  logger.success('Route gemountet', { path: '/api/referral-codes' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'referral-codes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // AUTH ROUTES (Login, Token, Passwortänderung/Reset)
 try {
   const authRoutes = require('./routes/auth');
@@ -312,6 +338,32 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'stundenplan routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 2.2 STANDORTE ROUTES (Multi-Location Management)
+try {
+  const standorteRoutes = require('./routes/standorte');
+  app.use('/api/standorte', authenticateToken, standorteRoutes);
+  logger.success('Route geladen', { path: '/api/standorte' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'standorte routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 2.3 RAEUME ROUTES (Room Management)
+try {
+  const raeumeRoutes = require('./routes/raeume');
+  app.use('/api/raeume', authenticateToken, raeumeRoutes);
+  logger.success('Route geladen', { path: '/api/raeume' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'raeume routes',
       error: error.message,
       stack: error.stack
     });

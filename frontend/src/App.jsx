@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { KursProvider } from "./context/KursContext.jsx";
 import { DojoProvider } from "./context/DojoContext.jsx";
+import { StandortProvider } from "./context/StandortContext.jsx";
 import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx";
 import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 
@@ -21,6 +22,7 @@ import Stundenplan from "./components/Stundenplan";
 import Kurse from "./components/Kurse";
 import Trainer from "./components/Trainer";
 import GruppenStilverwaltung from "./components/GruppenStilverwaltung";
+import StandortVerwaltung from "./components/StandortVerwaltung";
 import AnwesenheitDashboard from "./components/AnwesenheitDashboard";
 import DashboardStart from "./components/DashboardStart";
 
@@ -239,9 +241,10 @@ const App = () => {
     <AuthProvider>
       <SubscriptionProvider>
         <DojoProvider>
-          <KursProvider>
-            <MitgliederUpdateProvider>
-              <BrowserRouter>
+          <StandortProvider>
+            <KursProvider>
+              <MitgliederUpdateProvider>
+                <BrowserRouter>
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}
               <Route path="/login" element={<Login />} />
@@ -416,7 +419,10 @@ const App = () => {
               
               {/* Gruppen-Verwaltung */}
               <Route path="gruppen" element={<GruppenStilverwaltung />} />
-              
+
+              {/* Standort-Verwaltung */}
+              <Route path="standorte" element={<StandortVerwaltung />} />
+
               {/* Kurs-Management */}
               <Route path="kurse" element={<Kurse />} />
               
@@ -553,10 +559,11 @@ const App = () => {
             </BrowserRouter>
             </MitgliederUpdateProvider>
           </KursProvider>
-        </DojoProvider>
-      </SubscriptionProvider>
-    </AuthProvider>
-  );
+        </StandortProvider>
+      </DojoProvider>
+    </SubscriptionProvider>
+  </AuthProvider>
+);
 };
 
 export default App;

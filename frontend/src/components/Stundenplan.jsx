@@ -4,9 +4,11 @@ import "../styles/themes.css";       // Centralized theme system
 import "../styles/components.css";   // Universal component styles
 import "../styles/Stundenplan.css";
 import { DatenContext } from "@shared/DatenContext.jsx";
+import { useStandortContext } from '../context/StandortContext.jsx';
 
 const Stundenplan = () => {
   const { kurse } = useContext(DatenContext);
+  const { standorte, activeStandort, hasMultipleLocations } = useStandortContext();
   const [stundenplan, setStundenplan] = useState([]);
   const [raeume, setRaeume] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,14 @@ const Stundenplan = () => {
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
 
-  const sortedEintraege = [...stundenplan].sort((a, b) => {
+  // Filter by active standort
+  const filteredStundenplan = stundenplan.filter(eintrag => {
+    if (activeStandort === 'all') return true;
+    if (!eintrag.standort_id) return true; // Show entries without standort
+    return eintrag.standort_id === activeStandort;
+  });
+
+  const sortedEintraege = [...filteredStundenplan].sort((a, b) => {
     if (!sortConfig.key) return 0;
     const aVal = a[sortConfig.key]?.toLowerCase?.() || "";
     const bVal = b[sortConfig.key]?.toLowerCase?.() || "";
@@ -231,14 +240,14 @@ const Stundenplan = () => {
   const generateWeekView = () => {
     const weekData = {};
     wochentage.forEach(tag => {
-      weekData[tag] = stundenplan.filter(eintrag => eintrag.tag === tag)
+      weekData[tag] = filteredStundenplan.filter(eintrag => eintrag.tag === tag)
         .sort((a, b) => a.uhrzeit_start.localeCompare(b.uhrzeit_start));
     });
     return weekData;
   };
 
   const weekView = generateWeekView();
-  const overlaps = checkForOverlaps();
+  const overlaps = checkForOverlaps(filteredStundenplan);
 
   if (loading) return <div className="stundenplan-container-modern">Lade Stundenplan...</div>;
   if (error) return <div className="stundenplan-container-modern error">{error}</div>;
@@ -263,7 +272,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>📅</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {stundenplan.length}
+              {filteredStundenplan.length}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -274,7 +283,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🏃‍♂️</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {new Set(stundenplan.map(s => s.tag)).size}
+              {new Set(filteredStundenplan.map(s => s.tag)).size}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -285,7 +294,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🥋</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {new Set(stundenplan.map(s => s.kurs_id)).size}
+              {new Set(filteredStundenplan.map(s => s.kurs_id)).size}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -296,7 +305,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>⏰</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {stundenplan.length > 0 ? formatTime(stundenplan.reduce((earliest, s) => s.uhrzeit_start < earliest ? s.uhrzeit_start : earliest, stundenplan[0].uhrzeit_start)) : '--'}
+              {filteredStundenplan.length > 0 ? formatTime(filteredStundenplan.reduce((earliest, s) => s.uhrzeit_start < earliest ? s.uhrzeit_start : earliest, filteredStundenplan[0].uhrzeit_start)) : '--'}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -307,7 +316,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🌙</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {stundenplan.length > 0 ? formatTime(stundenplan.reduce((latest, s) => s.uhrzeit_ende > latest ? s.uhrzeit_ende : latest, stundenplan[0].uhrzeit_ende)) : '--'}
+              {filteredStundenplan.length > 0 ? formatTime(filteredStundenplan.reduce((latest, s) => s.uhrzeit_ende > latest ? s.uhrzeit_ende : latest, filteredStundenplan[0].uhrzeit_ende)) : '--'}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -318,7 +327,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>📊</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {stundenplan.filter(s => s.tag === 'Montag').length}
+              {filteredStundenplan.filter(s => s.tag === 'Montag').length}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -329,7 +338,7 @@ const Stundenplan = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
             <span style={{ fontSize: '1.2rem' }}>🎉</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
-              {stundenplan.filter(s => s.tag === 'Samstag' || s.tag === 'Sonntag').length}
+              {filteredStundenplan.filter(s => s.tag === 'Samstag' || s.tag === 'Sonntag').length}
             </span>
           </div>
           <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
@@ -360,12 +369,12 @@ const Stundenplan = () => {
       {/* Accordion Wochenansicht */}
       <div className="week-accordion-container">
         <div className="accordion-tabs">
-          <button 
+          <button
             onClick={() => setActiveDay('Wochenübersicht')}
             className={`accordion-tab ${activeDay === 'Wochenübersicht' ? 'active' : ''}`}
           >
             <span className="tab-name">📊 Woche</span>
-            <span className="tab-count">{stundenplan.length}</span>
+            <span className="tab-count">{filteredStundenplan.length}</span>
           </button>
           {wochentage.map(tag => (
             <button 
@@ -408,6 +417,26 @@ const Stundenplan = () => {
                             <div className="mini-name">{eintrag.kursname}</div>
                             {eintrag.raumname && (
                               <div className="mini-raum">🏢 {eintrag.raumname}</div>
+                            )}
+                            {hasMultipleLocations && eintrag.standort_name && (
+                              <div
+                                className="mini-standort"
+                                style={{
+                                  background: eintrag.standort_farbe || '#4F46E5',
+                                  color: 'white',
+                                  padding: '3px 8px',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '600',
+                                  borderRadius: '4px',
+                                  marginTop: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <span style={{ fontSize: '0.75rem' }}>📍</span>
+                                <span>{eintrag.standort_name}</span>
+                              </div>
                             )}
                           </div>
                         ))
@@ -463,6 +492,24 @@ const Stundenplan = () => {
                             <span className="course-trainer-big">
                               👨‍🏫 {eintrag.trainer_vorname || '?'} {eintrag.trainer_nachname || ''}
                             </span>
+                            {hasMultipleLocations && eintrag.standort_name && (
+                              <span
+                                style={{
+                                  background: eintrag.standort_farbe || '#4F46E5',
+                                  color: 'white',
+                                  padding: '4px 10px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '600',
+                                  borderRadius: '5px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}
+                              >
+                                <span>📍</span>
+                                <span>{eintrag.standort_name}</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

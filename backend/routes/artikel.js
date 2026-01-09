@@ -102,6 +102,11 @@ const createLagerbewegung = (artikel_id, bewegungsart, menge, alter_bestand, neu
 
 // GET /api/artikel/kategorien - Alle Kategorien abrufen
 router.get('/kategorien', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   // Datenbank verwenden
   const query = `
     SELECT
@@ -112,13 +117,13 @@ router.get('/kategorien', (req, res) => {
       icon,
       aktiv,
       reihenfolge,
-      (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE) as anzahl_artikel
+      (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE AND dojo_id = ?) as anzahl_artikel
     FROM artikel_kategorien ak
-    WHERE aktiv = TRUE
+    WHERE aktiv = TRUE AND dojo_id = ?
     ORDER BY reihenfolge ASC, name ASC
   `;
 
-  db.query(query, (error, results) => {
+  db.query(query, [req.tenant.dojo_id, req.tenant.dojo_id], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Kategorien:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Kategorien' });
@@ -129,18 +134,23 @@ router.get('/kategorien', (req, res) => {
 
 // POST /api/artikel/kategorien - Neue Kategorie erstellen
 router.post('/kategorien', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const { name, beschreibung, farbe_hex, icon, reihenfolge } = req.body;
-  
+
   if (!name) {
     return res.status(400).json({ error: 'Name ist erforderlich' });
   }
-  
+
   const query = `
-    INSERT INTO artikel_kategorien (name, beschreibung, farbe_hex, icon, reihenfolge)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO artikel_kategorien (name, beschreibung, farbe_hex, icon, reihenfolge, dojo_id)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
-  
-  db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0], 
+
+  db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0, req.tenant.dojo_id], 
     (error, results) => {
       if (error) {
         console.error('Fehler beim Erstellen der Kategorie:', error);
@@ -163,6 +173,11 @@ router.post('/kategorien', (req, res) => {
 
 // GET /api/artikel - Alle Artikel abrufen (mit optionaler Kategorien-Filterung)
 router.get('/', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const { kategorie_id, aktiv, sichtbar_kasse } = req.query;
 
   // Datenbank verwenden
@@ -183,9 +198,9 @@ router.get('/', (req, res) => {
     LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
     LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
-    WHERE 1=1
+    WHERE a.dojo_id = ?
   `;
-  const params = [];
+  const params = [req.tenant.dojo_id];
 
   if (kategorie_id) {
     query += ' AND a.kategorie_id = ?';
@@ -217,8 +232,13 @@ router.get('/', (req, res) => {
 
 // GET /api/artikel/kasse - Artikel für Kassensystem optimiert
 router.get('/kasse', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const query = `
-    SELECT 
+    SELECT
       a.artikel_id,
       a.name,
       a.verkaufspreis_cent,
@@ -238,11 +258,11 @@ router.get('/kasse', (req, res) => {
     FROM artikel a
     LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
-    WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
+    WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE AND a.dojo_id = ?
     ORDER BY ak.reihenfolge ASC, a.name ASC
   `;
-  
-  db.query(query, (error, results) => {
+
+  db.query(query, [req.tenant.dojo_id], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Kassen-Artikel:', error);
       console.error('SQL Fehler Details:', {
@@ -292,17 +312,22 @@ router.get('/kasse', (req, res) => {
 
 // GET /api/artikel/:id - Einzelnen Artikel abrufen
 router.get('/:id', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const query = `
-    SELECT 
+    SELECT
       a.*,
       ak.name as kategorie_name,
       ak.farbe_hex as kategorie_farbe
     FROM artikel a
     JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
-    WHERE a.artikel_id = ?
+    WHERE a.artikel_id = ? AND a.dojo_id = ?
   `;
-  
-  db.query(query, [req.params.id], (error, results) => {
+
+  db.query(query, [req.params.id, req.tenant.dojo_id], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen des Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des Artikels' });
@@ -319,6 +344,11 @@ router.get('/:id', (req, res) => {
 
 // POST /api/artikel - Neuen Artikel erstellen
 router.post('/', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const {
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
     einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
@@ -365,8 +395,8 @@ router.post('/', (req, res) => {
       gemeinkosten_prozent, gewinnzuschlag_prozent,
       kundenskonto_prozent, kundenrabatt_prozent,
       lagerbestand, mindestbestand, lager_tracking,
-      bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse, dojo_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -377,7 +407,7 @@ router.post('/', (req, res) => {
     kundenskonto_p, kundenrabatt_p,
     lagerbestand || 0, mindestbestand || 0, lager_tracking !== 'false',
     bild_url, bild_base64, farbe_hex || '#FFFFFF',
-    aktiv !== 'false', sichtbar_kasse !== 'false'
+    aktiv !== 'false', sichtbar_kasse !== 'false', req.tenant.dojo_id
   ];
   
   db.query(query, params, (error, results) => {
@@ -411,6 +441,11 @@ router.post('/', (req, res) => {
 
 // PUT /api/artikel/:id - Artikel aktualisieren
 router.put('/:id', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const artikel_id = req.params.id;
   const {
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
@@ -424,7 +459,7 @@ router.put('/:id', (req, res) => {
   } = req.body;
 
   // Zuerst aktuellen Artikel abrufen
-  db.query('SELECT * FROM artikel WHERE artikel_id = ?', [artikel_id], (error, currentResults) => {
+  db.query('SELECT * FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, req.tenant.dojo_id], (error, currentResults) => {
     if (error) {
       console.error('Fehler beim Abrufen des aktuellen Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des aktuellen Artikels' });
@@ -510,9 +545,10 @@ router.put('/:id', (req, res) => {
     
     updateFields.push('aktualisiert_am = CURRENT_TIMESTAMP');
     updateValues.push(artikel_id);
-    
-    const query = `UPDATE artikel SET ${updateFields.join(', ')} WHERE artikel_id = ?`;
-    
+
+    const query = `UPDATE artikel SET ${updateFields.join(', ')} WHERE artikel_id = ? AND dojo_id = ?`;
+    updateValues.push(req.tenant.dojo_id);
+
     db.query(query, updateValues, (error, results) => {
       if (error) {
         console.error('Fehler beim Aktualisieren des Artikels:', error);
@@ -549,9 +585,14 @@ router.put('/:id', (req, res) => {
 
 // DELETE /api/artikel/:id - Artikel löschen (soft delete)
 router.delete('/:id', (req, res) => {
-  const query = 'UPDATE artikel SET aktiv = FALSE, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ?';
-  
-  db.query(query, [req.params.id], (error, results) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
+  const query = 'UPDATE artikel SET aktiv = FALSE, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ? AND dojo_id = ?';
+
+  db.query(query, [req.params.id, req.tenant.dojo_id], (error, results) => {
     if (error) {
       console.error('Fehler beim Deaktivieren des Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Deaktivieren des Artikels' });
@@ -570,15 +611,20 @@ router.delete('/:id', (req, res) => {
 
 // POST /api/artikel/:id/lager - Lagerbestand ändern
 router.post('/:id/lager', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const artikel_id = req.params.id;
   const { bewegungsart, menge, grund } = req.body;
-  
+
   if (!bewegungsart || !menge) {
     return res.status(400).json({ error: 'Bewegungsart und Menge sind erforderlich' });
   }
-  
+
   // Aktuellen Bestand abrufen
-  db.query('SELECT lagerbestand FROM artikel WHERE artikel_id = ?', [artikel_id], (error, results) => {
+  db.query('SELECT lagerbestand FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, req.tenant.dojo_id], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen des Lagerbestands:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des Lagerbestands' });
@@ -646,24 +692,30 @@ router.post('/:id/lager', (req, res) => {
 
 // GET /api/artikel/:id/lager - Lagerbewegungen für Artikel
 router.get('/:id/lager', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
   const query = `
-    SELECT 
-      bewegung_id,
-      bewegungsart,
-      menge,
-      alter_bestand,
-      neuer_bestand,
-      grund,
-      verkauf_id,
-      durchgefuehrt_von_name,
-      bewegung_timestamp
-    FROM lager_bewegungen
-    WHERE artikel_id = ?
-    ORDER BY bewegung_timestamp DESC
+    SELECT
+      lb.bewegung_id,
+      lb.bewegungsart,
+      lb.menge,
+      lb.alter_bestand,
+      lb.neuer_bestand,
+      lb.grund,
+      lb.verkauf_id,
+      lb.durchgefuehrt_von_name,
+      lb.bewegung_timestamp
+    FROM lager_bewegungen lb
+    JOIN artikel a ON lb.artikel_id = a.artikel_id
+    WHERE lb.artikel_id = ? AND a.dojo_id = ?
+    ORDER BY lb.bewegung_timestamp DESC
     LIMIT 50
   `;
-  
-  db.query(query, [req.params.id], (error, results) => {
+
+  db.query(query, [req.params.id, req.tenant.dojo_id], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Lagerbewegungen:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Lagerbewegungen' });
@@ -678,17 +730,25 @@ router.get('/:id/lager', (req, res) => {
 
 // GET /api/artikel/stats - Artikel-Statistiken
 router.get('/stats/overview', (req, res) => {
+  // Tenant check
+  if (!req.tenant?.dojo_id) {
+    return res.status(403).json({ error: 'No tenant' });
+  }
+
+  const dojoId = req.tenant.dojo_id;
   const queries = {
-    gesamt: 'SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE',
-    kategorien: 'SELECT COUNT(*) as anzahl FROM artikel_kategorien WHERE aktiv = TRUE',
-    ausverkauft: 'SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND lagerbestand = 0',
-    nachbestellen: 'SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND lagerbestand <= mindestbestand AND lagerbestand > 0',
-    lagerwert: 'SELECT SUM(lagerbestand * einkaufspreis_cent) as wert_cent FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE'
+    gesamt: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND dojo_id = ?', [dojoId]],
+    kategorien: ['SELECT COUNT(*) as anzahl FROM artikel_kategorien WHERE aktiv = TRUE AND dojo_id = ?', [dojoId]],
+    ausverkauft: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND lagerbestand = 0 AND dojo_id = ?', [dojoId]],
+    nachbestellen: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND lagerbestand <= mindestbestand AND lagerbestand > 0 AND dojo_id = ?', [dojoId]],
+    lagerwert: ['SELECT SUM(lagerbestand * einkaufspreis_cent) as wert_cent FROM artikel WHERE aktiv = TRUE AND lager_tracking = TRUE AND dojo_id = ?', [dojoId]]
   };
-  
-  Promise.all(Object.entries(queries).map(([key, query]) => 
+
+
+  Promise.all(Object.entries(queries).map(([key, queryData]) =>
     new Promise((resolve) => {
-      db.query(query, (error, results) => {
+      const [query, params] = queryData;
+      db.query(query, params, (error, results) => {
         if (error) {
           console.error(`Fehler bei ${key}-Statistik:`, error);
           resolve({ key, value: 0 });

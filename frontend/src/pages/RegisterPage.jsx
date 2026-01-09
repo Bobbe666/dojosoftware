@@ -187,47 +187,70 @@ function RegisterPage() {
   if (success && registeredData) {
     return (
       <div className="register-page">
-        <div className="success-container">
-          <div className="success-icon">🎉</div>
-          <h1>Willkommen bei DojoSoftware!</h1>
-          <p className="success-message">
-            Dein Dojo <strong>{formData.dojoName}</strong> wurde erfolgreich registriert!
-          </p>
-
-          <div className="success-info">
-            <div className="info-box">
-              <h3><span className="section-icon">📧</span> E-Mail gesendet</h3>
-              <p>Wir haben dir eine Bestätigungs-E-Mail an <strong>{formData.ownerEmail}</strong> geschickt.</p>
+        {/* Navigation */}
+        <nav className="register-nav">
+          <div className="nav-container">
+            <div className="nav-logo" onClick={() => navigate('/')}>
+              <img src={dojoLogo} alt="DojoSoftware Logo" className="nav-logo-image" />
+              <span className="logo-text">DojoSoftware</span>
             </div>
-
-            <div className="info-box">
-              <h3><span className="section-icon">🌐</span> Dein Zugang</h3>
-              <p className="subdomain-url">{formData.subdomain}.dojo.tda-intl.org</p>
-            </div>
-
-            <div className="info-box">
-              <h3><span className="section-icon">⏱️</span> Trial-Phase</h3>
-              <p>Du hast <strong>14 Tage</strong> kostenlosen Zugriff auf alle Features.</p>
-              <p className="trial-date">Endet am: {new Date(registeredData.trial_ends_at).toLocaleDateString('de-DE')}</p>
+            <div className="nav-links">
+              <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
+              <a href="/#features">Features</a>
+              <a href="/galerie">Galerie</a>
+              <a href="/pricing">Preise</a>
+              <a href="/#testimonials">Referenzen</a>
+              <button className="nav-login-btn" onClick={() => navigate('/login')}>
+                Login
+              </button>
             </div>
           </div>
+        </nav>
 
-          <div className="next-steps">
-            <h3><span className="section-icon">🚀</span> Nächste Schritte</h3>
-            <ol style={{ textAlign: 'left', margin: '1rem auto', maxWidth: '500px' }}>
-              <li>Logge dich mit deiner E-Mail und deinem Passwort ein</li>
-              <li>Vervollständige dein Dojo-Profil</li>
-              <li>Lade deine ersten Mitglieder ein</li>
-            </ol>
-            <button
-              className="cta-btn"
-              onClick={() => {
-                const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                window.location.href = isLocalhost ? '/login' : registeredData.login_url;
-              }}
-            >
-              Jetzt zum Login und loslegen
-            </button>
+        <div className="register-container">
+          <div className="success-container">
+            <div className="success-header">
+              <h1>Willkommen bei DojoSoftware!</h1>
+              <p className="success-message">
+                Dein Dojo <strong>{formData.dojoName}</strong> wurde erfolgreich registriert!
+              </p>
+            </div>
+
+            <div className="success-info">
+              <div className="info-box">
+                <h3><span className="section-icon">📧</span> E-Mail gesendet</h3>
+                <p>Wir haben dir eine Bestätigungs-E-Mail an <strong>{formData.ownerEmail}</strong> geschickt.</p>
+              </div>
+
+              <div className="info-box">
+                <h3><span className="section-icon">🌐</span> Dein Zugang</h3>
+                <p className="subdomain-url">{formData.subdomain}.dojo.tda-intl.org</p>
+              </div>
+
+              <div className="info-box">
+                <h3><span className="section-icon">⏱️</span> Trial-Phase</h3>
+                <p>Du hast <strong>14 Tage</strong> kostenlosen Zugriff auf alle Features.</p>
+                <p className="trial-date">Endet am: {new Date(registeredData.trial_ends_at).toLocaleDateString('de-DE')}</p>
+              </div>
+            </div>
+
+            <div className="next-steps">
+              <h3><span className="section-icon">🚀</span> Nächste Schritte</h3>
+              <ol>
+                <li>Logge dich mit deiner E-Mail und deinem Passwort ein</li>
+                <li>Vervollständige dein Dojo-Profil</li>
+                <li>Lade deine ersten Mitglieder ein</li>
+              </ol>
+              <button
+                className="cta-btn"
+                onClick={() => {
+                  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                  window.location.href = isLocalhost ? '/login' : registeredData.login_url;
+                }}
+              >
+                Jetzt zum Login und loslegen
+              </button>
+            </div>
           </div>
         </div>
       </div>

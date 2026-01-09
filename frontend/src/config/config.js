@@ -7,9 +7,10 @@ const isDevelopment = import.meta.env.MODE === 'development';
 const isProduction = import.meta.env.MODE === 'production';
 
 // API-URLs für verschiedene Umgebungen
+// 🔒 MULTI-TENANT: Production uses relative path to support subdomains
 const API_URLS = {
   development: 'http://localhost:3000/api',
-  production: 'https://dojo.tda-intl.org/api',
+  production: '/api',
   testing: 'http://localhost:3000/api'
 };
 

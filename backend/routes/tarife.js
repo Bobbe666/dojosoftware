@@ -19,13 +19,19 @@ const queryAsync = (sql, params = []) => {
 // GET /api/tarife - Alle Tarife abrufen (fallback zu altem Schema wenn nötig)
 router.get('/', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         // Erst versuchen ob erweiterte Tabellen existieren
-        // Einfache Abfrage mit korrektem Schema
+        // Einfache Abfrage mit korrektem Schema + tenant filter
         const tarife = await queryAsync(`
             SELECT *
             FROM tarife
+            WHERE dojo_id = ?
             ORDER BY id ASC
-        `);
+        `, [req.tenant.dojo_id]);
         res.json({ success: true, data: tarife });
     } catch (err) {
         console.error('Fehler beim Abrufen der Tarife:', err);
@@ -36,6 +42,11 @@ router.get('/', async (req, res) => {
 // POST /api/tarife - Neuen Tarif erstellen mit korrektem Schema
 router.post('/', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const {
             name,
             price_cents,
@@ -52,9 +63,9 @@ router.post('/', async (req, res) => {
             INSERT INTO tarife (
                 name, price_cents, aufnahmegebuehr_cents, currency, duration_months,
                 billing_cycle, payment_method, active,
-                mindestlaufzeit_monate, kuendigungsfrist_monate
+                mindestlaufzeit_monate, kuendigungsfrist_monate, dojo_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             name,
             price_cents,
@@ -65,7 +76,8 @@ router.post('/', async (req, res) => {
             payment_method || 'SEPA',
             active !== undefined ? active : true,
             mindestlaufzeit_monate || duration_months,
-            kuendigungsfrist_monate || 3
+            kuendigungsfrist_monate || 3,
+            req.tenant.dojo_id
         ]);
         res.json({
             success: true,
@@ -92,13 +104,18 @@ router.post('/', async (req, res) => {
 // PUT /api/tarife/:id - Tarif aktualisieren
 router.put('/:id', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
         const { name, price_cents, aufnahmegebuehr_cents, currency, duration_months, billing_cycle, payment_method, active } = req.body;
         await queryAsync(`
             UPDATE tarife
             SET name = ?, price_cents = ?, aufnahmegebuehr_cents = ?, currency = ?, duration_months = ?, mindestlaufzeit_monate = ?, billing_cycle = ?, payment_method = ?, active = ?
-            WHERE id = ?
-        `, [name, price_cents, aufnahmegebuehr_cents || 4999, currency, duration_months, duration_months, billing_cycle, payment_method, active, id]);
+            WHERE id = ? AND dojo_id = ?
+        `, [name, price_cents, aufnahmegebuehr_cents || 4999, currency, duration_months, duration_months, billing_cycle, payment_method, active, id, req.tenant.dojo_id]);
         res.json({ success: true, message: 'Tarif erfolgreich aktualisiert' });
     } catch (err) {
         console.error('Fehler beim Aktualisieren des Tarifs:', err);
@@ -109,11 +126,16 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/tarife/:id - Tarif löschen
 router.delete('/:id', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
         // Note: vertraege table doesn't have tarif_id column in current schema
         // Skip usage check for now, can be added later if needed
 
-        await queryAsync('DELETE FROM tarife WHERE id = ?', [id]);
+        await queryAsync('DELETE FROM tarife WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id]);
         res.json({ success: true, message: 'Tarif erfolgreich gelöscht' });
     } catch (err) {
         console.error('Fehler beim Löschen des Tarifs:', err);
@@ -124,6 +146,11 @@ router.delete('/:id', async (req, res) => {
 // PATCH /api/tarife/:id/archivieren - Tarif archivieren/entarchivieren
 router.patch('/:id/archivieren', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
         const { ist_archiviert } = req.body;
 
@@ -135,8 +162,8 @@ router.patch('/:id/archivieren', async (req, res) => {
         const result = await queryAsync(`
             UPDATE tarife
             SET ist_archiviert = ?
-            WHERE id = ?
-        `, [archiviert, id]);
+            WHERE id = ? AND dojo_id = ?
+        `, [archiviert, id, req.tenant.dojo_id]);
 
         console.log('Update Ergebnis:', result);
 
@@ -157,10 +184,16 @@ router.patch('/:id/archivieren', async (req, res) => {
 // GET /api/tarife/rabatte - Alle Rabatte abrufen
 router.get('/rabatte', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const rabatte = await queryAsync(`
             SELECT * FROM rabatte
+            WHERE dojo_id = ?
             ORDER BY name ASC
-        `);
+        `, [req.tenant.dojo_id]);
         res.json({ success: true, data: rabatte });
     } catch (err) {
         console.error('Fehler beim Abrufen der Rabatte:', err);
@@ -171,11 +204,16 @@ router.get('/rabatte', async (req, res) => {
 // POST /api/tarife/rabatte - Neuen Rabatt erstellen
 router.post('/rabatte', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
         const result = await queryAsync(`
-            INSERT INTO rabatte (name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv]);
+            INSERT INTO rabatte (name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv, dojo_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv, req.tenant.dojo_id]);
         res.json({ 
             success: true, 
             data: { 
@@ -199,13 +237,18 @@ router.post('/rabatte', async (req, res) => {
 // PUT /api/tarife/rabatte/:id - Rabatt aktualisieren
 router.put('/rabatte/:id', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
         const { name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
         await queryAsync(`
-            UPDATE rabatte 
+            UPDATE rabatte
             SET name = ?, beschreibung = ?, rabatt_prozent = ?, gueltig_von = ?, gueltig_bis = ?, max_nutzungen = ?, aktiv = ?
-            WHERE rabatt_id = ?
-        `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv, id]);
+            WHERE rabatt_id = ? AND dojo_id = ?
+        `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv, id, req.tenant.dojo_id]);
         res.json({ success: true, message: 'Rabatt erfolgreich aktualisiert' });
     } catch (err) {
         console.error('Fehler beim Aktualisieren des Rabatts:', err);
@@ -216,10 +259,15 @@ router.put('/rabatte/:id', async (req, res) => {
 // DELETE /api/tarife/rabatte/:id - Rabatt löschen
 router.delete('/rabatte/:id', async (req, res) => {
     try {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
+            return res.status(403).json({ error: 'No tenant' });
+        }
+
         const { id } = req.params;
         // Vorerst ohne Verwendungscheck - kann später erweitert werden
-        
-        await queryAsync('DELETE FROM rabatte WHERE rabatt_id = ?', [id]);
+
+        await queryAsync('DELETE FROM rabatte WHERE rabatt_id = ? AND dojo_id = ?', [id, req.tenant.dojo_id]);
         res.json({ success: true, message: 'Rabatt erfolgreich gelöscht' });
     } catch (err) {
         console.error('Fehler beim Löschen des Rabatts:', err);

@@ -9,7 +9,13 @@ const router = express.Router();
 
 // ✅ NEU: API für Anwesenheit – aktive Mitglieder nach Stil filtern + DOJO-FILTER
 router.get("/", (req, res) => {
-    const { stil, dojo_id } = req.query;
+    let { stil, dojo_id } = req.query;
+
+    // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
+    if (req.user && req.user.dojo_id) {
+        dojo_id = req.user.dojo_id.toString();
+        console.log("🔒 Tenant-Filter erzwungen:", { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+    }
 
     // 🔒 DOJO-FILTER: Baue WHERE-Bedingungen
     let whereConditions = ['m.aktiv = 1'];
@@ -68,7 +74,13 @@ router.get("/", (req, res) => {
 
 // ✅ API: Alle Mitglieder abrufen (inkl. Stile) - ERWEITERT + DOJO-FILTER
 router.get("/all", (req, res) => {
-    const { dojo_id } = req.query;
+    let { dojo_id } = req.query;
+
+    // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
+    if (req.user && req.user.dojo_id) {
+        dojo_id = req.user.dojo_id.toString();
+        console.log("🔒 Mitglieder /all Tenant-Filter erzwungen:", { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+    }
 
     // 🔒 DOJO-FILTER: Baue WHERE-Clause
     let whereClause = '';

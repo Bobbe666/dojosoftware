@@ -226,6 +226,12 @@
   color: #1a1a2e;
 }
 
+.badge-gold {
+  background: linear-gradient(135deg, #DAA520, #B8860B);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(218, 165, 32, 0.3);
+}
+
 .check-icon {
   color: #22c55e;
   margin-left: auto;

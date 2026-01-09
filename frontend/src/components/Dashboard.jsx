@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
+import { useStandortContext } from '../context/StandortContext.jsx';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
@@ -14,6 +15,7 @@ import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
 import logo from '../assets/dojo-logo.png';
 import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown } from 'lucide-react';
 import DojoSwitcher from './DojoSwitcher';
+import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SuperAdminDashboard from './SuperAdminDashboard';
@@ -24,8 +26,9 @@ function Dashboard() {
   const navigate = useNavigate();
   const { token, logout } = useAuth();
   const { getDojoFilterParam, selectedDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
+  const { standorte } = useStandortContext(); // Multi-Location support
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
-  
+
   // State für echte Daten
   const [stats, setStats] = useState({
     mitglieder: 0,
@@ -47,19 +50,8 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [userDisplayName, setUserDisplayName] = useState(''); // Angezeigter Username/Name
 
-  // Kollaps-State für Dashboard-Sektionen (nur Check-in standardmäßig geöffnet)
-  const [collapsedSections, setCollapsedSections] = useState({
-    checkin: false,
-    mitglieder: true,
-    verwaltung: true,
-    personal: true,
-    einstellungen: true,
-    pruefungswesen: true,
-    artikelverwaltung: true,
-    berichte: true,
-    finanzen: true,
-    events: true
-  });
+  // Tab-State für Dashboard
+  const [activeTab, setActiveTab] = useState('checkin');
 
   let role = 'mitglied';
 
@@ -200,13 +192,20 @@ function Dashboard() {
     }
   };
 
-  // Funktion zum Umschalten der Kollaps-States
-  const toggleSection = (sectionKey) => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [sectionKey]: !prev[sectionKey]
-    }));
-  };
+  // Tab-Definitionen
+  const tabs = [
+    { id: 'checkin', label: 'Check-in Systeme', icon: '📱' },
+    { id: 'mitglieder', label: 'Mitgliederverwaltung', icon: '👥' },
+    { id: 'pruefungswesen', label: 'Prüfungswesen', icon: '🏆' },
+    { id: 'events', label: 'Events', icon: '📅' },
+    { id: 'finanzen', label: 'Finanzen', icon: '💰' },
+    { id: 'artikelverwaltung', label: 'Artikelverwaltung', icon: '📦' },
+    { id: 'verwaltung', label: 'Dojo-Verwaltung', icon: '🔧' },
+    { id: 'personal', label: 'Personal', icon: '👨‍🏫' },
+    { id: 'berichte', label: 'Berichte', icon: '📊' },
+    { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' },
+    { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' }
+  ];
 
   // Formatiere Zahlen für bessere Lesbarkeit
   const formatNumber = (num) => {
@@ -307,6 +306,13 @@ function Dashboard() {
       title: 'Gruppen',
       description: 'Trainingsgruppen verwalten',
       path: '/dashboard/gruppen'
+    },
+    {
+      icon: '📍',
+      title: 'Standorte',
+      description: 'Standorte & Filialen verwalten',
+      path: '/dashboard/standorte',
+      count: standorte?.length || 0
     }
   ];
 
@@ -652,6 +658,7 @@ function Dashboard() {
         </div>
         <div className="dashboard-header-right">
           {role === 'admin' && <DojoSwitcher />}
+          {role === 'admin' && <StandortSwitcher />}
           {!isMainDashboard && (
             <button
               onClick={() => navigate('/dashboard')}
@@ -706,320 +713,33 @@ function Dashboard() {
               {/* 🔔 Trial/Subscription Banner */}
               <TrialBanner stats={stats} />
 
-              {/* ✨ ERWEITERTE Statistiken Übersicht mit Stilen ✨ */}
-              <div 
-                className="stats-grid"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                  gap: '0.5rem',
-                  marginBottom: '0.5rem'
-                }}
-              >
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>👥</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.mitglieder)}
-                    </span>
+              {/* Navigation basierend auf Rolle */}
+              {role === 'admin' && (
+                <>
+                  {/* Tab Navigation */}
+                  <div className="dashboard-tabs">
+                    {tabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        className={`dashboard-tab ${activeTab === tab.id ? 'active' : ''}`}
+                        onClick={() => setActiveTab(tab.id)}
+                      >
+                        <span className="tab-icon">{tab.icon}</span>
+                        <span className="tab-label">{tab.label}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Mitglieder
-                  </div>
-                </div>
-
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>✅</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.anwesenheit)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Anwesenheiten
-                  </div>
-                </div>
-
-                {/* ✨ MINI CHECK-IN KARTE ✨ */}
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>📱</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.checkins_heute)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Check-ins
-                  </div>
-                </div>
-
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>🥋</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.kurse)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Kurse
-                  </div>
-                </div>
-
-                {/* ✨ NEUE STILE MINI-KARTE ✨ */}
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>🎖️</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.stile)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Stile
-                  </div>
-                </div>
-
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>👨‍🏫</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.trainer)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Trainer
-                  </div>
-                </div>
-
-                <div 
-                  className={`stat-card ${loading ? 'loading' : ''}`}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    minHeight: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    marginBottom: '0.1rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>💰</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffd700' }}>
-                      {loading ? '...' : formatNumber(stats.beitraege)}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    Beiträge
-                  </div>
-                </div>
-
-                {/* ✨ ABO/TRIAL STATUS KARTE ✨ */}
-                {stats.subscription_status && (
-                  <div
-                    className={`stat-card ${loading ? 'loading' : ''}`}
-                    style={{
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                      textAlign: 'center',
-                      minHeight: '60px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      background: stats.subscription_status === 'trial'
-                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)'
-                        : stats.subscription_status === 'active'
-                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)'
-                        : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)'
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                      marginBottom: '0.1rem'
-                    }}>
-                      <span style={{ fontSize: '1.2rem' }}>
-                        {stats.subscription_status === 'trial' ? '⏰' :
-                         stats.subscription_status === 'active' ? '✓' : '⚠️'}
-                      </span>
-                      <span style={{
-                        fontSize: '1.3rem',
-                        fontWeight: 'bold',
-                        color: stats.subscription_status === 'trial'
-                          ? '#3b82f6'
-                          : stats.subscription_status === 'active'
-                          ? '#10b981'
-                          : '#ef4444'
-                      }}>
-                        {loading ? '...' :
-                         stats.subscription_status === 'trial'
-                           ? stats.trial_days_remaining
-                           : stats.subscription_days_remaining || '∞'}
-                      </span>
-                    </div>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.3px',
-                      marginBottom: '0.2rem'
-                    }}>
-                      {stats.subscription_status === 'trial' ? 'Trial' :
-                       stats.subscription_status === 'active' ? (stats.subscription_plan || 'Aktiv').toUpperCase() :
-                       'Abgelaufen'}
-                    </div>
-                    <div style={{
-                      fontSize: '0.6rem',
-                      color: 'rgba(255, 255, 255, 0.5)',
-                      lineHeight: '1'
-                    }}>
-                      {stats.subscription_status === 'trial'
-                        ? `${stats.trial_days_remaining} Tage`
-                        : stats.subscription_status === 'active' && stats.subscription_ends_at
-                        ? `bis ${new Date(stats.subscription_ends_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`
-                        : ''}
-                    </div>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
 
               {/* Navigation basierend auf Rolle */}
               <div className="dashboard-navigation">
                 {role === 'admin' ? (
                   <>
-                    {/* ✨ Check-in Systems - Mitglieder & Personal ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('checkin')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">📱</span>
-                          <span className="section-text">Check-in Systeme</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.checkin ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.checkin && (
+                    {/* Tab Content */}
+                    <div className="tab-content">
+                      {/* ✨ Check-in Systems Tab ✨ */}
+                      {activeTab === 'checkin' && (
                         <div className="nav-cards">
                           <div 
                             onClick={() => handleNavigation('/dashboard/checkin')}
@@ -1141,24 +861,9 @@ function Dashboard() {
                           </div>
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Mitgliederverwaltung Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('mitglieder')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">👥</span>
-                          <span className="section-text">Mitgliederverwaltung</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.mitglieder ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.mitglieder && (
+                      {/* ✨ Mitgliederverwaltung Tab ✨ */}
+                      {activeTab === 'mitglieder' && (
                         <div className="nav-cards">
                         {mitgliederCards.map((card, index) => (
                           <div
@@ -1188,24 +893,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Prüfungswesen Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('pruefungswesen')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">🏆</span>
-                          <span className="section-text">Prüfungswesen</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.pruefungswesen ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.pruefungswesen && (
+                      {/* ✨ Prüfungswesen Tab ✨ */}
+                      {activeTab === 'pruefungswesen' && (
                         <div className="nav-cards">
                         {pruefungswesensCards.map((card, index) => (
                           <div
@@ -1235,24 +925,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Events Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('events')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">📅</span>
-                          <span className="section-text">Events</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.events ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.events && (
+                      {/* ✨ Events Tab ✨ */}
+                      {activeTab === 'events' && (
                         <div className="nav-cards">
                         {eventsCards.map((card, index) => (
                           <div
@@ -1277,24 +952,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Finanzen Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('finanzen')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">💰</span>
-                          <span className="section-text">Finanzen</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.finanzen ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.finanzen && (
+                      {/* ✨ Finanzen Tab ✨ */}
+                      {activeTab === 'finanzen' && (
                         <div className="nav-cards">
                         {finanzenCards.map((card, index) => (
                           <div
@@ -1324,24 +984,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Artikelverwaltung Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('artikelverwaltung')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">📦</span>
-                          <span className="section-text">Artikelverwaltung</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.artikelverwaltung ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.artikelverwaltung && (
+                      {/* ✨ Artikelverwaltung Tab ✨ */}
+                      {activeTab === 'artikelverwaltung' && (
                         <div className="nav-cards">
                         {artikelverwaltungCards.map((card, index) => (
                           <div
@@ -1366,24 +1011,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* Admin Verwaltung Sektion */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('verwaltung')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">🔧</span>
-                          <span className="section-text">Dojo-Verwaltung</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.verwaltung ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.verwaltung && (
+                      {/* ✨ Dojo-Verwaltung Tab ✨ */}
+                      {activeTab === 'verwaltung' && (
                         <div className="nav-cards">
                         {verwaltungCards.map((card, index) => (
                           <div
@@ -1413,24 +1043,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Personal Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('personal')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">👨‍🏫</span>
-                          <span className="section-text">Personal</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.personal ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.personal && (
+                      {/* ✨ Personal Tab ✨ */}
+                      {activeTab === 'personal' && (
                         <div className="nav-cards">
                         {personalCards.map((card, index) => (
                           <div
@@ -1460,24 +1075,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* Admin Berichte Sektion */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('berichte')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">📊</span>
-                          <span className="section-text">Berichte</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.berichte ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.berichte && (
+                      {/* ✨ Berichte Tab ✨ */}
+                      {activeTab === 'berichte' && (
                         <div className="nav-cards">
                         {berichteCards.map((card, index) => (
                           <div
@@ -1507,24 +1107,9 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
-                    </div>
 
-                    {/* ✨ Einstellungen Sektion ✨ */}
-                    <div className="nav-section">
-                      <h2
-                        className="section-header collapsible"
-                        onClick={() => toggleSection('einstellungen')}
-                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="section-icon">⚙️</span>
-                          <span className="section-text">Einstellungen</span>
-                        </span>
-                        <span style={{ transform: collapsedSections.einstellungen ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
-                          ▼
-                        </span>
-                      </h2>
-                      {!collapsedSections.einstellungen && (
+                      {/* ✨ Einstellungen Tab ✨ */}
+                      {activeTab === 'einstellungen' && (
                         <div className="nav-cards">
                         {einstellungenCards.map((card, index) => (
                           <div
@@ -1549,53 +1134,81 @@ function Dashboard() {
                         ))}
                         </div>
                       )}
+
+                      {/* ✨ Schnellaktionen Tab ✨ */}
+                      {activeTab === 'schnellaktionen' && (
+                        <div className="nav-section">
+                          <h2 className="section-header quick-actions-header" style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '0.5rem',
+                            backgroundImage: 'none',
+                            WebkitBackgroundClip: 'unset',
+                            WebkitTextFillColor: '#FFD700',
+                            backgroundClip: 'unset',
+                            color: '#FFD700',
+                            textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                            marginBottom: '2rem'
+                          }}>
+                            <span style={{ 
+                              fontSize: '1.5rem',
+                              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+                              position: 'relative',
+                              zIndex: 10,
+                              lineHeight: 1,
+                              display: 'inline-block',
+                              flexShrink: 0
+                            }}>⚡</span>
+                            <span style={{ 
+                              WebkitFontSmoothing: 'antialiased',
+                              MozOsxFontSmoothing: 'grayscale',
+                              color: '#FFD700 !important',
+                              WebkitTextFillColor: '#FFD700 !important',
+                              backgroundImage: 'none !important',
+                              WebkitBackgroundClip: 'unset !important',
+                              backgroundClip: 'unset !important'
+                            }}>Schnellaktionen</span>
+                          </h2>
+                          {role === 'admin' ? (
+                            <div className="quick-actions">
+                              {adminQuickActions.map((action, index) => (
+                                <button 
+                                  key={index}
+                                  onClick={() => handleNavigation(action.path)}
+                                  className={`quick-action-btn ${action.className}`}
+                                >
+                                  {action.label}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="quick-actions">
+                              {mitgliedQuickActions.map((action, index) => (
+                                <button 
+                                  key={index}
+                                  onClick={() => handleNavigation(action.path)}
+                                  className={`quick-action-btn ${action.className}`}
+                                >
+                                  {action.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {/* Aktualisieren Button */}
+                          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                            <button
+                              onClick={fetchDashboardStatsOptimized}
+                              className="quick-action-btn info"
+                              disabled={loading}
+                            >
+                              🔄 {loading ? 'Lädt...' : 'Statistiken aktualisieren'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Admin Quick Actions */}
-                    <div className="nav-section">
-                      <h2 className="section-header quick-actions-header" style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '0.5rem',
-                        backgroundImage: 'none',
-                        WebkitBackgroundClip: 'unset',
-                        WebkitTextFillColor: '#FFD700',
-                        backgroundClip: 'unset',
-                        color: '#FFD700',
-                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-                      }}>
-                        <span style={{ 
-                          fontSize: '1.5rem',
-                          filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-                          position: 'relative',
-                          zIndex: 10,
-                          lineHeight: 1,
-                          display: 'inline-block',
-                          flexShrink: 0
-                        }}>⚡</span>
-                        <span style={{ 
-                          WebkitFontSmoothing: 'antialiased',
-                          MozOsxFontSmoothing: 'grayscale',
-                          color: '#FFD700 !important',
-                          WebkitTextFillColor: '#FFD700 !important',
-                          backgroundImage: 'none !important',
-                          WebkitBackgroundClip: 'unset !important',
-                          backgroundClip: 'unset !important'
-                        }}>Schnellaktionen</span>
-                      </h2>
-                      <div className="quick-actions">
-                        {adminQuickActions.map((action, index) => (
-                          <button 
-                            key={index}
-                            onClick={() => handleNavigation(action.path)}
-                            className={`quick-action-btn ${action.className}`}
-                          >
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <>
@@ -1622,65 +1235,8 @@ function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Mitglieder Quick Actions */}
-                    <div className="nav-section">
-                      <h2 className="section-header quick-actions-header" style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        gap: '0.5rem',
-                        backgroundImage: 'none',
-                        WebkitBackgroundClip: 'unset',
-                        WebkitTextFillColor: '#FFD700',
-                        backgroundClip: 'unset',
-                        color: '#FFD700',
-                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-                      }}>
-                        <span style={{ 
-                          fontSize: '1.5rem',
-                          filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-                          position: 'relative',
-                          zIndex: 10,
-                          lineHeight: 1,
-                          display: 'inline-block',
-                          flexShrink: 0
-                        }}>⚡</span>
-                        <span style={{ 
-                          WebkitFontSmoothing: 'antialiased',
-                          MozOsxFontSmoothing: 'grayscale',
-                          color: '#FFD700 !important',
-                          WebkitTextFillColor: '#FFD700 !important',
-                          backgroundImage: 'none !important',
-                          WebkitBackgroundClip: 'unset !important',
-                          backgroundClip: 'unset !important'
-                        }}>Schnellaktionen</span>
-                      </h2>
-                      <div className="quick-actions">
-                        {mitgliedQuickActions.map((action, index) => (
-                          <button 
-                            key={index}
-                            onClick={() => handleNavigation(action.path)}
-                            className={`quick-action-btn ${action.className}`}
-                          >
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </>
                 )}
-                {/* Aktualisieren Button */}
-                <div className="nav-section">
-                  <div className="quick-actions">
-                    <button
-                      onClick={fetchDashboardStatsOptimized}
-                      className="quick-action-btn info"
-                      disabled={loading}
-                    >
-                      🔄 {loading ? 'Lädt...' : 'Statistiken aktualisieren'}
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           ) : (

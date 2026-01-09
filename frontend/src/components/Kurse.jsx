@@ -6,10 +6,12 @@ import "../styles/components.css";   // Universal component styles
 import "../styles/Kurse.css";
 import { DatenContext } from "@shared/DatenContext.jsx";
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
+import { useStandortContext } from '../context/StandortContext.jsx'; // Multi-Location Support
 
 const Kurse = () => {
   const { kurse, trainer, stile, gruppen, ladeAlleDaten } = useContext(DatenContext); // <-- Fix hier
   const { getDojoFilterParam, activeDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
+  const { standorte, activeStandort, switchStandort, hasMultipleLocations } = useStandortContext(); // Multi-Location
 
   const [neuerKurs, setNeuerKurs] = useState({
     gruppenname: "",
@@ -177,6 +179,7 @@ const Kurse = () => {
 
     kurse
       .filter(k => !filterTrainer || k.trainer_id.toString() === filterTrainer)
+      .filter(k => activeStandort === 'all' || !k.standort_id || k.standort_id === activeStandort)
       .forEach(kurs => {
         const stil = kurs.stil || 'Unbekannter Stil';
         if (!grouped[stil]) {
@@ -222,14 +225,15 @@ const Kurse = () => {
     });
 
     return grouped;
-  }, [kurse, filterTrainer, sortConfig]);
+  }, [kurse, filterTrainer, sortConfig, activeStandort]);
 
   // Alte sortedKurse für Kompatibilität (wird nicht mehr verwendet)
   const sortedKurse = useMemo(() => {
     return [...kurse]
       .filter(k =>
         (!filterStil || k.stil === filterStil) &&
-        (!filterTrainer || k.trainer_id.toString() === filterTrainer)
+        (!filterTrainer || k.trainer_id.toString() === filterTrainer) &&
+        (activeStandort === 'all' || !k.standort_id || k.standort_id === activeStandort)
       )
       .sort((a, b) => {
         if (!sortConfig.key) return 0;
@@ -258,7 +262,7 @@ const Kurse = () => {
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [kurse, filterStil, filterTrainer, sortConfig]);
+  }, [kurse, filterStil, filterTrainer, sortConfig, activeStandort]);
 
   const handleCSVExport = () => {
     const csv = [
@@ -930,6 +934,29 @@ const Kurse = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Standort Badge */}
+                {hasMultipleLocations && kurs.standort_name && (
+                  <div
+                    className="kurs-standort-badge"
+                    style={{
+                      background: kurs.standort_farbe || '#4F46E5',
+                      color: 'white',
+                      padding: '6px 12px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      borderRadius: '6px',
+                      marginTop: '8px',
+                      marginBottom: '4px'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.9rem' }}>📍</span>
+                    <span>{kurs.standort_name}</span>
+                  </div>
+                )}
 
                 <div className="kurs-card-content">
                   <div className="kurs-info-left">

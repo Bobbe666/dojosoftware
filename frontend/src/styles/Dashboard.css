@@ -307,6 +307,221 @@
   width: 100%;
 }
 
+/* Dashboard Tabs - Filigraner Stil */
+.dashboard-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+  background: transparent;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+
+.dashboard-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  margin-bottom: -1px;
+  border-radius: 6px 6px 0 0;
+  white-space: nowrap;
+}
+
+.dashboard-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-tab.active {
+  color: #ffd700;
+  border-bottom-color: #ffd700;
+  background: rgba(255, 215, 0, 0.08);
+  font-weight: 600;
+}
+
+.dashboard-tab .tab-icon {
+  font-size: 0.95rem;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.dashboard-tab:hover .tab-icon {
+  opacity: 0.9;
+}
+
+.dashboard-tab.active .tab-icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5));
+}
+
+.dashboard-tab .tab-label {
+  font-weight: inherit;
+}
+
+/* Buddy-Verwaltung Tabs */
+.buddy-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+.buddy-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.buddy-tab:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.buddy-tab.active {
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.15);
+  font-weight: 600;
+}
+
+/* Erweiterte Aktivitäten-Styles für Buddy-Verwaltung */
+.activities-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.activities-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.activities-section h3 {
+  color: #ffd700;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.activity-item-enhanced {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 215, 0, 0.3);
+  transition: all 0.2s;
+}
+
+.activity-item-enhanced:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-left-color: #ffd700;
+  transform: translateX(4px);
+}
+
+.activity-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid;
+  flex-shrink: 0;
+}
+
+.activity-icon {
+  font-size: 1.5rem;
+}
+
+.activity-content-enhanced {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-header-enhanced {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+}
+
+.activity-type {
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.activity-time-enhanced {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.activity-description-enhanced {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.activity-participant {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 215, 0, 0.8);
+}
+
+.activities-footer {
+  text-align: center;
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
 .nav-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -325,7 +540,7 @@
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
   gap: 0.5rem !important;
-  margin-bottom: 0.75rem !important;
+  margin-bottom: 1.5rem !important;
   margin-top: 0.5rem !important;
 }
 
@@ -437,9 +652,10 @@
 .nav-card-header {
   display: flex;
   justify-content: flex-start;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   min-height: 20px;
+  flex-wrap: wrap;
 }
 
 .nav-card-header h2,
@@ -450,34 +666,48 @@
   margin: 0;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6);
-  line-height: 1.2;
+  line-height: 1.1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4rem;
+  flex-wrap: wrap;
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 /* Dashboard-spezifisch: kleinere Schrift für 5 Karten */
 .dashboard-navigation .nav-card h3,
 .dashboard-navigation .nav-card-title {
   font-size: clamp(0.88rem, 1vw, 1.02rem) !important;
-  line-height: 1.2 !important;
+  line-height: 1.1 !important;
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: unset !important;
   word-break: break-word !important;
   hyphens: auto !important;
   margin: 0 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.4rem !important;
+  flex-wrap: wrap !important;
+  max-height: 2.4em !important;
 }
 
 .dashboard-navigation .nav-content p {
   font-size: 0.72rem !important;
 }
 
-/* Nav Count - Goldene Zahlen */
+/* Nav Count - Goldene Zahlen - Bleibt zusammen */
 .nav-count {
   color: #ffd700 !important;
   font-weight: 700;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  word-break: keep-all !important;
+  hyphens: none !important;
 }
 
 /* Nav Icon - EXAKT wie StilVerwaltung */
@@ -546,6 +776,14 @@
   margin: 0 0 0.5rem 0;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  white-space: normal;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.1;
 }
 
 /* Nav Content P - Helle Beschreibung */

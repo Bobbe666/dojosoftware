@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../styles/TresenUebersicht.css";
 import config from '../config/config.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useDojoContext } from '../context/DojoContext.jsx';
+import { fetchDashboardStats } from '../utils/apiCache.js';
 
 const aggregateAnwesendeByMitglied = (eintraege = []) => {
   const map = new Map();
@@ -75,13 +78,48 @@ const aggregateAnwesendeByMitglied = (eintraege = []) => {
 };
 
 const TresenUebersicht = () => {
+  const { token } = useAuth();
+  const { getDojoFilterParam } = useDojoContext();
   const [anwesende, setAnwesende] = useState([]);
   const [stats, setStats] = useState({});
+  const [dashboardStats, setDashboardStats] = useState({
+    mitglieder: 0,
+    anwesenheit: 0,
+    checkins_heute: 0,
+    kurse: 0,
+    stile: 0,
+    trainer: 0,
+    beitraege: 0
+  });
   const [selectedDatum, setSelectedDatum] = useState(() => new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [suchbegriff, setSuchbegriff] = useState("");
   const [nurTrainerHinzugefuegt, setNurTrainerHinzugefuegt] = useState(false);
+
+  // Dashboard Stats laden
+  useEffect(() => {
+    const loadDashboardStats = async () => {
+      if (token) {
+        try {
+          const dojoFilterParam = getDojoFilterParam();
+          const data = await fetchDashboardStats(token, dojoFilterParam);
+          setDashboardStats({
+            mitglieder: data.mitglieder || 0,
+            anwesenheit: data.anwesenheit || 0,
+            checkins_heute: data.checkins_heute || 0,
+            kurse: data.kurse || 0,
+            stile: data.stile || 0,
+            trainer: data.trainer || 0,
+            beitraege: data.beitraege || 0
+          });
+        } catch (err) {
+          console.error('Fehler beim Laden der Dashboard-Stats:', err);
+        }
+      }
+    };
+    loadDashboardStats();
+  }, [token, getDojoFilterParam]);
 
   // Automatisch laden beim Start
   useEffect(() => {
@@ -228,6 +266,11 @@ const TresenUebersicht = () => {
     [anwesende, suchbegriff, nurTrainerHinzugefuegt]
   );
 
+  const formatNumber = (num) => {
+    if (num === 0) return '0';
+    return num.toLocaleString('de-DE');
+  };
+
   return (
     <div className="tresen-uebersicht-container">
       <div className="tresen-header">
@@ -235,6 +278,185 @@ const TresenUebersicht = () => {
         <p className="description">
           Alle heute anwesenden Mitglieder - eingecheckt oder vom Trainer hinzugefügt
         </p>
+      </div>
+
+      {/* ✨ Dashboard Statistik-Karten ✨ */}
+      <div 
+        className="stats-floating-bar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          gap: '0.5rem',
+          padding: '0.5rem 1rem',
+          marginBottom: '1.5rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 215, 0, 0.15)',
+          flexWrap: 'wrap'
+        }}
+      >
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>👥</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.mitglieder)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Mitglieder
+          </span>
+        </div>
+
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>✅</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.anwesenheit)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Anwesenheiten
+          </span>
+        </div>
+
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>📱</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.checkins_heute)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Check-ins
+          </span>
+        </div>
+
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>🥋</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.kurse)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Kurse
+          </span>
+        </div>
+
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>🎖️</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.stile)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Stile
+          </span>
+        </div>
+
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>👨‍🏫</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.trainer)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Trainer
+          </span>
+        </div>
+
+        <div 
+          className="stat-item"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 215, 0, 0.1)',
+            flex: '1 1 auto',
+            minWidth: 'fit-content'
+          }}
+        >
+          <span style={{ fontSize: '0.95rem' }}>💰</span>
+          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+            {formatNumber(dashboardStats.beitraege)}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            Beiträge
+          </span>
+        </div>
       </div>
 
       {/* Datum & Statistiken */}

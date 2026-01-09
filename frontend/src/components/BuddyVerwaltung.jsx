@@ -7,10 +7,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import config from '../config/config.js';
+import MarketingAktionen from './MarketingAktionen';
+import { Users, Calendar } from 'lucide-react';
 import '../styles/Dashboard.css';
+import '../styles/MarketingAktionen.css';
 
 const BuddyVerwaltung = () => {
     const { token } = useAuth();
+
+    // Tab State
+    const [activeTab, setActiveTab] = useState('gruppen');
 
     // State Management
     const [groups, setGroups] = useState([]);
@@ -264,7 +270,7 @@ const BuddyVerwaltung = () => {
                     color: 'transparent'
                 }}>
                     <span style={{ 
-                        fontSize: '2.5rem',
+                        fontSize: '1.8rem',
                         filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
                         position: 'relative',
                         zIndex: 1000,
@@ -290,8 +296,32 @@ const BuddyVerwaltung = () => {
                         zIndex: 1
                     }}>Buddy-Gruppen Verwaltung</span>
                 </h1>
-                <p>Verwalte Freunde-Gruppen und Einladungen</p>
+                <p>Verwalte Freunde-Gruppen, Einladungen und Marketing-Aktionen</p>
             </div>
+
+            {/* Tabs */}
+            <div className="buddy-tabs">
+                <button
+                    className={`buddy-tab ${activeTab === 'gruppen' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('gruppen')}
+                >
+                    <Users size={18} />
+                    Buddy-Gruppen
+                </button>
+                <button
+                    className={`buddy-tab ${activeTab === 'aktionen' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('aktionen')}
+                >
+                    <Calendar size={18} />
+                    Marketing-Aktionen
+                </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'aktionen' ? (
+                <MarketingAktionen />
+            ) : (
+                <>
 
             {/* Filter und Suche */}
             <div className="filter-section">
@@ -574,25 +604,103 @@ const BuddyVerwaltung = () => {
                                 )}
                             </div>
 
-                            {/* Aktivitäten */}
-                            {selectedGroup.aktivitaeten?.length > 0 && (
+                            {/* Gemeinsame Aktivitäten */}
+                            {selectedGroup.aktivitaeten && selectedGroup.aktivitaeten.length > 0 && (
                                 <div className="activities-section">
-                                    <h3>📈 Letzte Aktivitäten</h3>
-                                    <div className="activities-list">
-                                        {selectedGroup.aktivitaeten.slice(0, 10).map(activity => (
-                                            <div key={activity.id} className="activity-item">
-                                                <div className="activity-time">
-                                                    {new Date(activity.erstellt_am).toLocaleString('de-DE')}
-                                                </div>
-                                                <div className="activity-description">
-                                                    <strong>{activity.aktivitaet_typ.replace('_', ' ')}</strong>
-                                                    {activity.beschreibung && (
-                                                        <span>: {activity.beschreibung}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <div className="section-header">
+                                        <h3>📈 Gemeinsame Aktivitäten ({selectedGroup.aktivitaeten.length})</h3>
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch(`${config.apiBaseUrl}/buddy/groups/${selectedGroup.id}/aktivitaeten?limit=50`, {
+                                                        headers: {
+                                                            'Authorization': `Bearer ${token}`
+                                                        }
+                                                    });
+                                                    if (response.ok) {
+                                                        const data = await response.json();
+                                                        setSelectedGroup({ ...selectedGroup, aktivitaeten: data.aktivitaeten });
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Fehler beim Laden aller Aktivitäten:', err);
+                                                }
+                                            }}
+                                            className="btn btn-secondary btn-sm"
+                                        >
+                                            Alle anzeigen
+                                        </button>
                                     </div>
+                                    <div className="activities-list">
+                                        {selectedGroup.aktivitaeten.slice(0, 15).map(activity => {
+                                            const getActivityIcon = (typ) => {
+                                                const iconMap = {
+                                                    'einladung_versendet': '📧',
+                                                    'einladung_angenommen': '✅',
+                                                    'einladung_abgelehnt': '❌',
+                                                    'einladung_abgelaufen': '⏰',
+                                                    'mitglied_registriert': '👤',
+                                                    'mitglied_aktiviert': '🎉',
+                                                    'gemeinsames_training': '🥋',
+                                                    'pruefung_erfolgreich': '🏆',
+                                                    'gruppen_erstellt': '👥'
+                                                };
+                                                return iconMap[activity.aktivitaet_typ] || '📋';
+                                            };
+
+                                            const getActivityColor = (typ) => {
+                                                if (typ.includes('erfolgreich') || typ.includes('aktiviert') || typ.includes('angenommen')) {
+                                                    return '#10b981';
+                                                } else if (typ.includes('abgelehnt') || typ.includes('abgelaufen')) {
+                                                    return '#ef4444';
+                                                } else if (typ.includes('versendet') || typ.includes('registriert')) {
+                                                    return '#3b82f6';
+                                                }
+                                                return '#94a3b8';
+                                            };
+
+                                            return (
+                                                <div key={activity.id} className="activity-item-enhanced">
+                                                    <div className="activity-icon-wrapper" style={{ backgroundColor: `${getActivityColor(activity.aktivitaet_typ)}20`, borderColor: getActivityColor(activity.aktivitaet_typ) }}>
+                                                        <span className="activity-icon">{getActivityIcon(activity.aktivitaet_typ)}</span>
+                                                    </div>
+                                                    <div className="activity-content-enhanced">
+                                                        <div className="activity-header-enhanced">
+                                                            <strong className="activity-type">
+                                                                {activity.aktivitaet_typ.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                            </strong>
+                                                            <span className="activity-time-enhanced">
+                                                                {new Date(activity.erstellt_am).toLocaleString('de-DE', {
+                                                                    day: '2-digit',
+                                                                    month: '2-digit',
+                                                                    year: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                        {activity.beschreibung && (
+                                                            <p className="activity-description-enhanced">{activity.beschreibung}</p>
+                                                        )}
+                                                        {(activity.freund_name || activity.mitglied_vorname) && (
+                                                            <div className="activity-participant">
+                                                                {activity.freund_name && (
+                                                                    <span>👤 {activity.freund_name}</span>
+                                                                )}
+                                                                {activity.mitglied_vorname && (
+                                                                    <span>👤 {activity.mitglied_vorname} {activity.mitglied_nachname}</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {selectedGroup.aktivitaeten.length > 15 && (
+                                        <div className="activities-footer">
+                                            <p>... und {selectedGroup.aktivitaeten.length - 15} weitere Aktivitäten</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -615,6 +723,8 @@ const BuddyVerwaltung = () => {
                     <div className="loading-spinner-large"></div>
                     <p>Aktion wird ausgeführt...</p>
                 </div>
+            )}
+                </>
             )}
         </div>
     );
