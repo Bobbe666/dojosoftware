@@ -1379,7 +1379,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
       renewalRate: renewalRate
     };
 
-    logger.success('Vertragsdaten geladen', {
+    console.log('✅ Vertragsdaten geladen', {
       activeContracts: contracts.activeContracts.length,
       upcomingRenewals: contracts.upcomingRenewals.next30Days.length,
       expiredContracts: contracts.expiredContracts.length
@@ -1390,7 +1390,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
       contracts: contracts
     });
   } catch (err) {
-    logger.error('Fehler beim Laden der Vertragsdaten', { error: err.message });
+    console.error('❌ Fehler beim Laden der Vertragsdaten', err.message);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der Vertragsdaten',
@@ -1579,7 +1579,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
       activeUsers: activeUsers
     };
 
-    logger.success('Benutzerdaten geladen', {
+    console.log('✅ Benutzerdaten geladen', {
       adminUsers: users.adminUsers.length,
       dojoUsers: users.dojoUsers.length,
       recentActivity: users.recentActivity.length
@@ -1590,7 +1590,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
       users: users
     });
   } catch (err) {
-    logger.error('Fehler beim Laden der Benutzerdaten', { error: err.message });
+    console.error('❌ Fehler beim Laden der Benutzerdaten', err.message);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der Benutzerdaten',
