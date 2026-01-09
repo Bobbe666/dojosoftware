@@ -1313,12 +1313,12 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
         COUNT(*) as total_expired,
         SUM(CASE
           WHEN subscription_status = 'active'
-            AND subscription_end < CURDATE()
+            AND subscription_ends_at < CURDATE()
           THEN 1
           ELSE 0
         END) as renewed
       FROM dojo
-      WHERE subscription_end IS NOT NULL
+      WHERE subscription_ends_at IS NOT NULL
     `);
 
     const renewalRate = renewalStats[0].total_expired > 0
@@ -1458,26 +1458,27 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
       console.log('⚠️ admin_users Tabelle nicht gefunden, nutze Fallback');
     }
 
-    // 2. Dojo-Admin Benutzer (aus benutzer Tabelle)
+    // 2. Dojo-Admin Benutzer (aus users Tabelle)
     const [dojoUsers] = await db.promise().query(`
       SELECT
-        b.benutzer_id,
-        b.benutzername,
-        b.email,
-        b.dojo_id,
+        u.id as benutzer_id,
+        u.username as benutzername,
+        u.email,
+        m.dojo_id,
         d.dojoname,
-        b.erstellt_am as created_at,
+        u.created_at,
         COALESCE(
           (SELECT COUNT(DISTINCT DATE(erstellt_am))
-           FROM mitglieder m
-           WHERE m.erstellt_von = b.benutzer_id
-           AND m.erstellt_am >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)),
+           FROM mitglieder m2
+           WHERE m2.erstellt_von = u.id
+           AND m2.erstellt_am >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)),
           0
         ) as activity_last_30_days
-      FROM benutzer b
-      LEFT JOIN dojo d ON b.dojo_id = d.id
-      WHERE b.rolle = 'admin'
-      ORDER BY d.dojoname, b.benutzername
+      FROM users u
+      LEFT JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
+      LEFT JOIN dojo d ON m.dojo_id = d.id
+      WHERE u.role = 'admin'
+      ORDER BY d.dojoname, u.username
     `);
 
     // 3. Recent Activity Log (falls vorhanden)
