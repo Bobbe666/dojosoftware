@@ -959,10 +959,10 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
         SUM(gesamtsumme) as gesamt_umsatz,
         COUNT(*) as anzahl_rechnungen,
         AVG(gesamtsumme) as durchschnitt_rechnung,
-        SUM(CASE WHEN bezahlt = 1 THEN gesamtsumme ELSE 0 END) as bezahlt_summe,
-        SUM(CASE WHEN bezahlt = 0 THEN gesamtsumme ELSE 0 END) as offen_summe,
-        COUNT(CASE WHEN bezahlt = 1 THEN 1 END) as bezahlt_anzahl,
-        COUNT(CASE WHEN bezahlt = 0 THEN 1 END) as offen_anzahl
+        SUM(CASE WHEN status = 'bezahlt' THEN gesamtsumme ELSE 0 END) as bezahlt_summe,
+        SUM(CASE WHEN status = 'offen' THEN gesamtsumme ELSE 0 END) as offen_summe,
+        COUNT(CASE WHEN status = 'bezahlt' THEN 1 END) as bezahlt_anzahl,
+        COUNT(CASE WHEN status = 'offen' THEN 1 END) as offen_anzahl
       FROM rechnungen
       WHERE YEAR(rechnungsdatum) = ?
     `, [currentYear]);
@@ -973,8 +973,8 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
         MONTH(rechnungsdatum) as monat,
         SUM(gesamtsumme) as umsatz,
         COUNT(*) as anzahl_rechnungen,
-        SUM(CASE WHEN bezahlt = 1 THEN gesamtsumme ELSE 0 END) as bezahlt,
-        SUM(CASE WHEN bezahlt = 0 THEN gesamtsumme ELSE 0 END) as offen
+        SUM(CASE WHEN status = 'bezahlt' THEN gesamtsumme ELSE 0 END) as bezahlt,
+        SUM(CASE WHEN status = 'offen' THEN gesamtsumme ELSE 0 END) as offen
       FROM rechnungen
       WHERE YEAR(rechnungsdatum) = ?
       GROUP BY MONTH(rechnungsdatum)
@@ -988,8 +988,8 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
         d.dojoname,
         COALESCE(SUM(r.gesamtsumme), 0) as umsatz,
         COUNT(r.rechnung_id) as anzahl_rechnungen,
-        COALESCE(SUM(CASE WHEN r.bezahlt = 1 THEN r.gesamtsumme ELSE 0 END), 0) as bezahlt,
-        COALESCE(SUM(CASE WHEN r.bezahlt = 0 THEN r.gesamtsumme ELSE 0 END), 0) as offen
+        COALESCE(SUM(CASE WHEN r.status = 'bezahlt' THEN r.gesamtsumme ELSE 0 END), 0) as bezahlt,
+        COALESCE(SUM(CASE WHEN r.status = 'offen' THEN r.gesamtsumme ELSE 0 END), 0) as offen
       FROM dojo d
       LEFT JOIN rechnungen r ON d.id = r.dojo_id AND YEAR(r.rechnungsdatum) = ?
       GROUP BY d.id, d.dojoname
@@ -1038,7 +1038,7 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
       FROM rechnungen r
       JOIN dojo d ON r.dojo_id = d.id
       LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-      WHERE r.bezahlt = 0
+      WHERE r.status = 'offen'
       ORDER BY r.faelligkeitsdatum ASC
       LIMIT 10
     `);
@@ -1047,9 +1047,9 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
     const [paymentBehavior] = await db.promise().query(`
       SELECT
         COUNT(*) as gesamt,
-        COUNT(CASE WHEN bezahlt = 1 AND bezahlt_am <= faelligkeitsdatum THEN 1 END) as puenktlich,
-        COUNT(CASE WHEN bezahlt = 1 AND bezahlt_am > faelligkeitsdatum THEN 1 END) as verspaetet,
-        COUNT(CASE WHEN bezahlt = 0 AND faelligkeitsdatum < NOW() THEN 1 END) as ueberfaellig
+        COUNT(CASE WHEN status = 'bezahlt' AND bezahlt_am <= faelligkeitsdatum THEN 1 END) as puenktlich,
+        COUNT(CASE WHEN status = 'bezahlt' AND bezahlt_am > faelligkeitsdatum THEN 1 END) as verspaetet,
+        COUNT(CASE WHEN status = 'offen' AND faelligkeitsdatum < NOW() THEN 1 END) as ueberfaellig
       FROM rechnungen
       WHERE YEAR(rechnungsdatum) = ?
     `, [currentYear]);
