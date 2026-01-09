@@ -17,6 +17,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Lastschriftlauf.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const Lastschriftlauf = ({ embedded = false }) => {
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
   const loadPreview = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/lastschriftlauf/preview`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview`);
 
       if (!response.ok) {
         let errorMessage = 'Fehler beim Laden der Vorschau';
@@ -66,7 +68,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
 
   const loadMissingMandates = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/lastschriftlauf/missing-mandates`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/missing-mandates`);
       if (response.ok) {
         const data = await response.json();
         setMissingMandates(data.members || []);

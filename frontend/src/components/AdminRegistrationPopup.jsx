@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Calendar, Mail, Phone, MapPin, CreditCard } from 'lucide-react';
 import '../styles/AdminRegistrationPopup.css';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const AdminRegistrationPopup = () => {
   const [notifications, setNotifications] = useState([]);
@@ -13,7 +15,7 @@ const AdminRegistrationPopup = () => {
     const checkForNewRegistrations = async () => {
       try {
         console.log('🔍 Checking for new registrations...');
-        const response = await fetch(`${config.apiBaseUrl}/notifications/admin/unread`);
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/admin/unread`);
         console.log('📡 Response status:', response.status);
 
         const data = await response.json();
@@ -57,7 +59,7 @@ const AdminRegistrationPopup = () => {
     if (currentNotification) {
       try {
         // Markiere als gelesen
-        await fetch(`/notifications/admin/${currentNotification.id}/read`, {
+        await fetchWithAuth(`/notifications/admin/${currentNotification.id}/read`, {
           method: 'PUT'
         });
 

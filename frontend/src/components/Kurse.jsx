@@ -7,6 +7,8 @@ import "../styles/Kurse.css";
 import { DatenContext } from "@shared/DatenContext.jsx";
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useStandortContext } from '../context/StandortContext.jsx'; // Multi-Location Support
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const Kurse = () => {
   const { kurse, trainer, stile, gruppen, ladeAlleDaten } = useContext(DatenContext); // <-- Fix hier
@@ -60,7 +62,7 @@ const Kurse = () => {
 
   const loadRaeume = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/raeume`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/raeume`);
       const result = await response.json();
       if (result.success) {
         setRaeume(result.data);

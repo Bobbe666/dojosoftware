@@ -5,6 +5,8 @@ import MemberHeader from './MemberHeader.jsx';
 import '../styles/themes.css';
 import '../styles/MemberStyles.css';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const MemberStyles = () => {
   const { user } = useAuth();
@@ -24,7 +26,7 @@ const MemberStyles = () => {
   const loadMemberData = async () => {
     try {
       // Lade Mitgliedsdaten
-      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(user.email)}`);
+      const memberResponse = await fetchWithAuth(`/mitglieder/by-email/${encodeURIComponent(user.email)}`);
       if (!memberResponse.ok) return;
       
       const memberData = await memberResponse.json();
@@ -44,7 +46,7 @@ const MemberStyles = () => {
 
   const loadStile = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/stile`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/stile`);
       if (response.ok) {
         const data = await response.json();
         setStile(data);
@@ -56,7 +58,7 @@ const MemberStyles = () => {
 
   const loadMemberStyles = async (memberId) => {
     try {
-      const response = await fetch(`/mitglieder/${memberId}/stile`);
+      const response = await fetchWithAuth(`/mitglieder/${memberId}/stile`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.stile) {
@@ -75,7 +77,7 @@ const MemberStyles = () => {
 
   const loadStyleSpecificData = async (memberId, stilId) => {
     try {
-      const response = await fetch(`/mitglieder/${memberId}/stil/${stilId}/data`);
+      const response = await fetchWithAuth(`/mitglieder/${memberId}/stil/${stilId}/data`);
       if (response.ok) {
         const result = await response.json();
         setStyleSpecificData(prev => ({

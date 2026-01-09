@@ -22,6 +22,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Rechnungsverwaltung.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const Rechnungsverwaltung = () => {
   const navigate = useNavigate();
@@ -57,8 +59,8 @@ const Rechnungsverwaltung = () => {
       setLoading(true);
 
       const [rechnungenRes, statsRes] = await Promise.all([
-        fetch(`${config.apiBaseUrl}/rechnungen`),
-        fetch(`${config.apiBaseUrl}/rechnungen/statistiken`)
+        fetchWithAuth(`${config.apiBaseUrl}/rechnungen`),
+        fetchWithAuth(`${config.apiBaseUrl}/rechnungen/statistiken`)
       ]);
 
       if (rechnungenRes.ok) {
@@ -122,7 +124,7 @@ const Rechnungsverwaltung = () => {
     }
 
     try {
-      const res = await fetch(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/archivieren`, {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/archivieren`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ archiviert: archivieren })
@@ -144,7 +146,7 @@ const Rechnungsverwaltung = () => {
     }
 
     try {
-      const res = await fetch(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`, {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`, {
         method: 'DELETE'
       });
 
@@ -160,7 +162,7 @@ const Rechnungsverwaltung = () => {
 
   const handleShowDetails = async (rechnung_id) => {
     try {
-      const res = await fetch(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`);
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`);
       if (res.ok) {
         const data = await res.json();
         setModalRechnung(data.data);

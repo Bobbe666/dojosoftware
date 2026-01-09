@@ -39,6 +39,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Finanzcockpit.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#f97316'];
 
@@ -64,7 +66,7 @@ const Finanzcockpit = () => {
       
       const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
       const separator = dojoFilterParam ? '&' : '';
-      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/stats?period=${selectedPeriod}${separator}${dojoFilterParam}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/stats?period=${selectedPeriod}${separator}${dojoFilterParam}`);
       
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Finanzstatistiken');
@@ -91,7 +93,7 @@ const Finanzcockpit = () => {
       const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
       const months = selectedPeriod === 'month' ? 3 : selectedPeriod === 'quarter' ? 6 : 12;
       const separator = dojoFilterParam ? '&' : '';
-      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/timeline?period=${selectedPeriod}&months=${months}${separator}${dojoFilterParam}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/timeline?period=${selectedPeriod}&months=${months}${separator}${dojoFilterParam}`);
 
       if (response.ok) {
         const result = await response.json();
@@ -144,7 +146,7 @@ const Finanzcockpit = () => {
     try {
       const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
       const separator = dojoFilterParam ? '&' : '';
-      const response = await fetch(`${config.apiBaseUrl}/finanzcockpit/tarif-breakdown?${dojoFilterParam}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/tarif-breakdown?${dojoFilterParam}`);
 
       if (response.ok) {
         const result = await response.json();

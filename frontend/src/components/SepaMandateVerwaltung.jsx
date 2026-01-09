@@ -17,6 +17,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/SepaMandateVerwaltung.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const SepaMandateVerwaltung = () => {
   const navigate = useNavigate();
@@ -53,7 +55,7 @@ const SepaMandateVerwaltung = () => {
   const loadMandate = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/sepa-mandate`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/sepa-mandate`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der SEPA-Mandate');
@@ -118,7 +120,7 @@ const SepaMandateVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/sepa-mandate/${mandat_id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/sepa-mandate/${mandat_id}`, {
         method: 'DELETE'
       });
 
@@ -137,7 +139,7 @@ const SepaMandateVerwaltung = () => {
   const loadMitgliederListe = async () => {
     try {
       setLoadingMitglieder(true);
-      const response = await fetch(`${config.apiBaseUrl}/mitglieder`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Mitgliederliste');
@@ -182,7 +184,7 @@ const SepaMandateVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${config.apiBaseUrl}/mitglieder/${neuesMandatData.mitglied_id}/sepa-mandate`,
         {
           method: 'POST',

@@ -10,6 +10,8 @@ import config from '../config/config.js';
   Checkbox,
   Toggle
 } from "../components/DesignSystem";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const billingOptions = [
   { value: "MONTHLY", label: "Monatlich" },
@@ -30,7 +32,7 @@ const EinstellungenMitgliedschaften = () => {
   const [current, setCurrent] = useState(null); // dto für neuen/zu bearbeitenden Tarif
 
   useEffect(() => {
-    fetch(`${config.apiBaseUrl}/tarife`)
+    fetchWithAuth(`${config.apiBaseUrl}/tarife`)
       .then(r => r.json())
       .then(setTarife);
   }, []);
@@ -56,7 +58,7 @@ const EinstellungenMitgliedschaften = () => {
   const save = () => {
     const method = current.id ? "PUT" : "POST";
     const url = current.id ? `/tarife/${current.id}` : "/tarife";
-    fetch(url, {
+    fetchWithAuth(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(current)
@@ -74,7 +76,7 @@ const EinstellungenMitgliedschaften = () => {
 
   const remove = (id) => {
     if (!window.confirm("Tarif wirklich löschen?")) return;
-    fetch(`/tarife/${id}`, { method: "DELETE" })
+    fetchWithAuth(`/tarife/${id}`, { method: "DELETE" })
       .then(() => setTarife(ts => ts.filter(t => t.id !== id)));
   };
 
@@ -104,7 +106,7 @@ const EinstellungenMitgliedschaften = () => {
                 <Toggle 
                   checked={t.active} 
                   onChange={checked => {
-                    fetch(`/tarife/${t.id}/active`, {
+                    fetchWithAuth(`/tarife/${t.id}/active`, {
                       method: "PATCH",
                       body: JSON.stringify({ active: checked })
                     }).then(() => setTarife(ts => 

@@ -20,6 +20,8 @@ import config from "../config/config";
 import "../styles/themes.css";       // Centralized theme system
 import "../styles/components.css";   // Universal component styles  
 import "../styles/Beitraege.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const Beitraege = () => {
   const navigate = useNavigate();
@@ -48,7 +50,7 @@ const Beitraege = () => {
       setReportLoading(true);
       const dojoFilterParam = getDojoFilterParam();
       const separator = dojoFilterParam ? '&' : '?';
-      const response = await fetch(`${config.apiBaseUrl}/monatsreport${dojoFilterParam ? `?${dojoFilterParam}` : ''}${separator}${dojoFilterParam ? '' : '?'}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/monatsreport${dojoFilterParam ? `?${dojoFilterParam}` : ''}${separator}${dojoFilterParam ? '' : '?'}`);
       const data = await response.json();
       if (data.success) {
         setMonatsreportData(data);
@@ -84,8 +86,8 @@ const Beitraege = () => {
         mitgliederResponse,
         vertraegeResponse
       ] = await Promise.all([
-        fetch(`${config.apiBaseUrl}/mitglieder${separator}${dojoFilterParam}`),
-        fetch(`${config.apiBaseUrl}/vertraege${separator}${dojoFilterParam}`)
+        fetchWithAuth(`${config.apiBaseUrl}/mitglieder${separator}${dojoFilterParam}`),
+        fetchWithAuth(`${config.apiBaseUrl}/vertraege${separator}${dojoFilterParam}`)
       ]);
 
       if (!mitgliederResponse.ok || !vertraegeResponse.ok) {

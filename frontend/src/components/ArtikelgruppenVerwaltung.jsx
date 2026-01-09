@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import '../styles/components.css';
 import '../styles/ArtikelgruppenVerwaltung.css';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const ArtikelgruppenVerwaltung = () => {
   const [gruppen, setGruppen] = useState([]);
@@ -34,7 +36,7 @@ const ArtikelgruppenVerwaltung = () => {
   const loadGruppen = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/artikelgruppen`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/artikelgruppen`);
       const data = await response.json();
 
       if (data.success) {
@@ -140,7 +142,7 @@ const ArtikelgruppenVerwaltung = () => {
       
       const method = editingGroup ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method,
         headers: {
           'Content-Type': 'application/json'
@@ -171,7 +173,7 @@ const ArtikelgruppenVerwaltung = () => {
     }
     
     try {
-      const response = await fetch(`/artikelgruppen/${group.id}`, {
+      const response = await fetchWithAuth(`/artikelgruppen/${group.id}`, {
         method: 'DELETE'
       });
       

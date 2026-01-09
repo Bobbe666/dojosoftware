@@ -17,6 +17,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/MahnstufenEinstellungen.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const MahnstufenEinstellungen = () => {
   const navigate = useNavigate();
@@ -60,7 +62,7 @@ const MahnstufenEinstellungen = () => {
   const loadMahnstufenEinstellungen = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/mahnwesen/mahnstufen-einstellungen`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mahnwesen/mahnstufen-einstellungen`);
 
       if (response.ok) {
         const data = await response.json();
@@ -84,7 +86,7 @@ const MahnstufenEinstellungen = () => {
     try {
       setSaving(true);
 
-      const response = await fetch(`${config.apiBaseUrl}/mahnwesen/mahnstufen-einstellungen`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mahnwesen/mahnstufen-einstellungen`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mahnstufen })

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import '../styles/DojosVerwaltung.css';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const DojosVerwaltung = () => {
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ const DojosVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dojos`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos`);
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const data = await response.json();
       setDojos(data);
@@ -99,7 +100,7 @@ const DojosVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dojos/statistics/gesamt`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/statistics/gesamt`);
       if (!response.ok) throw new Error('Fehler beim Laden der Statistiken');
       const data = await response.json();
       setStatistics(data);
@@ -112,7 +113,9 @@ const DojosVerwaltung = () => {
     if (!window.confirm('Möchten Sie dieses Dojo wirklich deaktivieren?')) return;
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}`, { method: 'DELETE' });
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}`, {
+        method: 'DELETE'
+      });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error);

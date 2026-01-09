@@ -5,6 +5,8 @@ import '../styles/NotificationSystem.css';
 import config from '../config/config.js';
 import { useDojoContext } from '../context/DojoContext';
 import { createSafeHtml } from '../utils/sanitizer';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const NotificationSystem = () => {
   const { activeDojo, filter } = useDojoContext();
@@ -113,7 +115,7 @@ const NotificationSystem = () => {
 
   const loadDashboardData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/dashboard`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/dashboard`);
       const data = await response.json();
       if (data.success) {
         setDashboardData(data);
@@ -126,7 +128,7 @@ const NotificationSystem = () => {
   const loadSettings = async () => {
     try {
       // Versuche zuerst die neue E-Mail-Service API
-      const response = await fetch(`${config.apiBaseUrl}/email-service/settings`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-service/settings`);
       const data = await response.json();
       if (data.success && data.settings) {
         const emailConfig = data.settings.email_config
@@ -159,7 +161,7 @@ const NotificationSystem = () => {
 
     // Fallback: Alte API
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/settings`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/settings`);
       const data = await response.json();
       if (data.success) {
         const emailConfig = data.settings.email_config ? JSON.parse(data.settings.email_config) : {};
@@ -222,7 +224,7 @@ const NotificationSystem = () => {
 
       console.log('📧 Loading recipients with filter:', dojoIdParam || 'no filter');
 
-      const response = await fetch(url);
+      const response = await fetchWithAuth(url);
       const data = await response.json();
       if (data.success) {
         setRecipients({
@@ -246,7 +248,7 @@ const NotificationSystem = () => {
 
     try {
       // Fallback: Lade echte Daten direkt aus der Datenbank
-      const response = await fetch(`${config.apiBaseUrl}/notifications/recipients`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/recipients`);
       const data = await response.json();
       if (data.success) {
         setRecipients({
@@ -274,7 +276,7 @@ const NotificationSystem = () => {
       
       // Versuche Mitglieder zu laden
       try {
-        const membersResponse = await fetch(`${config.apiBaseUrl}/mitglieder`);
+        const membersResponse = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder`);
         const membersData = await membersResponse.json();
         console.log('📊 Raw members data:', Array.isArray(membersData) ? membersData.slice(0, 2) : membersData); // Zeige ersten 2 Einträge
 
@@ -303,7 +305,7 @@ const NotificationSystem = () => {
       }
       
       // Lade Trainer direkt
-      const trainersResponse = await fetch(`${config.apiBaseUrl}/trainer`);
+      const trainersResponse = await fetchWithAuth(`${config.apiBaseUrl}/trainer`);
       const trainersData = await trainersResponse.json();
 
       const trainerEmails = Array.isArray(trainersData)
@@ -315,7 +317,7 @@ const NotificationSystem = () => {
         : [];
 
       // Lade Personal direkt
-      const personalResponse = await fetch(`${config.apiBaseUrl}/personal`);
+      const personalResponse = await fetchWithAuth(`${config.apiBaseUrl}/personal`);
       const personalData = await personalResponse.json();
 
       const personalEmails = Array.isArray(personalData)
@@ -342,7 +344,7 @@ const NotificationSystem = () => {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/templates`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/templates`);
       const data = await response.json();
       if (data.success) {
         setTemplates(data.templates);
@@ -354,7 +356,7 @@ const NotificationSystem = () => {
 
   const loadHistory = async (page = 1) => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/history?page=${page}&limit=20`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/history?page=${page}&limit=20`);
       const data = await response.json();
       if (data.success) {
         setHistory(data);
@@ -366,7 +368,7 @@ const NotificationSystem = () => {
 
   const loadPushSubscriptions = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/push/subscriptions`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/push/subscriptions`);
       const data = await response.json();
       if (data.success) {
         setPushSubscriptions(data.subscriptions);
@@ -378,7 +380,7 @@ const NotificationSystem = () => {
 
   const loadTimelineData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dashboard/notification-timeline?days=7`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dashboard/notification-timeline?days=7`);
       const data = await response.json();
       if (data.success && data.timeline) {
         setTimelineData(data.timeline);
@@ -401,7 +403,7 @@ const NotificationSystem = () => {
 
     try {
       // Verwende die neue E-Mail-Service API
-      const response = await fetch(`${config.apiBaseUrl}/email-service/settings`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-service/settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -440,7 +442,7 @@ const NotificationSystem = () => {
     
     try {
       // Verwende die neue E-Mail-Service API
-      const response = await fetch(`${config.apiBaseUrl}/email-service/test`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-service/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -480,7 +482,7 @@ const NotificationSystem = () => {
     setSuccess('');
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/email-service/verify`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-service/verify`);
       const data = await response.json();
       
       if (data.success) {
@@ -511,7 +513,7 @@ const NotificationSystem = () => {
     setSuccess('');
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/email/send`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/email/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -550,7 +552,7 @@ const NotificationSystem = () => {
     setSuccess('');
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/push/send`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/push/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -619,7 +621,7 @@ const NotificationSystem = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/history/${id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/history/${id}`, {
         method: 'DELETE',
       });
 
@@ -642,7 +644,7 @@ const NotificationSystem = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/notifications/history/bulk/${id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/history/bulk/${id}`, {
         method: 'DELETE',
       });
 
@@ -1894,7 +1896,7 @@ const NotificationSystem = () => {
     try {
       const encodedSubject = encodeURIComponent(subject);
       const encodedTimestamp = encodeURIComponent(timestamp);
-      const response = await fetch(`/dashboard/notification-recipients/${encodedSubject}/${encodedTimestamp}`);
+      const response = await fetchWithAuth(`/dashboard/notification-recipients/${encodedSubject}/${encodedTimestamp}`);
       const data = await response.json();
 
       if (data.success) {

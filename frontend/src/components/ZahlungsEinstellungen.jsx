@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import config from '../config/config.js';
 import '../styles/themes.css';
 import '../styles/components.css';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const ZahlungsEinstellungen = () => {
   const [paymentProvider, setPaymentProvider] = useState('manual_sepa');
@@ -29,7 +31,7 @@ const ZahlungsEinstellungen = () => {
   const loadCurrentSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/payment-provider/status`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/payment-provider/status`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Einstellungen');
@@ -79,7 +81,7 @@ const ZahlungsEinstellungen = () => {
         ...datevConfig
       };
 
-      const response = await fetch(`${config.apiBaseUrl}/payment-provider/configure`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/payment-provider/configure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

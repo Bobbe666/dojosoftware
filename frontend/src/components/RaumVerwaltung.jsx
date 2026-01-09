@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, Save, X, MapPin, Users, Square, Palette, MoveUp, MoveDown } from 'lucide-react';
 import config from '../config/config.js';
 import '../styles/RaumVerwaltung.css';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const RaumVerwaltung = () => {
   const [raeume, setRaeume] = useState([]);
@@ -22,7 +24,7 @@ const RaumVerwaltung = () => {
   const loadRaeume = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/raeume`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/raeume`);
       const result = await response.json();
 
       if (result.success) {
@@ -49,7 +51,7 @@ const RaumVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/raeume`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/raeume`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +89,7 @@ const RaumVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/raeume/${raum.raum_id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/raeume/${raum.raum_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +125,7 @@ const RaumVerwaltung = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/raeume/${raumId}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/raeume/${raumId}`, {
         method: 'DELETE'
       });
 

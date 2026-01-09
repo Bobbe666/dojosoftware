@@ -3,6 +3,8 @@ import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/PublicRegistration.css";
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const PublicRegistration = ({ onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -70,7 +72,7 @@ const PublicRegistration = ({ onClose }) => {
 
   const fetchPublicTarife = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/public/tarife`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/public/tarife`);
       const data = await response.json();
       if (data.success) {
         setAvailableTarife(data.data);
@@ -227,7 +229,7 @@ const PublicRegistration = ({ onClose }) => {
           break;
       }
 
-      const response = await fetch(endpoint, {
+      const response = await fetchWithAuth(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

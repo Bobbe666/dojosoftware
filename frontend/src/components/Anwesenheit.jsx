@@ -5,6 +5,8 @@ import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Anwesenheit.css";
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const Anwesenheit = () => {
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
@@ -36,7 +38,7 @@ const Anwesenheit = () => {
   // Hilfsfunktion für sichere API-Aufrufe mit Fehlerbehandlung
   const fetchKursMitglieder = async (url) => {
     try {
-      const response = await fetch(url);
+      const response = await fetchWithAuth(url);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -325,7 +327,7 @@ const Anwesenheit = () => {
       };
 
       // Direkt in anwesenheit Tabelle speichern (nicht nur Protokoll)
-      const response = await fetch(`${config.apiBaseUrl}/anwesenheit`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/anwesenheit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -346,7 +348,7 @@ const Anwesenheit = () => {
               checkin_type: 'manual' // Kennzeichnen als manueller Check-in
             };
             
-            const checkinResponse = await fetch(`${config.apiBaseUrl}/checkin`, {
+            const checkinResponse = await fetchWithAuth(`${config.apiBaseUrl}/checkin`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

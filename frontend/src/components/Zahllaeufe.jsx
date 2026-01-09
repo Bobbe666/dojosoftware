@@ -19,6 +19,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Zahllaeufe.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const Zahllaeufe = ({ embedded = false }) => {
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ const Zahllaeufe = ({ embedded = false }) => {
   const loadZahllaeufe = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${config.apiBaseUrl}/zahllaeufe`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/zahllaeufe`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Zahlläufe');

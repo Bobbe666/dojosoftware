@@ -14,6 +14,8 @@ import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Auswertungen.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const MitgliederFilter = () => {
   const { filterType } = useParams();
@@ -51,7 +53,7 @@ const MitgliederFilter = () => {
           endpoint = `/mitglieder?${dojoFilterParam}`;
       }
 
-      const response = await fetch(`${config.apiBaseUrl}${endpoint}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}${endpoint}`);
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der Mitglieder');

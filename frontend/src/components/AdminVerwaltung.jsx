@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Edit3, Trash2, Lock, Shield, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import '../styles/AdminVerwaltung.css';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const AdminVerwaltung = () => {
   const [activeTab, setActiveTab] = useState('admin');
@@ -93,7 +95,7 @@ const AdminVerwaltung = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/auth/users`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/auth/users`);
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setUsers(data);
@@ -125,7 +127,7 @@ const AdminVerwaltung = () => {
   const savePermissions = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/permissions`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/permissions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ permissions: rollenBerechtigungen })
@@ -172,7 +174,7 @@ const AdminVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/auth/users/${selectedUser.id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/auth/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -219,7 +221,7 @@ const AdminVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/auth/users/${selectedUser.id}/password`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/auth/users/${selectedUser.id}/password`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: passwordForm.newPassword })
@@ -256,7 +258,7 @@ const AdminVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${config.apiBaseUrl}/auth/users/${user.id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/auth/users/${user.id}`, {
         method: 'DELETE'
       });
 

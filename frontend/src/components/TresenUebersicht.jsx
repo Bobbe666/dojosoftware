@@ -4,6 +4,8 @@ import config from '../config/config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import { fetchDashboardStats } from '../utils/apiCache.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const aggregateAnwesendeByMitglied = (eintraege = []) => {
   const map = new Map();
@@ -133,7 +135,7 @@ const TresenUebersicht = () => {
       
       console.log(`📢 Lade Tresen-Daten für ${datum}...`);
       
-      const response = await fetch(`${config.apiBaseUrl}/checkin/tresen/${datum}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/checkin/tresen/${datum}`);
       
       if (!response.ok) {
         const text = await response.text();
@@ -221,7 +223,7 @@ const TresenUebersicht = () => {
     try {
       setLoading(true);
       
-      const response = await fetch(`${config.apiBaseUrl}/checkin/tresen/batch-checkin`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/checkin/tresen/batch-checkin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

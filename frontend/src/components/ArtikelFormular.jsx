@@ -7,6 +7,8 @@ import '../styles/components.css';
 import '../styles/ArtikelVerwaltung.css';
 import '../styles/ArtikelVerwaltungOverrides.css';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const ArtikelFormular = ({ mode }) => {
   const navigate = useNavigate();
@@ -50,7 +52,7 @@ const ArtikelFormular = ({ mode }) => {
   // API Call Helper
   const apiCall = async (endpoint, options = {}) => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/artikel${endpoint}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/artikel${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
@@ -82,7 +84,7 @@ const ArtikelFormular = ({ mode }) => {
   // Load Artikelgruppen
   const loadArtikelgruppen = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/artikelgruppen`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/artikelgruppen`);
       const data = await response.json();
       if (data.success) {
         setArtikelgruppen(data.data || []);

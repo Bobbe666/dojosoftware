@@ -9,6 +9,8 @@ import { useDojoContext } from '../context/DojoContext';
 import config from '../config/config.js';
 import '../styles/MitgliedDetail.css';
 import '../styles/DojoEdit.css';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const DojoEdit = () => {
   const { id } = useParams();
@@ -265,7 +267,7 @@ const DojoEdit = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}`);
       if (!response.ok) throw new Error('Fehler beim Laden des Dojos');
       const dojo = await response.json();
 
@@ -413,7 +415,7 @@ const DojoEdit = () => {
     if (isNewDojo) return;
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}/api-token`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}/api-token`);
       const data = await response.json();
 
       if (data.success && data.token) {
@@ -441,7 +443,7 @@ const DojoEdit = () => {
     setTokenLoading(true);
 
     try {
-      const response = await fetch(`${config.apiBaseUrl}/dojos/${id}/generate-api-token`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}/generate-api-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -510,7 +512,7 @@ const DojoEdit = () => {
         finanzamt: formData.finanzamt ? JSON.stringify(formData.finanzamt) : null
       };
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSend)

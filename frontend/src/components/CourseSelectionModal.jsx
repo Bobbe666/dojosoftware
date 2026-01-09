@@ -3,6 +3,8 @@ import {
   Search, Clock, CheckCircle, User, X, Camera, QrCode, 
   Users, Calendar, ArrowRight, Plus, Check
 } from 'lucide-react';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const CourseSelectionCheckin = () => {
   // State Management
@@ -33,7 +35,7 @@ const CourseSelectionCheckin = () => {
 
   const loadMitglieder = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/mitglieder`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder`);
       if (response.ok) {
         const data = await response.json();
         setMitglieder(data.map(m => ({
@@ -57,7 +59,7 @@ const CourseSelectionCheckin = () => {
   const loadKurseHeute = async () => {
     try {
       const heute = new Date().toISOString().split('T')[0];
-      const response = await fetch(`${config.apiBaseUrl}/kurse/heute?datum=${heute}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/kurse/heute?datum=${heute}`);
       if (response.ok) {
         const data = await response.json();
         setKurseHeute(data.map(k => ({

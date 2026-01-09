@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import config from '../config/config.js';
 import "../styles/TarifePreise.css";
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+
 
 const TarifePreise = () => {
   const [tarife, setTarife] = useState([]);
@@ -60,10 +62,10 @@ const TarifePreise = () => {
       
       // Alle benötigten APIs laden
       const [tarifeResponse, rabatteResponse, zahlungszyklenResponse, laufzeitenResponse] = await Promise.all([
-        fetch(`${config.apiBaseUrl}/tarife`),
-        fetch(`${config.apiBaseUrl}/tarife/rabatte`),
-        fetch(`${config.apiBaseUrl}/zahlungszyklen`).catch(() => ({ ok: false })),
-        fetch(`${config.apiBaseUrl}/laufzeiten`).catch(() => ({ ok: false }))
+        fetchWithAuth(`${config.apiBaseUrl}/tarife`),
+        fetchWithAuth(`${config.apiBaseUrl}/tarife/rabatte`),
+        fetchWithAuth(`${config.apiBaseUrl}/zahlungszyklen`).catch(() => ({ ok: false })),
+        fetchWithAuth(`${config.apiBaseUrl}/laufzeiten`).catch(() => ({ ok: false }))
       ]);
       
       const tarifeData = await tarifeResponse.json();
@@ -131,7 +133,7 @@ const TarifePreise = () => {
   const handleDeleteTarif = async (tarifId) => {
     if (window.confirm('Sind Sie sicher, dass Sie diesen Tarif löschen möchten?')) {
       try {
-        const response = await fetch(`${config.apiBaseUrl}/tarife/${tarifId}`, {
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/tarife/${tarifId}`, {
           method: 'DELETE'
         });
         
@@ -151,7 +153,7 @@ const TarifePreise = () => {
   const handleDeleteRabatt = async (rabattId) => {
     if (window.confirm('Sind Sie sicher, dass Sie diesen Rabatt löschen möchten?')) {
       try {
-        const response = await fetch(`${config.apiBaseUrl}/tarife/rabatte/${rabattId}`, {
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/tarife/rabatte/${rabattId}`, {
           method: 'DELETE'
         });
         
@@ -172,7 +174,7 @@ const TarifePreise = () => {
     try {
       if (tarif && tarif.id) {
         // Update existing
-        const response = await fetch(`${config.apiBaseUrl}/tarife/${tarif.id}`, {
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/tarife/${tarif.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -196,7 +198,7 @@ const TarifePreise = () => {
         }
       } else {
         // Create new
-        const response = await fetch(`${config.apiBaseUrl}/tarife`, {
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/tarife`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -248,7 +250,7 @@ const TarifePreise = () => {
     try {
       if (rabatt && rabatt.id) {
         // Update existing
-        const response = await fetch(`${config.apiBaseUrl}/tarife/rabatte/${rabatt.id}`, {
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/tarife/rabatte/${rabatt.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -273,7 +275,7 @@ const TarifePreise = () => {
         }
       } else {
         // Create new
-        const response = await fetch(`${config.apiBaseUrl}/tarife/rabatte`, {
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/tarife/rabatte`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
