@@ -2,6 +2,7 @@
 // Zentraler E-Mail Service für die Anwendung
 
 const nodemailer = require('nodemailer');
+const validator = require('validator');
 const db = require('../db');
 const logger = require('../utils/logger');
 
@@ -100,6 +101,17 @@ const createEmailTransporter = async () => {
  */
 const sendEmail = async (options) => {
   try {
+    // ✅ SECURITY: Email-Validierung (verhindert Email Header Injection)
+    if (!options.to || !validator.isEmail(options.to)) {
+      throw new Error('Ungültige E-Mail-Adresse');
+    }
+
+    // ✅ SECURITY: Subject-Sanitization (verhindert Email Header Injection)
+    if (!options.subject) {
+      throw new Error('E-Mail-Betreff erforderlich');
+    }
+    const safeSubject = options.subject.replace(/[\r\n]/g, '');
+
     const transporter = await createEmailTransporter();
 
     if (!transporter) {
@@ -111,7 +123,7 @@ const sendEmail = async (options) => {
     const mailOptions = {
       from: `"${settings.default_from_name}" <${settings.default_from_email}>`,
       to: options.to,
-      subject: options.subject,
+      subject: safeSubject,
       text: options.text,
       html: options.html,
       attachments: options.attachments || []

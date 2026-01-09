@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import TemplateEditor from './TemplateEditor';
+import { createSafeHtml } from '../utils/sanitizer';
 import '../styles/Dashboard.css';
 
 /**
@@ -1614,7 +1615,7 @@ const DokumenteVerwaltung = () => {
                     maxWidth: '800px',
                     margin: '0 auto'
                   }}
-                  dangerouslySetInnerHTML={{ __html: viewingDokument.inhalt }}
+                  dangerouslySetInnerHTML={createSafeHtml(viewingDokument.inhalt)}
                 />
               </div>
 

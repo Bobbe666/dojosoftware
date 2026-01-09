@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -54,12 +56,17 @@ router.post('/register/step1', async (req, res) => {
     const verificationToken = generateToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 Stunden
 
+    // SECURITY: Passwort hashen (12 Rounds für Sicherheit)
+    const passwordHash = await bcrypt.hash(password, 12);
+
     // In Registrierungs-Tabelle einfügen
     await queryAsync(`
       INSERT INTO registrierungen (
         email, password_hash, verification_token, token_expires_at, status, created_at
       ) VALUES (?, ?, ?, ?, 'email_pending', NOW())
-    `, [email, password, verificationToken, expiresAt]);
+    `, [email, passwordHash, verificationToken, expiresAt]);
+
+    logger.info('Neue Registrierung gestartet', { email });
 
     // TODO: Email mit Verifizierungslink senden
     res.json({

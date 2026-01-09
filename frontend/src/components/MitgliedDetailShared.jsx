@@ -10,6 +10,7 @@ import ZehnerkartenVerwaltung from './ZehnerkartenVerwaltung';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🏢 TAX COMPLIANCE
 import { useAuth } from '../context/AuthContext.jsx'; // For member ID
 import ReferralCodeVerwaltung from './ReferralCodeVerwaltung';
+import { createSafeHtml } from '../utils/sanitizer';
 import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
 import "../styles/MitgliedDetail.css";
@@ -7368,7 +7369,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               maxHeight: '150px',
                               overflowY: 'auto'
                             }}
-                            dangerouslySetInnerHTML={{ __html: notification.message }}
+                            dangerouslySetInnerHTML={createSafeHtml(notification.message)}
                           />
                         </div>
                       )}

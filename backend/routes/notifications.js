@@ -1,6 +1,7 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // ===================================================================
@@ -68,7 +69,7 @@ const getNotificationSettings = async () => {
 // BENACHRICHTIGUNGEN DASHBOARD
 // ===================================================================
 
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
     const settings = await getNotificationSettings();
     
@@ -117,7 +118,7 @@ router.get('/dashboard', async (req, res) => {
 // EINSTELLUNGEN VERWALTUNG
 // ===================================================================
 
-router.get('/settings', async (req, res) => {
+router.get('/settings', authenticateToken, async (req, res) => {
   try {
     const settings = await getNotificationSettings();
     res.json({ success: true, settings });
@@ -127,7 +128,7 @@ router.get('/settings', async (req, res) => {
   }
 });
 
-router.put('/settings', async (req, res) => {
+router.put('/settings', authenticateToken, async (req, res) => {
   try {
     const {
       email_enabled,
@@ -189,7 +190,7 @@ router.put('/settings', async (req, res) => {
 // EMAIL FUNKTIONEN
 // ===================================================================
 
-router.post('/email/test', async (req, res) => {
+router.post('/email/test', authenticateToken, async (req, res) => {
   try {
     const { test_email, test_subject, test_message } = req.body;
     
@@ -235,7 +236,7 @@ router.post('/email/test', async (req, res) => {
   }
 });
 
-router.post('/email/send', async (req, res) => {
+router.post('/email/send', authenticateToken, async (req, res) => {
   try {
     const { recipients, subject, message, template_type } = req.body;
     
@@ -304,7 +305,7 @@ router.post('/email/send', async (req, res) => {
 // ===================================================================
 
 // Web Push Service Worker Registration
-router.post('/push/subscribe', async (req, res) => {
+router.post('/push/subscribe', authenticateToken, async (req, res) => {
   try {
     const { subscription, user_id } = req.body;
     
@@ -343,7 +344,7 @@ router.post('/push/subscribe', async (req, res) => {
 });
 
 // Push-Notification senden
-router.post('/push/send', async (req, res) => {
+router.post('/push/send', authenticateToken, async (req, res) => {
   try {
     const { recipients, title, message, data, icon, badge, url } = req.body;
 
@@ -421,7 +422,7 @@ router.post('/push/send', async (req, res) => {
 });
 
 // Push-Subscriptions verwalten
-router.get('/push/subscriptions', async (req, res) => {
+router.get('/push/subscriptions', authenticateToken, async (req, res) => {
   try {
     const subscriptions = await new Promise((resolve, reject) => {
       db.query(`
@@ -444,7 +445,7 @@ router.get('/push/subscriptions', async (req, res) => {
 });
 
 // Push-Subscription deaktivieren
-router.delete('/push/subscribe/:id', async (req, res) => {
+router.delete('/push/subscribe/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -470,7 +471,7 @@ router.delete('/push/subscribe/:id', async (req, res) => {
 // BENACHRICHTIGUNGS-VERLAUF
 // ===================================================================
 
-router.get('/history', async (req, res) => {
+router.get('/history', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 20, type, status, recipient } = req.query;
     const offset = (page - 1) * limit;
@@ -531,7 +532,7 @@ router.get('/history', async (req, res) => {
 });
 
 // Einzelne Benachrichtigung löschen
-router.delete('/history/:id', async (req, res) => {
+router.delete('/history/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -550,7 +551,7 @@ router.delete('/history/:id', async (req, res) => {
 });
 
 // Alle Benachrichtigungen mit gleichem Subject und Timestamp löschen (für alle Empfänger)
-router.delete('/history/bulk/:id', async (req, res) => {
+router.delete('/history/bulk/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -593,7 +594,7 @@ router.delete('/history/bulk/:id', async (req, res) => {
 // EMPFÄNGER GRUPPEN
 // ===================================================================
 
-router.get('/recipients', async (req, res) => {
+router.get('/recipients', authenticateToken, async (req, res) => {
   try {
     const { dojo_id } = req.query;
 
@@ -759,7 +760,7 @@ router.get('/recipients', async (req, res) => {
 // EMAIL TEMPLATES
 // ===================================================================
 
-router.get('/templates', async (req, res) => {
+router.get('/templates', authenticateToken, async (req, res) => {
   try {
     const templates = await new Promise((resolve, reject) => {
       db.query('SELECT * FROM email_templates ORDER BY name', (err, results) => {
@@ -775,7 +776,7 @@ router.get('/templates', async (req, res) => {
   }
 });
 
-router.post('/templates', async (req, res) => {
+router.post('/templates', authenticateToken, async (req, res) => {
   try {
     const { name, subject, content, variables } = req.body;
     
@@ -801,7 +802,7 @@ router.post('/templates', async (req, res) => {
 // ===================================================================
 
 // Hole Benachrichtigungen für ein bestimmtes Mitglied (via Email)
-router.get('/member/:email', async (req, res) => {
+router.get('/member/:email', authenticateToken, async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -835,7 +836,7 @@ router.get('/member/:email', async (req, res) => {
 });
 
 // Hole bestätigte Dokument-Benachrichtigungen für ein Mitglied (via ID)
-router.get('/member/:id/confirmed', async (req, res) => {
+router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -883,7 +884,7 @@ router.get('/member/:id/confirmed', async (req, res) => {
 });
 
 // Benachrichtigung als gelesen markieren
-router.put('/member/:id/read', async (req, res) => {
+router.put('/member/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -910,7 +911,7 @@ router.put('/member/:id/read', async (req, res) => {
 // ===================================================================
 
 // Hole ungelesene Admin-Benachrichtigungen
-router.get('/admin/unread', async (req, res) => {
+router.get('/admin/unread', authenticateToken, async (req, res) => {
   try {
     const notifications = await new Promise((resolve, reject) => {
       db.query(`
@@ -938,7 +939,7 @@ router.get('/admin/unread', async (req, res) => {
 });
 
 // Markiere Admin-Benachrichtigung als gelesen
-router.put('/admin/:id/read', async (req, res) => {
+router.put('/admin/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -961,7 +962,7 @@ router.put('/admin/:id/read', async (req, res) => {
 });
 
 // TEST-ENDPUNKT: Erstelle Test-Benachrichtigung für neue Registrierung
-router.post('/admin/test-registration', async (req, res) => {
+router.post('/admin/test-registration', authenticateToken, async (req, res) => {
   try {
     const testMessage = `
       <strong>Neues Mitglied registriert!</strong><br><br>
@@ -1009,7 +1010,7 @@ router.post('/admin/test-registration', async (req, res) => {
 });
 
 // MIGRATION-ENDPUNKT: Fixe notifications Tabelle
-router.post('/admin/migrate', async (req, res) => {
+router.post('/admin/migrate', authenticateToken, async (req, res) => {
   try {
     console.log('🔧 Starting notifications table migration...');
 
@@ -1062,7 +1063,7 @@ router.post('/admin/migrate', async (req, res) => {
 });
 
 // DEBUG-ENDPUNKT: Prüfe Tabelle notifications
-router.get('/admin/debug', async (req, res) => {
+router.get('/admin/debug', authenticateToken, async (req, res) => {
   try {
     // Prüfe ob Tabelle existiert
     const tableExists = await new Promise((resolve, reject) => {

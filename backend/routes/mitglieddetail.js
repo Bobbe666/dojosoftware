@@ -5,6 +5,9 @@ const path = require("path");
 const fs = require("fs");
 const router = express.Router();
 const { generateMitgliedDetailPDF } = require("../services/mitgliedDetailPdfGenerator");
+const { authenticateToken } = require("../middleware/auth");
+const logger = require("../utils/logger");
+const { validateUploadedImage } = require("../utils/fileUploadSecurity");
 
 // Multer-Konfiguration für Foto-Uploads
 const storage = multer.diskStorage({
@@ -48,10 +51,11 @@ const upload = multer({
 });
 
 // API: Einzelnes Mitglied abrufen
-router.get("/:id", (req, res) => {
+router.get("/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
+  const dojoId = req.dojo_id;
 
-  // Datenbank verwenden - hole Mitgliedsdaten UND aktuelle Graduierung
+  // SECURITY: Multi-Tenancy Check - nur Mitglieder des eigenen Dojos
   const query = `
     SELECT
       m.*,
@@ -69,16 +73,25 @@ router.get("/:id", (req, res) => {
     LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
     LEFT JOIN stile s ON msd.stil_id = s.stil_id
     LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
-    WHERE m.mitglied_id = ?
+    WHERE m.mitglied_id = ? AND m.dojo_id = ?
     GROUP BY m.mitglied_id
   `;
 
-  db.query(query, [id], (err, results) => {
+  db.query(query, [id, dojoId], (err, results) => {
     if (err) {
-      console.error(`Fehler beim Abrufen des Mitglieds ${id}:`, err);
+      logger.error('Fehler beim Abrufen des Mitglieds', {
+        error: err.message,
+        mitgliedId: id,
+        dojoId,
+      });
       return res.status(500).json({ error: "Fehler beim Laden des Mitglieds" });
     }
     if (results.length === 0) {
+      logger.warn('Mitglied nicht gefunden oder Zugriff verweigert', {
+        mitgliedId: id,
+        dojoId,
+        userId: req.user?.id,
+      });
       return res.status(404).json({ message: "Mitglied nicht gefunden." });
     }
 
@@ -87,8 +100,10 @@ router.get("/:id", (req, res) => {
 });
 
 // API: Mitglied aktualisieren
-router.put("/:id", (req, res) => {
+router.put("/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
+  const dojoId = req.dojo_id;
+
   // Kopiere die Daten, damit wir sie manipulieren können
   let data = { ...req.body };
 
@@ -97,12 +112,10 @@ router.put("/:id", (req, res) => {
     delete data.id;
   }
 
-  console.log("Empfangene Felder:", Object.keys(data));
-  console.log("Vertreter-Daten:", {
-    vertreter1_typ: data.vertreter1_typ,
-    vertreter2_typ: data.vertreter2_typ,
-    vertreter1_name: data.vertreter1_name,
-    vertreter2_name: data.vertreter2_name
+  logger.debug("Mitglied-Update", {
+    mitgliedId: id,
+    dojoId,
+    fields: Object.keys(data),
   });
 
   // Entferne undefined/null Werte die Probleme verursachen könnten
@@ -141,23 +154,29 @@ router.put("/:id", (req, res) => {
     }
   });
 
-  console.log("Gefilterte Felder für Update:", Object.keys(filteredData));
-
-  // Datenbank verwenden
-  const updateQuery = "UPDATE mitglieder SET ? WHERE mitglied_id = ?";
-  db.query(updateQuery, [filteredData, id], (err, result) => {
+  // SECURITY: Multi-Tenancy Check im UPDATE
+  const updateQuery = "UPDATE mitglieder SET ? WHERE mitglied_id = ? AND dojo_id = ?";
+  db.query(updateQuery, [filteredData, id, dojoId], (err, result) => {
     if (err) {
-      console.error(`Fehler beim Aktualisieren des Mitglieds ${id}:`, err);
-      console.error(`Fehler-Details:`, err.message);
-      console.error(`SQL State:`, err.sqlState);
-      console.error(`SQL Message:`, err.sqlMessage);
-      console.error(`Gesendete Daten:`, JSON.stringify(data, null, 2));
-      return res.status(500).json({ 
-        error: "Fehler beim Aktualisieren des Mitglieds",
-        details: err.message,
-        sqlState: err.sqlState,
-        sqlMessage: err.sqlMessage
+      logger.error('Fehler beim Aktualisieren des Mitglieds', {
+        error: err.message,
+        mitgliedId: id,
+        dojoId,
       });
+      return res.status(500).json({
+        error: "Fehler beim Aktualisieren des Mitglieds",
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+
+    // Prüfe ob Datensatz überhaupt betroffen war (Tenant Check)
+    if (result.affectedRows === 0) {
+      logger.warn('Mitglied nicht gefunden oder Zugriff verweigert (UPDATE)', {
+        mitgliedId: id,
+        dojoId,
+        userId: req.user?.id,
+      });
+      return res.status(404).json({ error: "Mitglied nicht gefunden oder Zugriff verweigert" });
     }
 
     // Nach dem Update: Den aktualisierten Datensatz abfragen und zurücksenden
@@ -177,13 +196,17 @@ router.put("/:id", (req, res) => {
       LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
       LEFT JOIN stile s ON msd.stil_id = s.stil_id
       LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
-      WHERE m.mitglied_id = ?
+      WHERE m.mitglied_id = ? AND m.dojo_id = ?
       GROUP BY m.mitglied_id
     `;
 
-    db.query(selectQuery, [id], (err, results) => {
+    db.query(selectQuery, [id, dojoId], (err, results) => {
       if (err) {
-        console.error(`Fehler beim Abrufen des aktualisierten Mitglieds ${id}:`, err);
+        logger.error('Fehler beim Abrufen des aktualisierten Mitglieds', {
+          error: err.message,
+          mitgliedId: id,
+          dojoId,
+        });
         return res.status(500).json({ error: "Fehler beim Abrufen des aktualisierten Mitglieds" });
       }
       if (results.length === 0) {

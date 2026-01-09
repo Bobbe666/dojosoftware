@@ -1,19 +1,53 @@
 
 const express = require("express");
-const db = require("./db");  
+const db = require("./db");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 require("dotenv").config();
 
 // JWT für Authentication
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'DojoSoftware2024SecretKeyChangeThis!';
+const { JWT_SECRET } = require('./middleware/auth');
 
 // Strukturierter Logger
 const logger = require("./utils/logger");
 
 const app = express();
+
+// Security Headers mit Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Für Uploads
+}));
+
+// Rate Limiting - Schutz vor Brute Force
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 100, // Max 100 Requests pro IP
+  message: 'Zu viele Anfragen von dieser IP, bitte später erneut versuchen.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Striktes Rate Limiting für Login/Auth
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 5, // Max 5 Login-Versuche
+  message: 'Zu viele Login-Versuche, bitte später erneut versuchen.',
+  skipSuccessfulRequests: true,
+});
 
 // Statische Dateien für Uploads servieren - MUSS VOR Content-Type Middleware kommen!
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -21,18 +55,49 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // UTF-8 Encoding für alle Responses - ERWEITERT
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
   next();
 });
 
-// CORS mit expliziter UTF-8 Unterstützung
+// CORS mit Sicherheitskonfiguration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:5001'];
+
 app.use(cors({
-  exposedHeaders: ['Content-Type', 'Content-Length', 'X-Content-Type-Options']
+  origin: (origin, callback) => {
+    // Erlaube Requests ohne Origin (z.B. mobile apps, Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS nicht erlaubt für Origin: ' + origin));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Content-Length'],
 }));
 
 // Body-Parser mit expliziter UTF-8 Konfiguration und 10MB Limit für PDF-HTML
 app.use(express.json({ charset: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '10mb' }));
+
+// API Documentation mit Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'DojoSoftware API Documentation',
+}));
+
+// OpenAPI Spec als JSON
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
+logger.info('Swagger UI available at /api-docs');
 
 // =============================================
 // JWT AUTHENTICATION MIDDLEWARE
@@ -161,11 +226,11 @@ try {
     });
 }
 
-// AUTH ROUTES (Login, Token, Passwortänderung/Reset)
+// AUTH ROUTES (Login, Token, Passwortänderung/Reset) - mit strenger Rate Limiting
 try {
   const authRoutes = require('./routes/auth');
-  app.use('/api/auth', authRoutes);
-  logger.success('Route gemountet', { path: '/api/auth' });
+  app.use('/api/auth', authLimiter, authRoutes);
+  logger.success('Route gemountet', { path: '/api/auth (mit Rate Limiting)' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'auth routes',
@@ -1205,7 +1270,7 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
+// Global error handler - ✅ SECURITY: Production-safe error responses
 app.use((error, req, res, next) => {
   logger.error('Server Error', {
     error: error.message,
@@ -1213,11 +1278,30 @@ app.use((error, req, res, next) => {
     method: req.method,
     url: req.url
   });
-  res.status(500).json({
-    error: 'Interner Server-Fehler',
-    message: error.message,
-    timestamp: new Date().toISOString()
-  });
+
+  const statusCode = error.statusCode || error.status || 500;
+
+  // ✅ SECURITY: In Production keine Stack Traces oder interne Details exposen
+  if (process.env.NODE_ENV === 'production') {
+    res.status(statusCode).json({
+      error: 'Interner Serverfehler',
+      message: statusCode === 500 ? 'Ein Fehler ist aufgetreten' : error.message,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    // In Development: Vollständige Fehlerdetails für Debugging
+    res.status(statusCode).json({
+      error: 'Interner Server-Fehler',
+      message: error.message,
+      stack: error.stack,
+      details: {
+        method: req.method,
+        url: req.url,
+        statusCode
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // =============================================

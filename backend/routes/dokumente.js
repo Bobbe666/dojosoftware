@@ -7,18 +7,19 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const { generateMitgliedschaftsvertragPDF } = require('../services/vertragPdfGenerator');
-
-// Authentifizierungs-Middleware (wird später hinzugefügt)
-// const authenticateToken = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // =====================================================
 // GET /api/dokumente - Alle Dokumente abrufen
 // =====================================================
-router.get('/', (req, res) => {
+router.get('/', authenticateToken, (req, res) => {
   const { typ, status } = req.query;
+  const dojoId = req.dojo_id;
 
-  let query = 'SELECT * FROM dokumente WHERE 1=1';
-  const params = [];
+  // SECURITY: Multi-Tenancy - nur Dokumente des eigenen Dojos
+  let query = 'SELECT * FROM dokumente WHERE dojo_id = ?';
+  const params = [dojoId];
 
   if (typ && typ !== 'all') {
     query += ' AND typ = ?';
@@ -159,18 +160,29 @@ router.post('/generate', async (req, res) => {
 // =====================================================
 // GET /api/dokumente/:id/download - Dokument herunterladen
 // =====================================================
-router.get('/:id/download', (req, res) => {
+router.get('/:id/download', authenticateToken, (req, res) => {
   const { id } = req.params;
+  const dojoId = req.dojo_id;
 
-  const query = 'SELECT * FROM dokumente WHERE id = ?';
+  // SECURITY: Multi-Tenancy Check - nur Dokumente des eigenen Dojos
+  const query = 'SELECT * FROM dokumente WHERE id = ? AND dojo_id = ?';
 
-  req.db.query(query, [id], (err, results) => {
+  req.db.query(query, [id, dojoId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen des Dokuments:', err);
+      logger.error('Fehler beim Abrufen des Dokuments', {
+        error: err.message,
+        dokumentId: id,
+        dojoId,
+      });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
     if (results.length === 0) {
+      logger.warn('Dokument nicht gefunden oder Zugriff verweigert', {
+        dokumentId: id,
+        dojoId,
+        userId: req.user?.id,
+      });
       return res.status(404).json({ error: 'Dokument nicht gefunden' });
     }
 

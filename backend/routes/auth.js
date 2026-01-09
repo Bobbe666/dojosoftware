@@ -2,10 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db'); // Verwenden Sie Ihr bestehendes DB-System
+const logger = require('../utils/logger');
+const { JWT_SECRET } = require('../middleware/auth');
 const router = express.Router();
-
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'DojoSoftware2024SecretKeyChangeThis!';
 
 // ===================================================================
 // 🧪 TEST-ROUTEN
@@ -75,7 +74,7 @@ router.post('/login', async (req, res) => {
     // Verwenden Sie Ihr bestehendes DB-System
     db.query(userQuery, [loginField, loginField], async (err, results) => {
       if (err) {
-        console.error('💥 Database error:', err);
+        logger.error('💥 Database error', { error: err.message, stack: err.stack });
         return res.status(500).json({
           login: false,
           message: "Server-Fehler bei der Datenbankabfrage",
@@ -87,7 +86,7 @@ router.post('/login', async (req, res) => {
       if (results.length === 0) {
         db.query(adminQuery, [loginField, loginField], async (adminErr, adminResults) => {
           if (adminErr) {
-            console.error('💥 Admin database error:', adminErr);
+            logger.error('💥 Admin database error', { error: adminErr.message, stack: adminErr.stack });
             return res.status(500).json({
               login: false,
               message: "Server-Fehler bei der Datenbankabfrage",
@@ -210,7 +209,7 @@ router.post('/login', async (req, res) => {
         });
 
       } catch (bcryptError) {
-        console.error('💥 Bcrypt error:', bcryptError);
+        logger.error('💥 Bcrypt error', { error: bcryptError.message, stack: bcryptError.stack });
         return res.status(500).json({
           login: false,
           message: "Fehler bei der Passwort-Überprüfung"
@@ -219,9 +218,9 @@ router.post('/login', async (req, res) => {
     }
     
   } catch (error) {
-    console.error('💥 Login error:', error);
-    res.status(500).json({ 
-      login: false, 
+    logger.error('💥 Login error', { error: error.message, stack: error.stack });
+    res.status(500).json({
+      login: false,
       message: "Server-Fehler beim Login",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -307,7 +306,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
       const match = await bcrypt.compare(currentPassword, user.password);
       if (!match) return res.status(401).json({ message: 'Aktuelles Passwort falsch' });
 
-      const hash = await bcrypt.hash(newPassword, 10);
+      const hash = await bcrypt.hash(newPassword, 12);
       const upd = 'UPDATE users SET password = ? WHERE id = ?';
       db.query(upd, [hash, req.user.id], (uErr) => {
         if (uErr) return res.status(500).json({ message: 'Update fehlgeschlagen', error: uErr.message });
@@ -328,7 +327,7 @@ router.post('/security', authenticateToken, async (req, res) => {
     return res.status(400).json({ message: 'Frage und Antwort sind erforderlich' });
   }
   try {
-    const answerHash = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 10);
+    const answerHash = await bcrypt.hash(securityAnswer.trim().toLowerCase(), 12);
     const upd = 'UPDATE users SET security_question = ?, security_answer_hash = ? WHERE id = ?';
     db.query(upd, [securityQuestion, answerHash, req.user.id], (err) => {
       if (err) return res.status(500).json({ message: 'Update fehlgeschlagen', error: err.message });
@@ -368,7 +367,7 @@ router.post('/reset-password', async (req, res) => {
     const answerMatch = await bcrypt.compare(securityAnswer.trim().toLowerCase(), user.security_answer_hash);
     if (!answerMatch) return res.status(401).json({ message: 'Sicherheitsantwort falsch' });
 
-    const hash = await bcrypt.hash(newPassword, 10);
+    const hash = await bcrypt.hash(newPassword, 12);
     const upd = 'UPDATE users SET password = ? WHERE id = ?';
     db.query(upd, [hash, user.id], (uErr) => {
       if (uErr) return res.status(500).json({ message: 'Update fehlgeschlagen', error: uErr.message });
@@ -388,10 +387,10 @@ if (process.env.NODE_ENV === 'development') {
     
     db.query(query, (err, results) => {
       if (err) {
-        console.error('💥 Error fetching users:', err);
+        logger.error('💥 Error fetching users', { error: err.message, stack: err.stack });
         return res.status(500).json({ error: 'Database error' });
       }
-      
+
       res.json({
         users: results,
         count: results.length,
@@ -426,10 +425,10 @@ if (process.env.NODE_ENV === 'development') {
 
     db.query('SELECT COUNT(*) as user_count FROM users', (err, results) => {
       if (err) {
-        console.error('💥 Database test failed:', err);
-        return res.status(500).json({ 
+        logger.error('💥 Database test failed', { error: err.message, stack: err.stack });
+        return res.status(500).json({
           error: 'Database connection failed',
-          details: err.message 
+          details: err.message
         });
       }
 
@@ -452,7 +451,7 @@ router.get('/users', (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      console.error('💥 Error fetching users:', err);
+      logger.error('💥 Error fetching users', { error: err.message, stack: err.stack });
       return res.status(500).json({ error: 'Database error' });
     }
 
@@ -479,7 +478,7 @@ router.put('/users/:id', async (req, res) => {
     const updateQuery = 'UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?';
     db.query(updateQuery, [username, email, role, id], (err, result) => {
       if (err) {
-        console.error('💥 Error updating user:', err);
+        logger.error('💥 Error updating user', { error: err.message, stack: err.stack, userId: id });
         if (err.code === 'ER_DUP_ENTRY') {
           return res.status(400).json({ error: 'Benutzername oder E-Mail bereits vergeben' });
         }
@@ -493,7 +492,7 @@ router.put('/users/:id', async (req, res) => {
       res.json({ success: true, message: 'Benutzer erfolgreich aktualisiert' });
     });
   } catch (error) {
-    console.error('💥 Error updating user:', error);
+    logger.error('💥 Error updating user', { error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -508,12 +507,12 @@ router.put('/users/:id/password', async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
     const updateQuery = 'UPDATE users SET password = ? WHERE id = ?';
 
     db.query(updateQuery, [hashedPassword, id], (err, result) => {
       if (err) {
-        console.error('💥 Error resetting password:', err);
+        logger.error('💥 Error resetting password', { error: err.message, stack: err.stack, userId: id });
         return res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
       }
 
@@ -524,7 +523,7 @@ router.put('/users/:id/password', async (req, res) => {
       res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
     });
   } catch (error) {
-    console.error('💥 Error resetting password:', error);
+    logger.error('💥 Error resetting password', { error: error.message, stack: error.stack });
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -542,7 +541,7 @@ router.delete('/users/:id', (req, res) => {
 
   db.query(deleteQuery, [id], (err, result) => {
     if (err) {
-      console.error('💥 Error deleting user:', err);
+      logger.error('💥 Error deleting user', { error: err.message, stack: err.stack, userId: id });
       return res.status(500).json({ error: 'Fehler beim Löschen' });
     }
 
@@ -592,7 +591,7 @@ router.post('/token-login', async (req, res) => {
 
     db.query(dojoQuery, [api_token], async (err, results) => {
       if (err) {
-        console.error('💥 Database error during token authentication:', err);
+        logger.error('💥 Database error during token authentication', { error: err.message, stack: err.stack });
         return res.status(500).json({
           success: false,
           login: false,
@@ -620,7 +619,7 @@ router.post('/token-login', async (req, res) => {
 
       db.query(updateQuery, [dojo.id], (updateErr) => {
         if (updateErr) {
-          console.error('Warning: Failed to update token last_used:', updateErr);
+          logger.error('Warning: Failed to update token last_used', { error: updateErr.message, stack: updateErr.stack, dojoId: dojo.id });
         }
       });
 
@@ -652,7 +651,7 @@ router.post('/token-login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('💥 Error in token-login:', error);
+    logger.error('💥 Error in token-login', { error: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       login: false,

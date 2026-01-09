@@ -5,8 +5,15 @@
 
 const jwt = require('jsonwebtoken');
 
-// JWT Secret aus Umgebungsvariablen
-const JWT_SECRET = process.env.JWT_SECRET || 'dojosoftware-secret-key-2024';
+// JWT Secret aus Umgebungsvariablen - MUSS gesetzt sein!
+if (!process.env.JWT_SECRET) {
+    console.error("❌ KRITISCHER FEHLER: JWT_SECRET ist nicht gesetzt!");
+    console.error("Bitte setze JWT_SECRET in der .env Datei.");
+    console.error("Tipp: Generiere einen sicheren Schlüssel mit: openssl rand -base64 32");
+    process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Middleware: Authentifiziert API-Requests via JWT Token

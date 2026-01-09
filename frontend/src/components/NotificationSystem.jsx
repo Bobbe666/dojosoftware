@@ -4,6 +4,7 @@ import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianG
 import '../styles/NotificationSystem.css';
 import config from '../config/config.js';
 import { useDojoContext } from '../context/DojoContext';
+import { createSafeHtml } from '../utils/sanitizer';
 
 const NotificationSystem = () => {
   const { activeDojo, filter } = useDojoContext();
@@ -2085,7 +2086,7 @@ const NotificationSystem = () => {
                         maxHeight: '100px',
                         overflowY: 'auto'
                       }}
-                      dangerouslySetInnerHTML={{ __html: group.message }}
+                      dangerouslySetInnerHTML={createSafeHtml(group.message)}
                     />
                   </div>
                 )}

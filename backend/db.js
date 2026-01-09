@@ -5,12 +5,19 @@ let db;
 
 // Funktion zum Aufbau der Datenbankverbindung
 function connectDatabase() {
+    // Validiere dass alle erforderlichen Umgebungsvariablen gesetzt sind
+    if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_PASSWORD || !process.env.DB_NAME) {
+        console.error("❌ KRITISCHER FEHLER: Datenbank-Konfiguration fehlt!");
+        console.error("Bitte stelle sicher, dass DB_HOST, DB_USER, DB_PASSWORD und DB_NAME in der .env Datei gesetzt sind.");
+        process.exit(1);
+    }
+
     db = mysql.createPool({
         connectionLimit: 10,
-        host: process.env.DB_HOST || "localhost",
-        user: process.env.DB_USER || "dojoUser",
-        password: process.env.DB_PASSWORD || "DojoServer2025!",
-        database: process.env.DB_NAME || "dojo",
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
         waitForConnections: true,
         queueLimit: 0,
         charset: 'utf8mb4',
