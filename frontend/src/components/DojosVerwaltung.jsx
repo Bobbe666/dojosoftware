@@ -79,7 +79,7 @@ const DojosVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos`);
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const data = await response.json();
       setDojos(data);
@@ -99,11 +99,25 @@ const DojosVerwaltung = () => {
       return;
     }
 
+    // Berechne Statistiken aus den geladenen Dojos
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/statistics/gesamt`);
-      if (!response.ok) throw new Error('Fehler beim Laden der Statistiken');
-      const data = await response.json();
-      setStatistics(data);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos`);
+      if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
+      const dojosData = await response.json();
+
+      // Berechne Gesamt-Statistiken
+      const stats = {
+        dojos_anzahl: dojosData.length,
+        mitglieder_gesamt: dojosData.reduce((sum, dojo) => sum + (dojo.mitglieder_anzahl || 0), 0),
+        umsatz_gesamt: dojosData.reduce((sum, dojo) => sum + (dojo.jahresumsatz_aktuell || 0), 0),
+        ust_gesamt: dojosData.reduce((sum, dojo) => {
+          const umsatz = dojo.jahresumsatz_aktuell || 0;
+          const ust = dojo.steuer_status === 'regelbesteuert' ? umsatz * 0.19 : 0;
+          return sum + ust;
+        }, 0)
+      };
+
+      setStatistics(stats);
     } catch (error) {
       console.error('Fehler beim Laden der Statistiken:', error);
     }
@@ -113,7 +127,7 @@ const DojosVerwaltung = () => {
     if (!window.confirm('Möchten Sie dieses Dojo wirklich deaktivieren?')) return;
 
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) {
