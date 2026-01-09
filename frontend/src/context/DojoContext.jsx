@@ -74,6 +74,14 @@ export const DojoProvider = ({ children }) => {
 
       const savedDojoId = localStorage.getItem('activeDojoId');
       if (savedDojoId) {
+        // Prüfe ob 'super-admin' gespeichert ist
+        if (savedDojoId === 'super-admin') {
+          console.log('✅ DojoContext: Super-Admin Modus aus LocalStorage');
+          setActiveDojo('super-admin');
+          return;
+        }
+
+        // Ansonsten suche normales Dojo
         const saved = dojos.find(d => d.id === parseInt(savedDojoId));
         if (saved) {
           console.log('✅ DojoContext: Gespeichertes Dojo gefunden:', saved.dojoname);
@@ -143,7 +151,14 @@ export const DojoProvider = ({ children }) => {
 
   const switchDojo = useCallback((dojo) => {
     setActiveDojo(dojo);
-    localStorage.setItem('activeDojoId', dojo.id);
+    // Speichere entweder dojo.id oder 'super-admin' für TDA Int'l Org
+    if (dojo === 'super-admin') {
+      localStorage.setItem('activeDojoId', 'super-admin');
+      console.log('✅ Gewechselt zu: TDA Int\'l Org (Super-Admin)');
+    } else {
+      localStorage.setItem('activeDojoId', dojo.id);
+      console.log('✅ Gewechselt zu Dojo:', dojo.dojoname);
+    }
   }, []);
 
   const getDojoById = useCallback((id) => {
@@ -166,6 +181,11 @@ export const DojoProvider = ({ children }) => {
 
   // URL-Parameter für API-Calls
   const getDojoFilterParam = useCallback(() => {
+    // Super-Admin Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
+    if (activeDojo === 'super-admin') {
+      return '';
+    }
+
     switch (filter) {
       case 'current':
         return activeDojo ? `dojo_id=${activeDojo.id}` : '';
@@ -236,6 +256,7 @@ export const DojoProvider = ({ children }) => {
   const value = useMemo(() => ({
     dojos,
     activeDojo,
+    selectedDojo: activeDojo, // Alias für Dashboard-Kompatibilität
     loading,
     filter,
     setFilter,
