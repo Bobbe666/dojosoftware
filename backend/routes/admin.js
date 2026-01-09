@@ -1059,8 +1059,8 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
       ? ((paymentStats.puenktlich / paymentStats.gesamt) * 100).toFixed(1)
       : 0;
 
-    // 7. Durchschnittlicher Umsatz pro Mitglied
-    const [avgRevenuePerMember] = await db.promise().query(`
+    // 7. Durchschnittlicher Umsatz pro Mitglied (Gesamt)
+    const [avgRevenuePerMemberTotal] = await db.promise().query(`
       SELECT
         COUNT(DISTINCT m.mitglied_id) as anzahl_mitglieder,
         COALESCE(SUM(r.gesamtsumme), 0) as gesamt_umsatz
@@ -1069,9 +1069,28 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
       WHERE m.aktiv = 1
     `, [currentYear]);
 
-    const avgPerMember = avgRevenuePerMember[0].anzahl_mitglieder > 0
-      ? (avgRevenuePerMember[0].gesamt_umsatz / avgRevenuePerMember[0].anzahl_mitglieder).toFixed(2)
+    const avgPerMemberTotal = avgRevenuePerMemberTotal[0].anzahl_mitglieder > 0
+      ? (avgRevenuePerMemberTotal[0].gesamt_umsatz / avgRevenuePerMemberTotal[0].anzahl_mitglieder).toFixed(2)
       : 0;
+
+    // 8. Durchschnittlicher Umsatz pro Mitglied (pro Dojo)
+    const [avgRevenuePerMember] = await db.promise().query(`
+      SELECT
+        d.id,
+        d.dojoname,
+        COUNT(DISTINCT m.mitglied_id) as anzahl_mitglieder,
+        COALESCE(SUM(r.gesamtsumme), 0) as gesamt_umsatz,
+        CASE
+          WHEN COUNT(DISTINCT m.mitglied_id) > 0
+          THEN COALESCE(SUM(r.gesamtsumme), 0) / COUNT(DISTINCT m.mitglied_id)
+          ELSE 0
+        END as avg_umsatz_pro_mitglied
+      FROM dojo d
+      LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.aktiv = 1
+      LEFT JOIN rechnungen r ON m.mitglied_id = r.mitglied_id AND YEAR(r.rechnungsdatum) = ?
+      GROUP BY d.id, d.dojoname
+      ORDER BY avg_umsatz_pro_mitglied DESC
+    `, [currentYear]);
 
     res.json({
       success: true,
@@ -1126,7 +1145,13 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
           ueberfaellig: parseInt(paymentStats.ueberfaellig),
           puenktlich_rate: parseFloat(puenktlichRate)
         },
-        avgRevenuePerMember: parseFloat(avgPerMember)
+        avgRevenuePerMemberTotal: parseFloat(avgPerMemberTotal),
+        avgRevenuePerMember: avgRevenuePerMember.map(row => ({
+          dojoname: row.dojoname,
+          anzahl_mitglieder: parseInt(row.anzahl_mitglieder),
+          gesamt_umsatz: parseFloat(row.gesamt_umsatz),
+          avg_umsatz_pro_mitglied: parseFloat(row.avg_umsatz_pro_mitglied)
+        }))
       }
     });
 
