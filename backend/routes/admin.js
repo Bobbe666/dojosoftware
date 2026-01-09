@@ -1467,13 +1467,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         m.dojo_id,
         d.dojoname,
         u.created_at,
-        COALESCE(
-          (SELECT COUNT(DISTINCT DATE(erstellt_am))
-           FROM mitglieder m2
-           WHERE m2.erstellt_von = u.id
-           AND m2.erstellt_am >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)),
-          0
-        ) as activity_last_30_days
+        0 as activity_last_30_days
       FROM users u
       LEFT JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
       LEFT JOIN dojo d ON m.dojo_id = d.id
