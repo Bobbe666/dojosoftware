@@ -79,7 +79,8 @@ const DojosVerwaltung = () => {
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos`);
+      // filter=managed: Nur zentral verwaltete Dojos (ohne separate Tenants wie Demo)
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos?filter=managed`);
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const data = await response.json();
       // API gibt { success, count, dojos: [...] } zurück
@@ -102,7 +103,8 @@ const DojosVerwaltung = () => {
 
     // Berechne Statistiken aus den geladenen Dojos
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos`);
+      // filter=managed: Nur zentral verwaltete Dojos (ohne separate Tenants wie Demo)
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos?filter=managed`);
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const dojosData = await response.json();
 
