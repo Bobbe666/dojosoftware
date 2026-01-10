@@ -82,7 +82,8 @@ const DojosVerwaltung = () => {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos`);
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const data = await response.json();
-      setDojos(data);
+      // API gibt { success, count, dojos: [...] } zurück
+      setDojos(data.dojos || data);
     } catch (error) {
       setMessage('Fehler beim Laden der Dojos');
       console.error(error);
@@ -105,12 +106,15 @@ const DojosVerwaltung = () => {
       if (!response.ok) throw new Error('Fehler beim Laden der Dojos');
       const dojosData = await response.json();
 
+      // API gibt { success, count, dojos: [...] } zurück
+      const dojos = dojosData.dojos || dojosData;
+
       // Berechne Gesamt-Statistiken
       const stats = {
-        dojos_anzahl: dojosData.length,
-        mitglieder_gesamt: dojosData.reduce((sum, dojo) => sum + (dojo.mitglieder_anzahl || 0), 0),
-        umsatz_gesamt: dojosData.reduce((sum, dojo) => sum + (dojo.jahresumsatz_aktuell || 0), 0),
-        ust_gesamt: dojosData.reduce((sum, dojo) => {
+        dojos_anzahl: dojos.length,
+        mitglieder_gesamt: dojos.reduce((sum, dojo) => sum + (dojo.mitglieder_anzahl || 0), 0),
+        umsatz_gesamt: dojos.reduce((sum, dojo) => sum + (dojo.jahresumsatz_aktuell || 0), 0),
+        ust_gesamt: dojos.reduce((sum, dojo) => {
           const umsatz = dojo.jahresumsatz_aktuell || 0;
           const ust = dojo.steuer_status === 'regelbesteuert' ? umsatz * 0.19 : 0;
           return sum + ust;
