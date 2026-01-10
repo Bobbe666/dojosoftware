@@ -22,7 +22,7 @@ NC='\033[0m' # No Color
 SERVER_USER="root"
 SERVER_HOST="dojo.tda-intl.org"
 SERVER_PATH="/var/www/dojosoftware"
-PM2_APP_NAME="dojosoftware"
+PM2_APP_NAME="dojosoftware-backend"
 
 echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   DojoSoftware - Automatisches Deployment     ║${NC}"
@@ -136,12 +136,12 @@ cd ../backend
 
 # Prüfe ob PM2 läuft
 if command -v pm2 &> /dev/null; then
-    if pm2 list | grep -q dojosoftware; then
+    if pm2 list | grep -q dojosoftware-backend; then
         echo "  → PM2 Restart..."
-        pm2 restart dojosoftware
+        pm2 restart dojosoftware-backend
     else
         echo "  → PM2 Start..."
-        pm2 start server.js --name dojosoftware
+        pm2 start server.js --name dojosoftware-backend
     fi
     pm2 save
     echo -e "${GREEN}✓ Backend neu gestartet (PM2)${NC}"
