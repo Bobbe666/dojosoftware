@@ -164,6 +164,8 @@ const utils = {
   // URL-Validation
   isValidUrl: (url) => {
     if (!url || typeof url !== 'string') return false;
+    // Erlaube relative Pfade für Production (z.B. /api)
+    if (url.startsWith('/')) return true;
     // Erlaube localhost und production URLs
     if (url.startsWith('http://localhost:')) return true;
     if (url.startsWith('http://127.0.0.1:')) return true;
