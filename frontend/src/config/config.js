@@ -9,9 +9,9 @@ const isProduction = import.meta.env.MODE === 'production';
 // API-URLs für verschiedene Umgebungen
 // 🔒 MULTI-TENANT: Production uses relative path to support subdomains
 const API_URLS = {
-  development: 'http://localhost:3000/api',
+  development: 'http://localhost:5001/api',
   production: '/api',
-  testing: 'http://localhost:3000/api'
+  testing: 'http://localhost:5001/api'
 };
 
 // Basis-Konfiguration
