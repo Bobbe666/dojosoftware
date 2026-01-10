@@ -121,6 +121,9 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
       LEFT JOIN mitglieder m ON d.id = m.dojo_id AND m.aktiv = 1
       LEFT JOIN kurse k ON d.id = k.dojo_id
       LEFT JOIN trainer t ON d.id = t.dojo_id
+      WHERE d.id NOT IN (
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+      )
       GROUP BY d.id, d.dojoname, d.subdomain, d.inhaber, d.ort, d.email, d.telefon,
                d.ist_aktiv, d.mitgliederzahl_aktuell, d.created_at, d.onboarding_completed,
                d.subscription_status, d.trial_ends_at, d.subscription_plan,
