@@ -34,6 +34,10 @@ const Login = () => {
     if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && user?.username === 'TrainerloginTDA') {
       return <Navigate to="/trainer" replace />;
     }
+    // Super-Admins ohne Dojo zur Multi-Dojo-Verwaltung
+    if (userRole === 'super_admin' && !user?.dojo_id) {
+      return <Navigate to="/dashboard/dojos" replace />;
+    }
     // Alle anderen zu normalem Dashboard
     return <Navigate to="/dashboard" replace />;
   }
@@ -116,6 +120,10 @@ const Login = () => {
       if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && userData.username === 'TrainerloginTDA') {
         console.log('✅ Redirecting to /trainer');
         navigate('/trainer', { replace: true });
+      } else if (userRole === 'super_admin' && !userData.dojo_id) {
+        // Super-Admins ohne Dojo-Zuordnung zur Multi-Dojo-Verwaltung
+        console.log('✅ Redirecting super_admin to /dashboard/dojos');
+        navigate('/dashboard/dojos', { replace: true });
       } else {
         console.log('✅ Redirecting to /dashboard');
         navigate('/dashboard', { replace: true });
