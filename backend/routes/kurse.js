@@ -5,8 +5,11 @@ const router = express.Router();
 
 // Alle Kurse abrufen
 router.get("/", (req, res) => {
-    // Tenant check
-    if (!req.tenant?.dojo_id) {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id;
+
+    // Super-Admin (dojo_id = null): Kann Kurse aller zentral verwalteten Dojos sehen
+    // Normaler Admin: Muss dojo_id haben
+    if (dojoId === undefined && !req.user) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -18,9 +21,20 @@ router.get("/", (req, res) => {
         SELECT k.*, s.name as standort_name, s.farbe as standort_farbe
         FROM kurse k
         LEFT JOIN standorte s ON k.standort_id = s.standort_id
-        WHERE k.dojo_id = ?
     `;
-    const queryParams = [req.tenant.dojo_id];
+    let queryParams = [];
+
+    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
+    if (dojoId === null || dojoId === undefined) {
+        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+        query += ` WHERE k.dojo_id NOT IN (
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+        )`;
+    } else {
+        // Normaler Admin: Nur eigenes Dojo
+        query += ' WHERE k.dojo_id = ?';
+        queryParams.push(dojoId);
+    }
 
     // Add standort filter if provided
     if (standort_id && standort_id !== 'all') {

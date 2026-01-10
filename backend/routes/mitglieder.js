@@ -1707,15 +1707,23 @@ router.get("/:id/stil/:stil_id/training-analysis", (req, res) => {
 // ✅ SEPA-Mandat abrufen + DOJO-FILTER (KRITISCH - Bankdaten!)
 router.get("/:id/sepa-mandate", (req, res) => {
     const { id } = req.params;
-    const { dojo_id } = req.query;
+    const dojoIdFromQuery = req.query.dojo_id;
+    const dojoId = req.dojo_id || dojoIdFromQuery;
 
     // 🔒 KRITISCHER DOJO-FILTER: SEPA-Mandate nur für berechtigte Dojos!
     let whereConditions = ['sm.mitglied_id = ?', 'sm.status = \'aktiv\''];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
+    if (dojoId === null || dojoId === undefined || dojoIdFromQuery === 'all') {
+        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+        whereConditions.push(`m.dojo_id NOT IN (
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+        )`);
+    } else if (dojoId && dojoId !== 'all') {
+        // Normaler Admin: Nur eigenes Dojo
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(parseInt(dojoId));
     }
 
     const query = `

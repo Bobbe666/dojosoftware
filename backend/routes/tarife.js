@@ -19,19 +19,32 @@ const queryAsync = (sql, params = []) => {
 // GET /api/tarife - Alle Tarife abrufen (fallback zu altem Schema wenn nötig)
 router.get('/', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        const dojoId = req.tenant?.dojo_id || req.dojo_id;
+
+        // Super-Admin (dojo_id = null): Kann Tarife aller zentral verwalteten Dojos sehen
+        // Normaler Admin: Muss dojo_id haben
+        if (dojoId === undefined && !req.user) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
-        // Erst versuchen ob erweiterte Tabellen existieren
-        // Einfache Abfrage mit korrektem Schema + tenant filter
-        const tarife = await queryAsync(`
-            SELECT *
-            FROM tarife
-            WHERE dojo_id = ?
-            ORDER BY id ASC
-        `, [req.tenant.dojo_id]);
+        let query = 'SELECT * FROM tarife';
+        let params = [];
+
+        // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
+        if (dojoId === null || dojoId === undefined) {
+            // Super-Admin: Tarife aller zentral verwalteten Dojos
+            query += ` WHERE dojo_id NOT IN (
+                SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+            )`;
+        } else {
+            // Normaler Admin: Nur eigenes Dojo
+            query += ' WHERE dojo_id = ?';
+            params.push(dojoId);
+        }
+
+        query += ' ORDER BY id ASC';
+
+        const tarife = await queryAsync(query, params);
         res.json({ success: true, data: tarife });
     } catch (err) {
         console.error('Fehler beim Abrufen der Tarife:', err);

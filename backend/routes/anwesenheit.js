@@ -444,8 +444,11 @@ router.get("/kurse/:datum", (req, res) => {
 
 // Anwesenheit für ein bestimmtes Mitglied abrufen (STIL-SPEZIFISCH)
 router.get("/:mitglied_id", (req, res) => {
-    // Tenant check
-    if (!req.tenant?.dojo_id) {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id;
+
+    // Super-Admin (dojo_id = null): Kann Anwesenheit aller zentral verwalteten Dojos sehen
+    // Normaler Admin: Muss dojo_id haben
+    if (dojoId === undefined && !req.user) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -453,7 +456,6 @@ router.get("/:mitglied_id", (req, res) => {
     const { stil_id } = req.query; // Optional: Filter nach Stil
 
     if (isNaN(mitglied_id)) {
-
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
@@ -475,17 +477,29 @@ router.get("/:mitglied_id", (req, res) => {
         LEFT JOIN stundenplan s ON a.stundenplan_id = s.stundenplan_id
         LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
         LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
-        WHERE a.mitglied_id = ? AND m.dojo_id = ?
+        WHERE a.mitglied_id = ?
     `;
 
-    let params = [mitglied_id, req.tenant.dojo_id];
-    
+    let params = [mitglied_id];
+
+    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
+    if (dojoId === null || dojoId === undefined) {
+        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+        query += ` AND m.dojo_id NOT IN (
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+        )`;
+    } else {
+        // Normaler Admin: Nur eigenes Dojo
+        query += ' AND m.dojo_id = ?';
+        params.push(dojoId);
+    }
+
     // Optional: Filter nach Stil
     if (stil_id) {
       query += " AND k.stil = ?";
       params.push(stil_id);
     }
-    
+
     query += " ORDER BY a.datum DESC";
 
     db.query(query, params, (err, results) => {
