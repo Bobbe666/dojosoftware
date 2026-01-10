@@ -92,10 +92,15 @@ const DojoSwitcher = () => {
   };
 
   const handleShowAll = () => {
+    // Setze activeDojo auf das erste verfügbare Dojo (nicht super-admin)
+    // damit das normale Dashboard angezeigt wird
+    if (dojos.length > 0) {
+      const hauptDojo = dojos.find(d => d.ist_hauptdojo) || dojos[0];
+      switchDojo(hauptDojo);
+    }
     setFilter('all');
     setIsOpen(false);
     // Navigiere zum normalen Dashboard mit aggregierten Daten
-    // replace: true stellt sicher, dass die Navigation auch ausgeführt wird, wenn wir schon auf /dashboard sind
     navigate('/dashboard', { replace: true });
   };
 
