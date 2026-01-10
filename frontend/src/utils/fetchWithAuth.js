@@ -18,8 +18,8 @@
  * @returns {Promise<Response>} - Fetch Response
  */
 export const fetchWithAuth = async (url, options = {}) => {
-  // Hole Token aus localStorage
-  const token = localStorage.getItem('authToken');
+  // Hole Token aus localStorage (gleicher Key wie AuthContext)
+  const token = localStorage.getItem('dojo_auth_token');
 
   // Merge headers mit Authorization
   const headers = {
