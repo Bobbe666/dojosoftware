@@ -49,8 +49,8 @@ export const KursProvider = ({ children }) => {
       return;
     }
 
-    // Prüfe ob Token vorhanden ist
-    const token = localStorage.getItem('authToken');
+    // Prüfe ob Token vorhanden ist (verwende beide möglichen Keys für Kompatibilität)
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
     if (!token) {
       console.log('Kein Token vorhanden, überspringe Kurse-Laden');
       setLoading(false);
@@ -72,7 +72,30 @@ export const KursProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Lade Kurse initial
     ladeKurse();
+
+    // Event Listener für Login-Ereignisse
+    const handleStorageChange = (e) => {
+      if ((e.key === 'dojo_auth_token' || e.key === 'authToken') && e.newValue) {
+        console.log('Token wurde gesetzt, lade Kurse neu');
+        ladeKurse();
+      }
+    };
+
+    // Custom Event Listener für lokale Login-Ereignisse (same tab)
+    const handleLogin = () => {
+      console.log('Login-Event empfangen, lade Kurse neu');
+      ladeKurse();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userLoggedIn', handleLogin);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userLoggedIn', handleLogin);
+    };
   }, []);
 
   const contextValue = {

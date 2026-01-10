@@ -83,24 +83,28 @@ export const AuthProvider = ({ children }) => {
       username: userData.username,
       role: userData.role
     });
-    
+
     // Token dekodieren für Expiry-Zeit
     const payload = decodeToken(tokenData);
     const expiryTime = payload ? payload.exp * 1000 : Date.now() + (8 * 60 * 60 * 1000); // 8h fallback
-    
+
     // In localStorage speichern
     localStorage.setItem(TOKEN_KEY, tokenData);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
     localStorage.setItem(EXPIRY_KEY, expiryTime.toString());
-    
+
     // Axios default headers setzen
     axios.defaults.headers.common['Authorization'] = `Bearer ${tokenData}`;
-    
+
     // State aktualisieren
     setToken(tokenData);
     setUser(userData);
     setSessionExpiry(expiryTime);
     setError(null);
+
+    // Custom Event dispatchen damit andere Contexts reagieren können
+    window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { user: userData } }));
+    debugLog('userLoggedIn Event dispatched');
   }, [decodeToken, debugLog]);
 
   // Token-Validierung beim Backend
