@@ -12,6 +12,20 @@ import config from './config/config.js';
 // Axios-Basis-URL konfigurieren
 axios.defaults.baseURL = config.apiBaseUrl;
 
+// Globaler Request Interceptor - fügt Auth-Token automatisch hinzu
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <DatenProvider>
