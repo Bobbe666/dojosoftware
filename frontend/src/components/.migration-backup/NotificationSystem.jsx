@@ -1,0 +1,2407 @@
+import React, { useState, useEffect } from 'react';
+import { Mail, Bell, Settings, Send, Users, History, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
+import '../styles/NotificationSystem.css';
+import config from '../config/config.js';
+import { useDojoContext } from '../context/DojoContext';
+import { createSafeHtml } from '../utils/sanitizer';
+
+const NotificationSystem = () => {
+  const { activeDojo, filter } = useDojoContext();
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Dashboard State
+  const [dashboardData, setDashboardData] = useState({
+    stats: {},
+    recentNotifications: [],
+    settings: {}
+  });
+  
+  // Settings State
+  const [settings, setSettings] = useState({
+    email_enabled: false,
+    push_enabled: false,
+    email_config: {
+      protocol: 'smtp', // smtp, pop3, imap
+      smtp_host: '', // Postausgangsserver
+      smtp_port: 587,
+      imap_host: '', // Posteingangsserver (IMAP)
+      imap_port: 993,
+      pop3_host: '', // Posteingangsserver (POP3)
+      pop3_port: 995,
+      smtp_secure: false,
+      smtp_user: '',
+      smtp_password: ''
+    },
+    push_config: {},
+    default_from_email: '',
+    default_from_name: 'Dojo Software'
+  });
+  
+  // Email State
+  const [emailData, setEmailData] = useState({
+    recipients: [],
+    subject: '',
+    message: '',
+    template_type: 'general'
+  });
+  
+  // Push State
+  const [pushData, setPushData] = useState({
+    recipients: [],
+    title: '',
+    message: '',
+    icon: '',
+    badge: '',
+    url: ''
+  });
+  
+  // Push Subscriptions State
+  const [pushSubscriptions, setPushSubscriptions] = useState([]);
+
+  // Member Search State
+  const [memberSearch, setMemberSearch] = useState('');
+  const [selectedIndividuals, setSelectedIndividuals] = useState([]);
+
+  // Recipients State
+  const [recipients, setRecipients] = useState({
+    mitglieder: [],
+    trainer: [],
+    personal: [],
+    admin: [],
+    alle: []
+  });
+  
+  // Templates State
+  const [templates, setTemplates] = useState([]);
+  
+  // History State
+  const [history, setHistory] = useState({
+    notifications: [],
+    pagination: {}
+  });
+
+  // Expanded recipients state
+  const [expandedNotifications, setExpandedNotifications] = useState({});
+
+  // Timeline data state
+  const [timelineData, setTimelineData] = useState([]);
+
+  // ===================================================================
+  // 📊 DATA LOADING
+  // ===================================================================
+
+  useEffect(() => {
+    loadDashboardData();
+    loadSettings();
+    loadRecipients();
+    loadTemplates();
+    loadHistory();
+    loadPushSubscriptions();
+    // loadTimelineData(); // TODO: Endpoint noch nicht implementiert
+  }, []);
+
+  // Lade Empfänger neu, wenn sich der Dojo-Filter ändert
+  useEffect(() => {
+    if (activeDojo) {
+      loadRecipients();
+    }
+  }, [filter, activeDojo]);
+
+  const loadDashboardData = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/dashboard`);
+      const data = await response.json();
+      if (data.success) {
+        setDashboardData(data);
+      }
+    } catch (error) {
+      console.error('❌ Dashboard Daten Fehler:', error);
+    }
+  };
+
+  const loadSettings = async () => {
+    try {
+      // Versuche zuerst die neue E-Mail-Service API
+      const response = await fetch(`${config.apiBaseUrl}/email-service/settings`);
+      const data = await response.json();
+      if (data.success && data.settings) {
+        const emailConfig = data.settings.email_config
+          ? (typeof data.settings.email_config === 'string'
+              ? JSON.parse(data.settings.email_config)
+              : data.settings.email_config)
+          : {};
+
+        const loadedSettings = {
+          ...data.settings,
+          email_config: {
+            protocol: emailConfig.protocol || 'smtp',
+            smtp_host: emailConfig.smtp_host || 'smtp.alfahosting.de',
+            smtp_port: emailConfig.smtp_port || 587,
+            imap_host: emailConfig.imap_host || '',
+            imap_port: emailConfig.imap_port || 993,
+            pop3_host: emailConfig.pop3_host || '',
+            pop3_port: emailConfig.pop3_port || 995,
+            smtp_secure: emailConfig.smtp_secure || false,
+            smtp_user: emailConfig.smtp_user || '',
+            smtp_password: emailConfig.smtp_password || ''
+          }
+        };
+        setSettings(loadedSettings);
+        return;
+      }
+    } catch (error) {
+      console.log('⚠️ Neue E-Mail-Service API nicht verfügbar, versuche Fallback');
+    }
+
+    // Fallback: Alte API
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/settings`);
+      const data = await response.json();
+      if (data.success) {
+        const emailConfig = data.settings.email_config ? JSON.parse(data.settings.email_config) : {};
+
+        const loadedSettings = {
+          ...data.settings,
+          email_config: {
+            protocol: emailConfig.protocol || 'smtp',
+            smtp_host: emailConfig.smtp_host || 'smtp.alfahosting.de',
+            smtp_port: emailConfig.smtp_port || 587,
+            imap_host: emailConfig.imap_host || '',
+            imap_port: emailConfig.imap_port || 993,
+            pop3_host: emailConfig.pop3_host || '',
+            pop3_port: emailConfig.pop3_port || 995,
+            smtp_secure: emailConfig.smtp_secure || false,
+            smtp_user: emailConfig.smtp_user || '',
+            smtp_password: emailConfig.smtp_password || ''
+          }
+        };
+        setSettings(loadedSettings);
+      }
+    } catch (error) {
+      console.error('❌ Settings Fehler:', error);
+      // Setze Alfahosting-Standardwerte
+      setSettings(prev => ({
+        ...prev,
+        email_config: {
+          protocol: 'smtp',
+          smtp_host: 'smtp.alfahosting.de',
+          smtp_port: 587,
+          imap_host: '',
+          imap_port: 993,
+          pop3_host: '',
+          pop3_port: 995,
+          smtp_secure: false,
+          smtp_user: '',
+          smtp_password: ''
+        }
+      }));
+    }
+  };
+
+  const loadRecipients = async () => {
+    try {
+      // Bestimme dojo_id basierend auf Filter
+      let dojoIdParam = '';
+      if (filter === 'all') {
+        dojoIdParam = 'dojo_id=all';
+      } else if (filter === 'current' && activeDojo) {
+        dojoIdParam = `dojo_id=${activeDojo.id}`;
+      } else if (activeDojo) {
+        // Fallback: Wenn kein Filter gesetzt ist, verwende aktivenDojo
+        dojoIdParam = `dojo_id=${activeDojo.id}`;
+      }
+
+      // Versuche zuerst die Notifications-Route mit dojo_id Filter
+      const url = dojoIdParam
+        ? `${config.apiBaseUrl}/notifications/recipients?${dojoIdParam}`
+        : `${config.apiBaseUrl}/notifications/recipients`;
+
+      console.log('📧 Loading recipients with filter:', dojoIdParam || 'no filter');
+
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.success) {
+        setRecipients({
+          mitglieder: data.recipients.mitglieder || [],
+          trainer: data.recipients.trainer || [],
+          personal: data.recipients.personal || [],
+          admin: data.recipients.admin || [],
+          alle: data.recipients.alle || []
+        });
+        console.log('✅ Loaded recipients from dashboard API:', {
+          mitglieder: data.recipients.mitglieder?.length || 0,
+          trainer: data.recipients.trainer?.length || 0,
+          personal: data.recipients.personal?.length || 0,
+          filter: dojoIdParam || 'all'
+        });
+        return;
+      }
+    } catch (error) {
+      console.log('⚠️ Mitglieder API failed, trying fallback');
+    }
+
+    try {
+      // Fallback: Lade echte Daten direkt aus der Datenbank
+      const response = await fetch(`${config.apiBaseUrl}/notifications/recipients`);
+      const data = await response.json();
+      if (data.success) {
+        setRecipients({
+          mitglieder: data.recipients.mitglieder || [],
+          trainer: data.recipients.trainer || [],
+          personal: data.recipients.personal || [],
+          admin: data.recipients.admin || [],
+          alle: data.recipients.alle || []
+        });
+      } else {
+        // Fallback: Lade Mitglieder direkt
+        await loadMembersDirectly();
+      }
+    } catch (error) {
+      console.error('❌ Recipients Fehler:', error);
+      // Fallback: Lade Mitglieder direkt
+      await loadMembersDirectly();
+    }
+  };
+
+  const loadMembersDirectly = async () => {
+    try {
+      // Lade alle verfügbaren Daten und erstelle realistische Email-Adressen
+      let memberEmails = [];
+      
+      // Versuche Mitglieder zu laden
+      try {
+        const membersResponse = await fetch(`${config.apiBaseUrl}/mitglieder`);
+        const membersData = await membersResponse.json();
+        console.log('📊 Raw members data:', Array.isArray(membersData) ? membersData.slice(0, 2) : membersData); // Zeige ersten 2 Einträge
+
+        // Erstelle realistische Email-Adressen basierend auf den Namen
+        if (Array.isArray(membersData)) {
+          memberEmails = membersData.map(member => {
+            const firstName = (member.vorname || 'member').toLowerCase().replace(/[^a-z]/g, '');
+            const lastName = (member.nachname || 'test').toLowerCase().replace(/[^a-z]/g, '');
+            const email = `${firstName}.${lastName}@dojo.local`;
+
+            return {
+              email: email,
+              name: `${member.vorname || ''} ${member.nachname || ''}`.trim(),
+              type: 'mitglied'
+            };
+          });
+        } else {
+          console.warn('⚠️ membersData is not an array:', membersData);
+          memberEmails = [];
+        }
+
+        console.log(`✅ Created ${memberEmails.length} member emails`);
+      } catch (error) {
+        console.log('❌ Members API error:', error);
+        memberEmails = [];
+      }
+      
+      // Lade Trainer direkt
+      const trainersResponse = await fetch(`${config.apiBaseUrl}/trainer`);
+      const trainersData = await trainersResponse.json();
+
+      const trainerEmails = Array.isArray(trainersData)
+        ? trainersData.filter(trainer => trainer.email && trainer.email !== '').map(trainer => ({
+            email: trainer.email,
+            name: `${trainer.vorname || ''} ${trainer.nachname || ''}`.trim(),
+            type: 'trainer'
+          }))
+        : [];
+
+      // Lade Personal direkt
+      const personalResponse = await fetch(`${config.apiBaseUrl}/personal`);
+      const personalData = await personalResponse.json();
+
+      const personalEmails = Array.isArray(personalData)
+        ? personalData.filter(personal => personal.email && personal.email !== '').map(personal => ({
+            email: personal.email,
+            name: `${personal.vorname || ''} ${personal.nachname || ''}`.trim(),
+            type: 'personal'
+          }))
+        : [];
+      
+      setRecipients({
+        mitglieder: memberEmails,
+        trainer: trainerEmails,
+        personal: personalEmails,
+        admin: [], // Admins werden separat geladen
+        alle: [...memberEmails, ...trainerEmails, ...personalEmails]
+      });
+      
+      console.log(`📊 Loaded directly: ${memberEmails.length} members, ${trainerEmails.length} trainers, ${personalEmails.length} personal`);
+    } catch (error) {
+      console.error('❌ Direct load error:', error);
+    }
+  };
+
+  const loadTemplates = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/templates`);
+      const data = await response.json();
+      if (data.success) {
+        setTemplates(data.templates);
+      }
+    } catch (error) {
+      console.error('❌ Templates Fehler:', error);
+    }
+  };
+
+  const loadHistory = async (page = 1) => {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/history?page=${page}&limit=20`);
+      const data = await response.json();
+      if (data.success) {
+        setHistory(data);
+      }
+    } catch (error) {
+      console.error('❌ History Fehler:', error);
+    }
+  };
+
+  const loadPushSubscriptions = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/push/subscriptions`);
+      const data = await response.json();
+      if (data.success) {
+        setPushSubscriptions(data.subscriptions);
+      }
+    } catch (error) {
+      console.error('❌ Push Subscriptions Fehler:', error);
+    }
+  };
+
+  const loadTimelineData = async () => {
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/dashboard/notification-timeline?days=7`);
+      const data = await response.json();
+      if (data.success && data.timeline) {
+        setTimelineData(data.timeline);
+        console.log('✅ Timeline-Daten geladen:', data.timeline);
+      }
+    } catch (error) {
+      console.error('❌ Timeline Fehler:', error);
+      setTimelineData([]);
+    }
+  };
+
+  // ===================================================================
+  // ⚙️ SETTINGS HANDLING
+  // ===================================================================
+
+  const handleSettingsSave = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Verwende die neue E-Mail-Service API
+      const response = await fetch(`${config.apiBaseUrl}/email-service/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email_enabled: settings.email_enabled,
+          email_config: settings.email_config,
+          default_from_email: settings.default_from_email,
+          default_from_name: settings.default_from_name
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('✅ E-Mail-Einstellungen erfolgreich gespeichert');
+        await loadSettings();
+        await loadDashboardData();
+      } else {
+        setError(data.message || 'Fehler beim Speichern der Einstellungen');
+      }
+    } catch (error) {
+      console.error('❌ Settings Save Fehler:', error);
+      setError('Fehler beim Speichern der Einstellungen: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailTest = async () => {
+    const testEmail = prompt('Test-Email-Adresse eingeben:');
+    if (!testEmail) return;
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      // Verwende die neue E-Mail-Service API
+      const response = await fetch(`${config.apiBaseUrl}/email-service/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: testEmail,
+          subject: 'Test-Email von Dojo Software',
+          message: `
+            <h2>Test-Email erfolgreich!</h2>
+            <p>Diese E-Mail wurde erfolgreich über das Dojo Software E-Mail-System gesendet.</p>
+            <p><strong>Zeitstempel:</strong> ${new Date().toLocaleString('de-DE')}</p>
+            <p><strong>SMTP-Server:</strong> ${settings.email_config?.smtp_host || 'Nicht konfiguriert'}</p>
+            <hr>
+            <p><em>Dojo Software - E-Mail-Service</em></p>
+          `
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(`✅ Test-Email erfolgreich an ${testEmail} gesendet!`);
+        await loadDashboardData();
+      } else {
+        setError(data.message || data.error || 'Fehler beim Senden der Test-Email');
+      }
+    } catch (error) {
+      console.error('❌ Email Test Fehler:', error);
+      setError('Fehler beim Senden der Test-Email: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSMTPVerify = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/email-service/verify`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setSuccess('✅ SMTP-Verbindung erfolgreich getestet!');
+      } else {
+        setError(data.message || data.error || 'SMTP-Verbindung fehlgeschlagen');
+      }
+    } catch (error) {
+      console.error('❌ SMTP Verify Fehler:', error);
+      setError('Fehler beim Testen der SMTP-Verbindung: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===================================================================
+  // 📧 EMAIL HANDLING
+  // ===================================================================
+
+  const handleEmailSend = async () => {
+    if (!emailData.recipients.length || !emailData.subject || !emailData.message) {
+      setError('Bitte füllen Sie alle Felder aus');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(data.message);
+        setEmailData({ recipients: [], subject: '', message: '', template_type: 'general' });
+        await loadDashboardData();
+        await loadHistory();
+      } else {
+        setError(data.message || 'Fehler beim Senden der Emails');
+      }
+    } catch (error) {
+      setError('Fehler beim Senden der Emails');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===================================================================
+  // 📱 PUSH NOTIFICATION HANDLING
+  // ===================================================================
+
+  const handlePushSend = async () => {
+    if (!pushData.title || !pushData.message) {
+      setError('Bitte füllen Sie Titel und Nachricht aus');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/push/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pushData),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(data.message);
+
+        // Browser-Benachrichtigung für Admin anzeigen
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(`✅ ${pushData.title}`, {
+            body: `${pushData.message}\n\n${data.message}`,
+            icon: '/favicon.ico',
+            tag: 'push-sent-confirmation',
+            requireInteraction: true,  // Popup bleibt offen bis der User es schließt
+            silent: false
+          });
+        } else if ('Notification' in window && Notification.permission !== 'denied') {
+          // Frage nach Berechtigung, wenn noch nicht gesetzt
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification(`✅ ${pushData.title}`, {
+                body: `${pushData.message}\n\n${data.message}`,
+                icon: '/favicon.ico',
+                tag: 'push-sent-confirmation',
+                requireInteraction: true,  // Popup bleibt offen bis der User es schließt
+                silent: false
+              });
+            }
+          });
+        }
+
+        setPushData({ recipients: [], title: '', message: '', icon: '', badge: '', url: '' });
+        await loadDashboardData();
+        await loadHistory();
+      } else {
+        setError(data.message || 'Fehler beim Senden der Push-Nachrichten');
+      }
+    } catch (error) {
+      setError('Fehler beim Senden der Push-Nachrichten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const requestPushPermission = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Hier würde die Push-Subscription registriert werden
+        setSuccess('Push-Benachrichtigungen aktiviert');
+      } else {
+        setError('Push-Benachrichtigungen wurden abgelehnt');
+      }
+    } else {
+      setError('Push-Benachrichtigungen werden von diesem Browser nicht unterstützt');
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    if (!window.confirm('Möchten Sie diese Benachrichtigung wirklich löschen?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/history/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('Benachrichtigung erfolgreich gelöscht');
+        // History neu laden
+        await loadHistory();
+      } else {
+        setError(data.message || 'Fehler beim Löschen der Benachrichtigung');
+      }
+    } catch (error) {
+      setError('Fehler beim Löschen der Benachrichtigung');
+    }
+  };
+
+  const deleteBulkNotification = async (id) => {
+    if (!window.confirm('⚠️ ACHTUNG: Diese Aktion löscht die Benachrichtigung für ALLE Empfänger!\n\nMöchten Sie wirklich fortfahren?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.apiBaseUrl}/notifications/history/bulk/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuccess(`${data.deletedCount} Benachrichtigung(en) erfolgreich gelöscht`);
+        // History neu laden
+        await loadHistory();
+      } else {
+        setError(data.message || 'Fehler beim Löschen der Benachrichtigungen');
+      }
+    } catch (error) {
+      setError('Fehler beim Löschen der Benachrichtigungen');
+    }
+  };
+
+  // ===================================================================
+  // 🎨 RENDER FUNCTIONS
+  // ===================================================================
+
+  const renderDashboard = () => {
+    // Daten für Charts vorbereiten
+    const pieData = [
+      { name: 'Emails', value: dashboardData.stats.email_notifications || 0, color: '#60a5fa' },
+      { name: 'Push', value: dashboardData.stats.push_notifications || 0, color: '#22c55e' }
+    ];
+
+    const statusData = [
+      { name: 'Erfolgreich', value: dashboardData.stats.sent_notifications || 0, color: '#22c55e' },
+      { name: 'Fehlgeschlagen', value: dashboardData.stats.failed_notifications || 0, color: '#ef4444' }
+    ];
+
+    return (
+      <div className="notification-dashboard" style={{
+        background: 'rgba(20, 20, 30, 0.95)',
+        borderRadius: '12px',
+        padding: '1.5rem'
+      }}>
+        <div className="dashboard-header" style={{ marginBottom: '1.5rem' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1.25rem',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{ 
+              fontSize: '2.5rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>📧</span>
+            <h2 style={{ 
+              fontSize: '2.5rem',
+              fontWeight: '700',
+              color: '#FFD700',
+              margin: 0,
+              textShadow: 'none',
+              WebkitTextFillColor: '#FFD700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              letterSpacing: '0.5px',
+              position: 'relative',
+              zIndex: 2
+            }}>Newsletter & Benachrichtigungen</h2>
+          </div>
+          <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Verwalten Sie Email-Versand, Push-Nachrichten und Server-Einstellungen</p>
+        </div>
+
+        {/* Statistiken */}
+        <div className="stats-grid">
+          <div className="stat-card" style={{
+            border: '1px solid rgba(96, 165, 250, 0.3)'
+          }}>
+            <div className="stat-icon">📧</div>
+            <div className="stat-content">
+              <h3 style={{ color: '#60a5fa', margin: 0 }}>{dashboardData.stats.email_notifications || 0}</h3>
+              <p>Emails gesendet (30 Tage)</p>
+            </div>
+          </div>
+          <div className="stat-card" style={{
+            border: '1px solid rgba(34, 197, 94, 0.3)'
+          }}>
+            <div className="stat-icon">📱</div>
+            <div className="stat-content">
+              <h3 style={{ color: '#22c55e', margin: 0 }}>{dashboardData.stats.push_notifications || 0}</h3>
+              <p>Push-Nachrichten</p>
+            </div>
+          </div>
+          <div className="stat-card" style={{
+            border: '1px solid rgba(34, 197, 94, 0.3)'
+          }}>
+            <div className="stat-icon">✅</div>
+            <div className="stat-content">
+              <h3 style={{ color: '#22c55e', margin: 0 }}>{dashboardData.stats.sent_notifications || 0}</h3>
+              <p>Erfolgreich gesendet</p>
+            </div>
+          </div>
+          <div className="stat-card" style={{
+            border: '1px solid rgba(239, 68, 68, 0.3)'
+          }}>
+            <div className="stat-icon">❌</div>
+            <div className="stat-content">
+              <h3 style={{ color: '#ef4444', margin: 0 }}>{dashboardData.stats.failed_notifications || 0}</h3>
+              <p>Fehlgeschlagen</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          {/* Zeitverlauf Chart */}
+          <div style={{
+            background: 'rgba(30, 30, 45, 0.8)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '10px',
+            padding: '1.2rem'
+          }}>
+            <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1rem' }}>📈 Wochenverlauf</h4>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={timelineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                <XAxis dataKey="tag" stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
+                <YAxis stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
+                <Tooltip
+                  contentStyle={{
+                    background: 'rgba(20, 20, 30, 0.95)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0'
+                  }}
+                />
+                <Legend wrapperStyle={{ color: '#e0e0e0', fontSize: '0.85rem' }} />
+                <Line type="monotone" dataKey="emails" stroke="#60a5fa" strokeWidth={2} name="Emails" />
+                <Line type="monotone" dataKey="push" stroke="#22c55e" strokeWidth={2} name="Push" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Verteilung Email vs Push */}
+          <div style={{
+            background: 'rgba(30, 30, 45, 0.8)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '10px',
+            padding: '1.2rem'
+          }}>
+            <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1rem' }}>📊 Verteilung Typen</h4>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry) => `${entry.name}: ${entry.value}`}
+                  outerRadius={70}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    background: 'rgba(20, 20, 30, 0.95)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Status Chart */}
+          <div style={{
+            background: 'rgba(30, 30, 45, 0.8)',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            borderRadius: '10px',
+            padding: '1.2rem'
+          }}>
+            <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1rem' }}>✅ Erfolgsrate</h4>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={statusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                <XAxis dataKey="name" stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
+                <YAxis stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
+                <Tooltip
+                  contentStyle={{
+                    background: 'rgba(20, 20, 30, 0.95)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0'
+                  }}
+                />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Letzte Benachrichtigungen */}
+        <div className="recent-notifications" style={{
+          background: 'rgba(30, 30, 45, 0.8)',
+          border: '1px solid rgba(255, 215, 0, 0.2)',
+          borderRadius: '10px',
+          padding: '1.2rem'
+        }}>
+          <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.1rem' }}>🔔 Letzte Benachrichtigungen</h3>
+          <div className="notifications-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {dashboardData.recentNotifications?.map((notification, index) => (
+              <div key={index} className="notification-item" style={{
+                background: 'rgba(20, 20, 30, 0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                padding: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem'
+              }}>
+                <div className="notification-icon" style={{ fontSize: '1.5rem' }}>
+                  {notification.type === 'email' ? '📧' : '📱'}
+                </div>
+                <div className="notification-content" style={{ flex: 1 }}>
+                  <div className="notification-header" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '0.3rem'
+                  }}>
+                    <span className="notification-recipient" style={{
+                      color: '#e0e0e0',
+                      fontSize: '0.9rem',
+                      fontWeight: '600'
+                    }}>{notification.recipient}</span>
+                    <span className={`notification-status ${notification.status}`} style={{
+                      fontSize: '1rem'
+                    }}>
+                      {notification.status === 'sent' ? '✅' :
+                       notification.status === 'failed' ? '❌' : '⏳'}
+                    </span>
+                  </div>
+                  <div className="notification-subject" style={{
+                    color: '#ffd700',
+                    fontSize: '0.85rem',
+                    marginBottom: '0.2rem'
+                  }}>{notification.subject}</div>
+                  <div className="notification-time" style={{
+                    color: '#808090',
+                    fontSize: '0.75rem'
+                  }}>
+                    {new Date(notification.created_at).toLocaleString('de-DE')}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSettings = () => (
+    <div className="notification-settings" style={{
+      background: 'rgba(20, 20, 30, 0.95)',
+      borderRadius: '12px',
+      padding: '1.5rem'
+    }}>
+      <div className="settings-header" style={{ marginBottom: '1.5rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1.25rem',
+          marginBottom: '0.5rem'
+        }}>
+          <span style={{ 
+            fontSize: '2rem',
+            filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+            position: 'relative',
+            zIndex: 10,
+            lineHeight: 1,
+            display: 'inline-block',
+            flexShrink: 0
+          }}>⚙️</span>
+          <h3 style={{ 
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: '#FFD700',
+            margin: 0,
+            textShadow: 'none',
+            WebkitTextFillColor: '#FFD700',
+            background: 'none',
+            WebkitBackgroundClip: 'initial',
+            backgroundClip: 'initial',
+            WebkitFontSmoothing: 'antialiased',
+            MozOsxFontSmoothing: 'grayscale',
+            letterSpacing: '0.5px',
+            position: 'relative',
+            zIndex: 2
+          }}>Server-Einstellungen</h3>
+        </div>
+        <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Konfigurieren Sie Email- und Push-Notification-Einstellungen</p>
+      </div>
+
+      {/* Email-Einstellungen */}
+      <div className="settings-section" style={{
+        background: 'rgba(30, 30, 45, 0.8)',
+        border: '1px solid rgba(255, 215, 0, 0.2)',
+        borderRadius: '10px',
+        padding: '1.2rem',
+        marginBottom: '1.5rem'
+      }}>
+        <div className="section-header" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ 
+              fontSize: '1.1rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>📧</span>
+            <h4 style={{ 
+              color: '#ffd700', 
+              margin: 0, 
+              fontSize: '1.1rem', 
+              fontWeight: '600',
+              textShadow: 'none',
+              WebkitTextFillColor: '#ffd700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              position: 'relative',
+              zIndex: 2
+            }}>Email-Konfiguration</h4>
+          </div>
+          <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+            <input
+              type="checkbox"
+              checked={settings.email_enabled}
+              onChange={(e) => setSettings({...settings, email_enabled: e.target.checked})}
+              style={{ opacity: 0, width: 0, height: 0 }}
+            />
+            <span className="toggle-slider" style={{
+              position: 'absolute',
+              cursor: 'pointer',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: settings.email_enabled ? '#22c55e' : '#606070',
+              transition: '0.4s',
+              borderRadius: '24px'
+            }}></span>
+          </label>
+        </div>
+
+        {settings.email_enabled && (
+          <div className="email-config">
+            {/* Protokoll-Auswahl */}
+            <div className="form-row" style={{ marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>E-Mail Protokoll</label>
+                <select
+                  value={settings.email_config.protocol || 'smtp'}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {...settings.email_config, protocol: e.target.value}
+                  })}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <option value="smtp">SMTP (Postausgang)</option>
+                  <option value="pop3">POP3 (Posteingang)</option>
+                  <option value="imap">IMAP (Posteingang)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Postausgangsserver (SMTP) */}
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Postausgangsserver (SMTP)</label>
+                <input
+                  type="text"
+                  value={settings.email_config.smtp_host}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {...settings.email_config, smtp_host: e.target.value}
+                  })}
+                  placeholder="smtp.alfahosting.de"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Postausgangsserver Port</label>
+                <input
+                  type="number"
+                  value={settings.email_config.smtp_port}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {...settings.email_config, smtp_port: parseInt(e.target.value)}
+                  })}
+                  placeholder="587"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Posteingangsserver (IMAP/POP3) */}
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                  Posteingangsserver ({settings.email_config.protocol === 'imap' ? 'IMAP' : settings.email_config.protocol === 'pop3' ? 'POP3' : 'IMAP/POP3'})
+                </label>
+                <input
+                  type="text"
+                  value={settings.email_config.protocol === 'imap' ? settings.email_config.imap_host : settings.email_config.pop3_host}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {
+                      ...settings.email_config,
+                      ...(settings.email_config.protocol === 'imap'
+                        ? { imap_host: e.target.value }
+                        : { pop3_host: e.target.value })
+                    }
+                  })}
+                  placeholder={settings.email_config.protocol === 'imap' ? 'imap.alfahosting.de' : 'pop3.alfahosting.de'}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Posteingangsserver Port</label>
+                <input
+                  type="number"
+                  value={settings.email_config.protocol === 'imap' ? settings.email_config.imap_port : settings.email_config.pop3_port}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {
+                      ...settings.email_config,
+                      ...(settings.email_config.protocol === 'imap'
+                        ? { imap_port: parseInt(e.target.value) }
+                        : { pop3_port: parseInt(e.target.value) })
+                    }
+                  })}
+                  placeholder={settings.email_config.protocol === 'imap' ? '993' : '995'}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>SMTP Benutzername</label>
+                <input
+                  type="text"
+                  value={settings.email_config.smtp_user}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {...settings.email_config, smtp_user: e.target.value}
+                  })}
+                  placeholder="ihre-email@ihre-domain.de"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>SMTP Passwort</label>
+                <input
+                  type="password"
+                  value={settings.email_config.smtp_password}
+                  onChange={(e) => setSettings({
+                    ...settings,
+                    email_config: {...settings.email_config, smtp_password: e.target.value}
+                  })}
+                  placeholder="App-Passwort"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Standard Absender-Email</label>
+                <input
+                  type="email"
+                  value={settings.default_from_email}
+                  onChange={(e) => setSettings({...settings, default_from_email: e.target.value})}
+                  placeholder="noreply@ihrdojo.de"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Standard Absender-Name</label>
+                <input
+                  type="text"
+                  value={settings.default_from_name}
+                  onChange={(e) => setSettings({...settings, default_from_name: e.target.value})}
+                  placeholder="Dojo Software"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#e0e0e0',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="form-actions" style={{ 
+              marginTop: '1rem', 
+              display: 'flex', 
+              gap: '0.8rem',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={handleSMTPVerify}
+                disabled={loading || !settings.email_enabled}
+                style={{
+                  padding: '0.7rem 1.5rem',
+                  background: 'rgba(34, 197, 94, 0.2)',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  borderRadius: '8px',
+                  color: '#22c55e',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: (loading || !settings.email_enabled) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: (!settings.email_enabled) ? 0.5 : 1
+                }}
+                onMouseEnter={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(34, 197, 94, 0.3)')}
+                onMouseLeave={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)')}
+                title="SMTP-Verbindung testen"
+              >
+                🔌 SMTP-Verbindung testen
+              </button>
+              <button
+                onClick={handleEmailTest}
+                disabled={loading || !settings.email_enabled}
+                style={{
+                  padding: '0.7rem 1.5rem',
+                  background: 'rgba(96, 165, 250, 0.2)',
+                  border: '1px solid rgba(96, 165, 250, 0.4)',
+                  borderRadius: '8px',
+                  color: '#60a5fa',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: (loading || !settings.email_enabled) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: (!settings.email_enabled) ? 0.5 : 1
+                }}
+                onMouseEnter={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(96, 165, 250, 0.3)')}
+                onMouseLeave={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(96, 165, 250, 0.2)')}
+                title="Test-E-Mail versenden"
+              >
+                📧 Test-Email senden
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Push-Notification-Einstellungen */}
+      <div className="settings-section" style={{
+        background: 'rgba(30, 30, 45, 0.8)',
+        border: '1px solid rgba(255, 215, 0, 0.2)',
+        borderRadius: '10px',
+        padding: '1.2rem',
+        marginBottom: '1.5rem'
+      }}>
+        <div className="section-header" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ 
+              fontSize: '1.1rem',
+              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
+              position: 'relative',
+              zIndex: 10,
+              lineHeight: 1,
+              display: 'inline-block',
+              flexShrink: 0
+            }}>📱</span>
+            <h4 style={{ 
+              color: '#ffd700', 
+              margin: 0, 
+              fontSize: '1.1rem', 
+              fontWeight: '600',
+              textShadow: 'none',
+              WebkitTextFillColor: '#ffd700',
+              background: 'none',
+              WebkitBackgroundClip: 'initial',
+              backgroundClip: 'initial',
+              position: 'relative',
+              zIndex: 2
+            }}>Push-Notifications</h4>
+          </div>
+          <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+            <input
+              type="checkbox"
+              checked={settings.push_enabled}
+              onChange={(e) => setSettings({...settings, push_enabled: e.target.checked})}
+              style={{ opacity: 0, width: 0, height: 0 }}
+            />
+            <span className="toggle-slider" style={{
+              position: 'absolute',
+              cursor: 'pointer',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: settings.push_enabled ? '#22c55e' : '#606070',
+              transition: '0.4s',
+              borderRadius: '24px'
+            }}></span>
+          </label>
+        </div>
+
+        {settings.push_enabled && (
+          <div className="push-config">
+            <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Push-Notification-Konfiguration wird hier implementiert...</p>
+          </div>
+        )}
+      </div>
+
+      <div className="settings-actions" style={{ textAlign: 'right' }}>
+        <button
+          onClick={handleSettingsSave}
+          disabled={loading}
+          style={{
+            padding: '0.8rem 2rem',
+            background: 'rgba(255, 215, 0, 0.2)',
+            border: '1px solid rgba(255, 215, 0, 0.4)',
+            borderRadius: '8px',
+            color: '#ffd700',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => !loading && (e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)')}
+          onMouseLeave={(e) => !loading && (e.currentTarget.style.background = 'rgba(255, 215, 0, 0.2)')}
+        >
+          {loading ? 'Speichern...' : '💾 Einstellungen speichern'}
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderEmailComposer = () => (
+    <div className="email-composer">
+      <div className="composer-header">
+        <h3>📧 Email versenden</h3>
+        <p>Erstellen und versenden Sie Emails an Ihre Mitglieder</p>
+      </div>
+
+      {/* Dojo-Filter Indikator */}
+      {activeDojo && (
+        <div style={{
+          background: filter === 'all'
+            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 107, 53, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%)'
+            : `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
+          border: `1px solid ${filter === 'all' ? 'rgba(255, 215, 0, 0.3)' : `${activeDojo.farbe}66`}`,
+          borderRadius: '10px',
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.8rem'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '40px',
+            borderRadius: '4px',
+            background: filter === 'all'
+              ? 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
+              : activeDojo.farbe
+          }} />
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#a0a0b0',
+              marginBottom: '0.3rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Empfänger-Filter aktiv
+            </div>
+            <div style={{
+              fontSize: '1rem',
+              color: '#ffd700',
+              fontWeight: '600'
+            }}>
+              {filter === 'all' ? '🏯 Alle Dojos' : `🏯 ${activeDojo.dojoname}`}
+            </div>
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#e0e0e0',
+              marginTop: '0.3rem'
+            }}>
+              Verfügbare Empfänger: {recipients.mitglieder.length} Mitglieder, {recipients.trainer.length} Trainer, {recipients.personal.length} Mitarbeiter
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="composer-form">
+        <div className="form-group">
+          <label>Empfänger auswählen</label>
+          <div className="recipient-selector">
+            <div className="recipient-groups">
+              <button
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.mitglieder?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.mitglieder || []).map(r => r.email)})}
+              >
+                👥 Alle Mitglieder ({recipients.mitglieder?.length || 0})
+              </button>
+              <button
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.trainer?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.trainer || []).map(r => r.email)})}
+              >
+                👨‍🏫 Alle Trainer ({recipients.trainer?.length || 0})
+              </button>
+              <button
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.personal?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.personal || []).map(r => r.email)})}
+              >
+                🧑‍💼 Alle Mitarbeiter ({recipients.personal?.length || 0})
+              </button>
+              <button 
+                className={`recipient-group-btn ${emailData.recipients.length === (recipients.admin?.length || 0) ? 'active' : ''}`}
+                onClick={() => setEmailData({...emailData, recipients: (recipients.admin || []).map(r => r.email)})}
+              >
+                👑 Alle Admins ({recipients.admin?.length || 0})
+              </button>
+            </div>
+            
+            <div className="selected-recipients">
+              <strong>Ausgewählte Empfänger: {emailData.recipients.length}</strong>
+              {emailData.recipients.length > 0 && (
+                <div className="recipient-list">
+                  {emailData.recipients.slice(0, 5).map((email, index) => (
+                    <span key={index} className="recipient-tag">{email}</span>
+                  ))}
+                  {emailData.recipients.length > 5 && (
+                    <span className="recipient-more">+{emailData.recipients.length - 5} weitere</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Betreff</label>
+          <input
+            type="text"
+            value={emailData.subject}
+            onChange={(e) => setEmailData({...emailData, subject: e.target.value})}
+            placeholder="Betreff der Email..."
+            className="form-input"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Nachricht</label>
+          <textarea
+            value={emailData.message}
+            onChange={(e) => setEmailData({...emailData, message: e.target.value})}
+            placeholder="Ihre Nachricht..."
+            rows="10"
+            className="form-textarea"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Template verwenden</label>
+          <select
+            value={emailData.template_type}
+            onChange={(e) => {
+              const template = templates.find(t => t.id == e.target.value);
+              if (template) {
+                setEmailData({
+                  ...emailData,
+                  subject: template.subject,
+                  message: template.content,
+                  template_type: e.target.value
+                });
+              }
+            }}
+            className="form-select"
+          >
+            <option value="">Kein Template</option>
+            {Array.isArray(templates) && templates.map(template => (
+              <option key={template.id} value={template.id}>{template.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-actions">
+          <button 
+            onClick={handleEmailSend}
+            className="btn btn-primary"
+            disabled={loading || !emailData.recipients.length || !emailData.subject || !emailData.message}
+          >
+            {loading ? 'Senden...' : '📧 Email senden'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPushComposer = () => (
+    <div className="email-composer">
+      <div className="composer-header">
+        <h3>📱 Push-Nachrichten versenden</h3>
+        <p>Erstellen und versenden Sie Push-Benachrichtigungen an Ihre Mitglieder</p>
+      </div>
+
+      {/* Dojo-Filter Indikator */}
+      {activeDojo && (
+        <div style={{
+          background: filter === 'all'
+            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 107, 53, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%)'
+            : `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
+          border: `1px solid ${filter === 'all' ? 'rgba(255, 215, 0, 0.3)' : `${activeDojo.farbe}66`}`,
+          borderRadius: '10px',
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.8rem'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '40px',
+            borderRadius: '4px',
+            background: filter === 'all'
+              ? 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
+              : activeDojo.farbe
+          }} />
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: '0.75rem',
+              color: '#a0a0b0',
+              marginBottom: '0.3rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              Empfänger-Filter aktiv
+            </div>
+            <div style={{
+              fontSize: '1rem',
+              color: '#ffd700',
+              fontWeight: '600'
+            }}>
+              {filter === 'all' ? '🏯 Alle Dojos' : `🏯 ${activeDojo.dojoname}`}
+            </div>
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#e0e0e0',
+              marginTop: '0.3rem'
+            }}>
+              Verfügbare Empfänger: {recipients.mitglieder.length} Mitglieder, {recipients.trainer.length} Trainer, {recipients.personal.length} Mitarbeiter
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="composer-form">
+        <div className="form-group">
+          <label>Push-Berechtigung aktivieren</label>
+          <div className="push-permission-section">
+            <button 
+              onClick={requestPushPermission}
+              className="btn btn-secondary"
+            >
+              🔔 Push-Benachrichtigungen aktivieren
+            </button>
+            <p className="permission-info">
+              Aktive Abonnements: {pushSubscriptions.length}
+            </p>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Empfänger auswählen</label>
+          <div className="recipient-selector">
+            <div className="recipient-groups">
+              <button
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.mitglieder?.length || 0) ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: (recipients.mitglieder || []).map(r => r.email)});
+                }}
+              >
+                👥 Alle Mitglieder ({recipients.mitglieder?.length || 0})
+              </button>
+              <button
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.trainer?.length || 0) ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: (recipients.trainer || []).map(r => r.email)});
+                }}
+              >
+                👨‍🏫 Alle Trainer ({recipients.trainer?.length || 0})
+              </button>
+              <button
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.personal?.length || 0) ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: (recipients.personal || []).map(r => r.email)});
+                }}
+              >
+                🧑‍💼 Alle Mitarbeiter ({recipients.personal?.length || 0})
+              </button>
+              <button
+                className={`recipient-group-btn ${pushData.recipients.length === (recipients.admin?.length || 0) ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedIndividuals([]);
+                  setPushData({...pushData, recipients: (recipients.admin || []).map(r => r.email)});
+                }}
+              >
+                👑 Alle Admins ({recipients.admin?.length || 0})
+              </button>
+            </div>
+
+            <div className="individual-selection" style={{ marginTop: '1.5rem' }}>
+              <label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: '600' }}>
+                🔍 Einzelne Mitglieder auswählen
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  placeholder="Nach Name oder Email suchen..."
+                  className="form-input"
+                  style={{ width: '100%', marginBottom: '0.5rem' }}
+                />
+
+                {memberSearch.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    border: '2px solid #1976d2',
+                    borderRadius: '6px',
+                    maxHeight: '250px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    marginTop: '0.25rem'
+                  }}>
+                    {recipients.alle
+                      .filter(r =>
+                        r.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                        r.email.toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      .slice(0, 10)
+                      .map((member, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            if (!selectedIndividuals.find(m => m.email === member.email)) {
+                              setSelectedIndividuals([...selectedIndividuals, member]);
+                              setPushData({
+                                ...pushData,
+                                recipients: [...new Set([...pushData.recipients, member.email])]
+                              });
+                            }
+                            setMemberSearch('');
+                          }}
+                          style={{
+                            padding: '0.75rem 1rem',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #e0e0e0',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e3f2fd';
+                            e.currentTarget.style.borderLeftWidth = '4px';
+                            e.currentTarget.style.borderLeftColor = '#1976d2';
+                            e.currentTarget.style.borderLeftStyle = 'solid';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'white';
+                            e.currentTarget.style.borderLeftWidth = '0';
+                          }}
+                        >
+                          <div style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '0.95rem', marginBottom: '0.25rem' }}>
+                            {member.name}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: '#444' }}>
+                            {member.email}
+                            <span style={{
+                              marginLeft: '0.5rem',
+                              padding: '3px 8px',
+                              backgroundColor: '#1976d2',
+                              color: 'white',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: '600'
+                            }}>
+                              {member.type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+
+                    {recipients.alle.filter(r =>
+                      r.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                      r.email.toLowerCase().includes(memberSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div style={{ padding: '1rem', textAlign: 'center', color: '#999' }}>
+                        Keine Ergebnisse gefunden
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {selectedIndividuals.length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <strong style={{ marginBottom: '0.5rem', display: 'block' }}>
+                    Ausgewählte einzelne Empfänger ({selectedIndividuals.length}):
+                  </strong>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {selectedIndividuals.map((member, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          backgroundColor: '#e3f2fd',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        {member.name} ({member.email})
+                        <button
+                          onClick={() => {
+                            setSelectedIndividuals(selectedIndividuals.filter(m => m.email !== member.email));
+                            setPushData({
+                              ...pushData,
+                              recipients: pushData.recipients.filter(e => e !== member.email)
+                            });
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#666',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            padding: 0,
+                            lineHeight: 1
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="selected-recipients" style={{ marginTop: '1.5rem' }}>
+              <strong>Gesamt ausgewählte Empfänger: {pushData.recipients.length}</strong>
+              {pushData.recipients.length > 0 && (
+                <div className="recipient-list">
+                  {pushData.recipients.slice(0, 5).map((email, index) => (
+                    <span key={index} className="recipient-tag">{email}</span>
+                  ))}
+                  {pushData.recipients.length > 5 && (
+                    <span className="recipient-more">+{pushData.recipients.length - 5} weitere</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Titel</label>
+          <input
+            type="text"
+            value={pushData.title}
+            onChange={(e) => setPushData({...pushData, title: e.target.value})}
+            placeholder="Titel der Push-Nachricht..."
+            className="form-input"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Nachricht</label>
+          <textarea
+            value={pushData.message}
+            onChange={(e) => setPushData({...pushData, message: e.target.value})}
+            placeholder="Ihre Push-Nachricht..."
+            rows="4"
+            className="form-textarea"
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Icon URL (optional)</label>
+            <input
+              type="url"
+              value={pushData.icon}
+              onChange={(e) => setPushData({...pushData, icon: e.target.value})}
+              placeholder="https://example.com/icon.png"
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Link URL (optional)</label>
+            <input
+              type="url"
+              value={pushData.url}
+              onChange={(e) => setPushData({...pushData, url: e.target.value})}
+              placeholder="https://example.com"
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button 
+            onClick={handlePushSend}
+            className="btn btn-primary"
+            disabled={loading || !pushData.title || !pushData.message}
+          >
+            {loading ? 'Senden...' : '📱 Push-Nachricht senden'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Funktion zum Laden der Empfänger-Details
+  const loadRecipientDetails = async (subject, timestamp) => {
+    const key = `${subject}_${timestamp}`;
+
+    // Wenn bereits expanded, dann collapse
+    if (expandedNotifications[key]) {
+      setExpandedNotifications({
+        ...expandedNotifications,
+        [key]: null
+      });
+      return;
+    }
+
+    try {
+      const encodedSubject = encodeURIComponent(subject);
+      const encodedTimestamp = encodeURIComponent(timestamp);
+      const response = await fetch(`/dashboard/notification-recipients/${encodedSubject}/${encodedTimestamp}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setExpandedNotifications({
+          ...expandedNotifications,
+          [key]: data.recipients
+        });
+      }
+    } catch (error) {
+      console.error('❌ Fehler beim Laden der Empfänger:', error);
+    }
+  };
+
+  const renderHistory = () => {
+    // Gruppiere Benachrichtigungen nach Subject + Timestamp
+    const groupedNotifications = {};
+
+    history.notifications?.forEach(notification => {
+      const key = `${notification.subject}_${notification.created_at}`;
+      if (!groupedNotifications[key]) {
+        groupedNotifications[key] = {
+          id: notification.id,
+          subject: notification.subject,
+          type: notification.type,
+          timestamp: notification.created_at,
+          message: notification.message,
+          recipient: notification.recipient,
+          total_sent: notification.total_sent || 1,
+          total_read: notification.total_read || 0,
+          status: notification.status
+        };
+      }
+    });
+
+    const groups = Object.values(groupedNotifications);
+
+    return (
+      <div className="notification-history" style={{
+        background: 'rgba(20, 20, 30, 0.95)',
+        borderRadius: '12px',
+        padding: '1.5rem'
+      }}>
+        <div className="history-header" style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>📋 Benachrichtigungs-Verlauf</h3>
+          <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Übersicht über alle gesendeten Benachrichtigungen</p>
+        </div>
+
+        <div className="history-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {Array.isArray(groups) && groups.map((group, index) => {
+            const key = `${group.subject}_${group.timestamp}`;
+            const recipients = expandedNotifications[key];
+            const readPercentage = group.total_sent > 0 ? Math.round((group.total_read / group.total_sent) * 100) : 0;
+
+            return (
+              <div
+                key={index}
+                style={{
+                  background: 'rgba(30, 30, 45, 0.8)',
+                  border: '1px solid rgba(255, 215, 0, 0.2)',
+                  borderRadius: '10px',
+                  padding: '1rem',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {/* Header mit Subject und Typ */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.8rem',
+                  marginBottom: '0.8rem'
+                }}>
+                  <div style={{ fontSize: '1.5rem' }}>
+                    {group.type === 'email' ? '📧' : '📱'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{
+                      color: '#ffd700',
+                      margin: 0,
+                      fontSize: '1rem',
+                      fontWeight: '600'
+                    }}>
+                      {group.subject}
+                    </h4>
+                    <div style={{
+                      color: '#808090',
+                      fontSize: '0.85rem',
+                      marginTop: '0.2rem'
+                    }}>
+                      {new Date(group.timestamp).toLocaleString('de-DE')}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: group.status === 'sent' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    color: group.status === 'sent' ? '#22c55e' : '#ef4444',
+                    padding: '0.3rem 0.8rem',
+                    borderRadius: '20px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600'
+                  }}>
+                    {group.status === 'sent' ? '✅ Gesendet' :
+                     group.status === 'failed' ? '❌ Fehlgeschlagen' : '⏳ Ausstehend'}
+                  </div>
+                  <button
+                    onClick={() => deleteNotification(group.id)}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    }}
+                    title="Nur diesen Empfänger löschen"
+                  >
+                    🗑️
+                  </button>
+                  <button
+                    onClick={() => deleteBulkNotification(group.id)}
+                    style={{
+                      background: 'rgba(220, 38, 38, 0.3)',
+                      color: '#dc2626',
+                      border: '2px solid rgba(220, 38, 38, 0.5)',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: '700',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.4)';
+                      e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.7)';
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.3)';
+                      e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.5)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="⚠️ Für ALLE Empfänger löschen"
+                  >
+                    <span>🗑️🗑️</span>
+                    <span style={{ fontSize: '0.75rem' }}>Alle</span>
+                  </button>
+                </div>
+
+                {/* Nachrichteninhalt */}
+                {group.message && (
+                  <div style={{
+                    marginBottom: '0.8rem',
+                    padding: '0.8rem',
+                    background: 'rgba(20, 20, 30, 0.5)',
+                    borderRadius: '8px',
+                    borderLeft: '3px solid #ffd700'
+                  }}>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      marginBottom: '0.4rem',
+                      fontWeight: '600',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}>
+                      Nachricht
+                    </div>
+                    <div
+                      style={{
+                        color: '#e0e0e0',
+                        fontSize: '0.9rem',
+                        lineHeight: '1.5',
+                        maxHeight: '100px',
+                        overflowY: 'auto'
+                      }}
+                      dangerouslySetInnerHTML={createSafeHtml(group.message)}
+                    />
+                  </div>
+                )}
+
+                {/* Empfänger anzeigen */}
+                {group.recipient && (
+                  <div style={{
+                    marginBottom: '0.8rem',
+                    padding: '0.6rem 0.8rem',
+                    background: 'rgba(96, 165, 250, 0.1)',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(96, 165, 250, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>👤</span>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      fontWeight: '600',
+                      textTransform: 'uppercase'
+                    }}>
+                      Empfänger:
+                    </span>
+                    <span style={{
+                      color: '#60a5fa',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}>
+                      {group.recipient}
+                    </span>
+                  </div>
+                )}
+
+                {/* Statistiken */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '0.8rem',
+                  marginBottom: '0.8rem',
+                  padding: '0.8rem',
+                  background: 'rgba(20, 20, 30, 0.5)',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                      color: '#60a5fa'
+                    }}>
+                      {group.total_sent}
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      marginTop: '0.2rem'
+                    }}>
+                      Gesendet
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                      color: '#22c55e'
+                    }}>
+                      {group.total_read}
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      marginTop: '0.2rem'
+                    }}>
+                      Gelesen
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                      color: readPercentage >= 50 ? '#22c55e' : '#f59e0b'
+                    }}>
+                      {readPercentage}%
+                    </div>
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#a0a0b0',
+                      marginTop: '0.2rem'
+                    }}>
+                      Gelesen
+                    </div>
+                  </div>
+                </div>
+
+                {/* Empfänger Button */}
+                <button
+                  onClick={() => loadRecipientDetails(group.subject, group.timestamp)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    background: recipients ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${recipients ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
+                    borderRadius: '8px',
+                    color: recipients ? '#ffd700' : '#e0e0e0',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.6)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = recipients ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.borderColor = recipients ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)';
+                  }}
+                >
+                  <span>{recipients ? '▼' : '▶'}</span>
+                  <span>Empfänger anzeigen</span>
+                </button>
+
+                {/* Expanded Recipients List */}
+                {recipients && (
+                  <div style={{
+                    marginTop: '0.8rem',
+                    padding: '0.8rem',
+                    background: 'rgba(20, 20, 30, 0.6)',
+                    borderRadius: '8px',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.4rem'
+                    }}>
+                      {recipients.map((recipient, rIndex) => (
+                        <div
+                          key={rIndex}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.5rem 0.8rem',
+                            background: recipient.read ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+                            border: `1px solid ${recipient.read ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}>
+                            <span style={{ fontSize: '1rem' }}>
+                              {recipient.read ? '✅' : '📭'}
+                            </span>
+                            <span style={{
+                              color: '#e0e0e0',
+                              fontSize: '0.9rem'
+                            }}>
+                              {recipient.recipient}
+                            </span>
+                          </div>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: recipient.read ? '#22c55e' : '#808090',
+                            fontWeight: '600'
+                          }}>
+                            {recipient.read ? 'Gelesen' : 'Ungelesen'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {history.pagination && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem',
+            marginTop: '1.5rem',
+            padding: '1rem 0'
+          }}>
+            <button
+              onClick={() => loadHistory(history.pagination.page - 1)}
+              disabled={history.pagination.page <= 1}
+              style={{
+                padding: '0.6rem 1.2rem',
+                background: history.pagination.page <= 1 ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 215, 0, 0.2)',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                borderRadius: '8px',
+                color: history.pagination.page <= 1 ? '#606070' : '#ffd700',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                cursor: history.pagination.page <= 1 ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ← Zurück
+            </button>
+            <span style={{
+              color: '#e0e0e0',
+              fontSize: '0.9rem',
+              fontWeight: '500'
+            }}>
+              Seite {history.pagination.page} von {history.pagination.pages}
+            </span>
+            <button
+              onClick={() => loadHistory(history.pagination.page + 1)}
+              disabled={history.pagination.page >= history.pagination.pages}
+              style={{
+                padding: '0.6rem 1.2rem',
+                background: history.pagination.page >= history.pagination.pages ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 215, 0, 0.2)',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                borderRadius: '8px',
+                color: history.pagination.page >= history.pagination.pages ? '#606070' : '#ffd700',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                cursor: history.pagination.page >= history.pagination.pages ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Weiter →
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ===================================================================
+  // 🎨 MAIN RENDER
+  // ===================================================================
+
+  return (
+    <div className="notification-system">
+      {/* Navigation Tabs */}
+      <div className="notification-tabs">
+        <button 
+          className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <CheckCircle size={20} />
+          Dashboard
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'email' ? 'active' : ''}`}
+          onClick={() => setActiveTab('email')}
+        >
+          <Mail size={20} />
+          Email versenden
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'push' ? 'active' : ''}`}
+          onClick={() => setActiveTab('push')}
+        >
+          <Bell size={20} />
+          Push-Nachrichten
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          <Settings size={20} />
+          Einstellungen
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          <History size={20} />
+          Verlauf
+        </button>
+      </div>
+
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="alert alert-error">
+          <XCircle size={20} />
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success">
+          <CheckCircle size={20} />
+          {success}
+        </div>
+      )}
+
+      {/* Tab Content */}
+      <div className="tab-content">
+        {activeTab === 'dashboard' && renderDashboard()}
+        {activeTab === 'email' && renderEmailComposer()}
+        {activeTab === 'push' && renderPushComposer()}
+        {activeTab === 'settings' && renderSettings()}
+        {activeTab === 'history' && renderHistory()}
+      </div>
+    </div>
+  );
+};
+
+export default NotificationSystem;
