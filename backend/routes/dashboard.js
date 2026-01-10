@@ -58,8 +58,24 @@ async function getDashboardStats(dojo_id) {
 
   try {
     // 🔒 KRITISCHER DOJO-FILTER: Baue WHERE-Clause für alle relevanten Tabellen
-    const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND dojo_id = ${parseInt(dojo_id)}` : '';
-    const dojoJoinFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
+    // Wenn dojo_id === 'all', filtere nur zentral verwaltete Dojos (ohne separate Tenants)
+    let dojoFilter = '';
+    let dojoJoinFilter = '';
+
+    if (dojo_id && dojo_id !== 'all') {
+      // Spezifisches Dojo
+      dojoFilter = ` AND dojo_id = ${parseInt(dojo_id)}`;
+      dojoJoinFilter = ` AND m.dojo_id = ${parseInt(dojo_id)}`;
+    } else if (dojo_id === 'all') {
+      // Alle zentral verwalteten Dojos (ohne separate Tenants wie Demo)
+      dojoFilter = ` AND dojo_id NOT IN (
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+      )`;
+      dojoJoinFilter = ` AND m.dojo_id NOT IN (
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+      )`;
+    }
+    // Wenn dojo_id === undefined/null, keine Filterung (sollte nicht vorkommen)
 
     // Debug: Log Anwesenheits-Query
     // Zähle EINDEUTIGE Personen, die heute da waren (nicht die Summe aller Anwesenheiten)

@@ -122,7 +122,8 @@ export const DojoProvider = ({ children }) => {
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch(`${config.apiBaseUrl}/dojos`, {
+      // 🔒 Lade nur zentral verwaltete Dojos (ohne separate Tenants wie Demo)
+      const response = await fetch(`${config.apiBaseUrl}/dojos?filter=managed`, {
         headers
       });
 

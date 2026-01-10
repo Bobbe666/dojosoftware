@@ -6,6 +6,7 @@ const router = express.Router();
 
 // =====================================================
 // GET /api/dojos - Alle Dojos abrufen
+// Query Parameter: ?filter=managed - nur zentral verwaltete Dojos (ohne separate Tenants)
 // =====================================================
 router.get('/', async (req, res) => {
   // 🔒 MULTI-DOJO USER ISOLATION
@@ -18,6 +19,7 @@ router.get('/', async (req, res) => {
   const userDojoId = req.user?.dojo_id;
   const userRole = req.user?.role || req.user?.rolle;
   const isSuperAdmin = userRole === 'super_admin';
+  const { filter } = req.query;
 
   try {
     // Step 1: Check if user has specific dojo assignments in admin_user_dojos
@@ -27,7 +29,7 @@ router.get('/', async (req, res) => {
         'SELECT dojo_id FROM admin_user_dojos WHERE admin_user_id = ?',
         [userId]
       );
-      
+
       if (assignments.length > 0) {
         assignedDojoIds = assignments.map(a => a.dojo_id);
       }
@@ -36,6 +38,13 @@ router.get('/', async (req, res) => {
     // Build WHERE clause based on user permissions
     let whereClause = 'WHERE d.ist_aktiv = TRUE';
     let queryParams = [];
+
+    // Filter für zentral verwaltete Dojos (ohne separate Tenants)
+    if (filter === 'managed') {
+      whereClause += ` AND d.id NOT IN (
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+      )`;
+    }
 
     if (assignedDojoIds && assignedDojoIds.length > 0) {
       // User has specific dojo assignments → show only those
@@ -50,7 +59,7 @@ router.get('/', async (req, res) => {
       // User has no assignments and is not super_admin → show nothing
       return res.json([]);
     }
-    // If super_admin → no additional filter (show all active dojos)
+    // If super_admin → no additional filter (show all active dojos unless filter=managed)
 
     const query = `
       SELECT
