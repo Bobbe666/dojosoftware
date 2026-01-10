@@ -434,6 +434,19 @@ try {
     });
 }
 
+// 2.4 KURSE ROUTES (Course Management)
+try {
+  const kurseRoutes = require('./routes/kurse');
+  app.use('/api/kurse', authenticateToken, kurseRoutes);
+  logger.success('Route geladen', { path: '/api/kurse' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'kurse routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 3. CHECKIN ROUTE - HIGHEST PRIORITY
 try {
   const checkinPath = path.join(__dirname, "routes", "checkin.js");
@@ -1039,7 +1052,11 @@ const skipFiles = [
   "dojos.js",
   "notifications.js",
   "pruefungen.js",
-  "lastschriftlauf.js"
+  "lastschriftlauf.js",
+  "kurse.js",
+  "raeume.js",
+  "standorte.js",
+  "stundenplan.js"
 ];
 
 fs.readdirSync(routesPath).forEach((file) => {
