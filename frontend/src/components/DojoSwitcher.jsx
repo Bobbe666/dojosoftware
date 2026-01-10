@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Building2, ChevronDown, Check, AlertTriangle, TrendingUp, Award } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +8,7 @@ import '../styles/DojoSwitcher.css';
 const DojoSwitcher = () => {
   const { dojos, activeDojo, switchDojo, loading, filter, setFilter } = useDojoContext();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef(null);
@@ -77,17 +79,24 @@ const DojoSwitcher = () => {
     switchDojo(dojo);
     setFilter('current');
     setIsOpen(false);
+    // Navigiere zum normalen Dashboard
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSwitchToSuperAdmin = () => {
     switchDojo('super-admin');
     setFilter('current');
     setIsOpen(false);
+    // Navigiere zum Super-Admin Dashboard
+    navigate('/dashboard', { replace: true });
   };
 
   const handleShowAll = () => {
     setFilter('all');
     setIsOpen(false);
+    // Navigiere zum normalen Dashboard mit aggregierten Daten
+    // replace: true stellt sicher, dass die Navigation auch ausgeführt wird, wenn wir schon auf /dashboard sind
+    navigate('/dashboard', { replace: true });
   };
 
   // Prüfe ob User Super-Admin ist (Admin mit dojo_id=null)
