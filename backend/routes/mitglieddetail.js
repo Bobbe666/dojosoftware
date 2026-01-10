@@ -56,6 +56,21 @@ router.get("/:id", authenticateToken, (req, res) => {
   const dojoId = req.dojo_id;
 
   // SECURITY: Multi-Tenancy Check - nur Mitglieder des eigenen Dojos
+  // Super-Admin (dojo_id = null): Kann Mitglieder aller zentral verwalteten Dojos sehen
+  let whereClause = 'WHERE m.mitglied_id = ?';
+  let queryParams = [id];
+
+  if (dojoId === null || dojoId === undefined) {
+    // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+    whereClause += ` AND m.dojo_id NOT IN (
+      SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+    )`;
+  } else {
+    // Normaler Admin/User: Nur eigenes Dojo
+    whereClause += ' AND m.dojo_id = ?';
+    queryParams.push(dojoId);
+  }
+
   const query = `
     SELECT
       m.*,
@@ -73,11 +88,11 @@ router.get("/:id", authenticateToken, (req, res) => {
     LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
     LEFT JOIN stile s ON msd.stil_id = s.stil_id
     LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
-    WHERE m.mitglied_id = ? AND m.dojo_id = ?
+    ${whereClause}
     GROUP BY m.mitglied_id
   `;
 
-  db.query(query, [id, dojoId], (err, results) => {
+  db.query(query, queryParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Mitglieds', {
         error: err.message,
@@ -114,7 +129,7 @@ router.put("/:id", authenticateToken, (req, res) => {
 
   logger.debug("Mitglied-Update", {
     mitgliedId: id,
-    dojoId,
+    dojoId: dojoId || 'super_admin',
     fields: Object.keys(data),
   });
 
@@ -155,13 +170,28 @@ router.put("/:id", authenticateToken, (req, res) => {
   });
 
   // SECURITY: Multi-Tenancy Check im UPDATE
-  const updateQuery = "UPDATE mitglieder SET ? WHERE mitglied_id = ? AND dojo_id = ?";
-  db.query(updateQuery, [filteredData, id, dojoId], (err, result) => {
+  // Super-Admin (dojo_id = null): Kann Mitglieder aller zentral verwalteten Dojos bearbeiten
+  let updateWhereClause = 'WHERE mitglied_id = ?';
+  let updateParams = [filteredData, id];
+
+  if (dojoId === null || dojoId === undefined) {
+    // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+    updateWhereClause += ` AND dojo_id NOT IN (
+      SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+    )`;
+  } else {
+    // Normaler Admin/User: Nur eigenes Dojo
+    updateWhereClause += ' AND dojo_id = ?';
+    updateParams.push(dojoId);
+  }
+
+  const updateQuery = `UPDATE mitglieder SET ? ${updateWhereClause}`;
+  db.query(updateQuery, updateParams, (err, result) => {
     if (err) {
       logger.error('Fehler beim Aktualisieren des Mitglieds', {
         error: err.message,
         mitgliedId: id,
-        dojoId,
+        dojoId: dojoId || 'super_admin',
       });
       return res.status(500).json({
         error: "Fehler beim Aktualisieren des Mitglieds",
@@ -173,13 +203,27 @@ router.put("/:id", authenticateToken, (req, res) => {
     if (result.affectedRows === 0) {
       logger.warn('Mitglied nicht gefunden oder Zugriff verweigert (UPDATE)', {
         mitgliedId: id,
-        dojoId,
+        dojoId: dojoId || 'super_admin',
         userId: req.user?.id,
       });
       return res.status(404).json({ error: "Mitglied nicht gefunden oder Zugriff verweigert" });
     }
 
     // Nach dem Update: Den aktualisierten Datensatz abfragen und zurücksenden
+    let selectWhereClause = 'WHERE m.mitglied_id = ?';
+    let selectParams = [id];
+
+    if (dojoId === null || dojoId === undefined) {
+      // Super-Admin: Nur zentral verwaltete Dojos
+      selectWhereClause += ` AND m.dojo_id NOT IN (
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+      )`;
+    } else {
+      // Normaler Admin/User: Nur eigenes Dojo
+      selectWhereClause += ' AND m.dojo_id = ?';
+      selectParams.push(dojoId);
+    }
+
     const selectQuery = `
       SELECT
         m.*,
@@ -196,11 +240,11 @@ router.put("/:id", authenticateToken, (req, res) => {
       LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
       LEFT JOIN stile s ON msd.stil_id = s.stil_id
       LEFT JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id
-      WHERE m.mitglied_id = ? AND m.dojo_id = ?
+      ${selectWhereClause}
       GROUP BY m.mitglied_id
     `;
 
-    db.query(selectQuery, [id, dojoId], (err, results) => {
+    db.query(selectQuery, selectParams, (err, results) => {
       if (err) {
         logger.error('Fehler beim Abrufen des aktualisierten Mitglieds', {
           error: err.message,
