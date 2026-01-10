@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from "react";
-import axios from "axios";
+import { apiClient } from "../services/api";
 
 // Kontext erstellen
 export const KursContext = createContext();
@@ -49,10 +49,18 @@ export const KursProvider = ({ children }) => {
       return;
     }
 
+    // Prüfe ob Token vorhanden ist
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.log('Kein Token vorhanden, überspringe Kurse-Laden');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
-      const response = await axios.get("/kurse");
+      const response = await apiClient.get("/kurse");
       setKurse(response.data);
     } catch (err) {
       console.error("Fehler beim Laden der Kurse im Kontext:", err);
