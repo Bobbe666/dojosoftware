@@ -12,10 +12,13 @@ import {
   Bell,
   Trophy,
   Package,
-  Star
+  Star,
+  QrCode,
+  Download
 } from 'lucide-react';
 import MemberHeader from './MemberHeader.jsx';
 import MemberCheckin from './MemberCheckin.jsx';
+import MemberQRCode from './MemberQRCode.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
 import WeatherWidget from './WeatherWidget.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
@@ -47,6 +50,7 @@ const MemberDashboard = () => {
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [showMemberCheckin, setShowMemberCheckin] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   
   // Stil & Gurt Daten
   const [memberStile, setMemberStile] = useState([]);
@@ -588,6 +592,10 @@ const MemberDashboard = () => {
           <div className="cta-tile" onClick={() => handleQuickAction('checkin')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Clock size={20} />
             <span style={{ fontSize: '0.85rem' }}>Check-in</span>
+          </div>
+          <div className="cta-tile" onClick={() => setShowQRCode(true)} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 53, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+            <QrCode size={20} />
+            <span style={{ fontSize: '0.85rem' }}>Mein QR-Code</span>
           </div>
           <div className="cta-tile" onClick={() => navigate('/member/events')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Calendar size={20} />
@@ -1602,6 +1610,14 @@ const MemberDashboard = () => {
       {/* Member Check-in Modal */}
       {showMemberCheckin && (
         <MemberCheckin onClose={() => setShowMemberCheckin(false)} />
+      )}
+
+      {/* Member QR Code Modal */}
+      {showQRCode && memberData && (
+        <MemberQRCode
+          memberData={memberData}
+          onClose={() => setShowQRCode(false)}
+        />
       )}
 
       {/* PWA Install Prompt */}
