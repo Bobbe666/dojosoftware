@@ -20,26 +20,54 @@
 
     <title>Dojosoftware</title>
 
-    <!-- CRITICAL: Redirect to static cleanup page BEFORE loading React -->
+    <!-- CRITICAL: Clean Service Workers BEFORE loading React (NO REDIRECT) -->
     <script>
       (function() {
         'use strict';
 
+        // Only run cleanup once per session
         const SW_CLEANUP_KEY = 'sw_cleanup_completed';
         const hasCleanedUp = sessionStorage.getItem(SW_CLEANUP_KEY);
 
-        // If not cleaned up yet and Service Workers are supported, redirect to cleanup page
-        if (!hasCleanedUp && 'serviceWorker' in navigator) {
-          console.log('[REDIRECT] Redirecting to Service Worker cleanup page...');
-
-          // Save current URL to return to after cleanup
-          const currentPath = window.location.pathname + window.location.search + window.location.hash;
-          const cleanupUrl = '/pwa-reset.html?returnUrl=' + encodeURIComponent(currentPath);
-
-          window.location.href = cleanupUrl;
-        } else {
-          console.log('[REDIRECT] Already cleaned up or no SW support, loading app...');
+        if (hasCleanedUp || !('serviceWorker' in navigator)) {
+          console.log('[CLEANUP] Skipping - already done or not supported');
+          return;
         }
+
+        console.log('[CLEANUP] Removing Service Workers...');
+
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          if (registrations.length === 0) {
+            console.log('[CLEANUP] No Service Workers found');
+            sessionStorage.setItem(SW_CLEANUP_KEY, 'true');
+            return;
+          }
+
+          console.log('[CLEANUP] Found ' + registrations.length + ' Service Workers, removing...');
+
+          Promise.all(registrations.map(function(reg) {
+            return reg.unregister();
+          })).then(function() {
+            console.log('[CLEANUP] All Service Workers removed');
+
+            // Clear caches
+            if ('caches' in window) {
+              return caches.keys().then(function(names) {
+                return Promise.all(names.map(function(name) {
+                  return caches.delete(name);
+                }));
+              });
+            }
+          }).then(function() {
+            console.log('[CLEANUP] Caches cleared');
+            sessionStorage.setItem(SW_CLEANUP_KEY, 'true');
+            // Reload to start fresh WITHOUT Service Workers
+            window.location.reload();
+          });
+        }).catch(function(err) {
+          console.error('[CLEANUP] Error:', err);
+          sessionStorage.setItem(SW_CLEANUP_KEY, 'true');
+        });
       })();
     </script>
   </head>
