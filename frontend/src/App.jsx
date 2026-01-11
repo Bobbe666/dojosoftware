@@ -134,6 +134,9 @@ import MeineEvents from "./components/MeineEvents";
 // MagicLine Import
 import MagicLineImport from "./pages/MagicLineImport";
 
+// PWA Offline Support
+import OfflineBanner from "./components/OfflineBanner";
+
 // Public Marketing Pages
 import LandingPage from "./pages/LandingPage";
 import PricingPage from "./pages/PricingPage";
@@ -244,6 +247,8 @@ const App = () => {
           <StandortProvider>
             <KursProvider>
               <MitgliederUpdateProvider>
+                {/* PWA Offline Banner - Global visibility */}
+                <OfflineBanner />
                 <BrowserRouter>
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}

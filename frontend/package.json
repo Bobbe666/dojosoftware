@@ -21,6 +21,7 @@
     "get-user-locale": "^3.0.0",
     "grapesjs": "^0.22.13",
     "grapesjs-preset-webpage": "^1.0.3",
+    "html5-qrcode": "^2.3.8",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.484.0",
     "qrcode.react": "^4.2.0",
@@ -35,6 +36,8 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "terser": "^5.44.1",
-    "vite": "^6.2.3"
+    "vite": "^6.2.3",
+    "vite-plugin-pwa": "^0.21.2",
+    "workbox-window": "^7.4.0"
   }
 }
