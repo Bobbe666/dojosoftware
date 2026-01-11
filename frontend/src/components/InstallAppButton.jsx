@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone, Chrome, QrCode } from 'lucide-react';
-import AppInstallQRCode from './AppInstallQRCode.jsx';
 
-const InstallAppButton = () => {
+const InstallAppButton = ({ onShowQRCode }) => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -64,7 +62,10 @@ const InstallAppButton = () => {
   return (
     <>
       <button
-        onClick={handleInstallClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleInstallClick();
+        }}
         className="install-app-button"
         style={{
           display: 'flex',
@@ -73,8 +74,8 @@ const InstallAppButton = () => {
           justifyContent: 'center',
           gap: '0.3rem',
           width: '100%',
-          height: '100%',
-          padding: '0',
+          minHeight: '60px',
+          padding: '0.8rem',
           background: 'transparent',
           color: '#ffd700',
           border: 'none',
@@ -219,9 +220,14 @@ const InstallAppButton = () => {
               marginTop: '1.5rem',
             }}>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowModal(false);
-                  setShowQRCode(true);
+                  setTimeout(() => {
+                    if (onShowQRCode) {
+                      onShowQRCode();
+                    }
+                  }, 100);
                 }}
                 style={{
                   display: 'flex',
@@ -265,10 +271,6 @@ const InstallAppButton = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {showQRCode && (
-        <AppInstallQRCode onClose={() => setShowQRCode(false)} />
       )}
     </>
   );

@@ -20,6 +20,7 @@ import MemberHeader from './MemberHeader.jsx';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
 import InstallAppButton from './InstallAppButton.jsx';
+import AppInstallQRCode from './AppInstallQRCode.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
 import WeatherWidget from './WeatherWidget.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
@@ -51,6 +52,7 @@ const MemberDashboard = () => {
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [showMemberCheckin, setShowMemberCheckin] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showAppQRCode, setShowAppQRCode] = useState(false);
   
   // Stil & Gurt Daten
   const [memberStile, setMemberStile] = useState([]);
@@ -597,8 +599,8 @@ const MemberDashboard = () => {
             <QrCode size={20} />
             <span style={{ fontSize: '0.85rem' }}>Mein QR-Code</span>
           </div>
-          <div className="cta-tile" style={{ padding: '0.8rem', minHeight: '60px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-            <InstallAppButton />
+          <div className="cta-tile" style={{ padding: '0', minHeight: '60px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)', overflow: 'hidden' }}>
+            <InstallAppButton onShowQRCode={() => setShowAppQRCode(true)} />
           </div>
           <div className="cta-tile" onClick={() => navigate('/member/events')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Calendar size={20} />
@@ -1620,6 +1622,13 @@ const MemberDashboard = () => {
         <MemberQRCode
           memberData={memberData}
           onClose={() => setShowQRCode(false)}
+        />
+      )}
+
+      {/* App Install QR Code Modal */}
+      {showAppQRCode && (
+        <AppInstallQRCode
+          onClose={() => setShowAppQRCode(false)}
         />
       )}
         </div>

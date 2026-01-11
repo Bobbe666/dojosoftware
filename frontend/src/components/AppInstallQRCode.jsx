@@ -149,7 +149,7 @@ const AppInstallQRCode = ({ onClose }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 9999,
+      zIndex: 99999,
     }}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{
         backgroundColor: '#1a1a2e',
