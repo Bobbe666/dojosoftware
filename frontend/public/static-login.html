@@ -145,6 +145,69 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .install-banner {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15));
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .install-banner p {
+            color: #ffd700;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .install-btn {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #0f0f23;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .install-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+
+        .ios-instructions {
+            background: #1a1a2e;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .ios-instructions h3 {
+            color: #ffd700;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .ios-instructions ol {
+            text-align: left;
+            color: #e0e0e0;
+            padding-left: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .ios-instructions li {
+            margin-bottom: 0.5rem;
+        }
+
+        .install-icon {
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 <body>
@@ -152,6 +215,23 @@
         <div class="logo">
             <h1>🥋 Dojosoftware</h1>
             <p>Mitgliederbereich</p>
+        </div>
+
+        <!-- App Install Banner -->
+        <div id="install-banner" class="install-banner" style="display: none;">
+            <p><span class="install-icon">📱</span> Als App installieren</p>
+            <button id="install-btn" class="install-btn">
+                <span>App installieren</span>
+            </button>
+            <div id="ios-instructions" class="ios-instructions" style="display: none;">
+                <h3>📱 Installation auf iPhone:</h3>
+                <ol>
+                    <li>Tippe auf <strong>Teilen</strong> (Quadrat mit Pfeil) unten</li>
+                    <li>Scrolle runter zu <strong>"Zum Home-Bildschirm"</strong></li>
+                    <li>Tippe auf <strong>"Hinzufügen"</strong></li>
+                    <li>Fertig! Icon erscheint auf deinem Homescreen</li>
+                </ol>
+            </div>
         </div>
 
         <div id="error-message" class="error" style="display: none;"></div>
@@ -181,6 +261,63 @@
         const errorMessage = document.getElementById('error-message');
         const loading = document.getElementById('loading');
         const submitBtn = document.getElementById('submit-btn');
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const installBtn = document.getElementById('install-btn');
+        const iosInstructions = document.getElementById('ios-instructions');
+
+        // Check if already installed
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+                           window.navigator.standalone === true;
+
+        if (!isInstalled) {
+            // Show install banner
+            installBanner.style.display = 'block';
+
+            // Check if iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+            if (isIOS) {
+                // On iOS, show instructions
+                installBtn.addEventListener('click', () => {
+                    if (iosInstructions.style.display === 'none') {
+                        iosInstructions.style.display = 'block';
+                        installBtn.textContent = 'Anleitung ausblenden';
+                    } else {
+                        iosInstructions.style.display = 'none';
+                        installBtn.innerHTML = '<span>App installieren</span>';
+                    }
+                });
+            } else {
+                // Android/Chrome - use beforeinstallprompt
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    installBanner.style.display = 'block';
+
+                    installBtn.addEventListener('click', async () => {
+                        if (!deferredPrompt) {
+                            alert('Installation aktuell nicht verfügbar. Bitte versuche es später erneut.');
+                            return;
+                        }
+
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+
+                        if (outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                            installBanner.style.display = 'none';
+                        }
+
+                        deferredPrompt = null;
+                    });
+                });
+            }
+        }
+
+        // Login Form Handler
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
