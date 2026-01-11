@@ -19,6 +19,44 @@
     <link rel="manifest" href="/manifest.json" />
 
     <title>Dojosoftware</title>
+
+    <!-- CRITICAL: Kill Service Workers BEFORE loading React -->
+    <script>
+      (function() {
+        'use strict';
+
+        const SW_KILLED_KEY = 'sw_cleanup_done';
+        const hasCleanedUp = sessionStorage.getItem(SW_KILLED_KEY);
+
+        if (!hasCleanedUp && 'serviceWorker' in navigator) {
+          console.log('[CLEANUP] Starting Service Worker cleanup...');
+
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            if (registrations.length > 0) {
+              console.warn('[CLEANUP] Found', registrations.length, 'Service Workers - removing...');
+
+              Promise.all(registrations.map(function(reg) {
+                return reg.unregister();
+              })).then(function() {
+                console.log('[CLEANUP] All Service Workers removed');
+                sessionStorage.setItem(SW_KILLED_KEY, 'true');
+
+                // Force reload to start fresh
+                window.location.reload();
+              });
+            } else {
+              console.log('[CLEANUP] No Service Workers found');
+              sessionStorage.setItem(SW_KILLED_KEY, 'true');
+            }
+          }).catch(function(err) {
+            console.error('[CLEANUP] Error during cleanup:', err);
+            sessionStorage.setItem(SW_KILLED_KEY, 'true');
+          });
+        } else {
+          console.log('[CLEANUP] Already cleaned up or no SW support');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
