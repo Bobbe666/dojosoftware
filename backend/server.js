@@ -19,6 +19,10 @@ const logger = require("./utils/logger");
 
 const app = express();
 
+// Trust proxy - wichtig für Nginx/Apache Proxy-Setups
+// Ermöglicht korrekte IP-Erkennung über X-Forwarded-For Header
+app.set('trust proxy', true);
+
 // Security Headers mit Helmet
 app.use(helmet({
   contentSecurityPolicy: {
