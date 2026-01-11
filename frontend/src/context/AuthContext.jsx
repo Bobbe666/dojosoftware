@@ -195,21 +195,16 @@ export const AuthProvider = ({ children }) => {
           expiry: savedExpiry ? new Date(parseInt(savedExpiry)).toISOString() : 'unbekannt'
         });
 
-        // Backend-Validierung (optional, aber empfohlen)
-        const backendValidation = await validateTokenWithBackend(savedToken);
-        
-        if (backendValidation && backendValidation.tokenValid) {
-          // Session wiederherstellen
-          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
-          setToken(savedToken);
-          setUser(userData);
-          setSessionExpiry(savedExpiry ? parseInt(savedExpiry) : null);
-          
-          debugLog('Session erfolgreich wiederhergestellt', userData.username);
-        } else {
-          debugLog('Backend-Validierung fehlgeschlagen - Session gelöscht');
-          clearSession();
-        }
+        // Backend-Validierung DEAKTIVIERT - verursacht Loop auf Mobile
+        // const backendValidation = await validateTokenWithBackend(savedToken);
+
+        // Session wiederherstellen (OHNE Backend-Validierung)
+        axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+        setToken(savedToken);
+        setUser(userData);
+        setSessionExpiry(savedExpiry ? parseInt(savedExpiry) : null);
+
+        debugLog('Session wiederhergestellt (ohne Backend-Validierung)', userData.username);
         
       } catch (error) {
         debugLog('Fehler beim Initialisieren der Session', error);
