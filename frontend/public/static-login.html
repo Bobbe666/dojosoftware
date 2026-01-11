@@ -205,12 +205,16 @@
 
                 console.log('Login erfolgreich:', data.user.username);
 
-                // Weiterleitung basierend auf Rolle
-                if (data.user.role === 'member') {
-                    window.location.href = '/member/dashboard';
-                } else {
-                    window.location.href = '/dashboard';
-                }
+                // Weiterleitung zur React-App
+                // Die React-App liest das Token aus localStorage und leitet automatisch weiter
+                window.location.href = '/app.html';
+
+                // Alternative: Direkt zur gewünschten Route mit Hash
+                // if (data.user.role === 'member') {
+                //     window.location.href = '/app.html#/member/dashboard';
+                // } else {
+                //     window.location.href = '/app.html#/dashboard';
+                // }
 
             } catch (error) {
                 console.error('Login-Fehler:', error);
