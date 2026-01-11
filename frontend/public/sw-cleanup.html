@@ -102,6 +102,9 @@
             const SW_CLEANUP_KEY = 'sw_cleanup_completed';
             const status = document.getElementById('status');
 
+            // CRITICAL: Set flag IMMEDIATELY to prevent redirect loop
+            sessionStorage.setItem(SW_CLEANUP_KEY, 'true');
+
             function updateStatus(message) {
                 if (status) {
                     status.textContent = message;
@@ -111,22 +114,14 @@
 
             function redirectToApp() {
                 updateStatus('Weiterleitung zur App...');
-                sessionStorage.setItem(SW_CLEANUP_KEY, 'true');
 
                 // Get the original URL the user was trying to access
                 const params = new URLSearchParams(window.location.search);
                 const returnUrl = params.get('returnUrl') || '/';
 
                 setTimeout(function() {
-                    window.location.href = returnUrl;
+                    window.location.replace(returnUrl);
                 }, 500);
-            }
-
-            // Check if cleanup already done this session
-            if (sessionStorage.getItem(SW_CLEANUP_KEY) === 'true') {
-                updateStatus('Bereits bereinigt, Weiterleitung...');
-                redirectToApp();
-                return;
             }
 
             // Check if Service Workers are supported
@@ -144,7 +139,7 @@
                     if (registrations.length === 0) {
                         updateStatus('Keine Service Workers gefunden');
                         redirectToApp();
-                        return;
+                        return null;
                     }
 
                     updateStatus('Entferne ' + registrations.length + ' Service Worker(s)...');
@@ -157,23 +152,32 @@
                     return Promise.all(unregisterPromises);
                 })
                 .then(function(results) {
-                    if (results) {
-                        updateStatus('Service Workers entfernt');
-
-                        // Clear all caches
-                        if ('caches' in window) {
-                            updateStatus('Lösche Caches...');
-                            return caches.keys().then(function(cacheNames) {
-                                return Promise.all(
-                                    cacheNames.map(function(cacheName) {
-                                        return caches.delete(cacheName);
-                                    })
-                                );
-                            });
-                        }
+                    if (!results) {
+                        // No service workers were found, already redirected
+                        return null;
                     }
+
+                    updateStatus('Service Workers entfernt');
+
+                    // Clear all caches
+                    if ('caches' in window) {
+                        updateStatus('Lösche Caches...');
+                        return caches.keys().then(function(cacheNames) {
+                            return Promise.all(
+                                cacheNames.map(function(cacheName) {
+                                    return caches.delete(cacheName);
+                                })
+                            );
+                        });
+                    }
+
+                    return null;
                 })
-                .then(function() {
+                .then(function(cacheResults) {
+                    if (cacheResults === null) {
+                        // Already handled redirect
+                        return;
+                    }
                     updateStatus('Bereinigung abgeschlossen');
                     redirectToApp();
                 })
