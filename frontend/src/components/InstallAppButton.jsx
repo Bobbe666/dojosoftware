@@ -109,7 +109,7 @@ const InstallAppButton = ({ onShowQRCode }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 9999,
+            zIndex: 10000,
           }}
         >
           <div
@@ -222,12 +222,16 @@ const InstallAppButton = ({ onShowQRCode }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowModal(false);
+                  console.log('🔵 QR-Code Button geklickt');
+                  // WICHTIG: Erst QR-Code Modal öffnen, DANN erst dieses Modal schließen
+                  if (onShowQRCode) {
+                    onShowQRCode();
+                    console.log('✅ QR-Modal geöffnet');
+                  }
+                  // Modal wird automatisch durch das QR-Modal überdeckt
                   setTimeout(() => {
-                    if (onShowQRCode) {
-                      onShowQRCode();
-                    }
-                  }, 100);
+                    setShowModal(false);
+                  }, 200);
                 }}
                 style={{
                   display: 'flex',

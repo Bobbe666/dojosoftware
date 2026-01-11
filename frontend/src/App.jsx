@@ -61,6 +61,7 @@ import Stilverwaltung from "./components/Stilverwaltung";
 
 // MEMBER-KOMPONENTEN
 import MemberDashboard from "./components/MemberDashboard";
+import AppInstallPage from "./pages/AppInstallPage";
 import CourseRating from "./components/CourseRating";
 import MemberSchedule from "./components/MemberSchedule";
 import MemberEvents from "./components/MemberEvents";
@@ -274,6 +275,14 @@ const App = () => {
             <Route path="/registration/buddy-invite/:token" element={<BuddyInviteRegistration />} />
 
             {/* ======== MITGLIEDER-ROUTEN ======== */}
+            <Route
+              path="/app-install"
+              element={
+                <MemberOnlyRoute>
+                  <AppInstallPage />
+                </MemberOnlyRoute>
+              }
+            />
             <Route
               path="/member/profile"
               element={
