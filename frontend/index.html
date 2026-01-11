@@ -34,7 +34,7 @@
 
           // Save current URL to return to after cleanup
           const currentPath = window.location.pathname + window.location.search + window.location.hash;
-          const cleanupUrl = '/sw-cleanup.html?returnUrl=' + encodeURIComponent(currentPath);
+          const cleanupUrl = '/pwa-reset.html?returnUrl=' + encodeURIComponent(currentPath);
 
           window.location.href = cleanupUrl;
         } else {
