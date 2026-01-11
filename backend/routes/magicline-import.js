@@ -184,56 +184,94 @@ async function importMember(memberFolder, baseDir) {
     }
 
     // 2. MITGLIED IMPORTIEREN
-    const address = customerData.addresses?.[0] || {};
+    // Prüfe ob Mitglied bereits existiert (anhand magicline_uuid)
+    const checkMemberSQL = `SELECT mitglied_id FROM mitglieder WHERE magicline_uuid = ? LIMIT 1`;
+    const existingMember = await queryPromise(checkMemberSQL, [customerData.uuid]);
 
-    // Telefonnummer aus contact.json holen
-    const telefon = contactData?.telPrivateMobile || contactData?.telPrivate ||
-                   contactData?.telBusinessMobile || contactData?.telBusiness || null;
+    let mitgliedId;
 
-    const memberInsertSQL = `
-      INSERT INTO mitglieder (
-        vorname, nachname, geburtsdatum, geschlecht,
-        email, telefon, telefon_mobil,
-        strasse, hausnummer, plz, ort, land,
-        iban, bic, bankname, kontoinhaber,
-        magicline_customer_number, magicline_uuid,
-        aktiv, eintrittsdatum
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURDATE())
-    `;
+    if (existingMember.length > 0) {
+      // Mitglied existiert bereits - überspringen
+      mitgliedId = existingMember[0].mitglied_id;
+      importLog.warnings.push('Mitglied bereits vorhanden - übersprungen');
+      logger.info('Mitglied bereits vorhanden - übersprungen', {
+        mitgliedId,
+        uuid: customerData.uuid,
+        name: `${customerData.firstName} ${customerData.lastName}`
+      });
 
-    const memberValues = [
-      customerData.firstName,
-      customerData.lastName,
-      convertDate(customerData.dateOfBirth),
-      mapGender(customerData.gender),
-      customerData.email || null,
-      telefon, // Telefon aus contact.json
-      telefon, // telefon_mobil - verwende gleichen Wert
-      address.street || null,
-      address.houseNumber || null,
-      address.zip || null,
-      address.city || null,
-      address.country === 'DE' ? 'Deutschland' : address.country,
-      bankData?.iban || null,
-      bankData?.bic || null,
-      bankData?.bankName || null,
-      bankData?.accountHolder || null,
-      contractsData[0]?.customerNumber || null,
-      customerData.uuid,
-    ];
+      // Setze Flag, dass Mitglied existiert (nicht neu importiert)
+      importLog.imported.member = false;
+      importLog.memberAlreadyExists = true;
+    } else {
+      // Neues Mitglied - importieren
+      const address = customerData.addresses?.[0] || {};
 
-    const memberResult = await queryPromise(memberInsertSQL, memberValues);
-    const mitgliedId = memberResult.insertId;
-    importLog.imported.member = true;
+      // Telefonnummer aus contact.json holen
+      const telefon = contactData?.telPrivateMobile || contactData?.telPrivate ||
+                     contactData?.telBusinessMobile || contactData?.telBusiness || null;
 
-    logger.info('Mitglied importiert', {
-      mitgliedId,
-      name: `${customerData.firstName} ${customerData.lastName}`
-    });
+      const memberInsertSQL = `
+        INSERT INTO mitglieder (
+          vorname, nachname, geburtsdatum, geschlecht,
+          email, telefon, telefon_mobil,
+          strasse, hausnummer, plz, ort, land,
+          iban, bic, bankname, kontoinhaber,
+          magicline_customer_number, magicline_uuid,
+          aktiv, eintrittsdatum
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURDATE())
+      `;
+
+      const memberValues = [
+        customerData.firstName,
+        customerData.lastName,
+        convertDate(customerData.dateOfBirth),
+        mapGender(customerData.gender),
+        customerData.email || null,
+        telefon, // Telefon aus contact.json
+        telefon, // telefon_mobil - verwende gleichen Wert
+        address.street || null,
+        address.houseNumber || null,
+        address.zip || null,
+        address.city || null,
+        address.country === 'DE' ? 'Deutschland' : address.country,
+        bankData?.iban || null,
+        bankData?.bic || null,
+        bankData?.bankName || null,
+        bankData?.accountHolder || null,
+        contractsData[0]?.customerNumber || null,
+        customerData.uuid,
+      ];
+
+      const memberResult = await queryPromise(memberInsertSQL, memberValues);
+      mitgliedId = memberResult.insertId;
+      importLog.imported.member = true;
+
+      logger.info('Mitglied importiert', {
+        mitgliedId,
+        name: `${customerData.firstName} ${customerData.lastName}`
+      });
+    }
 
     // 3. VERTRÄGE IMPORTIEREN
     for (const contract of contractsData) {
       try {
+        // Prüfe ob Vertrag bereits existiert (anhand magicline_contract_id)
+        const checkContractSQL = `SELECT vertrag_id FROM vertraege WHERE magicline_contract_id = ? LIMIT 1`;
+        const existingContract = await queryPromise(checkContractSQL, [contract.id]);
+
+        if (existingContract.length > 0) {
+          // Vertrag existiert bereits - überspringen
+          importLog.warnings.push(`Vertrag ${contract.id} bereits vorhanden - übersprungen`);
+          logger.info('Vertrag bereits vorhanden - übersprungen', {
+            vertragId: existingContract[0].vertrag_id,
+            magiclineId: contract.id,
+            mitgliedId
+          });
+          continue; // Nächster Vertrag
+        }
+
+        // Neuer Vertrag - importieren
         // Finde oder erstelle Tarif
         const tarifId = await findOrCreateTarif(contract.rateName, contract.chargeAmountCurrent);
 
@@ -274,30 +312,50 @@ async function importMember(memberFolder, baseDir) {
         // 4. SEPA-MANDAT IMPORTIEREN (falls vorhanden)
         if (bankData && bankData.iban && contract.paymentType === 'Lastschrift') {
           const sepaMandate = bankData.sepaMandateDtos?.[0];
+          const mandatsreferenz = sepaMandate?.referenceNumber || `IMPORT-${Date.now()}`;
 
-          const sepaMandateSQL = `
-            INSERT INTO sepa_mandate (
-              mitglied_id,
-              iban, bic, kontoinhaber, bankname,
-              mandatsreferenz, erstellungsdatum,
-              status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'aktiv')
+          // Prüfe ob SEPA-Mandat bereits existiert (anhand IBAN + mitglied_id oder mandatsreferenz)
+          const checkMandateSQL = `
+            SELECT id FROM sepa_mandate
+            WHERE mitglied_id = ? AND iban = ?
+            LIMIT 1
           `;
+          const existingMandate = await queryPromise(checkMandateSQL, [mitgliedId, bankData.iban]);
 
-          const sepaMandateValues = [
-            mitgliedId,
-            bankData.iban,
-            bankData.bic,
-            bankData.accountHolder,
-            bankData.bankName,
-            sepaMandate?.referenceNumber || `IMPORT-${Date.now()}`,
-            convertDate(sepaMandate?.mandateGivenDate) || new Date().toISOString().split('T')[0]
-          ];
+          if (existingMandate.length > 0) {
+            // SEPA-Mandat existiert bereits - überspringen
+            importLog.warnings.push('SEPA-Mandat bereits vorhanden - übersprungen');
+            logger.info('SEPA-Mandat bereits vorhanden - übersprungen', {
+              mandateId: existingMandate[0].id,
+              mitgliedId,
+              iban: bankData.iban
+            });
+          } else {
+            // Neues SEPA-Mandat - importieren
+            const sepaMandateSQL = `
+              INSERT INTO sepa_mandate (
+                mitglied_id,
+                iban, bic, kontoinhaber, bankname,
+                mandatsreferenz, erstellungsdatum,
+                status
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 'aktiv')
+            `;
 
-          await queryPromise(sepaMandateSQL, sepaMandateValues);
-          importLog.imported.sepaMandate = true;
+            const sepaMandateValues = [
+              mitgliedId,
+              bankData.iban,
+              bankData.bic,
+              bankData.accountHolder,
+              bankData.bankName,
+              mandatsreferenz,
+              convertDate(sepaMandate?.mandateGivenDate) || new Date().toISOString().split('T')[0]
+            ];
 
-          logger.info('SEPA-Mandat importiert', { mitgliedId });
+            await queryPromise(sepaMandateSQL, sepaMandateValues);
+            importLog.imported.sepaMandate = true;
+
+            logger.info('SEPA-Mandat importiert', { mitgliedId });
+          }
         }
 
       } catch (contractError) {
@@ -314,6 +372,23 @@ async function importMember(memberFolder, baseDir) {
         try {
           // Nur PAYMENT_RUN_TYPE (tatsächliche Zahlungen) importieren
           if (transaction.parent?.typeAsString === 'PAYMENT_RUN_TYPE' && transaction.parent?.amount) {
+            // Prüfe ob Zahlung bereits existiert (anhand magicline_transaction_id)
+            const checkPaymentSQL = `
+              SELECT id FROM beitraege
+              WHERE magicline_transaction_id = ?
+              LIMIT 1
+            `;
+            const existingPayment = await queryPromise(checkPaymentSQL, [transaction.parent.id]);
+
+            if (existingPayment.length > 0) {
+              // Zahlung existiert bereits - überspringen
+              logger.debug('Zahlung bereits vorhanden - übersprungen', {
+                transactionId: transaction.parent.id
+              });
+              continue; // Nächste Zahlung
+            }
+
+            // Neue Zahlung - importieren
             const paymentSQL = `
               INSERT INTO beitraege (
                 mitglied_id, betrag, zahlungsart, zahlungsdatum, bezahlt, dojo_id,
@@ -333,8 +408,8 @@ async function importMember(memberFolder, baseDir) {
             importedPayments++;
           }
         } catch (paymentError) {
-          // Stille Fehler bei Zahlungen (oft Duplikate)
-          logger.warn('Zahlung Import übersprungen', {
+          // Stille Fehler bei Zahlungen
+          logger.warn('Zahlung Import Fehler', {
             error: paymentError.message,
             transactionId: transaction.parent?.id
           });
@@ -354,13 +429,33 @@ async function importMember(memberFolder, baseDir) {
 
       for (const file of files) {
         if (file.endsWith('.pdf')) {
+          const fileName = `magicline_${file}`;
+
+          // Prüfe ob Dokument bereits existiert (anhand dateiname + mitglied_id)
+          const checkDocumentSQL = `
+            SELECT id FROM mitglieder_dokumente
+            WHERE mitglied_id = ? AND dateiname = ?
+            LIMIT 1
+          `;
+          const existingDocument = await queryPromise(checkDocumentSQL, [mitgliedId, fileName]);
+
+          if (existingDocument.length > 0) {
+            // Dokument existiert bereits - überspringen
+            logger.debug('Dokument bereits vorhanden - übersprungen', {
+              mitgliedId,
+              fileName
+            });
+            continue; // Nächstes Dokument
+          }
+
+          // Neues Dokument - importieren
           const sourcePath = path.join(documentsPath, file);
           const targetDir = path.join(__dirname, '../uploads/mitglieder', mitgliedId.toString());
 
           // Erstelle Zielverzeichnis
           await fs.mkdir(targetDir, { recursive: true });
 
-          const targetPath = path.join(targetDir, `magicline_${file}`);
+          const targetPath = path.join(targetDir, fileName);
           await fs.copyFile(sourcePath, targetPath);
 
           // Speichere in Datenbank
@@ -372,8 +467,8 @@ async function importMember(memberFolder, baseDir) {
 
           await queryPromise(documentSQL, [
             mitgliedId,
-            `magicline_${file}`,
-            `/uploads/mitglieder/${mitgliedId}/magicline_${file}`
+            fileName,
+            `/uploads/mitglieder/${mitgliedId}/${fileName}`
           ]);
 
           importLog.imported.documents++;
