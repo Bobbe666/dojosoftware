@@ -4,16 +4,37 @@ const router = express.Router();
 
 // Alle Trainer abrufen (inkl. Mehrfachzuordnung der Stile)
 router.get("/", (req, res) => {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id;
 
-    const query = `
-        SELECT t.trainer_id, t.vorname, t.nachname, t.email, t.telefon,
+    // Super-Admin (dojo_id = null): Kann Trainer aller zentral verwalteten Dojos sehen
+    // Normaler Admin: Muss dojo_id haben
+    if (dojoId === undefined && !req.user) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
+
+    let query = `
+        SELECT t.trainer_id, t.vorname, t.nachname, t.email, t.telefon, t.dojo_id,
                COALESCE(GROUP_CONCAT(DISTINCT ts.stil ORDER BY ts.stil SEPARATOR ', '), '') AS stile
         FROM trainer t
         LEFT JOIN trainer_stile ts ON t.trainer_id = ts.trainer_id
-        GROUP BY t.trainer_id, t.vorname, t.nachname, t.email, t.telefon
     `;
+    let queryParams = [];
 
-    db.query(query, (err, results) => {
+    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
+    if (dojoId === null || dojoId === undefined) {
+        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+        query += ` WHERE t.dojo_id NOT IN (
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+        )`;
+    } else {
+        // Normaler Admin: Nur eigenes Dojo
+        query += ' WHERE t.dojo_id = ?';
+        queryParams.push(dojoId);
+    }
+
+    query += ' GROUP BY t.trainer_id, t.vorname, t.nachname, t.email, t.telefon, t.dojo_id';
+
+    db.query(query, queryParams, (err, results) => {
         if (err) {
             console.error("Fehler beim Abrufen der Trainer:", err);
             return res.status(500).json({ error: "Fehler beim Laden der Trainer", details: err.sqlMessage });
@@ -26,6 +47,7 @@ router.get("/", (req, res) => {
             email: trainer.email,
             telefon: trainer.telefon,
             stile: trainer.stile ? trainer.stile.split(", ") : [],
+            dojo_id: trainer.dojo_id
         })));
     });
 });

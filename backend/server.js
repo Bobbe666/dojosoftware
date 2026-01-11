@@ -451,6 +451,19 @@ try {
     });
 }
 
+// 2.5 TRAINER ROUTES (Trainer Management)
+try {
+  const trainerRoutes = require('./routes/trainer');
+  app.use('/api/trainer', authenticateToken, trainerRoutes);
+  logger.success('Route geladen', { path: '/api/trainer' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'trainer routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 3. CHECKIN ROUTE - HIGHEST PRIORITY
 try {
   const checkinPath = path.join(__dirname, "routes", "checkin.js");
@@ -1058,6 +1071,7 @@ const skipFiles = [
   "pruefungen.js",
   "lastschriftlauf.js",
   "kurse.js",
+  "trainer.js",
   "raeume.js",
   "standorte.js",
   "stundenplan.js"
