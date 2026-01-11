@@ -8,7 +8,7 @@ import config from '../config/config';
 
 // Erstelle Axios-Instance mit Default-Config
 const apiClient = axios.create({
-  baseURL: config.apiUrl || 'http://localhost:3000/api',
+  baseURL: config.apiBaseUrl,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -18,7 +18,8 @@ const apiClient = axios.create({
 // Request Interceptor - fügt Auth-Token automatisch hinzu
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    // Verwende dojo_auth_token (wie in AuthContext) mit fallback zu authToken
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,7 +38,10 @@ apiClient.interceptors.response.use(
   (error) => {
     // Bei 401 Unauthorized -> Logout
     if (error.response?.status === 401) {
+      localStorage.removeItem('dojo_auth_token');
       localStorage.removeItem('authToken');
+      localStorage.removeItem('dojo_user');
+      localStorage.removeItem('dojo_session_expiry');
       window.location.href = '/login';
     }
 
