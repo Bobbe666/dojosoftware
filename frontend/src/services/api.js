@@ -17,13 +17,13 @@ const apiClient = axios.create({
 
 // Request Interceptor - fügt Auth-Token automatisch hinzu
 apiClient.interceptors.request.use(
-  (config) => {
+  (requestConfig) => {
     // Verwende dojo_auth_token (wie in AuthContext) mit fallback zu authToken
     const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token && requestConfig.headers) {
+      requestConfig.headers['Authorization'] = `Bearer ${token}`;
     }
-    return config;
+    return requestConfig;
   },
   (error) => {
     return Promise.reject(error);
