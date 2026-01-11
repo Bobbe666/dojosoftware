@@ -19,6 +19,7 @@ import {
 import MemberHeader from './MemberHeader.jsx';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
+import InstallAppButton from './InstallAppButton.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
 import WeatherWidget from './WeatherWidget.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
@@ -96,7 +97,7 @@ const MemberDashboard = () => {
   // Lade Push-Benachrichtigungen für dieses Mitglied
   const loadNotifications = async (email) => {
     try {
-      const response = await fetchWithAuth(`/notifications/member/${encodeURIComponent(email)}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/member/${encodeURIComponent(email)}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -112,7 +113,7 @@ const MemberDashboard = () => {
   // Bestätige eine Benachrichtigung
   const confirmNotification = async (notificationId) => {
     try {
-      const response = await fetchWithAuth(`/notifications/confirm/${notificationId}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/confirm/${notificationId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -142,7 +143,7 @@ const MemberDashboard = () => {
   // Lade zugelassene Prüfungen für dieses Mitglied
   const loadApprovedExams = async (memberId) => {
     try {
-      const response = await fetchWithAuth(`/pruefungen?mitglied_id=${memberId}&status=geplant`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/pruefungen?mitglied_id=${memberId}&status=geplant`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.pruefungen) {
@@ -168,7 +169,7 @@ const MemberDashboard = () => {
   // Lade abgeschlossene Prüfungen (Ergebnisse)
   const loadExamResults = async (memberId) => {
     try {
-      const response = await fetchWithAuth(`/pruefungen/mitglied/${memberId}/historie`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/pruefungen/mitglied/${memberId}/historie`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.historie) {
@@ -195,7 +196,7 @@ const MemberDashboard = () => {
 
         console.log('🔍 Lade Mitgliedsdaten für ID:', mitgliedId);
 
-        const memberResponse = await fetchWithAuth(`/mitglieder/${mitgliedId}`);
+        const memberResponse = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${mitgliedId}`);
 
         if (!memberResponse.ok) {
           throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);
@@ -205,7 +206,7 @@ const MemberDashboard = () => {
         console.log('✅ Mitgliedsdaten empfangen:', memberData);
 
         // Anwesenheitsdaten laden (mit mitglied_id direkt)
-        const attendanceResponse = await fetchWithAuth(`/anwesenheit/${memberData.mitglied_id}`);
+        const attendanceResponse = await fetchWithAuth(`${config.apiBaseUrl}/anwesenheit/${memberData.mitglied_id}`);
 
         let attendanceData = [];
         if (attendanceResponse.ok) {
@@ -223,7 +224,7 @@ const MemberDashboard = () => {
         // Beitragsdaten laden - verwende den Mitgliederdetail-Endpoint
         // Da es keinen spezifischen Beitrags-Endpoint gibt, müssen wir diese Daten anders laden
         // Lass uns erstmal nur die Verträge des Mitglieds prüfen
-        const vertraegeResponse = await fetchWithAuth(`/vertraege?mitglied_id=${memberData.mitglied_id}`);
+        const vertraegeResponse = await fetchWithAuth(`${config.apiBaseUrl}/vertraege?mitglied_id=${memberData.mitglied_id}`);
 
         let vertraegeData = [];
         if (vertraegeResponse.ok) {
@@ -366,7 +367,7 @@ const MemberDashboard = () => {
       // Lade zuerst alle Stile
       await loadStile();
       
-      const response = await fetchWithAuth(`/mitglieder/${memberId}/stile`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberId}/stile`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.stile) {
@@ -388,7 +389,7 @@ const MemberDashboard = () => {
   // Lade stilspezifische Daten
   const loadStyleSpecificData = async (memberId, stilId) => {
     try {
-      const response = await fetchWithAuth(`/mitglieder/${memberId}/stil/${stilId}/data`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberId}/stil/${stilId}/data`);
       if (response.ok) {
         const result = await response.json();
         setStyleSpecificData(prev => ({
@@ -429,7 +430,7 @@ const MemberDashboard = () => {
     }
 
     try {
-      const response = await fetchWithAuth(`/pruefungen/${selectedExam.pruefung_id}/teilnahme-bestaetigen`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/pruefungen/${selectedExam.pruefung_id}/teilnahme-bestaetigen`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -595,6 +596,9 @@ const MemberDashboard = () => {
           <div className="cta-tile" onClick={() => setShowQRCode(true)} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 53, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
             <QrCode size={20} />
             <span style={{ fontSize: '0.85rem' }}>Mein QR-Code</span>
+          </div>
+          <div className="cta-tile" style={{ padding: '0.8rem', minHeight: '60px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+            <InstallAppButton />
           </div>
           <div className="cta-tile" onClick={() => navigate('/member/events')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Calendar size={20} />

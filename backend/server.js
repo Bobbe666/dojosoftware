@@ -484,7 +484,7 @@ try {
 // 3.1. ANWESENHEIT ROUTE
 try {
   const anwesenheitRoutes = require('./routes/anwesenheit');
-  app.use('/api/anwesenheit', anwesenheitRoutes);
+  app.use('/api/anwesenheit', authenticateToken, anwesenheitRoutes);
   logger.success('Route geladen', { path: '/api/anwesenheit' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
