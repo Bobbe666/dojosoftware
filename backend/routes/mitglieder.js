@@ -2498,7 +2498,7 @@ router.get('/:id/birthday-check', (req, res) => {
       MONTH(geburtsdatum) as geburtstag_monat,
       DAYOFMONTH(CURDATE()) as heute_tag,
       MONTH(CURDATE()) as heute_monat,
-      YEAR(CURDATE()) - YEAR(geburtsdatum) as alter,
+      YEAR(CURDATE()) - YEAR(geburtsdatum) as `alter`,
       CASE
         WHEN DAYOFMONTH(geburtsdatum) = DAYOFMONTH(CURDATE())
          AND MONTH(geburtsdatum) = MONTH(CURDATE())
