@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { apiClient } from '../services/api';
 
 export const DatenContext = createContext();
 
@@ -14,10 +14,10 @@ export const DatenProvider = ({ children }) => {
     setLoading(true);
     try {
       const [kurseRes, trainerRes, stileRes, gruppenRes] = await Promise.all([
-        axios.get('/kurse').catch(() => ({ data: [] })),
-        axios.get('/trainer').catch(() => ({ data: [] })),
-        axios.get('/stile').catch(() => ({ data: [] })),
-        axios.get('/gruppen').catch(() => ({ data: [] }))
+        apiClient.get('/kurse').catch(() => ({ data: [] })),
+        apiClient.get('/trainer').catch(() => ({ data: [] })),
+        apiClient.get('/stile').catch(() => ({ data: [] })),
+        apiClient.get('/gruppen').catch(() => ({ data: [] }))
       ]);
 
       setKurse(kurseRes.data);
