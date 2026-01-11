@@ -1,15 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    // TEMPORARILY DISABLED - PWA causing cache issues
-    // VitePWA plugin is commented out to fix flashing/cache problems
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, './src/shared')

@@ -23,7 +23,6 @@ import MotivationQuotes from './MotivationQuotes.jsx';
 import WeatherWidget from './WeatherWidget.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
 import BuddyGruppenWidget from './BuddyGruppenWidget.jsx';
-import PWAInstallPrompt from './PWAInstallPrompt.jsx';
 import '../styles/themes.css';
 import '../styles/Dashboard.css';
 import '../styles/DashboardStart.css';
@@ -1619,9 +1618,6 @@ const MemberDashboard = () => {
           onClose={() => setShowQRCode(false)}
         />
       )}
-
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt />
         </div>
       </div>
     </div>

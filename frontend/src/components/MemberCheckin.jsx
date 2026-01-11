@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
-import { X, Calendar, CheckCircle, Clock, QrCode } from 'lucide-react';
+import { X, Calendar, CheckCircle, Clock } from 'lucide-react';
 import config from '../config/config.js';
-import QRCodeScanner from './QRCodeScanner.jsx';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/CheckinSystem.css';
@@ -19,8 +18,7 @@ const MemberCheckin = ({ onClose }) => {
   const [success, setSuccess] = useState('');
   const [step, setStep] = useState(1); // 1: Course Selection, 2: Confirmation
   const [checkedInCourses, setCheckedInCourses] = useState([]); // Bereits eingecheckte Kurse
-  const [showQRScanner, setShowQRScanner] = useState(false);
-
+  
   const API_BASE = config.apiBaseUrl;
 
   // Lade Mitgliedsdaten und Kurse
@@ -179,106 +177,6 @@ const MemberCheckin = ({ onClose }) => {
     return timeString.substring(0, 5); // HH:MM
   };
 
-  // QR Code Scan Handler
-  const handleQRScan = async (memberId, rawQRData) => {
-    console.log('QR Code gescannt:', { memberId, rawQRData });
-    setShowQRScanner(false);
-
-    // Prüfe ob gescannte Member-ID mit eingeloggtem Mitglied übereinstimmt
-    if (memberData && memberId !== memberData.mitglied_id.toString()) {
-      setError(`Ungültige QR-Code: Dieser Code gehört nicht zu deinem Account (ID: ${memberId} vs. ${memberData.mitglied_id})`);
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-
-    // Auto-check-in für alle verfügbaren Kurse heute
-    if (coursesToday.length === 0) {
-      setError('Keine Kurse heute verfügbar für QR Check-in');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-
-    // Wähle alle noch nicht eingecheckten und verfügbaren Kurse aus
-    const availableCourses = coursesToday.filter(
-      course => !checkedInCourses.includes(course.stundenplan_id) && isCourseAvailable(course)
-    );
-
-    if (availableCourses.length === 0) {
-      setError('Keine verfügbaren Kurse für QR Check-in (bereits eingecheckt oder nicht verfügbar)');
-      setTimeout(() => setError(''), 5000);
-      return;
-    }
-
-    // Setze die ausgewählten Kurse und führe Check-in aus
-    setSelectedCourses(availableCourses);
-    setSuccess(`QR-Code erkannt! Check-in für ${availableCourses.length} Kurs(e)...`);
-
-    // Warte kurz, dann führe Check-in aus
-    setTimeout(async () => {
-      try {
-        setLoading(true);
-        const requestBody = {
-          mitglied_id: memberData.mitglied_id,
-          stundenplan_ids: availableCourses.map(course => course.stundenplan_id),
-          checkin_method: 'qr'
-        };
-
-        const response = await fetch(`${API_BASE}/checkin/multi-course`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage;
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`;
-          } catch {
-            errorMessage = `HTTP ${response.status}: ${errorText}`;
-          }
-          throw new Error(errorMessage);
-        }
-
-        const result = await response.json();
-        let successMessage = result.message || `QR Check-in erfolgreich für ${memberData.vorname} ${memberData.nachname}!`;
-
-        // Prüfe ob Mitglied heute Geburtstag hat
-        try {
-          const birthdayResponse = await fetch(`${API_BASE}/mitglieder/${memberData.mitglied_id}/birthday-check`);
-          const birthdayData = await birthdayResponse.json();
-
-          if (birthdayData.hasBirthday) {
-            successMessage = `🎉 ${successMessage}\n\n🎂 Herzlichen Glückwunsch zum ${birthdayData.mitglied.alter}. Geburtstag, ${memberData.vorname}! 🎉`;
-          }
-        } catch (birthdayError) {
-          console.error('Fehler beim Geburtstags-Check:', birthdayError);
-        }
-
-        setSuccess(`✅ ${successMessage}`);
-
-        // Nach 3 Sekunden schließen und neu laden
-        setTimeout(() => {
-          if (window.location.pathname.includes('/member')) {
-            window.location.reload();
-          }
-          onClose();
-        }, 3000);
-
-      } catch (err) {
-        console.error('QR Check-in Fehler:', err);
-        setError('QR Check-in Fehler: ' + err.message);
-        setSuccess('');
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-  };
-
   if (!memberData) {
     return (
       <div className="modal-overlay">
@@ -335,30 +233,6 @@ const MemberCheckin = ({ onClose }) => {
                   <p>Wählen Sie die Kurse aus, für die Sie sich anmelden möchten:</p>
                 </div>
               </div>
-
-              {/* QR Code Scanner Button */}
-              {coursesToday.filter(c => !checkedInCourses.includes(c.stundenplan_id)).length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <button
-                    onClick={() => setShowQRScanner(true)}
-                    className="btn btn-secondary"
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem',
-                      padding: '0.875rem 1rem',
-                      background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 107, 53, 0.1))',
-                      border: '2px solid #ffd700',
-                      color: '#ffd700'
-                    }}
-                  >
-                    <QrCode size={20} />
-                    QR-Code scannen für schnellen Check-in
-                  </button>
-                </div>
-              )}
 
               {loading ? (
                 <div className="loading">Lade Kurse...</div>
@@ -474,14 +348,6 @@ const MemberCheckin = ({ onClose }) => {
           )}
         </div>
       </div>
-
-      {/* QR Code Scanner Modal */}
-      {showQRScanner && (
-        <QRCodeScanner
-          onScanSuccess={handleQRScan}
-          onClose={() => setShowQRScanner(false)}
-        />
-      )}
     </div>
   );
 };
