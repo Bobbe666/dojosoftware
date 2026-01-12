@@ -21,12 +21,12 @@ router.get('/current', async (req, res) => {
     const [subscription] = await db.promise().query(
       `SELECT
          s.*,
-         d.name as dojo_name,
+         d.dojoname as dojo_name,
          d.subdomain,
          p.display_name as plan_display_name,
          p.description as plan_description
        FROM dojo_subscriptions s
-       JOIN dojos d ON s.dojo_id = d.dojo_id
+       JOIN dojo d ON s.dojo_id = d.id
        LEFT JOIN subscription_plans p ON s.plan_type = p.plan_name
        WHERE s.dojo_id = ?`,
       [dojoId]

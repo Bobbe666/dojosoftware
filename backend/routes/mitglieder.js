@@ -3139,7 +3139,7 @@ router.post("/:id/mitgliedsausweis", async (req, res) => {
       console.log("[Mitgliedsausweis] Mitglied gefunden:", mitglied);
 
       // 2. Dojo-Daten abrufen
-      const dojoQuery = `SELECT name, strasse, hausnummer, plz, ort FROM dojos WHERE dojo_id = ?`;
+      const dojoQuery = `SELECT dojoname as name, strasse, hausnummer, plz, ort FROM dojo WHERE id = ?`;
 
       db.query(dojoQuery, [mitglied.dojo_id], async (dojoErr, dojoResults) => {
         if (dojoErr) {

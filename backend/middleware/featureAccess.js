@@ -28,9 +28,9 @@ function requireFeature(featureName) {
                 s.feature_verkauf, s.feature_buchfuehrung,
                 s.feature_events, s.feature_multidojo, s.feature_api,
                 s.trial_ends_at, s.subscription_ends_at,
-                d.name as dojo_name, d.subdomain
+                d.dojoname as dojo_name, d.subdomain
          FROM dojo_subscriptions s
-         JOIN dojos d ON s.dojo_id = d.dojo_id
+         JOIN dojo d ON s.dojo_id = d.id
          WHERE s.dojo_id = ?`,
         [dojoId]
       );
