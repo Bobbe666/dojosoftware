@@ -204,31 +204,23 @@ try {
     });
 }
 
-// 1.2 MARKETING-AKTIONEN
-try {
-  const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
-  app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db; next(); }, marketingAktionenRoutes);
-  logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
-} catch (error) {
-  logger.error('Fehler beim Laden der Route', {
-      route: 'marketing-aktionen',
-      error: error.message,
-      stack: error.stack
-    });
-}
+// 1.2 MARKETING-AKTIONEN (TODO: Route noch nicht implementiert)
+// try {
+//   const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
+//   app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db; next(); }, marketingAktionenRoutes);
+//   logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
+// } catch (error) {
+//   logger.error('Fehler beim Laden der Route', { route: 'marketing-aktionen', error: error.message });
+// }
 
-// 1.3 REFERRAL-CODES
-try {
-  const referralCodesRoutes = require(path.join(__dirname, 'routes', 'referral-codes.js'));
-  app.use('/api/referral-codes', authenticateToken, (req, res, next) => { req.db = db; next(); }, referralCodesRoutes);
-  logger.success('Route gemountet', { path: '/api/referral-codes' });
-} catch (error) {
-  logger.error('Fehler beim Laden der Route', {
-      route: 'referral-codes',
-      error: error.message,
-      stack: error.stack
-    });
-}
+// 1.3 REFERRAL-CODES (TODO: Route noch nicht implementiert)
+// try {
+//   const referralCodesRoutes = require(path.join(__dirname, 'routes', 'referral-codes.js'));
+//   app.use('/api/referral-codes', authenticateToken, (req, res, next) => { req.db = db; next(); }, referralCodesRoutes);
+//   logger.success('Route gemountet', { path: '/api/referral-codes' });
+// } catch (error) {
+//   logger.error('Fehler beim Laden der Route', { route: 'referral-codes', error: error.message });
+// }
 
 // AUTH ROUTES (Login, Token, Passwortänderung/Reset) - mit strenger Rate Limiting
 try {
@@ -950,18 +942,14 @@ try {
   });
 }
 
-// Monatsreport Route
-try {
-  const monatsreportRouter = require(path.join(__dirname, "routes", "monatsreport.js"));
-  app.use("/api/monatsreport", monatsreportRouter);
-  logger.success('Route gemountet', { path: '/api/monatsreport' });
-} catch (error) {
-  logger.error('Fehler beim Laden der Route', {
-      route: 'monatsreport',
-      error: error.message,
-      stack: error.stack
-  });
-}
+// Monatsreport Route (TODO: Route noch nicht implementiert)
+// try {
+//   const monatsreportRouter = require(path.join(__dirname, "routes", "monatsreport.js"));
+//   app.use("/api/monatsreport", monatsreportRouter);
+//   logger.success('Route gemountet', { path: '/api/monatsreport' });
+// } catch (error) {
+//   logger.error('Fehler beim Laden der Route', { route: 'monatsreport', error: error.message });
+// }
 
 // Mahnwesen Route
 try {
@@ -1074,7 +1062,13 @@ const skipFiles = [
   "trainer.js",
   "raeume.js",
   "standorte.js",
-  "stundenplan.js"
+  "stundenplan.js",
+  // Keine Router-Module (exportieren nur Funktionen oder sind Notizen):
+  "stileguertel_stats_fixed.js",
+  "templatePdfGenerator.js",
+  "vertragPdfGeneratorExtended.js",
+  "ManualSepaProvider.js",
+  "PaymentProviderFactory.js"
 ];
 
 fs.readdirSync(routesPath).forEach((file) => {

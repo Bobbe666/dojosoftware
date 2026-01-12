@@ -66,7 +66,7 @@ const createEmailTransporter = async () => {
       ? JSON.parse(settings.email_config)
       : settings.email_config;
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: emailConfig.smtp_host,
       port: emailConfig.smtp_port,
       secure: emailConfig.smtp_secure,

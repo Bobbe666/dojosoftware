@@ -19,7 +19,7 @@ const initEmailTransporter = async () => {
     if (settings.email_enabled && settings.email_config) {
       const emailConfig = JSON.parse(settings.email_config);
       
-      emailTransporter = nodemailer.createTransporter({
+      emailTransporter = nodemailer.createTransport({
         host: emailConfig.smtp_host,
         port: emailConfig.smtp_port,
         secure: emailConfig.smtp_secure,

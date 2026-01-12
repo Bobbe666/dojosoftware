@@ -20,7 +20,7 @@ const createEmailTransporter = () => {
 
     if (process.env.NODE_ENV === 'production') {
         // Produktions-Email-Provider
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
             service: 'gmail', // oder 'sendgrid', 'ses', etc.
             auth: {
                 user: process.env.EMAIL_USER,
@@ -29,7 +29,7 @@ const createEmailTransporter = () => {
         });
     } else {
         // Entwicklungs-Email-Provider (Ethereal für Tests)
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
             host: 'smtp.ethereal.email',
             port: 587,
             auth: {
