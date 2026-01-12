@@ -108,6 +108,7 @@ const TrainingReminders = () => {
             uhrzeit: kurs.uhrzeit,
             raum: kurs.raum || 'Hauptdojo',
             duration,
+            stil_name: kurs.stil_name,
             wochentag: kurs.wochentag
           };
         })
@@ -344,7 +345,7 @@ const TrainingReminders = () => {
         {reminders.filter(r => !r.dismissed && r.reminderTime > new Date()).map(course => (
           <div key={course.id} className="course-preview">
             <div className="course-info">
-              <span className="course-name">{course.kurs_name}</span>
+              <span className="course-name" style={{ fontWeight: "bold", fontSize: "0.95rem", color: "rgba(255, 255, 255, 0.95)" }}>{course.kurs_name}</span>
               <span className="course-time">{formatDate(course.datum)} - {formatTime(course.datum)}</span>
               <div className="course-details" style={{
                 display: 'flex',
@@ -358,6 +359,9 @@ const TrainingReminders = () => {
                 )}
                 {course.raum && (
                   <span>📍 {course.raum}</span>
+                )}
+                {course.stil_name && (
+                  <span>🥋 {course.stil_name}</span>
                 )}
               </div>
             </div>

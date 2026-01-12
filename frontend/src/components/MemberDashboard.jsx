@@ -20,7 +20,6 @@ import MemberHeader from './MemberHeader.jsx';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
-import WeatherWidget from './WeatherWidget.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
 import BuddyGruppenWidget from './BuddyGruppenWidget.jsx';
 import '../styles/themes.css';
@@ -28,7 +27,6 @@ import '../styles/Dashboard.css';
 import '../styles/DashboardStart.css';
 import '../styles/MemberNavigation.css';
 import '../styles/MotivationQuotes.css';
-import '../styles/WeatherWidget.css';
 import '../styles/TrainingReminders.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -262,13 +260,15 @@ const MemberDashboard = () => {
           ? Math.round((totalAnwesend / totalAttendance) * 100)
           : 0;
 
-        // Offene Beiträge zählen - basierend auf aktiven Verträgen ohne Lastschrift
-        const openPayments = Array.isArray(paymentsData)
-          ? paymentsData.filter(v =>
-              v.status === 'aktiv' &&
-              (!v.lastschrift_status || v.lastschrift_status === 'ausstehend' || v.lastschrift_status === 'fehlgeschlagen')
-            ).length
-          : 0;
+        // Offene Beiträge zählen - ABER: Beitragsfreie Mitglieder haben immer 0
+        const openPayments = memberData.beitragsfrei === 1 || memberData.beitragsfrei === true
+          ? 0
+          : (Array.isArray(paymentsData)
+              ? paymentsData.filter(v =>
+                  v.status === 'aktiv' &&
+                  (!v.lastschrift_status || v.lastschrift_status === 'ausstehend' || v.lastschrift_status === 'fehlgeschlagen')
+                ).length
+              : 0);
 
         const nextExam = memberData.naechste_pruefung_datum;
 
@@ -480,8 +480,42 @@ const MemberDashboard = () => {
     return new Date(dateString).toLocaleDateString('de-DE');
   };
 
+  // Berechne aktuelle Gürtelfarben aus memberStile
+  const currentBelts = useMemo(() => {
+    console.log('🎨 Berechne Gürtelfarben...', { memberStile, styleSpecificData });
+
+    if (!memberStile || memberStile.length === 0) {
+      console.log('⚠️ Keine Stile geladen - Fallback zu Weiß');
+      return 'Weiß';
+    }
+
+    const belts = memberStile.map(stil => {
+      const stilData = styleSpecificData[stil.stil_id];
+
+      if (!stilData || !stilData.current_graduierung_id) {
+        // Fallback: Nutze stil.current_gurtfarbe wenn vorhanden
+        if (stil.current_gurtfarbe) {
+          return stil.current_gurtfarbe;
+        }
+
+        // Fallback: Erste Graduierung (meistens Weißgurt)
+        const firstGrad = stil.graduierungen?.[0]?.name;
+        return firstGrad || 'Weiß';
+      }
+
+      const currentGrad = stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id);
+      return currentGrad?.name || 'Weiß';
+    }).filter(Boolean); // Entferne undefinierte Werte
+
+    console.log('🎓 Finale Gürtel:', belts);
+
+    // Falls mehrere Stile: alle Gürtel anzeigen
+    return belts.length > 0 ? belts.join(', ') : 'Weiß';
+  }, [memberStile, styleSpecificData]);
+
   // Debug: Log memberData status on render
   console.log('🎨 MemberDashboard Render - memberData:', memberData ? 'vorhanden' : 'nicht vorhanden', memberData);
+  console.log('🎨 Aktuelle Gürtel:', currentBelts);
 
   return (
     <div className="dashboard-container">
@@ -534,7 +568,7 @@ const MemberDashboard = () => {
           }}>
             <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>🎓</div>
             <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Gürtel</h3>
-            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffd700' }}>{memberData.gurtfarbe || 'Weiß'}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffd700' }}>{currentBelts}</div>
           </div>
           
           <div style={{
@@ -880,8 +914,6 @@ const MemberDashboard = () => {
             {/* Buddy-Gruppen Widget */}
             <BuddyGruppenWidget compact={true} />
 
-            {/* Wetter-Integration */}
-            <WeatherWidget compact={true} />
 
             {/* Trainings-Erinnerungen */}
             <TrainingReminders />
