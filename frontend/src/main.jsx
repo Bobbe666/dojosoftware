@@ -33,3 +33,38 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </DatenProvider>
   </React.StrictMode>
 );
+
+// Service Worker Registration (PWA)
+// WICHTIG: NUR im Browser registrieren, NICHT in installierter App (verhindert Flacker-Loop)
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                     window.navigator.standalone === true;
+
+if ('serviceWorker' in navigator && !isStandalone) {
+  console.log('📱 PWA läuft im Browser - Service Worker wird registriert');
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        console.log('✅ Service Worker registriert:', registration.scope);
+
+        // Update-Check jede Stunde
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+      })
+      .catch((error) => {
+        console.warn('⚠️ Service Worker Registrierung fehlgeschlagen:', error);
+      });
+  });
+} else if (isStandalone) {
+  console.log('🚀 PWA läuft als installierte App - Service Worker DEAKTIVIERT (verhindert Flackern)');
+
+  // Cleanup: Unregister existing service workers in standalone mode
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        console.log('🧹 Deregistriere Service Worker in standalone mode:', registration.scope);
+        registration.unregister();
+      });
+    });
+  }
+}

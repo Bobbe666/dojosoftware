@@ -50,35 +50,62 @@ const WeatherWidget = ({ compact = false }) => {
     }
   ];
 
-  // Lade Wetterdaten (Mock-Implementation)
+  // Lade Wetterdaten für Vilsbiburg
   const loadWeather = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Simuliere API-Aufruf
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Wähle zufälliges Wetter für Demo
-      const randomWeather = mockWeatherData[Math.floor(Math.random() * mockWeatherData.length)];
-      
+      // TODO: Echte Wetter-API (OpenWeatherMap, WeatherAPI, etc.)
+      // Für jetzt: Simuliere Wetterdaten für Vilsbiburg (PLZ 84137)
+      const location = 'Vilsbiburg';
+      const plz = '84137';
+
+      // Simuliere API-Aufruf mit kurzer Verzögerung
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Wähle realistisches Wetter basierend auf Jahreszeit
+      const month = new Date().getMonth(); // 0-11
+      let seasonalWeather;
+
+      if (month >= 11 || month <= 1) { // Winter: Dez, Jan, Feb
+        seasonalWeather = mockWeatherData.find(w => w.condition === 'snow') || mockWeatherData[3];
+      } else if (month >= 5 && month <= 8) { // Sommer: Jun, Jul, Aug, Sep
+        seasonalWeather = mockWeatherData.find(w => w.condition === 'sunny') || mockWeatherData[1];
+      } else if (month === 2 || month === 3 || month === 9 || month === 10) { // Frühling/Herbst
+        seasonalWeather = mockWeatherData.find(w => w.condition === 'cloudy') || mockWeatherData[2];
+      } else { // Rest
+        seasonalWeather = mockWeatherData[Math.floor(Math.random() * mockWeatherData.length)];
+      }
+
       // Füge zusätzliche Details hinzu
       const weatherData = {
-        ...randomWeather,
+        ...seasonalWeather,
         humidity: Math.floor(Math.random() * 40) + 40, // 40-80%
         windSpeed: Math.floor(Math.random() * 20) + 5, // 5-25 km/h
-        location: 'Dojo Umgebung',
-        lastUpdate: new Date().toLocaleTimeString('de-DE', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        location: `${location} (${plz})`,
+        lastUpdate: new Date().toLocaleTimeString('de-DE', {
+          hour: '2-digit',
+          minute: '2-digit'
         })
       };
-      
+
+      console.log('🌤️ Wetter geladen für', weatherData.location, ':', weatherData.description);
       setWeather(weatherData);
     } catch (err) {
+      console.error('❌ Fehler beim Laden der Wetterdaten:', err);
       setError('Wetterdaten konnten nicht geladen werden');
       // Fallback-Wetter
-      setWeather(mockWeatherData[0]);
+      setWeather({
+        ...mockWeatherData[2],
+        location: 'Vilsbiburg (84137)',
+        humidity: 60,
+        windSpeed: 10,
+        lastUpdate: new Date().toLocaleTimeString('de-DE', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      });
     } finally {
       setLoading(false);
     }

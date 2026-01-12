@@ -189,13 +189,13 @@ router.get('/schedule', authenticateMember, async (req, res) => {
     const userId = req.user.id;
     
     // Hole Mitglieder-ID
-    const memberData = await queryAsync('SELECT id FROM mitglieder WHERE user_id = ?', [userId]);
+    const memberData = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE user_id = ?', [userId]);
     
     if (memberData.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
     }
 
-    const memberId = memberData[0].id;
+    const memberId = memberData[0].mitglied_id;
 
     // Hole Termine (Kurse, Prüfungen, etc.)
     const schedule = await queryAsync(`
@@ -250,13 +250,13 @@ router.get('/payments', authenticateMember, async (req, res) => {
     const userId = req.user.id;
     
     // Hole Mitglieder-ID
-    const memberData = await queryAsync('SELECT id FROM mitglieder WHERE user_id = ?', [userId]);
+    const memberData = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE user_id = ?', [userId]);
     
     if (memberData.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
     }
 
-    const memberId = memberData[0].id;
+    const memberId = memberData[0].mitglied_id;
 
     // Hole Zahlungsdaten
     const payments = await queryAsync(`
@@ -291,13 +291,13 @@ router.get('/stats', authenticateMember, async (req, res) => {
     const userId = req.user.id;
     
     // Hole Mitglieder-ID
-    const memberData = await queryAsync('SELECT id FROM mitglieder WHERE user_id = ?', [userId]);
+    const memberData = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE user_id = ?', [userId]);
     
     if (memberData.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
     }
 
-    const memberId = memberData[0].id;
+    const memberId = memberData[0].mitglied_id;
 
     // Berechne Statistiken
     const stats = await queryAsync(`
