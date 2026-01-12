@@ -74,7 +74,7 @@ const GruppenStilVerwaltung = () => {
       return;
     }
 
-    const endpoint = typ === "stil" ? `${config.apiBaseUrl}/stile` : `${config.apiBaseUrl}/gruppen`;
+    const endpoint = typ === "stil" ? `/stile` : `/gruppen`;
 
     try {
       await axios.post(endpoint, { name: wert.trim() });
@@ -112,7 +112,7 @@ const GruppenStilVerwaltung = () => {
       return;
     }
 
-    const endpoint = typ === "stil" ? `${config.apiBaseUrl}/stile` : `${config.apiBaseUrl}/gruppen`;
+    const endpoint = typ === "stil" ? `/stile` : `/gruppen`;
 
     try {
       const response = await axios.delete(`${endpoint}/${id}`);
@@ -167,7 +167,7 @@ const GruppenStilVerwaltung = () => {
 
     try {
       // Update via PUT, da das Backend PUT /api/stile/:id erwartet
-      await axios.put(`${config.apiBaseUrl}/stile/${stilId}`, { name: editingStilName.trim() });
+      await axios.put(`/stile/${stilId}`, { name: editingStilName.trim() });
       abbrechenStil();
       ladeAlleDaten();
     } catch (err) {
@@ -203,7 +203,7 @@ const GruppenStilVerwaltung = () => {
 
     try {
       // Update via PUT, damit es mit dem Backend (PUT /api/gruppen/:id) übereinstimmt
-      await axios.put(`${config.apiBaseUrl}/gruppen/${gruppeId}`, { name: editingGruppeName.trim() });
+      await axios.put(`/gruppen/${gruppeId}`, { name: editingGruppeName.trim() });
       abbrechenGruppe();
       ladeAlleDaten();
     } catch (err) {
@@ -272,13 +272,13 @@ const GruppenStilVerwaltung = () => {
     try {
       // Tausche reihenfolge-Werte
       await Promise.all([
-        axios.put(`${config.apiBaseUrl}/stile/${stil1.stil_id}`, {
+        axios.put(`/stile/${stil1.stil_id}`, {
           name: stil1.name,
           beschreibung: stil1.beschreibung || '',
           aktiv: stil1.aktiv,
           reihenfolge: stil2.reihenfolge || newIndex
         }),
-        axios.put(`${config.apiBaseUrl}/stile/${stil2.stil_id}`, {
+        axios.put(`/stile/${stil2.stil_id}`, {
           name: stil2.name,
           beschreibung: stil2.beschreibung || '',
           aktiv: stil2.aktiv,
@@ -314,11 +314,11 @@ const GruppenStilVerwaltung = () => {
     try {
       // Tausche reihenfolge-Werte
       await Promise.all([
-        axios.put(`${config.apiBaseUrl}/gruppen/${gruppe1.gruppen_id}`, {
+        axios.put(`/gruppen/${gruppe1.gruppen_id}`, {
           name: gruppe1.name,
           reihenfolge: gruppe2.reihenfolge || newIndex
         }),
-        axios.put(`${config.apiBaseUrl}/gruppen/${gruppe2.gruppen_id}`, {
+        axios.put(`/gruppen/${gruppe2.gruppen_id}`, {
           name: gruppe2.name,
           reihenfolge: gruppe1.reihenfolge || index
         })

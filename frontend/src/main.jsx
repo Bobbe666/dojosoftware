@@ -10,6 +10,8 @@ import axios from 'axios';
 import config from './config/config.js';
 
 // Axios-Basis-URL konfigurieren
+// WICHTIG: Alle axios-Aufrufe sollten relative Pfade verwenden (z.B. '/events'),
+// NICHT ${config.apiBaseUrl}/events - das führt zu doppelten /api/api/ Pfaden!
 axios.defaults.baseURL = config.apiBaseUrl;
 
 // Globaler Request Interceptor - fügt Auth-Token automatisch hinzu

@@ -30,7 +30,7 @@ export const SubscriptionProvider = ({ children }) => {
     }
 
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/subscription/current`, {
+      const response = await axios.get(`/subscription/current`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

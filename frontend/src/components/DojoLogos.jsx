@@ -27,7 +27,7 @@ const DojoLogos = ({ dojoId }) => {
   const loadLogos = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${config.apiBaseUrl}/dojos/${dojoId}/logos`);
+      const response = await axios.get(`/dojos/${dojoId}/logos`);
 
       // Convert array to object keyed by logo_type
       const logosObj = {};
@@ -73,7 +73,7 @@ const DojoLogos = ({ dojoId }) => {
       formData.append('logoType', logoType);
 
       const response = await axios.post(
-        `${config.apiBaseUrl}/dojos/${dojoId}/logos`,
+        `/dojos/${dojoId}/logos`,
         formData,
         {
           headers: {
@@ -99,7 +99,7 @@ const DojoLogos = ({ dojoId }) => {
 
     try {
       setLoading(true);
-      await axios.delete(`${config.apiBaseUrl}/dojos/${dojoId}/logos/${logoId}`);
+      await axios.delete(`/dojos/${dojoId}/logos/${logoId}`);
 
       showMessage('success', 'Logo erfolgreich gelöscht');
 

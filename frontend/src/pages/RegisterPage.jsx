@@ -49,7 +49,7 @@ function RegisterPage() {
     setSubdomainStatus({ checking: true, available: null, message: '' });
 
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/onboarding/check-subdomain/${subdomain}`);
+      const response = await axios.get(`/onboarding/check-subdomain/${subdomain}`);
 
       setSubdomainStatus({
         checking: false,
@@ -164,7 +164,7 @@ function RegisterPage() {
       };
       console.log('📤 Payload:', payload);
 
-      const response = await axios.post(`${config.apiBaseUrl}/onboarding/register-dojo`, payload);
+      const response = await axios.post(`/onboarding/register-dojo`, payload);
       console.log('📥 Response:', response.data);
 
       if (response.data.success) {

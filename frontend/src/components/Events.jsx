@@ -58,7 +58,7 @@ const Events = () => {
     setError('');
     try {
       const dojoFilter = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
-      const response = await axios.get(`${config.apiBaseUrl}/events${dojoFilter}`, {
+      const response = await axios.get(`/events${dojoFilter}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -81,7 +81,7 @@ const Events = () => {
   // Lade Räume
   const ladeRaeume = useCallback(async () => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/raeume`, {
+      const response = await axios.get(`/raeume`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -104,7 +104,7 @@ const Events = () => {
   // Lade Trainer
   const ladeTrainer = useCallback(async () => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/trainer`, {
+      const response = await axios.get(`/trainer`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -134,7 +134,7 @@ const Events = () => {
     setError('');
     try {
       await axios.post(
-        `${config.apiBaseUrl}/events`,
+        `/events`,
         {
           ...newEvent,
           dojo_id: activeDojo?.id || 1,
@@ -173,7 +173,7 @@ const Events = () => {
     setError('');
     try {
       await axios.put(
-        `${config.apiBaseUrl}/events/${selectedEvent.event_id}`,
+        `/events/${selectedEvent.event_id}`,
         {
           ...selectedEvent,
           raum_id: selectedEvent.raum_id || null,
@@ -197,7 +197,7 @@ const Events = () => {
 
     setError('');
     try {
-      await axios.delete(`${config.apiBaseUrl}/events/${eventId}`, {
+      await axios.delete(`/events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       ladeEvents();
@@ -215,7 +215,7 @@ const Events = () => {
     // Lade Anmeldungen
     try {
       const response = await axios.get(
-        `${config.apiBaseUrl}/events/${event.event_id}/anmeldungen`,
+        `/events/${event.event_id}/anmeldungen`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSelectedEvent({ ...event, anmeldungen: response.data });
@@ -229,7 +229,7 @@ const Events = () => {
     const loadMembers = async () => {
       if (!isAdmin) return;
       try {
-        const response = await axios.get(`${config.apiBaseUrl}/mitglieder/all`, {
+        const response = await axios.get(`/mitglieder/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAllMembers(response.data || []);
@@ -250,7 +250,7 @@ const Events = () => {
     // Lade existierende Anmeldungen für dieses Event
     try {
       const response = await axios.get(
-        `${config.apiBaseUrl}/events/${event.event_id}/anmeldungen`,
+        `/events/${event.event_id}/anmeldungen`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // Speichere registrierte Mitglieder-IDs
@@ -273,7 +273,7 @@ const Events = () => {
     setError('');
     try {
       const response = await axios.post(
-        `${config.apiBaseUrl}/events/${selectedEventForParticipant.event_id}/admin-anmelden`,
+        `/events/${selectedEventForParticipant.event_id}/admin-anmelden`,
         {
           mitglied_id: parseInt(selectedMemberId),
           bemerkung: participantBemerkung || undefined,
@@ -301,7 +301,7 @@ const Events = () => {
 
     try {
       const response = await axios.put(
-        `${config.apiBaseUrl}/events/anmeldung/${anmeldungId}/bezahlt`,
+        `/events/anmeldung/${anmeldungId}/bezahlt`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -311,7 +311,7 @@ const Events = () => {
         // Refresh event details um aktualisierte Anmeldung zu zeigen
         if (selectedEvent) {
           const eventResponse = await axios.get(
-            `${config.apiBaseUrl}/events/${selectedEvent.event_id}`,
+            `/events/${selectedEvent.event_id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           setSelectedEvent(eventResponse.data);

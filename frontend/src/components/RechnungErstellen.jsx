@@ -113,7 +113,7 @@ const RechnungErstellen = () => {
 
   const loadMitglieder = async () => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/mitglieder`, {
+      const response = await axios.get(`/mitglieder`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMitglieder(response.data || []);
@@ -124,7 +124,7 @@ const RechnungErstellen = () => {
 
   const loadArtikel = async () => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/artikel`, {
+      const response = await axios.get(`/artikel`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setArtikel(response.data.data || []);
@@ -146,7 +146,7 @@ const RechnungErstellen = () => {
       console.log('🔍 Lade Bankdaten für Dojo:', dojoId);
       
       // Versuche zuerst die Standard-Bank aus dojo_banken zu holen
-      const response = await axios.get(`${config.apiBaseUrl}/dojo-banken/${dojoId}`, {
+      const response = await axios.get(`/dojo-banken/${dojoId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -215,14 +215,14 @@ const RechnungErstellen = () => {
         // Versuche Migration durchzuführen
         console.log('🔄 Versuche automatische Migration der Bankdaten...');
         try {
-          const migrateResponse = await axios.post(`${config.apiBaseUrl}/dojo-banken/migrate`, {}, {
+          const migrateResponse = await axios.post(`/dojo-banken/migrate`, {}, {
             headers: { Authorization: `Bearer ${token}` }
           });
           console.log('✅ Migration-Ergebnis:', migrateResponse.data);
           
           // Nach Migration erneut versuchen, Bankdaten zu laden
           if (migrateResponse.data.success) {
-            const retryResponse = await axios.get(`${config.apiBaseUrl}/dojo-banken/${dojoId}`, {
+            const retryResponse = await axios.get(`/dojo-banken/${dojoId}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -270,7 +270,7 @@ const RechnungErstellen = () => {
 
   const loadRechnungsnummer = async (datum) => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/rechnungen/naechste-nummer`, {
+      const response = await axios.get(`/rechnungen/naechste-nummer`, {
         params: { datum },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -777,7 +777,7 @@ const RechnungErstellen = () => {
     };
 
     try {
-      const response = await axios.post(`${config.apiBaseUrl}/rechnungen`, rechnungData, {
+      const response = await axios.post(`/rechnungen`, rechnungData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

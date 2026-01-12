@@ -23,7 +23,7 @@ const PersonalCheckin = () => {
 
   const loadPersonal = async () => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/personalCheckin/personal`);
+      const response = await axios.get(`/personalCheckin/personal`);
       setPersonal(response.data.personal);
     } catch (error) {
       console.error('❌ Fehler beim Laden der Personal-Liste:', error);
@@ -33,7 +33,7 @@ const PersonalCheckin = () => {
   const loadCheckins = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${config.apiBaseUrl}/personalCheckin?datum=${datum}`);
+      const response = await axios.get(`/personalCheckin?datum=${datum}`);
       setCheckins(response.data.checkins);
       setStats(response.data.stats);
     } catch (error) {
@@ -51,7 +51,7 @@ const PersonalCheckin = () => {
 
     try {
       setLoading(true);
-      await axios.post(`${config.apiBaseUrl}/personalCheckin`, {
+      await axios.post(`/personalCheckin`, {
         personal_id: selectedPersonal,
         bemerkung: bemerkung
       });
@@ -77,7 +77,7 @@ const PersonalCheckin = () => {
 
     try {
       setLoading(true);
-      const response = await axios.put(`${config.apiBaseUrl}/personalCheckin/${checkinId}/checkout`);
+      const response = await axios.put(`/personalCheckin/${checkinId}/checkout`);
       
       // Daten neu laden
       loadCheckins();

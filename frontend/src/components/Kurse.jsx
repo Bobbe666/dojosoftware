@@ -62,7 +62,7 @@ const Kurse = () => {
 
   const loadRaeume = async () => {
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/raeume`);
+      const response = await fetchWithAuth(`/raeume`);
       const result = await response.json();
       if (result.success) {
         setRaeume(result.data);
@@ -299,7 +299,7 @@ const Kurse = () => {
     }
 
     try {
-      await axios.post(`${config.apiBaseUrl}/kurse`, {
+      await axios.post(`/kurse`, {
         gruppenname: neuerKurs.gruppenname,
         stil: neuerKurs.stil,
         trainer_ids: neuerKurs.trainer_ids,
@@ -323,8 +323,8 @@ const Kurse = () => {
       // 🔒 TAX COMPLIANCE: Include dojo_id filter for permission check
       const dojoFilterParam = getDojoFilterParam();
       const url = dojoFilterParam
-        ? `${config.apiBaseUrl}/kurse/${id}?${dojoFilterParam}`
-        : `${config.apiBaseUrl}/kurse/${id}`;
+        ? `/kurse/${id}?${dojoFilterParam}`
+        : `/kurse/${id}`;
       await axios.delete(url);
       ladeAlleDaten();
     } catch (err) {
@@ -364,8 +364,8 @@ const Kurse = () => {
     // 🔒 TAX COMPLIANCE: Include dojo_id filter for permission check
     const dojoFilterParam = getDojoFilterParam();
     const url = dojoFilterParam
-      ? `${config.apiBaseUrl}/kurse/${id}?${dojoFilterParam}`
-      : `${config.apiBaseUrl}/kurse/${id}`;
+      ? `/kurse/${id}?${dojoFilterParam}`
+      : `/kurse/${id}`;
 
     try {
       await axios.put(url, {
@@ -393,7 +393,7 @@ const Kurse = () => {
 
     try {
       // Trainer ohne Stile erstellen - Stile werden später beim Kurs zugeordnet
-      const response = await axios.post(`${config.apiBaseUrl}/trainer`, {
+      const response = await axios.post(`/trainer`, {
         vorname: newTrainerData.vorname,
         nachname: newTrainerData.nachname,
         email: newTrainerData.email || "",
@@ -421,7 +421,7 @@ const Kurse = () => {
     }
 
     try {
-      await axios.post(`${config.apiBaseUrl}/gruppen`, {
+      await axios.post(`/gruppen`, {
         name: newGroupName.trim()
       });
 
@@ -445,7 +445,7 @@ const Kurse = () => {
     }
 
     try {
-      await axios.post(`${config.apiBaseUrl}/stile`, {
+      await axios.post(`/stile`, {
         name: newStyleName.trim()
       });
 
@@ -470,7 +470,7 @@ const Kurse = () => {
     }
 
     try {
-      await axios.post(`${config.apiBaseUrl}/raeume`, {
+      await axios.post(`/raeume`, {
         name: roomData.name.trim(),
         beschreibung: roomData.beschreibung.trim(),
         groesse: roomData.groesse.trim() || null,

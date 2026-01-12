@@ -19,7 +19,7 @@ function PricingPage() {
 
   const loadPlans = async () => {
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/onboarding/plans`);
+      const response = await axios.get(`/onboarding/plans`);
       setPlans(response.data.plans || []);
     } catch (error) {
       console.error('Fehler beim Laden der Pläne:', error);

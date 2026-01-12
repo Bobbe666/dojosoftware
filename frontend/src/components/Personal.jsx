@@ -35,7 +35,7 @@ const Personal = () => {
   const ladePersonalDaten = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${config.apiBaseUrl}/personal`);
+      const response = await axios.get(`/personal`);
       setPersonal(response.data);
       console.log("✅ Personal-Daten geladen:", response.data.length);
     } catch (err) {
@@ -81,7 +81,7 @@ const Personal = () => {
     }
 
     try {
-      await axios.post(`${config.apiBaseUrl}/personal`, neuerMitarbeiter);
+      await axios.post(`/personal`, neuerMitarbeiter);
       setNeuerMitarbeiter({
         personalnummer: "",
         vorname: "",
@@ -123,7 +123,7 @@ const Personal = () => {
     }
 
     try {
-      await axios.put(`${config.apiBaseUrl}/personal/${id}`, editingData);
+      await axios.put(`/personal/${id}`, editingData);
       setEditingId(null);
       ladePersonalDaten();
       alert("Mitarbeiter erfolgreich aktualisiert!");
@@ -137,7 +137,7 @@ const Personal = () => {
     if (!window.confirm("Soll dieser Mitarbeiter wirklich gekündigt werden?")) return;
 
     try {
-      await axios.delete(`${config.apiBaseUrl}/personal/${id}`);
+      await axios.delete(`/personal/${id}`);
       ladePersonalDaten();
       alert("Mitarbeiter erfolgreich gekündigt!");
     } catch (err) {
