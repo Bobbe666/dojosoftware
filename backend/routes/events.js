@@ -12,9 +12,9 @@ const { requireFeature } = require('../middleware/featureAccess');
 // ============================================================================
 // FEATURE PROTECTION: Events-Verwaltung
 // ============================================================================
-// Alle Events-Routes erfordern das 'events' Feature (ab Professional Plan)
+// Admin-Routes erfordern das 'events' Feature (ab Professional Plan)
+// Member-Routes sind OHNE Feature-Check verfügbar
 router.use(authenticateToken);
-router.use(requireFeature('events'));
 
 // ============================================================================
 // HILFSFUNKTIONEN
@@ -57,8 +57,9 @@ function getAvailableSlots(event, anmeldungen) {
 /**
  * GET /api/events
  * Holt alle Events (mit optionalem Dojo-Filter)
+ * ADMIN-ROUTE: Feature-Flag erforderlich
  */
-router.get('/', (req, res) => {
+router.get('/', requireFeature('events'), (req, res) => {
   const { dojo_id, status, upcoming } = req.query;
 
   let query = `
@@ -241,8 +242,9 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
 /**
  * POST /api/events
  * Erstellt ein neues Event
+ * ADMIN-ROUTE: Feature-Flag erforderlich
  */
-router.post('/', (req, res) => {
+router.post('/', requireFeature('events'), (req, res) => {
   const eventData = req.body;
 
   // Validierung
@@ -477,8 +479,9 @@ router.post('/:id/abmelden', (req, res) => {
 /**
  * PUT /api/events/:id
  * Aktualisiert ein Event
+ * ADMIN-ROUTE: Feature-Flag erforderlich
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', requireFeature('events'), (req, res) => {
   const eventId = req.params.id;
   const eventData = req.body;
 
@@ -592,8 +595,9 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
 /**
  * DELETE /api/events/:id
  * Löscht ein Event
+ * ADMIN-ROUTE: Feature-Flag erforderlich
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireFeature('events'), (req, res) => {
   const eventId = req.params.id;
 
   // Prüfe ob Anmeldungen existieren
@@ -644,6 +648,7 @@ router.delete('/:id', (req, res) => {
 /**
  * POST /api/events/:id/anmelden
  * Mitglied meldet sich für ein Event an
+ * MEMBER-ROUTE: KEIN Feature-Flag erforderlich
  */
 router.post('/:id/anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
@@ -717,6 +722,7 @@ router.post('/:id/anmelden', async (req, res) => {
 /**
  * DELETE /api/events/:id/anmelden
  * Mitglied meldet sich von einem Event ab
+ * MEMBER-ROUTE: KEIN Feature-Flag erforderlich
  */
 router.delete('/:id/anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
@@ -758,6 +764,7 @@ router.delete('/:id/anmelden', async (req, res) => {
 /**
  * GET /api/events/member/:mitglied_id
  * Alle Events mit Anmeldestatus für ein Mitglied
+ * MEMBER-ROUTE: KEIN Feature-Flag erforderlich
  */
 router.get('/member/:mitglied_id', async (req, res) => {
   const mitgliedId = parseInt(req.params.mitglied_id);
