@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Clock, Calendar, X, Settings, CheckCircle } from 'lucide-react';
+import { Bell, Clock, Calendar, X, Settings, CheckCircle, List } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
-
+import { useAuth } from '../context/AuthContext.jsx';
 
 const TrainingReminders = () => {
+  const { user } = useAuth();
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAllCourses, setShowAllCourses] = useState(true); // Toggle zwischen "Meine Kurse" und "Alle Kurse" - DEFAULT: ALLE
   const [reminderSettings, setReminderSettings] = useState({
     enabled: true,
     advanceMinutes: 30,
@@ -15,50 +17,104 @@ const TrainingReminders = () => {
     emailReminders: false
   });
 
-  // Mock-Daten für kommende Kurse
-  const mockUpcomingCourses = [
-    {
-      id: 1,
-      kurs_name: 'Karate Grundkurs',
-      trainer_name: 'Meister Schmidt',
-      datum: new Date(Date.now() + 45 * 60 * 1000), // 45 Minuten
-      uhrzeit: '18:00',
-      raum: 'Dojo A',
-      duration: 90
-    },
-    {
-      id: 2,
-      kurs_name: 'Selbstverteidigung',
-      trainer_name: 'Frau Müller',
-      datum: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 Stunden
-      uhrzeit: '19:30',
-      raum: 'Dojo B',
-      duration: 60
-    },
-    {
-      id: 3,
-      kurs_name: 'Kickboxen',
-      trainer_name: 'Trainer Weber',
-      datum: new Date(Date.now() + 24 * 60 * 60 * 1000), // Morgen
-      uhrzeit: '17:00',
-      raum: 'Dojo A',
-      duration: 75
-    }
-  ];
-
   // Lade kommende Kurse und erstelle Erinnerungen
   const loadUpcomingCourses = async () => {
+    if (!user?.mitglied_id) {
+      console.warn('⚠️ Keine mitglied_id - Kurse können nicht geladen werden');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      // Hier würde normalerweise die API aufgerufen werden
-      // const response = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/upcoming-courses`);
-      
-      // Simuliere API-Aufruf
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const upcomingCourses = mockUpcomingCourses.filter(course => 
-        course.datum > new Date()
-      );
+      console.log('📅 Lade Kurse... (showAllCourses:', showAllCourses, ')');
+
+      // Lade entweder "Meine Kurse" oder "Alle Kurse"
+      const endpoint = showAllCourses
+        ? `${config.apiBaseUrl}/kurse?include_schedule=true`
+        : `${config.apiBaseUrl}/mitglieder/${user.mitglied_id}/kurse`;
+
+      const response = await fetchWithAuth(endpoint);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('📅 Kurse geladen:', data);
+
+      // Konvertiere Kurse zu Erinnerungen mit Datum/Zeit
+      const upcomingCourses = (Array.isArray(data) ? data : data.kurse || [])
+        .map(kurs => {
+          // Prüfe ob Kurs einen Stundenplan hat
+          if (!kurs.wochentag || !kurs.uhrzeit) {
+            console.log(`⚠️ Kurs "${kurs.name}" hat keinen Stundenplan - überspringe`);
+            return null;
+          }
+
+          // Kombiniere wochentag mit aktueller Woche für nächstes Vorkommnis
+          const today = new Date();
+          const currentDay = today.getDay(); // 0 = Sonntag, 1 = Montag, ...
+
+          // Wochentag-Mapping (Montag=1, Dienstag=2, ... Sonntag=0)
+          const wochentagMap = {
+            'Montag': 1, 'Dienstag': 2, 'Mittwoch': 3, 'Donnerstag': 4,
+            'Freifag': 5, 'Freitag': 5, 'Samstag': 6, 'Sonntag': 0
+          };
+
+          const targetDay = wochentagMap[kurs.wochentag] || 1;
+          let daysUntil = targetDay - currentDay;
+
+          // Parse Uhrzeit (Format: "18:00:00" oder "18:00")
+          const [hours, minutes] = (kurs.uhrzeit || '18:00').split(':').map(Number);
+
+          // Berechne nächstes Vorkommnis
+          const nextOccurrence = new Date(today);
+
+          if (daysUntil === 0) {
+            // Heute - prüfe ob Uhrzeit noch in der Zukunft liegt
+            nextOccurrence.setHours(hours || 18, minutes || 0, 0, 0);
+
+            if (nextOccurrence <= new Date()) {
+              // Uhrzeit ist vorbei - nächste Woche
+              daysUntil = 7;
+              nextOccurrence.setDate(today.getDate() + 7);
+            }
+          } else {
+            // Nicht heute
+            if (daysUntil < 0) daysUntil += 7; // Nächste Woche
+            nextOccurrence.setDate(today.getDate() + daysUntil);
+            nextOccurrence.setHours(hours || 18, minutes || 0, 0, 0);
+          }
+
+          // Parse Dauer (Format: "01:30:00" oder Minuten)
+          let duration = 90; // Default
+          if (kurs.dauer) {
+            if (typeof kurs.dauer === 'string' && kurs.dauer.includes(':')) {
+              const [h, m] = kurs.dauer.split(':').map(Number);
+              duration = (h || 0) * 60 + (m || 0);
+            } else {
+              duration = parseInt(kurs.dauer) || 90;
+            }
+          }
+
+          return {
+            id: kurs.kurs_id || kurs.id,
+            kurs_name: kurs.name || kurs.kurs_name,
+            trainer_name: kurs.trainer_vorname && kurs.trainer_nachname
+              ? `${kurs.trainer_vorname} ${kurs.trainer_nachname}`
+              : kurs.trainer_name || 'TBA',
+            datum: nextOccurrence,
+            uhrzeit: kurs.uhrzeit,
+            raum: kurs.raum || 'Hauptdojo',
+            duration,
+            wochentag: kurs.wochentag
+          };
+        })
+        .filter(course => course !== null && course.datum > new Date()); // Nur zukünftige Kurse mit Stundenplan
+
+      // Sortiere nach Datum (nächster zuerst)
+      upcomingCourses.sort((a, b) => a.datum - b.datum);
 
       // Erstelle Erinnerungen basierend auf Einstellungen
       const generatedReminders = upcomingCourses.map(course => {
@@ -71,9 +127,11 @@ const TrainingReminders = () => {
         };
       });
 
+      console.log('✅ Erinnerungen erstellt:', generatedReminders.length);
       setReminders(generatedReminders);
     } catch (error) {
-      console.error('Fehler beim Laden der Kurse:', error);
+      console.error('❌ Fehler beim Laden der Kurse:', error);
+      setReminders([]);
     } finally {
       setLoading(false);
     }
@@ -134,12 +192,18 @@ const TrainingReminders = () => {
   };
 
   useEffect(() => {
-    loadUpcomingCourses();
-    
+    if (user?.mitglied_id) {
+      loadUpcomingCourses();
+    }
+
     // Aktualisiere alle 30 Sekunden
-    const interval = setInterval(loadUpcomingCourses, 30000);
+    const interval = setInterval(() => {
+      if (user?.mitglied_id) {
+        loadUpcomingCourses();
+      }
+    }, 30000);
     return () => clearInterval(interval);
-  }, [reminderSettings.advanceMinutes]);
+  }, [reminderSettings.advanceMinutes, showAllCourses, user?.mitglied_id]);
 
   if (loading) {
     return (
@@ -164,13 +228,27 @@ const TrainingReminders = () => {
             <span className="reminders-badge">{activeReminders.length}</span>
           )}
         </div>
-        <button 
-          className="settings-button"
-          onClick={() => setShowSettings(!showSettings)}
-          title="Einstellungen"
-        >
-          <Settings size={16} />
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className="settings-button"
+            onClick={() => setShowAllCourses(!showAllCourses)}
+            title={showAllCourses ? 'Nur meine Kurse' : 'Alle Kurse anzeigen'}
+            style={{
+              background: showAllCourses ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+              border: showAllCourses ? '1px solid rgba(255, 215, 0, 0.5)' : '1px solid rgba(255, 255, 255, 0.2)',
+              color: showAllCourses ? '#ffd700' : 'rgba(255, 255, 255, 0.7)'
+            }}
+          >
+            <List size={16} />
+          </button>
+          <button
+            className="settings-button"
+            onClick={() => setShowSettings(!showSettings)}
+            title="Einstellungen"
+          >
+            <Settings size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Einstellungen */}
@@ -268,6 +346,20 @@ const TrainingReminders = () => {
             <div className="course-info">
               <span className="course-name">{course.kurs_name}</span>
               <span className="course-time">{formatDate(course.datum)} - {formatTime(course.datum)}</span>
+              <div className="course-details" style={{
+                display: 'flex',
+                gap: '0.75rem',
+                fontSize: '0.85rem',
+                color: 'rgba(255, 255, 255, 0.6)',
+                marginTop: '0.25rem'
+              }}>
+                {course.trainer_name && (
+                  <span>👨‍🏫 {course.trainer_name}</span>
+                )}
+                {course.raum && (
+                  <span>📍 {course.raum}</span>
+                )}
+              </div>
             </div>
             <span className="time-until">in {getTimeUntilCourse(course.datum)}</span>
           </div>

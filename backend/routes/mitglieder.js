@@ -1455,15 +1455,69 @@ router.get("/:id/stile", (req, res) => {
             }
             return {
                 stil_id: stilInfo.stil_id,
+                name: stilInfo.stil_name, // Frontend erwartet 'name', nicht 'stil_name'
                 stil_name: stilInfo.stil_name,
                 beschreibung: stilInfo.beschreibung
             };
         }).filter(Boolean);
 
-        res.json({
-            success: true,
-            mitglied_id: mitglied_id,
-            stile: transformedResults
+        if (transformedResults.length === 0) {
+            return res.json({
+                success: true,
+                mitglied_id: mitglied_id,
+                stile: []
+            });
+        }
+
+        // Lade Graduierungen für jeden Stil
+        const stilIds = transformedResults.map(s => s.stil_id);
+        const graduierungenQuery = `
+            SELECT
+                graduierung_id,
+                stil_id,
+                name,
+                reihenfolge,
+                trainingsstunden_min,
+                mindestzeit_monate,
+                farbe_hex,
+                kategorie,
+                dan_grad
+            FROM graduierungen
+            WHERE stil_id IN (?)
+            ORDER BY stil_id, reihenfolge
+        `;
+
+        db.query(graduierungenQuery, [stilIds], (gradErr, gradResults) => {
+            if (gradErr) {
+                console.error("❌ Fehler beim Laden der Graduierungen:", gradErr);
+                // Trotzdem Stile ohne Graduierungen zurückgeben
+                return res.json({
+                    success: true,
+                    mitglied_id: mitglied_id,
+                    stile: transformedResults
+                });
+            }
+
+            // Gruppiere Graduierungen nach stil_id
+            const graduierungenByStil = {};
+            gradResults.forEach(grad => {
+                if (!graduierungenByStil[grad.stil_id]) {
+                    graduierungenByStil[grad.stil_id] = [];
+                }
+                graduierungenByStil[grad.stil_id].push(grad);
+            });
+
+            // Füge Graduierungen zu den Stilen hinzu
+            const stileWithGraduierungen = transformedResults.map(stil => ({
+                ...stil,
+                graduierungen: graduierungenByStil[stil.stil_id] || []
+            }));
+
+            res.json({
+                success: true,
+                mitglied_id: mitglied_id,
+                stile: stileWithGraduierungen
+            });
         });
     });
 });
@@ -3121,6 +3175,194 @@ router.post("/:id/mitgliedsausweis", async (req, res) => {
     console.error("[Mitgliedsausweis] Unerwarteter Fehler:", error);
     return res.status(500).json({ error: "Interner Serverfehler", details: error.message });
   }
+});
+
+/**
+ * GET /mitglieder/:id/kurse
+ * Gibt alle Kurse zurück, an denen ein Mitglied teilnimmt (basierend auf Stil-Zuordnung)
+ */
+router.get("/:id/kurse", (req, res) => {
+  const mitgliedId = req.params.id;
+
+  console.log(`📅 Lade Kurse für Mitglied ID ${mitgliedId}`);
+
+  // Stil ENUM zu ID Mapping
+  const stilMapping = {
+    'ShieldX': { stil_id: 2, stil_name: 'ShieldX' },
+    'BJJ': { stil_id: 3, stil_name: 'BJJ' },
+    'Brazilian Jiu Jitsu': { stil_id: 3, stil_name: 'Brazilian Jiu Jitsu' },
+    'Kickboxen': { stil_id: 4, stil_name: 'Kickboxen' },
+    'Karate': { stil_id: 5, stil_name: 'Enso Karate' },
+    'Enso Karate': { stil_id: 5, stil_name: 'Enso Karate' },
+    'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do' }
+  };
+
+  // Lade zuerst die Stile des Mitglieds
+  const stileQuery = `
+    SELECT DISTINCT ms.stil
+    FROM mitglied_stile ms
+    WHERE ms.mitglied_id = ?
+  `;
+
+  db.query(stileQuery, [mitgliedId], (err, stileResults) => {
+    if (err) {
+      console.error("❌ Fehler beim Laden der Mitglieds-Stile:", err);
+      return res.status(500).json({ error: "Fehler beim Laden der Stile" });
+    }
+
+    if (!stileResults || stileResults.length === 0) {
+      console.log("⚠️ Mitglied hat keine Stile - keine Kurse vorhanden");
+      return res.json([]);
+    }
+
+    // Map ENUM stil values to stil_ids
+    const stilIds = stileResults
+      .map(s => {
+        const stilInfo = stilMapping[s.stil];
+        if (!stilInfo) {
+          console.warn(`⚠️ Stil '${s.stil}' nicht im Mapping gefunden`);
+          return null;
+        }
+        return stilInfo.stil_id;
+      })
+      .filter(Boolean);
+
+    console.log(`✅ Mitglied hat Stil ENUMs:`, stileResults.map(s => s.stil));
+    console.log(`✅ Mitglied hat Stil-IDs:`, stilIds);
+
+    if (stilIds.length === 0) {
+      console.log("⚠️ Keine Stil-IDs gefunden - keine Kurse vorhanden");
+      return res.json([]);
+    }
+
+    // Lade Kurse die zu den Stilen passen
+    // WICHTIG: kurse.stil ist VARCHAR, nicht stil_id
+    const stilEnums = stileResults.map(s => s.stil);
+    console.log(`✅ Mitglied hat Stil-ENUMs für Kurse:`, stilEnums);
+
+    const kurseQuery = `
+      SELECT DISTINCT
+        k.kurs_id,
+        k.gruppenname as name,
+        sp.tag as wochentag,
+        sp.uhrzeit_start as uhrzeit,
+        TIMESTAMPDIFF(MINUTE, sp.uhrzeit_start, sp.uhrzeit_ende) as dauer,
+        r.name as raum,
+        k.stil as stil_name,
+        k.trainer_ids,
+        k.trainer_id
+      FROM kurse k
+      LEFT JOIN stundenplan sp ON k.kurs_id = sp.kurs_id
+      LEFT JOIN raeume r ON sp.raum_id = r.id
+      WHERE k.stil IN (?)
+      ORDER BY
+        FIELD(sp.tag, 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'),
+        sp.uhrzeit_start,
+        k.gruppenname
+    `;
+
+    db.query(kurseQuery, [stilEnums], async (err, kurseResults) => {
+      if (err) {
+        console.error("❌ Fehler beim Laden der Kurse:", err);
+        return res.status(500).json({ error: "Fehler beim Laden der Kurse" });
+      }
+
+      console.log(`✅ ${kurseResults.length} Kurs-Einträge für Mitglied ${mitgliedId} gefunden`);
+
+      if (kurseResults.length === 0) {
+        return res.json([]);
+      }
+
+      // Sammle alle Trainer-IDs aus allen Kursen
+      const allTrainerIds = new Set();
+      kurseResults.forEach(kurs => {
+        // Parse trainer_ids JSON array
+        let trainerIds = [];
+        if (kurs.trainer_ids && typeof kurs.trainer_ids === 'string') {
+          try {
+            trainerIds = JSON.parse(kurs.trainer_ids);
+          } catch (e) {
+            console.warn(`⚠️ Konnte trainer_ids nicht parsen für Kurs ${kurs.kurs_id}:`, e);
+          }
+        } else if (Array.isArray(kurs.trainer_ids)) {
+          trainerIds = kurs.trainer_ids;
+        } else if (kurs.trainer_id) {
+          // Fallback auf altes trainer_id Feld
+          trainerIds = [kurs.trainer_id];
+        }
+
+        trainerIds.forEach(id => allTrainerIds.add(id));
+      });
+
+      if (allTrainerIds.size === 0) {
+        // Keine Trainer zugeordnet - gebe Kurse ohne Trainer-Namen zurück
+        console.log("⚠️ Keine Trainer-IDs gefunden");
+        return res.json(kurseResults.map(k => ({
+          ...k,
+          trainer_vorname: null,
+          trainer_nachname: null,
+          trainer_name: 'TBA'
+        })));
+      }
+
+      // Lade alle Trainer auf einmal
+      const trainerQuery = `
+        SELECT trainer_id, vorname, nachname
+        FROM trainer
+        WHERE trainer_id IN (?)
+      `;
+
+      db.query(trainerQuery, [Array.from(allTrainerIds)], (err, trainerResults) => {
+        if (err) {
+          console.error("❌ Fehler beim Laden der Trainer:", err);
+          return res.status(500).json({ error: "Fehler beim Laden der Trainer" });
+        }
+
+        // Erstelle Trainer-Lookup-Map
+        const trainerMap = {};
+        trainerResults.forEach(trainer => {
+          trainerMap[trainer.trainer_id] = trainer;
+        });
+
+        // Füge Trainer-Namen zu jedem Kurs hinzu
+        const enrichedKurse = kurseResults.map(kurs => {
+          // Parse trainer_ids
+          let trainerIds = [];
+          if (kurs.trainer_ids && typeof kurs.trainer_ids === 'string') {
+            try {
+              trainerIds = JSON.parse(kurs.trainer_ids);
+            } catch (e) {
+              console.warn(`⚠️ Konnte trainer_ids nicht parsen für Kurs ${kurs.kurs_id}`);
+            }
+          } else if (Array.isArray(kurs.trainer_ids)) {
+            trainerIds = kurs.trainer_ids;
+          } else if (kurs.trainer_id) {
+            trainerIds = [kurs.trainer_id];
+          }
+
+          // Hole ersten Trainer (für Kompatibilität)
+          const firstTrainerId = trainerIds[0];
+          const firstTrainer = trainerMap[firstTrainerId];
+
+          return {
+            kurs_id: kurs.kurs_id,
+            name: kurs.name,
+            wochentag: kurs.wochentag,
+            uhrzeit: kurs.uhrzeit,
+            dauer: kurs.dauer,
+            raum: kurs.raum,
+            stil_name: kurs.stil_name,
+            trainer_vorname: firstTrainer?.vorname || null,
+            trainer_nachname: firstTrainer?.nachname || null,
+            trainer_name: firstTrainer ? `${firstTrainer.vorname} ${firstTrainer.nachname}` : 'TBA'
+          };
+        });
+
+        console.log(`✅ ${enrichedKurse.length} Kurse mit Trainer-Namen angereichert`);
+        res.json(enrichedKurse);
+      });
+    });
+  });
 });
 
 /**
