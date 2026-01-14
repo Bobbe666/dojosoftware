@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
+import { useDojoContext } from '../context/DojoContext.jsx';
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Anwesenheit.css";
@@ -10,6 +11,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const Anwesenheit = () => {
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
+  const { getDojoFilterParam, activeDojo } = useDojoContext(); // 🔒 Dojo-Filter für Multi-Tenant
   const [stundenplan, setStundenplan] = useState([]);
   const [ausgewaehlteStunde, setAusgewaehlteStunde] = useState(null);
   const [ausgewaehltesDatum, setAusgewaehltesDatum] = useState(() => new Date().toISOString().split("T")[0]);
@@ -99,7 +101,12 @@ const Anwesenheit = () => {
     try {
       setLoading(true);
 
-      const response = await axios.get(`/anwesenheit/kurse/${datum}`);
+      // 🔒 Dojo-Filter für Multi-Tenant Unterstützung
+      const dojoParam = getDojoFilterParam();
+      const url = dojoParam ? `/anwesenheit/kurse/${datum}?${dojoParam}` : `/anwesenheit/kurse/${datum}`;
+      console.log('📅 Lade Kurse:', url, 'activeDojo:', activeDojo);
+
+      const response = await axios.get(url);
       const data = response.data;
       
       if (data.success) {

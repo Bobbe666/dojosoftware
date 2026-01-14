@@ -6,7 +6,7 @@ import axios from 'axios';
 import config from '../config/config.js';
 import '../styles/News.css';
 
-function NewsVerwaltung() {
+function NewsVerwaltung({ embedded = false }) {
   const navigate = useNavigate();
   const { token } = useAuth();
   const [news, setNews] = useState([]);
@@ -53,7 +53,8 @@ function NewsVerwaltung() {
   };
 
   useEffect(() => {
-    if (!isMainAdmin()) {
+    // Nur redirecten wenn nicht embedded
+    if (!embedded && !isMainAdmin()) {
       navigate('/dashboard');
       return;
     }
@@ -114,12 +115,14 @@ function NewsVerwaltung() {
   }
 
   return (
-    <div className="news-verwaltung">
+    <div className={`news-verwaltung ${embedded ? 'embedded' : ''}`}>
       <div className="news-header">
         <div className="news-header-left">
-          <button className="btn-back" onClick={() => navigate('/dashboard')}>
-            ← Zurück
-          </button>
+          {!embedded && (
+            <button className="btn-back" onClick={() => navigate('/dashboard')}>
+              ← Zurück
+            </button>
+          )}
           <h1>📰 News verwalten</h1>
         </div>
         <button

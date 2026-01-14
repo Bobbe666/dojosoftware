@@ -1,16 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Bell, Settings, Send, Users, History, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Mail, Bell, Settings, Send, Users, History, FileText, CheckCircle, XCircle, Clock, Newspaper } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 import '../styles/NotificationSystem.css';
 import config from '../config/config.js';
 import { useDojoContext } from '../context/DojoContext';
+import { useAuth } from '../context/AuthContext.jsx';
+import { jwtDecode } from 'jwt-decode';
 import { createSafeHtml } from '../utils/sanitizer';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import NewsVerwaltung from './NewsVerwaltung';
 
 
 const NotificationSystem = () => {
   const { activeDojo, filter } = useDojoContext();
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Prüfe ob User Haupt-Admin ist (für News-Feature)
+  let isMainAdmin = false;
+  try {
+    if (token) {
+      const decoded = jwtDecode(token);
+      isMainAdmin = decoded.id === 1 || decoded.user_id === 1 || decoded.username === 'admin';
+    }
+  } catch (error) {
+    console.error('Token decode error:', error);
+  }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -2371,13 +2386,23 @@ const NotificationSystem = () => {
           <Settings size={20} />
           Einstellungen
         </button>
-        <button 
+        <button
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
           <History size={20} />
           Verlauf
         </button>
+        {/* News Tab - Nur für Haupt-Admin */}
+        {isMainAdmin && (
+          <button
+            className={`tab-btn ${activeTab === 'news' ? 'active' : ''}`}
+            onClick={() => setActiveTab('news')}
+          >
+            <Newspaper size={20} />
+            News verwalten
+          </button>
+        )}
       </div>
 
       {/* Error/Success Messages */}
@@ -2401,6 +2426,7 @@ const NotificationSystem = () => {
         {activeTab === 'push' && renderPushComposer()}
         {activeTab === 'settings' && renderSettings()}
         {activeTab === 'history' && renderHistory()}
+        {activeTab === 'news' && isMainAdmin && <NewsVerwaltung embedded={true} />}
       </div>
     </div>
   );

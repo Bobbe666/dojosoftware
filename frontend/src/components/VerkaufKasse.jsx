@@ -691,29 +691,6 @@ const VerkaufKasse = ({ kunde, onClose }) => {
                     </div>
                     <div className="info">
                       <div className="name">{name}</div>
-                      {person.kurse?.length > 0 && (
-                        <div className="kurse">
-                          {person.kurse.slice(0, 2).map((kurs, index) => (
-                            <span
-                              key={`${person.mitglied_id || index}-kurs-${index}`}
-                              className={`kasse-kurs-tag mini ${
-                                kurs.anwesenheits_typ === 'trainer_hinzugefuegt'
-                                  ? 'trainer'
-                                  : 'checkin'
-                              }`}
-                            >
-                              <span className="name">
-                                {kurs.kurs_name || 'Kurs'}
-                              </span>
-                            </span>
-                          ))}
-                          {person.kurse.length > 2 && (
-                            <span className="mehr">
-                              +{person.kurse.length - 2} weitere
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </button>
                 );

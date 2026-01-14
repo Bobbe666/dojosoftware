@@ -469,7 +469,7 @@ router.get('/today', async (req, res) => {
         CONCAT(m.vorname, ' ', m.nachname) as full_name,
         m.gurtfarbe,
         m.foto_pfad,
-        m.profilbild,
+        m.foto_pfad as profilbild,
         c.stundenplan_id,
         c.checkin_time,
         c.checkout_time,
@@ -969,63 +969,6 @@ router.get('/qr/:id', async (req, res) => {
       success: false,
       error: 'Fehler bei QR-Code',
       details: error.message
-    });
-  }
-});
-
-// ============================================
-// PUBLIC DISPLAY ROUTES
-// ============================================
-
-// GET /api/checkin/today - Heutige Check-ins für öffentliche Anzeige
-router.get('/today', async (req, res) => {
-  try {
-    const { datum } = req.query;
-    const targetDate = datum || new Date().toISOString().split('T')[0];
-    
-    const query = `
-      SELECT 
-        c.checkin_id,
-        c.mitglied_id,
-        c.checkin_time,
-        c.checkout_time,
-        c.status,
-        m.vorname,
-        m.nachname,
-        m.profilbild,
-        m.gurtfarbe,
-        GROUP_CONCAT(DISTINCT k.gruppenname ORDER BY k.gruppenname SEPARATOR ', ') as kurse
-      FROM checkins c
-      JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
-      LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id  
-      LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-      WHERE DATE(c.checkin_time) = ?
-      GROUP BY c.checkin_id, c.mitglied_id, c.checkin_time, c.checkout_time, c.status, 
-               m.vorname, m.nachname, m.profilbild, m.gurtfarbe
-      ORDER BY c.checkin_time DESC
-    `;
-    
-    const checkins = await queryAsync(query, [targetDate]);
-    
-    // Kurse als Array statt String
-    const processedCheckins = checkins.map(checkin => ({
-      ...checkin,
-      kurse: checkin.kurse ? checkin.kurse.split(', ') : []
-    }));
-    
-    res.json({
-      success: true,
-      checkins: processedCheckins,
-      datum: targetDate,
-      count: processedCheckins.length
-    });
-    
-  } catch (error) {
-    console.error('Fehler beim Abrufen der heutigen Check-ins:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Fehler beim Abrufen der Check-in Daten',
-      message: error.message
     });
   }
 });

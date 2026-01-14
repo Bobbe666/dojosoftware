@@ -232,37 +232,72 @@ router.get('/', (req, res) => {
 
 // GET /api/artikel/kasse - Artikel für Kassensystem optimiert
 router.get('/kasse', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
-    return res.status(403).json({ error: 'No tenant' });
+  // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
+  const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+  const showAll = !dojoId || dojoId === 'all' || dojoId === 'null';
+
+  let query;
+  let params;
+
+  if (showAll) {
+    // Super-Admin: Alle Kassen-Artikel
+    query = `
+      SELECT
+        a.artikel_id,
+        a.name,
+        a.verkaufspreis_cent,
+        a.mwst_prozent,
+        a.lagerbestand,
+        a.lager_tracking,
+        a.bild_url,
+        a.bild_base64,
+        a.dojo_id,
+        d.dojoname,
+        ak.name as kategorie_name,
+        ak.farbe_hex as kategorie_farbe,
+        ak.icon as kategorie_icon,
+        ak.kategorie_id,
+        ag.name as artikelgruppe_name,
+        ag.farbe as artikelgruppe_farbe,
+        ag.icon as artikelgruppe_icon,
+        ag.id as artikelgruppe_id
+      FROM artikel a
+      LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+      LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
+      LEFT JOIN dojo d ON a.dojo_id = d.id
+      WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
+      ORDER BY d.dojoname ASC, ak.reihenfolge ASC, a.name ASC
+    `;
+    params = [];
+  } else {
+    query = `
+      SELECT
+        a.artikel_id,
+        a.name,
+        a.verkaufspreis_cent,
+        a.mwst_prozent,
+        a.lagerbestand,
+        a.lager_tracking,
+        a.bild_url,
+        a.bild_base64,
+        ak.name as kategorie_name,
+        ak.farbe_hex as kategorie_farbe,
+        ak.icon as kategorie_icon,
+        ak.kategorie_id,
+        ag.name as artikelgruppe_name,
+        ag.farbe as artikelgruppe_farbe,
+        ag.icon as artikelgruppe_icon,
+        ag.id as artikelgruppe_id
+      FROM artikel a
+      LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+      LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
+      WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE AND a.dojo_id = ?
+      ORDER BY ak.reihenfolge ASC, a.name ASC
+    `;
+    params = [dojoId];
   }
 
-  const query = `
-    SELECT
-      a.artikel_id,
-      a.name,
-      a.verkaufspreis_cent,
-      a.mwst_prozent,
-      a.lagerbestand,
-      a.lager_tracking,
-      a.bild_url,
-      a.bild_base64,
-      ak.name as kategorie_name,
-      ak.farbe_hex as kategorie_farbe,
-      ak.icon as kategorie_icon,
-      ak.kategorie_id,
-      ag.name as artikelgruppe_name,
-      ag.farbe as artikelgruppe_farbe,
-      ag.icon as artikelgruppe_icon,
-      ag.id as artikelgruppe_id
-    FROM artikel a
-    LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
-    LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
-    WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE AND a.dojo_id = ?
-    ORDER BY ak.reihenfolge ASC, a.name ASC
-  `;
-
-  db.query(query, [req.tenant.dojo_id], (error, results) => {
+  db.query(query, params, (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Kassen-Artikel:', error);
       console.error('SQL Fehler Details:', {
