@@ -102,28 +102,55 @@ const createLagerbewegung = (artikel_id, bewegungsart, menge, alter_bestand, neu
 
 // GET /api/artikel/kategorien - Alle Kategorien abrufen
 router.get('/kategorien', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles sehen)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin darf ohne dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
-  // Datenbank verwenden
-  const query = `
-    SELECT
-      kategorie_id,
-      name,
-      beschreibung,
-      farbe_hex,
-      icon,
-      aktiv,
-      reihenfolge,
-      (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE AND dojo_id = ?) as anzahl_artikel
-    FROM artikel_kategorien ak
-    WHERE aktiv = TRUE AND dojo_id = ?
-    ORDER BY reihenfolge ASC, name ASC
-  `;
+  const dojoId = req.tenant?.dojo_id;
 
-  db.query(query, [req.tenant.dojo_id, req.tenant.dojo_id], (error, results) => {
+  // Datenbank verwenden - Super-Admin sieht alle
+  let query, params;
+  if (isSuperAdmin && !dojoId) {
+    query = `
+      SELECT
+        kategorie_id,
+        name,
+        beschreibung,
+        farbe_hex,
+        icon,
+        aktiv,
+        reihenfolge,
+        dojo_id,
+        (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE) as anzahl_artikel
+      FROM artikel_kategorien ak
+      WHERE aktiv = TRUE
+      ORDER BY reihenfolge ASC, name ASC
+    `;
+    params = [];
+  } else {
+    query = `
+      SELECT
+        kategorie_id,
+        name,
+        beschreibung,
+        farbe_hex,
+        icon,
+        aktiv,
+        reihenfolge,
+        (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE AND dojo_id = ?) as anzahl_artikel
+      FROM artikel_kategorien ak
+      WHERE aktiv = TRUE AND dojo_id = ?
+      ORDER BY reihenfolge ASC, name ASC
+    `;
+    params = [dojoId, dojoId];
+  }
+
+  db.query(query, params, (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Kategorien:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Kategorien' });
@@ -173,34 +200,64 @@ router.post('/kategorien', (req, res) => {
 
 // GET /api/artikel - Alle Artikel abrufen (mit optionaler Kategorien-Filterung)
 router.get('/', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles sehen)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin darf ohne dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
+  const dojoId = req.tenant?.dojo_id;
   const { kategorie_id, aktiv, sichtbar_kasse } = req.query;
 
-  // Datenbank verwenden
-  let query = `
-    SELECT
-      a.*,
-      ak.name as kategorie_name,
-      ak.farbe_hex as kategorie_farbe,
-      ak.icon as kategorie_icon,
-      ag.name as artikelgruppe_name,
-      ag.farbe as artikelgruppe_farbe,
-      ag.icon as artikelgruppe_icon,
-      CASE
-        WHEN ag.parent_id IS NULL THEN ag.name
-        ELSE CONCAT(pag.name, ' → ', ag.name)
-      END AS artikelgruppe_vollstaendig
-    FROM artikel a
-    LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
-    LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
-    LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
-    WHERE a.dojo_id = ?
-  `;
-  const params = [req.tenant.dojo_id];
+  // Datenbank verwenden - Super-Admin sieht alle
+  let query, params;
+
+  if (isSuperAdmin && !dojoId) {
+    query = `
+      SELECT
+        a.*,
+        ak.name as kategorie_name,
+        ak.farbe_hex as kategorie_farbe,
+        ak.icon as kategorie_icon,
+        ag.name as artikelgruppe_name,
+        ag.farbe as artikelgruppe_farbe,
+        ag.icon as artikelgruppe_icon,
+        CASE
+          WHEN ag.parent_id IS NULL THEN ag.name
+          ELSE CONCAT(pag.name, ' → ', ag.name)
+        END AS artikelgruppe_vollstaendig
+      FROM artikel a
+      LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+      LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
+      LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
+      WHERE 1=1
+    `;
+    params = [];
+  } else {
+    query = `
+      SELECT
+        a.*,
+        ak.name as kategorie_name,
+        ak.farbe_hex as kategorie_farbe,
+        ak.icon as kategorie_icon,
+        ag.name as artikelgruppe_name,
+        ag.farbe as artikelgruppe_farbe,
+        ag.icon as artikelgruppe_icon,
+        CASE
+          WHEN ag.parent_id IS NULL THEN ag.name
+          ELSE CONCAT(pag.name, ' → ', ag.name)
+        END AS artikelgruppe_vollstaendig
+      FROM artikel a
+      LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+      LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
+      LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
+      WHERE a.dojo_id = ?
+    `;
+    params = [dojoId];
+  }
 
   if (kategorie_id) {
     query += ' AND a.kategorie_id = ?';
