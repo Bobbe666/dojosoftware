@@ -82,13 +82,16 @@
 .artikelgruppen-verwaltung .header-controls {
   display: flex;
   align-items: center;
-  gap: var(--abstand-md);
+  gap: var(--abstand-lg);
   flex-wrap: wrap;
+  margin-top: var(--abstand-md);
+  padding-top: var(--abstand-md);
+  border-top: 1px solid var(--rand-farbe);
 }
 
 .artikelgruppen-verwaltung .header-controls .search-box {
   position: relative;
-  width: 220px;
+  width: 250px;
 }
 
 .artikelgruppen-verwaltung .header-controls .search-box input {
@@ -133,7 +136,7 @@
   color: var(--text-hauptfarbe);
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 180px;
+  width: 250px;
 }
 
 .artikelgruppen-verwaltung .header-controls .filter-select:focus {
@@ -145,12 +148,12 @@
 .artikelgruppen-verwaltung .btn-primary {
   height: 42px;
   padding: 0 1.5rem;
-  background: #5d4e37;
-  border: none;
+  background: #1a1a1a;
+  border: 1px solid #1a1a1a;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: #f5f0e6;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -160,9 +163,9 @@
 }
 
 .artikelgruppen-verwaltung .btn-primary:hover {
-  background: #4a3d2b;
+  background: #2a2a2a;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(93, 78, 55, 0.3);
+  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.4);
 }
 
 .artikelgruppen-verwaltung .btn-secondary {
@@ -183,7 +186,7 @@
 
 .artikelgruppen-verwaltung .btn-secondary:hover {
   background: var(--hintergrund-card);
-  border-color: #5d4e37;
+  border-color: #1a1a1a;
 }
 
 /* ============================================
