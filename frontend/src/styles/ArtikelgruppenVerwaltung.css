@@ -148,12 +148,12 @@
 .artikelgruppen-verwaltung .btn-primary {
   height: 42px;
   padding: 0 1.5rem;
-  background: #1a1a1a;
-  border: 1px solid #1a1a1a;
+  background: var(--farbe-hauptfarbe);
+  border: none;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
-  color: #f5f0e6;
+  color: var(--text-auf-akzent);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -163,9 +163,8 @@
 }
 
 .artikelgruppen-verwaltung .btn-primary:hover {
-  background: #2a2a2a;
+  filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.4);
 }
 
 .artikelgruppen-verwaltung .btn-secondary {
@@ -186,7 +185,7 @@
 
 .artikelgruppen-verwaltung .btn-secondary:hover {
   background: var(--hintergrund-card);
-  border-color: #1a1a1a;
+  border-color: var(--farbe-hauptfarbe);
 }
 
 /* ============================================
