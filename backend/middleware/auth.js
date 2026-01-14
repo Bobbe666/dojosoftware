@@ -31,6 +31,16 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+  // Debug logging for /kasse endpoint
+  if (req.path.includes('kasse')) {
+    console.log('🔍 Auth Debug für /kasse:', {
+      path: req.path,
+      hasAuthHeader: !!authHeader,
+      authHeaderStart: authHeader ? authHeader.substring(0, 20) + '...' : 'none',
+      hasToken: !!token
+    });
+  }
+
   if (!token) {
     return res.status(401).json({ message: "Kein Token vorhanden" });
   }
