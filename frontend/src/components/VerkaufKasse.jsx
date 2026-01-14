@@ -135,7 +135,7 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   const apiCall = async (endpoint, options = {}) => {
     try {
       const API_BASE = config.apiBaseUrl;
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
       const response = await fetch(`${API_BASE}${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
