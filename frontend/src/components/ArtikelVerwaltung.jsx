@@ -708,84 +708,81 @@ const ArtikelVerwaltung = () => {
   const renderModal = () => {
     if (!showModal) return null;
 
-    // Lager modal bleibt gleich
+    // Lager modal - kompakt und hell
     if (modalMode === 'lager') {
       return (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>📦 Lagerbestand ändern</h2>
+        <div className="modal-overlay lager-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content lager-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header lager-modal-header">
+              <h2>Lagerbestand ändern</h2>
               <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
 
-            <div className="modal-body">
-              <div className="lager-form">
-                <div className="form-section">
-                  <h3 className="section-title">📊 Lagerbewegung</h3>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Bewegungsart:</label>
-                      <select
-                        name="bewegungsart"
-                        value={lagerBewegung.bewegungsart}
-                        onChange={handleLagerChange}
-                        className="form-select"
-                      >
-                        <option value="eingang">📈 Eingang (+)</option>
-                        <option value="ausgang">📉 Ausgang (-)</option>
-                      </select>
-                    </div>
+            <div className="modal-body lager-modal-body">
+              <div className="artikel-info-card">
+                <h4>{selectedArtikel?.name}</h4>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Aktueller Bestand:</span>
+                    <span className="info-value">{selectedArtikel?.lagerbestand}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Mindestbestand:</span>
+                    <span className="info-value">{selectedArtikel?.mindestbestand}</span>
+                  </div>
+                </div>
+              </div>
 
-                    <div className="form-group">
-                      <label>Menge:</label>
-                      <input
-                        type="number"
-                        name="menge"
-                        value={lagerBewegung.menge}
-                        onChange={handleLagerChange}
-                        min="1"
-                        required
-                        className="form-input"
-                        placeholder="Anzahl"
-                      />
-                    </div>
+              <div className="lager-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Bewegungsart</label>
+                    <select
+                      name="bewegungsart"
+                      value={lagerBewegung.bewegungsart}
+                      onChange={handleLagerChange}
+                      className="form-select"
+                    >
+                      <option value="eingang">Eingang (+)</option>
+                      <option value="ausgang">Ausgang (-)</option>
+                    </select>
                   </div>
 
                   <div className="form-group">
-                    <label>Grund:</label>
+                    <label>Menge</label>
                     <input
-                      type="text"
-                      name="grund"
-                      value={lagerBewegung.grund}
+                      type="number"
+                      name="menge"
+                      value={lagerBewegung.menge}
                       onChange={handleLagerChange}
-                      placeholder="z.B. Lieferung, Verkauf, Inventur"
+                      min="1"
+                      required
                       className="form-input"
+                      placeholder="Anzahl"
                     />
                   </div>
                 </div>
 
-                <div className="artikel-info-card">
-                  <h4>📦 {selectedArtikel?.name}</h4>
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">Aktueller Bestand:</span>
-                      <span className="info-value">{selectedArtikel?.lagerbestand}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">Mindestbestand:</span>
-                      <span className="info-value">{selectedArtikel?.mindestbestand}</span>
-                    </div>
-                  </div>
+                <div className="form-group">
+                  <label>Grund</label>
+                  <input
+                    type="text"
+                    name="grund"
+                    value={lagerBewegung.grund}
+                    onChange={handleLagerChange}
+                    placeholder="z.B. Lieferung, Verkauf, Inventur"
+                    className="form-input"
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer sub-tabs">
-              <button className="sub-tab-btn" onClick={() => setShowModal(false)}>
-                ❌ Abbrechen
+            <div className="modal-footer lager-modal-footer">
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+                Abbrechen
               </button>
-              <button className="sub-tab-btn" onClick={updateLagerbestand}>
-                📦 Aktualisieren
+              <button className="btn-primary" onClick={updateLagerbestand}>
+                Aktualisieren
               </button>
             </div>
           </div>

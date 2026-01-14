@@ -657,6 +657,160 @@
 }
 
 /* ============================================
+   LAGER MODAL - KOMPAKT
+   ============================================ */
+
+.lager-modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.lager-modal {
+  max-width: 450px !important;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.lager-modal-header {
+  padding: 1rem 1.5rem !important;
+  background: var(--hintergrund-hauptfarbe) !important;
+  border-bottom: 1px solid var(--rand-farbe) !important;
+}
+
+.lager-modal-header h2 {
+  font-size: 1.1rem !important;
+  margin: 0 !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--text-hauptfarbe) !important;
+  color: var(--text-hauptfarbe) !important;
+}
+
+.lager-modal-body {
+  padding: 1.25rem 1.5rem !important;
+  background: var(--hintergrund-hauptfarbe) !important;
+}
+
+.lager-modal .artikel-info-card {
+  background: var(--hintergrund-hover);
+  border: 1px solid var(--rand-farbe);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.lager-modal .artikel-info-card h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-hauptfarbe);
+}
+
+.lager-modal .info-grid {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.lager-modal .info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lager-modal .info-label {
+  font-size: 0.75rem;
+  color: var(--text-sekundaer);
+}
+
+.lager-modal .info-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-hauptfarbe);
+}
+
+.lager-modal .lager-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lager-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.lager-modal .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lager-modal .form-group label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-hauptfarbe);
+}
+
+.lager-modal .form-select,
+.lager-modal .form-input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rand-farbe);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--hintergrund-hover);
+  color: var(--text-hauptfarbe);
+  transition: border-color 0.2s ease;
+}
+
+.lager-modal .form-select:focus,
+.lager-modal .form-input:focus {
+  outline: none;
+  border-color: var(--farbe-hauptfarbe);
+}
+
+.lager-modal-footer {
+  padding: 1rem 1.5rem !important;
+  background: var(--hintergrund-hauptfarbe) !important;
+  border-top: 1px solid var(--rand-farbe) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+}
+
+.lager-modal .btn-secondary {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--rand-farbe);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text-hauptfarbe);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lager-modal .btn-secondary:hover {
+  background: var(--hintergrund-hover);
+}
+
+.lager-modal .btn-primary {
+  padding: 0.5rem 1rem;
+  background: var(--farbe-hauptfarbe);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text-auf-akzent);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.lager-modal .btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+/* ============================================
    STEP PROGRESS BAR
    ============================================ */
 
