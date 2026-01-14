@@ -252,33 +252,30 @@ const ArtikelgruppenVerwaltung = () => {
         <div className="group-actions sub-tabs">
           {hasUnterkategorien && (
             <button
-              className="sub-tab-btn"
+              className="sub-tab-btn details-btn"
               onClick={() => openGroupDetail(group)}
               title="Details anzeigen"
-              style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
             >
               📋 Details
             </button>
           )}
 
           <button
-            className="sub-tab-btn"
+            className="sub-tab-btn edit-btn"
             onClick={() => openModal(group)}
             title="Bearbeiten"
             aria-label={`Gruppe ${group.name} bearbeiten`}
-            style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
           >
-            ✏️
+            ✏️ Bearbeiten
           </button>
 
           <button
-            className="sub-tab-btn"
+            className="sub-tab-btn delete-btn"
             onClick={() => deleteGroup(group)}
             title="Löschen"
             aria-label={`Gruppe ${group.name} löschen`}
-            style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
           >
-            🗑️
+            🗑️ Löschen
           </button>
         </div>
       </div>

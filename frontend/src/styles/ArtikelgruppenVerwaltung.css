@@ -224,7 +224,7 @@
 .groups-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: var(--abstand-lg);
+  gap: var(--abstand-xl, 2rem);
 }
 
 /* ============================================
@@ -351,6 +351,43 @@
   border-color: var(--farbe-hauptfarbe) !important;
   color: var(--text-auf-akzent) !important;
   transform: translateY(-1px) !important;
+}
+
+/* Specific button colors */
+.artikelgruppen-verwaltung .details-btn {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #3b82f6 !important;
+}
+
+.artikelgruppen-verwaltung .details-btn:hover {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.artikelgruppen-verwaltung .edit-btn {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #f59e0b !important;
+}
+
+.artikelgruppen-verwaltung .edit-btn:hover {
+  background: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: white !important;
+}
+
+.artikelgruppen-verwaltung .delete-btn {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+}
+
+.artikelgruppen-verwaltung .delete-btn:hover {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
 }
 
 /* ============================================
