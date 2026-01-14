@@ -657,178 +657,191 @@
 }
 
 /* ============================================
-   LAGER MODAL - SUPER KOMPAKT
+   LAGER MODAL - MINIMAL KOMPAKT
    ============================================ */
 
 .lager-modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
 }
 
 .lager-modal {
-  max-width: 320px !important;
-  width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  max-width: 280px !important;
+  width: 280px !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  padding: 0 !important;
 }
 
 .lager-modal-header {
-  padding: 0.6rem 0.8rem !important;
+  padding: 8px 10px !important;
   background: var(--hintergrund-hauptfarbe) !important;
   border-bottom: 1px solid var(--rand-farbe) !important;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
 }
 
 .lager-modal-header h2 {
-  font-size: 0.9rem !important;
+  font-size: 13px !important;
   margin: 0 !important;
+  padding: 0 !important;
   background: none !important;
   -webkit-text-fill-color: var(--text-hauptfarbe) !important;
   color: var(--text-hauptfarbe) !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
 .lager-modal .close-btn {
-  width: 24px;
-  height: 24px;
-  font-size: 1.1rem;
-  padding: 0;
-  margin: 0;
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
 }
 
 .lager-modal-body {
-  padding: 0.6rem 0.8rem !important;
+  padding: 10px !important;
   background: var(--hintergrund-hauptfarbe) !important;
 }
 
 .lager-modal .artikel-info-card {
-  background: var(--hintergrund-hover);
-  border: 1px solid var(--rand-farbe);
-  border-radius: 5px;
-  padding: 0.5rem 0.6rem;
-  margin-bottom: 0.6rem;
+  background: var(--hintergrund-hover) !important;
+  border: 1px solid var(--rand-farbe) !important;
+  border-radius: 4px !important;
+  padding: 6px 8px !important;
+  margin-bottom: 8px !important;
 }
 
 .lager-modal .artikel-info-card h4 {
-  margin: 0 0 0.35rem 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-hauptfarbe);
-  line-height: 1.2;
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--text-hauptfarbe) !important;
+  line-height: 1.2 !important;
 }
 
 .lager-modal .info-grid {
-  display: flex;
-  gap: 1rem;
+  display: flex !important;
+  gap: 12px !important;
 }
 
 .lager-modal .info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
 }
 
 .lager-modal .info-label {
-  font-size: 0.65rem;
-  color: var(--text-sekundaer);
-  line-height: 1.2;
+  font-size: 10px !important;
+  color: var(--text-sekundaer) !important;
+  line-height: 1.2 !important;
 }
 
 .lager-modal .info-value {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-hauptfarbe);
-  line-height: 1.2;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-hauptfarbe) !important;
+  line-height: 1.2 !important;
 }
 
 .lager-modal .lager-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
 }
 
 .lager-modal .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px !important;
 }
 
 .lager-modal .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
 }
 
 .lager-modal .form-group label {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-hauptfarbe);
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: var(--text-hauptfarbe) !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .lager-modal .form-select,
 .lager-modal .form-input {
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--rand-farbe);
-  border-radius: 4px;
-  font-size: 0.8rem;
-  background: var(--hintergrund-hover);
-  color: var(--text-hauptfarbe);
-  transition: border-color 0.2s ease;
-  height: 30px;
-  box-sizing: border-box;
+  padding: 4px 6px !important;
+  border: 1px solid var(--rand-farbe) !important;
+  border-radius: 3px !important;
+  font-size: 12px !important;
+  background: var(--hintergrund-hover) !important;
+  color: var(--text-hauptfarbe) !important;
+  transition: border-color 0.2s ease !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  width: 100% !important;
 }
 
 .lager-modal .form-select:focus,
 .lager-modal .form-input:focus {
-  outline: none;
-  border-color: var(--farbe-hauptfarbe);
+  outline: none !important;
+  border-color: var(--farbe-hauptfarbe) !important;
 }
 
 .lager-modal-footer {
-  padding: 0.5rem 0.8rem !important;
+  padding: 8px 10px !important;
   background: var(--hintergrund-hauptfarbe) !important;
   border-top: 1px solid var(--rand-farbe) !important;
   display: flex !important;
   justify-content: flex-end !important;
-  gap: 0.4rem !important;
+  gap: 6px !important;
 }
 
 .lager-modal .btn-secondary,
 .lager-modal .btn-primary {
-  padding: 0.3rem 0.7rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  height: 26px;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  padding: 4px 10px !important;
+  border-radius: 3px !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
 }
 
 .lager-modal .btn-secondary {
-  background: transparent;
-  border: 1px solid var(--rand-farbe);
-  color: var(--text-hauptfarbe);
+  background: transparent !important;
+  border: 1px solid var(--rand-farbe) !important;
+  color: var(--text-hauptfarbe) !important;
 }
 
 .lager-modal .btn-secondary:hover {
-  background: var(--hintergrund-hover);
+  background: var(--hintergrund-hover) !important;
 }
 
 .lager-modal .btn-primary {
-  background: var(--farbe-hauptfarbe);
-  border: none;
-  color: var(--text-auf-akzent);
-  font-weight: 500;
+  background: var(--farbe-hauptfarbe) !important;
+  border: none !important;
+  color: var(--text-auf-akzent) !important;
+  font-weight: 500 !important;
 }
 
 .lager-modal .btn-primary:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.1) !important;
 }
 
 /* ============================================
