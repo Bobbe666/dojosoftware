@@ -4483,3 +4483,192 @@
 [data-theme="tda-vib"] .mahnwesen-container .stats-grid {
   gap: 1rem !important;
 }
+
+/* =====================================================
+   ARTIKELGRUPPEN VERWALTUNG - TDA-VIB Theme
+   ===================================================== */
+
+/* Page Header */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .page-header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(92, 64, 51, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(92, 64, 51, 0.08) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-content h1 {
+  color: var(--tda-sumi, #1a1a1a) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-content p {
+  color: var(--tda-sumi-light, #4a4a4a) !important;
+}
+
+/* Header Controls - Proper Spacing */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1.5rem !important;
+  margin-top: 1rem !important;
+  padding-top: 1rem !important;
+  border-top: 1px solid rgba(92, 64, 51, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-controls .search-box {
+  width: 280px !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-controls .search-box input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(92, 64, 51, 0.25) !important;
+  color: var(--tda-sumi) !important;
+  height: 42px !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-controls .search-box input:focus {
+  border-color: var(--tda-earth) !important;
+  box-shadow: 0 0 0 3px rgba(92, 64, 51, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-controls .filter-select {
+  width: 200px !important;
+  height: 42px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(92, 64, 51, 0.25) !important;
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .header-controls .filter-select:focus {
+  border-color: var(--tda-earth) !important;
+  box-shadow: 0 0 0 3px rgba(92, 64, 51, 0.1) !important;
+}
+
+/* Primary Button - Dark Sumi Color */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-primary {
+  background: var(--tda-sumi, #1a1a1a) !important;
+  color: var(--tda-washi, #f5f0e6) !important;
+  border: 1px solid var(--tda-sumi, #1a1a1a) !important;
+  height: 42px !important;
+  padding: 0 1.5rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-primary:hover {
+  background: #2a2a2a !important;
+  border-color: #2a2a2a !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.3) !important;
+}
+
+/* Secondary Button */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-secondary {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--tda-sumi) !important;
+  border: 1px solid rgba(92, 64, 51, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-secondary:hover {
+  background: rgba(92, 64, 51, 0.08) !important;
+  border-color: var(--tda-earth) !important;
+}
+
+/* Group Cards */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .group-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(92, 64, 51, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(92, 64, 51, 0.08) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .group-card:hover {
+  border-color: var(--tda-earth) !important;
+  box-shadow: 0 4px 16px rgba(92, 64, 51, 0.12) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .group-name {
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .group-description {
+  color: var(--tda-sumi-light, #4a4a4a) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .group-icon {
+  background: rgba(92, 64, 51, 0.08) !important;
+  border-color: rgba(92, 64, 51, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .stat {
+  background: rgba(92, 64, 51, 0.08) !important;
+  border-color: rgba(92, 64, 51, 0.15) !important;
+  color: var(--tda-sumi) !important;
+}
+
+/* Action Buttons in Cards */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .group-actions {
+  border-top-color: rgba(92, 64, 51, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .details-btn,
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .edit-btn,
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .delete-btn {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(92, 64, 51, 0.2) !important;
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .details-btn:hover {
+  background: var(--tda-earth) !important;
+  border-color: var(--tda-earth) !important;
+  color: var(--tda-washi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .edit-btn:hover {
+  background: var(--tda-earth) !important;
+  border-color: var(--tda-earth) !important;
+  color: var(--tda-washi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .delete-btn:hover {
+  background: var(--tda-vermillion, #c73e3a) !important;
+  border-color: var(--tda-vermillion, #c73e3a) !important;
+  color: var(--tda-washi) !important;
+}
+
+/* Modal */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-content {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(92, 64, 51, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-header {
+  background: rgba(92, 64, 51, 0.05) !important;
+  border-bottom-color: rgba(92, 64, 51, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-header h2 {
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer {
+  border-top-color: rgba(92, 64, 51, 0.15) !important;
+}
+
+/* Form Elements */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group label {
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group input,
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group select,
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group textarea {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(92, 64, 51, 0.25) !important;
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group input:focus,
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group select:focus,
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group textarea:focus {
+  border-color: var(--tda-earth) !important;
+  box-shadow: 0 0 0 3px rgba(92, 64, 51, 0.1) !important;
+}
