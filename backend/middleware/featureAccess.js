@@ -12,6 +12,12 @@ const db = require('../db');
 function requireFeature(featureName) {
   return async (req, res, next) => {
     try {
+      // Super-Admin (id=1 oder username='admin') darf alles
+      const isSuperAdmin = req.user?.id === 1 || req.user?.username === 'admin';
+      if (isSuperAdmin) {
+        return next();
+      }
+
       // Hole dojo_id aus User-Session/JWT
       const dojoId = req.user?.dojo_id || req.body?.dojo_id || req.query?.dojo_id;
 
