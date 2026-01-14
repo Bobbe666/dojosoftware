@@ -317,7 +317,9 @@
   gap: var(--abstand-sm) !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  margin-top: auto !important;
+  margin-top: var(--abstand-md) !important;
+  padding-top: var(--abstand-md) !important;
+  border-top: 1px solid var(--rand-farbe) !important;
   flex-direction: row !important;
 }
 
@@ -325,8 +327,30 @@
   gap: 0.5rem;
   background: transparent !important;
   border: none !important;
-  padding: 0 !important;
+  border-top: 1px solid var(--rand-farbe) !important;
+  padding: var(--abstand-md) 0 0 0 !important;
   margin-bottom: 0 !important;
+}
+
+/* Override sub-tab-btn styles for Artikelgruppen */
+.artikelgruppen-verwaltung .group-actions .sub-tab-btn,
+.artikelgruppen-verwaltung .unterkategorie-actions .sub-tab-btn {
+  background: var(--hintergrund-hover) !important;
+  border: 1px solid var(--rand-farbe) !important;
+  color: var(--text-hauptfarbe) !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.85rem !important;
+  border-radius: var(--radius-sm) !important;
+  transition: all 0.3s ease !important;
+  text-shadow: none !important;
+}
+
+.artikelgruppen-verwaltung .group-actions .sub-tab-btn:hover,
+.artikelgruppen-verwaltung .unterkategorie-actions .sub-tab-btn:hover {
+  background: var(--farbe-hauptfarbe) !important;
+  border-color: var(--farbe-hauptfarbe) !important;
+  color: var(--text-auf-akzent) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* ============================================
