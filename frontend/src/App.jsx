@@ -2,17 +2,19 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// Authentifizierung
+// Authentifizierung & Context
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { KursProvider } from "./context/KursContext.jsx";
 import { DojoProvider } from "./context/DojoContext.jsx";
 import { StandortProvider } from "./context/StandortContext.jsx";
 import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx";
 import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 // Bestehende Komponenten
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
+import DashboardTdaVib from "./components/DashboardTdaVib"; // TDA-Vib Style Test
 import MitgliederListe from "./components/MitgliederListe";
 import MitgliedDetail from "./components/MitgliedDetail";
 import EhemaligenListe from "./components/EhemaligenListe";
@@ -132,6 +134,10 @@ import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
 import Events from "./components/Events";
 import MeineEvents from "./components/MeineEvents";
 
+// News-Verwaltung (Haupt-Admin)
+import NewsVerwaltung from "./components/NewsVerwaltung";
+import NewsFormular from "./components/NewsFormular";
+
 // MagicLine Import
 import MagicLineImport from "./pages/MagicLineImport";
 
@@ -239,13 +245,14 @@ const RootRedirect = () => {
 // Haupt-App Komponente
 const App = () => {
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <DojoProvider>
-          <StandortProvider>
-            <KursProvider>
-              <MitgliederUpdateProvider>
-                <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <DojoProvider>
+            <StandortProvider>
+              <KursProvider>
+                <MitgliederUpdateProvider>
+                  <BrowserRouter>
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}
               <Route path="/login" element={<Login />} />
@@ -361,7 +368,17 @@ const App = () => {
 
             {/* Standard-Weiterleitung basierend auf Authentifizierung */}
             <Route path="/" element={<RootRedirect />} />
-            
+
+            {/* ======== TDA-VIB STYLE DASHBOARD (TEST) ======== */}
+            <Route
+              path="/dashboard-tda-vib"
+              element={
+                <ProtectedRoute>
+                  <DashboardTdaVib />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ======== PROTECTED DASHBOARD ROUTES ======== */}
             <Route 
               path="/dashboard" 
@@ -448,6 +465,11 @@ const App = () => {
               {/* Events-Verwaltung */}
               <Route path="events" element={<Events />} />
               <Route path="meine-events" element={<MeineEvents />} />
+
+              {/* News-Verwaltung (nur Haupt-Admin) */}
+              <Route path="news" element={<NewsVerwaltung />} />
+              <Route path="news/neu" element={<NewsFormular mode="create" />} />
+              <Route path="news/bearbeiten/:id" element={<NewsFormular mode="edit" />} />
 
               {/* Beitrags-Management */}
               <Route path="finanzcockpit" element={<Finanzcockpit />} />
@@ -565,13 +587,14 @@ const App = () => {
               } 
             />
               </Routes>
-            </BrowserRouter>
-            </MitgliederUpdateProvider>
-          </KursProvider>
-        </StandortProvider>
-      </DojoProvider>
-    </SubscriptionProvider>
-  </AuthProvider>
+              </BrowserRouter>
+              </MitgliederUpdateProvider>
+            </KursProvider>
+          </StandortProvider>
+        </DojoProvider>
+      </SubscriptionProvider>
+    </AuthProvider>
+  </ThemeProvider>
 );
 };
 

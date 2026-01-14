@@ -16,7 +16,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   border: 1px solid rgba(255, 215, 0, 0.2);
@@ -54,13 +54,13 @@
 }
 
 .header-title svg {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .zahlungszyklen-seite .header-title h1 {
   font-size: 1.75rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -104,7 +104,7 @@
   align-items: center !important;
   gap: 0.625rem !important;
   padding: 0.625rem !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--glass-bg) !important;
   backdrop-filter: blur(20px) !important;
   border-radius: 10px !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
@@ -128,8 +128,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(255, 215, 0, 0.15) !important;
-  color: #ffd700 !important;
+  background: var(--primary-alpha-10) !important;
+  color: var(--primary) !important;
   flex-shrink: 0 !important;
   padding: 0 !important;
   font-size: 1rem !important;
@@ -192,7 +192,7 @@
 .zahlungszyklen-seite .add-form-card {
   margin-bottom: 1.5rem !important;
   padding: 1.5rem !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--glass-bg) !important;
   backdrop-filter: blur(20px) !important;
   border-radius: 20px !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
@@ -282,9 +282,9 @@
 
 .input-field:focus {
   outline: none;
-  border-color: #ffd700;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  background: var(--glass-bg);
 }
 
 .input-field::placeholder {
@@ -327,13 +327,13 @@
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark {
-  background: #ffd700;
-  border-color: #ffd700;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
   content: '✓';
-  color: #1a1a2e;
+  color: var(--bg-secondary);
   font-weight: bold;
   font-size: 12px;
 }
@@ -368,7 +368,7 @@
 /* ===== ZYKLUS CARD STYLING - EIGENE KLASSE OHNE KONFLIKTE ===== */
 
 .zyklus-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   border: 1px solid rgba(255, 215, 0, 0.2);
@@ -458,7 +458,7 @@
 
 .zahlungszyklen-seite .status-badge.active,
 .zyklus-card .status-badge.active {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-shadow: none !important;
   background: none !important;
   border: none !important;
@@ -529,7 +529,7 @@
 .empty-state {
   text-align: center;
   padding: 3rem 2rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 20px;
   border: 1px solid rgba(255, 215, 0, 0.2);
@@ -544,7 +544,7 @@
 }
 
 .empty-state h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 0.5rem;
   font-size: 1.25rem;
 }
@@ -603,7 +603,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid rgba(255, 215, 0, 0.2);
-  border-top: 4px solid #ffd700;
+  border-top: 4px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -624,9 +624,9 @@
 }
 
 .message.success {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-10);
+  border-color: var(--primary);
+  color: var(--primary);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
 }
@@ -711,7 +711,7 @@
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 .zahlungszyklen-seite .btn-danger {

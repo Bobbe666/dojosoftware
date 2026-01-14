@@ -6,9 +6,9 @@
 
 /* Modal Header - Icons nicht von Gradient überlagern */
 .artikel-modal .modal-header h2 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   background: none !important;
-  -webkit-text-fill-color: #ffd700 !important;
+  -webkit-text-fill-color: var(--primary) !important;
   background-clip: initial !important;
   -webkit-background-clip: initial !important;
   text-shadow: none !important;
@@ -20,7 +20,7 @@
   gap: 0.5rem !important;
   margin-bottom: 1.5rem !important;
   padding: 0.25rem !important;
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: var(--glass-bg) !important;
   border-radius: 12px !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   flex-wrap: wrap !important;
@@ -52,9 +52,9 @@
 }
 
 .artikel-modal .sub-tab-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
-  color: #1a1a2e !important;
-  border-color: #ffd700 !important;
+  background: var(--gradient-gold) !important;
+  color: var(--bg-secondary) !important;
+  border-color: var(--primary) !important;
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
   transform: translateY(-1px) !important;
 }
@@ -89,7 +89,7 @@
 .tab-content-section .form-select:focus,
 .tab-content-section .form-textarea:focus {
   outline: none !important;
-  border-color: #ffd700 !important;
+  border-color: var(--primary) !important;
   background: rgba(0, 0, 0, 0.4) !important;
   box-shadow: none !important;
 }
@@ -111,7 +111,7 @@
 .tab-content-section .form-input:focus:invalid,
 .tab-content-section .form-select:focus:invalid,
 .tab-content-section .form-textarea:focus:invalid {
-  border-color: #ffd700 !important;
+  border-color: var(--primary) !important;
   box-shadow: none !important;
 }
 
@@ -131,7 +131,7 @@
 }
 
 .tab-content-section .checkbox-label:hover {
-  background: rgba(255, 215, 0, 0.1) !important;
+  background: var(--primary-alpha-10) !important;
   border-color: rgba(255, 215, 0, 0.4) !important;
 }
 
@@ -139,12 +139,12 @@
   width: 20px !important;
   height: 20px !important;
   cursor: pointer !important;
-  accent-color: #ffd700 !important;
+  accent-color: var(--primary) !important;
 }
 
 /* Modal Hintergrund - keine Transparenz */
 .modal-content.artikel-modal {
-  background: #1a1a2e !important;
+  background: var(--bg-secondary) !important;
   max-width: 100% !important;
   max-height: 100vh !important;
   height: 100vh !important;
@@ -155,7 +155,7 @@
 }
 
 .artikel-modal .modal-body {
-  background: #1a1a2e !important;
+  background: var(--bg-secondary) !important;
   flex: 1 !important;
   overflow-y: hidden !important;
   overflow-x: hidden !important;

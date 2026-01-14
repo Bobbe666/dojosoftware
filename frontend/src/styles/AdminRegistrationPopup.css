@@ -47,7 +47,7 @@
 }
 
 .popup-header {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-bottom: 1px solid rgba(255, 215, 0, 0.3);
   padding: 1.5rem;
   display: flex;
@@ -62,7 +62,7 @@
 }
 
 .header-icon {
-  color: #ffd700;
+  color: var(--primary);
   animation: pulse 2s infinite;
 }
 
@@ -76,7 +76,7 @@
 }
 
 .popup-header h2 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0;
   font-size: 1.4rem;
   font-weight: 700;
@@ -100,7 +100,7 @@
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .popup-content {
@@ -135,7 +135,7 @@
 }
 
 .section-title {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
@@ -173,7 +173,7 @@
 }
 
 .info-item svg {
-  color: #ffd700;
+  color: var(--primary);
   flex-shrink: 0;
   margin-top: 0.2rem;
 }
@@ -214,7 +214,7 @@
 .btn-primary {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.2) 100%);
   border: 1px solid rgba(255, 215, 0, 0.5);
-  color: #ffd700;
+  color: var(--primary);
   padding: 0.8rem 2rem;
   border-radius: 8px;
   font-size: 1rem;

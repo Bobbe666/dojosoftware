@@ -1,7 +1,7 @@
 /* ===== ZAHLLÄUFE CONTAINER ===== */
 .zahllaeufe-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
   color: #ffffff;
   padding: 1.5rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -15,7 +15,7 @@
   justify-content: space-between;
   margin-bottom: 1.5rem;
   padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 12px;
   border: 1px solid rgba(245, 158, 11, 0.3);
@@ -90,7 +90,7 @@
 }
 
 .stat-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -235,7 +235,7 @@
 
 .status-filter:hover {
   border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
 }
 
 .status-filter:focus {

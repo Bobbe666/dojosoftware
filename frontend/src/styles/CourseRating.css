@@ -16,7 +16,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ffd700, #ff6b35, #8B5CF6, #10B981);
+  background: linear-gradient(90deg, var(--primary), var(--secondary), #8B5CF6, #10B981);
   animation: shimmer 4s ease-in-out infinite;
 }
 
@@ -33,16 +33,16 @@
 }
 
 .course-rating .header-content svg {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .course-rating .header-content h1 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0;
   font-size: 2.2rem;
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -78,7 +78,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 1.5rem 0;
   font-size: 1.2rem;
   font-weight: 600;
@@ -92,7 +92,7 @@
 }
 
 .course-rating .course-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 215, 0, 0.05));
+  background: linear-gradient(135deg, var(--glass-bg), rgba(255, 215, 0, 0.05));
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 16px;
   padding: 2rem;
@@ -109,7 +109,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-10), transparent);
   transition: left 0.6s ease;
 }
 
@@ -145,7 +145,7 @@
 
 .course-rating .course-date {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 53, 0.2));
-  color: #ffd700;
+  color: var(--primary);
   padding: 0.4rem 1rem;
   border-radius: 25px;
   font-size: 0.85rem;
@@ -175,7 +175,7 @@
 }
 
 .course-rating .detail-item:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.2);
   transform: translateY(-1px);
 }
@@ -196,7 +196,7 @@
 
 .course-rating .rating-stars label {
   display: block;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 1rem;
@@ -235,9 +235,9 @@
 }
 
 .course-rating .star:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   transform: scale(1.2);
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .course-rating .star:hover::before {
@@ -246,7 +246,7 @@
 }
 
 .course-rating .star.filled {
-  color: #ffd700;
+  color: var(--primary);
   background: rgba(255, 215, 0, 0.15);
   transform: scale(1.1);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
@@ -259,7 +259,7 @@
 }
 
 .course-rating .rating-text {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 700;
   font-size: 1rem;
   text-align: center;
@@ -274,7 +274,7 @@
 
 .course-rating .comment-section label {
   display: block;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.8rem;
@@ -295,7 +295,7 @@
 
 .course-rating .comment-section textarea:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
@@ -313,7 +313,7 @@
 
 /* Submit Button */
 .course-rating .submit-button {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 12px;
   padding: 1rem 2rem;
@@ -376,7 +376,7 @@
 }
 
 .course-rating .no-ratable-courses svg {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 1rem;
 }
 
@@ -401,7 +401,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 1.5rem 0;
   font-size: 1.2rem;
   font-weight: 600;
@@ -414,7 +414,7 @@
 }
 
 .course-rating .rated-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 10px;
   padding: 1rem;
@@ -425,7 +425,7 @@
 }
 
 .course-rating .rated-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
 }
 
@@ -461,7 +461,7 @@
 }
 
 .course-rating .rating-tips h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   font-weight: 600;
@@ -504,7 +504,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid rgba(255, 215, 0, 0.3);
-  border-top: 3px solid #ffd700;
+  border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

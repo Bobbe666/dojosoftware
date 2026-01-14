@@ -17,7 +17,7 @@
 .berichte-dokumente .page-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -80,7 +80,7 @@
 }
 
 .quick-create-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-left: 4px solid;
   border-radius: 12px;
@@ -94,7 +94,7 @@
 }
 
 .quick-create-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.4);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
@@ -106,7 +106,7 @@
 }
 
 .quick-create-card.featured:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   box-shadow: 0 12px 32px rgba(255, 215, 0, 0.3);
 }
 
@@ -133,8 +133,8 @@
 }
 
 .btn-create {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  color: #1a1a2e;
+  background: var(--gradient-gold);
+  color: var(--bg-secondary);
   border: none;
   padding: 6px 12px;
   border-radius: 8px;
@@ -186,15 +186,15 @@
 }
 
 .filter-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
   color: #ffffff;
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  color: #1a1a2e;
-  border-color: #ffd700;
+  background: var(--gradient-gold);
+  color: var(--bg-secondary);
+  border-color: var(--primary);
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
@@ -219,7 +219,7 @@
 }
 
 .document-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
@@ -237,9 +237,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-radius: 10px;
-  color: #ffd700;
+  color: var(--primary);
   flex-shrink: 0;
 }
 
@@ -343,7 +343,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid rgba(255, 215, 0, 0.2);
-  border-top-color: #ffd700;
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -375,7 +375,7 @@
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, #16213e 100%);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 16px;
   padding: 2rem;

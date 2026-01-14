@@ -5,7 +5,7 @@
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
   color: #ffffff;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -17,13 +17,13 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid var(--primary-alpha-10);
 }
 
 .header-left h2 {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
 }
@@ -196,9 +196,9 @@
 }
 
 .stat-card-large {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: 12px;
   padding: 1.5rem;
   display: flex;
@@ -210,7 +210,7 @@
 
 .stat-card-large:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 12px 40px var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -232,7 +232,7 @@
 .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   line-height: 1;
   margin-bottom: 0.5rem;
 }
@@ -253,9 +253,9 @@
 
 /* Standort Card */
 .standort-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -264,7 +264,7 @@
 
 .standort-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 12px 40px var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -283,7 +283,7 @@
   align-items: center;
   padding: 1.25rem;
   background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-10);
 }
 
 .header-left-section {
@@ -373,7 +373,7 @@
   gap: 1.5rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-10);
 }
 
 .stat-item {
@@ -385,7 +385,7 @@
 .stat-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   line-height: 1;
 }
 
@@ -401,7 +401,7 @@
 .expanded-details {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 2px solid rgba(255, 215, 0, 0.2);
+  border-top: 2px solid var(--primary-alpha-10);
 }
 
 .detail-section {
@@ -415,7 +415,7 @@
 .detail-section h4 {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.75rem;
@@ -463,7 +463,7 @@
 .empty-state h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 0.5rem;
 }
 
@@ -491,7 +491,7 @@
 .modal-content-large {
   background: rgba(15, 15, 35, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: 16px;
   max-width: 1200px;
   width: 100%;
@@ -517,14 +517,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.05);
 }
 
 .modal-header h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0;
 }
 
@@ -533,7 +533,7 @@
   display: flex;
   gap: 0.5rem;
   padding: 0 2rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -557,9 +557,9 @@
 }
 
 .modal-tab.active {
-  color: #ffd700;
-  border-bottom-color: #ffd700;
-  background: rgba(255, 215, 0, 0.1);
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--primary-alpha-10);
 }
 
 .modal-body {
@@ -571,7 +571,7 @@
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem 2rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -591,7 +591,7 @@
 .form-section h4 {
   font-size: 1rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 1rem;
 }
 
@@ -639,8 +639,8 @@
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #ffd700;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.15);
 }
 

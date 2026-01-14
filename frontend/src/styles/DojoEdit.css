@@ -35,22 +35,22 @@
   padding: 1.5rem 2rem;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 16px;
   position: sticky;
   top: 0;
   z-index: 50;
   margin: 1rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+              0 0 0 1px var(--primary-alpha-10) inset;
 }
 
 .dojo-edit-header h1 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 2rem;
   font-weight: 700;
   margin: 0;
-  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 2px 8px var(--primary-alpha-30);
 }
 
 .dojo-name-header {
@@ -64,11 +64,11 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(255, 215, 0, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 12px;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -77,10 +77,10 @@
 }
 
 .back-button:hover {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: #ffd700;
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
   transform: translateX(-3px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 /* Message */
@@ -92,7 +92,7 @@
   margin: 0;
   border-radius: 0;
   font-size: 0.95rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
 }
 
 .message.success {
@@ -102,9 +102,9 @@
 }
 
 .message.error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: var(--color-error-500-alpha-10);
+  border: 1px solid var(--color-error-500-alpha-20);
+  color: var(--error);
 }
 
 @keyframes slideIn {
@@ -125,7 +125,7 @@
   max-width: 280px;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(255, 215, 0, 0.2);
+  border-right: 1px solid var(--primary-alpha-20);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -133,7 +133,7 @@
   margin: 1rem 0 1rem 1rem;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+              0 0 0 1px var(--primary-alpha-10) inset;
   padding: 1rem 0.75rem;
 }
 
@@ -147,7 +147,7 @@
   text-align: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .dojo-edit-page .mitglied-avatar {
@@ -155,12 +155,12 @@
   height: 80px;
   margin: 0 auto 1rem;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--primary-alpha-30);
+  box-shadow: 0 4px 12px var(--primary-alpha-20);
   transition: all 0.3s ease;
 }
 
@@ -173,9 +173,9 @@
 .dojo-edit-page .mitglied-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   line-height: 1.4;
-  text-shadow: 0 2px 4px rgba(255, 215, 0, 0.2);
+  text-shadow: 0 2px 4px var(--primary-alpha-20);
 }
 
 /* Tabs - Premium Gold Design */
@@ -206,20 +206,20 @@
 }
 
 .dojo-edit-page .tab-vertical-btn:hover {
-  background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
-  border-color: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-10);
+  color: var(--primary);
+  border-color: var(--primary-alpha-20);
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 2px 8px var(--primary-alpha-15);
 }
 
 .dojo-edit-page .tab-vertical-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.08));
-  color: #ffd700;
+  background: linear-gradient(135deg, var(--primary-alpha-15), var(--glass-bg));
+  color: var(--primary);
   font-weight: 600;
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2),
-              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+  border-color: var(--primary-alpha-40);
+  box-shadow: 0 4px 12px var(--primary-alpha-20),
+              0 0 0 1px var(--primary-alpha-10) inset;
 }
 
 .dojo-edit-page .tab-vertical-btn .tab-icon {
@@ -231,7 +231,7 @@
 }
 
 .dojo-edit-page .tab-vertical-btn.active .tab-icon {
-  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.4));
+  filter: drop-shadow(0 2px 4px var(--primary-alpha-40));
 }
 
 /* Sidebar Toggle Button */
@@ -239,13 +239,13 @@
   margin-top: auto;
   margin-bottom: 0.5rem;
   justify-content: center;
-  background: rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--glass-bg);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .dojo-edit-page .sidebar-toggle-btn:hover {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: #ffd700;
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
 }
 
 /* Content */
@@ -269,12 +269,12 @@
   padding: 1.5rem 2rem;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 16px;
   z-index: 100;
   margin: 2rem 1rem 1rem 1rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+              0 0 0 1px var(--primary-alpha-10) inset;
 }
 
 .btn-primary, .btn-secondary {
@@ -298,32 +298,32 @@
 
 .btn-primary:focus-visible,
 .btn-secondary:focus-visible {
-  outline: 2px solid rgba(255, 215, 0, 0.5);
+  outline: 2px solid var(--primary-alpha-50);
   outline-offset: 2px;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ffd700 0%, #f0c419 100%);
-  color: #1a1a2e;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, var(--primary) 0%, #f0c419 100%);
+  color: var(--bg-secondary);
+  border: 1px solid var(--primary-alpha-30);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 20px var(--primary-alpha-50);
   filter: brightness(1.1);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(10px);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--glass-bg-hover);
   border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
@@ -356,15 +356,15 @@
 }
 
 .tab-button:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
-  color: #ffd700;
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
+  color: var(--primary);
 }
 
 .tab-button.active {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -379,18 +379,18 @@
   border-radius: 16px;
   padding: 2rem;
   margin-bottom: 2rem;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-              0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+              0 0 0 1px var(--primary-alpha-10) inset;
 }
 
 .form-section h3 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 1.5rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .form-grid {
@@ -427,8 +427,8 @@
 .form-textarea:focus,
 .form-select:focus {
   outline: none;
-  border-color: #ffd700;
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-alpha-20);
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -466,13 +466,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  color: #1a1a2e;
+  background: var(--gradient-gold);
+  color: var(--bg-secondary);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .btn-secondary {
@@ -487,13 +487,13 @@
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, var(--error), #dc2626);
   color: white;
 }
 
 .btn-danger:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px var(--color-error-500-alpha-20);
 }
 
 /* Responsive */

@@ -91,28 +91,12 @@ function CustomSelect({ value, onChange, options, className = "", style = {}, di
         <span className="custom-select-arrow">{isOpen ? '▲' : '▼'}</span>
       </div>
       {isOpen && !disabled && (
-        <div
-          className="custom-select-options"
-          style={{
-            backgroundColor: '#1a1a1a',
-            backgroundImage: 'none',
-            opacity: 1,
-            backdropFilter: 'none',
-            WebkitBackdropFilter: 'none'
-          }}
-        >
+        <div className="custom-select-options mitglied-detail-dropdown">
           {options.map((option) => (
             <div
               key={option.value}
-              className={`custom-select-option ${option.value === value ? 'selected' : ''}`}
+              className={`custom-select-option mitglied-detail-dropdown-option ${option.value === value ? 'selected' : ''}`}
               onClick={() => handleSelect(option.value)}
-              style={{
-                backgroundColor: option.value === value ? '#2a2a2a' : '#1a1a1a',
-                backgroundImage: 'none',
-                opacity: 1,
-                backdropFilter: 'none',
-                WebkitBackdropFilter: 'none'
-              }}
             >
               {option.label}
             </div>
@@ -228,6 +212,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   // Nachrichten State
   const [memberNotifications, setMemberNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  // News State (für News-Artikel vom Haupt-Admin)
+  const [newsArticles, setNewsArticles] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [expandedNews, setExpandedNews] = useState(null);
   
   const [showNewVertrag, setShowNewVertrag] = useState(false);
   const [editingVertrag, setEditingVertrag] = useState(null);
@@ -998,6 +987,28 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       console.error('❌ Fehler beim Laden der Benachrichtigungen:', error);
     } finally {
       setNotificationsLoading(false);
+    }
+  };
+
+  // News-Artikel laden (vom Haupt-Admin)
+  const loadNewsArticles = async (signal = null) => {
+    setNewsLoading(true);
+    try {
+      const response = await axios.get(`/news/public`, {
+        signal: signal || undefined
+      });
+
+      if (response.data.news) {
+        setNewsArticles(response.data.news || []);
+        console.log('✅ News-Artikel geladen:', response.data.news?.length);
+      }
+    } catch (error) {
+      if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        return;
+      }
+      console.error('❌ Fehler beim Laden der News:', error);
+    } finally {
+      setNewsLoading(false);
     }
   };
 
@@ -1900,11 +1911,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   }, [activeTab, mitglied?.dojo_id, mitglied?.id, isAdmin, id]);
 
-  // Load member notifications when nachrichten tab is active
+  // Load member notifications and news when nachrichten tab is active
   useEffect(() => {
-    if (activeTab === "nachrichten" && mitglied?.email) {
+    if (activeTab === "nachrichten") {
       const controller = new AbortController();
-      loadMemberNotifications(controller.signal);
+
+      // Benachrichtigungen laden (nur wenn Email vorhanden)
+      if (mitglied?.email) {
+        loadMemberNotifications(controller.signal);
+      }
+
+      // News-Artikel laden
+      loadNewsArticles(controller.signal);
 
       return () => {
         controller.abort();
@@ -2350,7 +2368,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {/* Foto und Name oben */}
           <div className="mitglied-header">
-            <div className="mitglied-avatar" style={{ position: 'relative', backgroundColor: avatarLoaded ? 'transparent' : '#2a2a4e', backgroundImage: avatarLoaded ? 'none' : 'linear-gradient(90deg, #2a2a4e 25%, #3a3a6e 50%, #2a2a4e 75%)', backgroundSize: '200% 100%', animation: avatarLoaded ? 'none' : 'shimmer 1.5s infinite' }}>
+            <div className={`mitglied-avatar ${!avatarLoaded ? 'avatar-loading' : ''}`} style={{ position: 'relative' }}>
               <img
                 key={mitglied?.mitglied_id}
                 src={mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
@@ -2375,7 +2393,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               <div className="mitglied-name">
                 {mitglied?.vorname} {mitglied?.nachname}
                 {isAdmin && mitglied?.dojo_id && (
-                  <div style={{ fontSize: '0.85rem', color: '#888', marginTop: '4px', fontWeight: 'normal' }}>
+                  <div className="mitglied-dojo-name" style={{ fontSize: '0.85rem', marginTop: '4px', fontWeight: 'normal' }}>
                     {getDojoName(mitglied.dojo_id)}
                   </div>
                 )}
@@ -2421,89 +2439,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* Zurück-Button - nur für Admin */}
               {isAdmin && (
                 <button
-                  className="back-button"
+                  className="back-button mitglied-detail-back-btn"
                   onClick={() => navigate("/dashboard/mitglieder")}
-                  style={{
-                    background: 'rgba(255, 215, 0, 0.15)',
-                    border: '2px solid rgba(255, 215, 0, 0.4)',
-                    borderRadius: '10px',
-                    padding: '10px 16px',
-                    cursor: 'pointer',
-                    color: '#FFD700',
-                    fontSize: '0.95rem',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.25)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.6)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-                  }}
                 >
                   ← Zurück
                 </button>
               )}
               
               {/* Status-Badges - nebeneinander */}
-              <div style={{
-                display: 'flex',
-                gap: '0.75rem',
-                flexWrap: 'nowrap',
-                alignItems: 'center'
-              }}>
-              <div style={{
-                background: 'rgba(255, 215, 0, 0.1)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.85rem'
-              }} title="Offene Dokumente">
-                <span style={{ fontSize: '1rem' }}>📄</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Dokumente:</span>
-                <span style={{ color: '#FFD700', fontWeight: 'bold' }}>{offeneDokumente}</span>
+              <div className="mitglied-detail-status-badges">
+              <div className="mitglied-detail-badge" title="Offene Dokumente">
+                <span className="badge-icon">📄</span>
+                <span className="badge-label">Dokumente:</span>
+                <span className="badge-value">{offeneDokumente}</span>
               </div>
-              <div style={{
-                background: 'rgba(255, 215, 0, 0.1)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.85rem'
-              }} title="Offene Nachrichten">
-                <span style={{ fontSize: '1rem' }}>✉️</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Nachrichten:</span>
-                <span style={{ color: '#FFD700', fontWeight: 'bold' }}>{offeneNachrichten}</span>
+              <div className="mitglied-detail-badge" title="Offene Nachrichten">
+                <span className="badge-icon">✉️</span>
+                <span className="badge-label">Nachrichten:</span>
+                <span className="badge-value">{offeneNachrichten}</span>
               </div>
-              <div style={{
-                background: offeneBeiträge > 0 ? 'rgba(231, 76, 60, 0.1)' : 'rgba(255, 215, 0, 0.1)',
-                border: offeneBeiträge > 0 ? '1px solid rgba(231, 76, 60, 0.3)' : '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.85rem'
-              }} title="Offene Beiträge">
-                <span style={{ fontSize: '1rem' }}>💰</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Beiträge:</span>
-                <span style={{ color: offeneBeiträge > 0 ? '#e74c3c' : '#FFD700', fontWeight: 'bold' }}>{offeneBeiträge}</span>
+              <div className={`mitglied-detail-badge ${offeneBeiträge > 0 ? 'badge-warning' : ''}`} title="Offene Beiträge">
+                <span className="badge-icon">💰</span>
+                <span className="badge-label">Beiträge:</span>
+                <span className={`badge-value ${offeneBeiträge > 0 ? 'warning' : ''}`}>{offeneBeiträge}</span>
               </div>
             </div>
             </div>
@@ -2512,36 +2470,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             {isAdmin && (
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <button
+                  className="mitglied-detail-actions-btn"
                   onClick={() => setShowActionsMenu(!showActionsMenu)}
-                  style={{
-                    background: 'rgba(255, 215, 0, 0.15)',
-                    border: '2px solid rgba(255, 215, 0, 0.4)',
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    cursor: 'pointer',
-                    color: '#FFD700',
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.3s ease',
-                    minWidth: '44px',
-                    height: '44px',
-                    boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.25)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.6)';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-                  }}
                   title="Aktionen"
                 >
                   ⋮
@@ -2563,134 +2493,52 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       }}
                     />
 
-                    <div style={{
-                      position: 'absolute',
-                      top: '45px',
-                      right: 0,
-                      background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
-                      border: '1px solid rgba(255, 215, 0, 0.3)',
-                      borderRadius: '12px',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-                      padding: '8px',
-                      minWidth: '200px',
-                      zIndex: 999
-                    }}>
+                    <div className="mitglied-detail-actions-menu">
                       <button
+                        className="mitglied-detail-menu-item"
                         onClick={() => {
                           setEditMode(!editMode);
                           setShowActionsMenu(false);
                         }}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#fff',
-                          padding: '12px 16px',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '0.95rem',
-                          transition: 'background 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 215, 0, 0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontSize: '1.2rem' }}>✏️</span>
+                        <span className="menu-item-icon">✏️</span>
                         <span>{editMode ? 'Bearbeiten beenden' : 'Bearbeiten'}</span>
                       </button>
 
                       <button
+                        className={`mitglied-detail-menu-item ${!editMode ? 'disabled' : ''}`}
                         onClick={() => {
                           handleSave();
                           setShowActionsMenu(false);
                         }}
                         disabled={!editMode}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          color: editMode ? '#fff' : 'rgba(255, 255, 255, 0.3)',
-                          padding: '12px 16px',
-                          textAlign: 'left',
-                          cursor: editMode ? 'pointer' : 'not-allowed',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '0.95rem',
-                          transition: 'background 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (editMode) e.currentTarget.style.background = 'rgba(46, 213, 115, 0.1)';
-                        }}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontSize: '1.2rem' }}>💾</span>
+                        <span className="menu-item-icon">💾</span>
                         <span>Speichern</span>
                       </button>
 
                       <button
+                        className={`mitglied-detail-menu-item ${generatingPdf ? 'disabled' : ''}`}
                         onClick={() => {
                           handlePrint();
                           setShowActionsMenu(false);
                         }}
                         disabled={generatingPdf}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#fff',
-                          padding: '12px 16px',
-                          textAlign: 'left',
-                          cursor: generatingPdf ? 'not-allowed' : 'pointer',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '0.95rem',
-                          transition: 'background 0.2s ease',
-                          opacity: generatingPdf ? 0.6 : 1
-                        }}
-                        onMouseEnter={(e) => !generatingPdf && (e.currentTarget.style.background = 'rgba(52, 152, 219, 0.1)')}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontSize: '1.2rem' }}>{generatingPdf ? '⏳' : '📄'}</span>
+                        <span className="menu-item-icon">{generatingPdf ? '⏳' : '📄'}</span>
                         <span>{generatingPdf ? 'Generiere PDF...' : 'PDF exportieren'}</span>
                       </button>
 
-                      <div style={{
-                        height: '1px',
-                        background: 'rgba(255, 215, 0, 0.2)',
-                        margin: '8px 0'
-                      }} />
+                      <div className="mitglied-detail-menu-divider" />
 
                       <button
+                        className="mitglied-detail-menu-item danger"
                         onClick={() => {
                           setShowArchiveModal(true);
                           setShowActionsMenu(false);
                         }}
-                        style={{
-                          width: '100%',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#e74c3c',
-                          padding: '12px 16px',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '0.95rem',
-                          transition: 'background 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(231, 76, 60, 0.1)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontSize: '1.2rem' }}>🗑️</span>
+                        <span className="menu-item-icon">🗑️</span>
                         <span>Ins Archiv verschieben</span>
                       </button>
                     </div>
@@ -2711,12 +2559,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             >
           {activeTab === "sicherheit" && (
             <div className="grid-container">
-              <div className="field-group card" style={{
-                background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
+              <div className="field-group card mitglied-detail-card" style={{
                 borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255, 255, 255, 0.05)'
+                padding: '2rem'
               }}>
                 <h3>Passwort & Sicherheitsfrage</h3>
 
@@ -2725,45 +2570,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <label>Aktuelles Passwort:</label>
                   <div className="password-wrapper" style={{ position: 'relative' }}>
                     <input
+                      className="mitglied-detail-input"
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       placeholder="Aktuelles Passwort"
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '2px solid rgba(255, 215, 0, 0.2)',
-                        transition: 'all 0.3s ease'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                        e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(255, 215, 0, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                        e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                        e.target.style.boxShadow = 'none';
-                      }}
                     />
                     <button
                       type="button"
+                      className="password-toggle-btn"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        color: 'rgba(255, 215, 0, 0.7)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'color 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#FFD700'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 215, 0, 0.7)'}
                     >
                       {showCurrentPassword ? '👁️' : '•••••••'}
                     </button>
@@ -2775,56 +2591,23 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <label>Neues Passwort:</label>
                   <div className="password-wrapper" style={{ position: 'relative' }}>
                     <input
+                      className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Neues Passwort"
                       disabled={!currentPassword}
-                      style={{
-                        background: !currentPassword ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)',
-                        border: '2px solid rgba(255, 215, 0, 0.2)',
-                        transition: 'all 0.3s ease',
-                        opacity: !currentPassword ? 0.5 : 1,
-                        cursor: !currentPassword ? 'not-allowed' : 'text'
-                      }}
-                      onFocus={(e) => {
-                        if (currentPassword) {
-                          e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(255, 215, 0, 0.1)';
-                        }
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.background = !currentPassword ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)';
-                        e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                        e.target.style.boxShadow = 'none';
-                      }}
                     />
                     <button
                       type="button"
+                      className="password-toggle-btn"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        color: 'rgba(255, 215, 0, 0.7)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'color 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#FFD700'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 215, 0, 0.7)'}
                     >
                       {showNewPassword ? '👁️' : '•••••••'}
                     </button>
                   </div>
                   {!currentPassword && (
-                    <small className="input-hint" style={{ color: '#FFA500', fontStyle: 'italic' }}>
+                    <small className="input-hint mitglied-detail-hint-warning">
                       ℹ️ Bitte zuerst das aktuelle Passwort eingeben
                     </small>
                   )}
@@ -2838,50 +2621,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <label>Neues Passwort bestätigen:</label>
                   <div className="password-wrapper" style={{ position: 'relative' }}>
                     <input
+                      className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Passwort bestätigen"
                       disabled={!currentPassword}
-                      style={{
-                        background: !currentPassword ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)',
-                        border: '2px solid rgba(255, 215, 0, 0.2)',
-                        transition: 'all 0.3s ease',
-                        opacity: !currentPassword ? 0.5 : 1,
-                        cursor: !currentPassword ? 'not-allowed' : 'text'
-                      }}
-                      onFocus={(e) => {
-                        if (currentPassword) {
-                          e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                          e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(255, 215, 0, 0.1)';
-                        }
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.background = !currentPassword ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)';
-                        e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                        e.target.style.boxShadow = 'none';
-                      }}
                     />
                     <button
                       type="button"
+                      className="password-toggle-btn"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        color: 'rgba(255, 215, 0, 0.7)',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'color 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#FFD700'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 215, 0, 0.7)'}
                     >
                       {showConfirmPassword ? '👁️' : '•••••••'}
                     </button>
@@ -2907,96 +2657,27 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label>Antwort auf Sicherheitsfrage:</label>
                   <input
+                    className="mitglied-detail-input"
                     type="text"
                     value={securityAnswer}
                     onChange={(e) => setSecurityAnswer(e.target.value)}
                     placeholder="Antwort"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '2px solid rgba(255, 215, 0, 0.2)',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.background = 'rgba(255, 255, 255, 0.08)';
-                      e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255, 215, 0, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                      e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                      e.target.style.boxShadow = 'none';
-                    }}
                   />
                 </div>
 
                 {/* ACTION BUTTONS */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.5rem' }}>
+                <div className="mitglied-detail-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.5rem' }}>
                   <button
+                    className={`mitglied-detail-btn mitglied-detail-btn-primary ${(!currentPassword || !newPassword || !confirmPassword) ? 'disabled' : ''}`}
                     onClick={handleChangePassword}
                     disabled={!currentPassword || !newPassword || !confirmPassword}
-                    onMouseEnter={(e) => {
-                      if (!e.currentTarget.disabled) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.4)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!e.currentTarget.disabled) {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.2)';
-                      }
-                    }}
-                    style={{
-                      background: (!currentPassword || !newPassword || !confirmPassword)
-                        ? 'rgba(100, 100, 100, 0.2)'
-                        : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.2) 100%)',
-                      color: (!currentPassword || !newPassword || !confirmPassword) ? '#888' : '#FFD700',
-                      border: '1px solid rgba(255, 215, 0, 0.4)',
-                      borderRadius: '10px',
-                      opacity: (!currentPassword || !newPassword || !confirmPassword) ? 0.5 : 1,
-                      cursor: (!currentPassword || !newPassword || !confirmPassword) ? 'not-allowed' : 'pointer',
-                      padding: '0.75rem 1.5rem',
-                      fontSize: '0.95rem',
-                      fontWeight: '600',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      boxShadow: '0 4px 12px rgba(255, 215, 0, 0.2)'
-                    }}
                   >
                     🔒 Passwort Ändern
                   </button>
 
                   <button
+                    className="mitglied-detail-btn mitglied-detail-btn-secondary"
                     onClick={handleSaveSecurity}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 165, 0, 0.3)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 165, 0, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 165, 0, 0.15)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 165, 0, 0.2)';
-                    }}
-                    style={{
-                      background: 'rgba(255, 165, 0, 0.15)',
-                      color: '#FFA500',
-                      border: '1px solid rgba(255, 165, 0, 0.4)',
-                      borderRadius: '10px',
-                      padding: '0.75rem 1.5rem',
-                      fontSize: '0.95rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      boxShadow: '0 4px 12px rgba(255, 165, 0, 0.2)'
-                    }}
                   >
                     👁️ Sicherheitsfrage speichern
                   </button>
@@ -3004,21 +2685,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 {/* SUCCESS/ERROR MESSAGES */}
                 {securityMessage && (
-                  <div style={{
+                  <div className={`mitglied-detail-message ${securityMessage.type === 'error' ? 'error' : 'success'}`} style={{
                     marginTop: '1.25rem',
                     padding: '1rem',
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    fontSize: '0.95rem',
-                    background: securityMessage.type === 'error'
-                      ? 'rgba(231, 76, 60, 0.15)'
-                      : 'rgba(46, 213, 115, 0.15)',
-                    color: securityMessage.type === 'error' ? '#e74c3c' : '#2ed573',
-                    border: `1px solid ${securityMessage.type === 'error'
-                      ? 'rgba(231, 76, 60, 0.3)'
-                      : 'rgba(46, 213, 115, 0.3)'}`
+                    fontSize: '0.95rem'
                   }}>
                     <span style={{ fontSize: '1.2rem' }}>
                       {securityMessage.type === 'error' ? '?' : '?'}
@@ -5408,6 +5082,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     {verträge.map(vertrag => (
                       <div
                         key={vertrag.id}
+                        className="vertrag-card"
                         style={{
                           background: 'linear-gradient(135deg, rgba(40, 40, 50, 0.6) 0%, rgba(30, 30, 40, 0.8) 100%)',
                           borderRadius: '12px',
@@ -7099,7 +6774,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "buddy_gruppen" && (
-            <div style={{padding: '1.5rem', background: 'transparent'}}>
+            <div className="buddy-gruppen-content" style={{padding: '1.5rem', background: 'transparent'}}>
               <div style={{marginBottom: '1.5rem'}}>
                 <h3 style={{color: '#ffd700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                   👥 Buddy-Gruppen
@@ -7262,7 +6937,122 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "nachrichten" && (
-            <div style={{padding: '1.5rem', background: 'transparent'}}>
+            <div className="nachrichten-content" style={{padding: '1.5rem', background: 'transparent'}}>
+
+              {/* News-Artikel Sektion */}
+              <div style={{marginBottom: '2.5rem'}}>
+                <h3 style={{color: '#ffd700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                  📰 Aktuelle News
+                </h3>
+
+                {newsLoading ? (
+                  <div style={{textAlign: 'center', padding: '1.5rem', color: 'rgba(255, 255, 255, 0.7)'}}>
+                    Lade News...
+                  </div>
+                ) : newsArticles.length === 0 ? (
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1.5rem',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255, 215, 0, 0.1)'
+                  }}>
+                    <p style={{color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', margin: 0}}>
+                      Keine aktuellen News vorhanden
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                    {newsArticles.map((news) => (
+                      <div
+                        key={news.id}
+                        style={{
+                          background: 'rgba(30, 30, 45, 0.8)',
+                          border: '1px solid rgba(255, 215, 0, 0.2)',
+                          borderRadius: '10px',
+                          padding: '1rem',
+                          backdropFilter: 'blur(10px)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => setExpandedNews(expandedNews === news.id ? null : news.id)}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          gap: '1rem'
+                        }}>
+                          <div style={{flex: 1}}>
+                            <h4 style={{
+                              color: '#ffd700',
+                              margin: '0 0 0.5rem 0',
+                              fontSize: '1rem',
+                              fontWeight: '600'
+                            }}>
+                              {news.titel}
+                            </h4>
+                            {news.kurzbeschreibung && expandedNews !== news.id && (
+                              <p style={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                margin: 0,
+                                fontSize: '0.9rem',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                              }}>
+                                {news.kurzbeschreibung}
+                              </p>
+                            )}
+                          </div>
+                          <div style={{
+                            color: '#808090',
+                            fontSize: '0.8rem',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {new Date(news.veroeffentlicht_am || news.created_at).toLocaleDateString('de-DE')}
+                          </div>
+                        </div>
+
+                        {expandedNews === news.id && (
+                          <div style={{
+                            marginTop: '1rem',
+                            paddingTop: '1rem',
+                            borderTop: '1px solid rgba(255, 215, 0, 0.1)'
+                          }}>
+                            <div style={{
+                              color: '#e0e0e0',
+                              fontSize: '0.9rem',
+                              lineHeight: '1.6',
+                              whiteSpace: 'pre-wrap'
+                            }}>
+                              {news.inhalt}
+                            </div>
+                          </div>
+                        )}
+
+                        <div style={{
+                          marginTop: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <span style={{
+                            color: '#ffd700',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer'
+                          }}>
+                            {expandedNews === news.id ? '▲ Weniger anzeigen' : '▼ Mehr lesen'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Benachrichtigungen Sektion */}
               <div style={{marginBottom: '1.5rem'}}>
                 <h3 style={{color: '#ffd700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                   📬 Nachrichtenarchiv
@@ -7381,7 +7171,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "statistiken" && (
-            <div style={{padding: '1rem', background: 'transparent'}}>
+            <div className="statistiken-content" style={{padding: '1rem', background: 'transparent'}}>
               {/* Kompakte Statistik-Karten Grid */}
               <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem'}}>
                 {/* Trainings absolviert */}
@@ -8003,8 +7793,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                                 {/* Buttons immer sichtbar, aber nur im Edit-Modus aktiv */}
                                 {isActiveStyle && isAdmin && (
-                                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                  <div className="graduierung-buttons" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                                     <button
+                                      className="grad-btn grad-btn-down"
                                       onClick={() => {
                                         console.log('🔘 Niedriger-Button geklickt! CurrentGrad:', currentGraduation?.name);
                                         handleGraduationArrowChange(currentGraduation?.graduierung_id, 'up');
@@ -8030,6 +7821,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                       ⬇️ Niedriger
                                     </button>
                                     <button
+                                      className="grad-btn grad-btn-up"
                                       onClick={() => {
                                         console.log('🔘 Höher-Button geklickt! CurrentGrad:', currentGraduation?.name);
                                         handleGraduationArrowChange(currentGraduation?.graduierung_id, 'down');

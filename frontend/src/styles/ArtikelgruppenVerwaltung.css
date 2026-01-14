@@ -5,53 +5,6 @@
    ===================================================================================== */
 
 /* ============================================
-   CSS VARIABLES - DOJOSOFTWARE THEME
-   ============================================ */
-:root {
-  /* Hauptfarben - GOLDEN THEME */
-  --farbe-hauptfarbe: #ffd700;
-  --farbe-dunkel: #ff6b35;
-  --farbe-akzent: #ffd700;
-  --farbe-erfolg: #ffd700;
-  --farbe-fehler: #ef4444;
-  --farbe-warning: #ff9800;
-  --farbe-info: #2196f3;
-
-  /* Hintergrundfarben - GLASSMORPHISM */
-  --hintergrund-hauptfarbe: rgba(255, 255, 255, 0.08);
-  --hintergrund-verlauf: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  --hintergrund-hover: rgba(255, 255, 255, 0.15);
-  --hintergrund-erfolg: rgba(255, 215, 0, 0.1);
-  --hintergrund-fehler: rgba(239, 68, 68, 0.1);
-  --hintergrund-card: rgba(255, 255, 255, 0.08);
-
-  /* Textfarben - LIGHT ON DARK */
-  --text-hauptfarbe: #ffffff;
-  --text-sekundaer: rgba(255, 255, 255, 0.8);
-  --text-hell: rgba(255, 255, 255, 0.7);
-
-  /* Transparente Farben */
-  --farbe-hauptfarbe-transparent: rgba(255, 215, 0, 0.2);
-
-  /* Randfarben */
-  --rand-farbe: rgba(255, 215, 0, 0.2);
-
-  /* Schriftarten */
-  --schriftart-haupt: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-  /* Abstände */
-  --abstand-sm: 0.5rem;
-  --abstand-md: 1rem;
-  --abstand-lg: 1.5rem;
-  --abstand-xl: 2rem;
-
-  /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-}
-
-/* ============================================
    ANIMATIONEN
    ============================================ */
 @keyframes fadeIn {
@@ -117,7 +70,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-10), transparent);
   animation: shimmer 3s forwards;
 }
 
@@ -125,12 +78,12 @@
   color: var(--text-hauptfarbe);
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-dunkel));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0 0 var(--abstand-sm) 0;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 20px var(--primary-alpha-10);
 }
 
 .header-content p {
@@ -220,7 +173,7 @@
 .search-box input:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--hintergrund-hover);
 }
 
@@ -253,11 +206,11 @@
 .filter-select:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .filter-select option {
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   color: var(--text-hauptfarbe);
 }
 
@@ -293,7 +246,7 @@
 .group-card:hover {
   border-color: var(--farbe-hauptfarbe);
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 12px 40px var(--primary-alpha-10);
 }
 
 .group-header {
@@ -535,7 +488,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-10);
 }
 
 .modal-header h2 {
@@ -610,7 +563,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--hintergrund-hover);
 }
 
@@ -620,7 +573,7 @@
 }
 
 .form-group select option {
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   color: var(--text-hauptfarbe);
 }
 
@@ -744,7 +697,7 @@
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 var(--abstand-sm) 0;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-dunkel));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -815,7 +768,7 @@
 .unterkategorie-detail-card:hover {
   border-color: var(--farbe-hauptfarbe);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 8px 24px var(--primary-alpha-10);
 }
 
 .unterkategorie-detail-header {

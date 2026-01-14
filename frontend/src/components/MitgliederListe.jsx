@@ -439,12 +439,10 @@ const MitgliederListe = () => {
 
               <button
                 onClick={handleNewMember}
+                className="add-member-btn"
                 style={{
                   padding: '0.3rem 0.6rem',
                   fontSize: '0.75rem',
-                  background: 'transparent',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
                   borderRadius: '6px',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -452,26 +450,10 @@ const MitgliederListe = () => {
                   alignItems: 'center',
                   gap: '0.25rem',
                   fontWeight: '600',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
-                  backdropFilter: 'blur(8px)',
                   boxSizing: 'border-box',
                   height: '28px',
                   marginRight: '0.5rem'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                  e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent';
-                  e.target.style.color = 'rgba(255, 255, 255, 0.7)';
-                  e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
                 }}
               >
                 <span style={{ fontSize: '0.8rem' }}>➕</span>
@@ -483,17 +465,23 @@ const MitgliederListe = () => {
                 <button
                   ref={menuButtonRef}
                   onClick={handleMenuToggle}
-                  className="logout-button"
+                  className="actions-btn"
                   style={{
-                    padding: '10px 20px',
-                    fontSize: '0.95rem',
+                    padding: '0.3rem 0.6rem',
+                    fontSize: '0.75rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    whiteSpace: 'nowrap'
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    transition: 'all 0.3s ease',
+                    boxSizing: 'border-box',
+                    height: '28px'
                   }}
                 >
-                  <span style={{ fontSize: '1rem', fontWeight: '900' }}>⋮</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '900' }}>⋮</span>
                   <span>Aktionen</span>
                 </button>
 
@@ -502,22 +490,19 @@ const MitgliederListe = () => {
               {/* Dropdown Menü als Portal direkt im Body */}
               {showMenu && ReactDOM.createPortal(
                 <div
-                  className="dropdown-content"
+                  className="actions-dropdown"
                   style={{
                     position: 'fixed',
                     top: `${menuPosition.top}px`,
                     left: `${menuPosition.left}px`,
-                    background: '#1a1a2e',
-                    border: '3px solid #ffd700',
                     borderRadius: '8px',
-                    boxShadow: '0 8px 24px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.4)',
                     zIndex: 999999,
                     minWidth: '220px',
-                    backdropFilter: 'blur(16px)',
                     overflow: 'visible',
                     display: 'block',
                     visibility: 'visible',
-                    opacity: 1
+                    opacity: 1,
+                    padding: '0.5rem'
                   }}
                   onClick={(e) => {
                     console.log('🎯 Dropdown clicked!');
@@ -525,6 +510,7 @@ const MitgliederListe = () => {
                   }}
                 >
                   <button
+                    className="actions-dropdown-item"
                     onMouseDown={(e) => {
                       console.log('🖨️ Drucken button MOUSEDOWN!');
                       e.preventDefault();
@@ -534,9 +520,7 @@ const MitgliederListe = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      background: 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
                       border: 'none',
-                      color: 'white',
                       textAlign: 'left',
                       cursor: 'pointer',
                       fontSize: '0.9rem',
@@ -544,17 +528,9 @@ const MitgliederListe = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.75rem',
-                      fontWeight: '700',
+                      fontWeight: '600',
                       borderRadius: '6px',
                       marginBottom: '0.5rem'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.4), rgba(255, 215, 0, 0.2))';
-                      e.target.style.transform = 'translateX(4px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))';
-                      e.target.style.transform = 'translateX(0)';
                     }}
                   >
                     <span style={{ fontSize: '1.3rem' }}>🖨️</span>
@@ -562,6 +538,7 @@ const MitgliederListe = () => {
                   </button>
 
                   <button
+                    className="actions-dropdown-item"
                     onMouseDown={(e) => {
                       console.log('📦 Archivieren button MOUSEDOWN!');
                       e.preventDefault();
@@ -571,9 +548,7 @@ const MitgliederListe = () => {
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      background: 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
                       border: 'none',
-                      color: 'white',
                       textAlign: 'left',
                       cursor: 'pointer',
                       fontSize: '0.9rem',
@@ -581,16 +556,8 @@ const MitgliederListe = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.75rem',
-                      fontWeight: '700',
+                      fontWeight: '600',
                       borderRadius: '6px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.4), rgba(255, 215, 0, 0.2))';
-                      e.target.style.transform = 'translateX(4px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))';
-                      e.target.style.transform = 'translateX(0)';
                     }}
                   >
                     <span style={{ fontSize: '1.3rem' }}>📦</span>
@@ -613,17 +580,13 @@ const MitgliederListe = () => {
               <select
                 value={filterStil}
                 onChange={(e) => setFilterStil(e.target.value)}
+                className={`filter-select ${filterStil ? 'active' : ''}`}
                 style={{
                   padding: '0.5rem 0.8rem',
                   fontSize: '0.85rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  border: filterStil ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
-                  backdropFilter: 'blur(8px)',
                   height: '38px',
                   minHeight: '38px',
                   outline: 'none',
@@ -632,10 +595,10 @@ const MitgliederListe = () => {
                   lineHeight: '1.4'
                 }}
               >
-                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🎯 Alle Stile</option>
-                <option value="__OHNE_STIL__" style={{ background: '#1a1a2e', color: '#ff6b6b' }}>❌ Ohne Stil</option>
+                <option value="">🎯 Alle Stile</option>
+                <option value="__OHNE_STIL__" className="option-warning">❌ Ohne Stil</option>
                 {availableStile.map(stil => (
-                  <option key={stil} value={stil} style={{ background: '#1a1a2e', color: '#ffffff' }}>
+                  <option key={stil} value={stil}>
                     {stil}
                   </option>
                 ))}
@@ -645,17 +608,13 @@ const MitgliederListe = () => {
               <select
                 value={filterAlter}
                 onChange={(e) => setFilterAlter(e.target.value)}
+                className={`filter-select ${filterAlter ? 'active' : ''}`}
                 style={{
                   padding: '0.5rem 0.8rem',
                   fontSize: '0.85rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  border: filterAlter ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
-                  backdropFilter: 'blur(8px)',
                   height: '38px',
                   minHeight: '38px',
                   outline: 'none',
@@ -664,30 +623,26 @@ const MitgliederListe = () => {
                   lineHeight: '1.4'
                 }}
               >
-                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>📅 Alle Altersgruppen</option>
-                <option value="0-6" style={{ background: '#1a1a2e', color: '#ffffff' }}>0-6 Jahre</option>
-                <option value="7-12" style={{ background: '#1a1a2e', color: '#ffffff' }}>7-12 Jahre</option>
-                <option value="13-17" style={{ background: '#1a1a2e', color: '#ffffff' }}>13-17 Jahre</option>
-                <option value="18-25" style={{ background: '#1a1a2e', color: '#ffffff' }}>18-25 Jahre</option>
-                <option value="26-40" style={{ background: '#1a1a2e', color: '#ffffff' }}>26-40 Jahre</option>
-                <option value="41+" style={{ background: '#1a1a2e', color: '#ffffff' }}>41+ Jahre</option>
+                <option value="">📅 Alle Altersgruppen</option>
+                <option value="0-6">0-6 Jahre</option>
+                <option value="7-12">7-12 Jahre</option>
+                <option value="13-17">13-17 Jahre</option>
+                <option value="18-25">18-25 Jahre</option>
+                <option value="26-40">26-40 Jahre</option>
+                <option value="41+">41+ Jahre</option>
               </select>
 
               {/* Gurt-Filter */}
               <select
                 value={filterGurt}
                 onChange={(e) => setFilterGurt(e.target.value)}
+                className={`filter-select ${filterGurt ? 'active' : ''}`}
                 style={{
                   padding: '0.5rem 0.8rem',
                   fontSize: '0.85rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  border: filterGurt ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 255, 255, 0.3)',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease',
-                  backdropFilter: 'blur(8px)',
                   height: '38px',
                   minHeight: '38px',
                   outline: 'none',
@@ -696,9 +651,9 @@ const MitgliederListe = () => {
                   lineHeight: '1.4'
                 }}
               >
-                <option value="" style={{ background: '#1a1a2e', color: '#ffffff' }}>🥋 Alle Gurte</option>
+                <option value="">🥋 Alle Gurte</option>
                 {availableGurte.map(gurt => (
-                  <option key={gurt} value={gurt} style={{ background: '#1a1a2e', color: '#ffffff' }}>
+                  <option key={gurt} value={gurt}>
                     {gurt}
                   </option>
                 ))}
@@ -708,32 +663,18 @@ const MitgliederListe = () => {
               {hasActiveFilters() && (
                 <button
                   onClick={handleResetFilters}
+                  className="filter-reset-btn"
                   style={{
                     padding: '0.3rem 0.6rem',
                     fontSize: '0.75rem',
-                    background: 'rgba(255, 0, 0, 0.2)',
-                    color: '#ff6b6b',
-                    border: '1px solid rgba(255, 0, 0, 0.4)',
                     borderRadius: '6px',
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                     transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(8px)',
                     height: '28px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.3rem',
                     fontWeight: '600'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(255, 0, 0, 0.3)';
-                    e.target.style.color = '#ffffff';
-                    e.target.style.borderColor = 'rgba(255, 0, 0, 0.6)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(255, 0, 0, 0.2)';
-                    e.target.style.color = '#ff6b6b';
-                    e.target.style.borderColor = 'rgba(255, 0, 0, 0.4)';
                   }}
                 >
                   ✕ Filter zurücksetzen
@@ -741,43 +682,23 @@ const MitgliederListe = () => {
               )}
             </div>
 
-            <div style={{ marginBottom: '0.3rem', fontWeight: '600', color: '#F59E0B', fontSize: '0.8rem' }}>
+            <div className="filter-label" style={{ marginBottom: '0.3rem', fontWeight: '600', fontSize: '0.8rem' }}>
               Filter nach Nachname:
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+            <div className="letter-filter-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
               {availableLetters.map(letter => (
                 <button
                   key={letter}
                   onClick={() => handleLetterFilter(letter)}
+                  className={`letter-filter-btn ${selectedLetter === letter ? 'active' : ''}`}
                   style={{
                     padding: '0.3rem 0.5rem',
-                    border: selectedLetter === letter ? '1px solid rgba(255, 215, 0, 0.4)' : '1px solid rgba(255, 215, 0, 0.2)',
                     borderRadius: '6px',
-                    background: selectedLetter === letter ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)' : 'transparent',
-                    color: selectedLetter === letter ? 'rgba(255, 255, 255, 0.95)' : '#ffd700',
                     cursor: 'pointer',
                     fontWeight: '600',
                     fontSize: '0.7rem',
-                    transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedLetter !== letter) {
-                      e.target.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                      e.target.style.color = 'rgba(255, 255, 255, 0.95)';
-                      e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                      e.target.style.transform = 'translateY(-2px)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedLetter !== letter) {
-                      e.target.style.background = 'transparent';
-                      e.target.style.color = '#ffd700';
-                      e.target.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                      e.target.style.transform = 'translateY(0)';
-                    }
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   {letter}
@@ -786,28 +707,14 @@ const MitgliederListe = () => {
               {selectedLetter && (
                 <button
                   onClick={() => setSelectedLetter("")}
+                  className="letter-filter-reset-btn"
                   style={{
                     padding: '0.3rem 0.5rem',
-                    border: '1px solid #EF4444',
                     borderRadius: '6px',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    color: '#EF4444',
                     cursor: 'pointer',
                     fontWeight: '600',
                     fontSize: '0.7rem',
-                    transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 1px 2px rgba(239, 68, 68, 0.2)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = '#EF4444';
-                    e.target.style.color = 'white';
-                    e.target.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                    e.target.style.color = '#EF4444';
-                    e.target.style.transform = 'translateY(0)';
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   ✖ Alle
@@ -815,7 +722,7 @@ const MitgliederListe = () => {
               )}
             </div>
             {(searchTerm || selectedLetter) && (
-              <div style={{ marginTop: '0.3rem', fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', fontWeight: '500' }}>
+              <div className="filter-result-count" style={{ marginTop: '0.3rem', fontSize: '0.7rem', fontWeight: '500' }}>
                 {filteredMitglieder.length} von {mitglieder.length} Mitgliedern angezeigt
               </div>
             )}
@@ -1030,12 +937,10 @@ const MitgliederListe = () => {
                         e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
                       }}
                     />
-                    <h3 style={{
+                    <h3 className="member-name" style={{
                       fontSize: '1.2rem',
                       fontWeight: '600',
                       margin: '0',
-                      color: '#ffd700',
-                      textShadow: '0 3px 12px rgba(0, 0, 0, 1), 0 0 15px rgba(255, 215, 0, 0.6), 0 0 25px rgba(255, 215, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.8)',
                       whiteSpace: 'normal',
                       overflow: 'visible',
                       textOverflow: 'unset',
@@ -1045,7 +950,7 @@ const MitgliederListe = () => {
                     </h3>
                   </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', lineHeight: '1.4' }}>
+                <div className="member-info" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
                   <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
                     <strong>Geburtsdatum:</strong>{" "}
                     {mitglied.geburtsdatum

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
@@ -128,10 +128,10 @@ const Login = () => {
         console.log('✅ Redirecting to /dashboard');
         navigate('/dashboard', { replace: true });
       }
-      
+
     } catch (err) {
       console.error('? Login-Fehler:', err);
-      
+
       if (err.response?.status === 401) {
         setError('Ungültige Anmeldedaten. Bitte prüfen Sie Username/Email und Passwort.');
       } else if (err.response?.status === 400) {
@@ -174,174 +174,230 @@ const Login = () => {
             <a href="/galerie">Galerie</a>
             <a href="/pricing">Preise</a>
             <a href="/#testimonials">Referenzen</a>
-            <button className="nav-login-btn" onClick={() => navigate('/register')}>
-              Registrieren
-            </button>
           </div>
         </div>
       </nav>
 
-      <div className="login-card">
-        <div className="login-header">
-          <div className="japanese-title">Tiger & Dragon Association - International</div>
-          <div className="logo">
-            <img src={dojoLogo} alt="Dojo Logo" className="logo-image" />
-            <h1 className="title">DojoSoftware</h1>
-          </div>
-          <div className="security-badge">
-            <Shield size={16} />
-            <span>Sicher verschlüsselt</span>
+      {/* Main Split Layout */}
+      <div className="login-split-layout">
+        {/* Left Side - Logo Area */}
+        <div className="login-branding">
+          <div className="branding-content">
+            <img src={dojoLogo} alt="Dojo Logo" className="branding-logo" />
+            <h1 className="branding-title">DojoSoftware</h1>
+            <p className="branding-subtitle">Die professionelle Lösung für Kampfsportschulen</p>
+            <div className="branding-features">
+              <div className="feature-item">
+                <CheckCircle size={20} />
+                <span>Mitgliederverwaltung</span>
+              </div>
+              <div className="feature-item">
+                <CheckCircle size={20} />
+                <span>Check-In System</span>
+              </div>
+              <div className="feature-item">
+                <CheckCircle size={20} />
+                <span>SEPA & Buchhaltung</span>
+              </div>
+              <div className="feature-item">
+                <CheckCircle size={20} />
+                <span>Prüfungswesen</span>
+              </div>
+              <div className="feature-item">
+                <CheckCircle size={20} />
+                <span>uvm...</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {/* Email/Username Feld */}
-          <div className="form-group">
-            <label className="form-label">
-              <div className="label-content">
-                {loginType === 'email' ? (
-                  <Mail size={16} className="label-icon" />
-                ) : (
-                  <User size={16} className="label-icon" />
-                )}
-                <span>
-                  {loginType === 'email' ? 'E-Mail-Adresse' : 'Benutzername'}
-                </span>
-              </div>
-            </label>
-            <input
-              type="text"
-              name="loginField"
-              value={formData.loginField}
-              onChange={handleInputChange}
-              className={`form-input ${loginType === 'email' ? 'input-email' : 'input-username'}`}
-              placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'ihr-benutzername'}
-              required
-              autoComplete="username"
-              disabled={loading}
-            />
-            <small className="input-hint">
-              <Info size={12} />
-              Sie können sich mit E-Mail oder Benutzername anmelden
-            </small>
-          </div>
-
-          {/* Passwort Feld */}
-          <div className="form-group">
-            <label className="form-label">
-              <div className="label-content">
-                <Lock size={16} className="label-icon" />
-                <span>Passwort</span>
-              </div>
-            </label>
-            <div className="password-wrapper">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="form-input password-input"
-                placeholder="Ihr Passwort"
-                required
-                autoComplete="current-password"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-                disabled={loading}
-                aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="error-message" role="alert">
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Success Message */}
-          {successMessage && (
-            <div className="success-message" role="alert">
-              <CheckCircle size={16} />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          {/* Login Button */}
-          <button
-            type="submit"
-            className={`login-button btn btn-primary btn-small ${loading ? 'loading' : ''}`}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <div className="button-spinner"></div>
-                <span>Anmelden...</span>
-              </>
-            ) : (
-              <>
-                <Shield size={16} />
+        {/* Right Side - Login & Register Cards */}
+        <div className="login-forms-area">
+          <div className="forms-container">
+            {/* Login Card */}
+            <div className="login-card">
+              <div className="login-card-title">
+                <LogIn size={16} />
                 <span>Anmelden</span>
-              </>
-            )}
-          </button>
-        </form>
+              </div>
 
-        {/* Passwort vergessen Link */}
-        <div className="forgot-password">
-          <button
-            type="button"
-            className="link-button btn btn-link btn-small"
-            onClick={() => navigate('/password-reset')}
-            disabled={loading}
-          >
-            Passwort vergessen? Passwort zurücksetzen
-          </button>
-        </div>
+              <form onSubmit={handleSubmit} className="login-form">
+                {/* Email/Username Feld */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <div className="label-content">
+                      {loginType === 'email' ? (
+                        <Mail size={16} className="label-icon" />
+                      ) : (
+                        <User size={16} className="label-icon" />
+                      )}
+                      <span>
+                        {loginType === 'email' ? 'E-Mail' : 'Benutzername'}
+                      </span>
+                    </div>
+                  </label>
+                  <input
+                    type="text"
+                    name="loginField"
+                    value={formData.loginField}
+                    onChange={handleInputChange}
+                    className={`form-input ${loginType === 'email' ? 'input-email' : 'input-username'}`}
+                    placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'ihr-benutzername'}
+                    required
+                    autoComplete="username"
+                    disabled={loading}
+                  />
+                </div>
 
-        {/* Registrierungsbutton */}
-        <div className="registration-section">
-          <div className="registration-divider">
-            <span>oder</span>
+                {/* Passwort Feld */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <div className="label-content">
+                      <Lock size={16} className="label-icon" />
+                      <span>Passwort</span>
+                    </div>
+                  </label>
+                  <div className="password-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="form-input password-input"
+                      placeholder="Ihr Passwort"
+                      required
+                      autoComplete="current-password"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      disabled={loading}
+                      aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="error-message" role="alert">
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {successMessage && (
+                  <div className="success-message" role="alert">
+                    <CheckCircle size={16} />
+                    <span>{successMessage}</span>
+                  </div>
+                )}
+
+                {/* Login Button */}
+                <button
+                  type="submit"
+                  className="login-button"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="button-spinner"></div>
+                      <span>Anmelden...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn size={18} />
+                      <span>Anmelden</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Passwort vergessen Link */}
+                <button
+                  type="button"
+                  className="forgot-password-link"
+                  onClick={() => navigate('/password-reset')}
+                  disabled={loading}
+                >
+                  Passwort vergessen?
+                </button>
+              </form>
+            </div>
+
+            {/* Register Card */}
+            <div className="register-card">
+              <div className="login-card-title">
+                <UserPlus size={16} />
+                <span>Registrieren</span>
+              </div>
+
+              <div className="register-content">
+                <p className="register-description">
+                  Neu bei DojoSoftware? Registrieren Sie sich jetzt und starten Sie Ihre 14-tägige kostenlose Testphase.
+                </p>
+
+                <div className="register-benefits">
+                  <div className="benefit-item">
+                    <CheckCircle size={16} />
+                    <span>14 Tage kostenlos testen</span>
+                  </div>
+                  <div className="benefit-item">
+                    <CheckCircle size={16} />
+                    <span>Keine Kreditkarte erforderlich</span>
+                  </div>
+                  <div className="benefit-item">
+                    <CheckCircle size={16} />
+                    <span>Vollständiger Funktionsumfang</span>
+                  </div>
+                  <div className="benefit-item">
+                    <CheckCircle size={16} />
+                    <span>Persönliche Einrichtungshilfe</span>
+                  </div>
+                  <div className="benefit-item">
+                    <CheckCircle size={16} />
+                    <span>uvm...</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="register-button"
+                  onClick={() => setShowRegistrationModal(true)}
+                  disabled={loading}
+                >
+                  <UserPlus size={18} />
+                  <span>Jetzt registrieren</span>
+                </button>
+
+                <p className="register-note">
+                  <Info size={14} />
+                  <span>Vollständige Registrierung inkl. Vertragsdaten</span>
+                </p>
+              </div>
+            </div>
           </div>
-          <button
-            type="button"
-            className="registration-button btn btn-secondary"
-            onClick={() => setShowRegistrationModal(true)}
-            disabled={loading}
-          >
-            <UserPlus size={16} />
-            <span>Neues Mitglied registrieren</span>
-          </button>
-          <p className="registration-info">
-            <Info size={12} />
-            Vollständige Registrierung inkl. Vertrag erforderlich
-          </p>
-        </div>
 
-        {/* Footer */}
-        <div className="login-footer">
-          <p className="version-info">
-            DojoSoftware v2.0 | © 2024-2025
-          </p>
-          <div className="security-info">
-            <Shield size={12} />
-            <span>JWT-Authentication | bcrypt-Verschlüsselung</span>
+          {/* Footer */}
+          <div className="login-footer">
+            <p className="version-info">
+              DojoSoftware v2.0 | © 2024-2025
+            </p>
+            <div className="security-info">
+              <Shield size={12} />
+              <span>SSL-verschlüsselt | DSGVO-konform</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Registrierungs-Modal */}
       {showRegistrationModal && (
-        <NeuesMitgliedAnlegen 
+        <NeuesMitgliedAnlegen
           onClose={() => setShowRegistrationModal(false)}
           isRegistrationFlow={true}
           onRegistrationComplete={(success) => {

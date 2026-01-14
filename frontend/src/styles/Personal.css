@@ -3,9 +3,9 @@
 /* Container */
 .personal-container-modern {
   min-height: 100vh;
-  background: var(--hintergrund-primary);
+  background: var(--bg-body);
   padding: 2rem;
-  color: var(--farbe-text);
+  color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -19,16 +19,16 @@
 .personal-header h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 0.5rem;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 20px var(--primary-alpha-30);
 }
 
 .personal-subtitle {
-  color: var(--farbe-text-hell);
+  color: var(--text-secondary);
   font-size: 1.1rem;
   font-weight: 400;
   margin: 0;
@@ -59,7 +59,7 @@
 
 .filter-group label {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   margin-bottom: 0.5rem;
@@ -68,33 +68,33 @@
 
 .filter-select {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 215, 0, 0.4);
+  background: var(--glass-bg-hover);
+  border: 2px solid var(--primary-alpha-40);
   border-radius: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 600;
   min-width: 200px;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
 }
 
 .filter-select:focus {
   outline: none;
-  border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
-  background: var(--hintergrund-hover);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  background: var(--bg-card-hover);
 }
 
 .filter-select option {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: none;
   padding: 8px 12px;
 }
 
 .export-button-modern {
-  background: linear-gradient(135deg, var(--farbe-akzent), var(--farbe-akzent-2));
+  background: linear-gradient(135deg, var(--secondary), var(--color-orange));
   color: white;
   border: none;
   border-radius: 12px;
@@ -124,15 +124,15 @@
 }
 
 .personal-container-modern .stat-card {
-  background: var(--hintergrund-secondary) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: 16px;
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
   animation: fadeInUp 0.6s ease-out both;
 }
 
@@ -149,7 +149,7 @@
   width: 60px;
   height: 60px;
   background: transparent;
-  color: var(--farbe-text);
+  color: var(--text-primary);
   border-radius: 12px;
 }
 
@@ -160,7 +160,7 @@
 .stat-number {
   font-size: 2rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   line-height: 1;
   margin-bottom: 0.25rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -183,12 +183,12 @@
 
 /* Personal Cards */
 .personal-card {
-  background: var(--hintergrund-secondary);
-  border: 1px solid var(--rahmen-farbe);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   overflow: hidden;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
   animation: fadeInUp 0.6s ease-out both;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .personal-card-header {
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  background: var(--gradient-gold);
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
@@ -208,7 +208,7 @@
 .personal-status-badge {
   font-size: 1rem;
   font-weight: 700;
-  color: #000000;
+  color: var(--text-inverse);
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -219,17 +219,17 @@
 
 .personal-status-badge[data-status="aktiv"] {
   background: rgba(34, 197, 94, 0.3);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .personal-status-badge[data-status="inaktiv"] {
   background: rgba(107, 114, 128, 0.3);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .personal-status-badge[data-status="beurlaubt"] {
   background: rgba(251, 191, 36, 0.3);
-  color: #000000;
+  color: var(--text-inverse);
 }
 
 .personal-actions {
@@ -259,7 +259,7 @@
 
 .save-btn:hover { background: rgba(0, 255, 0, 0.3); }
 .cancel-btn:hover { background: rgba(255, 0, 0, 0.3); }
-.edit-btn:hover { background: rgba(255, 215, 0, 0.3); }
+.edit-btn:hover { background: var(--primary-alpha-30); }
 .delete-btn:hover { background: rgba(255, 0, 0, 0.3); }
 
 .personal-card-content {
@@ -284,7 +284,7 @@
 
 .personal-field label {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
@@ -293,7 +293,7 @@
 
 .personal-value {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   font-size: 1rem;
   text-align: right;
@@ -301,7 +301,7 @@
 }
 
 .position-tag {
-  background: var(--farbe-erfolg);
+  background: var(--success);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -319,9 +319,9 @@
 .edit-input {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 215, 0, 0.5);
+  border: 2px solid var(--primary-alpha-50);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -331,41 +331,41 @@
 .edit-select:focus,
 .edit-input:focus {
   outline: none;
-  border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
-  background: var(--hintergrund-hover);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  background: var(--bg-card-hover);
 }
 
 .edit-select option {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: none;
   padding: 8px 12px;
 }
 
 /* Neuer Mitarbeiter Form */
 .neuer-mitarbeiter-card {
-  background: var(--hintergrund-secondary);
-  border: 1px solid var(--rahmen-farbe);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out both;
 }
 
 .card-header {
-  background: linear-gradient(135deg, var(--farbe-erfolg), var(--farbe-akzent));
+  background: linear-gradient(135deg, var(--success), var(--secondary));
   padding: 1.5rem;
 }
 
 .card-header h3 {
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 10px var(--primary-alpha-30);
 }
 
 .mitarbeiter-form-modern {
@@ -384,7 +384,7 @@
 
 .form-group label {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
@@ -394,10 +394,10 @@
 .form-input,
 .form-select {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 215, 0, 0.4);
+  background: var(--glass-bg-hover);
+  border: 2px solid var(--primary-alpha-40);
   border-radius: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -406,8 +406,8 @@
 .form-input:focus,
 .form-select:focus {
   outline: none;
-  border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.2);
 }
 
@@ -416,14 +416,14 @@
 }
 
 .form-select option {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   border: none;
   padding: 8px 12px;
 }
 
 .add-button-modern {
-  background: linear-gradient(135deg, var(--farbe-erfolg), var(--farbe-akzent));
+  background: linear-gradient(135deg, var(--success), var(--secondary));
   color: white;
   border: none;
   border-radius: 12px;
@@ -461,8 +461,8 @@
 
 .empty-state {
   text-align: center;
-  background: var(--hintergrund-secondary);
-  border: 2px dashed var(--rahmen-farbe);
+  background: var(--bg-surface);
+  border: 2px dashed var(--border-default);
   border-radius: 16px;
   padding: 3rem;
   max-width: 400px;
@@ -475,12 +475,12 @@
 }
 
 .empty-state h3 {
-  color: var(--farbe-text);
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .empty-state p {
-  color: var(--farbe-text-hell);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -501,7 +501,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--farbe-error);
+  color: var(--error);
   font-size: 1.2rem;
 }
 
@@ -510,57 +510,57 @@
   .personal-container-modern {
     padding: 1rem;
   }
-  
+
   .personal-header h2 {
     font-size: 2rem;
   }
-  
+
   .personal-controls {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .personal-filters {
     gap: 1rem;
   }
-  
+
   .filter-group {
     flex: 1;
     min-width: 0;
   }
-  
+
   .filter-select {
     min-width: 0;
   }
-  
+
   .personal-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .personal-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .mitarbeiter-form-modern {
     grid-template-columns: 1fr;
     padding: 1.5rem;
   }
-  
+
   .add-button-modern {
     grid-column: span 1;
   }
-  
+
   .personal-field {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .personal-field label {
     min-width: auto;
   }
-  
+
   .personal-value {
     text-align: left;
   }
@@ -572,13 +572,13 @@
     text-align: center;
     padding: 1rem;
   }
-  
+
   .stat-icon {
     width: 50px;
     height: 50px;
     font-size: 2rem;
   }
-  
+
   .stat-number {
     font-size: 1.5rem;
   }

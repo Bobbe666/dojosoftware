@@ -65,7 +65,7 @@ app.use((req, res, next) => {
 // CORS mit Sicherheitskonfiguration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:5001'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:5001'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -668,6 +668,19 @@ try {
     });
 }
 
+// 10.1. TDA TURNIERE (Webhook + Frontend API für TDA Turnier-Integration)
+try {
+  const tdaTurniereRouter = require(path.join(__dirname, "routes", "tda-turniere.js"));
+  app.use("/api/tda-turniere", tdaTurniereRouter);
+  logger.success('Route gemountet', { path: '/api/tda-turniere' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'tda-turniere',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 9.5. MIGRATION ROUTES - NEU
 try {
   const migrationRouter = require(path.join(__dirname, "routes", "migration.js"));
@@ -890,7 +903,20 @@ try {
     });
 }
 
-// 15.1 EMAIL SERVICE - NEU
+// 15.1 NEWS VERWALTUNG (Nur Haupt-Admin)
+try {
+  const newsRouter = require(path.join(__dirname, "routes", "news.js"));
+  app.use("/api/news", newsRouter);
+  logger.success('Route gemountet', { path: '/api/news' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'news',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 15.2 EMAIL SERVICE - NEU
 try {
   const emailServiceRouter = require(path.join(__dirname, "routes", "emailService.js"));
   app.use("/api/email-service", emailServiceRouter);

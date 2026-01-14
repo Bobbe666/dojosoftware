@@ -273,11 +273,61 @@ router.get('/me', authenticateToken, (req, res) => {
 // Logout
 router.post('/logout', authenticateToken, (req, res) => {
 
-  res.json({ 
+  res.json({
     message: "Erfolgreich abgemeldet",
     user: req.user.username,
     timestamp: new Date().toISOString()
   });
+});
+
+// ===================================================================
+// 🔄 TOKEN REFRESH (Sliding Session)
+// ===================================================================
+
+/**
+ * POST /api/auth/refresh
+ * Verlängert einen gültigen Token um 2 Stunden
+ * Wird automatisch vom Frontend aufgerufen wenn Token bald abläuft
+ */
+router.post('/refresh', authenticateToken, async (req, res) => {
+  try {
+    // Benutzer-Daten aus dem alten Token übernehmen
+    const user = req.user;
+
+    // Neues Token-Payload erstellen (ohne exp und iat vom alten Token)
+    const tokenPayload = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      rolle: user.role,
+      dojo_id: user.dojo_id || null,
+      mitglied_id: user.mitglied_id || null,
+      vorname: user.vorname || null,
+      nachname: user.nachname || null,
+      berechtigungen: user.berechtigungen || null,
+      iat: Math.floor(Date.now() / 1000)
+    };
+
+    // Neuen Token erstellen (2 Stunden Gültigkeit)
+    const newToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '2h' });
+
+    console.log(`✅ [Auth] Token verlängert für User: ${user.username} (${user.email})`);
+
+    res.json({
+      success: true,
+      token: newToken,
+      message: 'Token um 2 Stunden verlängert',
+      expiresIn: '2h'
+    });
+
+  } catch (error) {
+    logger.error('❌ Token-Refresh Fehler:', { error: error.message, stack: error.stack });
+    res.status(500).json({
+      success: false,
+      error: 'Fehler beim Token-Refresh'
+    });
+  }
 });
 
 // ===================================================================

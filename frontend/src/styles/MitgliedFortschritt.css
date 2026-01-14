@@ -29,7 +29,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.7);
@@ -45,9 +45,9 @@
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  border-color: #ffd700;
-  color: #1a1a2e;
+  background: var(--gradient-gold);
+  border-color: var(--primary);
+  color: var(--bg-secondary);
 }
 
 .tab-badge {
@@ -67,10 +67,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
-  color: #1a1a2e;
+  color: var(--bg-secondary);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -94,7 +94,7 @@
 }
 
 .skill-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 12px;
@@ -147,7 +147,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .skill-desc {
@@ -174,7 +174,7 @@
 
 .progress-fill {
   height: 100%;
-  background: #ffd700;
+  background: var(--primary);
   transition: width 0.3s;
   border-radius: 4px;
 }
@@ -182,7 +182,7 @@
 .progress-text {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   min-width: 40px;
 }
 
@@ -234,13 +234,13 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #ffd700;
+  background: var(--primary);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .progress-slider::-webkit-slider-thumb:hover {
-  background: #ff6b35;
+  background: var(--secondary);
   transform: scale(1.2);
 }
 
@@ -252,7 +252,7 @@
 }
 
 .ziel-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 12px;
@@ -280,7 +280,7 @@
 .ziel-header h3 {
   margin: 0;
   font-size: 0.95rem;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .ziel-status {
@@ -337,7 +337,7 @@
 }
 
 .meilenstein-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 12px;
@@ -348,7 +348,7 @@
 
 .meilenstein-card.erreicht {
   border-color: rgba(255, 215, 0, 0.5);
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-10);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
 }
 
@@ -366,7 +366,7 @@
 .meilenstein-card h3 {
   margin: 0 0 0.5rem 0;
   font-size: 0.95rem;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .meilenstein-card p {
@@ -484,8 +484,8 @@ div.mitglied-fortschritt .modal-overlay,
 /* Modal Content - BREITER UND HÖHER */
 .mitglied-fortschritt .modal-content {
   position: relative !important;
-  background: #1a1a2e !important;
-  border: 2px solid #ffd700 !important;
+  background: var(--bg-secondary) !important;
+  border: 2px solid var(--primary) !important;
   border-radius: 12px !important;
   padding: 0 !important;
   width: 450px !important;
@@ -525,7 +525,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   justify-content: space-between !important;
   align-items: center !important;
   padding: 16px 20px !important;
-  background: rgba(255, 215, 0, 0.1) !important;
+  background: var(--primary-alpha-10) !important;
   border-bottom: 1px solid rgba(255, 215, 0, 0.3) !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
@@ -533,7 +533,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 
 .mitglied-fortschritt .modal-header h2 {
   margin: 0 !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   font-size: 16px !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
@@ -597,7 +597,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   margin: 0 !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   line-height: 1.3 !important;
 }
 
@@ -649,7 +649,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 }
 
 .mitglied-fortschritt .form-group select option {
-  background: #1a1a2e !important;
+  background: var(--bg-secondary) !important;
   color: #fff !important;
   padding: 8px !important;
 }
@@ -681,8 +681,8 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 }
 
 .mitglied-fortschritt .btn-primary {
-  background: #ffd700 !important;
-  color: #1a1a2e !important;
+  background: var(--primary) !important;
+  color: var(--bg-secondary) !important;
 }
 
 .mitglied-fortschritt .btn-primary:hover {
@@ -715,7 +715,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   width: 40px;
   height: 40px;
   border: 4px solid rgba(255, 215, 0, 0.2);
-  border-top-color: #ffd700;
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -900,7 +900,7 @@ html body .mitglied-fortschritt .modal-content {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ffd700, #ff6b35, #ffd700);
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
   border-radius: 16px 16px 0 0;
   z-index: 1;
 }

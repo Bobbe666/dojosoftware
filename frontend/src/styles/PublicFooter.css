@@ -29,7 +29,7 @@
   margin-bottom: 1rem;
   font-weight: 700;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -45,7 +45,7 @@
 }
 
 .footer-col a:hover {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

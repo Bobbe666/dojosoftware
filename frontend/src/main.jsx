@@ -1,10 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+
+// Design System - Neue zentrale Styles
+import './design-system/index.css';
+
+// Legacy Styles (werden schrittweise migriert)
 import './styles/designsystem.css';
 import './styles/themes.css';
 import './styles/Buttons.css';
 import './styles/components.css';
+
+// Theme-spezifische Styles (global für Theme-Switching)
+import './styles/Dashboard-TdaVib.css';
 import { DatenProvider } from '@shared/DatenContext.jsx';
 import axios from 'axios';
 import config from './config/config.js';

@@ -1,0 +1,141 @@
+/* ===========================================
+   DESIGN SYSTEM - COLOR TOKENS
+   Zentrale Farbdefinitionen für alle Themes
+   =========================================== */
+
+:root {
+  /* ========== BRAND COLORS ========== */
+
+  /* Gold (Primary) - Tailwind-like scale */
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+  --color-gold-600: #d97706;
+  --color-gold-700: #b45309;
+  --color-gold-800: #92400e;
+  --color-gold-900: #78350f;
+
+  /* Gold Brand */
+  --color-gold: #ffd700;
+  --color-gold-light: #ffe44d;
+  --color-gold-dark: #ccac00;
+
+  /* Orange Accent */
+  --color-orange: #ff6b35;
+  --color-orange-light: #ff8c5a;
+  --color-orange-dark: #e55a2b;
+
+  /* ========== SEMANTIC COLORS ========== */
+
+  /* Success */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+
+  /* Warning */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  /* Error/Danger */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+
+  /* Info */
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-200: #bfdbfe;
+  --color-info-300: #93c5fd;
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
+  --color-info-800: #1e40af;
+  --color-info-900: #1e3a8a;
+
+  /* ========== NEUTRAL COLORS ========== */
+
+  /* Gray Scale */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Pure */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* ========== DARK THEME BASE COLORS ========== */
+
+  /* Midnight Blue */
+  --color-midnight-50: #eef2ff;
+  --color-midnight-100: #e0e7ff;
+  --color-midnight-200: #c7d2fe;
+  --color-midnight-300: #a5b4fc;
+  --color-midnight-400: #818cf8;
+  --color-midnight-500: #6366f1;
+  --color-midnight-600: #4f46e5;
+  --color-midnight-700: #1a1a2e;
+  --color-midnight-800: #16213e;
+  --color-midnight-900: #0f0f23;
+  --color-midnight-950: #0a0a1a;
+
+  /* ========== LIGHT THEME BASE COLORS ========== */
+
+  /* Washi Paper (TDA-Vib) */
+  --color-washi: #f5f0e6;
+  --color-washi-dark: #e8e0d0;
+  --color-washi-light: #faf7f0;
+
+  /* Sumi Ink */
+  --color-sumi: #1a1a1a;
+  --color-sumi-light: #2d2d2d;
+  --color-sumi-muted: #4a4a4a;
+
+  /* Vermillion (Japanese Red) */
+  --color-vermillion: #c73e3a;
+  --color-vermillion-light: #d45450;
+  --color-vermillion-dark: #a83330;
+
+  /* Bamboo Green */
+  --color-bamboo: #5c6b4c;
+  --color-bamboo-light: #7a8a68;
+  --color-bamboo-dark: #4a5840;
+
+  /* Indigo */
+  --color-indigo: #264653;
+  --color-indigo-light: #3a5a6a;
+  --color-indigo-dark: #1a3340;
+}

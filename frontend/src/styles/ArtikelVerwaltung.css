@@ -5,54 +5,6 @@
    ===================================================================================== */
 
 /* ============================================
-   CSS VARIABLES - DOJOSOFTWARE THEME
-   ============================================ */
-
-:root {
-  /* Hauptfarben - GOLDEN THEME */
-  --farbe-hauptfarbe: #ffd700;
-  --farbe-dunkel: #ff6b35;
-  --farbe-akzent: #ffd700;
-  --farbe-erfolg: #ffd700;
-  --farbe-fehler: #ef4444;
-  --farbe-warning: #ff9800;
-  --farbe-info: #2196f3;
-  
-  /* Hintergrundfarben - GLASSMORPHISM */
-  --hintergrund-hauptfarbe: rgba(255, 255, 255, 0.08);
-  --hintergrund-verlauf: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  --hintergrund-hover: rgba(255, 255, 255, 0.15);
-  --hintergrund-erfolg: rgba(255, 215, 0, 0.1);
-  --hintergrund-fehler: rgba(239, 68, 68, 0.1);
-  --hintergrund-card: rgba(255, 255, 255, 0.08);
-  
-  /* Textfarben - LIGHT ON DARK */
-  --text-hauptfarbe: #ffffff;
-  --text-sekundaer: rgba(255, 255, 255, 0.8);
-  --text-hell: rgba(255, 255, 255, 0.7);
-  
-  /* Transparente Farben */
-  --farbe-hauptfarbe-transparent: rgba(255, 215, 0, 0.2);
-  
-  /* Randfarben */
-  --rand-farbe: rgba(255, 215, 0, 0.2);
-  
-  /* Schriftarten */
-  --schriftart-haupt: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  
-  /* Abstände */
-  --abstand-sm: 0.5rem;
-  --abstand-md: 1rem;
-  --abstand-lg: 1.5rem;
-  --abstand-xl: 2rem;
-  
-  /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-}
-
-/* ============================================
    ANIMATIONEN
    ============================================ */
 
@@ -125,7 +77,7 @@
   height: 100%;
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(255, 215, 0, 0.1), 
+    var(--primary-alpha-10), 
     transparent);
   animation: shimmer 3s forwards;
 }
@@ -225,7 +177,7 @@
 .search-box input:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--hintergrund-hover);
 }
 
@@ -258,7 +210,7 @@
 .search-filters select:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .checkbox-label {
@@ -304,7 +256,7 @@
 
 .btn-primary {
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-dunkel));
-  color: #1a1a2e;
+  color: var(--bg-secondary);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
 
@@ -390,7 +342,7 @@
   font-weight: 700;
   color: var(--text-hauptfarbe);
   border-bottom: 2px solid var(--rand-farbe);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .artikel-table td {
@@ -595,7 +547,7 @@
 
 .modal-content.modern-modal,
 .modal-content.step-modal {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, #16213e 100%);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: var(--radius-lg);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
@@ -760,9 +712,9 @@
 }
 
 .step-indicator.active .step-number {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  border-color: #ffd700;
-  color: #1a1a2e;
+  background: var(--gradient-gold);
+  border-color: var(--primary);
+  color: var(--bg-secondary);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
   transform: scale(1.1);
 }
@@ -783,7 +735,7 @@
 }
 
 .step-indicator.active .step-label {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -825,7 +777,7 @@
 
 .section-title {
   margin: 0 0 1.5rem 0;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.35rem;
   font-weight: 700;
   display: flex;
@@ -849,7 +801,7 @@
 
 .form-group label {
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1rem;
   display: flex;
   align-items: center;
@@ -879,7 +831,7 @@
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.25);
   background: rgba(0, 0, 0, 0.6);
   transform: translateY(-2px);
@@ -981,7 +933,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #1a1a2e;
+  color: var(--bg-secondary);
   font-weight: bold;
   font-size: 12px;
 }
@@ -1006,7 +958,7 @@
 
 /* Lager Form Specific */
 .artikel-info-card {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: var(--radius-md);
   padding: var(--abstand-lg);
@@ -1576,7 +1528,7 @@
 
 .progress-step.active {
   opacity: 1;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .progress-step.completed {
@@ -1585,7 +1537,7 @@
 
 .progress-step.completed .step-number {
   background: var(--farbe-hauptfarbe);
-  color: #1a1a2e;
+  color: var(--bg-secondary);
 }
 
 .step-number {
@@ -1629,7 +1581,7 @@
 
 .step-title {
   margin: 0 0 0.75rem 0;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.75rem;
   font-weight: 700;
   display: flex;
@@ -1775,7 +1727,7 @@
   justify-content: space-between;
   padding: var(--abstand-lg);
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-bg);
   border-radius: var(--radius-md);
   transition: all 0.3s ease;
 }
@@ -1858,7 +1810,7 @@
 
 .toggle-switch input:checked + .toggle-slider:before {
   transform: translateX(30px);
-  background-color: #1a1a2e;
+  background-color: var(--bg-secondary);
 }
 
 /* ============================================
@@ -1879,7 +1831,7 @@
 
 .btn-outline:hover {
   background: var(--farbe-hauptfarbe);
-  color: #1a1a2e;
+  color: var(--bg-secondary);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
 }
@@ -1907,7 +1859,7 @@
   max-width: 100%;
   max-height: 100vh;
   height: 100vh;
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 0;
   overflow: hidden;
@@ -1925,9 +1877,9 @@
 
 /* Modal Header - ohne Gradient damit Icons nicht überlagert werden */
 .artikel-modal .modal-header h2 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   background: none !important;
-  -webkit-text-fill-color: #ffd700 !important;
+  -webkit-text-fill-color: var(--primary) !important;
   background-clip: initial !important;
   -webkit-background-clip: initial !important;
   text-shadow: none !important;
@@ -1937,7 +1889,7 @@
 .artikel-modal .sub-tabs {
   padding: 1rem 1.5rem !important;
   margin-bottom: 0 !important;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
   background: rgba(0, 0, 0, 0.3) !important;
   border-radius: 0 !important;
 }
@@ -1947,7 +1899,7 @@
   overflow-y: hidden;
   overflow-x: hidden;
   padding: 1rem;
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
 }
@@ -1978,7 +1930,7 @@
 
 .tab-content-section .form-group label {
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -2015,7 +1967,7 @@
 .tab-content-section .form-select:focus,
 .tab-content-section .form-textarea:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -2040,7 +1992,7 @@
 }
 
 .tab-content-section .checkbox-label:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -2048,7 +2000,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 /* Responsive */
@@ -2113,7 +2065,7 @@
 }
 
 .kalkulation-row.total {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.3);
   margin-top: 0.5rem;
   padding: 1rem;
@@ -2166,7 +2118,7 @@
 
 .kalkulation-value.final-price {
   font-size: 1.25rem;
-  color: #ffd700;
+  color: var(--primary);
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
@@ -2196,13 +2148,13 @@
 .modal-title {
   font-size: 2rem !important;
   font-weight: 800 !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0 !important;
   text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
   background: none !important;
-  -webkit-text-fill-color: #ffd700 !important;
+  -webkit-text-fill-color: var(--primary) !important;
   background-clip: initial !important;
   -webkit-background-clip: initial !important;
   line-height: 1.2;
@@ -2222,7 +2174,7 @@
 
 .preis-eingabe-section .form-group label,
 .preis-kalkulation-section h3 {
-  color: #ffd700;
+  color: var(--primary);
   text-shadow: 0 1px 3px rgba(255, 215, 0, 0.3);
 }
 

@@ -1,15 +1,15 @@
 /* Homepage Styles */
 .homepage {
   min-height: 100vh;
-  background: var(--background-color);
-  color: var(--text-color);
+  background: var(--bg-body);
+  color: var(--text-primary);
 }
 
 /* Header */
 .homepage-header {
-  background: rgba(var(--background-dark-rgb), 0.95);
+  background: var(--glass-bg-strong);
   backdrop-filter: blur(10px);
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--border-default);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -23,11 +23,11 @@
 }
 
 .logo h1 {
-  color: var(--primary-color);
+  color: var(--primary);
   margin: 0;
   font-size: 1.8rem;
   font-weight: bold;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -40,7 +40,7 @@
 }
 
 .nav-links a {
-  color: var(--text-color);
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -49,12 +49,12 @@
 }
 
 .nav-links a:hover {
-  background: rgba(var(--primary-color-rgb), 0.1);
-  color: var(--primary-color);
+  background: var(--primary-alpha-10);
+  color: var(--primary);
 }
 
 .register-btn {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-gold);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -68,7 +68,7 @@
 
 .register-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+  box-shadow: var(--shadow-gold);
 }
 
 /* Container */
@@ -81,8 +81,8 @@
 /* Hero Section */
 .hero-section {
   background: linear-gradient(135deg,
-    rgba(var(--primary-color-rgb), 0.1),
-    rgba(var(--secondary-color-rgb), 0.1));
+    var(--primary-alpha-10),
+    var(--secondary-alpha-10));
   padding: 6rem 0;
   text-align: center;
 }
@@ -90,7 +90,7 @@
 .hero-content h2 {
   font-size: 3.5rem;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -130,23 +130,23 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: var(--gradient-gold);
   color: white;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(var(--primary-color-rgb), 0.3);
+  box-shadow: var(--shadow-gold);
 }
 
 .btn-secondary {
   background: transparent;
-  color: var(--primary-color);
-  border: 2px solid var(--primary-color);
+  color: var(--primary);
+  border: 2px solid var(--primary);
 }
 
 .btn-secondary:hover {
-  background: var(--primary-color);
+  background: var(--primary);
   color: white;
   transform: translateY(-2px);
 }
@@ -159,14 +159,14 @@
 /* Features Section */
 .features-section {
   padding: 6rem 0;
-  background: var(--background-secondary);
+  background: var(--bg-secondary);
 }
 
 .features-section h3 {
   text-align: center;
   font-size: 2.5rem;
   margin-bottom: 3rem;
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .features-grid {
@@ -176,33 +176,33 @@
 }
 
 .feature-card {
-  background: var(--background-color);
+  background: var(--bg-body);
   padding: 2rem;
   border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
-  border: 2px solid var(--border-color);
+  border: 2px solid var(--border-default);
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
 }
 
 .feature-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
   background: transparent;
-  color: var(--farbe-text);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .feature-card h4 {
-  color: var(--primary-color);
+  color: var(--primary);
   margin-bottom: 1rem;
   font-size: 1.3rem;
 }
@@ -216,15 +216,15 @@
 .cta-section {
   padding: 6rem 0;
   background: linear-gradient(135deg,
-    rgba(var(--primary-color-rgb), 0.05),
-    rgba(var(--secondary-color-rgb), 0.05));
+    rgba(255, 215, 0, 0.05),
+    rgba(255, 107, 53, 0.05));
   text-align: center;
 }
 
 .cta-content h3 {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .cta-content p {
@@ -240,15 +240,15 @@
 .registration-info {
   margin-top: 2rem;
   padding: 1.5rem;
-  background: rgba(var(--primary-color-rgb), 0.1);
+  background: var(--primary-alpha-10);
   border-radius: 12px;
-  border: 2px solid rgba(var(--primary-color-rgb), 0.2);
+  border: 2px solid var(--primary-alpha-20);
   display: inline-block;
 }
 
 .registration-info p {
   margin: 0;
-  color: var(--text-color);
+  color: var(--text-primary);
   text-align: left;
   font-size: 1rem;
   line-height: 1.8;
@@ -256,8 +256,8 @@
 
 /* Footer */
 .homepage-footer {
-  background: var(--background-dark);
-  color: var(--text-light);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
   padding: 3rem 0 1rem;
 }
 
@@ -269,7 +269,7 @@
 }
 
 .footer-section h4 {
-  color: var(--primary-color);
+  color: var(--primary);
   margin-bottom: 1rem;
   font-size: 1.1rem;
 }
@@ -287,7 +287,7 @@
 }
 
 .footer-section a:hover {
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .footer-link-btn {
@@ -303,11 +303,11 @@
 }
 
 .footer-link-btn:hover {
-  color: var(--primary-color);
+  color: var(--primary);
 }
 
 .footer-bottom {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-default);
   padding-top: 1rem;
   text-align: center;
 }
@@ -385,15 +385,15 @@
 /* Dark Mode Adjustments */
 @media (prefers-color-scheme: dark) {
   .homepage-header {
-    background: rgba(0, 0, 0, 0.95);
+    background: var(--glass-bg-strong);
   }
 
   .feature-card {
-    background: var(--background-dark);
-    border-color: var(--border-dark);
+    background: var(--bg-primary);
+    border-color: var(--border-default);
   }
 
   .feature-card:hover {
-    border-color: var(--primary-color);
+    border-color: var(--primary);
   }
 }

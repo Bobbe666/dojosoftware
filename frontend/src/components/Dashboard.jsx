@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useStandortContext } from '../context/StandortContext.jsx';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
+import { useTheme } from '../context/ThemeContext.jsx'; // 🎨 Theme Switching
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 import config from '../config/config.js';
@@ -13,7 +14,7 @@ import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
 import logo from '../assets/dojo-logo.png';
-import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown } from 'lucide-react';
+import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun } from 'lucide-react';
 import DojoSwitcher from './DojoSwitcher';
 import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
@@ -28,6 +29,7 @@ function Dashboard() {
   const { getDojoFilterParam, selectedDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
   const { standorte } = useStandortContext(); // Multi-Location support
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
+  const { theme, setTheme, isDarkMode, toggleDarkMode, themes } = useTheme(); // 🎨 Theme Switching
 
   // State für echte Daten
   const [stats, setStats] = useState({
@@ -54,11 +56,14 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('checkin');
 
   let role = 'mitglied';
+  let isMainAdmin = false; // Haupt-Admin Check für News-Feature
 
   try {
     if (token) {
       const decoded = jwtDecode(token);
       role = decoded.role || 'mitglied';
+      // Haupt-Admin: user.id === 1 oder username === 'admin'
+      isMainAdmin = decoded.id === 1 || decoded.user_id === 1 || decoded.username === 'admin';
     }
   } catch (error) {
     console.error("Fehler beim Dekodieren des Tokens:", error);
@@ -193,7 +198,7 @@ function Dashboard() {
   };
 
   // Tab-Definitionen
-  const tabs = [
+  const baseTabs = [
     { id: 'checkin', label: 'Check-in Systeme', icon: '📱' },
     { id: 'mitglieder', label: 'Mitgliederverwaltung', icon: '👥' },
     { id: 'pruefungswesen', label: 'Prüfungswesen', icon: '🏆' },
@@ -206,6 +211,11 @@ function Dashboard() {
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' },
     { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' }
   ];
+
+  // News-Tab nur für Haupt-Admin anzeigen
+  const tabs = isMainAdmin
+    ? [...baseTabs, { id: 'news', label: 'News verwalten', icon: '📰' }]
+    : baseTabs;
 
   // Formatiere Zahlen für bessere Lesbarkeit
   const formatNumber = (num) => {
@@ -408,6 +418,14 @@ function Dashboard() {
 
   // ✨ Einstellungen - System-Konfiguration ✨
   const einstellungenCards = [
+    {
+      icon: '🏯',
+      title: 'Mein Dojo',
+      description: 'Dojo-Einstellungen, Design & Theme-Auswahl',
+      path: '/dashboard/einstellungen',
+      badge: 'DESIGN',
+      featured: true
+    },
     {
       icon: '🏢',
       title: 'Dojo-Verwaltung',
@@ -667,6 +685,29 @@ function Dashboard() {
               ← Dashboard
             </button>
           )}
+          {/* 🎨 Theme Toggle */}
+          <button
+            className="theme-toggle-button"
+            onClick={toggleDarkMode}
+            title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 12px',
+              background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+              border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
+              borderRadius: '8px',
+              color: isDarkMode ? '#ffd700' : '#333',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontSize: '0.85rem',
+              fontWeight: '500'
+            }}
+          >
+            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+            <span>{isDarkMode ? 'Hell' : 'Dunkel'}</span>
+          </button>
           {userDisplayName && (
             <div className="user-display">
               <span className="user-greeting">Willkommen</span>
@@ -1204,6 +1245,26 @@ function Dashboard() {
                             >
                               🔄 {loading ? 'Lädt...' : 'Statistiken aktualisieren'}
                             </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 📰 News Tab - Nur für Haupt-Admin */}
+                      {activeTab === 'news' && isMainAdmin && (
+                        <div className="nav-section">
+                          <h2 className="section-header" style={{ color: 'var(--color-gold)' }}>
+                            <span>📰</span> News verwalten
+                          </h2>
+                          <div className="nav-cards">
+                            <div
+                              className="nav-card clickable featured"
+                              onClick={() => handleNavigation('/dashboard/news')}
+                            >
+                              <div className="nav-icon">📰</div>
+                              <h3>News-Artikel</h3>
+                              <p>Erstellen und verwalten Sie News-Artikel für alle Dojos oder nur die Homepage</p>
+                              <span className="nav-badge">ADMIN</span>
+                            </div>
                           </div>
                         </div>
                       )}

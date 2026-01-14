@@ -9,7 +9,7 @@
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  border: 2px solid #ffd700;
+  border: 2px solid var(--primary);
   min-width: 200px;
   user-select: none;
   -webkit-user-select: none;
@@ -23,9 +23,9 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #ffd700;
+  background: var(--primary);
   cursor: grab;
-  border: 2px solid #1a1a2e;
+  border: 2px solid var(--bg-secondary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -40,9 +40,9 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #ffd700;
+  background: var(--primary);
   cursor: grab;
-  border: 2px solid #1a1a2e;
+  border: 2px solid var(--bg-secondary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 

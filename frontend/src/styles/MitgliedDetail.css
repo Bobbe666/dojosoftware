@@ -173,6 +173,19 @@
   object-fit: cover;
 }
 
+/* Avatar Loading Shimmer Animation */
+.mitglied-avatar.avatar-loading {
+  background-color: #2a2a4e;
+  background-image: linear-gradient(90deg, #2a2a4e 25%, #3a3a6e 50%, #2a2a4e 75%);
+  background-size: 200% 100%;
+  animation: avatar-shimmer 1.5s infinite;
+}
+
+@keyframes avatar-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .mitglied-name {
   font-size: 1rem;
   font-weight: 600;
@@ -234,7 +247,7 @@
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .tab-vertical-btn:active {
@@ -245,7 +258,7 @@
 .tab-vertical-btn.active {
   /* Aktiver Tab hat Hover-Design */
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 700;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
 }
@@ -573,7 +586,7 @@
 
 .mitglied-content .field-group select:focus {
   background: #1a1a1a !important;
-  border: 1px solid #ffd700 !important;
+  border: 1px solid var(--primary) !important;
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
   outline: none !important;
 }
@@ -951,7 +964,7 @@ textarea:hover {
 
 .status-badge-modern.ruhepause {
   background: rgba(0, 123, 255, 0.1);
-  color: #ffd700;
+  color: var(--primary);
   border: 1px solid rgba(0, 123, 255, 0.3);
 }
 
@@ -1490,7 +1503,7 @@ textarea:hover {
   background: linear-gradient(135deg, #FFD700, #FFA500);
   color: #000;
   font-weight: 600;
-  border-color: #FFD700;
+  border-color: var(--primary);
 }
 
 .style-management-container .add-style-compact {
@@ -1528,7 +1541,7 @@ textarea:hover {
 }
 
 .add-style-compact .style-select:focus {
-  border-color: #FFD700;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
   outline: none;
 }
@@ -1562,7 +1575,7 @@ textarea:hover {
 
 /* === 🎯 Goldene Überschriften mit Glow-Effekten === */
 h1, h2, h3, h4, h5, h6 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;
@@ -1573,7 +1586,7 @@ h1, h2, h3, h4, h5, h6 {
 .field-group h3,
 .card h3,
 .modal h2 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;
@@ -1583,7 +1596,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Spezielle Überschriften-Stile mit goldenen Schatten */
 .field-group h3 {
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;
@@ -1591,7 +1604,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card h3 {
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;
@@ -1599,7 +1612,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .modal h2 {
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;
@@ -1613,7 +1626,7 @@ h1, h2, h3, h4, h5, h6,
 .modal h2,
 .tab-content h3,
 .detail-section h3 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;
@@ -2198,7 +2211,7 @@ input:focus {
 .metric-value-large.good,
 .detail-value.good,
 .stat-value.good {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .metric-value-large.ok,
@@ -2215,13 +2228,13 @@ input:focus {
 
 .detail-value.highlight,
 .stat-value.highlight {
-  color: #ffd700;
+  color: var(--primary);
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
 .detail-value.excellent,
 .stat-value.excellent {
-  color: #ffd700;
+  color: var(--primary);
   text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
 }
 
@@ -2253,7 +2266,7 @@ input:focus {
   font-size: 1.1em;
 }
 
-.stat-value.positive { color: #ffd700; }
+.stat-value.positive { color: var(--primary); }
 .stat-value.negative { color: #ef4444; }
 
 .attendance-list {
@@ -2406,7 +2419,7 @@ input:focus {
   border-bottom: none;
 }
 
-.attendance-status.present { color: #ffd700; }
+.attendance-status.present { color: var(--primary); }
 .attendance-status.absent { color: #ef4444; }
 
 .attendance-date {
@@ -2418,7 +2431,7 @@ input:focus {
   padding: 0;
 }
 
-.finance-amount.positive { color: #ffd700; }
+.finance-amount.positive { color: var(--primary); }
 .finance-amount.negative { color: #ef4444; }
 
 /* === 📈 Statistik-Komponenten === */
@@ -2613,7 +2626,7 @@ input:focus {
 }
 
 .contract-card.aktiv {
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(255, 255, 255, 0.12) 100%);
 }
 
@@ -2623,7 +2636,7 @@ input:focus {
 }
 
 .contract-card.ruhepause {
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(255, 255, 255, 0.12) 100%);
 }
 
@@ -2701,7 +2714,7 @@ input:focus {
 
 .status-badge.ruhepause {
   background: #dbeafe;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .status-badge.beendet {
@@ -2792,7 +2805,7 @@ input:focus {
 }
 
 .form-group label {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.8rem;
   letter-spacing: 0.3px;
@@ -2910,7 +2923,7 @@ input:focus {
 }
 
 .vertrag-checkbox-label strong {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -2926,7 +2939,7 @@ input:focus {
 .vertrag-info-box h4 {
   margin-top: 0;
   margin-bottom: 0.8rem;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -2975,7 +2988,7 @@ input:focus {
 .vertrag-legal-box h4 {
   margin-top: 0;
   margin-bottom: 0.6rem;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -3335,11 +3348,11 @@ input:focus {
 .style-group-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #FFD700;
+  color: var(--primary);
   margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   background: none !important;
-  -webkit-text-fill-color: #FFD700 !important;
+  -webkit-text-fill-color: var(--primary) !important;
 }
 
 .style-group-badge {
@@ -3768,7 +3781,7 @@ input:focus {
 }
 
 .date-info strong {
-  color: #FFD700;
+  color: var(--primary);
 }
 
 /* Warning Section */
@@ -3811,7 +3824,7 @@ input:focus {
 }
 
 .ruhepause-duration-selection label {
-  color: #FFD700;
+  color: var(--primary);
   font-weight: 700;
   font-size: 0.8rem;
   letter-spacing: 0.3px;
@@ -3820,13 +3833,13 @@ input:focus {
 
 .ruhepause-duration-selection select {
   padding: 0.85rem;
-  border: 3px solid #FFD700;
+  border: 3px solid var(--primary);
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 700;
   transition: all 0.2s ease;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%);
-  color: #FFD700;
+  color: var(--primary);
   cursor: pointer;
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 215, 0, 0.1);
   text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
@@ -3834,7 +3847,7 @@ input:focus {
 
 .ruhepause-duration-selection select:focus {
   outline: none;
-  border-color: #FFD700;
+  border-color: var(--primary);
   box-shadow: 0 0 25px rgba(255, 215, 0, 0.5), 0 0 0 3px rgba(255, 215, 0, 0.3);
   background: rgba(0, 0, 0, 0.7);
   transform: scale(1.02);
@@ -3842,7 +3855,7 @@ input:focus {
 
 .ruhepause-duration-selection select option {
   background: #1a1a1a;
-  color: #FFD700;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -3854,7 +3867,7 @@ input:focus {
 
 .date-info h5,
 .warning-section h5 {
-  color: #FFD700;
+  color: var(--primary);
   font-size: 0.8rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
@@ -3884,7 +3897,7 @@ input:focus {
 }
 
 .cancellation-terms h4 {
-  color: #FFD700;
+  color: var(--primary);
   margin: 0 0 0.75rem 0;
   font-size: 0.8rem;
   font-weight: 600;
@@ -3907,7 +3920,7 @@ input:focus {
 }
 
 .terms-section h5 {
-  color: #FFD700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   font-size: 0.8rem;
   font-weight: 600;
@@ -3935,7 +3948,7 @@ input:focus {
 }
 
 .current-contract-info h5 {
-  color: #FFD700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   font-size: 0.8rem;
   font-weight: 600;
@@ -4602,7 +4615,7 @@ input:focus {
 .bank-sepa-card h3.bank-sepa-heading {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
@@ -4639,7 +4652,7 @@ input:focus {
 .bank-sepa-card .sepa-legal-info h4 {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
@@ -4710,13 +4723,13 @@ input:focus {
 
 .bank-sepa-button-primary {
   border-color: rgba(255, 215, 0, 0.4);
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .bank-sepa-button-primary:hover {
   background: rgba(255, 215, 0, 0.1);
   border-color: rgba(255, 215, 0, 0.6);
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .mandate-actions {
@@ -4795,7 +4808,7 @@ input:focus {
   padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -4830,7 +4843,7 @@ input:focus {
 
 .zahlungshistorie-table td.betrag {
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 /* Spaltenbreiten für Zahlungshistorie */
@@ -5531,7 +5544,7 @@ input:focus {
 
 .style-exam-header h4 {
   margin: 0;
-  color: #FFD700;
+  color: var(--primary);
   font-size: 1.3rem;
   font-weight: 700;
 }
@@ -5563,7 +5576,7 @@ input:focus {
 
 .exam-section h5 {
   margin: 0 0 1rem 0;
-  color: #FFD700;
+  color: var(--primary);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -5586,7 +5599,7 @@ input:focus {
 
 .graduation-select:focus {
   outline: none;
-  border-color: #FFD700;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
 
@@ -5602,7 +5615,7 @@ input:focus {
 
 .current-graduation-display span {
   font-weight: 600;
-  color: #FFD700;
+  color: var(--primary);
 }
 
 /* Training Progress Styles */
@@ -5686,7 +5699,7 @@ input:focus {
 
 .progress-percentage {
   font-weight: 700;
-  color: #FFD700;
+  color: var(--primary);
   font-size: 0.8rem;
   min-width: 45px;
   text-align: right;
@@ -5743,7 +5756,7 @@ input:focus {
 
 .date-input:focus {
   outline: none;
-  border-color: #FFD700;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
 
@@ -5762,7 +5775,7 @@ input:focus {
 
 .notes-textarea:focus {
   outline: none;
-  border-color: #FFD700;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
 
@@ -5867,12 +5880,12 @@ input:focus {
 
 /* Farbkodierung für Anwesenheit */
 .month-count.excellent {
-  color: #ffd700;
+  color: var(--primary);
   background: rgba(16, 185, 129, 0.1);
 }
 
 .month-count.good {
-  color: #ffd700;
+  color: var(--primary);
   background: rgba(59, 130, 246, 0.1);
 }
 
@@ -5902,12 +5915,12 @@ input:focus {
 
 /* Statistische Werte Farbkodierung */
 .stat-value.excellent {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 700;
 }
 
 .stat-value.good {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -6756,7 +6769,7 @@ input:hover, textarea:hover {
   padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6821,7 +6834,7 @@ input:hover, textarea:hover {
 
 .beitraege-table td.betrag {
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .status-badge {
@@ -6911,7 +6924,7 @@ input:hover, textarea:hover {
 
 .view-filter-btn.active {
   background: rgba(255, 215, 0, 0.15);
-  color: #ffd700;
+  color: var(--primary);
   border-color: rgba(255, 215, 0, 0.5);
   font-weight: 600;
 }
@@ -6986,7 +6999,7 @@ input:hover, textarea:hover {
 }
 
 .collapse-icon {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   transition: transform 0.2s ease;
   min-width: 1rem;
@@ -6995,7 +7008,7 @@ input:hover, textarea:hover {
 .period-label {
   font-size: 1rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   text-transform: capitalize;
   white-space: nowrap;
 }
@@ -7129,7 +7142,7 @@ select option {
 select option:hover,
 select option:focus {
   background: #2a2a2a !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 /* Foto Upload Button - Lesbarkeit sicherstellen - MAXIMALE PRIORITÄT */
@@ -7147,7 +7160,7 @@ label.foto-upload-btn,
   /* Background & Border */
   background: #2a2a4e !important;
   background-color: #2a2a4e !important;
-  border: 2px solid #ffd700 !important;
+  border: 2px solid var(--primary) !important;
 
   /* Display & Visibility */
   display: inline-flex !important;
@@ -7226,7 +7239,7 @@ select:hover {
 
 select:focus {
   background-color: #1a1a1a !important;
-  border-color: #ffd700 !important;
+  border-color: var(--primary) !important;
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
   outline: none !important;
 }
@@ -7247,5 +7260,5 @@ div option {
 option:hover,
 option:checked {
   background-color: #2a2a2a !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }

@@ -16,7 +16,7 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 12px;
   border: 1px solid rgba(16, 185, 129, 0.3);
@@ -423,7 +423,7 @@
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
   border: 1px solid rgba(255, 215, 0, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   color: white;
   font-size: 0.8rem;
   cursor: pointer;
@@ -435,11 +435,11 @@
 .form-select-compact:focus {
   outline: none;
   border-color: rgba(255, 215, 0, 0.5);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
 }
 
 .form-select-compact option {
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   color: white;
 }
 
@@ -462,14 +462,14 @@
 
 .form-select:hover {
   border-color: rgba(16, 185, 129, 0.5);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
 }
 
 .form-select:focus {
   outline: none;
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
 }
 
 .form-group small {

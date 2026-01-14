@@ -1,22 +1,22 @@
-/* 🎨 Mitgliederliste - StilVerwaltung Theme */
+/* Mitgliederliste - Design System Theme */
 .mitglieder-container {
   min-height: 100vh;
-  background: var(--hintergrund-primary);
+  background: var(--bg-body);
   padding: 2rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: var(--farbe-text);
+  color: var(--text-primary);
 }
 
 h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent), var(--farbe-akzent-2));
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 2rem;
   text-align: center;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  text-shadow: var(--glow-gold);
 }
 
 /* Mitgliederkarten Layout */
@@ -28,11 +28,11 @@ h2 {
   justify-items: start;
 }
 
-/* Einzelne Mitgliederkarten - StilVerwaltung Style */
+/* Einzelne Mitgliederkarten - Design System Style */
 .mitglieder-card {
-  background: var(--hintergrund-card);
-  backdrop-filter: var(--backdrop-filter);
-  border: var(--border-glas);
+  background: var(--card-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--schatten-glas);
   padding: 2rem;
@@ -54,7 +54,7 @@ h2 {
   left: -100%;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--farbe-hauptfarbe), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   animation: shimmer 2s infinite;
 }
 
@@ -65,11 +65,11 @@ h2 {
 
 .mitglieder-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: var(--shadow-gold-lg);
+  border-color: var(--primary-alpha-50);
 }
 
-/* Rotating Border Effekt - DEZENTER wie StilVerwaltung */
+/* Rotating Border Effekt - DEZENTER wie Design System */
 .mitglieder-card::after {
   content: '';
   position: absolute;
@@ -80,9 +80,9 @@ h2 {
   background: conic-gradient(
     from 0deg,
     transparent,
-    rgba(255, 215, 0, 0.1),
+    var(--primary-alpha-10),
     transparent,
-    rgba(255, 107, 53, 0.1),
+    var(--secondary-alpha-10),
     transparent
   );
   border-radius: 50%;
@@ -107,8 +107,8 @@ h2 {
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 1rem;
-  border: 3px solid var(--farbe-hauptfarbe);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  border: 3px solid var(--primary);
+  box-shadow: var(--glow-gold-sm);
 }
 
 /* Mitgliedsdaten */
@@ -121,14 +121,14 @@ h2 {
 .mitglied-details h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0.5rem 0;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
-               0 0 4px rgba(255, 215, 0, 0.3);
+               0 0 4px var(--primary-alpha-30);
 }
 
 .mitglied-details p {
-  color: var(--farbe-text-hell);
+  color: var(--text-secondary);
   margin: 0.25rem 0;
   font-size: 0.9rem;
 }
@@ -143,7 +143,7 @@ h2 {
 
 .filter-button {
   background-color: var(--farbe-rot-hell);
-  color: var(--farbe-weiss);
+  color: var(--text-primary);
   padding: 8px 16px;
   border-radius: var(--radius);
   cursor: pointer;
@@ -164,5 +164,5 @@ h2 {
 
 .filter-button.reset {
   background-color: var(--farbe-grau);
-  color: var(--farbe-text);
+  color: var(--text-primary);
 }

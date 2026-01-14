@@ -3,10 +3,12 @@ import axios from 'axios';
 import config from '../config/config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
+import TdaTurniereList from './TdaTurniereList.jsx';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Events.css';
 import '../styles/Dashboard.css';
+import '../styles/TdaTurniere.css';
 
 const Events = () => {
   const { token, isAdmin } = useAuth();
@@ -419,7 +421,8 @@ const Events = () => {
   const tabs = [
     { key: 'aktuelle', label: 'Aktuelle', icon: '📅' },
     { key: 'geplante', label: 'Geplante', icon: '🗓️' },
-    { key: 'vergangene', label: 'Vergangene', icon: '📜' }
+    { key: 'vergangene', label: 'Vergangene', icon: '📜' },
+    { key: 'tda-turniere', label: 'TDA Turniere', icon: '🏆' }
   ];
 
   return (
@@ -432,6 +435,17 @@ const Events = () => {
             <div className="events-icon">📅</div>
             <h2 className="events-sidebar-title">Events</h2>
           </div>
+
+          {/* Neues Event Button - oben prominent */}
+          {isAdmin && (
+            <button
+              className="btn-create-event"
+              onClick={() => setShowNewEvent(true)}
+            >
+              <span>➕</span>
+              <span>Neues Event erstellen</span>
+            </button>
+          )}
 
           {/* Navigation Tabs */}
           <nav className="tabs-vertical">
@@ -446,17 +460,6 @@ const Events = () => {
               </button>
             ))}
           </nav>
-
-          {/* Neues Event Button */}
-          {isAdmin && (
-            <button
-              className="btn-create-event"
-              onClick={() => setShowNewEvent(true)}
-            >
-              <span>➕</span>
-              <span>Neues Event erstellen</span>
-            </button>
-          )}
         </aside>
 
         {/* Main Content */}
@@ -469,7 +472,9 @@ const Events = () => {
 
           <div className="glass-card">
             <div className="card-body">
-            {loading ? (
+            {activeTab === 'tda-turniere' ? (
+              <TdaTurniereList />
+            ) : loading ? (
               <div className="loading-state">
                 <p>Lade Events...</p>
               </div>

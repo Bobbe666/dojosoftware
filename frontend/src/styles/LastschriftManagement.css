@@ -1,7 +1,7 @@
 /* ===== LASTSCHRIFT MANAGEMENT CONTAINER ===== */
 .lastschrift-management-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
   color: #ffffff;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -19,7 +19,7 @@
 
 .management-header .btn {
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   border: none !important;
   padding: 12px 20px !important;
@@ -58,7 +58,7 @@
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 .management-header .btn:active {
@@ -145,7 +145,7 @@
 }
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   font-weight: 700 !important;
   box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;

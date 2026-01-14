@@ -20,7 +20,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 215, 0, 0.3);
-  border-top: 3px solid #ffd700;
+  border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   font-size: 1.8rem;
   font-weight: 600;
@@ -65,7 +65,7 @@
 }
 
 .no-styles h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 0.5rem;
 }
 
@@ -93,20 +93,20 @@
 }
 
 .style-tab:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
 .style-tab.active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
-  border-color: #ffd700;
+  border-color: var(--primary);
   font-weight: 600;
 }
 
 /* Style Content */
 .style-content {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--glass-bg);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 16px;
   padding: 2rem;
@@ -126,7 +126,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
   font-weight: 600;
@@ -146,7 +146,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -173,7 +173,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 1rem 0;
   font-size: 1.2rem;
   font-weight: 600;
@@ -203,7 +203,7 @@
 }
 
 .graduation-item.current {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -215,7 +215,7 @@
   height: 30px;
   background: rgba(255, 215, 0, 0.2);
   border-radius: 50%;
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -239,7 +239,7 @@
 }
 
 .current-indicator {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -265,7 +265,7 @@
 }
 
 .exam-item label {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -298,7 +298,7 @@
 }
 
 .stat-value {
-  color: #ffd700;
+  color: var(--primary);
   font-weight: 600;
   font-size: 1rem;
 }
@@ -337,7 +337,7 @@
 
 /* Training Hours Tracker */
 .member-styles .training-tracker-section {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--glass-bg);
   border: 1px solid rgba(255, 215, 0, 0.18);
   border-radius: 12px;
   padding: 1rem;
@@ -348,7 +348,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   font-weight: 600;
@@ -369,7 +369,7 @@
 }
 
 .member-styles .tracker-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
 }
@@ -392,8 +392,8 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
+  background: var(--primary-alpha-10);
+  color: var(--primary);
   padding: 0.3rem 0.6rem;
   border-radius: 8px;
   font-size: 0.8rem;
@@ -415,7 +415,7 @@
 
 .member-styles .tracker-progress .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border-radius: 8px;
   transition: width 0.8s ease;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
@@ -434,7 +434,7 @@
 }
 
 .member-styles .progress-percentage {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -455,7 +455,7 @@
 }
 
 .member-styles .hours-value {
-  color: #ff6b35;
+  color: var(--secondary);
   font-size: 1.1rem;
   font-weight: 700;
   background: rgba(255, 107, 53, 0.1);

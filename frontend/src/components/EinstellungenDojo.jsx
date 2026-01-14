@@ -9,9 +9,13 @@ import "../styles/themes.css";
 import "../styles/components.css";
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { useTheme, THEMES } from '../context/ThemeContext';
 
 
 const EinstellungenDojo = () => {
+  // Theme-Context nutzen
+  const { theme, setTheme, currentTheme, themes: contextThemes, isDarkMode } = useTheme();
+
   const [dojo, setDojo] = useState({
     // Grunddaten (bestehend)
     dojoname: "",
@@ -165,15 +169,8 @@ const EinstellungenDojo = () => {
   const [message, setMessage] = useState("");
   const [showThemeSelector, setShowThemeSelector] = useState(false);
 
-  // Theme-Konfiguration
-  const themes = [
-    { id: "default", name: "Gold Elite", description: "Premium Gold mit dunklem Hintergrund" },
-    { id: "blue-ocean", name: "Blue Ocean", description: "Beruhigender Ozean-Look" },
-    { id: "green-forest", name: "Green Forest", description: "Natürlicher Wald-Stil" },
-    { id: "purple-mystic", name: "Purple Mystic", description: "Mystischer Lila-Ton" },
-    { id: "red-fire", name: "Red Fire", description: "Kraftvolles Feuer-Design" },
-    { id: "light", name: "Light Mode", description: "Heller Tag-Modus" }
-  ];
+  // Theme-Konfiguration aus Context (THEMES wird von ThemeContext importiert)
+  const themes = Object.values(contextThemes);
 
   // Tab-Konfiguration
   const tabs = [
@@ -190,31 +187,17 @@ const EinstellungenDojo = () => {
     { id: "system", label: "System", icon: Settings, color: "#6B7280" }
   ];
 
-  // Daten laden und Theme initialisieren
+  // Daten laden (Theme wird jetzt vom ThemeContext verwaltet)
   useEffect(() => {
     loadDojoData();
-    initializeTheme();
   }, []);
 
-  // Theme initialisieren
-  const initializeTheme = () => {
-    const savedTheme = localStorage.getItem('dojo-theme') || 'default';
-    setDojo(prev => ({ ...prev, theme_scheme: savedTheme }));
-    applyTheme(savedTheme);
-  };
-
-  // Theme anwenden
-  const applyTheme = (themeId) => {
-    document.documentElement.setAttribute('data-theme', themeId);
-    localStorage.setItem('dojo-theme', themeId);
-  };
-
-  // Theme wechseln
+  // Theme wechseln (nutzt jetzt ThemeContext)
   const handleThemeChange = (themeId) => {
-    setDojo(prev => ({ ...prev, theme_scheme: themeId }));
-    applyTheme(themeId);
+    setTheme(themeId);
     setShowThemeSelector(false);
-    setMessage(`✅ Theme zu "${themes.find(t => t.id === themeId)?.name}" geändert!`);
+    const themeName = contextThemes[themeId]?.name || themeId;
+    setMessage(`✅ Theme zu "${themeName}" geändert!`);
     setTimeout(() => setMessage(""), 3000);
   };
 
@@ -1016,26 +999,27 @@ const EinstellungenDojo = () => {
         return (
           <div className="tab-content">
             <h3>⚙️ System-Einstellungen</h3>
-            
+
             <div className="form-section">
               <h4>🎨 Design & Theme-Auswahl</h4>
               <div className="theme-selector-section">
                 <div className="current-theme-display">
                   <label>Aktuelles Theme</label>
                   <div className="current-theme-card glass-card">
-                    <div className="theme-preview" data-theme={dojo.theme_scheme}>
-                      <div className="preview-header"></div>
-                      <div className="preview-content">
-                        <div className="preview-card"></div>
-                        <div className="preview-buttons">
-                          <div className="preview-btn primary"></div>
-                          <div className="preview-btn secondary"></div>
-                        </div>
+                    <div
+                      className="theme-preview-gradient"
+                      style={{ background: currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)' }}
+                    >
+                      <div className="preview-overlay">
+                        {isDarkMode ? '🌙' : '☀️'}
                       </div>
                     </div>
                     <div className="theme-info">
-                      <h5>{themes.find(t => t.id === dojo.theme_scheme)?.name || "Gold Elite"}</h5>
-                      <p>{themes.find(t => t.id === dojo.theme_scheme)?.description}</p>
+                      <h5>{currentTheme?.name || "Midnight Blue"}</h5>
+                      <p>{currentTheme?.description}</p>
+                      <span className={`theme-mode-badge ${isDarkMode ? 'dark' : 'light'}`}>
+                        {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1053,26 +1037,24 @@ const EinstellungenDojo = () => {
 
                 {showThemeSelector && (
                   <div className="theme-grid">
-                    {themes.map(theme => (
-                      <div 
-                        key={theme.id}
-                        className={`theme-option glass-card ${dojo.theme_scheme === theme.id ? 'active' : ''}`}
-                        onClick={() => handleThemeChange(theme.id)}
+                    {themes.map(t => (
+                      <div
+                        key={t.id}
+                        className={`theme-option glass-card ${theme === t.id ? 'active' : ''}`}
+                        onClick={() => handleThemeChange(t.id)}
                       >
-                        <div className="theme-preview small" data-theme={theme.id}>
-                          <div className="preview-header"></div>
-                          <div className="preview-content">
-                            <div className="preview-card"></div>
-                            <div className="preview-buttons">
-                              <div className="preview-btn primary"></div>
-                              <div className="preview-btn secondary"></div>
-                            </div>
+                        <div
+                          className="theme-preview-gradient small"
+                          style={{ background: t.preview }}
+                        >
+                          <div className="preview-overlay">
+                            {t.isDark ? '🌙' : '☀️'}
                           </div>
                         </div>
                         <div className="theme-details">
-                          <h6>{theme.name}</h6>
-                          <p>{theme.description}</p>
-                          {dojo.theme_scheme === theme.id && (
+                          <h6>{t.name}</h6>
+                          <p>{t.description}</p>
+                          {theme === t.id && (
                             <span className="active-badge">✓ Aktiv</span>
                           )}
                         </div>

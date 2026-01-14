@@ -106,7 +106,7 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
   align-items: flex-start;        /* Oben ausrichten (nicht mittig) */
   margin-bottom: 3rem;            /* 48px Abstand nach unten */
   padding: 2rem;                  /* 32px Innenabstand */
-  background: rgba(255, 255, 255, 0.08); /* Verstärkter Glaseffekt */
+  background: var(--glass-bg); /* Verstärkter Glaseffekt */
   backdrop-filter: blur(20px);    /* Weichzeichnung des Hintergrunds = Glassmorphism */
   border-radius: 20px;            /* Abgerundete Ecken */
   border: 1px solid rgba(255, 215, 0, 0.2); /* NEU: Gold-Rand statt weiß */
@@ -123,7 +123,7 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
 .header-left h1 {
   font-size: 2.5rem;             /* 40px große Überschrift */
   font-weight: 700;              /* Sehr fett/bold */
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   /* ^ Gold-Orange Gradient für Kampfkunst-Thema */
   -webkit-background-clip: text; /* Gradient nur auf Text anwenden (WebKit) */
   -webkit-text-fill-color: transparent; /* Text transparent machen für Gradient-Effekt */
@@ -198,9 +198,9 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
 }
 
 .add-stil-btn:active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gradient nur bei Active */
-  color: #1a1a2e;                /* Dunkler Text */
-  border-color: #ffd700;         /* Gold-Rand */
+  background: var(--gradient-gold); /* Gradient nur bei Active */
+  color: var(--bg-secondary);                /* Dunkler Text */
+  border-color: var(--primary);         /* Gold-Rand */
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
 }
 
@@ -375,7 +375,7 @@ Gürtel-Auswahl Grid und Kategorien für Standard-Gürtel
 /* Ausgewählte Belt-Option */
 .belt-option.selected {
   background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
-  border-color: #ffd700;         /* Gold-Rand */
+  border-color: var(--primary);         /* Gold-Rand */
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
 }
 

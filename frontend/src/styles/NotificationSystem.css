@@ -80,14 +80,14 @@
 }
 
 .tab-btn:hover {
-  background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
+  background: var(--primary-alpha-10);
+  color: var(--primary);
   transform: translateY(-2px);
 }
 
 .tab-btn.active {
   background: rgba(255, 215, 0, 0.2);
-  color: #ffd700;
+  color: var(--primary);
   border: 1px solid rgba(255, 215, 0, 0.4);
   box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
   transform: translateY(-2px) scale(1.02);
@@ -113,7 +113,7 @@
 }
 
 .dashboard-header h2 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 8px;
   font-size: 28px;
 }
@@ -160,7 +160,7 @@
   margin-right: 0 !important;
   padding: 6px !important;
   border-radius: 50% !important;
-  background: rgba(255, 215, 0, 0.1) !important;
+  background: var(--primary-alpha-10) !important;
   flex-shrink: 0 !important;
   width: auto !important;
   min-width: auto !important;
@@ -170,7 +170,7 @@
 .notification-dashboard .stat-card .stat-content h3 {
   font-size: 1.25rem !important;
   font-weight: bold !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   margin: 0 0 2px 0 !important;
   line-height: 1.2 !important;
 }
@@ -191,7 +191,7 @@
 }
 
 .recent-notifications h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 16px;
   font-size: 20px;
 }
@@ -246,7 +246,7 @@
 }
 
 .notification-subject {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 14px;
   margin-bottom: 4px;
 }
@@ -275,7 +275,7 @@
 }
 
 .settings-header h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 8px;
   font-size: 24px;
 }
@@ -301,7 +301,7 @@
 }
 
 .section-header h4 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0;
   font-size: 18px;
 }
@@ -399,7 +399,7 @@ input:checked + .toggle-slider:before {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
   background: rgba(20, 20, 30, 0.8);
 }
@@ -437,7 +437,7 @@ input:checked + .toggle-slider:before {
 }
 
 .composer-header h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 8px;
   font-size: 24px;
 }
@@ -479,16 +479,16 @@ input:checked + .toggle-slider:before {
 }
 
 .recipient-group-btn:hover {
-  border-color: #ffd700;
-  color: #ffd700;
-  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-alpha-10);
   transform: translateY(-2px);
 }
 
 .recipient-group-btn.active {
   background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
-  color: #ffd700;
+  border-color: var(--primary);
+  color: var(--primary);
   box-shadow: 0 4px 16px rgba(255, 215, 0, 0.2);
 }
 
@@ -545,7 +545,7 @@ input:checked + .toggle-slider:before {
 
 .form-input:focus, .form-textarea:focus, .form-select:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: rgba(20, 20, 30, 0.8);
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
 }
@@ -574,7 +574,7 @@ input:checked + .toggle-slider:before {
 }
 
 .history-header h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 8px;
   font-size: 24px;
 }
@@ -654,7 +654,7 @@ input:checked + .toggle-slider:before {
 }
 
 .history-subject {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 14px;
   margin-bottom: 4px;
 }
@@ -733,7 +733,7 @@ input:checked + .toggle-slider:before {
 
 .btn-primary {
   background: rgba(255, 215, 0, 0.2);
-  color: #ffd700;
+  color: var(--primary);
   border: 1px solid rgba(255, 215, 0, 0.4);
 }
 
@@ -741,7 +741,7 @@ input:checked + .toggle-slider:before {
   background: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 8px 32px rgba(255, 215, 0, 0.4);
-  border-color: #ffd700;
+  border-color: var(--primary);
 }
 
 .btn-secondary {
@@ -810,7 +810,7 @@ input:checked + .toggle-slider:before {
   background: rgba(255, 215, 0, 0.2);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 8px;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -819,13 +819,13 @@ input:checked + .toggle-slider:before {
 
 .pagination button:hover:not(:disabled) {
   background: rgba(255, 215, 0, 0.3);
-  border-color: #ffd700;
+  border-color: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
 }
 
 .pagination button:disabled {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   color: #606070;
   border-color: rgba(255, 255, 255, 0.1);
   cursor: not-allowed;

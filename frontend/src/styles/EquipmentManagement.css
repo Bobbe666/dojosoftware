@@ -21,11 +21,11 @@
 }
 
 .equipment-management .header-content svg {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .equipment-management .header-content h2 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
@@ -38,7 +38,7 @@
 }
 
 .equipment-management .add-button {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   padding: 0.8rem 1.2rem;
@@ -71,7 +71,7 @@
 }
 
 .equipment-management .equipment-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -126,7 +126,7 @@
 
 .equipment-management .badge.category {
   background: rgba(255, 215, 0, 0.2);
-  color: #ffd700;
+  color: var(--primary);
   border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
@@ -142,7 +142,7 @@
 }
 
 .equipment-management .assigned-courses strong {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   display: block;
   margin-bottom: 0.5rem;
@@ -222,7 +222,7 @@
 }
 
 .equipment-management .modal-header {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
   padding: 1rem 1.5rem;
   display: flex;
@@ -263,7 +263,7 @@
 
 .equipment-management .form-group label {
   display: block;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -286,7 +286,7 @@
 .equipment-management .form-group select:focus,
 .equipment-management .form-group textarea:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
@@ -299,7 +299,7 @@
 .equipment-management .form-group input[type="checkbox"] {
   width: auto;
   margin-right: 0.5rem;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 .equipment-management .course-checkboxes {
@@ -322,7 +322,7 @@
 }
 
 .equipment-management .checkbox-label:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .equipment-management .modal-footer {
@@ -357,7 +357,7 @@
 }
 
 .equipment-management .btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
 }
 
@@ -377,7 +377,7 @@
   width: 24px;
   height: 24px;
   border: 3px solid rgba(255, 215, 0, 0.3);
-  border-top: 3px solid #ffd700;
+  border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 2rem auto;

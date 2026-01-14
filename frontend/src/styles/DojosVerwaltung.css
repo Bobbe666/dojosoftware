@@ -1,7 +1,7 @@
 /* DojosVerwaltung.css */
 
 .dojos-verwaltung {
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
   min-height: 100vh;
   padding: 2rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -21,7 +21,7 @@
 .dojos-verwaltung .page-header h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -92,7 +92,7 @@
 }
 
 .stat-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
 }
@@ -104,7 +104,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-radius: 8px;
   flex-shrink: 0;
 }
@@ -116,7 +116,7 @@
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 0.125rem;
   line-height: 1.2;
 }
@@ -156,7 +156,7 @@
 }
 
 .dojo-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -208,8 +208,8 @@
 }
 
 .badge-primary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  color: #1a1a2e;
+  background: var(--gradient-gold);
+  color: var(--bg-secondary);
 }
 
 .badge-success {
@@ -300,8 +300,8 @@
 
 /* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  color: #1a1a2e;
+  background: var(--gradient-gold);
+  color: var(--bg-secondary);
   border: none;
   padding: 12px 24px;
   border-radius: 10px;
@@ -356,7 +356,7 @@
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, #16213e 100%);
   border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 16px;
   padding: 0;
@@ -409,7 +409,7 @@
 .modal-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 2px solid var(--primary-alpha-10);
   background: rgba(0, 0, 0, 0.2);
   overflow-x: auto;
   scrollbar-width: thin;
@@ -450,9 +450,9 @@
 }
 
 .tab-button.active {
-  color: #ffd700;
+  color: var(--primary);
   background: rgba(255, 215, 0, 0.05);
-  border-bottom-color: #ffd700;
+  border-bottom-color: var(--primary);
 }
 
 .tab-button.active::after {
@@ -462,7 +462,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
 }
 
 .modal-form {
@@ -498,12 +498,12 @@
 
 .form-section textarea:focus {
   outline: none;
-  border-color: #ffd700;
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+  background: var(--glass-bg);
 }
 
 .form-section h3 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.2rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
@@ -542,8 +542,8 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #ffd700;
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+  background: var(--glass-bg);
 }
 
 .form-group input[type="color"] {

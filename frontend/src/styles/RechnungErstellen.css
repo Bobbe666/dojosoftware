@@ -69,7 +69,7 @@
 }
 
 .form-section select option {
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   color: rgba(255, 255, 255, 0.95);
   padding: 0.5rem;
 }
@@ -77,8 +77,8 @@
 .form-section select:focus,
 .form-section input:focus {
   outline: none;
-  border-color: #ffd700;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .rechnung-erstellen-container .form-grid {
@@ -123,7 +123,7 @@
 }
 
 .position-input select option {
-  background: #1a1a2e;
+  background: var(--bg-secondary);
   color: rgba(255, 255, 255, 0.95);
   padding: 0.5rem;
 }
@@ -160,8 +160,8 @@
 .rechnung-erstellen-container .btn-save {
   width: 100% !important;
   padding: 0.6rem !important;
-  background: linear-gradient(135deg, #ffd700, #f59e0b) !important;
-  color: #1a1a2e !important;
+  background: linear-gradient(135deg, var(--primary), #f59e0b) !important;
+  color: var(--bg-secondary) !important;
   border: 1px solid rgba(255, 215, 0, 0.3) !important;
   border-radius: 8px !important;
   font-size: 0.9rem !important;
@@ -174,7 +174,7 @@
 .btn-save:hover {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-10);
 }
 
 /* Rechnungsvorschau */

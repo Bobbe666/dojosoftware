@@ -36,7 +36,7 @@
   gap: 8px;
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.02);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-10);
   overflow-x: auto;
   flex-wrap: wrap;
   margin-bottom: 20px;
@@ -48,7 +48,7 @@
   gap: 8px;
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
@@ -60,15 +60,15 @@
 
 .tab:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-10);
   color: #ffffff;
   transform: translateY(-1px);
 }
 
 .tab.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
-  border-color: #ffd700;
-  color: #ffd700;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), var(--primary-alpha-10));
+  border-color: var(--primary);
+  color: var(--primary);
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
 }
@@ -79,13 +79,13 @@
 
 .tab-add {
   background: transparent;
-  border: 1px dashed rgba(255, 215, 0, 0.3);
-  color: #ffd700;
+  border: 1px dashed var(--primary-alpha-10);
+  color: var(--primary);
 }
 
 .tab-add:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: #ffd700;
+  background: var(--primary-alpha-10);
+  border-color: var(--primary);
 }
 
 /* Tab-Inhalt */
@@ -118,20 +118,20 @@
 }
 
 .bank-form h2 {
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 16px;
   font-size: 1.2rem;
 }
 
 .bank-form-title {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   font-size: 1.5rem !important;
   font-weight: 700 !important;
   margin-bottom: 2rem !important;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-10);
 }
 
 .form-section {
@@ -143,21 +143,21 @@
 }
 
 .form-section h3 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.85rem;
   margin-bottom: 8px;
   padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
   font-weight: 500;
 }
 
 /* Spezielle Styling für 3-Spalten Layout - normale Überschriften */
 .form-section-three-column .form-section h3 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.9rem;
   margin-bottom: 14px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+  border-bottom: 1px solid var(--primary-alpha-10);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -203,7 +203,7 @@
   margin-bottom: 0;
   padding: 20px;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: 8px;
 }
 
@@ -255,7 +255,7 @@
 }
 
 .form-group label {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 2px;
@@ -275,14 +275,14 @@
 
 .checkbox-button:hover {
   background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 215, 0, 0.4) !important;
+  border-color: var(--primary-alpha-10) !important;
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .checkbox-button.active:hover {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15)) !important;
-  border-color: #ffd700 !important;
-  color: #ffd700 !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
 }
 
 .form-group input,
@@ -290,7 +290,7 @@
 .form-group textarea {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: 6px;
   color: #ffffff;
   font-size: 0.9rem;
@@ -303,9 +303,9 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #ffd700;
+  border-color: var(--primary);
   background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 2px var(--primary-alpha-10);
 }
 
 .form-group input::placeholder,
@@ -350,7 +350,7 @@
   gap: 12px;
   margin-top: 24px;
   padding: 20px;
-  border-top: 2px solid rgba(255, 215, 0, 0.2);
+  border-top: 2px solid var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
   width: 100%;

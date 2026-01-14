@@ -4,7 +4,7 @@
 .section-header-break-even {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid var(--primary-alpha-10);
 }
 
 .section-header-break-even h2 {
@@ -12,7 +12,7 @@
   font-weight: 700;
   color: #ffffff;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -34,10 +34,10 @@
 
 /* Cost Card Styling */
 .cost-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   padding: 1.5rem;
   transition: all 0.3s ease;
 }
@@ -95,8 +95,8 @@
 }
 
 .input-with-unit:focus-within {
-  border-color: #ffd700;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .input-with-unit input {
@@ -111,8 +111,8 @@
 
 .input-with-unit .unit {
   padding: 0.75rem 1rem;
-  background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
+  background: var(--primary-alpha-10);
+  color: var(--primary);
   font-weight: 600;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -131,8 +131,8 @@
   padding: 1rem 2.5rem;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1a1a2e;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: var(--bg-secondary);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -164,7 +164,7 @@
   font-weight: 700;
   color: #ffffff;
   margin: 0;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -179,10 +179,10 @@
 }
 
 .kpi-result-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   padding: 2.5rem;
   text-align: center;
   transition: all 0.4s ease;
@@ -197,7 +197,7 @@
   left: -100%;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   animation: shimmer 2s infinite;
 }
 
@@ -262,10 +262,10 @@
 }
 
 .scenario-card-pro {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: 16px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
   padding: 1.5rem;
   transition: all 0.3s ease;
 }
@@ -365,7 +365,7 @@
   padding: 2rem;
   background: rgba(255, 215, 0, 0.05);
   border-radius: 16px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-10);
 }
 
 .recommendations-section h4 {
@@ -392,7 +392,7 @@
 }
 
 .recommendation-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
   transform: translateX(4px);
 }
 
@@ -403,9 +403,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border-radius: 50%;
-  color: #1a1a2e;
+  color: var(--bg-secondary);
   font-weight: 700;
   font-size: 0.875rem;
 }
