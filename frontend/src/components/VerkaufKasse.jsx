@@ -135,9 +135,11 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   const apiCall = async (endpoint, options = {}) => {
     try {
       const API_BASE = config.apiBaseUrl;
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE}${endpoint}`, {
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
           ...options.headers
         },
         ...options
