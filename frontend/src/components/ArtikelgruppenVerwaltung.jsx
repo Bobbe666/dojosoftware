@@ -300,44 +300,44 @@ const ArtikelgruppenVerwaltung = () => {
     <div className="artikelgruppen-verwaltung">
       {/* Header */}
       <div className="page-header">
-        <div className="header-content">
-          <h1>Artikelgruppen-Verwaltung</h1>
-          <p>Kampfsport-spezifische Kategorien und Unterkategorien verwalten</p>
-        </div>
-        <div className="header-controls">
-          {!selectedGroup && (
-            <>
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Gruppen suchen..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <span className="search-icon">🔍</span>
-              </div>
-
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="filter-select"
-              >
-                <option value="all">Alle Gruppen</option>
-                <option value="hauptkategorien">Nur Hauptkategorien</option>
-                <option value="unterkategorien">Nur Unterkategorien</option>
-              </select>
-
-              <button className="btn-primary" onClick={() => openModal()}>
-                ➕ Neue Gruppe
-              </button>
-            </>
-          )}
+        <div className="page-header-top">
+          <div className="header-content">
+            <h1>Artikelgruppen-Verwaltung</h1>
+            <p>Kampfsport-spezifische Kategorien und Unterkategorien verwalten</p>
+          </div>
           {selectedGroup && (
             <button className="btn-secondary" onClick={closeGroupDetail}>
               ← Zurück zur Übersicht
             </button>
           )}
         </div>
+        {!selectedGroup && (
+          <div className="header-controls">
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="Gruppen suchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <span className="search-icon">🔍</span>
+            </div>
+
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Alle Gruppen</option>
+              <option value="hauptkategorien">Nur Hauptkategorien</option>
+              <option value="unterkategorien">Nur Unterkategorien</option>
+            </select>
+
+            <button className="btn-primary" onClick={() => openModal()}>
+              + Neue Gruppe
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}

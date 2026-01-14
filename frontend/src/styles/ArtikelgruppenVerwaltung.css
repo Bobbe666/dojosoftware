@@ -52,33 +52,29 @@
   backdrop-filter: blur(20px);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-md);
-  padding: var(--abstand-lg);
-  margin-bottom: var(--abstand-lg);
+  padding: var(--abstand-lg) var(--abstand-xl);
+  margin-bottom: var(--abstand-xl);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.artikelgruppen-verwaltung .page-header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--abstand-lg);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-  animation: fadeInUp 0.8s ease-out;
-  flex-wrap: wrap;
-}
-
-.artikelgruppen-verwaltung .header-content {
-  flex: 0 0 auto;
+  margin-bottom: var(--abstand-lg);
 }
 
 .artikelgruppen-verwaltung .header-content h1 {
   color: var(--text-hauptfarbe);
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 0.25rem 0;
 }
 
 .artikelgruppen-verwaltung .header-content p {
   color: var(--text-sekundaer);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin: 0;
   font-weight: 400;
 }
@@ -88,19 +84,17 @@
   align-items: center;
   gap: var(--abstand-md);
   flex-wrap: wrap;
-  flex: 1;
-  justify-content: flex-end;
 }
 
 .artikelgruppen-verwaltung .header-controls .search-box {
   position: relative;
-  min-width: 200px;
-  max-width: 280px;
+  width: 220px;
 }
 
 .artikelgruppen-verwaltung .header-controls .search-box input {
   width: 100%;
-  padding: 0.6rem 2.5rem 0.6rem 1rem;
+  height: 42px;
+  padding: 0 2.5rem 0 1rem;
   background: var(--hintergrund-hover);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-sm);
@@ -130,7 +124,8 @@
 }
 
 .artikelgruppen-verwaltung .header-controls .filter-select {
-  padding: 0.6rem 1rem;
+  height: 42px;
+  padding: 0 1rem;
   background: var(--hintergrund-hover);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-sm);
@@ -138,7 +133,7 @@
   color: var(--text-hauptfarbe);
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 160px;
+  min-width: 180px;
 }
 
 .artikelgruppen-verwaltung .header-controls .filter-select:focus {
@@ -148,26 +143,31 @@
 }
 
 .artikelgruppen-verwaltung .btn-primary {
-  padding: 0.6rem 1.25rem;
-  background: var(--farbe-hauptfarbe);
+  height: 42px;
+  padding: 0 1.5rem;
+  background: #5d4e37;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-auf-akzent, white);
+  color: white;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .artikelgruppen-verwaltung .btn-primary:hover {
-  background: var(--farbe-hauptfarbe-hover, var(--farbe-hauptfarbe));
+  background: #4a3d2b;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--primary-alpha-20);
+  box-shadow: 0 4px 12px rgba(93, 78, 55, 0.3);
 }
 
 .artikelgruppen-verwaltung .btn-secondary {
-  padding: 0.6rem 1.25rem;
+  height: 42px;
+  padding: 0 1.25rem;
   background: var(--hintergrund-hover);
   border: 1px solid var(--rand-farbe);
   border-radius: var(--radius-sm);
@@ -177,11 +177,13 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 
 .artikelgruppen-verwaltung .btn-secondary:hover {
   background: var(--hintergrund-card);
-  border-color: var(--farbe-hauptfarbe);
+  border-color: #5d4e37;
 }
 
 /* ============================================
