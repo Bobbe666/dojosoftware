@@ -657,7 +657,7 @@
 }
 
 /* ============================================
-   LAGER MODAL - KOMPAKT
+   LAGER MODAL - SUPER KOMPAKT
    ============================================ */
 
 .lager-modal-overlay {
@@ -666,102 +666,119 @@
 }
 
 .lager-modal {
-  max-width: 450px !important;
+  max-width: 320px !important;
   width: 100%;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 
 .lager-modal-header {
-  padding: 1rem 1.5rem !important;
+  padding: 0.6rem 0.8rem !important;
   background: var(--hintergrund-hauptfarbe) !important;
   border-bottom: 1px solid var(--rand-farbe) !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .lager-modal-header h2 {
-  font-size: 1.1rem !important;
+  font-size: 0.9rem !important;
   margin: 0 !important;
   background: none !important;
   -webkit-text-fill-color: var(--text-hauptfarbe) !important;
   color: var(--text-hauptfarbe) !important;
+  font-weight: 600;
+}
+
+.lager-modal .close-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 1.1rem;
+  padding: 0;
+  margin: 0;
 }
 
 .lager-modal-body {
-  padding: 1.25rem 1.5rem !important;
+  padding: 0.6rem 0.8rem !important;
   background: var(--hintergrund-hauptfarbe) !important;
 }
 
 .lager-modal .artikel-info-card {
   background: var(--hintergrund-hover);
   border: 1px solid var(--rand-farbe);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.25rem;
+  border-radius: 5px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.6rem;
 }
 
 .lager-modal .artikel-info-card h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.95rem;
+  margin: 0 0 0.35rem 0;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-hauptfarbe);
+  line-height: 1.2;
 }
 
 .lager-modal .info-grid {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .lager-modal .info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0;
 }
 
 .lager-modal .info-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-sekundaer);
+  line-height: 1.2;
 }
 
 .lager-modal .info-value {
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-hauptfarbe);
+  line-height: 1.2;
 }
 
 .lager-modal .lager-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .lager-modal .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .lager-modal .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.15rem;
 }
 
 .lager-modal .form-group label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-hauptfarbe);
 }
 
 .lager-modal .form-select,
 .lager-modal .form-input {
-  padding: 0.6rem 0.75rem;
+  padding: 0.35rem 0.5rem;
   border: 1px solid var(--rand-farbe);
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
   background: var(--hintergrund-hover);
   color: var(--text-hauptfarbe);
   transition: border-color 0.2s ease;
+  height: 30px;
+  box-sizing: border-box;
 }
 
 .lager-modal .form-select:focus,
@@ -771,23 +788,32 @@
 }
 
 .lager-modal-footer {
-  padding: 1rem 1.5rem !important;
+  padding: 0.5rem 0.8rem !important;
   background: var(--hintergrund-hauptfarbe) !important;
   border-top: 1px solid var(--rand-farbe) !important;
   display: flex !important;
   justify-content: flex-end !important;
-  gap: 0.75rem !important;
+  gap: 0.4rem !important;
+}
+
+.lager-modal .btn-secondary,
+.lager-modal .btn-primary {
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 26px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lager-modal .btn-secondary {
-  padding: 0.5rem 1rem;
   background: transparent;
   border: 1px solid var(--rand-farbe);
-  border-radius: 6px;
-  font-size: 0.85rem;
   color: var(--text-hauptfarbe);
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .lager-modal .btn-secondary:hover {
@@ -795,15 +821,10 @@
 }
 
 .lager-modal .btn-primary {
-  padding: 0.5rem 1rem;
   background: var(--farbe-hauptfarbe);
   border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
   color: var(--text-auf-akzent);
-  cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s ease;
 }
 
 .lager-modal .btn-primary:hover {

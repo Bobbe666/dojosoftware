@@ -4852,3 +4852,12 @@
 [data-theme="tda-vib"] .lager-modal .close-btn:hover {
   background: rgba(92, 64, 51, 0.1) !important;
 }
+
+[data-theme="tda-vib"] .lager-modal .form-select option {
+  background: #fff !important;
+  color: var(--tda-sumi) !important;
+}
+
+[data-theme="tda-vib"] .lager-modal .form-input::placeholder {
+  color: #999 !important;
+}
