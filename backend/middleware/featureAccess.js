@@ -14,8 +14,19 @@ function requireFeature(featureName) {
     try {
       // Super-Admin (id=1 oder username='admin') darf alles
       const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
-      const isSuperAdmin = userId === 1 || req.user?.username === 'admin';
+      const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+      // Debug logging
+      console.log('🔍 Feature Check Debug:', {
+        feature: featureName,
+        userId,
+        username: req.user?.username,
+        isSuperAdmin,
+        userObject: req.user
+      });
+
       if (isSuperAdmin) {
+        console.log('✅ Super-Admin Bypass für Feature:', featureName);
         return next();
       }
 
