@@ -250,15 +250,13 @@ const ArtikelgruppenVerwaltung = () => {
         </div>
 
         <div className="group-actions sub-tabs">
-          {hasUnterkategorien && (
-            <button
-              className="sub-tab-btn details-btn"
-              onClick={() => openGroupDetail(group)}
-              title="Details anzeigen"
-            >
-              📋 Details
-            </button>
-          )}
+          <button
+            className="sub-tab-btn details-btn"
+            onClick={() => openGroupDetail(group)}
+            title="Details anzeigen"
+          >
+            📋 Details
+          </button>
 
           <button
             className="sub-tab-btn edit-btn"
