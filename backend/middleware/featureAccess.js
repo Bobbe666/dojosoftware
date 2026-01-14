@@ -13,7 +13,8 @@ function requireFeature(featureName) {
   return async (req, res, next) => {
     try {
       // Super-Admin (id=1 oder username='admin') darf alles
-      const isSuperAdmin = req.user?.id === 1 || req.user?.username === 'admin';
+      const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+      const isSuperAdmin = userId === 1 || req.user?.username === 'admin';
       if (isSuperAdmin) {
         return next();
       }
