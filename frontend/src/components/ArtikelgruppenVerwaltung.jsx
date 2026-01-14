@@ -304,34 +304,9 @@ const ArtikelgruppenVerwaltung = () => {
           <h1>Artikelgruppen-Verwaltung</h1>
           <p>Kampfsport-spezifische Kategorien und Unterkategorien verwalten</p>
         </div>
-        <div className="header-actions">
-          {selectedGroup && (
-            <button className="sub-tab-btn" onClick={closeGroupDetail}>
-              ← Zurück zur Übersicht
-            </button>
-          )}
+        <div className="header-controls">
           {!selectedGroup && (
-            <button className="sub-tab-btn" onClick={() => openModal()}>
-              ➕ Neue Gruppe
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="error-message">
-          <span>{error}</span>
-          <button onClick={() => setError(null)}>✕</button>
-        </div>
-      )}
-
-      {/* Main Content */}
-      {!selectedGroup ? (
-        <>
-          {/* Controls */}
-          <div className="controls-section">
-            <div className="search-filters">
+            <>
               <div className="search-box">
                 <input
                   type="text"
@@ -351,8 +326,31 @@ const ArtikelgruppenVerwaltung = () => {
                 <option value="hauptkategorien">Nur Hauptkategorien</option>
                 <option value="unterkategorien">Nur Unterkategorien</option>
               </select>
-            </div>
-          </div>
+
+              <button className="btn-primary" onClick={() => openModal()}>
+                ➕ Neue Gruppe
+              </button>
+            </>
+          )}
+          {selectedGroup && (
+            <button className="btn-secondary" onClick={closeGroupDetail}>
+              ← Zurück zur Übersicht
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>✕</button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!selectedGroup ? (
+        <>
 
           {/* Groups Grid */}
           <div className="groups-container">

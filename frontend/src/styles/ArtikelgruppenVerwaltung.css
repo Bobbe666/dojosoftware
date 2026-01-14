@@ -47,7 +47,7 @@
 /* ============================================
    PAGE HEADER
    ============================================ */
-.page-header {
+.artikelgruppen-verwaltung .page-header {
   background: var(--hintergrund-hauptfarbe);
   backdrop-filter: blur(20px);
   border: 1px solid var(--rand-farbe);
@@ -57,40 +57,131 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  gap: var(--abstand-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.8s ease-out;
+  flex-wrap: wrap;
 }
 
-.page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, var(--primary-alpha-10), transparent);
-  animation: shimmer 3s forwards;
+.artikelgruppen-verwaltung .header-content {
+  flex: 0 0 auto;
 }
 
-.header-content h1 {
+.artikelgruppen-verwaltung .header-content h1 {
   color: var(--text-hauptfarbe);
-  font-size: 2.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  background: var(--gradient-gold);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 0 var(--abstand-sm) 0;
-  text-shadow: 0 0 20px var(--primary-alpha-10);
+  margin: 0 0 0.25rem 0;
 }
 
-.header-content p {
+.artikelgruppen-verwaltung .header-content p {
   color: var(--text-sekundaer);
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   margin: 0;
   font-weight: 400;
+}
+
+.artikelgruppen-verwaltung .header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-md);
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.artikelgruppen-verwaltung .header-controls .search-box {
+  position: relative;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.artikelgruppen-verwaltung .header-controls .search-box input {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
+  background: var(--hintergrund-hover);
+  border: 1px solid var(--rand-farbe);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--text-hauptfarbe);
+  transition: all 0.3s ease;
+}
+
+.artikelgruppen-verwaltung .header-controls .search-box input:focus {
+  outline: none;
+  border-color: var(--farbe-hauptfarbe);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+}
+
+.artikelgruppen-verwaltung .header-controls .search-box input::placeholder {
+  color: var(--text-hell);
+}
+
+.artikelgruppen-verwaltung .header-controls .search-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-hell);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.artikelgruppen-verwaltung .header-controls .filter-select {
+  padding: 0.6rem 1rem;
+  background: var(--hintergrund-hover);
+  border: 1px solid var(--rand-farbe);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--text-hauptfarbe);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 160px;
+}
+
+.artikelgruppen-verwaltung .header-controls .filter-select:focus {
+  outline: none;
+  border-color: var(--farbe-hauptfarbe);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+}
+
+.artikelgruppen-verwaltung .btn-primary {
+  padding: 0.6rem 1.25rem;
+  background: var(--farbe-hauptfarbe);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-auf-akzent, white);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.artikelgruppen-verwaltung .btn-primary:hover {
+  background: var(--farbe-hauptfarbe-hover, var(--farbe-hauptfarbe));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--primary-alpha-20);
+}
+
+.artikelgruppen-verwaltung .btn-secondary {
+  padding: 0.6rem 1.25rem;
+  background: var(--hintergrund-hover);
+  border: 1px solid var(--rand-farbe);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-hauptfarbe);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.artikelgruppen-verwaltung .btn-secondary:hover {
+  background: var(--hintergrund-card);
+  border-color: var(--farbe-hauptfarbe);
 }
 
 /* ============================================
@@ -131,88 +222,7 @@
   background: rgba(239, 68, 68, 0.2);
 }
 
-/* ============================================
-   CONTROLS SECTION
-   ============================================ */
-.controls-section {
-  background: var(--hintergrund-hauptfarbe);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--rand-farbe);
-  border-radius: var(--radius-md);
-  padding: var(--abstand-md);
-  margin-bottom: var(--abstand-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  animation: fadeInUp 0.8s ease-out 0.2s both;
-}
-
-.search-filters {
-  display: flex;
-  align-items: center;
-  gap: var(--abstand-md);
-  flex-wrap: wrap;
-}
-
-.search-box {
-  position: relative;
-  min-width: 300px;
-  flex: 1;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 0.5rem 2.5rem 0.5rem 1rem;
-  background: var(--hintergrund-hauptfarbe);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--rand-farbe);
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-  color: var(--text-hauptfarbe);
-  transition: all 0.3s ease;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
-  background: var(--hintergrund-hover);
-}
-
-.search-box input::placeholder {
-  color: var(--text-hell);
-}
-
-.search-icon {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-hell);
-  font-size: 1.2rem;
-}
-
-.filter-select {
-  padding: 0.5rem 1rem;
-  background: var(--hintergrund-hauptfarbe);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--rand-farbe);
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-  color: var(--text-hauptfarbe);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 180px;
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
-}
-
-.filter-select option {
-  background: var(--bg-secondary);
-  color: var(--text-hauptfarbe);
-}
+/* Controls section removed - now in header */
 
 /* ============================================
    GROUPS CONTAINER
