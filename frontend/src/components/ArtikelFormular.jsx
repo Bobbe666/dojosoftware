@@ -77,7 +77,9 @@ const ArtikelFormular = ({ mode }) => {
     custom_groesse: '',
     custom_farbe_name: '',
     custom_farbe_hex: '#000000',
-    custom_material: ''
+    custom_material: '',
+    // Varianten-Bestand (key: "groesse|farbe|material", value: {bestand, mindestbestand})
+    varianten_bestand: {}
   });
 
   // API Call Helper
@@ -780,71 +782,59 @@ const ArtikelFormular = ({ mode }) => {
     fontWeight: 500
   };
 
-  const renderTabLager = () => (
-    <div className="tab-content-section">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={basisLabelStyle}>Aktueller Bestand</label>
-          <input
-            type="number"
-            name="lagerbestand"
-            value={formData.lagerbestand}
-            onChange={handleInputChange}
-            min="0"
-            style={{
-              ...basisInputStyle,
-              opacity: formData.lager_tracking ? 1 : 0.5,
-              cursor: formData.lager_tracking ? 'text' : 'not-allowed'
-            }}
-            placeholder="0"
-            disabled={!formData.lager_tracking}
-          />
-        </div>
+  // Varianten-Kombinationen generieren
+  const getVariantenKombinationen = () => {
+    const groessen = formData.varianten_groessen.length > 0 ? formData.varianten_groessen : [''];
+    const farben = formData.varianten_farben.length > 0 ? formData.varianten_farben : [{ name: '', hex: '' }];
+    const materialien = formData.varianten_material.length > 0 ? formData.varianten_material : [''];
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={basisLabelStyle}>Mindestbestand</label>
-          <input
-            type="number"
-            name="mindestbestand"
-            value={formData.mindestbestand}
-            onChange={handleInputChange}
-            min="0"
-            style={{
-              ...basisInputStyle,
-              opacity: formData.lager_tracking ? 1 : 0.5,
-              cursor: formData.lager_tracking ? 'text' : 'not-allowed'
-            }}
-            placeholder="0"
-            disabled={!formData.lager_tracking}
-          />
-        </div>
+    const kombinationen = [];
+    groessen.forEach(g => {
+      farben.forEach(f => {
+        materialien.forEach(m => {
+          const key = `${g}|${f.name}|${m}`;
+          kombinationen.push({
+            key,
+            groesse: g,
+            farbe: f,
+            material: m,
+            label: [g, f.name, m].filter(Boolean).join(' / ') || 'Standard'
+          });
+        });
+      });
+    });
+    return kombinationen;
+  };
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={basisLabelStyle}>Artikelfarbe</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              type="color"
-              name="farbe_hex"
-              value={formData.farbe_hex}
-              onChange={handleInputChange}
-              style={{ width: '60px', height: '46px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #dee2e6' }}
-            />
-            <input
-              type="text"
-              value={formData.farbe_hex}
-              onChange={(e) => setFormData(prev => ({...prev, farbe_hex: e.target.value}))}
-              style={basisInputStyle}
-              placeholder="#FFFFFF"
-            />
-          </div>
-        </div>
+  // Varianten-Bestand aktualisieren
+  const updateVariantenBestand = (key, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      varianten_bestand: {
+        ...prev.varianten_bestand,
+        [key]: {
+          ...(prev.varianten_bestand[key] || { bestand: 0, mindestbestand: 0 }),
+          [field]: parseInt(value) || 0
+        }
+      }
+    }));
+  };
 
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+  const renderTabLager = () => {
+    const hatVarianten = formData.hat_varianten &&
+      (formData.varianten_groessen.length > 0 || formData.varianten_farben.length > 0 || formData.varianten_material.length > 0);
+    const kombinationen = hatVarianten ? getVariantenKombinationen() : [];
+
+    return (
+      <div className="tab-content-section" style={{ overflow: 'auto' }}>
+        {/* Lager-Tracking Checkbox */}
+        <div style={{ marginBottom: '1.5rem' }}>
           <label
             style={{
               ...checkboxContainerStyle,
               borderColor: formData.lager_tracking ? '#6B4423' : '#dee2e6',
-              background: formData.lager_tracking ? 'rgba(107, 68, 35, 0.05)' : '#ffffff'
+              background: formData.lager_tracking ? 'rgba(107, 68, 35, 0.05)' : '#ffffff',
+              maxWidth: '400px'
             }}
           >
             <input
@@ -859,9 +849,265 @@ const ArtikelFormular = ({ mode }) => {
             </span>
           </label>
         </div>
+
+        {formData.lager_tracking && (
+          <>
+            {/* Ohne Varianten: Einfache Bestandseingabe */}
+            {!hatVarianten && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', maxWidth: '800px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={basisLabelStyle}>Aktueller Bestand</label>
+                  <input
+                    type="number"
+                    name="lagerbestand"
+                    value={formData.lagerbestand}
+                    onChange={handleInputChange}
+                    min="0"
+                    style={basisInputStyle}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={basisLabelStyle}>Mindestbestand</label>
+                  <input
+                    type="number"
+                    name="mindestbestand"
+                    value={formData.mindestbestand}
+                    onChange={handleInputChange}
+                    min="0"
+                    style={basisInputStyle}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label style={basisLabelStyle}>Artikelfarbe</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="color"
+                      name="farbe_hex"
+                      value={formData.farbe_hex}
+                      onChange={handleInputChange}
+                      style={{ width: '60px', height: '46px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #dee2e6' }}
+                    />
+                    <input
+                      type="text"
+                      value={formData.farbe_hex}
+                      onChange={(e) => setFormData(prev => ({...prev, farbe_hex: e.target.value}))}
+                      style={basisInputStyle}
+                      placeholder="#FFFFFF"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mit Varianten: Bestandstabelle für alle Kombinationen */}
+            {hatVarianten && (
+              <div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(107, 68, 35, 0.05)',
+                  borderRadius: '8px'
+                }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.1rem' }}>
+                      📊 Varianten-Bestand ({kombinationen.length} Kombinationen)
+                    </h3>
+                    <p style={{ margin: '0.25rem 0 0 0', color: '#6c757d', fontSize: '0.9rem' }}>
+                      Erfassen Sie den Bestand für jede Variante
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <span style={{ padding: '0.5rem 1rem', background: '#6B4423', color: '#fff', borderRadius: '20px', fontSize: '0.85rem' }}>
+                      {formData.varianten_groessen.length} Größen
+                    </span>
+                    <span style={{ padding: '0.5rem 1rem', background: '#6B4423', color: '#fff', borderRadius: '20px', fontSize: '0.85rem' }}>
+                      {formData.varianten_farben.length} Farben
+                    </span>
+                    <span style={{ padding: '0.5rem 1rem', background: '#6B4423', color: '#fff', borderRadius: '20px', fontSize: '0.85rem' }}>
+                      {formData.varianten_material.length} Material
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bestandstabelle */}
+                <div style={{
+                  background: '#ffffff',
+                  border: '2px solid #dee2e6',
+                  borderRadius: '12px',
+                  overflow: 'hidden'
+                }}>
+                  {/* Tabellen-Header */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 120px',
+                    gap: '1rem',
+                    padding: '1rem 1.5rem',
+                    background: '#f8f9fa',
+                    borderBottom: '2px solid #dee2e6',
+                    fontWeight: 600,
+                    color: '#6B4423',
+                    fontSize: '0.9rem'
+                  }}>
+                    <span>Variante</span>
+                    <span>Bestand</span>
+                    <span>Mindestbestand</span>
+                    <span>Status</span>
+                  </div>
+
+                  {/* Tabellen-Inhalt */}
+                  <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {kombinationen.map((kombi, index) => {
+                      const bestandData = formData.varianten_bestand[kombi.key] || { bestand: 0, mindestbestand: 0 };
+                      const istKritisch = bestandData.bestand <= bestandData.mindestbestand && bestandData.mindestbestand > 0;
+                      const istLeer = bestandData.bestand === 0;
+
+                      return (
+                        <div
+                          key={kombi.key}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 1fr 1fr 120px',
+                            gap: '1rem',
+                            padding: '0.75rem 1.5rem',
+                            borderBottom: index < kombinationen.length - 1 ? '1px solid #e9ecef' : 'none',
+                            background: istLeer ? 'rgba(239, 68, 68, 0.05)' : istKritisch ? 'rgba(234, 179, 8, 0.1)' : '#ffffff',
+                            alignItems: 'center'
+                          }}
+                        >
+                          {/* Varianten-Label */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {kombi.farbe.hex && (
+                              <span style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                background: kombi.farbe.hex,
+                                border: kombi.farbe.hex === '#FFFFFF' ? '1px solid #dee2e6' : 'none',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                                flexShrink: 0
+                              }} />
+                            )}
+                            <span style={{ color: '#2c3e50', fontWeight: 500 }}>
+                              {kombi.label}
+                            </span>
+                          </div>
+
+                          {/* Bestand Input */}
+                          <input
+                            type="number"
+                            value={bestandData.bestand}
+                            onChange={(e) => updateVariantenBestand(kombi.key, 'bestand', e.target.value)}
+                            min="0"
+                            style={{
+                              ...basisInputStyle,
+                              padding: '0.5rem 0.75rem',
+                              fontSize: '0.95rem',
+                              textAlign: 'center'
+                            }}
+                          />
+
+                          {/* Mindestbestand Input */}
+                          <input
+                            type="number"
+                            value={bestandData.mindestbestand}
+                            onChange={(e) => updateVariantenBestand(kombi.key, 'mindestbestand', e.target.value)}
+                            min="0"
+                            style={{
+                              ...basisInputStyle,
+                              padding: '0.5rem 0.75rem',
+                              fontSize: '0.95rem',
+                              textAlign: 'center'
+                            }}
+                          />
+
+                          {/* Status */}
+                          <span style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            textAlign: 'center',
+                            background: istLeer ? '#fef2f2' : istKritisch ? '#fef3c7' : '#ecfdf5',
+                            color: istLeer ? '#dc2626' : istKritisch ? '#d97706' : '#047857',
+                            border: `1px solid ${istLeer ? '#fca5a5' : istKritisch ? '#fcd34d' : '#6ee7b7'}`
+                          }}>
+                            {istLeer ? '❌ Leer' : istKritisch ? '⚠️ Kritisch' : '✓ OK'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Zusammenfassung */}
+                <div style={{
+                  marginTop: '1.5rem',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '1rem'
+                }}>
+                  <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
+                    <p style={{ color: '#6c757d', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Gesamtbestand</p>
+                    <p style={{ color: '#6B4423', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+                      {Object.values(formData.varianten_bestand).reduce((sum, v) => sum + (v.bestand || 0), 0)}
+                    </p>
+                  </div>
+                  <div style={{ padding: '1rem', background: '#ecfdf5', borderRadius: '8px', textAlign: 'center' }}>
+                    <p style={{ color: '#047857', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Verfügbar</p>
+                    <p style={{ color: '#047857', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+                      {kombinationen.filter(k => {
+                        const b = formData.varianten_bestand[k.key];
+                        return b && b.bestand > b.mindestbestand;
+                      }).length}
+                    </p>
+                  </div>
+                  <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', textAlign: 'center' }}>
+                    <p style={{ color: '#d97706', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Kritisch</p>
+                    <p style={{ color: '#d97706', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+                      {kombinationen.filter(k => {
+                        const b = formData.varianten_bestand[k.key];
+                        return b && b.bestand <= b.mindestbestand && b.bestand > 0;
+                      }).length}
+                    </p>
+                  </div>
+                  <div style={{ padding: '1rem', background: '#fef2f2', borderRadius: '8px', textAlign: 'center' }}>
+                    <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Leer</p>
+                    <p style={{ color: '#dc2626', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+                      {kombinationen.filter(k => {
+                        const b = formData.varianten_bestand[k.key];
+                        return !b || b.bestand === 0;
+                      }).length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {!formData.lager_tracking && (
+          <div style={{
+            padding: '2rem',
+            background: '#f8f9fa',
+            borderRadius: '12px',
+            textAlign: 'center',
+            color: '#6c757d'
+          }}>
+            <p style={{ fontSize: '1.1rem', margin: 0 }}>
+              📦 Aktivieren Sie die Lagerbestandsverfolgung, um den Bestand zu verwalten.
+            </p>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTabEinstellungen = () => (
     <div className="tab-content-section">
