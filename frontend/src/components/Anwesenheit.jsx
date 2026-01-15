@@ -103,11 +103,11 @@ const Anwesenheit = () => {
 
       // 🔒 Dojo-Filter für Multi-Tenant Unterstützung
       const dojoParam = getDojoFilterParam();
-      const url = dojoParam ? `/api/anwesenheit/kurse/${datum}?${dojoParam}` : `/api/anwesenheit/kurse/${datum}`;
+      const url = dojoParam ? `${config.apiBaseUrl}/anwesenheit/kurse/${datum}?${dojoParam}` : `${config.apiBaseUrl}/anwesenheit/kurse/${datum}`;
       console.log('📅 Lade Kurse:', url, 'activeDojo:', activeDojo);
 
-      const response = await axios.get(url);
-      const data = response.data;
+      const response = await fetchWithAuth(url);
+      const data = await response.json();
       
       if (data.success) {
         setGefilterteStunden(data.kurse);
