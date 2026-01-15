@@ -85,6 +85,8 @@ const formatArtikel = (artikel) => ({
   varianten_farben: artikel.varianten_farben ? (typeof artikel.varianten_farben === 'string' ? JSON.parse(artikel.varianten_farben) : artikel.varianten_farben) : [],
   varianten_material: artikel.varianten_material ? (typeof artikel.varianten_material === 'string' ? JSON.parse(artikel.varianten_material) : artikel.varianten_material) : [],
   varianten_bestand: artikel.varianten_bestand ? (typeof artikel.varianten_bestand === 'string' ? JSON.parse(artikel.varianten_bestand) : artikel.varianten_bestand) : {},
+  groessen_kids: artikel.groessen_kids ? (typeof artikel.groessen_kids === 'string' ? JSON.parse(artikel.groessen_kids) : artikel.groessen_kids) : ['100', '110', '120', '130', '140', '150'],
+  groessen_erwachsene: artikel.groessen_erwachsene ? (typeof artikel.groessen_erwachsene === 'string' ? JSON.parse(artikel.groessen_erwachsene) : artikel.groessen_erwachsene) : ['160', '170', '180', '190', '200', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
   lager_status: artikel.lagerbestand <= artikel.mindestbestand ?
     (artikel.lagerbestand === 0 ? 'ausverkauft' : 'nachbestellen') : 'verfuegbar'
 });
@@ -459,7 +461,8 @@ router.post('/', (req, res) => {
     farbe_hex, aktiv, sichtbar_kasse,
     // Varianten-Felder
     hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
-    preis_kids_euro, preis_erwachsene_euro
+    preis_kids_euro, preis_erwachsene_euro,
+    hat_preiskategorien, groessen_kids, groessen_erwachsene
   } = req.body;
 
   // Validierung
@@ -503,8 +506,8 @@ router.post('/', (req, res) => {
       lagerbestand, mindestbestand, lager_tracking,
       bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse, dojo_id,
       hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
-      preis_kids_cent, preis_erwachsene_cent
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      preis_kids_cent, preis_erwachsene_cent, hat_preiskategorien, groessen_kids, groessen_erwachsene
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -521,7 +524,10 @@ router.post('/', (req, res) => {
     varianten_farben ? JSON.stringify(varianten_farben) : null,
     varianten_material ? JSON.stringify(varianten_material) : null,
     varianten_bestand ? JSON.stringify(varianten_bestand) : null,
-    preis_kids_cent, preis_erwachsene_cent
+    preis_kids_cent, preis_erwachsene_cent,
+    hat_preiskategorien ? 1 : 0,
+    groessen_kids ? JSON.stringify(groessen_kids) : null,
+    groessen_erwachsene ? JSON.stringify(groessen_erwachsene) : null
   ];
   
   db.query(query, params, (error, results) => {
@@ -582,7 +588,8 @@ router.put('/:id', (req, res) => {
     farbe_hex, aktiv, sichtbar_kasse,
     // Varianten-Felder
     hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
-    preis_kids_euro, preis_erwachsene_euro
+    preis_kids_euro, preis_erwachsene_euro,
+    hat_preiskategorien, groessen_kids, groessen_erwachsene
   } = req.body;
 
   // Zuerst aktuellen Artikel abrufen
@@ -682,6 +689,18 @@ router.put('/:id', (req, res) => {
       const preis_erwachsene_cent = preis_erwachsene_euro ? Math.round(parseFloat(preis_erwachsene_euro) * 100) : null;
       updateFields.push('preis_erwachsene_cent = ?');
       updateValues.push(preis_erwachsene_cent);
+    }
+    if (hat_preiskategorien !== undefined) {
+      updateFields.push('hat_preiskategorien = ?');
+      updateValues.push(hat_preiskategorien ? 1 : 0);
+    }
+    if (groessen_kids !== undefined) {
+      updateFields.push('groessen_kids = ?');
+      updateValues.push(groessen_kids ? JSON.stringify(groessen_kids) : null);
+    }
+    if (groessen_erwachsene !== undefined) {
+      updateFields.push('groessen_erwachsene = ?');
+      updateValues.push(groessen_erwachsene ? JSON.stringify(groessen_erwachsene) : null);
     }
 
     // TODO: Bild-Upload für Updates implementieren
