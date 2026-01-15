@@ -77,6 +77,14 @@ const formatArtikel = (artikel) => ({
   // Handelskalkulation - Bezugskalkulation
   listeneinkaufspreis_euro: artikel.listeneinkaufspreis_cent ? artikel.listeneinkaufspreis_cent / 100 : 0,
   bezugskosten_euro: artikel.bezugskosten_cent ? artikel.bezugskosten_cent / 100 : 0,
+  // Varianten-Preise
+  preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
+  preis_erwachsene_euro: artikel.preis_erwachsene_cent ? artikel.preis_erwachsene_cent / 100 : null,
+  // JSON-Felder parsen
+  varianten_groessen: artikel.varianten_groessen ? (typeof artikel.varianten_groessen === 'string' ? JSON.parse(artikel.varianten_groessen) : artikel.varianten_groessen) : [],
+  varianten_farben: artikel.varianten_farben ? (typeof artikel.varianten_farben === 'string' ? JSON.parse(artikel.varianten_farben) : artikel.varianten_farben) : [],
+  varianten_material: artikel.varianten_material ? (typeof artikel.varianten_material === 'string' ? JSON.parse(artikel.varianten_material) : artikel.varianten_material) : [],
+  varianten_bestand: artikel.varianten_bestand ? (typeof artikel.varianten_bestand === 'string' ? JSON.parse(artikel.varianten_bestand) : artikel.varianten_bestand) : {},
   lager_status: artikel.lagerbestand <= artikel.mindestbestand ?
     (artikel.lagerbestand === 0 ? 'ausverkauft' : 'nachbestellen') : 'verfuegbar'
 });
@@ -448,7 +456,10 @@ router.post('/', (req, res) => {
     gemeinkosten_prozent, gewinnzuschlag_prozent,
     kundenskonto_prozent, kundenrabatt_prozent,
     lagerbestand, mindestbestand, lager_tracking,
-    farbe_hex, aktiv, sichtbar_kasse
+    farbe_hex, aktiv, sichtbar_kasse,
+    // Varianten-Felder
+    hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
+    preis_kids_euro, preis_erwachsene_euro
   } = req.body;
 
   // Validierung
@@ -474,6 +485,10 @@ router.post('/', (req, res) => {
   const kundenskonto_p = kundenskonto_prozent ? parseFloat(kundenskonto_prozent) : 0;
   const kundenrabatt_p = kundenrabatt_prozent ? parseFloat(kundenrabatt_prozent) : 0;
 
+  // Varianten-Preise in Cent
+  const preis_kids_cent = preis_kids_euro ? Math.round(parseFloat(preis_kids_euro) * 100) : null;
+  const preis_erwachsene_cent = preis_erwachsene_euro ? Math.round(parseFloat(preis_erwachsene_euro) * 100) : null;
+
   // TODO: Bild-Upload implementieren
   let bild_url = null;
   let bild_base64 = null;
@@ -486,8 +501,10 @@ router.post('/', (req, res) => {
       gemeinkosten_prozent, gewinnzuschlag_prozent,
       kundenskonto_prozent, kundenrabatt_prozent,
       lagerbestand, mindestbestand, lager_tracking,
-      bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse, dojo_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse, dojo_id,
+      hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
+      preis_kids_cent, preis_erwachsene_cent
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -498,7 +515,13 @@ router.post('/', (req, res) => {
     kundenskonto_p, kundenrabatt_p,
     lagerbestand || 0, mindestbestand || 0, lager_tracking !== 'false',
     bild_url, bild_base64, farbe_hex || '#FFFFFF',
-    aktiv !== 'false', sichtbar_kasse !== 'false', dojoId
+    aktiv !== 'false', sichtbar_kasse !== 'false', dojoId,
+    hat_varianten ? 1 : 0,
+    varianten_groessen ? JSON.stringify(varianten_groessen) : null,
+    varianten_farben ? JSON.stringify(varianten_farben) : null,
+    varianten_material ? JSON.stringify(varianten_material) : null,
+    varianten_bestand ? JSON.stringify(varianten_bestand) : null,
+    preis_kids_cent, preis_erwachsene_cent
   ];
   
   db.query(query, params, (error, results) => {
@@ -556,7 +579,10 @@ router.put('/:id', (req, res) => {
     gemeinkosten_prozent, gewinnzuschlag_prozent,
     kundenskonto_prozent, kundenrabatt_prozent,
     lagerbestand, mindestbestand, lager_tracking,
-    farbe_hex, aktiv, sichtbar_kasse
+    farbe_hex, aktiv, sichtbar_kasse,
+    // Varianten-Felder
+    hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
+    preis_kids_euro, preis_erwachsene_euro
   } = req.body;
 
   // Zuerst aktuellen Artikel abrufen
@@ -624,6 +650,38 @@ router.put('/:id', (req, res) => {
       const bezugskosten_cent = Math.round(parseFloat(bezugskosten_euro || 0) * 100);
       updateFields.push('bezugskosten_cent = ?');
       updateValues.push(bezugskosten_cent);
+    }
+
+    // Varianten-Felder
+    if (hat_varianten !== undefined) {
+      updateFields.push('hat_varianten = ?');
+      updateValues.push(hat_varianten ? 1 : 0);
+    }
+    if (varianten_groessen !== undefined) {
+      updateFields.push('varianten_groessen = ?');
+      updateValues.push(varianten_groessen ? JSON.stringify(varianten_groessen) : null);
+    }
+    if (varianten_farben !== undefined) {
+      updateFields.push('varianten_farben = ?');
+      updateValues.push(varianten_farben ? JSON.stringify(varianten_farben) : null);
+    }
+    if (varianten_material !== undefined) {
+      updateFields.push('varianten_material = ?');
+      updateValues.push(varianten_material ? JSON.stringify(varianten_material) : null);
+    }
+    if (varianten_bestand !== undefined) {
+      updateFields.push('varianten_bestand = ?');
+      updateValues.push(varianten_bestand ? JSON.stringify(varianten_bestand) : null);
+    }
+    if (preis_kids_euro !== undefined) {
+      const preis_kids_cent = preis_kids_euro ? Math.round(parseFloat(preis_kids_euro) * 100) : null;
+      updateFields.push('preis_kids_cent = ?');
+      updateValues.push(preis_kids_cent);
+    }
+    if (preis_erwachsene_euro !== undefined) {
+      const preis_erwachsene_cent = preis_erwachsene_euro ? Math.round(parseFloat(preis_erwachsene_euro) * 100) : null;
+      updateFields.push('preis_erwachsene_cent = ?');
+      updateValues.push(preis_erwachsene_cent);
     }
 
     // TODO: Bild-Upload für Updates implementieren

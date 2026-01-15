@@ -47,6 +47,7 @@ const ArtikelFormular = ({ mode }) => {
     beschreibung: '',
     ean_code: '',
     artikel_nummer: '',
+    artikel_nummer_basis: '', // Basis-Artikelnummer ohne Varianten-Suffix
     artikel_nummer_auto: true, // Auto-generieren aktiviert
     // Handelskalkulation
     listeneinkaufspreis_euro: '',
@@ -79,7 +80,10 @@ const ArtikelFormular = ({ mode }) => {
     custom_farbe_hex: '#000000',
     custom_material: '',
     // Varianten-Bestand (key: "groesse|farbe|material", value: {bestand, mindestbestand})
-    varianten_bestand: {}
+    varianten_bestand: {},
+    // Varianten-Preise (Kids 100-150 vs Erwachsene)
+    preis_kids_euro: '',
+    preis_erwachsene_euro: ''
   });
 
   // API Call Helper
@@ -171,8 +175,8 @@ const ArtikelFormular = ({ mode }) => {
       const response = await apiCall('');
       const existingArtikel = response.data || [];
 
-      // Find all artikel numbers with this prefix
-      const prefixPattern = new RegExp(`^${prefix}(\\d+)$`);
+      // Find all artikel numbers with this prefix (without suffix)
+      const prefixPattern = new RegExp(`^${prefix}(\\d+)`);
       let maxNum = 0;
 
       existingArtikel.forEach(art => {
@@ -194,6 +198,54 @@ const ArtikelFormular = ({ mode }) => {
     }
   };
 
+  // Generate variant suffix for article number
+  const getVariantenSuffix = () => {
+    const parts = [];
+
+    // Add size codes
+    if (formData.varianten_groessen.length > 0) {
+      // Show abbreviated sizes
+      const sizeAbbr = formData.varianten_groessen.map(g => {
+        // For numeric sizes, keep as is
+        if (/^\d+$/.test(g)) return g;
+        // For letter sizes, keep first letter(s)
+        return g.substring(0, 2).toUpperCase();
+      }).slice(0, 3).join('/');
+      if (formData.varianten_groessen.length > 3) {
+        parts.push(`${sizeAbbr}+${formData.varianten_groessen.length - 3}`);
+      } else {
+        parts.push(sizeAbbr);
+      }
+    }
+
+    // Add color codes
+    if (formData.varianten_farben.length > 0) {
+      const colorAbbr = formData.varianten_farben.map(f =>
+        f.name.substring(0, 2).toUpperCase()
+      ).slice(0, 3).join('/');
+      if (formData.varianten_farben.length > 3) {
+        parts.push(`${colorAbbr}+${formData.varianten_farben.length - 3}`);
+      } else {
+        parts.push(colorAbbr);
+      }
+    }
+
+    return parts.length > 0 ? '-' + parts.join('-') : '';
+  };
+
+  // Update article number when variants change
+  const updateArtikelNummerMitVarianten = () => {
+    if (!formData.artikel_nummer_basis) return;
+
+    const suffix = formData.hat_varianten ? getVariantenSuffix() : '';
+    const newNummer = formData.artikel_nummer_basis + suffix;
+
+    setFormData(prev => ({
+      ...prev,
+      artikel_nummer: newNummer
+    }));
+  };
+
   // Handle Input Change
   const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
@@ -210,11 +262,26 @@ const ArtikelFormular = ({ mode }) => {
       if (autoNummer) {
         setFormData(prev => ({
           ...prev,
-          artikel_nummer: autoNummer
+          artikel_nummer: autoNummer,
+          artikel_nummer_basis: autoNummer
         }));
       }
     }
   };
+
+  // Update article number when variants change
+  useEffect(() => {
+    if (formData.artikel_nummer_basis && formData.hat_varianten) {
+      const suffix = getVariantenSuffix();
+      const newNummer = formData.artikel_nummer_basis + suffix;
+      if (newNummer !== formData.artikel_nummer) {
+        setFormData(prev => ({
+          ...prev,
+          artikel_nummer: newNummer
+        }));
+      }
+    }
+  }, [formData.varianten_groessen, formData.varianten_farben, formData.hat_varianten]);
 
   // Save Artikel
   const handleSave = async () => {
@@ -586,6 +653,115 @@ const ArtikelFormular = ({ mode }) => {
                 </div>
               </div>
             </div>
+
+            {/* Varianten-Preise (Kids vs Erwachsene) */}
+            {formData.hat_varianten && formData.varianten_groessen.length > 0 && (
+              <div style={{marginTop: '1.2rem', marginBottom: '1rem'}}>
+                <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+                  👶🧑 Varianten-Preise (Größenabhängig)
+                </h4>
+                <p style={{fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.75rem'}}>
+                  Kids-Größen: 100-150cm | Erwachsene: 160-200cm, S-3XL
+                </p>
+                <div className="form-grid" style={{gap: '0.8rem'}}>
+                  <div className="form-group">
+                    <label style={{fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                      <span style={{fontSize: '1rem'}}>👶</span> Preis Kids (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="preis_kids_euro"
+                      value={formData.preis_kids_euro}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      className="form-input"
+                      placeholder={nettoverkaufspreis > 0 ? `z.B. ${(nettoverkaufspreis * 0.8).toFixed(2)}` : '0.00'}
+                      style={{height: '36px'}}
+                    />
+                    <small style={{color: '#6c757d', fontSize: '0.75rem'}}>Für Größen 100-150</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                      <span style={{fontSize: '1rem'}}>🧑</span> Preis Erwachsene (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="preis_erwachsene_euro"
+                      value={formData.preis_erwachsene_euro}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      className="form-input"
+                      placeholder={nettoverkaufspreis > 0 ? nettoverkaufspreis.toFixed(2) : '0.00'}
+                      style={{height: '36px'}}
+                    />
+                    <small style={{color: '#6c757d', fontSize: '0.75rem'}}>Für Größen 160-200, S-3XL</small>
+                  </div>
+                </div>
+
+                {/* Quick-Fill Buttons */}
+                {nettoverkaufspreis > 0 && (
+                  <div style={{marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        preis_kids_euro: (nettoverkaufspreis * 0.7).toFixed(2),
+                        preis_erwachsene_euro: nettoverkaufspreis.toFixed(2)
+                      }))}
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        background: '#f8f9fa',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Kids -30%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        preis_kids_euro: (nettoverkaufspreis * 0.8).toFixed(2),
+                        preis_erwachsene_euro: nettoverkaufspreis.toFixed(2)
+                      }))}
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        background: '#f8f9fa',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Kids -20%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        preis_kids_euro: nettoverkaufspreis.toFixed(2),
+                        preis_erwachsene_euro: nettoverkaufspreis.toFixed(2)
+                      }))}
+                      style={{
+                        padding: '0.4rem 0.75rem',
+                        background: '#f8f9fa',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Gleicher Preis
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Button: Neuen Preis übernehmen */}
             {listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
