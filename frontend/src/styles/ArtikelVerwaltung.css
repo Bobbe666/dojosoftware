@@ -657,135 +657,144 @@
 }
 
 /* ============================================
-   LAGER MODAL - MINIMAL KOMPAKT
+   LAGER MODAL - KOMPAKT & HELL
    ============================================ */
 
 .lager-modal-overlay {
-  background: rgba(0, 0, 0, 0.5) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
   backdrop-filter: blur(4px) !important;
 }
 
 .lager-modal {
-  max-width: 280px !important;
-  width: 280px !important;
-  border-radius: 6px !important;
+  max-width: 260px !important;
+  width: 260px !important;
+  border-radius: 8px !important;
   overflow: hidden !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
   padding: 0 !important;
+  background: #ffffff !important;
 }
 
 .lager-modal-header {
-  padding: 8px 10px !important;
-  background: var(--hintergrund-hauptfarbe) !important;
-  border-bottom: 1px solid var(--rand-farbe) !important;
+  padding: 10px 12px !important;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+  border-bottom: 1px solid #e9ecef !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
 }
 
 .lager-modal-header h2 {
-  font-size: 13px !important;
+  font-size: 14px !important;
   margin: 0 !important;
   padding: 0 !important;
   background: none !important;
-  -webkit-text-fill-color: var(--text-hauptfarbe) !important;
-  color: var(--text-hauptfarbe) !important;
+  -webkit-text-fill-color: #2c3e50 !important;
+  color: #2c3e50 !important;
   font-weight: 600 !important;
 }
 
 .lager-modal .close-btn {
-  width: 20px !important;
-  height: 20px !important;
+  width: 22px !important;
+  height: 22px !important;
   font-size: 16px !important;
   padding: 0 !important;
   margin: 0 !important;
   line-height: 1 !important;
+  color: #6c757d !important;
+  background: transparent !important;
+  border-radius: 4px !important;
+}
+
+.lager-modal .close-btn:hover {
+  background: #f1f3f4 !important;
+  color: #2c3e50 !important;
 }
 
 .lager-modal-body {
-  padding: 10px !important;
-  background: var(--hintergrund-hauptfarbe) !important;
+  padding: 12px !important;
+  background: #ffffff !important;
 }
 
 .lager-modal .artikel-info-card {
-  background: var(--hintergrund-hover) !important;
-  border: 1px solid var(--rand-farbe) !important;
-  border-radius: 4px !important;
-  padding: 6px 8px !important;
-  margin-bottom: 8px !important;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+  border: 1px solid #e9ecef !important;
+  border-radius: 6px !important;
+  padding: 8px 10px !important;
+  margin-bottom: 10px !important;
 }
 
 .lager-modal .artikel-info-card h4 {
-  margin: 0 0 4px 0 !important;
+  margin: 0 0 6px 0 !important;
   padding: 0 !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
-  color: var(--text-hauptfarbe) !important;
-  line-height: 1.2 !important;
+  color: #2c3e50 !important;
+  line-height: 1.3 !important;
 }
 
 .lager-modal .info-grid {
   display: flex !important;
-  gap: 12px !important;
+  gap: 16px !important;
 }
 
 .lager-modal .info-item {
   display: flex !important;
   flex-direction: column !important;
-  gap: 0 !important;
+  gap: 1px !important;
 }
 
 .lager-modal .info-label {
   font-size: 10px !important;
-  color: var(--text-sekundaer) !important;
+  color: #6c757d !important;
   line-height: 1.2 !important;
 }
 
 .lager-modal .info-value {
-  font-size: 13px !important;
+  font-size: 14px !important;
   font-weight: 600 !important;
-  color: var(--text-hauptfarbe) !important;
-  line-height: 1.2 !important;
+  color: #2c3e50 !important;
+  line-height: 1.3 !important;
 }
 
 .lager-modal .lager-form {
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
+  gap: 8px !important;
 }
 
 .lager-modal .form-row {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 6px !important;
+  gap: 8px !important;
 }
 
 .lager-modal .form-group {
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  gap: 3px !important;
 }
 
 .lager-modal .form-group label {
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 500 !important;
-  color: var(--text-hauptfarbe) !important;
+  color: #495057 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
 .lager-modal .form-select,
 .lager-modal .form-input {
-  padding: 4px 6px !important;
-  border: 1px solid var(--rand-farbe) !important;
-  border-radius: 3px !important;
-  font-size: 12px !important;
-  background: var(--hintergrund-hover) !important;
-  color: var(--text-hauptfarbe) !important;
-  transition: border-color 0.2s ease !important;
-  height: 26px !important;
-  min-height: 26px !important;
-  max-height: 26px !important;
+  padding: 6px 8px !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  background: #ffffff !important;
+  color: #2c3e50 !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
   box-sizing: border-box !important;
   margin: 0 !important;
   width: 100% !important;
@@ -794,28 +803,29 @@
 .lager-modal .form-select:focus,
 .lager-modal .form-input:focus {
   outline: none !important;
-  border-color: var(--farbe-hauptfarbe) !important;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15) !important;
 }
 
 .lager-modal-footer {
-  padding: 8px 10px !important;
-  background: var(--hintergrund-hauptfarbe) !important;
-  border-top: 1px solid var(--rand-farbe) !important;
+  padding: 10px 12px !important;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+  border-top: 1px solid #e9ecef !important;
   display: flex !important;
   justify-content: flex-end !important;
-  gap: 6px !important;
+  gap: 8px !important;
 }
 
 .lager-modal .btn-secondary,
 .lager-modal .btn-primary {
-  padding: 4px 10px !important;
-  border-radius: 3px !important;
-  font-size: 11px !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  height: 24px !important;
-  min-height: 24px !important;
-  max-height: 24px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
   box-sizing: border-box !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -824,24 +834,25 @@
 }
 
 .lager-modal .btn-secondary {
-  background: transparent !important;
-  border: 1px solid var(--rand-farbe) !important;
-  color: var(--text-hauptfarbe) !important;
+  background: #ffffff !important;
+  border: 1px solid #dee2e6 !important;
+  color: #495057 !important;
 }
 
 .lager-modal .btn-secondary:hover {
-  background: var(--hintergrund-hover) !important;
+  background: #f8f9fa !important;
+  border-color: #adb5bd !important;
 }
 
 .lager-modal .btn-primary {
-  background: var(--farbe-hauptfarbe) !important;
+  background: #007bff !important;
   border: none !important;
-  color: var(--text-auf-akzent) !important;
+  color: #ffffff !important;
   font-weight: 500 !important;
 }
 
 .lager-modal .btn-primary:hover {
-  filter: brightness(1.1) !important;
+  background: #0056b3 !important;
 }
 
 /* ============================================
