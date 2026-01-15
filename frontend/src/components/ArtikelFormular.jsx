@@ -766,7 +766,12 @@ const ArtikelFormular = ({ mode }) => {
     width: '22px',
     height: '22px',
     accentColor: '#6B4423',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    appearance: 'auto',
+    WebkitAppearance: 'checkbox',
+    MozAppearance: 'checkbox',
+    opacity: 1,
+    position: 'relative'
   };
 
   const checkboxLabelTextStyle = {
