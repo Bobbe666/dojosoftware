@@ -32,10 +32,11 @@ const config = {
   // App-Einstellungen
   app: {
     name: 'DojoSoftware',
-    version: '2.0.1-hotfix',
+    version: '2.1.0',
     description: 'Kampfkunstschule Verwaltungssystem',
     author: 'DojoSoft Team',
-    buildDate: '2026-01-11T15:00:00.000Z',
+    buildDate: '2026-01-15',
+    contactEmail: 'support@tda-intl.org',
   },
   
   // UI-Einstellungen

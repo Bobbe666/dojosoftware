@@ -95,6 +95,17 @@
   flex-shrink: 0 !important;
 }
 
+.version-badge {
+  background: var(--primary-alpha-20);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--primary-alpha-30);
+  white-space: nowrap;
+}
+
 .dashboard-logo {
   height: 50px !important;
   width: auto !important;

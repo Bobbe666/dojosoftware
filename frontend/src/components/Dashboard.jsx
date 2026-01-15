@@ -209,7 +209,8 @@ function Dashboard() {
     { id: 'personal', label: 'Personal', icon: '👨‍🏫' },
     { id: 'berichte', label: 'Berichte', icon: '📊' },
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' },
-    { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' }
+    { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' },
+    { id: 'info', label: 'Info', icon: 'ℹ️' }
   ];
 
   const tabs = baseTabs;
@@ -670,6 +671,7 @@ function Dashboard() {
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
           <h2>{headerTitle}</h2>
+          <span className="version-badge">v{config.app.version}</span>
         </div>
         <div className="dashboard-header-right">
           {role === 'admin' && <DojoSwitcher />}
@@ -1242,6 +1244,72 @@ function Dashboard() {
                             >
                               🔄 {loading ? 'Lädt...' : 'Statistiken aktualisieren'}
                             </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ℹ️ Info Tab ℹ️ */}
+                      {activeTab === 'info' && (
+                        <div className="nav-section">
+                          <h2 className="section-header">ℹ️ Systeminformationen</h2>
+                          <div className="info-container" style={{
+                            background: 'var(--glass-bg)',
+                            borderRadius: '16px',
+                            padding: '2rem',
+                            border: '1px solid var(--border-accent)',
+                            maxWidth: '600px',
+                            margin: '0 auto'
+                          }}>
+                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
+                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                Version
+                              </h3>
+                              <p style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>
+                                DojoSoftware v{config.app.version}
+                              </p>
+                              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                Build: {config.app.buildDate}
+                              </p>
+                            </div>
+
+                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
+                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                Kontakt & Support
+                              </h3>
+                              <p style={{ color: 'var(--text-primary)' }}>
+                                <a href={`mailto:${config.app.contactEmail}`} style={{ color: 'var(--primary)' }}>
+                                  {config.app.contactEmail}
+                                </a>
+                              </p>
+                            </div>
+
+                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
+                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                Entwickler
+                              </h3>
+                              <p style={{ color: 'var(--text-primary)' }}>
+                                {config.app.author}
+                              </p>
+                            </div>
+
+                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
+                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                Beschreibung
+                              </h3>
+                              <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                                {config.app.description} - Eine umfassende Lösung für die Verwaltung von Kampfkunstschulen,
+                                Mitgliedern, Kursen, Prüfungen und Finanzen.
+                              </p>
+                            </div>
+
+                            <div className="info-section">
+                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                Technologie
+                              </h3>
+                              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                React • Node.js • MySQL • PWA
+                              </p>
+                            </div>
                           </div>
                         </div>
                       )}
