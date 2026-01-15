@@ -936,6 +936,59 @@ const ArtikelFormular = ({ mode }) => {
                   </div>
                 </div>
 
+                {/* Mindestbestand für alle setzen */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  background: '#ffffff',
+                  border: '2px solid #dee2e6',
+                  borderRadius: '8px'
+                }}>
+                  <label style={{ color: '#6B4423', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    Mindestbestand für alle:
+                  </label>
+                  <input
+                    type="number"
+                    id="global-mindestbestand"
+                    min="0"
+                    placeholder="z.B. 5"
+                    style={{
+                      ...basisInputStyle,
+                      width: '120px',
+                      textAlign: 'center'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const globalValue = parseInt(document.getElementById('global-mindestbestand').value) || 0;
+                      const newBestand = { ...formData.varianten_bestand };
+                      kombinationen.forEach(k => {
+                        newBestand[k.key] = {
+                          ...(newBestand[k.key] || { bestand: 0, mindestbestand: 0 }),
+                          mindestbestand: globalValue
+                        };
+                      });
+                      setFormData(prev => ({ ...prev, varianten_bestand: newBestand }));
+                    }}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: '#6B4423',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    ✓ Für alle übernehmen
+                  </button>
+                </div>
+
                 {/* Bestandstabelle */}
                 <div style={{
                   background: '#ffffff',
