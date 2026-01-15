@@ -652,7 +652,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{bareinkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
                 <span>+ Bezugskosten</span>
                 <span>+{bezugskosten_wert.toFixed(2)} €</span>
               </div>
@@ -669,7 +669,7 @@ const ArtikelFormular = ({ mode }) => {
                 <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Selbstkostenkalkulation</strong>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
                 <span>+ Gemeinkosten ({gemeinkosten_prozent}%)</span>
                 <span>+{gemeinkosten_euro.toFixed(2)} €</span>
               </div>
@@ -679,7 +679,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{selbstkostenpreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
                 <span>+ Gewinnzuschlag ({gewinnzuschlag_prozent}%)</span>
                 <span>+{gewinnzuschlag_euro.toFixed(2)} €</span>
               </div>
@@ -696,7 +696,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{barverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
                 <span>+ Kundenskonto ({kundenskonto_prozent}%)</span>
                 <span>+{kundenskonto_euro.toFixed(2)} €</span>
               </div>
@@ -706,7 +706,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{zielverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
                 <span>+ Kundenrabatt ({kundenrabatt_prozent}%)</span>
                 <span>+{kundenrabatt_euro.toFixed(2)} €</span>
               </div>
@@ -716,7 +716,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{nettoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
                 <span>+ Umsatzsteuer ({mwst_prozent}%)</span>
                 <span>+{umsatzsteuer_euro.toFixed(2)} €</span>
               </div>
@@ -726,19 +726,19 @@ const ArtikelFormular = ({ mode }) => {
                 <span style={{color: 'var(--primary, #6B4423)'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div style={{height: '8px', borderTop: '1px solid rgba(255, 215, 0, 0.3)', margin: '0.5rem 0'}}></div>
+              <div style={{height: '8px', borderTop: '1px solid rgba(107, 68, 35, 0.3)', margin: '0.5rem 0'}}></div>
 
               {/* GEWINN */}
               <div className="kalkulation-row profit" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem'}}>
                 <span>💰 Gewinn gesamt</span>
-                <span style={{color: gewinn_gesamt >= 0 ? '#10b981' : '#ef4444', fontWeight: 600}}>
+                <span style={{color: gewinn_gesamt >= 0 ? '#047857' : '#ef4444', fontWeight: 600}}>
                   {gewinn_gesamt.toFixed(2)} €
                 </span>
               </div>
 
               <div className="kalkulation-row profit" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem'}}>
                 <span>📈 Gewinnspanne</span>
-                <span style={{color: gewinnspanne_prozent >= 0 ? '#10b981' : '#ef4444', fontWeight: 600}}>
+                <span style={{color: gewinnspanne_prozent >= 0 ? '#047857' : '#ef4444', fontWeight: 600}}>
                   {gewinnspanne_prozent.toFixed(1)} %
                 </span>
               </div>
