@@ -27,6 +27,7 @@ const ArtikelFormular = ({ mode }) => {
     beschreibung: '',
     ean_code: '',
     artikel_nummer: '',
+    artikel_nummer_auto: true, // Auto-generieren aktiviert
     // Handelskalkulation
     listeneinkaufspreis_euro: '',
     lieferrabatt_prozent: '',
@@ -122,13 +123,65 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [mode, id]);
 
+  // Generate next Artikelnummer based on Artikelgruppe
+  const generateArtikelNummer = async (gruppeId) => {
+    if (!gruppeId) return '';
+
+    try {
+      // Find the selected group to get its prefix/code
+      const gruppe = artikelgruppen.find(g => g.id == gruppeId);
+      if (!gruppe) return '';
+
+      // Create a 3-letter prefix from gruppe name
+      const prefix = (gruppe.code || gruppe.name.substring(0, 3)).toUpperCase().replace(/[^A-Z]/g, '').substring(0, 3).padEnd(3, 'X');
+
+      // Get all existing artikel to find the next number
+      const response = await apiCall('');
+      const existingArtikel = response.data || [];
+
+      // Find all artikel numbers with this prefix
+      const prefixPattern = new RegExp(`^${prefix}(\\d+)$`);
+      let maxNum = 0;
+
+      existingArtikel.forEach(art => {
+        if (art.artikel_nummer) {
+          const match = art.artikel_nummer.match(prefixPattern);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) maxNum = num;
+          }
+        }
+      });
+
+      // Generate next number
+      const nextNum = (maxNum + 1).toString().padStart(3, '0');
+      return `${prefix}${nextNum}`;
+    } catch (error) {
+      console.error('Error generating Artikelnummer:', error);
+      return '';
+    }
+  };
+
   // Handle Input Change
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: newValue
     }));
+
+    // Auto-generate Artikelnummer when Artikelgruppe changes
+    if (name === 'artikelgruppe_id' && value && formData.artikel_nummer_auto && mode === 'create') {
+      const autoNummer = await generateArtikelNummer(value);
+      if (autoNummer) {
+        setFormData(prev => ({
+          ...prev,
+          artikel_nummer: autoNummer
+        }));
+      }
+    }
   };
 
   // Save Artikel
@@ -306,14 +359,14 @@ const ArtikelFormular = ({ mode }) => {
         <div className="preiskalkulation-container" style={{height: '100%', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
 
           {/* Eingabebereich */}
-          <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(0, 0, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.2)', borderRadius: '8px'}}>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
+          <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'var(--glass-bg, #f8f9fa)', border: '2px solid var(--border-accent, #dee2e6)', borderRadius: '8px'}}>
+            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📝 Eingabe - Handelskalkulation
             </h3>
 
             {/* BEZUGSKALKULATION */}
             <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: '#ffd700', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+              <h4 style={{color: 'var(--primary, #6B4423)', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
                 📦 Bezugskalkulation (Einkauf)
               </h4>
               <div className="form-grid" style={{gap: '0.8rem'}}>
@@ -377,14 +430,14 @@ const ArtikelFormular = ({ mode }) => {
                     placeholder="0.00"
                     style={{height: '36px'}}
                   />
-                  <small style={{color: '#888', fontSize: '0.75rem'}}>Versand, Zoll, Verpackung</small>
+                  <small style={{color: 'var(--text-secondary, #6c757d)', fontSize: '0.75rem'}}>Versand, Zoll, Verpackung</small>
                 </div>
               </div>
             </div>
 
             {/* SELBSTKOSTENKALKULATION */}
             <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: '#ffd700', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+              <h4 style={{color: 'var(--primary, #6B4423)', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
                 🏭 Selbstkostenkalkulation
               </h4>
               <div className="form-grid" style={{gap: '0.8rem'}}>
@@ -401,7 +454,7 @@ const ArtikelFormular = ({ mode }) => {
                     placeholder="0.00"
                     style={{height: '36px'}}
                   />
-                  <small style={{color: '#888', fontSize: '0.75rem'}}>Miete, Personal, etc.</small>
+                  <small style={{color: 'var(--text-secondary, #6c757d)', fontSize: '0.75rem'}}>Miete, Personal, etc.</small>
                 </div>
 
                 <div className="form-group">
@@ -423,7 +476,7 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* VERKAUFSKALKULATION */}
             <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: '#ffd700', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+              <h4 style={{color: 'var(--primary, #6B4423)', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
                 💰 Verkaufskalkulation
               </h4>
               <div className="form-grid" style={{gap: '0.8rem'}}>
@@ -477,8 +530,8 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* Button: Neuen Preis übernehmen */}
             {listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
-              <div style={{marginTop: '1rem', padding: '0.8rem', background: 'rgba(255, 215, 0, 0.1)', borderRadius: '8px', border: '1px solid rgba(255, 215, 0, 0.3)'}}>
-                <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: '#ffd700'}}>
+              <div style={{marginTop: '1rem', padding: '0.8rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '8px', border: '1px solid rgba(107, 68, 35, 0.3)'}}>
+                <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>
                   Kalkulierter Nettoverkaufspreis: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
                 </div>
                 <button
@@ -487,8 +540,8 @@ const ArtikelFormular = ({ mode }) => {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: 'linear-gradient(135deg, #ffd700, #ff6b35)',
-                    color: '#1a1a2e',
+                    background: 'var(--primary, #6B4423)',
+                    color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '0.95rem',
@@ -506,15 +559,15 @@ const ArtikelFormular = ({ mode }) => {
           </div>
 
           {/* Kalkulationsübersicht - Fortsetzung im nächsten Teil */}
-          <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(255, 215, 0, 0.05)', border: '2px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px'}}>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
+          <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.3)', borderRadius: '8px'}}>
+            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📊 Kalkulation
             </h3>
 
             <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
               {/* BEZUGSKALKULATION */}
-              <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(255, 215, 0, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: '#ffd700'}}>Bezugskalkulation</strong>
+              <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
+                <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Bezugskalkulation</strong>
               </div>
 
               <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem'}}>
@@ -527,7 +580,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span>−{lieferrabatt_euro.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(255, 215, 0, 0.05)'}}>
+              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
                 <span><strong>= Zieleinkaufspreis</strong></span>
                 <span><strong>{zieleinkaufspreis.toFixed(2)} €</strong></span>
               </div>
@@ -537,7 +590,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span>−{lieferskonto_euro.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(255, 215, 0, 0.05)'}}>
+              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
                 <span><strong>= Bareinkaufspreis</strong></span>
                 <span><strong>{bareinkaufspreis.toFixed(2)} €</strong></span>
               </div>
@@ -547,7 +600,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span>+{bezugskosten_wert.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: 'rgba(255, 215, 0, 0.1)', fontWeight: 600}}>
+              <div className="kalkulation-row total" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: 'rgba(107, 68, 35, 0.1)', fontWeight: 600}}>
                 <span><strong>= Bezugspreis</strong></span>
                 <span><strong>{bezugspreis.toFixed(2)} €</strong></span>
               </div>
@@ -555,8 +608,8 @@ const ArtikelFormular = ({ mode }) => {
               <div style={{height: '8px'}}></div>
 
               {/* SELBSTKOSTENKALKULATION */}
-              <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(255, 215, 0, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: '#ffd700'}}>Selbstkostenkalkulation</strong>
+              <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
+                <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Selbstkostenkalkulation</strong>
               </div>
 
               <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#10b981'}}>
@@ -564,7 +617,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span>+{gemeinkosten_euro.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(255, 215, 0, 0.05)'}}>
+              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
                 <span><strong>= Selbstkostenpreis</strong></span>
                 <span><strong>{selbstkostenpreis.toFixed(2)} €</strong></span>
               </div>
@@ -577,11 +630,11 @@ const ArtikelFormular = ({ mode }) => {
               <div style={{height: '8px'}}></div>
 
               {/* VERKAUFSKALKULATION */}
-              <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(255, 215, 0, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: '#ffd700'}}>Verkaufskalkulation</strong>
+              <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
+                <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Verkaufskalkulation</strong>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(255, 215, 0, 0.05)'}}>
+              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
                 <span><strong>= Barverkaufspreis</strong></span>
                 <span><strong>{barverkaufspreis.toFixed(2)} €</strong></span>
               </div>
@@ -591,7 +644,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span>+{kundenskonto_euro.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(255, 215, 0, 0.05)'}}>
+              <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
                 <span><strong>= Zielverkaufspreis</strong></span>
                 <span><strong>{zielverkaufspreis.toFixed(2)} €</strong></span>
               </div>
@@ -601,7 +654,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span>+{kundenrabatt_euro.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: 'rgba(255, 215, 0, 0.1)', fontWeight: 600}}>
+              <div className="kalkulation-row total" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: 'rgba(107, 68, 35, 0.1)', fontWeight: 600}}>
                 <span><strong>= Nettoverkaufspreis</strong></span>
                 <span><strong>{nettoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
@@ -611,9 +664,9 @@ const ArtikelFormular = ({ mode }) => {
                 <span>+{umsatzsteuer_euro.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row final" style={{padding: '0.5rem 0.6rem', fontSize: '0.9rem', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 53, 0.2))', borderRadius: '6px', marginTop: '0.5rem'}}>
+              <div className="kalkulation-row final" style={{padding: '0.5rem 0.6rem', fontSize: '0.9rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '6px', marginTop: '0.5rem'}}>
                 <span><strong>= BRUTTOVERKAUFSPREIS</strong></span>
-                <span style={{color: '#ffd700'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
+                <span style={{color: 'var(--primary, #6B4423)'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
               <div style={{height: '8px', borderTop: '1px solid rgba(255, 215, 0, 0.3)', margin: '0.5rem 0'}}></div>
@@ -762,19 +815,19 @@ const ArtikelFormular = ({ mode }) => {
         alignItems: 'center',
         marginBottom: '2rem',
         paddingBottom: '1rem',
-        borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
+        borderBottom: '2px solid var(--border-accent, #e9ecef)'
       }}>
         <div>
           <h1 style={{
             fontSize: '2rem',
             fontWeight: 700,
-            color: '#ffd700',
+            color: 'var(--primary, #6B4423)',
             marginBottom: '0.5rem'
           }}>
             {mode === 'create' ? '🆕 Neuen Artikel erstellen' : '✏️ Artikel bearbeiten'}
           </h1>
           {mode === 'edit' && formData.name && (
-            <p style={{fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.7)'}}>
+            <p style={{fontSize: '1.1rem', color: 'var(--text-secondary, #6c757d)'}}>
               {formData.name}
             </p>
           )}
@@ -785,9 +838,9 @@ const ArtikelFormular = ({ mode }) => {
             onClick={() => navigate('/dashboard/artikel')}
             style={{
               padding: '0.75rem 1.5rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              background: 'var(--glass-bg, #f8f9fa)',
+              color: 'var(--text-primary, #2c3e50)',
+              border: '1px solid var(--border-color, #dee2e6)',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '1rem',
@@ -802,8 +855,8 @@ const ArtikelFormular = ({ mode }) => {
             disabled={loading || !formData.name || !formData.verkaufspreis_euro}
             style={{
               padding: '0.75rem 2rem',
-              background: 'linear-gradient(135deg, #ffd700, #ff6b35)',
-              color: '#1a1a2e',
+              background: 'var(--primary, #6B4423)',
+              color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -820,10 +873,10 @@ const ArtikelFormular = ({ mode }) => {
       {error && (
         <div style={{
           padding: '1rem',
-          background: 'rgba(239, 68, 68, 0.1)',
+          background: '#fef2f2',
           border: '1px solid #ef4444',
           borderRadius: '8px',
-          color: '#ef4444',
+          color: '#dc2626',
           marginBottom: '1rem'
         }}>
           {error}
@@ -836,9 +889,9 @@ const ArtikelFormular = ({ mode }) => {
         gap: '0.5rem',
         marginBottom: '1.5rem',
         padding: '0.25rem',
-        background: 'rgba(255, 255, 255, 0.03)',
+        background: 'var(--glass-bg, #f8f9fa)',
         borderRadius: '12px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid var(--border-color, #dee2e6)',
         flexWrap: 'wrap'
       }}>
         {tabs.map(tab => (
@@ -849,9 +902,9 @@ const ArtikelFormular = ({ mode }) => {
             style={{
               flex: 1,
               padding: '0.75rem 1.5rem',
-              background: activeTab === tab.id ? 'linear-gradient(135deg, #ffd700, #ff6b35)' : 'transparent',
-              color: activeTab === tab.id ? '#1a1a2e' : 'rgba(255, 255, 255, 0.7)',
-              border: activeTab === tab.id ? '1px solid #ffd700' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: activeTab === tab.id ? 'var(--primary, #6B4423)' : 'transparent',
+              color: activeTab === tab.id ? '#ffffff' : 'var(--text-secondary, #6c757d)',
+              border: activeTab === tab.id ? '1px solid var(--primary, #6B4423)' : '1px solid var(--border-color, #dee2e6)',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '1rem',
@@ -872,8 +925,8 @@ const ArtikelFormular = ({ mode }) => {
 
       {/* Tab Content */}
       <div style={{
-        background: 'rgba(0, 0, 0, 0.3)',
-        border: '2px solid rgba(255, 215, 0, 0.2)',
+        background: 'var(--glass-bg, #ffffff)',
+        border: '2px solid var(--border-accent, #dee2e6)',
         borderRadius: '12px',
         padding: '2rem',
         minHeight: '600px'
