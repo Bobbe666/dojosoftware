@@ -423,7 +423,7 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* BEZUGSKALKULATION */}
             <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: 'var(--primary, #6B4423)', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
                 📦 Bezugskalkulation (Einkauf)
               </h4>
               <div className="form-grid" style={{gap: '0.8rem'}}>
@@ -494,7 +494,7 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* SELBSTKOSTENKALKULATION */}
             <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: 'var(--primary, #6B4423)', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
                 🏭 Selbstkostenkalkulation
               </h4>
               <div className="form-grid" style={{gap: '0.8rem'}}>
@@ -533,7 +533,7 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* VERKAUFSKALKULATION */}
             <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: 'var(--primary, #6B4423)', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
                 💰 Verkaufskalkulation
               </h4>
               <div className="form-grid" style={{gap: '0.8rem'}}>
@@ -588,7 +588,7 @@ const ArtikelFormular = ({ mode }) => {
             {/* Button: Neuen Preis übernehmen */}
             {listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
               <div style={{marginTop: '1rem', padding: '0.8rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '8px', border: '1px solid rgba(107, 68, 35, 0.3)'}}>
-                <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>
+                <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: '#6B4423'}}>
                   Kalkulierter Nettoverkaufspreis: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
                 </div>
                 <button
@@ -597,7 +597,7 @@ const ArtikelFormular = ({ mode }) => {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: 'var(--primary, #6B4423)',
+                    background: '#6B4423',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '8px',
@@ -624,7 +624,7 @@ const ArtikelFormular = ({ mode }) => {
             <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
               {/* BEZUGSKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Bezugskalkulation</strong>
+                <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>Bezugskalkulation</strong>
               </div>
 
               <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem'}}>
@@ -666,7 +666,7 @@ const ArtikelFormular = ({ mode }) => {
 
               {/* SELBSTKOSTENKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Selbstkostenkalkulation</strong>
+                <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>Selbstkostenkalkulation</strong>
               </div>
 
               <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
@@ -688,7 +688,7 @@ const ArtikelFormular = ({ mode }) => {
 
               {/* VERKAUFSKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: 'var(--primary, #6B4423)'}}>Verkaufskalkulation</strong>
+                <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>Verkaufskalkulation</strong>
               </div>
 
               <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
@@ -723,7 +723,7 @@ const ArtikelFormular = ({ mode }) => {
 
               <div className="kalkulation-row final" style={{padding: '0.5rem 0.6rem', fontSize: '0.9rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '6px', marginTop: '0.5rem'}}>
                 <span><strong>= BRUTTOVERKAUFSPREIS</strong></span>
-                <span style={{color: 'var(--primary, #6B4423)'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
+                <span style={{color: '#6B4423'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
               <div style={{height: '8px', borderTop: '1px solid rgba(107, 68, 35, 0.3)', margin: '0.5rem 0'}}></div>
@@ -749,67 +749,110 @@ const ArtikelFormular = ({ mode }) => {
     );
   };
 
+  // Einheitlicher Checkbox-Style für Light Mode
+  const checkboxContainerStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '1rem 1.25rem',
+    background: '#ffffff',
+    border: '2px solid #dee2e6',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  };
+
+  const checkboxStyle = {
+    width: '22px',
+    height: '22px',
+    accentColor: '#6B4423',
+    cursor: 'pointer'
+  };
+
+  const checkboxLabelTextStyle = {
+    color: '#2c3e50',
+    fontSize: '1rem',
+    fontWeight: 500
+  };
+
   const renderTabLager = () => (
     <div className="tab-content-section">
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Aktueller Bestand</label>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>Aktueller Bestand</label>
           <input
             type="number"
             name="lagerbestand"
             value={formData.lagerbestand}
             onChange={handleInputChange}
             min="0"
-            className="form-input"
+            style={{
+              ...basisInputStyle,
+              opacity: formData.lager_tracking ? 1 : 0.5,
+              cursor: formData.lager_tracking ? 'text' : 'not-allowed'
+            }}
             placeholder="0"
             disabled={!formData.lager_tracking}
           />
         </div>
 
-        <div className="form-group">
-          <label>Mindestbestand</label>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>Mindestbestand</label>
           <input
             type="number"
             name="mindestbestand"
             value={formData.mindestbestand}
             onChange={handleInputChange}
             min="0"
-            className="form-input"
+            style={{
+              ...basisInputStyle,
+              opacity: formData.lager_tracking ? 1 : 0.5,
+              cursor: formData.lager_tracking ? 'text' : 'not-allowed'
+            }}
             placeholder="0"
             disabled={!formData.lager_tracking}
           />
         </div>
 
-        <div className="form-group">
-          <label>Farbe</label>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>Artikelfarbe</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input
               type="color"
               name="farbe_hex"
               value={formData.farbe_hex}
               onChange={handleInputChange}
-              style={{ width: '60px', height: '42px', cursor: 'pointer' }}
+              style={{ width: '60px', height: '46px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #dee2e6' }}
             />
             <input
               type="text"
               value={formData.farbe_hex}
               onChange={(e) => setFormData(prev => ({...prev, farbe_hex: e.target.value}))}
-              className="form-input"
+              style={basisInputStyle}
               placeholder="#FFFFFF"
             />
           </div>
         </div>
 
-        <div className="form-group full-width">
-          <div className="checkbox-label">
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <label
+            style={{
+              ...checkboxContainerStyle,
+              borderColor: formData.lager_tracking ? '#6B4423' : '#dee2e6',
+              background: formData.lager_tracking ? 'rgba(107, 68, 35, 0.05)' : '#ffffff'
+            }}
+          >
             <input
               type="checkbox"
               name="lager_tracking"
               checked={formData.lager_tracking}
               onChange={handleInputChange}
+              style={checkboxStyle}
             />
-            <span>Lagerbestand aktiv verfolgen</span>
-          </div>
+            <span style={checkboxLabelTextStyle}>
+              📦 Lagerbestand aktiv verfolgen
+            </span>
+          </label>
         </div>
       </div>
     </div>
@@ -817,30 +860,44 @@ const ArtikelFormular = ({ mode }) => {
 
   const renderTabEinstellungen = () => (
     <div className="tab-content-section">
-      <div className="form-grid">
-        <div className="form-group full-width">
-          <div className="checkbox-label">
-            <input
-              type="checkbox"
-              name="aktiv"
-              checked={formData.aktiv}
-              onChange={handleInputChange}
-            />
-            <span>Artikel aktiv</span>
-          </div>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '500px' }}>
+        <label
+          style={{
+            ...checkboxContainerStyle,
+            borderColor: formData.aktiv ? '#6B4423' : '#dee2e6',
+            background: formData.aktiv ? 'rgba(107, 68, 35, 0.05)' : '#ffffff'
+          }}
+        >
+          <input
+            type="checkbox"
+            name="aktiv"
+            checked={formData.aktiv}
+            onChange={handleInputChange}
+            style={checkboxStyle}
+          />
+          <span style={checkboxLabelTextStyle}>
+            ✅ Artikel aktiv
+          </span>
+        </label>
 
-        <div className="form-group full-width">
-          <div className="checkbox-label">
-            <input
-              type="checkbox"
-              name="sichtbar_kasse"
-              checked={formData.sichtbar_kasse}
-              onChange={handleInputChange}
-            />
-            <span>An der Kasse sichtbar</span>
-          </div>
-        </div>
+        <label
+          style={{
+            ...checkboxContainerStyle,
+            borderColor: formData.sichtbar_kasse ? '#6B4423' : '#dee2e6',
+            background: formData.sichtbar_kasse ? 'rgba(107, 68, 35, 0.05)' : '#ffffff'
+          }}
+        >
+          <input
+            type="checkbox"
+            name="sichtbar_kasse"
+            checked={formData.sichtbar_kasse}
+            onChange={handleInputChange}
+            style={checkboxStyle}
+          />
+          <span style={checkboxLabelTextStyle}>
+            🛒 An der Kasse sichtbar
+          </span>
+        </label>
       </div>
     </div>
   );
@@ -938,7 +995,7 @@ const ArtikelFormular = ({ mode }) => {
         <div style={{ display: 'grid', gap: '2rem' }}>
           {/* GRÖSSEN */}
           <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               📏 Größen
             </h3>
 
@@ -1040,7 +1097,7 @@ const ArtikelFormular = ({ mode }) => {
 
           {/* FARBEN */}
           <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               🎨 Farben
             </h3>
 
@@ -1136,7 +1193,7 @@ const ArtikelFormular = ({ mode }) => {
 
           {/* MATERIAL */}
           <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               🧵 Material / Stoff
             </h3>
 
@@ -1241,7 +1298,7 @@ const ArtikelFormular = ({ mode }) => {
           {/* ZUSAMMENFASSUNG */}
           {(formData.varianten_groessen.length > 0 || formData.varianten_farben.length > 0 || formData.varianten_material.length > 0) && (
             <div style={{ background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.2)', borderRadius: '12px', padding: '1.5rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem' }}>
                 📊 Varianten-Zusammenfassung
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -1305,7 +1362,7 @@ const ArtikelFormular = ({ mode }) => {
           <h1 style={{
             fontSize: '2rem',
             fontWeight: 700,
-            color: 'var(--primary, #6B4423)',
+            color: '#6B4423',
             marginBottom: '0.5rem'
           }}>
             {mode === 'create' ? '🆕 Neuen Artikel erstellen' : '✏️ Artikel bearbeiten'}
@@ -1339,7 +1396,7 @@ const ArtikelFormular = ({ mode }) => {
             disabled={loading || !formData.name || !formData.verkaufspreis_euro}
             style={{
               padding: '0.75rem 2rem',
-              background: 'var(--primary, #6B4423)',
+              background: '#6B4423',
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
@@ -1386,9 +1443,9 @@ const ArtikelFormular = ({ mode }) => {
             style={{
               flex: 1,
               padding: '0.75rem 1.5rem',
-              background: activeTab === tab.id ? 'var(--primary, #6B4423)' : 'transparent',
+              background: activeTab === tab.id ? '#6B4423' : 'transparent',
               color: activeTab === tab.id ? '#ffffff' : 'var(--text-secondary, #6c757d)',
-              border: activeTab === tab.id ? '1px solid var(--primary, #6B4423)' : '1px solid var(--border-color, #dee2e6)',
+              border: activeTab === tab.id ? '1px solid #6B4423' : '1px solid var(--border-color, #dee2e6)',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '1rem',
