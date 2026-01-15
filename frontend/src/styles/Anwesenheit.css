@@ -1,7 +1,32 @@
 /* Modern Anwesenheit CSS - Check-in Terminal Design */
 
-/* Container */
+/* Container - Light Mode (Default) */
 .anwesenheit-container {
+  --anw-primary: #6B4423;
+  --anw-secondary: #8B5A2B;
+  --anw-success: #22c55e;
+  --anw-border: #dee2e6;
+  --anw-border-strong: #6B4423;
+  --anw-card-bg: #ffffff;
+  --anw-card-hover: #f8f9fa;
+  --anw-text: #2c3e50;
+  --anw-text-muted: #6c757d;
+  --anw-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --farbe-hauptfarbe: #6B4423;
+  --farbe-akzent: #8B5A2B;
+  --farbe-erfolg: #22c55e;
+  --rahmen-farbe: #dee2e6;
+  --hintergrund-secondary: #ffffff;
+
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 1rem;
+  color: #2c3e50;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Container - Dark Mode */
+[data-theme="dark"] .anwesenheit-container {
   --anw-primary: var(--primary);
   --anw-secondary: var(--secondary);
   --anw-success: var(--success);
@@ -12,17 +37,14 @@
   --anw-text: var(--text-primary);
   --anw-text-muted: var(--text-secondary);
   --anw-shadow: var(--shadow-gold);
-  --farbe-hauptfarbe: var(--anw-primary);
-  --farbe-akzent: var(--anw-secondary);
-  --farbe-erfolg: var(--anw-success);
-  --rahmen-farbe: var(--anw-border);
-  --hintergrund-secondary: var(--anw-card-bg);
+  --farbe-hauptfarbe: var(--primary);
+  --farbe-akzent: var(--secondary);
+  --farbe-erfolg: var(--success);
+  --rahmen-farbe: var(--border-accent);
+  --hintergrund-secondary: var(--glass-bg);
 
-  min-height: 100vh;
   background: var(--bg-gradient);
-  padding: 1rem;
-  color: var(--anw-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
 }
 
 /* Header */
@@ -63,6 +85,10 @@
   font-size: clamp(1.45rem, 2vw, 1.8rem);
   font-weight: 700;
   margin: 0;
+  color: #6B4423;
+}
+
+[data-theme="dark"] .anwesenheit-header h2 {
   background: linear-gradient(135deg, var(--anw-primary), var(--anw-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -243,12 +269,16 @@
 .mitglieder-abschnitt h3 {
   font-size: 1.6rem;
   font-weight: 700;
+  color: #6B4423;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+[data-theme="dark"] .mitglieder-abschnitt h3 {
   background: linear-gradient(135deg, var(--anw-primary), var(--anw-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 1.5rem;
-  text-align: center;
   text-shadow: 0 0 12px var(--primary-alpha-35);
 }
 
@@ -331,8 +361,12 @@
 
 .mitglied-block strong {
   font-size: 1.1rem;
-  color: var(--text-primary);
+  color: #2c3e50;
   font-weight: 700;
+}
+
+[data-theme="dark"] .mitglied-block strong {
+  color: var(--text-primary);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
@@ -495,7 +529,7 @@
   accent-color: var(--primary);
 }
 
-/* Text Color Fixes fuer Anwesenheit */
+/* Text Color Fixes fuer Anwesenheit - Light Mode */
 .anwesenheit-container h2,
 .anwesenheit-container h3,
 .anwesenheit-container h4,
@@ -504,6 +538,19 @@
 .anwesenheit-container .toggle-checkbox-label,
 .anwesenheit-container .filter-checkbox-label,
 .anwesenheit-container .mitglieder-stats {
+  color: #2c3e50 !important;
+  text-shadow: none !important;
+}
+
+/* Text Color Fixes fuer Anwesenheit - Dark Mode */
+[data-theme="dark"] .anwesenheit-container h2,
+[data-theme="dark"] .anwesenheit-container h3,
+[data-theme="dark"] .anwesenheit-container h4,
+[data-theme="dark"] .anwesenheit-container label,
+[data-theme="dark"] .anwesenheit-container .mitglied-block strong,
+[data-theme="dark"] .anwesenheit-container .toggle-checkbox-label,
+[data-theme="dark"] .anwesenheit-container .filter-checkbox-label,
+[data-theme="dark"] .anwesenheit-container .mitglieder-stats {
   color: var(--text-primary) !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
 }
