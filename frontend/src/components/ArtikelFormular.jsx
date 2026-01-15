@@ -287,6 +287,21 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [formData.varianten_groessen, formData.varianten_farben, formData.hat_varianten]);
 
+  // Automatisch Verkaufspreis setzen wenn Erwachsene-Preis eingegeben wird
+  useEffect(() => {
+    if (formData.hat_preiskategorien && formData.preis_erwachsene_euro) {
+      const erwPreis = parseFloat(formData.preis_erwachsene_euro);
+      const currentVK = parseFloat(formData.verkaufspreis_euro) || 0;
+      // Nur aktualisieren wenn unterschiedlich (verhindert Loop)
+      if (erwPreis > 0 && erwPreis !== currentVK) {
+        setFormData(prev => ({
+          ...prev,
+          verkaufspreis_euro: erwPreis.toFixed(2)
+        }));
+      }
+    }
+  }, [formData.preis_erwachsene_euro, formData.hat_preiskategorien]);
+
   // Save Artikel
   const handleSave = async () => {
     try {
@@ -592,7 +607,7 @@ const ArtikelFormular = ({ mode }) => {
 
                     {/* Quick-Fill Buttons - basierend auf Erwachsenen-Preis */}
                     {(() => {
-                      const basisPreis = parseFloat(formData.preis_erwachsene_euro) || nettoverkaufspreis || 0;
+                      const basisPreis = parseFloat(formData.preis_erwachsene_euro) || 0;
                       return basisPreis > 0 ? (
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                           <button type="button" onClick={() => setFormData(prev => ({
@@ -617,35 +632,19 @@ const ArtikelFormular = ({ mode }) => {
                       ) : null;
                     })()}
 
-                    {/* Preise übernehmen Button */}
-                    {(parseFloat(formData.preis_kids_euro) > 0 || parseFloat(formData.preis_erwachsene_euro) > 0) && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Erwachsenen-Preis als Hauptpreis setzen (oder Kids wenn nur der gesetzt ist)
-                          const hauptpreis = parseFloat(formData.preis_erwachsene_euro) || parseFloat(formData.preis_kids_euro) || 0;
-                          if (hauptpreis > 0) {
-                            setFormData(prev => ({
-                              ...prev,
-                              verkaufspreis_euro: hauptpreis.toFixed(2)
-                            }));
-                          }
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '0.75rem',
-                          marginBottom: '1rem',
-                          background: '#6B4423',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '0.95rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ✓ Preise übernehmen (Erwachsene: {parseFloat(formData.preis_erwachsene_euro) || 0}€ als Hauptpreis)
-                      </button>
+                    {/* Info: Preise werden automatisch übernommen */}
+                    {(parseFloat(formData.preis_erwachsene_euro) > 0) && (
+                      <div style={{
+                        padding: '0.5rem 0.75rem',
+                        marginBottom: '0.75rem',
+                        background: '#dcfce7',
+                        border: '1px solid #86efac',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        color: '#166534'
+                      }}>
+                        ✓ Preise werden automatisch für die Kalkulation verwendet
+                      </div>
                     )}
 
                     {/* Größen-Zuordnung */}
