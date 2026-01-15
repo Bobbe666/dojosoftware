@@ -590,32 +590,36 @@ const ArtikelFormular = ({ mode }) => {
                       </div>
                     </div>
 
-                    {/* Quick-Fill Buttons */}
-                    {nettoverkaufspreis > 0 && (
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                        <button type="button" onClick={() => setFormData(prev => ({
-                          ...prev,
-                          preis_kids_euro: (nettoverkaufspreis * 0.7).toFixed(2),
-                          preis_erwachsene_euro: nettoverkaufspreis.toFixed(2)
-                        }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                          Kids -30%
-                        </button>
-                        <button type="button" onClick={() => setFormData(prev => ({
-                          ...prev,
-                          preis_kids_euro: (nettoverkaufspreis * 0.8).toFixed(2),
-                          preis_erwachsene_euro: nettoverkaufspreis.toFixed(2)
-                        }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                          Kids -20%
-                        </button>
-                        <button type="button" onClick={() => setFormData(prev => ({
-                          ...prev,
-                          preis_kids_euro: nettoverkaufspreis.toFixed(2),
-                          preis_erwachsene_euro: nettoverkaufspreis.toFixed(2)
-                        }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                          Gleicher Preis
-                        </button>
-                      </div>
-                    )}
+                    {/* Quick-Fill Buttons - basierend auf Erwachsenen-Preis */}
+                    {(() => {
+                      const basisPreis = parseFloat(formData.preis_erwachsene_euro) || nettoverkaufspreis || 0;
+                      return basisPreis > 0 ? (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                          <button type="button" onClick={() => setFormData(prev => ({
+                            ...prev,
+                            preis_kids_euro: (basisPreis * 0.7).toFixed(2)
+                          }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            Kids -30% ({(basisPreis * 0.7).toFixed(2)}€)
+                          </button>
+                          <button type="button" onClick={() => setFormData(prev => ({
+                            ...prev,
+                            preis_kids_euro: (basisPreis * 0.8).toFixed(2)
+                          }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            Kids -20% ({(basisPreis * 0.8).toFixed(2)}€)
+                          </button>
+                          <button type="button" onClick={() => setFormData(prev => ({
+                            ...prev,
+                            preis_kids_euro: basisPreis.toFixed(2)
+                          }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            Gleicher Preis
+                          </button>
+                        </div>
+                      ) : (
+                        <p style={{ fontSize: '0.8rem', color: '#9ca3af', fontStyle: 'italic', marginBottom: '1rem' }}>
+                          Gib zuerst einen Erwachsenen-Preis ein für Quick-Fill
+                        </p>
+                      );
+                    })()}
 
                     {/* Größen-Zuordnung */}
                     <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px' }}>
@@ -1061,6 +1065,40 @@ const ArtikelFormular = ({ mode }) => {
                   {gewinnspanne_prozent.toFixed(1)} %
                 </span>
               </div>
+
+              {/* KIDS/ERWACHSENE PREISE */}
+              {formData.hat_preiskategorien && formData.hat_varianten && (
+                <>
+                  <div style={{height: '8px', borderTop: '2px solid #6B4423', margin: '0.75rem 0'}}></div>
+                  <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '4px'}}>
+                    <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>👶🧑 Varianten-Preise</strong>
+                  </div>
+
+                  <div className="kalkulation-row" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#dcfce7', borderRadius: '4px', marginBottom: '0.25rem'}}>
+                    <span>👶 <strong>Kids-Preis</strong></span>
+                    <span style={{color: '#166534', fontWeight: 600}}>
+                      {formData.preis_kids_euro ? `${parseFloat(formData.preis_kids_euro).toFixed(2)} €` : '– nicht gesetzt –'}
+                    </span>
+                  </div>
+
+                  <div className="kalkulation-row" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#dbeafe', borderRadius: '4px'}}>
+                    <span>🧑 <strong>Erwachsene-Preis</strong></span>
+                    <span style={{color: '#1e40af', fontWeight: 600}}>
+                      {formData.preis_erwachsene_euro ? `${parseFloat(formData.preis_erwachsene_euro).toFixed(2)} €` : '– nicht gesetzt –'}
+                    </span>
+                  </div>
+
+                  {formData.preis_kids_euro && formData.preis_erwachsene_euro && (
+                    <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#6c757d', marginTop: '0.25rem'}}>
+                      <span>Differenz</span>
+                      <span>
+                        {(parseFloat(formData.preis_erwachsene_euro) - parseFloat(formData.preis_kids_euro)).toFixed(2)} €
+                        ({(((parseFloat(formData.preis_erwachsene_euro) - parseFloat(formData.preis_kids_euro)) / parseFloat(formData.preis_erwachsene_euro)) * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
