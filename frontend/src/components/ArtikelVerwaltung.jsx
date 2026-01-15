@@ -708,103 +708,212 @@ const ArtikelVerwaltung = () => {
   const renderModal = () => {
     if (!showModal) return null;
 
-    // Lager modal - kompakt und hell
+    // Lager modal - kompakt, theme-aware
     if (modalMode === 'lager') {
+      console.log('LAGER MODAL GERENDERT - NEUE VERSION');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      console.log('isDark:', isDark);
       const modalStyle = {
-        maxWidth: '320px',
-        width: '320px',
-        borderRadius: '8px',
+        maxWidth: '420px',
+        width: '420px',
+        borderRadius: '4px',
         overflow: 'hidden',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+        boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.15)',
         padding: '0',
-        background: '#ffffff',
-        border: '1px solid #e9ecef',
+        background: isDark ? '#1a1a2e' : '#ffffff',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
         animation: 'none',
         backdropFilter: 'none'
       };
       const headerStyle = {
-        padding: '12px 14px',
-        background: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
-        borderBottom: '1px solid #e9ecef',
+        padding: '14px 16px',
+        background: isDark ? '#1a1a2e' : '#ffffff',
+        borderBottom: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       };
       const headerTitleStyle = {
-        fontSize: '15px',
+        fontSize: '14px',
         margin: '0',
-        color: '#2c3e50',
+        color: isDark ? '#ffffff' : '#2c3e50',
         fontWeight: '600',
         background: 'none',
-        WebkitTextFillColor: '#2c3e50'
+        WebkitTextFillColor: isDark ? '#ffffff' : '#2c3e50',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
       };
       const bodyStyle = {
-        padding: '14px',
-        background: '#ffffff'
+        padding: '16px',
+        background: isDark ? '#1a1a2e' : '#ffffff'
       };
       const infoCardStyle = {
-        background: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
-        border: '1px solid #e9ecef',
-        borderRadius: '6px',
-        padding: '10px 12px',
-        marginBottom: '12px'
+        background: isDark ? '#252540' : '#f8f9fa',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        borderRadius: '4px',
+        padding: '12px 14px',
+        marginBottom: '16px'
       };
       const infoTitleStyle = {
-        margin: '0 0 8px 0',
+        margin: '0 0 10px 0',
         fontSize: '14px',
         fontWeight: '600',
-        color: '#2c3e50'
+        color: isDark ? '#ffffff' : '#2c3e50'
       };
       const labelStyle = {
         fontSize: '11px',
-        color: '#6c757d'
+        color: isDark ? '#a0a0a0' : '#6c757d',
+        marginBottom: '2px'
       };
       const valueStyle = {
-        fontSize: '15px',
+        fontSize: '16px',
         fontWeight: '600',
-        color: '#2c3e50'
+        color: isDark ? '#ffffff' : '#2c3e50'
+      };
+      const inputStyle = {
+        padding: '10px 12px',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        borderRadius: '4px',
+        fontSize: '14px',
+        background: isDark ? '#252540' : '#ffffff',
+        color: isDark ? '#ffffff' : '#2c3e50',
+        height: '42px',
+        width: '100%',
+        boxSizing: 'border-box'
+      };
+      const overlayStyle = {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999
+      };
+      const closeButtonStyle = {
+        background: 'transparent',
+        border: 'none',
+        fontSize: '24px',
+        cursor: 'pointer',
+        color: isDark ? '#a0a0a0' : '#6c757d',
+        padding: '0',
+        lineHeight: '1'
+      };
+      const footerStyle = {
+        padding: '14px 16px',
+        background: isDark ? '#1a1a2e' : '#ffffff',
+        borderTop: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '12px'
+      };
+      const cancelBtnStyle = {
+        padding: '10px 18px',
+        borderRadius: '4px',
+        fontSize: '13px',
+        background: isDark ? '#252540' : '#f8f9fa',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        color: isDark ? '#ffffff' : '#495057',
+        cursor: 'pointer',
+        fontWeight: '500'
+      };
+      const submitBtnStyle = {
+        padding: '10px 18px',
+        borderRadius: '4px',
+        fontSize: '13px',
+        background: isDark ? '#d4a017' : '#007bff',
+        border: 'none',
+        color: '#ffffff',
+        cursor: 'pointer',
+        fontWeight: '500'
+      };
+      const selectStyle = {
+        padding: '10px 12px',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        borderRadius: '4px',
+        fontSize: '14px',
+        background: isDark ? '#252540' : '#ffffff',
+        color: isDark ? '#ffffff' : '#2c3e50',
+        height: '40px',
+        width: '100%',
+        boxSizing: 'border-box',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        MozAppearance: 'none'
+      };
+      const numberInputStyle = {
+        padding: '10px 12px',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        borderRadius: '4px',
+        fontSize: '14px',
+        background: isDark ? '#252540' : '#ffffff',
+        color: isDark ? '#ffffff' : '#2c3e50',
+        height: '40px',
+        width: '100%',
+        boxSizing: 'border-box'
+      };
+      const textInputStyle = {
+        padding: '10px 12px',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        borderRadius: '4px',
+        fontSize: '14px',
+        background: isDark ? '#252540' : '#ffffff',
+        color: isDark ? '#ffffff' : '#2c3e50',
+        height: '40px',
+        width: '100%',
+        boxSizing: 'border-box'
+      };
+      const infoBoxStyle = {
+        flex: '1',
+        background: isDark ? '#252540' : '#f8f9fa',
+        border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
+        borderRadius: '4px',
+        padding: '10px',
+        textAlign: 'center'
       };
       return (
-        <div className="modal-overlay lager-modal-overlay" onClick={() => setShowModal(false)} style={{background: 'rgba(0,0,0,0.3)'}}>
-          <div className="modal-content lager-modal" onClick={e => e.stopPropagation()} style={modalStyle}>
-            <div className="modal-header lager-modal-header" style={headerStyle}>
+        <div style={overlayStyle} onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={modalStyle}>
+            <div style={headerStyle}>
               <h2 style={headerTitleStyle}>Lagerbestand ändern</h2>
-              <button className="close-btn" onClick={() => setShowModal(false)} style={{background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6c757d'}}>×</button>
+              <button onClick={() => setShowModal(false)} style={closeButtonStyle}>×</button>
             </div>
 
-            <div className="modal-body lager-modal-body" style={bodyStyle}>
-              <div className="artikel-info-card" style={infoCardStyle}>
+            <div style={bodyStyle}>
+              <div style={infoCardStyle}>
                 <h4 style={infoTitleStyle}>{selectedArtikel?.name}</h4>
-                <div className="info-grid" style={{display: 'flex', gap: '20px'}}>
-                  <div className="info-item" style={{display: 'flex', flexDirection: 'column', gap: '2px'}}>
-                    <span className="info-label" style={labelStyle}>Aktueller Bestand:</span>
-                    <span className="info-value" style={valueStyle}>{selectedArtikel?.lagerbestand}</span>
+                <div style={{display: 'flex', gap: '12px'}}>
+                  <div style={infoBoxStyle}>
+                    <div style={{fontSize: '11px', color: isDark ? '#a0a0a0' : '#666', marginBottom: '4px'}}>Aktueller Bestand</div>
+                    <div style={{fontSize: '18px', fontWeight: '600', color: isDark ? '#fff' : '#2c3e50'}}>{selectedArtikel?.lagerbestand}</div>
                   </div>
-                  <div className="info-item" style={{display: 'flex', flexDirection: 'column', gap: '2px'}}>
-                    <span className="info-label" style={labelStyle}>Mindestbestand:</span>
-                    <span className="info-value" style={valueStyle}>{selectedArtikel?.mindestbestand}</span>
+                  <div style={infoBoxStyle}>
+                    <div style={{fontSize: '11px', color: isDark ? '#a0a0a0' : '#666', marginBottom: '4px'}}>Mindestbestand</div>
+                    <div style={{fontSize: '18px', fontWeight: '600', color: isDark ? '#fff' : '#2c3e50'}}>{selectedArtikel?.mindestbestand}</div>
                   </div>
                 </div>
               </div>
 
-              <div className="lager-form" style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
-                <div className="form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                  <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                    <label style={{fontSize: '12px', fontWeight: '500', color: '#495057'}}>Bewegungsart</label>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '14px'}}>
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}}>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                    <label style={{fontSize: '11px', fontWeight: '500', color: isDark ? '#a0a0a0' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Bewegungsart</label>
                     <select
                       name="bewegungsart"
                       value={lagerBewegung.bewegungsart}
                       onChange={handleLagerChange}
-                      className="form-select"
-                      style={{padding: '8px 10px', border: '1px solid #dee2e6', borderRadius: '4px', fontSize: '13px', background: '#ffffff', color: '#2c3e50', height: '36px'}}
+                      style={selectStyle}
                     >
                       <option value="eingang">Eingang (+)</option>
                       <option value="ausgang">Ausgang (-)</option>
                     </select>
                   </div>
 
-                  <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                    <label style={{fontSize: '12px', fontWeight: '500', color: '#495057'}}>Menge</label>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                    <label style={{fontSize: '11px', fontWeight: '500', color: isDark ? '#a0a0a0' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Menge</label>
                     <input
                       type="number"
                       name="menge"
@@ -812,33 +921,31 @@ const ArtikelVerwaltung = () => {
                       onChange={handleLagerChange}
                       min="1"
                       required
-                      className="form-input"
                       placeholder="Anzahl"
-                      style={{padding: '8px 10px', border: '1px solid #dee2e6', borderRadius: '4px', fontSize: '13px', background: '#ffffff', color: '#2c3e50', height: '36px'}}
+                      style={numberInputStyle}
                     />
                   </div>
                 </div>
 
-                <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                  <label style={{fontSize: '12px', fontWeight: '500', color: '#495057'}}>Grund</label>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                  <label style={{fontSize: '11px', fontWeight: '500', color: isDark ? '#a0a0a0' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Grund</label>
                   <input
                     type="text"
                     name="grund"
                     value={lagerBewegung.grund}
                     onChange={handleLagerChange}
                     placeholder="z.B. Lieferung, Verkauf, Inventur"
-                    className="form-input"
-                    style={{padding: '8px 10px', border: '1px solid #dee2e6', borderRadius: '4px', fontSize: '13px', background: '#ffffff', color: '#2c3e50', height: '36px'}}
+                    style={textInputStyle}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer lager-modal-footer" style={{padding: '12px 14px', background: 'linear-gradient(135deg, #f8f9fa, #ffffff)', borderTop: '1px solid #e9ecef', display: 'flex', justifyContent: 'flex-end', gap: '10px'}}>
-              <button className="btn-secondary" onClick={() => setShowModal(false)} style={{padding: '8px 14px', borderRadius: '4px', fontSize: '13px', background: '#ffffff', border: '1px solid #dee2e6', color: '#495057', cursor: 'pointer'}}>
+            <div style={footerStyle}>
+              <button onClick={() => setShowModal(false)} style={cancelBtnStyle}>
                 Abbrechen
               </button>
-              <button className="btn-primary" onClick={updateLagerbestand} style={{padding: '8px 14px', borderRadius: '4px', fontSize: '13px', background: '#007bff', border: 'none', color: '#ffffff', cursor: 'pointer', fontWeight: '500'}}>
+              <button onClick={updateLagerbestand} style={submitBtnStyle}>
                 Aktualisieren
               </button>
             </div>
