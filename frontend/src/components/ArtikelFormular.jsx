@@ -19,6 +19,26 @@ const ArtikelFormular = ({ mode }) => {
   const [artikelgruppen, setArtikelgruppen] = useState([]);
   const [activeTab, setActiveTab] = useState('basis');
 
+  // Verfügbare Größen
+  const verfuegbareGroessen = [
+    'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL',
+    '100', '110', '120', '130', '140', '150', '160', '170', '180', '190', '200'
+  ];
+
+  // Verfügbare Farben
+  const verfuegbareFarben = [
+    { name: 'Schwarz', hex: '#000000' },
+    { name: 'Weiß', hex: '#FFFFFF' },
+    { name: 'Rot', hex: '#DC2626' },
+    { name: 'Blau', hex: '#2563EB' },
+    { name: 'Grün', hex: '#16A34A' },
+    { name: 'Gelb', hex: '#EAB308' },
+    { name: 'Orange', hex: '#EA580C' },
+    { name: 'Lila', hex: '#9333EA' },
+    { name: 'Rosa', hex: '#EC4899' },
+    { name: 'Grau', hex: '#6B7280' }
+  ];
+
   // Form State
   const [formData, setFormData] = useState({
     kategorie_id: '',
@@ -47,7 +67,17 @@ const ArtikelFormular = ({ mode }) => {
     lager_tracking: true,
     farbe_hex: '#FFFFFF',
     aktiv: true,
-    sichtbar_kasse: true
+    sichtbar_kasse: true,
+    // Varianten
+    hat_varianten: false,
+    varianten_groessen: [],
+    varianten_farben: [],
+    varianten_material: [],
+    varianten_custom: [],
+    custom_groesse: '',
+    custom_farbe_name: '',
+    custom_farbe_hex: '#000000',
+    custom_material: ''
   });
 
   // API Call Helper
@@ -211,23 +241,45 @@ const ArtikelFormular = ({ mode }) => {
   // Tab Navigation
   const tabs = [
     { id: 'basis', label: 'Basis', icon: '📋' },
+    { id: 'varianten', label: 'Varianten', icon: '🎨' },
     { id: 'preise', label: 'Preiskalkulation', icon: '💶' },
     { id: 'lager', label: 'Lager', icon: '📦' },
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' }
   ];
 
+  // Basis Input Style für gute Sichtbarkeit
+  const basisInputStyle = {
+    padding: '0.75rem 1rem',
+    background: '#ffffff',
+    border: '2px solid #dee2e6',
+    borderRadius: '8px',
+    color: '#2c3e50',
+    fontSize: '1rem',
+    width: '100%',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+  };
+
+  const basisLabelStyle = {
+    display: 'block',
+    marginBottom: '0.5rem',
+    fontWeight: 600,
+    color: '#6B4423',
+    fontSize: '0.95rem'
+  };
+
   // Render Tab Content
   const renderTabBasis = () => (
     <div className="tab-content-section">
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Artikelgruppe</label>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>Artikelgruppe *</label>
           <select
             name="artikelgruppe_id"
             value={formData.artikelgruppe_id}
             onChange={handleInputChange}
             required
-            className="form-select"
+            style={{ ...basisInputStyle, cursor: 'pointer' }}
           >
             <option value="">Wählen Sie eine Artikelgruppe...</option>
             {artikelgruppen.map(gruppe => (
@@ -238,13 +290,13 @@ const ArtikelFormular = ({ mode }) => {
           </select>
         </div>
 
-        <div className="form-group">
-          <label>Kategorie</label>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>Kategorie</label>
           <select
             name="kategorie_id"
             value={formData.kategorie_id}
             onChange={handleInputChange}
-            className="form-select"
+            style={{ ...basisInputStyle, cursor: 'pointer' }}
           >
             <option value="">Wählen Sie eine Kategorie...</option>
             {kategorien.map(kat => (
@@ -255,53 +307,58 @@ const ArtikelFormular = ({ mode }) => {
           </select>
         </div>
 
-        <div className="form-group full-width">
-          <label>Artikelname *</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
+          <label style={basisLabelStyle}>Artikelname *</label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleInputChange}
             required
-            className="form-input"
+            style={basisInputStyle}
             placeholder="z.B. Proteinriegel Schokolade 50g"
           />
         </div>
 
-        <div className="form-group full-width">
-          <label>Beschreibung</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
+          <label style={basisLabelStyle}>Beschreibung</label>
           <textarea
             name="beschreibung"
             value={formData.beschreibung}
             onChange={handleInputChange}
             rows="3"
-            className="form-textarea"
+            style={{ ...basisInputStyle, resize: 'vertical', minHeight: '80px' }}
             placeholder="Produktbeschreibung..."
           />
         </div>
 
-        <div className="form-group">
-          <label>EAN-Code</label>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>EAN-Code</label>
           <input
             type="text"
             name="ean_code"
             value={formData.ean_code}
             onChange={handleInputChange}
-            className="form-input"
+            style={basisInputStyle}
             placeholder="z.B. 4250123456789"
           />
         </div>
 
-        <div className="form-group">
-          <label>Artikelnummer</label>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={basisLabelStyle}>Artikelnummer</label>
           <input
             type="text"
             name="artikel_nummer"
             value={formData.artikel_nummer}
             onChange={handleInputChange}
-            className="form-input"
-            placeholder="z.B. ART-001"
+            style={basisInputStyle}
+            placeholder="Wird automatisch generiert"
           />
+          {mode === 'create' && formData.artikel_nummer && (
+            <small style={{ color: '#16a34a', marginTop: '0.25rem', fontSize: '0.85rem' }}>
+              ✓ Auto-generiert basierend auf Artikelgruppe
+            </small>
+          )}
         </div>
       </div>
     </div>
@@ -788,9 +845,436 @@ const ArtikelFormular = ({ mode }) => {
     </div>
   );
 
+  // Varianten Handlers
+  const toggleGroesse = (groesse) => {
+    setFormData(prev => ({
+      ...prev,
+      varianten_groessen: prev.varianten_groessen.includes(groesse)
+        ? prev.varianten_groessen.filter(g => g !== groesse)
+        : [...prev.varianten_groessen, groesse]
+    }));
+  };
+
+  const toggleFarbe = (farbe) => {
+    setFormData(prev => ({
+      ...prev,
+      varianten_farben: prev.varianten_farben.some(f => f.name === farbe.name)
+        ? prev.varianten_farben.filter(f => f.name !== farbe.name)
+        : [...prev.varianten_farben, farbe]
+    }));
+  };
+
+  const addCustomGroesse = () => {
+    if (formData.custom_groesse && !formData.varianten_groessen.includes(formData.custom_groesse)) {
+      setFormData(prev => ({
+        ...prev,
+        varianten_groessen: [...prev.varianten_groessen, prev.custom_groesse],
+        custom_groesse: ''
+      }));
+    }
+  };
+
+  const addCustomFarbe = () => {
+    if (formData.custom_farbe_name && !formData.varianten_farben.some(f => f.name === formData.custom_farbe_name)) {
+      setFormData(prev => ({
+        ...prev,
+        varianten_farben: [...prev.varianten_farben, { name: prev.custom_farbe_name, hex: prev.custom_farbe_hex }],
+        custom_farbe_name: '',
+        custom_farbe_hex: '#000000'
+      }));
+    }
+  };
+
+  const addCustomMaterial = () => {
+    if (formData.custom_material && !formData.varianten_material.includes(formData.custom_material)) {
+      setFormData(prev => ({
+        ...prev,
+        varianten_material: [...prev.varianten_material, prev.custom_material],
+        custom_material: ''
+      }));
+    }
+  };
+
+  const removeMaterial = (material) => {
+    setFormData(prev => ({
+      ...prev,
+      varianten_material: prev.varianten_material.filter(m => m !== material)
+    }));
+  };
+
+  // Input Style für bessere Sichtbarkeit
+  const inputStyle = {
+    padding: '0.75rem 1rem',
+    background: '#ffffff',
+    border: '2px solid #dee2e6',
+    borderRadius: '8px',
+    color: '#2c3e50',
+    fontSize: '1rem',
+    width: '100%',
+    boxSizing: 'border-box'
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    cursor: 'pointer'
+  };
+
+  const renderTabVarianten = () => (
+    <div className="tab-content-section" style={{ overflow: 'auto' }}>
+      {/* Varianten aktivieren */}
+      <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(107, 68, 35, 0.05)', borderRadius: '12px', border: '2px solid rgba(107, 68, 35, 0.2)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)' }}>
+          <input
+            type="checkbox"
+            checked={formData.hat_varianten}
+            onChange={(e) => setFormData(prev => ({ ...prev, hat_varianten: e.target.checked }))}
+            style={{ width: '20px', height: '20px', accentColor: '#6B4423' }}
+          />
+          🎨 Artikel hat Varianten (Größen, Farben, Material)
+        </label>
+      </div>
+
+      {formData.hat_varianten && (
+        <div style={{ display: 'grid', gap: '2rem' }}>
+          {/* GRÖSSEN */}
+          <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              📏 Größen
+            </h3>
+
+            {/* Standard Größen */}
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '0.75rem' }}>Konfektionsgrößen:</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'].map(groesse => (
+                  <button
+                    key={groesse}
+                    type="button"
+                    onClick={() => toggleGroesse(groesse)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      border: '2px solid',
+                      borderColor: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#dee2e6',
+                      borderRadius: '8px',
+                      background: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#ffffff',
+                      color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : '#2c3e50',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {groesse}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Körpergrößen */}
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '0.75rem' }}>Körpergrößen (cm):</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {['100', '110', '120', '130', '140', '150', '160', '170', '180', '190', '200'].map(groesse => (
+                  <button
+                    key={groesse}
+                    type="button"
+                    onClick={() => toggleGroesse(groesse)}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      border: '2px solid',
+                      borderColor: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#dee2e6',
+                      borderRadius: '8px',
+                      background: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#ffffff',
+                      color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : '#2c3e50',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {groesse}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Eigene Größe hinzufügen */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Eigene Größe..."
+                value={formData.custom_groesse}
+                onChange={(e) => setFormData(prev => ({ ...prev, custom_groesse: e.target.value }))}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={addCustomGroesse}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#6B4423',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                + Hinzufügen
+              </button>
+            </div>
+
+            {/* Ausgewählte Größen */}
+            {formData.varianten_groessen.length > 0 && (
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_groessen.length}):</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {formData.varianten_groessen.map(g => (
+                    <span key={g} style={{ padding: '0.25rem 0.75rem', background: '#6B4423', color: '#ffffff', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 500 }}>
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* FARBEN */}
+          <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🎨 Farben
+            </h3>
+
+            {/* Standard Farben */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+              {verfuegbareFarben.map(farbe => (
+                <button
+                  key={farbe.name}
+                  type="button"
+                  onClick={() => toggleFarbe(farbe)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    border: '2px solid',
+                    borderColor: formData.varianten_farben.some(f => f.name === farbe.name) ? '#6B4423' : '#dee2e6',
+                    borderRadius: '8px',
+                    background: formData.varianten_farben.some(f => f.name === farbe.name) ? 'rgba(107, 68, 35, 0.1)' : '#ffffff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    background: farbe.hex,
+                    border: farbe.hex === '#FFFFFF' ? '1px solid #dee2e6' : 'none',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                  }} />
+                  <span style={{ color: '#2c3e50', fontWeight: 500 }}>{farbe.name}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Eigene Farbe hinzufügen */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="Farbname..."
+                value={formData.custom_farbe_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, custom_farbe_name: e.target.value }))}
+                style={{ ...inputStyle, flex: 1, minWidth: '150px' }}
+              />
+              <input
+                type="color"
+                value={formData.custom_farbe_hex}
+                onChange={(e) => setFormData(prev => ({ ...prev, custom_farbe_hex: e.target.value }))}
+                style={{ width: '50px', height: '42px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #dee2e6' }}
+              />
+              <button
+                type="button"
+                onClick={addCustomFarbe}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#6B4423',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                + Hinzufügen
+              </button>
+            </div>
+
+            {/* Ausgewählte Farben */}
+            {formData.varianten_farben.length > 0 && (
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_farben.length}):</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {formData.varianten_farben.map(f => (
+                    <span key={f.name} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      background: '#ffffff',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '20px',
+                      fontSize: '0.85rem'
+                    }}>
+                      <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: f.hex, border: f.hex === '#FFFFFF' ? '1px solid #dee2e6' : 'none' }} />
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* MATERIAL */}
+          <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🧵 Material / Stoff
+            </h3>
+
+            {/* Schnell-Auswahl */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+              {['Baumwolle', 'Polyester', 'Mischgewebe', 'Seide', 'Leinen', 'Wolle', 'Leder', 'Kunstleder'].map(mat => (
+                <button
+                  key={mat}
+                  type="button"
+                  onClick={() => {
+                    if (!formData.varianten_material.includes(mat)) {
+                      setFormData(prev => ({ ...prev, varianten_material: [...prev.varianten_material, mat] }));
+                    }
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: '2px solid',
+                    borderColor: formData.varianten_material.includes(mat) ? '#6B4423' : '#dee2e6',
+                    borderRadius: '8px',
+                    background: formData.varianten_material.includes(mat) ? '#6B4423' : '#ffffff',
+                    color: formData.varianten_material.includes(mat) ? '#ffffff' : '#2c3e50',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {mat}
+                </button>
+              ))}
+            </div>
+
+            {/* Eigenes Material hinzufügen */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Eigenes Material..."
+                value={formData.custom_material}
+                onChange={(e) => setFormData(prev => ({ ...prev, custom_material: e.target.value }))}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={addCustomMaterial}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#6B4423',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                + Hinzufügen
+              </button>
+            </div>
+
+            {/* Ausgewählte Materialien */}
+            {formData.varianten_material.length > 0 && (
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_material.length}):</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {formData.varianten_material.map(m => (
+                    <span key={m} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      background: '#6B4423',
+                      color: '#ffffff',
+                      borderRadius: '20px',
+                      fontSize: '0.85rem',
+                      fontWeight: 500
+                    }}>
+                      {m}
+                      <button
+                        type="button"
+                        onClick={() => removeMaterial(m)}
+                        style={{
+                          background: 'rgba(255,255,255,0.3)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '18px',
+                          height: '18px',
+                          cursor: 'pointer',
+                          color: '#ffffff',
+                          fontSize: '0.7rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ZUSAMMENFASSUNG */}
+          {(formData.varianten_groessen.length > 0 || formData.varianten_farben.length > 0 || formData.varianten_material.length > 0) && (
+            <div style={{ background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.2)', borderRadius: '12px', padding: '1.5rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary, #6B4423)', fontSize: '1.2rem' }}>
+                📊 Varianten-Zusammenfassung
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Größen</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>{formData.varianten_groessen.length}</p>
+                </div>
+                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Farben</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>{formData.varianten_farben.length}</p>
+                </div>
+                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Materialien</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>{formData.varianten_material.length}</p>
+                </div>
+                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Mögliche Kombinationen</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>
+                    {Math.max(1, formData.varianten_groessen.length) * Math.max(1, formData.varianten_farben.length) * Math.max(1, formData.varianten_material.length)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'basis': return renderTabBasis();
+      case 'varianten': return renderTabVarianten();
       case 'preise': return renderTabPreise();
       case 'lager': return renderTabLager();
       case 'einstellungen': return renderTabEinstellungen();
