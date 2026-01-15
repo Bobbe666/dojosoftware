@@ -212,10 +212,7 @@ function Dashboard() {
     { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' }
   ];
 
-  // News-Tab nur für Haupt-Admin anzeigen
-  const tabs = isMainAdmin
-    ? [...baseTabs, { id: 'news', label: 'News verwalten', icon: '📰' }]
-    : baseTabs;
+  const tabs = baseTabs;
 
   // Formatiere Zahlen für bessere Lesbarkeit
   const formatNumber = (num) => {
@@ -1249,25 +1246,6 @@ function Dashboard() {
                         </div>
                       )}
 
-                      {/* 📰 News Tab - Nur für Haupt-Admin */}
-                      {activeTab === 'news' && isMainAdmin && (
-                        <div className="nav-section">
-                          <h2 className="section-header" style={{ color: 'var(--color-gold)' }}>
-                            <span>📰</span> News verwalten
-                          </h2>
-                          <div className="nav-cards">
-                            <div
-                              className="nav-card clickable featured"
-                              onClick={() => handleNavigation('/dashboard/news')}
-                            >
-                              <div className="nav-icon">📰</div>
-                              <h3>News-Artikel</h3>
-                              <p>Erstellen und verwalten Sie News-Artikel für alle Dojos oder nur die Homepage</p>
-                              <span className="nav-badge">ADMIN</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                   </>
