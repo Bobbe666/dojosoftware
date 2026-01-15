@@ -594,7 +594,7 @@ const ArtikelFormular = ({ mode }) => {
                     {(() => {
                       const basisPreis = parseFloat(formData.preis_erwachsene_euro) || nettoverkaufspreis || 0;
                       return basisPreis > 0 ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                           <button type="button" onClick={() => setFormData(prev => ({
                             ...prev,
                             preis_kids_euro: (basisPreis * 0.7).toFixed(2)
@@ -614,12 +614,39 @@ const ArtikelFormular = ({ mode }) => {
                             Gleicher Preis
                           </button>
                         </div>
-                      ) : (
-                        <p style={{ fontSize: '0.8rem', color: '#9ca3af', fontStyle: 'italic', marginBottom: '1rem' }}>
-                          Gib zuerst einen Erwachsenen-Preis ein für Quick-Fill
-                        </p>
-                      );
+                      ) : null;
                     })()}
+
+                    {/* Preise übernehmen Button */}
+                    {(parseFloat(formData.preis_kids_euro) > 0 || parseFloat(formData.preis_erwachsene_euro) > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Erwachsenen-Preis als Hauptpreis setzen (oder Kids wenn nur der gesetzt ist)
+                          const hauptpreis = parseFloat(formData.preis_erwachsene_euro) || parseFloat(formData.preis_kids_euro) || 0;
+                          if (hauptpreis > 0) {
+                            setFormData(prev => ({
+                              ...prev,
+                              verkaufspreis_euro: hauptpreis.toFixed(2)
+                            }));
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          marginBottom: '1rem',
+                          background: '#6B4423',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.95rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✓ Preise übernehmen (Erwachsene: {parseFloat(formData.preis_erwachsene_euro) || 0}€ als Hauptpreis)
+                      </button>
+                    )}
 
                     {/* Größen-Zuordnung */}
                     <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px' }}>
