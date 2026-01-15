@@ -598,12 +598,249 @@
   .weekly-view .weekly-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .view-title {
     font-size: 6vw;
   }
-  
+
   .big-time {
     font-size: 8vw;
   }
+}
+
+/* ========================================
+   LIGHT MODE STYLES
+   ======================================== */
+
+[data-theme="light"] .public-timetable-display {
+  background: #f8f9fa;
+  color: #2c3e50;
+}
+
+[data-theme="light"] .public-timetable-display::before {
+  background:
+    radial-gradient(circle at 20% 80%, rgba(107, 68, 35, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+}
+
+/* Light Mode View Indicator */
+[data-theme="light"] .view-indicator {
+  background: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .time {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+[data-theme="light"] .date {
+  color: #6c757d;
+}
+
+[data-theme="light"] .info-text {
+  color: #6c757d;
+}
+
+[data-theme="light"] .current-view-name {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+[data-theme="light"] .view-progress {
+  color: #6c757d;
+}
+
+[data-theme="light"] .view-dot {
+  background: #dee2e6;
+}
+
+[data-theme="light"] .view-dot.active {
+  background: #6B4423;
+  box-shadow: 0 0 10px rgba(107, 68, 35, 0.3);
+}
+
+/* Light Mode Loading Indicator */
+[data-theme="light"] .loading-indicator {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  color: #6B4423;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .spinner {
+  border: 2px solid #dee2e6;
+  border-top: 2px solid #6B4423;
+}
+
+/* Light Mode View Title */
+[data-theme="light"] .view-title {
+  background: linear-gradient(135deg, #6B4423, #8B5A2B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+/* Light Mode Class Card */
+[data-theme="light"] .class-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .class-card::before {
+  background: linear-gradient(135deg, #6B4423, #8B5A2B);
+}
+
+[data-theme="light"] .class-card:hover {
+  background: #f8f9fa;
+  border-color: #6B4423;
+  box-shadow: 0 8px 24px rgba(107, 68, 35, 0.15);
+}
+
+[data-theme="light"] .start-time,
+[data-theme="light"] .end-time {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+[data-theme="light"] .time-separator {
+  color: #6c757d;
+}
+
+[data-theme="light"] .class-name {
+  color: #2c3e50;
+  text-shadow: none;
+}
+
+[data-theme="light"] .class-style,
+[data-theme="light"] .class-trainer {
+  color: #495057;
+}
+
+[data-theme="light"] .status-indicator {
+  background: #6B4423;
+  box-shadow: 0 0 0 4px rgba(107, 68, 35, 0.2);
+}
+
+/* Light Mode Next Class View */
+[data-theme="light"] .next-class-card {
+  background: #ffffff;
+  border: 2px solid #dee2e6;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .next-class-card::before {
+  background: linear-gradient(135deg, #6B4423, #8B5A2B);
+}
+
+[data-theme="light"] .next-class-day {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+[data-theme="light"] .big-time {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+[data-theme="light"] .next-class-time .time-separator {
+  color: #6c757d;
+}
+
+[data-theme="light"] .next-class-name {
+  color: #2c3e50;
+  text-shadow: none;
+}
+
+[data-theme="light"] .next-class-style,
+[data-theme="light"] .next-class-trainer {
+  color: #495057;
+}
+
+[data-theme="light"] .countdown-section {
+  border-top: 1px solid #dee2e6;
+}
+
+[data-theme="light"] .countdown-label {
+  color: #6c757d;
+}
+
+[data-theme="light"] .countdown-timer {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+/* Light Mode Weekly View */
+[data-theme="light"] .day-column {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .day-column.current-day {
+  border-color: #6B4423;
+  background: rgba(107, 68, 35, 0.05);
+  box-shadow: 0 0 15px rgba(107, 68, 35, 0.15);
+}
+
+[data-theme="light"] .day-column:hover {
+  background: #f8f9fa;
+}
+
+[data-theme="light"] .day-header {
+  border-bottom: 1px solid #dee2e6;
+}
+
+[data-theme="light"] .day-name {
+  color: #6B4423;
+  text-shadow: none;
+}
+
+[data-theme="light"] .day-count {
+  color: #6c757d;
+}
+
+/* Light Mode Mini Class Card */
+[data-theme="light"] .mini-class-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+[data-theme="light"] .mini-class-card:hover {
+  background: rgba(107, 68, 35, 0.08);
+  border-color: rgba(107, 68, 35, 0.3);
+}
+
+[data-theme="light"] .mini-time {
+  color: #6B4423;
+}
+
+[data-theme="light"] .mini-name {
+  color: #6c757d;
+}
+
+[data-theme="light"] .mini-style {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .no-day-classes {
+  color: #adb5bd;
+}
+
+/* Light Mode No Classes State */
+[data-theme="light"] .no-classes {
+  background: #ffffff;
+  border: 2px dashed #dee2e6;
+}
+
+[data-theme="light"] .no-classes h3 {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .no-classes p {
+  color: #6c757d;
 }
