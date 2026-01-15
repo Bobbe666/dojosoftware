@@ -1093,38 +1093,85 @@ const ArtikelFormular = ({ mode }) => {
                 </span>
               </div>
 
-              {/* KIDS/ERWACHSENE PREISE */}
+              {/* KIDS/ERWACHSENE PREISE - Vollständige Kalkulation */}
               {formData.hat_preiskategorien && formData.hat_varianten && (
-                <>
-                  <div style={{height: '8px', borderTop: '2px solid #6B4423', margin: '0.75rem 0'}}></div>
-                  <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '4px'}}>
-                    <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>👶🧑 Varianten-Preise</strong>
-                  </div>
+                (() => {
+                  const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
+                  const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
+                  const mwst = parseFloat(formData.mwst_prozent) || 19;
+                  const kidsBrutto = kidsNetto * (1 + mwst / 100);
+                  const erwBrutto = erwNetto * (1 + mwst / 100);
+                  const einkauf = bezugspreis > 0 ? bezugspreis : (parseFloat(formData.einkaufspreis_euro) || 0);
+                  const kidsGewinn = kidsNetto - einkauf;
+                  const erwGewinn = erwNetto - einkauf;
 
-                  <div className="kalkulation-row" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#dcfce7', borderRadius: '4px', marginBottom: '0.25rem'}}>
-                    <span>👶 <strong>Kids-Preis</strong></span>
-                    <span style={{color: '#166534', fontWeight: 600}}>
-                      {formData.preis_kids_euro ? `${parseFloat(formData.preis_kids_euro).toFixed(2)} €` : '– nicht gesetzt –'}
-                    </span>
-                  </div>
+                  return (
+                    <>
+                      <div style={{height: '8px', borderTop: '2px solid #6B4423', margin: '0.75rem 0'}}></div>
+                      <div style={{marginBottom: '0.5rem', padding: '0.4rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '4px'}}>
+                        <strong style={{fontSize: '0.9rem', color: '#6B4423'}}>👶🧑 VARIANTEN-KALKULATION</strong>
+                      </div>
 
-                  <div className="kalkulation-row" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#dbeafe', borderRadius: '4px'}}>
-                    <span>🧑 <strong>Erwachsene-Preis</strong></span>
-                    <span style={{color: '#1e40af', fontWeight: 600}}>
-                      {formData.preis_erwachsene_euro ? `${parseFloat(formData.preis_erwachsene_euro).toFixed(2)} €` : '– nicht gesetzt –'}
-                    </span>
-                  </div>
+                      {/* KIDS Bereich */}
+                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.5rem' }}>
+                        <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.25rem', fontSize: '0.85rem' }}>👶 KIDS (Größen: {formData.varianten_groessen.filter(g => formData.groessen_kids.includes(g)).join(', ') || 'keine'})</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
+                          <span>Netto-VK</span>
+                          <span style={{ fontWeight: 600 }}>{kidsNetto.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#047857' }}>
+                          <span>+ MwSt ({mwst}%)</span>
+                          <span>+{(kidsNetto * mwst / 100).toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderTop: '1px solid #86efac', fontWeight: 600 }}>
+                          <span>= Brutto-VK</span>
+                          <span style={{ color: '#166534' }}>{kidsBrutto.toFixed(2)} €</span>
+                        </div>
+                        {einkauf > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626' }}>
+                            <span>💰 Gewinn</span>
+                            <span style={{ fontWeight: 600 }}>{kidsGewinn.toFixed(2)} € ({einkauf > 0 ? ((kidsGewinn / einkauf) * 100).toFixed(0) : 0}%)</span>
+                          </div>
+                        )}
+                      </div>
 
-                  {formData.preis_kids_euro && formData.preis_erwachsene_euro && (
-                    <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#6c757d', marginTop: '0.25rem'}}>
-                      <span>Differenz</span>
-                      <span>
-                        {(parseFloat(formData.preis_erwachsene_euro) - parseFloat(formData.preis_kids_euro)).toFixed(2)} €
-                        ({(((parseFloat(formData.preis_erwachsene_euro) - parseFloat(formData.preis_kids_euro)) / parseFloat(formData.preis_erwachsene_euro)) * 100).toFixed(0)}%)
-                      </span>
-                    </div>
-                  )}
-                </>
+                      {/* ERWACHSENE Bereich */}
+                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.5rem' }}>
+                        <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.25rem', fontSize: '0.85rem' }}>🧑 ERWACHSENE (Größen: {formData.varianten_groessen.filter(g => formData.groessen_erwachsene.includes(g)).join(', ') || 'keine'})</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
+                          <span>Netto-VK</span>
+                          <span style={{ fontWeight: 600 }}>{erwNetto.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#047857' }}>
+                          <span>+ MwSt ({mwst}%)</span>
+                          <span>+{(erwNetto * mwst / 100).toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderTop: '1px solid #93c5fd', fontWeight: 600 }}>
+                          <span>= Brutto-VK</span>
+                          <span style={{ color: '#1e40af' }}>{erwBrutto.toFixed(2)} €</span>
+                        </div>
+                        {einkauf > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626' }}>
+                            <span>💰 Gewinn</span>
+                            <span style={{ fontWeight: 600 }}>{erwGewinn.toFixed(2)} € ({einkauf > 0 ? ((erwGewinn / einkauf) * 100).toFixed(0) : 0}%)</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Preisdifferenz */}
+                      {kidsNetto > 0 && erwNetto > 0 && (
+                        <div style={{ background: '#f3f4f6', borderRadius: '6px', padding: '0.4rem 0.5rem', fontSize: '0.8rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>📊 Preisdifferenz</span>
+                            <span style={{ fontWeight: 600 }}>
+                              {(erwNetto - kidsNetto).toFixed(2)} € ({((erwNetto - kidsNetto) / erwNetto * 100).toFixed(0)}% günstiger für Kids)
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()
               )}
             </div>
           </div>
