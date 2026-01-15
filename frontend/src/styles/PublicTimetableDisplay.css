@@ -801,34 +801,40 @@
 }
 
 [data-theme="light"] .day-count {
-  color: #6c757d;
+  color: #495057 !important;
+  font-weight: 500;
 }
 
 /* Light Mode Mini Class Card */
 [data-theme="light"] .mini-class-card {
-  background: #f8f9fa;
+  background: #ffffff;
   border: 1px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"] .mini-class-card:hover {
-  background: rgba(107, 68, 35, 0.08);
-  border-color: rgba(107, 68, 35, 0.3);
+  background: #f8f9fa;
+  border-color: #6B4423;
+  box-shadow: 0 2px 6px rgba(107, 68, 35, 0.15);
 }
 
 [data-theme="light"] .mini-time {
-  color: #6B4423;
+  color: #6B4423 !important;
+  font-weight: 700;
 }
 
 [data-theme="light"] .mini-name {
-  color: #6c757d;
+  color: #495057 !important;
+  font-weight: 500;
 }
 
 [data-theme="light"] .mini-style {
-  color: #2c3e50;
+  color: #2c3e50 !important;
+  font-weight: 600;
 }
 
 [data-theme="light"] .no-day-classes {
-  color: #adb5bd;
+  color: #6c757d;
 }
 
 /* Light Mode No Classes State */
