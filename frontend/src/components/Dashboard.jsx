@@ -1301,15 +1301,6 @@ function Dashboard() {
                                 Mitgliedern, Kursen, Prüfungen und Finanzen.
                               </p>
                             </div>
-
-                            <div className="info-section">
-                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                                Technologie
-                              </h3>
-                              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                React • Node.js • MySQL • PWA
-                              </p>
-                            </div>
                           </div>
                         </div>
                       )}

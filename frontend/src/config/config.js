@@ -34,7 +34,7 @@ const config = {
     name: 'DojoSoftware',
     version: '2.1.0',
     description: 'Kampfkunstschule Verwaltungssystem',
-    author: 'DojoSoft Team',
+    author: 'Sascha Schreiner',
     buildDate: '2026-01-15',
     contactEmail: 'support@tda-intl.org',
   },
