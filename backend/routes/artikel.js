@@ -161,9 +161,19 @@ router.get('/kategorien', (req, res) => {
 
 // POST /api/artikel/kategorien - Neue Kategorie erstellen
 router.post('/kategorien', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const { name, beschreibung, farbe_hex, icon, reihenfolge } = req.body;
@@ -177,7 +187,7 @@ router.post('/kategorien', (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0, req.tenant.dojo_id], 
+  db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0, dojoId], 
     (error, results) => {
       if (error) {
         console.error('Fehler beim Erstellen der Kategorie:', error);
@@ -373,9 +383,19 @@ router.get('/kasse', (req, res) => {
 
 // GET /api/artikel/:id - Einzelnen Artikel abrufen
 router.get('/:id', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles sehen)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const query = `
@@ -388,7 +408,7 @@ router.get('/:id', (req, res) => {
     WHERE a.artikel_id = ? AND a.dojo_id = ?
   `;
 
-  db.query(query, [req.params.id, req.tenant.dojo_id], (error, results) => {
+  db.query(query, [req.params.id, dojoId], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen des Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des Artikels' });
@@ -405,9 +425,19 @@ router.get('/:id', (req, res) => {
 
 // POST /api/artikel - Neuen Artikel erstellen
 router.post('/', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const {
@@ -468,7 +498,7 @@ router.post('/', (req, res) => {
     kundenskonto_p, kundenrabatt_p,
     lagerbestand || 0, mindestbestand || 0, lager_tracking !== 'false',
     bild_url, bild_base64, farbe_hex || '#FFFFFF',
-    aktiv !== 'false', sichtbar_kasse !== 'false', req.tenant.dojo_id
+    aktiv !== 'false', sichtbar_kasse !== 'false', dojoId
   ];
   
   db.query(query, params, (error, results) => {
@@ -502,9 +532,19 @@ router.post('/', (req, res) => {
 
 // PUT /api/artikel/:id - Artikel aktualisieren
 router.put('/:id', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const artikel_id = req.params.id;
@@ -520,7 +560,7 @@ router.put('/:id', (req, res) => {
   } = req.body;
 
   // Zuerst aktuellen Artikel abrufen
-  db.query('SELECT * FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, req.tenant.dojo_id], (error, currentResults) => {
+  db.query('SELECT * FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, currentResults) => {
     if (error) {
       console.error('Fehler beim Abrufen des aktuellen Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des aktuellen Artikels' });
@@ -608,7 +648,7 @@ router.put('/:id', (req, res) => {
     updateValues.push(artikel_id);
 
     const query = `UPDATE artikel SET ${updateFields.join(', ')} WHERE artikel_id = ? AND dojo_id = ?`;
-    updateValues.push(req.tenant.dojo_id);
+    updateValues.push(dojoId);
 
     db.query(query, updateValues, (error, results) => {
       if (error) {
@@ -646,14 +686,24 @@ router.put('/:id', (req, res) => {
 
 // DELETE /api/artikel/:id - Artikel löschen (soft delete)
 router.delete('/:id', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const query = 'UPDATE artikel SET aktiv = FALSE, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ? AND dojo_id = ?';
 
-  db.query(query, [req.params.id, req.tenant.dojo_id], (error, results) => {
+  db.query(query, [req.params.id, dojoId], (error, results) => {
     if (error) {
       console.error('Fehler beim Deaktivieren des Artikels:', error);
       return res.status(500).json({ error: 'Fehler beim Deaktivieren des Artikels' });
@@ -672,9 +722,19 @@ router.delete('/:id', (req, res) => {
 
 // POST /api/artikel/:id/lager - Lagerbestand ändern
 router.post('/:id/lager', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const artikel_id = req.params.id;
@@ -685,7 +745,7 @@ router.post('/:id/lager', (req, res) => {
   }
 
   // Aktuellen Bestand abrufen
-  db.query('SELECT lagerbestand FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, req.tenant.dojo_id], (error, results) => {
+  db.query('SELECT lagerbestand FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen des Lagerbestands:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen des Lagerbestands' });
@@ -753,9 +813,19 @@ router.post('/:id/lager', (req, res) => {
 
 // GET /api/artikel/:id/lager - Lagerbewegungen für Artikel
 router.get('/:id/lager', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles sehen)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
+  }
+
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
   }
 
   const query = `
@@ -776,7 +846,7 @@ router.get('/:id/lager', (req, res) => {
     LIMIT 50
   `;
 
-  db.query(query, [req.params.id, req.tenant.dojo_id], (error, results) => {
+  db.query(query, [req.params.id, dojoId], (error, results) => {
     if (error) {
       console.error('Fehler beim Abrufen der Lagerbewegungen:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Lagerbewegungen' });
@@ -791,12 +861,20 @@ router.get('/:id/lager', (req, res) => {
 
 // GET /api/artikel/stats - Artikel-Statistiken
 router.get('/stats/overview', (req, res) => {
-  // Tenant check
-  if (!req.tenant?.dojo_id) {
+  // Super-Admin Check (darf alles sehen)
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+  // Tenant check (Super-Admin braucht kein dojo_id)
+  if (!isSuperAdmin && !req.tenant?.dojo_id) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
-  const dojoId = req.tenant.dojo_id;
+  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) {
+    return res.status(403).json({ error: 'No dojo_id available' });
+  }
   const queries = {
     gesamt: ['SELECT COUNT(*) as anzahl FROM artikel WHERE aktiv = TRUE AND dojo_id = ?', [dojoId]],
     kategorien: ['SELECT COUNT(*) as anzahl FROM artikel_kategorien WHERE aktiv = TRUE AND dojo_id = ?', [dojoId]],
