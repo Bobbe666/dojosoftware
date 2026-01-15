@@ -1,5 +1,5 @@
 // Frontend/src/App.jsx - VOLLST�NDIGE VERSION mit korrekten Routes
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Authentifizierung & Context
@@ -16,7 +16,8 @@ import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import DashboardTdaVib from "./components/DashboardTdaVib"; // TDA-Vib Style Test
 import MitgliederListe from "./components/MitgliederListe";
-import MitgliedDetail from "./components/MitgliedDetail";
+// LAZY LOADED (wraps MitgliedDetailShared)
+const MitgliedDetail = lazy(() => import("./components/MitgliedDetail"));
 import EhemaligenListe from "./components/EhemaligenListe";
 import InteressentenListe from "./components/InteressentenListe";
 import Anwesenheit from "./components/Anwesenheit";
@@ -58,8 +59,8 @@ import ArtikelFormular from "./components/ArtikelFormular";
 import VerkaufKasse from "./components/VerkaufKasse";
 import ArtikelgruppenVerwaltung from "./components/ArtikelgruppenVerwaltung";
 
-// ERWEITERTE STIL-VERWALTUNG (mit Graduierungen und Drag & Drop)
-import Stilverwaltung from "./components/Stilverwaltung";
+// ERWEITERTE STIL-VERWALTUNG (mit Graduierungen und Drag & Drop) - LAZY LOADED
+const Stilverwaltung = lazy(() => import("./components/Stilverwaltung"));
 
 // MEMBER-KOMPONENTEN
 import MemberDashboard from "./components/MemberDashboard";
@@ -72,7 +73,8 @@ import MemberStats from "./components/MemberStats";
 import MemberStyles from "./components/MemberStyles";
 import EquipmentChecklist from "./components/EquipmentChecklist";
 import CourseRatingAdmin from "./components/CourseRatingAdmin";
-import MitgliedDetailShared from "./components/MitgliedDetailShared";
+// LAZY LOADED - Large component (9975 lines)
+const MitgliedDetailShared = lazy(() => import("./components/MitgliedDetailShared"));
 import MemberHeader from "./components/MemberHeader";
 
 // TRAINER-KOMPONENTEN
@@ -120,14 +122,14 @@ import BerichteDokumente from "./components/BerichteDokumente";
 import DojosVerwaltung from "./components/DojosVerwaltung";
 import DojoEdit from "./components/DojoEdit";
 
-// Vertrags-Dokumentenverwaltung
-import DokumenteVerwaltung from "./components/DokumenteVerwaltung";
+// Vertrags-Dokumentenverwaltung - LAZY LOADED (2304 lines)
+const DokumenteVerwaltung = lazy(() => import("./components/DokumenteVerwaltung"));
 
-// Newsletter & Benachrichtigungssystem
-import NotificationSystem from "./components/NotificationSystem";
+// Newsletter & Benachrichtigungssystem - LAZY LOADED (2435 lines)
+const NotificationSystem = lazy(() => import("./components/NotificationSystem"));
 
-// Pr�fungsverwaltung (Gurtpr�fungen)
-import PruefungsVerwaltung from "./components/PruefungsVerwaltung";
+// Pr�fungsverwaltung (Gurtpr�fungen) - LAZY LOADED (4748 lines)
+const PruefungsVerwaltung = lazy(() => import("./components/PruefungsVerwaltung"));
 import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
 
 // Events-Verwaltung
@@ -153,6 +155,20 @@ import AGBPage from "./pages/AGBPage";
 import HelpPage from "./pages/HelpPage";
 import GaleriePage from "./pages/GaleriePage";
 import DemoPage from "./pages/DemoPage";
+
+// Loading Fallback für Lazy-Loaded Komponenten
+const LazyLoadFallback = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '200px',
+    fontSize: '1rem',
+    color: '#666'
+  }}>
+    <div className="loading-spinner"></div>
+  </div>
+);
 
 // Protected Route Komponente mit AuthContext
 const ProtectedRoute = ({ children }) => {
@@ -296,7 +312,9 @@ const App = () => {
                 <MemberOnlyRoute>
                   <div className="member-profile-wrapper">
                     <MemberHeader />
-                    <MitgliedDetailShared isAdmin={false} />
+                    <Suspense fallback={<LazyLoadFallback />}>
+                      <MitgliedDetailShared isAdmin={false} />
+                    </Suspense>
                   </div>
                 </MemberOnlyRoute>
               }
@@ -405,7 +423,7 @@ const App = () => {
               
               {/* Mitglieder-Management */}
               <Route path="mitglieder" element={<MitgliederListe />} />
-              <Route path="mitglieder/:id" element={<MitgliedDetail />} />
+              <Route path="mitglieder/:id" element={<Suspense fallback={<LazyLoadFallback />}><MitgliedDetail /></Suspense>} />
 
               {/* Ehemalige & Interessenten */}
               <Route path="ehemalige" element={<EhemaligenListe />} />
@@ -438,8 +456,8 @@ const App = () => {
                 WICHTIG: Diese Routen verwenden momentan GruppenStilverwaltung als Fallback
                 TODO: Erweiterte StilVerwaltung mit Graduierungen implementieren
               */}
-              <Route path="stile" element={<Stilverwaltung />} />
-              <Route path="stile/:stilId" element={<Stilverwaltung />} />
+              <Route path="stile" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />
+              <Route path="stile/:stilId" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />
               
               {/* ======== VERWALTUNGSBEREICHE ======== */}
               
@@ -459,7 +477,7 @@ const App = () => {
               <Route path="trainer" element={<Trainer />} />
 
               {/* Pr�fungsverwaltung (Gurtpr�fungen) */}
-              <Route path="termine" element={<PruefungsVerwaltung />} />
+              <Route path="termine" element={<Suspense fallback={<LazyLoadFallback />}><PruefungsVerwaltung /></Suspense>} />
               <Route path="pruefung-durchfuehren" element={<PruefungDurchfuehren />} />
 
               {/* Events-Verwaltung */}
@@ -507,7 +525,7 @@ const App = () => {
               <Route path="berichte" element={<BerichteDokumente />} />
 
               {/* Vertrags-Dokumentenverwaltung (AGB, Datenschutz, etc.) */}
-              <Route path="vertragsdokumente" element={<DokumenteVerwaltung />} />
+              <Route path="vertragsdokumente" element={<Suspense fallback={<LazyLoadFallback />}><DokumenteVerwaltung /></Suspense>} />
 
               {/* Multi-Dojo-Verwaltung & Steuer-Tracking */}
               <Route path="dojos" element={<DojosVerwaltung />} />
@@ -515,7 +533,7 @@ const App = () => {
               <Route path="dojos/new" element={<DojoEdit />} />
 
               {/* Newsletter & Benachrichtigungssystem */}
-              <Route path="notifications" element={<NotificationSystem />} />
+              <Route path="notifications" element={<Suspense fallback={<LazyLoadFallback />}><NotificationSystem /></Suspense>} />
 
               {/* ======== EINSTELLUNGEN ======== */}
               <Route path="einstellungen" element={<EinstellungenDojo />} />

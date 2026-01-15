@@ -101,6 +101,10 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          icons: ['lucide-react'],
+          charts: ['recharts'],
+          animation: ['framer-motion'],
+          editor: ['grapesjs', 'grapesjs-preset-webpage'],
         },
       },
     },
