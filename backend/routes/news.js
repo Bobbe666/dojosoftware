@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 
 // Middleware: Nur Haupt-Admin (user.id === 1 oder username === 'admin')

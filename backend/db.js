@@ -20,11 +20,7 @@ function connectDatabase() {
         database: process.env.DB_NAME,
         waitForConnections: true,
         queueLimit: 0,
-        charset: 'utf8mb4',
-        collation: 'utf8mb4_unicode_ci',
-        connectionConfig: {
-            charset: 'UTF8MB4_UNICODE_CI'
-        }
+        charset: 'utf8mb4'
     });
 
     // Teste die Verbindung beim Start
