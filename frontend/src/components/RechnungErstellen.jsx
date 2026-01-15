@@ -934,28 +934,20 @@ const RechnungErstellen = () => {
                   onChange={(e) => setNeuePosition({...neuePosition, ist_rabattfaehig: e.target.checked, rabatt_prozent: e.target.checked ? neuePosition.rabatt_prozent : 0})}
                   style={{ cursor: 'pointer' }}
                 />
-                <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.85)' }}>Rabattfähig</span>
+                <span className="checkbox-label" style={{ fontSize: '0.85rem' }}>Rabattfähig</span>
               </label>
 
               {neuePosition.ist_rabattfaehig && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)' }}>Rabatt %:</label>
+                  <label className="rabatt-label">Rabatt %:</label>
                   <input
                     type="number"
+                    className="rabatt-input"
                     value={neuePosition.rabatt_prozent}
                     onChange={(e) => setNeuePosition({...neuePosition, rabatt_prozent: parseFloat(e.target.value) || 0})}
                     min="0"
                     max="100"
                     step="0.01"
-                    style={{
-                      padding: '0.3rem 0.45rem',
-                      fontSize: '0.75rem',
-                      width: '80px',
-                      background: 'rgba(255, 215, 0, 0.1)',
-                      border: '1px solid rgba(255, 215, 0, 0.3)',
-                      borderRadius: '4px',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
                   />
                 </div>
               )}
@@ -964,23 +956,16 @@ const RechnungErstellen = () => {
             {/* Hinzugefügte Positionen */}
             {positionen.length > 0 && (
               <div style={{ marginTop: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
-                <h4 style={{ fontSize: '0.85rem', color: '#ffd700', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Hinzugefügte Positionen:</h4>
+                <h4 className="positionen-liste-header">Hinzugefügte Positionen:</h4>
                 {positionen.map((pos, index) => (
-                  <div key={index} style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 215, 0, 0.2)',
-                    borderRadius: '6px',
-                    padding: '0.75rem',
-                    marginBottom: '0.5rem',
+                  <div key={index} className="position-item" style={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.5rem'
                   }}>
                     {/* Erste Zeile: Produkt-Info und Entfernen-Button */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{
-                        fontSize: '0.8rem',
-                        color: 'rgba(255, 255, 255, 0.9)',
+                      <div className="position-item-text" style={{
                         flex: 1,
                         paddingRight: '0.5rem'
                       }}>
@@ -1015,12 +1000,11 @@ const RechnungErstellen = () => {
                     </div>
 
                     {/* Zweite Zeile: Rabatt-Einstellungen */}
-                    <div style={{
+                    <div className="position-item-divider" style={{
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '0.5rem',
                       paddingTop: '0.25rem',
-                      borderTop: '1px solid rgba(255, 215, 0, 0.1)',
                       alignItems: 'flex-start'
                     }}>
                       <label style={{
@@ -1044,7 +1028,7 @@ const RechnungErstellen = () => {
                           }}
                           style={{ cursor: 'pointer', width: '12px', height: '12px', flexShrink: 0 }}
                         />
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', whiteSpace: 'nowrap' }}>Rabattfähig</span>
+                        <span className="checkbox-label" style={{ whiteSpace: 'nowrap' }}>Rabattfähig</span>
                       </label>
 
                       {pos.ist_rabattfaehig && (
@@ -1054,13 +1038,10 @@ const RechnungErstellen = () => {
                           gap: '0.5rem',
                           paddingLeft: '1.25rem'
                         }}>
-                          <label style={{
-                            fontSize: '0.7rem',
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            minWidth: '60px'
-                          }}>Rabatt %:</label>
+                          <label className="rabatt-label" style={{ minWidth: '60px' }}>Rabatt %:</label>
                           <input
                             type="number"
+                            className="rabatt-input"
                             value={pos.rabatt_prozent || 0}
                             onChange={(e) => {
                               const updatedPositionen = [...positionen];
@@ -1073,15 +1054,6 @@ const RechnungErstellen = () => {
                             min="0"
                             max="100"
                             step="0.01"
-                            style={{
-                              padding: '0.3rem 0.5rem',
-                              fontSize: '0.75rem',
-                              width: '80px',
-                              background: 'rgba(255, 215, 0, 0.1)',
-                              border: '1px solid rgba(255, 215, 0, 0.3)',
-                              borderRadius: '4px',
-                              color: 'rgba(255, 255, 255, 0.95)'
-                            }}
                           />
                         </div>
                       )}
