@@ -710,46 +710,101 @@ const ArtikelVerwaltung = () => {
 
     // Lager modal - kompakt und hell
     if (modalMode === 'lager') {
+      const modalStyle = {
+        maxWidth: '320px',
+        width: '320px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+        padding: '0',
+        background: '#ffffff',
+        border: '1px solid #e9ecef',
+        animation: 'none',
+        backdropFilter: 'none'
+      };
+      const headerStyle = {
+        padding: '12px 14px',
+        background: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
+        borderBottom: '1px solid #e9ecef',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      };
+      const headerTitleStyle = {
+        fontSize: '15px',
+        margin: '0',
+        color: '#2c3e50',
+        fontWeight: '600',
+        background: 'none',
+        WebkitTextFillColor: '#2c3e50'
+      };
+      const bodyStyle = {
+        padding: '14px',
+        background: '#ffffff'
+      };
+      const infoCardStyle = {
+        background: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
+        border: '1px solid #e9ecef',
+        borderRadius: '6px',
+        padding: '10px 12px',
+        marginBottom: '12px'
+      };
+      const infoTitleStyle = {
+        margin: '0 0 8px 0',
+        fontSize: '14px',
+        fontWeight: '600',
+        color: '#2c3e50'
+      };
+      const labelStyle = {
+        fontSize: '11px',
+        color: '#6c757d'
+      };
+      const valueStyle = {
+        fontSize: '15px',
+        fontWeight: '600',
+        color: '#2c3e50'
+      };
       return (
-        <div className="modal-overlay lager-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content lager-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header lager-modal-header">
-              <h2>Lagerbestand ändern</h2>
-              <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
+        <div className="modal-overlay lager-modal-overlay" onClick={() => setShowModal(false)} style={{background: 'rgba(0,0,0,0.3)'}}>
+          <div className="modal-content lager-modal" onClick={e => e.stopPropagation()} style={modalStyle}>
+            <div className="modal-header lager-modal-header" style={headerStyle}>
+              <h2 style={headerTitleStyle}>Lagerbestand ändern</h2>
+              <button className="close-btn" onClick={() => setShowModal(false)} style={{background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6c757d'}}>×</button>
             </div>
 
-            <div className="modal-body lager-modal-body">
-              <div className="artikel-info-card">
-                <h4>{selectedArtikel?.name}</h4>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">Aktueller Bestand:</span>
-                    <span className="info-value">{selectedArtikel?.lagerbestand}</span>
+            <div className="modal-body lager-modal-body" style={bodyStyle}>
+              <div className="artikel-info-card" style={infoCardStyle}>
+                <h4 style={infoTitleStyle}>{selectedArtikel?.name}</h4>
+                <div className="info-grid" style={{display: 'flex', gap: '20px'}}>
+                  <div className="info-item" style={{display: 'flex', flexDirection: 'column', gap: '2px'}}>
+                    <span className="info-label" style={labelStyle}>Aktueller Bestand:</span>
+                    <span className="info-value" style={valueStyle}>{selectedArtikel?.lagerbestand}</span>
                   </div>
-                  <div className="info-item">
-                    <span className="info-label">Mindestbestand:</span>
-                    <span className="info-value">{selectedArtikel?.mindestbestand}</span>
+                  <div className="info-item" style={{display: 'flex', flexDirection: 'column', gap: '2px'}}>
+                    <span className="info-label" style={labelStyle}>Mindestbestand:</span>
+                    <span className="info-value" style={valueStyle}>{selectedArtikel?.mindestbestand}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="lager-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Bewegungsart</label>
+              <div className="lager-form" style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                <div className="form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
+                  <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                    <label style={{fontSize: '12px', fontWeight: '500', color: '#495057'}}>Bewegungsart</label>
                     <select
                       name="bewegungsart"
                       value={lagerBewegung.bewegungsart}
                       onChange={handleLagerChange}
                       className="form-select"
+                      style={{padding: '8px 10px', border: '1px solid #dee2e6', borderRadius: '4px', fontSize: '13px', background: '#ffffff', color: '#2c3e50', height: '36px'}}
                     >
                       <option value="eingang">Eingang (+)</option>
                       <option value="ausgang">Ausgang (-)</option>
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label>Menge</label>
+                  <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                    <label style={{fontSize: '12px', fontWeight: '500', color: '#495057'}}>Menge</label>
                     <input
                       type="number"
                       name="menge"
@@ -759,12 +814,13 @@ const ArtikelVerwaltung = () => {
                       required
                       className="form-input"
                       placeholder="Anzahl"
+                      style={{padding: '8px 10px', border: '1px solid #dee2e6', borderRadius: '4px', fontSize: '13px', background: '#ffffff', color: '#2c3e50', height: '36px'}}
                     />
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Grund</label>
+                <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
+                  <label style={{fontSize: '12px', fontWeight: '500', color: '#495057'}}>Grund</label>
                   <input
                     type="text"
                     name="grund"
@@ -772,16 +828,17 @@ const ArtikelVerwaltung = () => {
                     onChange={handleLagerChange}
                     placeholder="z.B. Lieferung, Verkauf, Inventur"
                     className="form-input"
+                    style={{padding: '8px 10px', border: '1px solid #dee2e6', borderRadius: '4px', fontSize: '13px', background: '#ffffff', color: '#2c3e50', height: '36px'}}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer lager-modal-footer">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>
+            <div className="modal-footer lager-modal-footer" style={{padding: '12px 14px', background: 'linear-gradient(135deg, #f8f9fa, #ffffff)', borderTop: '1px solid #e9ecef', display: 'flex', justifyContent: 'flex-end', gap: '10px'}}>
+              <button className="btn-secondary" onClick={() => setShowModal(false)} style={{padding: '8px 14px', borderRadius: '4px', fontSize: '13px', background: '#ffffff', border: '1px solid #dee2e6', color: '#495057', cursor: 'pointer'}}>
                 Abbrechen
               </button>
-              <button className="btn-primary" onClick={updateLagerbestand}>
+              <button className="btn-primary" onClick={updateLagerbestand} style={{padding: '8px 14px', borderRadius: '4px', fontSize: '13px', background: '#007bff', border: 'none', color: '#ffffff', cursor: 'pointer', fontWeight: '500'}}>
                 Aktualisieren
               </button>
             </div>
