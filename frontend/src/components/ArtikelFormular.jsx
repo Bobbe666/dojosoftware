@@ -299,6 +299,16 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [formData.varianten_groessen, formData.varianten_farben, formData.hat_varianten]);
 
+  // Automatisch hat_varianten setzen wenn Varianten hinzugefügt werden
+  useEffect(() => {
+    const hasVariants = formData.varianten_groessen.length > 0 ||
+                        formData.varianten_farben.length > 0 ||
+                        formData.varianten_material.length > 0;
+    if (hasVariants && !formData.hat_varianten) {
+      setFormData(prev => ({ ...prev, hat_varianten: true }));
+    }
+  }, [formData.varianten_groessen, formData.varianten_farben, formData.varianten_material]);
+
   // Automatisch Verkaufspreis setzen wenn Erwachsene-Preis eingegeben wird
   useEffect(() => {
     if (preisTab === 'groessenabhaengig' && formData.preis_erwachsene_euro) {
