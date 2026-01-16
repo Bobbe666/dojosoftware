@@ -82,10 +82,12 @@ const ArtikelFormular = ({ mode }) => {
     custom_material: '',
     // Varianten-Bestand (key: "groesse|farbe|material", value: {bestand, mindestbestand})
     varianten_bestand: {},
-    // Varianten-Preise
+    // Varianten-Preise (größenabhängige EK-Preise)
     hat_preiskategorien: false, // Unterschiedliche Preise für Kids/Erwachsene?
-    preis_kids_euro: '',
-    preis_erwachsene_euro: '',
+    listeneinkaufspreis_kids_euro: '', // EK für Kids-Größen
+    listeneinkaufspreis_erwachsene_euro: '', // EK für Erwachsene-Größen
+    preis_kids_euro: '', // Berechneter VK Kids (legacy)
+    preis_erwachsene_euro: '', // Berechneter VK Erwachsene (legacy)
     // Flexible Größen-Zuordnung (welche Größen sind Kids, welche Erwachsene)
     groessen_kids: ['100', '110', '120', '130', '140', '150'], // Standard Kids-Größen
     groessen_erwachsene: ['160', '170', '180', '190', '200', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] // Standard Erwachsene
@@ -781,30 +783,26 @@ const ArtikelFormular = ({ mode }) => {
               </div>
             )}
 
-            {/* GRÖSSENABHÄNGIGE PREISE - nur wenn Tab aktiv */}
+            {/* GRÖSSENABHÄNGIGE EINKAUFSPREISE - nur wenn Tab aktiv */}
             {preisTab === 'groessenabhaengig' && (
               <div style={{marginTop: '1.5rem', padding: '1rem', background: '#ffffff', border: '2px solid #6B4423', borderRadius: '12px'}}>
                 <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#6B4423', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                  👶🧑 Größenabhängige Verkaufspreise (Netto)
+                  👶🧑 Größenabhängige Einkaufspreise
                 </h4>
+                <p style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '1rem' }}>
+                  Unterschiedliche EK-Preise für Kids und Erwachsene eingeben. Die Kalkulation verwendet die Prozentsätze von oben.
+                </p>
 
-                {/* Info wenn Handelskalkulation ausgefüllt */}
-                {nettoverkaufspreis > 0 && (
-                  <div style={{ padding: '0.5rem 0.75rem', marginBottom: '1rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', fontSize: '0.85rem', color: '#92400e' }}>
-                    Aus Handelskalkulation: <strong>{nettoverkaufspreis.toFixed(2)} € Netto</strong> (Basis für Erwachsene)
-                  </div>
-                )}
-
-                {/* Preis-Eingaben */}
+                {/* EK-Eingaben */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>
-                      👶 Kids Netto-VK (€)
+                      👶 Listeneinkaufspreis Kids (€)
                     </label>
                     <input
                       type="number"
-                      name="preis_kids_euro"
-                      value={formData.preis_kids_euro}
+                      name="listeneinkaufspreis_kids_euro"
+                      value={formData.listeneinkaufspreis_kids_euro}
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
@@ -813,20 +811,21 @@ const ArtikelFormular = ({ mode }) => {
                         padding: '0.75rem',
                         border: '2px solid #86efac',
                         borderRadius: '8px',
-                        fontSize: '1rem',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
                         background: '#f0fdf4'
                       }}
-                      placeholder={nettoverkaufspreis > 0 ? (nettoverkaufspreis * 0.8).toFixed(2) : '0.00'}
+                      placeholder="z.B. 20.00"
                     />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>
-                      🧑 Erwachsene Netto-VK (€)
+                      🧑 Listeneinkaufspreis Erwachsene (€)
                     </label>
                     <input
                       type="number"
-                      name="preis_erwachsene_euro"
-                      value={formData.preis_erwachsene_euro}
+                      name="listeneinkaufspreis_erwachsene_euro"
+                      value={formData.listeneinkaufspreis_erwachsene_euro}
                       onChange={handleInputChange}
                       step="0.01"
                       min="0"
@@ -835,39 +834,19 @@ const ArtikelFormular = ({ mode }) => {
                         padding: '0.75rem',
                         border: '2px solid #93c5fd',
                         borderRadius: '8px',
-                        fontSize: '1rem',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
                         background: '#eff6ff'
                       }}
-                      placeholder={nettoverkaufspreis > 0 ? nettoverkaufspreis.toFixed(2) : '0.00'}
+                      placeholder="z.B. 35.00"
                     />
                   </div>
                 </div>
 
-                {/* Quick-Fill Buttons vom Handelskalkulations-Ergebnis */}
-                {nettoverkaufspreis > 0 && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: '#6c757d', alignSelf: 'center' }}>Schnellauswahl:</span>
-                    <button type="button" onClick={() => setFormData(prev => ({
-                      ...prev,
-                      preis_erwachsene_euro: nettoverkaufspreis.toFixed(2),
-                      preis_kids_euro: (nettoverkaufspreis * 0.7).toFixed(2)
-                    }))} style={{ padding: '0.4rem 0.8rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                      Kids -30%
-                    </button>
-                    <button type="button" onClick={() => setFormData(prev => ({
-                      ...prev,
-                      preis_erwachsene_euro: nettoverkaufspreis.toFixed(2),
-                      preis_kids_euro: (nettoverkaufspreis * 0.8).toFixed(2)
-                    }))} style={{ padding: '0.4rem 0.8rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                      Kids -20%
-                    </button>
-                    <button type="button" onClick={() => setFormData(prev => ({
-                      ...prev,
-                      preis_erwachsene_euro: nettoverkaufspreis.toFixed(2),
-                      preis_kids_euro: nettoverkaufspreis.toFixed(2)
-                    }))} style={{ padding: '0.4rem 0.8rem', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                      Gleicher Preis
-                    </button>
+                {/* Hinweis zur Berechnung */}
+                {(parseFloat(formData.listeneinkaufspreis_kids_euro) > 0 || parseFloat(formData.listeneinkaufspreis_erwachsene_euro) > 0) && (
+                  <div style={{ padding: '0.5rem 0.75rem', marginBottom: '1rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', fontSize: '0.8rem', color: '#166534' }}>
+                    ✓ Vollständige Kalkulation wird rechts angezeigt →
                   </div>
                 )}
 
@@ -963,138 +942,160 @@ const ArtikelFormular = ({ mode }) => {
               📊 {preisTab === 'groessenabhaengig' ? 'Größenabhängige Kalkulation' : 'Handelskalkulation'}
             </h3>
 
-            {/* GRÖSSENABHÄNGIGE KALKULATION */}
+            {/* GRÖSSENABHÄNGIGE KALKULATION - Vollständig für Kids und Erwachsene */}
             {preisTab === 'groessenabhaengig' && (
               (() => {
-                const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
-                const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
+                // Prozentsätze aus der Handelskalkulation
+                const lieferrabatt = parseFloat(formData.lieferrabatt_prozent) || 0;
+                const lieferskonto = parseFloat(formData.lieferskonto_prozent) || 0;
+                const bezugskosten = parseFloat(formData.bezugskosten_euro) || 0;
+                const gemeinkosten = parseFloat(formData.gemeinkosten_prozent) || 0;
+                const gewinnzuschlag = parseFloat(formData.gewinnzuschlag_prozent) || 0;
+                const kundenskonto = parseFloat(formData.kundenskonto_prozent) || 0;
+                const kundenrabatt = parseFloat(formData.kundenrabatt_prozent) || 0;
                 const mwst = parseFloat(formData.mwst_prozent) || 19;
-                const kidsBrutto = kidsNetto * (1 + mwst / 100);
-                const erwBrutto = erwNetto * (1 + mwst / 100);
-                // Bezugspreis aus Handelskalkulation verwenden
-                const einkauf = bezugspreis > 0 ? bezugspreis : 0;
-                const kidsGewinn = kidsNetto - einkauf;
-                const erwGewinn = erwNetto - einkauf;
-                const kidsGewinnProzent = einkauf > 0 ? ((kidsGewinn / einkauf) * 100) : 0;
-                const erwGewinnProzent = einkauf > 0 ? ((erwGewinn / einkauf) * 100) : 0;
+
+                // Kids Kalkulation
+                const kidsEK = parseFloat(formData.listeneinkaufspreis_kids_euro) || 0;
+                const kidsZielEK = kidsEK * (1 - lieferrabatt / 100);
+                const kidsBareEK = kidsZielEK * (1 - lieferskonto / 100);
+                const kidsBezug = kidsBareEK + bezugskosten;
+                const kidsSelbstkosten = kidsBezug * (1 + gemeinkosten / 100);
+                const kidsBarVK = kidsSelbstkosten * (1 + gewinnzuschlag / 100);
+                const kidsZielVK = kidsBarVK / (1 - kundenskonto / 100);
+                const kidsNettoVK = kidsZielVK / (1 - kundenrabatt / 100);
+                const kidsBruttoVK = kidsNettoVK * (1 + mwst / 100);
+                const kidsGewinn = kidsNettoVK - kidsBezug;
+                const kidsGewinnProzent = kidsBezug > 0 ? (kidsGewinn / kidsBezug) * 100 : 0;
+
+                // Erwachsene Kalkulation
+                const erwEK = parseFloat(formData.listeneinkaufspreis_erwachsene_euro) || 0;
+                const erwZielEK = erwEK * (1 - lieferrabatt / 100);
+                const erwBareEK = erwZielEK * (1 - lieferskonto / 100);
+                const erwBezug = erwBareEK + bezugskosten;
+                const erwSelbstkosten = erwBezug * (1 + gemeinkosten / 100);
+                const erwBarVK = erwSelbstkosten * (1 + gewinnzuschlag / 100);
+                const erwZielVK = erwBarVK / (1 - kundenskonto / 100);
+                const erwNettoVK = erwZielVK / (1 - kundenrabatt / 100);
+                const erwBruttoVK = erwNettoVK * (1 + mwst / 100);
+                const erwGewinn = erwNettoVK - erwBezug;
+                const erwGewinnProzent = erwBezug > 0 ? (erwGewinn / erwBezug) * 100 : 0;
+
+                const hasKids = kidsEK > 0;
+                const hasErw = erwEK > 0;
 
                 return (
                   <div>
-                    {/* HANDELSKALKULATION ZUSAMMENFASSUNG */}
-                    {listeneinkaufspreis > 0 && (
-                      <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(107, 68, 35, 0.08)', borderRadius: '8px', border: '1px solid rgba(107, 68, 35, 0.2)' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>📦 Aus Handelskalkulation:</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
-                          <span>Listeneinkaufspreis</span>
-                          <span>{listeneinkaufspreis_wert.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#6B4423', fontWeight: 600 }}>
-                          <span>= Bezugspreis</span>
-                          <span>{bezugspreis.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#047857', fontWeight: 600 }}>
-                          <span>→ Nettoverkaufspreis</span>
-                          <span>{nettoverkaufspreis.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderTop: '1px solid rgba(107, 68, 35, 0.2)', marginTop: '0.3rem', fontWeight: 700 }}>
-                          <span>= Bruttoverkaufspreis</span>
-                          <span style={{ color: '#6B4423' }}>{bruttoverkaufspreis.toFixed(2)} €</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Hinweis wenn keine Handelskalkulation */}
-                    {listeneinkaufspreis === 0 && (
-                      <div style={{ padding: '0.75rem', marginBottom: '1rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', fontSize: '0.85rem', color: '#92400e' }}>
-                        💡 Handelskalkulation oben ausfüllen für Gewinnberechnung
-                      </div>
-                    )}
-
-                    {/* Hinweis wenn keine Preise eingegeben */}
-                    {kidsNetto === 0 && erwNetto === 0 && (
+                    {/* Hinweis wenn keine EK eingegeben */}
+                    {!hasKids && !hasErw && (
                       <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
-                        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Bitte unten die Verkaufspreise eingeben</p>
-                        <p style={{ fontSize: '0.8rem' }}>👶 Kids und 🧑 Erwachsene Netto-VK</p>
-                        {nettoverkaufspreis > 0 && (
-                          <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#047857' }}>
-                            Vorschlag aus Kalkulation: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
-                          </p>
-                        )}
+                        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Bitte links die Einkaufspreise eingeben</p>
+                        <p style={{ fontSize: '0.8rem' }}>👶 Listeneinkaufspreis Kids</p>
+                        <p style={{ fontSize: '0.8rem' }}>🧑 Listeneinkaufspreis Erwachsene</p>
                       </div>
                     )}
 
-                    {/* KIDS Kalkulation */}
-                    {kidsNetto > 0 && (
-                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', border: '2px solid #86efac' }}>
-                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    {/* KIDS Vollständige Kalkulation */}
+                    {hasKids && (
+                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', border: '2px solid #86efac' }}>
+                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.5rem', fontSize: '0.95rem', borderBottom: '1px solid #86efac', paddingBottom: '0.4rem' }}>
                           👶 KIDS ({formData.varianten_groessen?.filter(g => formData.groessen_kids?.includes(g)).join(', ') || 'alle'})
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
-                          <span>Netto-VK</span>
-                          <span style={{ fontWeight: 600 }}>{kidsNetto.toFixed(2)} €</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.15rem 0' }}>
+                          <span>Listeneinkaufspreis</span>
+                          <span>{kidsEK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                          <span>− Lieferrabatt ({lieferrabatt}%)</span>
+                          <span>= {kidsZielEK.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskosten.toFixed(2)}€)</span>
+                          <span>= {kidsBezug.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#166534' }}>
+                          <span>= Bezugspreis</span>
+                          <span>{kidsBezug.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                          <span>+ Gemeinkosten ({gemeinkosten}%) + Gewinn ({gewinnzuschlag}%)</span>
+                          <span></span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#047857' }}>
+                          <span>= Netto-VK</span>
+                          <span>{kidsNettoVK.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#047857' }}>
                           <span>+ MwSt ({mwst}%)</span>
-                          <span>+{(kidsNetto * mwst / 100).toFixed(2)} €</span>
+                          <span>+{(kidsNettoVK * mwst / 100).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.5rem 0', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.2rem' }}>
                           <span>= BRUTTO-VK</span>
-                          <span style={{ color: '#166534', fontSize: '1.15rem' }}>{kidsBrutto.toFixed(2)} €</span>
+                          <span style={{ color: '#166534', fontSize: '1.1rem' }}>{kidsBruttoVK.toFixed(2)} €</span>
                         </div>
-                        {einkauf > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.4rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac', marginTop: '0.25rem' }}>
-                            <span>💰 Gewinn (Netto - Bezug)</span>
-                            <span style={{ fontWeight: 700 }}>{kidsGewinn.toFixed(2)} € ({kidsGewinnProzent.toFixed(0)}%)</span>
-                          </div>
-                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac' }}>
+                          <span>💰 Gewinn</span>
+                          <span style={{ fontWeight: 700 }}>{kidsGewinn.toFixed(2)} € ({kidsGewinnProzent.toFixed(0)}%)</span>
+                        </div>
                       </div>
                     )}
 
-                    {/* ERWACHSENE Kalkulation */}
-                    {erwNetto > 0 && (
-                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', border: '2px solid #93c5fd' }}>
-                        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                    {/* ERWACHSENE Vollständige Kalkulation */}
+                    {hasErw && (
+                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', border: '2px solid #93c5fd' }}>
+                        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.5rem', fontSize: '0.95rem', borderBottom: '1px solid #93c5fd', paddingBottom: '0.4rem' }}>
                           🧑 ERWACHSENE ({formData.varianten_groessen?.filter(g => formData.groessen_erwachsene?.includes(g)).join(', ') || 'alle'})
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
-                          <span>Netto-VK</span>
-                          <span style={{ fontWeight: 600 }}>{erwNetto.toFixed(2)} €</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.15rem 0' }}>
+                          <span>Listeneinkaufspreis</span>
+                          <span>{erwEK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                          <span>− Lieferrabatt ({lieferrabatt}%)</span>
+                          <span>= {erwZielEK.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskosten.toFixed(2)}€)</span>
+                          <span>= {erwBezug.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#1e40af' }}>
+                          <span>= Bezugspreis</span>
+                          <span>{erwBezug.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                          <span>+ Gemeinkosten ({gemeinkosten}%) + Gewinn ({gewinnzuschlag}%)</span>
+                          <span></span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#047857' }}>
+                          <span>= Netto-VK</span>
+                          <span>{erwNettoVK.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#047857' }}>
                           <span>+ MwSt ({mwst}%)</span>
-                          <span>+{(erwNetto * mwst / 100).toFixed(2)} €</span>
+                          <span>+{(erwNettoVK * mwst / 100).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.5rem 0', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.2rem' }}>
                           <span>= BRUTTO-VK</span>
-                          <span style={{ color: '#1e40af', fontSize: '1.15rem' }}>{erwBrutto.toFixed(2)} €</span>
+                          <span style={{ color: '#1e40af', fontSize: '1.1rem' }}>{erwBruttoVK.toFixed(2)} €</span>
                         </div>
-                        {einkauf > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.4rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #93c5fd', marginTop: '0.25rem' }}>
-                            <span>💰 Gewinn (Netto - Bezug)</span>
-                            <span style={{ fontWeight: 700 }}>{erwGewinn.toFixed(2)} € ({erwGewinnProzent.toFixed(0)}%)</span>
-                          </div>
-                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #93c5fd' }}>
+                          <span>💰 Gewinn</span>
+                          <span style={{ fontWeight: 700 }}>{erwGewinn.toFixed(2)} € ({erwGewinnProzent.toFixed(0)}%)</span>
+                        </div>
                       </div>
                     )}
 
                     {/* Preisdifferenz */}
-                    {kidsNetto > 0 && erwNetto > 0 && (
-                      <div style={{ background: '#f3f4f6', borderRadius: '8px', padding: '0.6rem', marginBottom: '0.5rem' }}>
+                    {hasKids && hasErw && (
+                      <div style={{ background: '#f3f4f6', borderRadius: '8px', padding: '0.6rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
                           <span>📊 Preisdifferenz (Brutto)</span>
-                          <span style={{ fontWeight: 700 }}>{(erwBrutto - kidsBrutto).toFixed(2)} €</span>
+                          <span style={{ fontWeight: 700 }}>{(erwBruttoVK - kidsBruttoVK).toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6c757d' }}>
                           <span>Kids ist günstiger um</span>
-                          <span style={{ fontWeight: 600 }}>{erwBrutto > 0 ? ((erwBrutto - kidsBrutto) / erwBrutto * 100).toFixed(0) : 0}%</span>
+                          <span style={{ fontWeight: 600 }}>{erwBruttoVK > 0 ? ((erwBruttoVK - kidsBruttoVK) / erwBruttoVK * 100).toFixed(0) : 0}%</span>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Hinweis wenn kein Bezugspreis */}
-                    {bezugspreis === 0 && (kidsNetto > 0 || erwNetto > 0) && (
-                      <div style={{ padding: '0.5rem', background: '#fef3c7', borderRadius: '6px', fontSize: '0.8rem', color: '#92400e', marginTop: '0.5rem' }}>
-                        💡 Tipp: Handelskalkulation oben ausfüllen um Gewinn zu berechnen
                       </div>
                     )}
                   </div>
@@ -1781,13 +1782,57 @@ const ArtikelFormular = ({ mode }) => {
         <div style={{ display: 'grid', gap: '2rem' }}>
           {/* GRÖSSEN */}
           <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              📏 Größen
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                📏 Größen
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  const alleGroessen = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '100', '110', '120', '130', '140', '150', '160', '170', '180', '190', '200'];
+                  setFormData(prev => ({ ...prev, varianten_groessen: alleGroessen }));
+                }}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  background: '#dcfce7',
+                  border: '1px solid #86efac',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#166534'
+                }}
+              >
+                ✓ Alle auswählen
+              </button>
+            </div>
 
             {/* Standard Größen */}
             <div style={{ marginBottom: '1rem' }}>
-              <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '0.75rem' }}>Konfektionsgrößen:</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <p style={{ color: '#6c757d', fontSize: '0.9rem', margin: 0 }}>Konfektionsgrößen:</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const konfektions = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+                    setFormData(prev => ({
+                      ...prev,
+                      varianten_groessen: [...new Set([...prev.varianten_groessen, ...konfektions])]
+                    }));
+                  }}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    color: '#374151'
+                  }}
+                >
+                  Alle
+                </button>
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'].map(groesse => (
                   <button
@@ -1814,7 +1859,30 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* Körpergrößen */}
             <div style={{ marginBottom: '1rem' }}>
-              <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '0.75rem' }}>Körpergrößen (cm):</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <p style={{ color: '#6c757d', fontSize: '0.9rem', margin: 0 }}>Körpergrößen (cm):</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const koerper = ['100', '110', '120', '130', '140', '150', '160', '170', '180', '190', '200'];
+                    setFormData(prev => ({
+                      ...prev,
+                      varianten_groessen: [...new Set([...prev.varianten_groessen, ...koerper])]
+                    }));
+                  }}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    color: '#374151'
+                  }}
+                >
+                  Alle
+                </button>
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {['100', '110', '120', '130', '140', '150', '160', '170', '180', '190', '200'].map(groesse => (
                   <button
@@ -1883,9 +1951,29 @@ const ArtikelFormular = ({ mode }) => {
 
           {/* FARBEN */}
           <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              🎨 Farben
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🎨 Farben
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, varianten_farben: [...verfuegbareFarben] }));
+                }}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  background: '#dcfce7',
+                  border: '1px solid #86efac',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#166534'
+                }}
+              >
+                ✓ Alle auswählen
+              </button>
+            </div>
 
             {/* Standard Farben */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -1979,9 +2067,30 @@ const ArtikelFormular = ({ mode }) => {
 
           {/* MATERIAL */}
           <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              🧵 Material / Stoff
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🧵 Material / Stoff
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  const alleMaterialien = ['Baumwolle', 'Polyester', 'Mischgewebe', 'Seide', 'Leinen', 'Wolle', 'Leder', 'Kunstleder'];
+                  setFormData(prev => ({ ...prev, varianten_material: alleMaterialien }));
+                }}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  background: '#dcfce7',
+                  border: '1px solid #86efac',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#166534'
+                }}
+              >
+                ✓ Alle auswählen
+              </button>
+            </div>
 
             {/* Schnell-Auswahl */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
