@@ -980,19 +980,46 @@ const ArtikelFormular = ({ mode }) => {
 
                 return (
                   <div>
-                    {/* Bezugspreis aus Handelskalkulation */}
-                    {bezugspreis > 0 && (
-                      <div style={{ padding: '0.6rem', marginBottom: '1rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px' }}>
-                        <div style={{ fontSize: '0.85rem', color: '#92400e', marginBottom: '0.25rem' }}>📦 Bezugspreis (aus Handelskalkulation)</div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#78350f' }}>{bezugspreis.toFixed(2)} €</div>
+                    {/* HANDELSKALKULATION ZUSAMMENFASSUNG */}
+                    {listeneinkaufspreis > 0 && (
+                      <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(107, 68, 35, 0.08)', borderRadius: '8px', border: '1px solid rgba(107, 68, 35, 0.2)' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>📦 Aus Handelskalkulation:</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
+                          <span>Listeneinkaufspreis</span>
+                          <span>{listeneinkaufspreis_wert.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#6B4423', fontWeight: 600 }}>
+                          <span>= Bezugspreis</span>
+                          <span>{bezugspreis.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#047857', fontWeight: 600 }}>
+                          <span>→ Nettoverkaufspreis</span>
+                          <span>{nettoverkaufspreis.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderTop: '1px solid rgba(107, 68, 35, 0.2)', marginTop: '0.3rem', fontWeight: 700 }}>
+                          <span>= Bruttoverkaufspreis</span>
+                          <span style={{ color: '#6B4423' }}>{bruttoverkaufspreis.toFixed(2)} €</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hinweis wenn keine Handelskalkulation */}
+                    {listeneinkaufspreis === 0 && (
+                      <div style={{ padding: '0.75rem', marginBottom: '1rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', fontSize: '0.85rem', color: '#92400e' }}>
+                        💡 Handelskalkulation oben ausfüllen für Gewinnberechnung
                       </div>
                     )}
 
                     {/* Hinweis wenn keine Preise eingegeben */}
                     {kidsNetto === 0 && erwNetto === 0 && (
                       <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
-                        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Bitte links die Verkaufspreise eingeben</p>
+                        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Bitte unten die Verkaufspreise eingeben</p>
                         <p style={{ fontSize: '0.8rem' }}>👶 Kids und 🧑 Erwachsene Netto-VK</p>
+                        {nettoverkaufspreis > 0 && (
+                          <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#047857' }}>
+                            Vorschlag aus Kalkulation: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
+                          </p>
+                        )}
                       </div>
                     )}
 
