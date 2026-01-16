@@ -18,6 +18,7 @@ const ArtikelFormular = ({ mode }) => {
   const [kategorien, setKategorien] = useState([]);
   const [artikelgruppen, setArtikelgruppen] = useState([]);
   const [activeTab, setActiveTab] = useState('basis');
+  const [preisTab, setPreisTab] = useState('einzelkalkulation'); // 'groessenabhaengig' | 'einzelkalkulation'
 
   // Verfügbare Größen
   const verfuegbareGroessen = [
@@ -147,6 +148,10 @@ const ArtikelFormular = ({ mode }) => {
           ...formData,
           ...response.data
         });
+        // Tab setzen basierend auf gespeichertem hat_preiskategorien
+        if (response.data.hat_preiskategorien) {
+          setPreisTab('groessenabhaengig');
+        }
       }
     } catch (error) {
       setError('Fehler beim Laden des Artikels');
@@ -289,7 +294,7 @@ const ArtikelFormular = ({ mode }) => {
 
   // Automatisch Verkaufspreis setzen wenn Erwachsene-Preis eingegeben wird
   useEffect(() => {
-    if (formData.hat_preiskategorien && formData.preis_erwachsene_euro) {
+    if (preisTab === 'groessenabhaengig' && formData.preis_erwachsene_euro) {
       const erwPreis = parseFloat(formData.preis_erwachsene_euro);
       const currentVK = parseFloat(formData.verkaufspreis_euro) || 0;
       // Nur aktualisieren wenn unterschiedlich (verhindert Loop)
@@ -300,7 +305,18 @@ const ArtikelFormular = ({ mode }) => {
         }));
       }
     }
-  }, [formData.preis_erwachsene_euro, formData.hat_preiskategorien]);
+  }, [formData.preis_erwachsene_euro, preisTab]);
+
+  // Sync preisTab mit hat_preiskategorien für das Speichern
+  useEffect(() => {
+    const shouldHavePreiskategorien = preisTab === 'groessenabhaengig';
+    if (formData.hat_preiskategorien !== shouldHavePreiskategorien) {
+      setFormData(prev => ({
+        ...prev,
+        hat_preiskategorien: shouldHavePreiskategorien
+      }));
+    }
+  }, [preisTab]);
 
   // Save Artikel
   const handleSave = async () => {
@@ -527,273 +543,49 @@ const ArtikelFormular = ({ mode }) => {
           {/* Eingabebereich */}
           <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'var(--glass-bg, #f8f9fa)', border: '2px solid var(--border-accent, #dee2e6)', borderRadius: '8px'}}>
 
-            {/* VARIANTEN-PREISE - OBEN */}
-            {formData.hat_varianten && formData.varianten_groessen.length > 0 && (
-              <div style={{marginBottom: '1.5rem', padding: '1rem', background: '#ffffff', border: '2px solid #6B4423', borderRadius: '12px'}}>
-                <h3 style={{margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 600, color: '#6B4423', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                  👶🧑 Größenabhängige Preise
-                </h3>
-
-                {/* Toggle für Preiskategorien */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.75rem 1rem',
-                  background: formData.hat_preiskategorien ? 'rgba(107, 68, 35, 0.1)' : '#f8f9fa',
-                  border: `2px solid ${formData.hat_preiskategorien ? '#6B4423' : '#dee2e6'}`,
-                  borderRadius: '8px',
+            {/* TAB-AUSWAHL */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', background: '#e5e7eb', padding: '0.25rem', borderRadius: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setPreisTab('einzelkalkulation')}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem 1rem',
+                  background: preisTab === 'einzelkalkulation' ? '#6B4423' : 'transparent',
+                  color: preisTab === 'einzelkalkulation' ? '#ffffff' : '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  marginBottom: '1rem'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hat_preiskategorien}
-                    onChange={(e) => setFormData(prev => ({ ...prev, hat_preiskategorien: e.target.checked }))}
-                    style={{ width: '20px', height: '20px', accentColor: '#6B4423' }}
-                  />
-                  <span style={{ color: '#2c3e50', fontWeight: 500 }}>
-                    Unterschiedliche Preise für Kids / Erwachsene
-                  </span>
-                </label>
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                💰 Einzelkalkulation
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreisTab('groessenabhaengig')}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem 1rem',
+                  background: preisTab === 'groessenabhaengig' ? '#6B4423' : 'transparent',
+                  color: preisTab === 'groessenabhaengig' ? '#ffffff' : '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                👶🧑 Größenabhängig
+              </button>
+            </div>
 
-                {formData.hat_preiskategorien && (
-                  <>
-                    {/* Preis-Eingaben */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>
-                          👶 Preis Kids (€)
-                        </label>
-                        <input
-                          type="number"
-                          name="preis_kids_euro"
-                          value={formData.preis_kids_euro}
-                          onChange={handleInputChange}
-                          step="0.01"
-                          min="0"
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            border: '2px solid #dee2e6',
-                            borderRadius: '8px',
-                            fontSize: '1rem'
-                          }}
-                          placeholder={nettoverkaufspreis > 0 ? (nettoverkaufspreis * 0.8).toFixed(2) : '0.00'}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>
-                          🧑 Preis Erwachsene (€)
-                        </label>
-                        <input
-                          type="number"
-                          name="preis_erwachsene_euro"
-                          value={formData.preis_erwachsene_euro}
-                          onChange={handleInputChange}
-                          step="0.01"
-                          min="0"
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            border: '2px solid #dee2e6',
-                            borderRadius: '8px',
-                            fontSize: '1rem'
-                          }}
-                          placeholder={nettoverkaufspreis > 0 ? nettoverkaufspreis.toFixed(2) : '0.00'}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quick-Fill Buttons - basierend auf Erwachsenen-Preis */}
-                    {(() => {
-                      const basisPreis = parseFloat(formData.preis_erwachsene_euro) || 0;
-                      return basisPreis > 0 ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                          <button type="button" onClick={() => setFormData(prev => ({
-                            ...prev,
-                            preis_kids_euro: (basisPreis * 0.7).toFixed(2)
-                          }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                            Kids -30% ({(basisPreis * 0.7).toFixed(2)}€)
-                          </button>
-                          <button type="button" onClick={() => setFormData(prev => ({
-                            ...prev,
-                            preis_kids_euro: (basisPreis * 0.8).toFixed(2)
-                          }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                            Kids -20% ({(basisPreis * 0.8).toFixed(2)}€)
-                          </button>
-                          <button type="button" onClick={() => setFormData(prev => ({
-                            ...prev,
-                            preis_kids_euro: basisPreis.toFixed(2)
-                          }))} style={{ padding: '0.5rem 1rem', background: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
-                            Gleicher Preis
-                          </button>
-                        </div>
-                      ) : null;
-                    })()}
-
-                    {/* Einkaufspreis für Gewinnberechnung */}
-                    <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>
-                        📦 Einkaufspreis (€) - für Gewinnberechnung
-                      </label>
-                      <input
-                        type="number"
-                        name="einkaufspreis_euro"
-                        value={formData.einkaufspreis_euro}
-                        onChange={handleInputChange}
-                        step="0.01"
-                        min="0"
-                        style={{
-                          width: '100%',
-                          padding: '0.6rem',
-                          border: '2px solid #dee2e6',
-                          borderRadius: '8px',
-                          fontSize: '0.95rem'
-                        }}
-                        placeholder="z.B. 10.00"
-                      />
-                      <small style={{ color: '#6c757d', fontSize: '0.75rem' }}>
-                        Optional - wenn eingegeben wird der Gewinn berechnet
-                      </small>
-                    </div>
-
-                    {/* Info: Preise werden automatisch übernommen */}
-                    {(parseFloat(formData.preis_erwachsene_euro) > 0) && (
-                      <div style={{
-                        padding: '0.5rem 0.75rem',
-                        marginBottom: '0.75rem',
-                        background: '#dcfce7',
-                        border: '1px solid #86efac',
-                        borderRadius: '6px',
-                        fontSize: '0.8rem',
-                        color: '#166534'
-                      }}>
-                        ✓ Kalkulation wird rechts angezeigt →
-                      </div>
-                    )}
-
-                    {/* Größen-Zuordnung */}
-                    <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px' }}>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.75rem' }}>
-                        📏 Größen-Zuordnung (klicken zum Ändern)
-                      </p>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        {/* Kids Spalte */}
-                        <div>
-                          <p style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.5rem' }}>👶 Kids-Größen:</p>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                            {formData.varianten_groessen.map(g => {
-                              const isKids = formData.groessen_kids.includes(g);
-                              if (!isKids) return null;
-                              return (
-                                <button
-                                  key={g}
-                                  type="button"
-                                  onClick={() => toggleGroesseKategorie(g, 'erwachsene')}
-                                  style={{
-                                    padding: '0.3rem 0.6rem',
-                                    background: '#dcfce7',
-                                    border: '1px solid #86efac',
-                                    borderRadius: '4px',
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer',
-                                    color: '#166534'
-                                  }}
-                                  title="Klicken um zu Erwachsene zu verschieben"
-                                >
-                                  {g}
-                                </button>
-                              );
-                            })}
-                            {formData.varianten_groessen.filter(g => formData.groessen_kids.includes(g)).length === 0 && (
-                              <span style={{ color: '#9ca3af', fontSize: '0.8rem', fontStyle: 'italic' }}>Keine</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Erwachsene Spalte */}
-                        <div>
-                          <p style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.5rem' }}>🧑 Erwachsene-Größen:</p>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                            {formData.varianten_groessen.map(g => {
-                              const isErwachsene = formData.groessen_erwachsene.includes(g);
-                              if (!isErwachsene) return null;
-                              return (
-                                <button
-                                  key={g}
-                                  type="button"
-                                  onClick={() => toggleGroesseKategorie(g, 'kids')}
-                                  style={{
-                                    padding: '0.3rem 0.6rem',
-                                    background: '#dbeafe',
-                                    border: '1px solid #93c5fd',
-                                    borderRadius: '4px',
-                                    fontSize: '0.8rem',
-                                    cursor: 'pointer',
-                                    color: '#1e40af'
-                                  }}
-                                  title="Klicken um zu Kids zu verschieben"
-                                >
-                                  {g}
-                                </button>
-                              );
-                            })}
-                            {formData.varianten_groessen.filter(g => formData.groessen_erwachsene.includes(g)).length === 0 && (
-                              <span style={{ color: '#9ca3af', fontSize: '0.8rem', fontStyle: 'italic' }}>Keine</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Nicht zugeordnete Größen */}
-                      {formData.varianten_groessen.some(g => !formData.groessen_kids.includes(g) && !formData.groessen_erwachsene.includes(g)) && (
-                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e5e7eb' }}>
-                          <p style={{ fontSize: '0.8rem', color: '#dc2626', marginBottom: '0.5rem' }}>⚠️ Nicht zugeordnet:</p>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                            {formData.varianten_groessen.filter(g => !formData.groessen_kids.includes(g) && !formData.groessen_erwachsene.includes(g)).map(g => (
-                              <div key={g} style={{ display: 'flex', gap: '0.25rem' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleGroesseKategorie(g, 'kids')}
-                                  style={{
-                                    padding: '0.3rem 0.5rem',
-                                    background: '#fef2f2',
-                                    border: '1px solid #fca5a5',
-                                    borderRadius: '4px 0 0 4px',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {g} → Kids
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleGroesseKategorie(g, 'erwachsene')}
-                                  style={{
-                                    padding: '0.3rem 0.5rem',
-                                    background: '#fef2f2',
-                                    border: '1px solid #fca5a5',
-                                    borderRadius: '0 4px 4px 0',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  → Erw.
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
+            {/* GEMEINSAME HANDELSKALKULATION */}
             <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
-              📝 Eingabe - Handelskalkulation
+              📝 Handelskalkulation
             </h3>
 
             {/* BEZUGSKALKULATION */}
@@ -960,8 +752,8 @@ const ArtikelFormular = ({ mode }) => {
               </div>
             </div>
 
-            {/* Button: Neuen Preis übernehmen */}
-            {listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
+            {/* Button: Neuen Preis übernehmen - nur bei Einzelkalkulation */}
+            {preisTab === 'einzelkalkulation' && listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
               <div style={{marginTop: '1rem', padding: '0.8rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '8px', border: '1px solid rgba(107, 68, 35, 0.3)'}}>
                 <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: '#6B4423'}}>
                   Kalkulierter Nettoverkaufspreis: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
@@ -988,49 +780,227 @@ const ArtikelFormular = ({ mode }) => {
                 </button>
               </div>
             )}
+
+            {/* GRÖSSENABHÄNGIGE PREISE - nur wenn Tab aktiv */}
+            {preisTab === 'groessenabhaengig' && (
+              <div style={{marginTop: '1.5rem', padding: '1rem', background: '#ffffff', border: '2px solid #6B4423', borderRadius: '12px'}}>
+                <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#6B4423', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                  👶🧑 Größenabhängige Verkaufspreise (Netto)
+                </h4>
+
+                {/* Info wenn Handelskalkulation ausgefüllt */}
+                {nettoverkaufspreis > 0 && (
+                  <div style={{ padding: '0.5rem 0.75rem', marginBottom: '1rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', fontSize: '0.85rem', color: '#92400e' }}>
+                    Aus Handelskalkulation: <strong>{nettoverkaufspreis.toFixed(2)} € Netto</strong> (Basis für Erwachsene)
+                  </div>
+                )}
+
+                {/* Preis-Eingaben */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>
+                      👶 Kids Netto-VK (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="preis_kids_euro"
+                      value={formData.preis_kids_euro}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '2px solid #86efac',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        background: '#f0fdf4'
+                      }}
+                      placeholder={nettoverkaufspreis > 0 ? (nettoverkaufspreis * 0.8).toFixed(2) : '0.00'}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>
+                      🧑 Erwachsene Netto-VK (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="preis_erwachsene_euro"
+                      value={formData.preis_erwachsene_euro}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '2px solid #93c5fd',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        background: '#eff6ff'
+                      }}
+                      placeholder={nettoverkaufspreis > 0 ? nettoverkaufspreis.toFixed(2) : '0.00'}
+                    />
+                  </div>
+                </div>
+
+                {/* Quick-Fill Buttons vom Handelskalkulations-Ergebnis */}
+                {nettoverkaufspreis > 0 && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#6c757d', alignSelf: 'center' }}>Schnellauswahl:</span>
+                    <button type="button" onClick={() => setFormData(prev => ({
+                      ...prev,
+                      preis_erwachsene_euro: nettoverkaufspreis.toFixed(2),
+                      preis_kids_euro: (nettoverkaufspreis * 0.7).toFixed(2)
+                    }))} style={{ padding: '0.4rem 0.8rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                      Kids -30%
+                    </button>
+                    <button type="button" onClick={() => setFormData(prev => ({
+                      ...prev,
+                      preis_erwachsene_euro: nettoverkaufspreis.toFixed(2),
+                      preis_kids_euro: (nettoverkaufspreis * 0.8).toFixed(2)
+                    }))} style={{ padding: '0.4rem 0.8rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                      Kids -20%
+                    </button>
+                    <button type="button" onClick={() => setFormData(prev => ({
+                      ...prev,
+                      preis_erwachsene_euro: nettoverkaufspreis.toFixed(2),
+                      preis_kids_euro: nettoverkaufspreis.toFixed(2)
+                    }))} style={{ padding: '0.4rem 0.8rem', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                      Gleicher Preis
+                    </button>
+                  </div>
+                )}
+
+                {/* Größen-Zuordnung */}
+                {formData.hat_varianten && formData.varianten_groessen.length > 0 && (
+                  <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', marginTop: '1rem' }}>
+                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.75rem' }}>
+                      📏 Größen-Zuordnung (klicken zum Ändern)
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      {/* Kids Spalte */}
+                      <div>
+                        <p style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.5rem', fontWeight: 600 }}>👶 Kids-Größen:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                          {formData.varianten_groessen.map(g => {
+                            const isKids = formData.groessen_kids.includes(g);
+                            if (!isKids) return null;
+                            return (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => toggleGroesseKategorie(g, 'erwachsene')}
+                                style={{
+                                  padding: '0.3rem 0.6rem',
+                                  background: '#dcfce7',
+                                  border: '1px solid #86efac',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  cursor: 'pointer',
+                                  color: '#166534'
+                                }}
+                                title="Klicken um zu Erwachsene zu verschieben"
+                              >
+                                {g}
+                              </button>
+                            );
+                          })}
+                          {formData.varianten_groessen.filter(g => formData.groessen_kids.includes(g)).length === 0 && (
+                            <span style={{ color: '#9ca3af', fontSize: '0.8rem', fontStyle: 'italic' }}>Keine</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Erwachsene Spalte */}
+                      <div>
+                        <p style={{ fontSize: '0.8rem', color: '#1e40af', marginBottom: '0.5rem', fontWeight: 600 }}>🧑 Erwachsene-Größen:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                          {formData.varianten_groessen.map(g => {
+                            const isErwachsene = formData.groessen_erwachsene.includes(g);
+                            if (!isErwachsene) return null;
+                            return (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => toggleGroesseKategorie(g, 'kids')}
+                                style={{
+                                  padding: '0.3rem 0.6rem',
+                                  background: '#dbeafe',
+                                  border: '1px solid #93c5fd',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  cursor: 'pointer',
+                                  color: '#1e40af'
+                                }}
+                                title="Klicken um zu Kids zu verschieben"
+                              >
+                                {g}
+                              </button>
+                            );
+                          })}
+                          {formData.varianten_groessen.filter(g => formData.groessen_erwachsene.includes(g)).length === 0 && (
+                            <span style={{ color: '#9ca3af', fontSize: '0.8rem', fontStyle: 'italic' }}>Keine</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Hinweis wenn keine Varianten */}
+                {(!formData.hat_varianten || formData.varianten_groessen.length === 0) && (
+                  <div style={{ padding: '0.75rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '0.85rem', color: '#dc2626' }}>
+                    ⚠️ Bitte zuerst im Tab "Varianten" die Größen aktivieren
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Kalkulationsübersicht */}
           <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.3)', borderRadius: '8px'}}>
             <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
-              📊 Kalkulation
+              📊 {preisTab === 'groessenabhaengig' ? 'Größenabhängige Kalkulation' : 'Handelskalkulation'}
             </h3>
 
-            {/* VARIANTEN-KALKULATION - OBEN wenn aktiv */}
-            {formData.hat_preiskategorien && formData.hat_varianten && (parseFloat(formData.preis_kids_euro) > 0 || parseFloat(formData.preis_erwachsene_euro) > 0) && (
+            {/* GRÖSSENABHÄNGIGE KALKULATION */}
+            {preisTab === 'groessenabhaengig' && (
               (() => {
                 const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
                 const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
                 const mwst = parseFloat(formData.mwst_prozent) || 19;
                 const kidsBrutto = kidsNetto * (1 + mwst / 100);
                 const erwBrutto = erwNetto * (1 + mwst / 100);
-                const einkauf = parseFloat(formData.einkaufspreis_euro) || 0;
+                // Bezugspreis aus Handelskalkulation verwenden
+                const einkauf = bezugspreis > 0 ? bezugspreis : 0;
                 const kidsGewinn = kidsNetto - einkauf;
                 const erwGewinn = erwNetto - einkauf;
                 const kidsGewinnProzent = einkauf > 0 ? ((kidsGewinn / einkauf) * 100) : 0;
                 const erwGewinnProzent = einkauf > 0 ? ((erwGewinn / einkauf) * 100) : 0;
 
                 return (
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <div style={{marginBottom: '0.75rem', padding: '0.5rem', background: '#6B4423', borderRadius: '6px'}}>
-                      <strong style={{fontSize: '1rem', color: '#ffffff'}}>👶🧑 VARIANTEN-PREISE</strong>
-                    </div>
-
-                    {/* Einkaufspreis Anzeige */}
-                    {einkauf > 0 && (
-                      <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#fef3c7', borderRadius: '6px', marginBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>📦 Einkaufspreis</span>
-                          <span style={{ fontWeight: 600 }}>{einkauf.toFixed(2)} €</span>
-                        </div>
+                  <div>
+                    {/* Bezugspreis aus Handelskalkulation */}
+                    {bezugspreis > 0 && (
+                      <div style={{ padding: '0.6rem', marginBottom: '1rem', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '0.85rem', color: '#92400e', marginBottom: '0.25rem' }}>📦 Bezugspreis (aus Handelskalkulation)</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#78350f' }}>{bezugspreis.toFixed(2)} €</div>
                       </div>
                     )}
 
-                    {/* KIDS */}
+                    {/* Hinweis wenn keine Preise eingegeben */}
+                    {kidsNetto === 0 && erwNetto === 0 && (
+                      <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Bitte links die Verkaufspreise eingeben</p>
+                        <p style={{ fontSize: '0.8rem' }}>👶 Kids und 🧑 Erwachsene Netto-VK</p>
+                      </div>
+                    )}
+
+                    {/* KIDS Kalkulation */}
                     {kidsNetto > 0 && (
-                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.6rem', marginBottom: '0.5rem', border: '2px solid #86efac' }}>
-                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                          👶 KIDS ({formData.varianten_groessen.filter(g => formData.groessen_kids.includes(g)).join(', ') || 'keine Größen'})
+                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', border: '2px solid #86efac' }}>
+                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                          👶 KIDS ({formData.varianten_groessen?.filter(g => formData.groessen_kids?.includes(g)).join(', ') || 'alle'})
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
                           <span>Netto-VK</span>
@@ -1040,24 +1010,24 @@ const ArtikelFormular = ({ mode }) => {
                           <span>+ MwSt ({mwst}%)</span>
                           <span>+{(kidsNetto * mwst / 100).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', padding: '0.4rem 0', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.25rem' }}>
-                          <span>= BRUTTO</span>
-                          <span style={{ color: '#166534', fontSize: '1.1rem' }}>{kidsBrutto.toFixed(2)} €</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.5rem 0', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.25rem' }}>
+                          <span>= BRUTTO-VK</span>
+                          <span style={{ color: '#166534', fontSize: '1.15rem' }}>{kidsBrutto.toFixed(2)} €</span>
                         </div>
                         {einkauf > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac' }}>
-                            <span>💰 Gewinn</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.4rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac', marginTop: '0.25rem' }}>
+                            <span>💰 Gewinn (Netto - Bezug)</span>
                             <span style={{ fontWeight: 700 }}>{kidsGewinn.toFixed(2)} € ({kidsGewinnProzent.toFixed(0)}%)</span>
                           </div>
                         )}
                       </div>
                     )}
 
-                    {/* ERWACHSENE */}
+                    {/* ERWACHSENE Kalkulation */}
                     {erwNetto > 0 && (
-                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.6rem', marginBottom: '0.5rem', border: '2px solid #93c5fd' }}>
-                        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                          🧑 ERWACHSENE ({formData.varianten_groessen.filter(g => formData.groessen_erwachsene.includes(g)).join(', ') || 'keine Größen'})
+                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', border: '2px solid #93c5fd' }}>
+                        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                          🧑 ERWACHSENE ({formData.varianten_groessen?.filter(g => formData.groessen_erwachsene?.includes(g)).join(', ') || 'alle'})
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
                           <span>Netto-VK</span>
@@ -1067,13 +1037,13 @@ const ArtikelFormular = ({ mode }) => {
                           <span>+ MwSt ({mwst}%)</span>
                           <span>+{(erwNetto * mwst / 100).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', padding: '0.4rem 0', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.25rem' }}>
-                          <span>= BRUTTO</span>
-                          <span style={{ color: '#1e40af', fontSize: '1.1rem' }}>{erwBrutto.toFixed(2)} €</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.5rem 0', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.25rem' }}>
+                          <span>= BRUTTO-VK</span>
+                          <span style={{ color: '#1e40af', fontSize: '1.15rem' }}>{erwBrutto.toFixed(2)} €</span>
                         </div>
                         {einkauf > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #93c5fd' }}>
-                            <span>💰 Gewinn</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.4rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #93c5fd', marginTop: '0.25rem' }}>
+                            <span>💰 Gewinn (Netto - Bezug)</span>
                             <span style={{ fontWeight: 700 }}>{erwGewinn.toFixed(2)} € ({erwGewinnProzent.toFixed(0)}%)</span>
                           </div>
                         )}
@@ -1082,23 +1052,22 @@ const ArtikelFormular = ({ mode }) => {
 
                     {/* Preisdifferenz */}
                     {kidsNetto > 0 && erwNetto > 0 && (
-                      <div style={{ background: '#f3f4f6', borderRadius: '6px', padding: '0.5rem', fontSize: '0.85rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ background: '#f3f4f6', borderRadius: '8px', padding: '0.6rem', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
                           <span>📊 Preisdifferenz (Brutto)</span>
-                          <span style={{ fontWeight: 600 }}>
-                            {(erwBrutto - kidsBrutto).toFixed(2)} €
-                          </span>
+                          <span style={{ fontWeight: 700 }}>{(erwBrutto - kidsBrutto).toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6c757d' }}>
                           <span>Kids ist günstiger um</span>
-                          <span>{((erwBrutto - kidsBrutto) / erwBrutto * 100).toFixed(0)}%</span>
+                          <span style={{ fontWeight: 600 }}>{erwBrutto > 0 ? ((erwBrutto - kidsBrutto) / erwBrutto * 100).toFixed(0) : 0}%</span>
                         </div>
                       </div>
                     )}
 
-                    {!einkauf && (
-                      <div style={{ padding: '0.4rem', background: '#fef3c7', borderRadius: '6px', fontSize: '0.8rem', color: '#92400e', marginTop: '0.5rem' }}>
-                        💡 Tipp: Einkaufspreis links eingeben um Gewinn zu sehen
+                    {/* Hinweis wenn kein Bezugspreis */}
+                    {bezugspreis === 0 && (kidsNetto > 0 || erwNetto > 0) && (
+                      <div style={{ padding: '0.5rem', background: '#fef3c7', borderRadius: '6px', fontSize: '0.8rem', color: '#92400e', marginTop: '0.5rem' }}>
+                        💡 Tipp: Handelskalkulation oben ausfüllen um Gewinn zu berechnen
                       </div>
                     )}
                   </div>
@@ -1106,8 +1075,8 @@ const ArtikelFormular = ({ mode }) => {
               })()
             )}
 
-            {/* Standard Handelskalkulation - nur wenn keine Varianten-Preise ODER Listeneinkaufspreis eingegeben */}
-            {(listeneinkaufspreis > 0 || !(formData.hat_preiskategorien && formData.hat_varianten && (parseFloat(formData.preis_kids_euro) > 0 || parseFloat(formData.preis_erwachsene_euro) > 0))) && (
+            {/* EINZELKALKULATION (Standard Handelskalkulation) */}
+            {preisTab === 'einzelkalkulation' && (
             <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
               {/* BEZUGSKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
@@ -1229,87 +1198,6 @@ const ArtikelFormular = ({ mode }) => {
                   {gewinnspanne_prozent.toFixed(1)} %
                 </span>
               </div>
-
-              {/* KIDS/ERWACHSENE PREISE - Vollständige Kalkulation */}
-              {formData.hat_preiskategorien && formData.hat_varianten && (
-                (() => {
-                  const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
-                  const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
-                  const mwst = parseFloat(formData.mwst_prozent) || 19;
-                  const kidsBrutto = kidsNetto * (1 + mwst / 100);
-                  const erwBrutto = erwNetto * (1 + mwst / 100);
-                  const einkauf = bezugspreis > 0 ? bezugspreis : (parseFloat(formData.einkaufspreis_euro) || 0);
-                  const kidsGewinn = kidsNetto - einkauf;
-                  const erwGewinn = erwNetto - einkauf;
-
-                  return (
-                    <>
-                      <div style={{height: '8px', borderTop: '2px solid #6B4423', margin: '0.75rem 0'}}></div>
-                      <div style={{marginBottom: '0.5rem', padding: '0.4rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '4px'}}>
-                        <strong style={{fontSize: '0.9rem', color: '#6B4423'}}>👶🧑 VARIANTEN-KALKULATION</strong>
-                      </div>
-
-                      {/* KIDS Bereich */}
-                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.5rem' }}>
-                        <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.25rem', fontSize: '0.85rem' }}>👶 KIDS (Größen: {formData.varianten_groessen.filter(g => formData.groessen_kids.includes(g)).join(', ') || 'keine'})</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
-                          <span>Netto-VK</span>
-                          <span style={{ fontWeight: 600 }}>{kidsNetto.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#047857' }}>
-                          <span>+ MwSt ({mwst}%)</span>
-                          <span>+{(kidsNetto * mwst / 100).toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderTop: '1px solid #86efac', fontWeight: 600 }}>
-                          <span>= Brutto-VK</span>
-                          <span style={{ color: '#166534' }}>{kidsBrutto.toFixed(2)} €</span>
-                        </div>
-                        {einkauf > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626' }}>
-                            <span>💰 Gewinn</span>
-                            <span style={{ fontWeight: 600 }}>{kidsGewinn.toFixed(2)} € ({einkauf > 0 ? ((kidsGewinn / einkauf) * 100).toFixed(0) : 0}%)</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* ERWACHSENE Bereich */}
-                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.5rem' }}>
-                        <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.25rem', fontSize: '0.85rem' }}>🧑 ERWACHSENE (Größen: {formData.varianten_groessen.filter(g => formData.groessen_erwachsene.includes(g)).join(', ') || 'keine'})</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0' }}>
-                          <span>Netto-VK</span>
-                          <span style={{ fontWeight: 600 }}>{erwNetto.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: '#047857' }}>
-                          <span>+ MwSt ({mwst}%)</span>
-                          <span>+{(erwNetto * mwst / 100).toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', borderTop: '1px solid #93c5fd', fontWeight: 600 }}>
-                          <span>= Brutto-VK</span>
-                          <span style={{ color: '#1e40af' }}>{erwBrutto.toFixed(2)} €</span>
-                        </div>
-                        {einkauf > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626' }}>
-                            <span>💰 Gewinn</span>
-                            <span style={{ fontWeight: 600 }}>{erwGewinn.toFixed(2)} € ({einkauf > 0 ? ((erwGewinn / einkauf) * 100).toFixed(0) : 0}%)</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Preisdifferenz */}
-                      {kidsNetto > 0 && erwNetto > 0 && (
-                        <div style={{ background: '#f3f4f6', borderRadius: '6px', padding: '0.4rem 0.5rem', fontSize: '0.8rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>📊 Preisdifferenz</span>
-                            <span style={{ fontWeight: 600 }}>
-                              {(erwNetto - kidsNetto).toFixed(2)} € ({((erwNetto - kidsNetto) / erwNetto * 100).toFixed(0)}% günstiger für Kids)
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()
-              )}
             </div>
             )}
           </div>
