@@ -82,12 +82,17 @@ const ArtikelFormular = ({ mode }) => {
     custom_material: '',
     // Varianten-Bestand (key: "groesse|farbe|material", value: {bestand, mindestbestand})
     varianten_bestand: {},
+    // Artikel-Verkaufspreise
+    preis_euro: '', // Netto-VK Einzelpreis
+    bruttopreis_euro: '', // Brutto-VK Einzelpreis
     // Varianten-Preise (größenabhängige EK-Preise)
     hat_preiskategorien: false, // Unterschiedliche Preise für Kids/Erwachsene?
     listeneinkaufspreis_kids_euro: '', // EK für Kids-Größen
     listeneinkaufspreis_erwachsene_euro: '', // EK für Erwachsene-Größen
-    preis_kids_euro: '', // Berechneter VK Kids (legacy)
-    preis_erwachsene_euro: '', // Berechneter VK Erwachsene (legacy)
+    preis_kids_euro: '', // Netto-VK Kids
+    preis_erwachsene_euro: '', // Netto-VK Erwachsene
+    bruttopreis_kids_euro: '', // Brutto-VK Kids
+    bruttopreis_erwachsene_euro: '', // Brutto-VK Erwachsene
     // Flexible Größen-Zuordnung (welche Größen sind Kids, welche Erwachsene)
     groessen_kids: ['100', '110', '120', '130', '140', '150'], // Standard Kids-Größen
     groessen_erwachsene: ['160', '170', '180', '190', '200', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'] // Standard Erwachsene
@@ -546,46 +551,66 @@ const ArtikelFormular = ({ mode }) => {
           <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'var(--glass-bg, #f8f9fa)', border: '2px solid var(--border-accent, #dee2e6)', borderRadius: '8px'}}>
 
             {/* TAB-AUSWAHL */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', background: '#e5e7eb', padding: '0.25rem', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '1rem', background: '#e5e7eb', padding: '0.25rem', borderRadius: '8px' }}>
               <button
                 type="button"
                 onClick={() => setPreisTab('einzelkalkulation')}
                 style={{
                   flex: 1,
-                  padding: '0.6rem 1rem',
+                  padding: '0.5rem 0.75rem',
                   background: preisTab === 'einzelkalkulation' ? '#6B4423' : 'transparent',
                   color: preisTab === 'einzelkalkulation' ? '#ffffff' : '#374151',
                   border: 'none',
                   borderRadius: '6px',
-                  fontSize: '0.9rem',
+                  fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
               >
-                💰 Einzelkalkulation
+                💰 Einzel
               </button>
               <button
                 type="button"
                 onClick={() => setPreisTab('groessenabhaengig')}
                 style={{
                   flex: 1,
-                  padding: '0.6rem 1rem',
+                  padding: '0.5rem 0.75rem',
                   background: preisTab === 'groessenabhaengig' ? '#6B4423' : 'transparent',
                   color: preisTab === 'groessenabhaengig' ? '#ffffff' : '#374151',
                   border: 'none',
                   borderRadius: '6px',
-                  fontSize: '0.9rem',
+                  fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
               >
-                👶🧑 Größenabhängig
+                👶🧑 Größen
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreisTab('uebersicht')}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem 0.75rem',
+                  background: preisTab === 'uebersicht' ? '#047857' : 'transparent',
+                  color: preisTab === 'uebersicht' ? '#ffffff' : '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ✓ Übersicht
               </button>
             </div>
 
-            {/* GEMEINSAME HANDELSKALKULATION */}
+            {/* GEMEINSAME HANDELSKALKULATION - nur für Einzel und Größen Tabs */}
+            {(preisTab === 'einzelkalkulation' || preisTab === 'groessenabhaengig') && (
+            <>
             <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📝 Handelskalkulation
             </h3>
@@ -934,13 +959,238 @@ const ArtikelFormular = ({ mode }) => {
                 )}
               </div>
             )}
+            </>
+            )}
+
+            {/* ÜBERSICHT TAB - Preise übernehmen */}
+            {preisTab === 'uebersicht' && (
+              <div style={{ padding: '1rem', background: '#ffffff', border: '2px solid #047857', borderRadius: '12px' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#047857', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  ✓ Preise übernehmen
+                </h4>
+                <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1.5rem' }}>
+                  Übernehmen Sie die berechneten Preise für diesen Artikel.
+                </p>
+
+                {/* Einzelpreis Übernahme */}
+                {(() => {
+                  const lieferrabatt = parseFloat(formData.lieferrabatt_prozent) || 0;
+                  const lieferskonto = parseFloat(formData.lieferskonto_prozent) || 0;
+                  const bezugskosten = parseFloat(formData.bezugskosten_euro) || 0;
+                  const gemeinkosten = parseFloat(formData.gemeinkosten_prozent) || 0;
+                  const gewinnzuschlag = parseFloat(formData.gewinnzuschlag_prozent) || 0;
+                  const kundenskonto = parseFloat(formData.kundenskonto_prozent) || 0;
+                  const kundenrabatt = parseFloat(formData.kundenrabatt_prozent) || 0;
+                  const mwst = parseFloat(formData.mwst_prozent) || 19;
+
+                  // Einzelkalkulation
+                  const einzelEK = parseFloat(formData.listeneinkaufspreis_euro) || 0;
+                  const einzelZielEK = einzelEK * (1 - lieferrabatt / 100);
+                  const einzelBareEK = einzelZielEK * (1 - lieferskonto / 100);
+                  const einzelBezug = einzelBareEK + bezugskosten;
+                  const einzelSelbstkosten = einzelBezug * (1 + gemeinkosten / 100);
+                  const einzelBarVK = einzelSelbstkosten * (1 + gewinnzuschlag / 100);
+                  const einzelZielVK = einzelBarVK / (1 - kundenskonto / 100);
+                  const einzelNettoVK = einzelZielVK / (1 - kundenrabatt / 100);
+                  const einzelBruttoVK = einzelNettoVK * (1 + mwst / 100);
+
+                  // Größenabhängige Kalkulation - Kids
+                  const kidsEK = parseFloat(formData.listeneinkaufspreis_kids_euro) || 0;
+                  const kidsZielEK = kidsEK * (1 - lieferrabatt / 100);
+                  const kidsBareEK = kidsZielEK * (1 - lieferskonto / 100);
+                  const kidsBezug = kidsBareEK + bezugskosten;
+                  const kidsSelbstkosten = kidsBezug * (1 + gemeinkosten / 100);
+                  const kidsBarVK = kidsSelbstkosten * (1 + gewinnzuschlag / 100);
+                  const kidsZielVK = kidsBarVK / (1 - kundenskonto / 100);
+                  const kidsNettoVK = kidsZielVK / (1 - kundenrabatt / 100);
+                  const kidsBruttoVK = kidsNettoVK * (1 + mwst / 100);
+
+                  // Größenabhängige Kalkulation - Erwachsene
+                  const erwEK = parseFloat(formData.listeneinkaufspreis_erwachsene_euro) || 0;
+                  const erwZielEK = erwEK * (1 - lieferrabatt / 100);
+                  const erwBareEK = erwZielEK * (1 - lieferskonto / 100);
+                  const erwBezug = erwBareEK + bezugskosten;
+                  const erwSelbstkosten = erwBezug * (1 + gemeinkosten / 100);
+                  const erwBarVK = erwSelbstkosten * (1 + gewinnzuschlag / 100);
+                  const erwZielVK = erwBarVK / (1 - kundenskonto / 100);
+                  const erwNettoVK = erwZielVK / (1 - kundenrabatt / 100);
+                  const erwBruttoVK = erwNettoVK * (1 + mwst / 100);
+
+                  const hasEinzel = einzelEK > 0;
+                  const hasKids = kidsEK > 0;
+                  const hasErw = erwEK > 0;
+                  const hasGroessen = hasKids || hasErw;
+
+                  return (
+                    <div>
+                      {/* Einzelpreis */}
+                      {hasEinzel && (
+                        <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f0fdf4', border: '2px solid #86efac', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                            <span style={{ fontWeight: 600, color: '#166534' }}>💰 Einzelpreis</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#166534' }}>{einzelBruttoVK.toFixed(2)} € Brutto</span>
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '0.75rem' }}>
+                            Netto: {einzelNettoVK.toFixed(2)} € | Bezugspreis: {einzelBezug.toFixed(2)} €
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                preis_euro: einzelNettoVK.toFixed(2),
+                                bruttopreis_euro: einzelBruttoVK.toFixed(2)
+                              }));
+                              alert('✅ Einzelpreis wurde übernommen!');
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              background: '#047857',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✅ Einzelpreis übernehmen
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Größenabhängige Preise */}
+                      {hasGroessen && (
+                        <div style={{ padding: '1rem', background: '#eff6ff', border: '2px solid #93c5fd', borderRadius: '8px' }}>
+                          <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.75rem' }}>
+                            👶🧑 Größenabhängige Preise
+                          </div>
+
+                          {hasKids && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: '#dcfce7', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                              <span style={{ color: '#166534' }}>👶 Kids</span>
+                              <span style={{ fontWeight: 700, color: '#166534' }}>{kidsBruttoVK.toFixed(2)} € Brutto</span>
+                            </div>
+                          )}
+
+                          {hasErw && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: '#dbeafe', borderRadius: '6px', marginBottom: '0.75rem' }}>
+                              <span style={{ color: '#1e40af' }}>🧑 Erwachsene</span>
+                              <span style={{ fontWeight: 700, color: '#1e40af' }}>{erwBruttoVK.toFixed(2)} € Brutto</span>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                hat_preiskategorien: true,
+                                preis_kids_euro: kidsNettoVK.toFixed(2),
+                                preis_erwachsene_euro: erwNettoVK.toFixed(2),
+                                bruttopreis_kids_euro: kidsBruttoVK.toFixed(2),
+                                bruttopreis_erwachsene_euro: erwBruttoVK.toFixed(2)
+                              }));
+                              alert('✅ Größenabhängige Preise wurden übernommen!');
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              background: '#1e40af',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✅ Größenpreise übernehmen
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Hinweis wenn keine Preise */}
+                      {!hasEinzel && !hasGroessen && (
+                        <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', textAlign: 'center', color: '#dc2626' }}>
+                          <p style={{ marginBottom: '0.5rem', fontWeight: 600 }}>⚠️ Keine Preise berechnet</p>
+                          <p style={{ fontSize: '0.85rem' }}>
+                            Bitte wechseln Sie zum Tab "💰 Einzel" oder "👶🧑 Größen" und geben Sie die Einkaufspreise ein.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Kalkulationsübersicht */}
-          <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.3)', borderRadius: '8px'}}>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
-              📊 {preisTab === 'groessenabhaengig' ? 'Größenabhängige Kalkulation' : 'Handelskalkulation'}
+          <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: preisTab === 'uebersicht' ? 'rgba(4, 120, 87, 0.05)' : 'rgba(107, 68, 35, 0.05)', border: preisTab === 'uebersicht' ? '2px solid rgba(4, 120, 87, 0.3)' : '2px solid rgba(107, 68, 35, 0.3)', borderRadius: '8px'}}>
+            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: preisTab === 'uebersicht' ? '#047857' : 'var(--text-primary, #2c3e50)'}}>
+              {preisTab === 'uebersicht' ? '✓ Aktuelle Artikelpreise' : preisTab === 'groessenabhaengig' ? '📊 Größenabhängige Kalkulation' : '📊 Handelskalkulation'}
             </h3>
+
+            {/* ÜBERSICHT - Aktuelle gespeicherte Preise */}
+            {preisTab === 'uebersicht' && (
+              <div>
+                <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1rem' }}>
+                  Aktuell für diesen Artikel gespeicherte Preise:
+                </p>
+
+                {/* Einzelpreis */}
+                {(formData.preis_euro || formData.bruttopreis_euro) && (
+                  <div style={{ padding: '0.75rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                    <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>💰 Einzelpreis</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span>Netto:</span>
+                      <span style={{ fontWeight: 600 }}>{parseFloat(formData.preis_euro || 0).toFixed(2)} €</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                      <span>Brutto:</span>
+                      <span style={{ fontWeight: 700, color: '#166534' }}>{parseFloat(formData.bruttopreis_euro || 0).toFixed(2)} €</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Größenabhängige Preise */}
+                {formData.hat_preiskategorien && (
+                  <div style={{ padding: '0.75rem', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                    <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>👶🧑 Größenabhängige Preise</div>
+
+                    {(formData.preis_kids_euro || formData.bruttopreis_kids_euro) && (
+                      <div style={{ padding: '0.5rem', background: '#dcfce7', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                        <div style={{ fontWeight: 600, color: '#166534', fontSize: '0.85rem' }}>👶 Kids</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span>Netto: {parseFloat(formData.preis_kids_euro || 0).toFixed(2)} €</span>
+                          <span style={{ fontWeight: 700 }}>Brutto: {parseFloat(formData.bruttopreis_kids_euro || 0).toFixed(2)} €</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {(formData.preis_erwachsene_euro || formData.bruttopreis_erwachsene_euro) && (
+                      <div style={{ padding: '0.5rem', background: '#dbeafe', borderRadius: '6px' }}>
+                        <div style={{ fontWeight: 600, color: '#1e40af', fontSize: '0.85rem' }}>🧑 Erwachsene</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span>Netto: {parseFloat(formData.preis_erwachsene_euro || 0).toFixed(2)} €</span>
+                          <span style={{ fontWeight: 700 }}>Brutto: {parseFloat(formData.bruttopreis_erwachsene_euro || 0).toFixed(2)} €</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Hinweis wenn keine Preise gespeichert */}
+                {!formData.preis_euro && !formData.bruttopreis_euro && !formData.hat_preiskategorien && (
+                  <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                    <p style={{ marginBottom: '0.5rem' }}>Noch keine Preise gespeichert</p>
+                    <p style={{ fontSize: '0.85rem' }}>Übernehmen Sie links die berechneten Preise</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* GRÖSSENABHÄNGIGE KALKULATION - Vollständig für Kids und Erwachsene */}
             {preisTab === 'groessenabhaengig' && (
