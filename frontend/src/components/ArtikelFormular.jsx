@@ -632,6 +632,32 @@ const ArtikelFormular = ({ mode }) => {
                       ) : null;
                     })()}
 
+                    {/* Einkaufspreis für Gewinnberechnung */}
+                    <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>
+                        📦 Einkaufspreis (€) - für Gewinnberechnung
+                      </label>
+                      <input
+                        type="number"
+                        name="einkaufspreis_euro"
+                        value={formData.einkaufspreis_euro}
+                        onChange={handleInputChange}
+                        step="0.01"
+                        min="0"
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem',
+                          border: '2px solid #dee2e6',
+                          borderRadius: '8px',
+                          fontSize: '0.95rem'
+                        }}
+                        placeholder="z.B. 10.00"
+                      />
+                      <small style={{ color: '#6c757d', fontSize: '0.75rem' }}>
+                        Optional - wenn eingegeben wird der Gewinn berechnet
+                      </small>
+                    </div>
+
                     {/* Info: Preise werden automatisch übernommen */}
                     {(parseFloat(formData.preis_erwachsene_euro) > 0) && (
                       <div style={{
@@ -643,7 +669,7 @@ const ArtikelFormular = ({ mode }) => {
                         fontSize: '0.8rem',
                         color: '#166534'
                       }}>
-                        ✓ Preise werden automatisch für die Kalkulation verwendet
+                        ✓ Kalkulation wird rechts angezeigt →
                       </div>
                     )}
 
@@ -964,12 +990,124 @@ const ArtikelFormular = ({ mode }) => {
             )}
           </div>
 
-          {/* Kalkulationsübersicht - Fortsetzung im nächsten Teil */}
+          {/* Kalkulationsübersicht */}
           <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.3)', borderRadius: '8px'}}>
             <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📊 Kalkulation
             </h3>
 
+            {/* VARIANTEN-KALKULATION - OBEN wenn aktiv */}
+            {formData.hat_preiskategorien && formData.hat_varianten && (parseFloat(formData.preis_kids_euro) > 0 || parseFloat(formData.preis_erwachsene_euro) > 0) && (
+              (() => {
+                const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
+                const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
+                const mwst = parseFloat(formData.mwst_prozent) || 19;
+                const kidsBrutto = kidsNetto * (1 + mwst / 100);
+                const erwBrutto = erwNetto * (1 + mwst / 100);
+                const einkauf = parseFloat(formData.einkaufspreis_euro) || 0;
+                const kidsGewinn = kidsNetto - einkauf;
+                const erwGewinn = erwNetto - einkauf;
+                const kidsGewinnProzent = einkauf > 0 ? ((kidsGewinn / einkauf) * 100) : 0;
+                const erwGewinnProzent = einkauf > 0 ? ((erwGewinn / einkauf) * 100) : 0;
+
+                return (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{marginBottom: '0.75rem', padding: '0.5rem', background: '#6B4423', borderRadius: '6px'}}>
+                      <strong style={{fontSize: '1rem', color: '#ffffff'}}>👶🧑 VARIANTEN-PREISE</strong>
+                    </div>
+
+                    {/* Einkaufspreis Anzeige */}
+                    {einkauf > 0 && (
+                      <div style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem', background: '#fef3c7', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>📦 Einkaufspreis</span>
+                          <span style={{ fontWeight: 600 }}>{einkauf.toFixed(2)} €</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* KIDS */}
+                    {kidsNetto > 0 && (
+                      <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.6rem', marginBottom: '0.5rem', border: '2px solid #86efac' }}>
+                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
+                          👶 KIDS ({formData.varianten_groessen.filter(g => formData.groessen_kids.includes(g)).join(', ') || 'keine Größen'})
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
+                          <span>Netto-VK</span>
+                          <span style={{ fontWeight: 600 }}>{kidsNetto.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', color: '#047857' }}>
+                          <span>+ MwSt ({mwst}%)</span>
+                          <span>+{(kidsNetto * mwst / 100).toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', padding: '0.4rem 0', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.25rem' }}>
+                          <span>= BRUTTO</span>
+                          <span style={{ color: '#166534', fontSize: '1.1rem' }}>{kidsBrutto.toFixed(2)} €</span>
+                        </div>
+                        {einkauf > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac' }}>
+                            <span>💰 Gewinn</span>
+                            <span style={{ fontWeight: 700 }}>{kidsGewinn.toFixed(2)} € ({kidsGewinnProzent.toFixed(0)}%)</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ERWACHSENE */}
+                    {erwNetto > 0 && (
+                      <div style={{ background: '#dbeafe', borderRadius: '8px', padding: '0.6rem', marginBottom: '0.5rem', border: '2px solid #93c5fd' }}>
+                        <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
+                          🧑 ERWACHSENE ({formData.varianten_groessen.filter(g => formData.groessen_erwachsene.includes(g)).join(', ') || 'keine Größen'})
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0' }}>
+                          <span>Netto-VK</span>
+                          <span style={{ fontWeight: 600 }}>{erwNetto.toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', color: '#047857' }}>
+                          <span>+ MwSt ({mwst}%)</span>
+                          <span>+{(erwNetto * mwst / 100).toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', padding: '0.4rem 0', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.25rem' }}>
+                          <span>= BRUTTO</span>
+                          <span style={{ color: '#1e40af', fontSize: '1.1rem' }}>{erwBrutto.toFixed(2)} €</span>
+                        </div>
+                        {einkauf > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #93c5fd' }}>
+                            <span>💰 Gewinn</span>
+                            <span style={{ fontWeight: 700 }}>{erwGewinn.toFixed(2)} € ({erwGewinnProzent.toFixed(0)}%)</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Preisdifferenz */}
+                    {kidsNetto > 0 && erwNetto > 0 && (
+                      <div style={{ background: '#f3f4f6', borderRadius: '6px', padding: '0.5rem', fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>📊 Preisdifferenz (Brutto)</span>
+                          <span style={{ fontWeight: 600 }}>
+                            {(erwBrutto - kidsBrutto).toFixed(2)} €
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6c757d' }}>
+                          <span>Kids ist günstiger um</span>
+                          <span>{((erwBrutto - kidsBrutto) / erwBrutto * 100).toFixed(0)}%</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {!einkauf && (
+                      <div style={{ padding: '0.4rem', background: '#fef3c7', borderRadius: '6px', fontSize: '0.8rem', color: '#92400e', marginTop: '0.5rem' }}>
+                        💡 Tipp: Einkaufspreis links eingeben um Gewinn zu sehen
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+
+            {/* Standard Handelskalkulation - nur wenn keine Varianten-Preise ODER Listeneinkaufspreis eingegeben */}
+            {(listeneinkaufspreis > 0 || !(formData.hat_preiskategorien && formData.hat_varianten && (parseFloat(formData.preis_kids_euro) > 0 || parseFloat(formData.preis_erwachsene_euro) > 0))) && (
             <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
               {/* BEZUGSKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
