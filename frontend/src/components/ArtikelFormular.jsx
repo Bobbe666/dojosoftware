@@ -1311,6 +1311,7 @@ const ArtikelFormular = ({ mode }) => {
                 })()
               )}
             </div>
+            )}
           </div>
         </div>
       </div>
