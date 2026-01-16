@@ -611,167 +611,71 @@ const ArtikelFormular = ({ mode }) => {
             {/* GEMEINSAME HANDELSKALKULATION - nur für Einzel und Größen Tabs */}
             {(preisTab === 'einzelkalkulation' || preisTab === 'groessenabhaengig') && (
             <>
-            <h3 style={{marginBottom: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
+            <h3 style={{marginBottom: '0.3rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📝 Handelskalkulation
             </h3>
 
             {/* BEZUGSKALKULATION */}
-            <div style={{marginBottom: '0.6rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600}}>
-                📦 Bezugskalkulation (Einkauf)
+            <div style={{marginBottom: '0.3rem'}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
+                📦 Bezugskalkulation
               </h4>
-              <div className="form-grid" style={{gap: '0.4rem'}}>
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Listeneinkaufspreis (€)</label>
-                  <input
-                    type="number"
-                    name="listeneinkaufspreis_euro"
-                    value={formData.listeneinkaufspreis_euro}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.4rem'}}>
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Listeneinkaufspreis (€)</label>
+                  <input type="number" name="listeneinkaufspreis_euro" value={formData.listeneinkaufspreis_euro} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
-
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Lieferrabatt (%)</label>
-                  <input
-                    type="number"
-                    name="lieferrabatt_prozent"
-                    value={formData.lieferrabatt_prozent}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Lieferrabatt (%)</label>
+                  <input type="number" name="lieferrabatt_prozent" value={formData.lieferrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
-
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Lieferskonto (%)</label>
-                  <input
-                    type="number"
-                    name="lieferskonto_prozent"
-                    value={formData.lieferskonto_prozent}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Lieferskonto (%)</label>
+                  <input type="number" name="lieferskonto_prozent" value={formData.lieferskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
-
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Bezugskosten (€)</label>
-                  <input
-                    type="number"
-                    name="bezugskosten_euro"
-                    value={formData.bezugskosten_euro}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Bezugskosten (€)</label>
+                  <input type="number" name="bezugskosten_euro" value={formData.bezugskosten_euro} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
               </div>
             </div>
 
             {/* SELBSTKOSTENKALKULATION */}
-            <div style={{marginBottom: '0.6rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600}}>
-                🏭 Selbstkostenkalkulation
+            <div style={{marginBottom: '0.3rem'}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
+                🏭 Selbstkosten
               </h4>
-              <div className="form-grid" style={{gap: '0.4rem'}}>
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Gemeinkosten (%)</label>
-                  <input
-                    type="number"
-                    name="gemeinkosten_prozent"
-                    value={formData.gemeinkosten_prozent}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.4rem'}}>
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Gemeinkosten (%)</label>
+                  <input type="number" name="gemeinkosten_prozent" value={formData.gemeinkosten_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
-
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Gewinnzuschlag (%)</label>
-                  <input
-                    type="number"
-                    name="gewinnzuschlag_prozent"
-                    value={formData.gewinnzuschlag_prozent}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Gewinnzuschlag (%)</label>
+                  <input type="number" name="gewinnzuschlag_prozent" value={formData.gewinnzuschlag_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
               </div>
             </div>
 
             {/* VERKAUFSKALKULATION */}
-            <div style={{marginBottom: '0.6rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600}}>
-                💰 Verkaufskalkulation
+            <div style={{marginBottom: '0.3rem'}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
+                💰 Verkauf
               </h4>
-              <div className="form-grid" style={{gap: '0.4rem'}}>
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Kundenskonto (%)</label>
-                  <input
-                    type="number"
-                    name="kundenskonto_prozent"
-                    value={formData.kundenskonto_prozent}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.2rem 0.4rem'}}>
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Kundenskonto (%)</label>
+                  <input type="number" name="kundenskonto_prozent" value={formData.kundenskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
-
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Kundenrabatt (%)</label>
-                  <input
-                    type="number"
-                    name="kundenrabatt_prozent"
-                    value={formData.kundenrabatt_prozent}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className="form-input"
-                    placeholder="0.00"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  />
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Kundenrabatt (%)</label>
+                  <input type="number" name="kundenrabatt_prozent" value={formData.kundenrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
-
-                <div className="form-group" style={{marginBottom: '0'}}>
-                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>MwSt. (%)</label>
-                  <select
-                    name="mwst_prozent"
-                    value={formData.mwst_prozent}
-                    onChange={handleInputChange}
-                    className="form-select"
-                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
-                  >
-                    <option value="7.00">7% (ermäßigt)</option>
-                    <option value="19.00">19% (normal)</option>
+                <div>
+                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>MwSt. (%)</label>
+                  <select name="mwst_prozent" value={formData.mwst_prozent} onChange={handleInputChange} className="form-select" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}}>
+                    <option value="7.00">7%</option>
+                    <option value="19.00">19%</option>
                   </select>
                 </div>
               </div>
@@ -1036,8 +940,8 @@ const ArtikelFormular = ({ mode }) => {
                             onClick={() => {
                               setFormData(prev => ({
                                 ...prev,
-                                preis_euro: einzelNettoVK.toFixed(2),
-                                bruttopreis_euro: einzelBruttoVK.toFixed(2)
+                                verkaufspreis_euro: einzelNettoVK.toFixed(2),
+                                hat_preiskategorien: false
                               }));
                               alert('✅ Einzelpreis wurde übernommen!');
                             }}
@@ -1087,8 +991,7 @@ const ArtikelFormular = ({ mode }) => {
                                 hat_preiskategorien: true,
                                 preis_kids_euro: kidsNettoVK.toFixed(2),
                                 preis_erwachsene_euro: erwNettoVK.toFixed(2),
-                                bruttopreis_kids_euro: kidsBruttoVK.toFixed(2),
-                                bruttopreis_erwachsene_euro: erwBruttoVK.toFixed(2)
+                                verkaufspreis_euro: erwNettoVK.toFixed(2) // Erwachsene als Hauptpreis
                               }));
                               alert('✅ Größenabhängige Preise wurden übernommen!');
                             }}
@@ -1138,55 +1041,69 @@ const ArtikelFormular = ({ mode }) => {
                   Aktuell für diesen Artikel gespeicherte Preise:
                 </p>
 
-                {/* Einzelpreis */}
-                {(formData.preis_euro || formData.bruttopreis_euro) && (
-                  <div style={{ padding: '0.75rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>💰 Einzelpreis</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span>Netto:</span>
-                      <span style={{ fontWeight: 600 }}>{parseFloat(formData.preis_euro || 0).toFixed(2)} €</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                      <span>Brutto:</span>
-                      <span style={{ fontWeight: 700, color: '#166534' }}>{parseFloat(formData.bruttopreis_euro || 0).toFixed(2)} €</span>
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const mwst = parseFloat(formData.mwst_prozent) || 19;
+                  const vkNetto = parseFloat(formData.verkaufspreis_euro) || 0;
+                  const vkBrutto = vkNetto * (1 + mwst / 100);
+                  const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
+                  const kidsBrutto = kidsNetto * (1 + mwst / 100);
+                  const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
+                  const erwBrutto = erwNetto * (1 + mwst / 100);
 
-                {/* Größenabhängige Preise */}
-                {formData.hat_preiskategorien && (
-                  <div style={{ padding: '0.75rem', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                    <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>👶🧑 Größenabhängige Preise</div>
-
-                    {(formData.preis_kids_euro || formData.bruttopreis_kids_euro) && (
-                      <div style={{ padding: '0.5rem', background: '#dcfce7', borderRadius: '6px', marginBottom: '0.5rem' }}>
-                        <div style={{ fontWeight: 600, color: '#166534', fontSize: '0.85rem' }}>👶 Kids</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                          <span>Netto: {parseFloat(formData.preis_kids_euro || 0).toFixed(2)} €</span>
-                          <span style={{ fontWeight: 700 }}>Brutto: {parseFloat(formData.bruttopreis_kids_euro || 0).toFixed(2)} €</span>
+                  return (
+                    <>
+                      {/* Einzelpreis */}
+                      {vkNetto > 0 && !formData.hat_preiskategorien && (
+                        <div style={{ padding: '0.75rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                          <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>💰 Einzelpreis</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                            <span>Netto:</span>
+                            <span style={{ fontWeight: 600 }}>{vkNetto.toFixed(2)} €</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                            <span>Brutto ({mwst}% MwSt):</span>
+                            <span style={{ fontWeight: 700, color: '#166534' }}>{vkBrutto.toFixed(2)} €</span>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {(formData.preis_erwachsene_euro || formData.bruttopreis_erwachsene_euro) && (
-                      <div style={{ padding: '0.5rem', background: '#dbeafe', borderRadius: '6px' }}>
-                        <div style={{ fontWeight: 600, color: '#1e40af', fontSize: '0.85rem' }}>🧑 Erwachsene</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                          <span>Netto: {parseFloat(formData.preis_erwachsene_euro || 0).toFixed(2)} €</span>
-                          <span style={{ fontWeight: 700 }}>Brutto: {parseFloat(formData.bruttopreis_erwachsene_euro || 0).toFixed(2)} €</span>
+                      {/* Größenabhängige Preise */}
+                      {formData.hat_preiskategorien && (
+                        <div style={{ padding: '0.75rem', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                          <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>👶🧑 Größenabhängige Preise</div>
+
+                          {kidsNetto > 0 && (
+                            <div style={{ padding: '0.5rem', background: '#dcfce7', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                              <div style={{ fontWeight: 600, color: '#166534', fontSize: '0.85rem' }}>👶 Kids</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                <span>Netto: {kidsNetto.toFixed(2)} €</span>
+                                <span style={{ fontWeight: 700 }}>Brutto: {kidsBrutto.toFixed(2)} €</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {erwNetto > 0 && (
+                            <div style={{ padding: '0.5rem', background: '#dbeafe', borderRadius: '6px' }}>
+                              <div style={{ fontWeight: 600, color: '#1e40af', fontSize: '0.85rem' }}>🧑 Erwachsene</div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                <span>Netto: {erwNetto.toFixed(2)} €</span>
+                                <span style={{ fontWeight: 700 }}>Brutto: {erwBrutto.toFixed(2)} €</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
 
-                {/* Hinweis wenn keine Preise gespeichert */}
-                {!formData.preis_euro && !formData.bruttopreis_euro && !formData.hat_preiskategorien && (
-                  <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
-                    <p style={{ marginBottom: '0.5rem' }}>Noch keine Preise gespeichert</p>
-                    <p style={{ fontSize: '0.85rem' }}>Übernehmen Sie links die berechneten Preise</p>
-                  </div>
-                )}
+                      {/* Hinweis wenn keine Preise gespeichert */}
+                      {vkNetto <= 0 && !formData.hat_preiskategorien && (
+                        <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                          <p style={{ marginBottom: '0.5rem' }}>Noch keine Preise gespeichert</p>
+                          <p style={{ fontSize: '0.85rem' }}>Übernehmen Sie links die berechneten Preise</p>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
 
