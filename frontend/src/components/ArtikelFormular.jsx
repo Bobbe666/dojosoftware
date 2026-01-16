@@ -611,18 +611,18 @@ const ArtikelFormular = ({ mode }) => {
             {/* GEMEINSAME HANDELSKALKULATION - nur für Einzel und Größen Tabs */}
             {(preisTab === 'einzelkalkulation' || preisTab === 'groessenabhaengig') && (
             <>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
+            <h3 style={{marginBottom: '0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📝 Handelskalkulation
             </h3>
 
             {/* BEZUGSKALKULATION */}
-            <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+            <div style={{marginBottom: '0.6rem'}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600}}>
                 📦 Bezugskalkulation (Einkauf)
               </h4>
-              <div className="form-grid" style={{gap: '0.8rem'}}>
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Listeneinkaufspreis (€)</label>
+              <div className="form-grid" style={{gap: '0.4rem'}}>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Listeneinkaufspreis (€)</label>
                   <input
                     type="number"
                     name="listeneinkaufspreis_euro"
@@ -632,12 +632,12 @@ const ArtikelFormular = ({ mode }) => {
                     min="0"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Lieferrabatt (%)</label>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Lieferrabatt (%)</label>
                   <input
                     type="number"
                     name="lieferrabatt_prozent"
@@ -648,12 +648,12 @@ const ArtikelFormular = ({ mode }) => {
                     max="100"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Lieferskonto (%)</label>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Lieferskonto (%)</label>
                   <input
                     type="number"
                     name="lieferskonto_prozent"
@@ -664,12 +664,12 @@ const ArtikelFormular = ({ mode }) => {
                     max="100"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Bezugskosten (€)</label>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Bezugskosten (€)</label>
                   <input
                     type="number"
                     name="bezugskosten_euro"
@@ -679,21 +679,20 @@ const ArtikelFormular = ({ mode }) => {
                     min="0"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
-                  <small style={{color: 'var(--text-secondary, #6c757d)', fontSize: '0.75rem'}}>Versand, Zoll, Verpackung</small>
                 </div>
               </div>
             </div>
 
             {/* SELBSTKOSTENKALKULATION */}
-            <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+            <div style={{marginBottom: '0.6rem'}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600}}>
                 🏭 Selbstkostenkalkulation
               </h4>
-              <div className="form-grid" style={{gap: '0.8rem'}}>
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Gemeinkosten (%)</label>
+              <div className="form-grid" style={{gap: '0.4rem'}}>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Gemeinkosten (%)</label>
                   <input
                     type="number"
                     name="gemeinkosten_prozent"
@@ -703,13 +702,12 @@ const ArtikelFormular = ({ mode }) => {
                     min="0"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
-                  <small style={{color: 'var(--text-secondary, #6c757d)', fontSize: '0.75rem'}}>Miete, Personal, etc.</small>
                 </div>
 
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Gewinnzuschlag (%)</label>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Gewinnzuschlag (%)</label>
                   <input
                     type="number"
                     name="gewinnzuschlag_prozent"
@@ -719,20 +717,20 @@ const ArtikelFormular = ({ mode }) => {
                     min="0"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
                 </div>
               </div>
             </div>
 
             {/* VERKAUFSKALKULATION */}
-            <div style={{marginBottom: '1.2rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600}}>
+            <div style={{marginBottom: '0.6rem'}}>
+              <h4 style={{color: '#6B4423', fontSize: '0.85rem', marginBottom: '0.25rem', fontWeight: 600}}>
                 💰 Verkaufskalkulation
               </h4>
-              <div className="form-grid" style={{gap: '0.8rem'}}>
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Kundenskonto (%)</label>
+              <div className="form-grid" style={{gap: '0.4rem'}}>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Kundenskonto (%)</label>
                   <input
                     type="number"
                     name="kundenskonto_prozent"
@@ -743,12 +741,12 @@ const ArtikelFormular = ({ mode }) => {
                     max="100"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>Kundenrabatt (%)</label>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>Kundenrabatt (%)</label>
                   <input
                     type="number"
                     name="kundenrabatt_prozent"
@@ -759,18 +757,18 @@ const ArtikelFormular = ({ mode }) => {
                     max="100"
                     className="form-input"
                     placeholder="0.00"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label style={{fontSize: '0.8rem'}}>MwSt. (%)</label>
+                <div className="form-group" style={{marginBottom: '0'}}>
+                  <label style={{fontSize: '0.75rem', marginBottom: '0.1rem'}}>MwSt. (%)</label>
                   <select
                     name="mwst_prozent"
                     value={formData.mwst_prozent}
                     onChange={handleInputChange}
                     className="form-select"
-                    style={{height: '36px'}}
+                    style={{height: '32px', padding: '0.25rem 0.5rem'}}
                   >
                     <option value="7.00">7% (ermäßigt)</option>
                     <option value="19.00">19% (normal)</option>
@@ -781,7 +779,7 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* Button: Neuen Preis übernehmen - nur bei Einzelkalkulation */}
             {preisTab === 'einzelkalkulation' && listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
-              <div style={{marginTop: '1rem', padding: '0.8rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '8px', border: '1px solid rgba(107, 68, 35, 0.3)'}}>
+              <div style={{marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '6px', border: '1px solid rgba(107, 68, 35, 0.3)'}}>
                 <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: '#6B4423'}}>
                   Kalkulierter Nettoverkaufspreis: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
                 </div>
