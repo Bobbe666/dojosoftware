@@ -640,8 +640,8 @@ const ArtikelFormular = ({ mode }) => {
               </button>
             </div>
 
-            {/* GEMEINSAME HANDELSKALKULATION - nur für Einzel und Größen Tabs */}
-            {(preisTab === 'einzelkalkulation' || preisTab === 'groessenabhaengig') && (
+            {/* GEMEINSAME HANDELSKALKULATION - NUR für Einzel Tab */}
+            {preisTab === 'einzelkalkulation' && (
             <>
             <h3 style={{marginBottom: '0.3rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
               📝 Handelskalkulation
@@ -847,6 +847,46 @@ const ArtikelFormular = ({ mode }) => {
                       }}
                       placeholder="z.B. 5.00"
                     />
+                  </div>
+                </div>
+
+                {/* Kalkulationsparameter für Größen */}
+                <div style={{ background: '#f8f9fa', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #e9ecef' }}>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>
+                    📊 Kalkulationsparameter (für beide Kategorien)
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Lieferrabatt (%)</label>
+                      <input type="number" name="lieferrabatt_prozent" value={formData.lieferrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Lieferskonto (%)</label>
+                      <input type="number" name="lieferskonto_prozent" value={formData.lieferskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Gemeinkosten (%)</label>
+                      <input type="number" name="gemeinkosten_prozent" value={formData.gemeinkosten_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Gewinn (%)</label>
+                      <input type="number" name="gewinnzuschlag_prozent" value={formData.gewinnzuschlag_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Kundenskonto (%)</label>
+                      <input type="number" name="kundenskonto_prozent" value={formData.kundenskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Kundenrabatt (%)</label>
+                      <input type="number" name="kundenrabatt_prozent" value={formData.kundenrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>MwSt. (%)</label>
+                      <select name="mwst_prozent" value={formData.mwst_prozent} onChange={handleInputChange} className="form-select" style={{ height: '26px', padding: '0.1rem 0.3rem', fontSize: '0.8rem' }}>
+                        <option value="7.00">7%</option>
+                        <option value="19.00">19%</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -1295,40 +1335,74 @@ const ArtikelFormular = ({ mode }) => {
                         <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.5rem', fontSize: '0.95rem', borderBottom: '1px solid #86efac', paddingBottom: '0.4rem' }}>
                           👶 KIDS ({formData.varianten_groessen?.filter(g => formData.groessen_kids?.includes(g)).join(', ') || 'alle'})
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.15rem 0' }}>
+                        {/* BEZUGSKALKULATION */}
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#166534', marginTop: '0.3rem' }}>📦 Bezugskalkulation</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
                           <span>Listeneinkaufspreis</span>
                           <span>{kidsEK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                        {lieferrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#dc2626' }}>
                           <span>− Lieferrabatt ({lieferrabatt}%)</span>
-                          <span>= {kidsZielEK.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
-                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskostenKids.toFixed(2)}€)</span>
-                          <span>= {kidsBezug.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#166534' }}>
+                          <span>−{(kidsEK * lieferrabatt / 100).toFixed(2)} €</span>
+                        </div>}
+                        {lieferskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#dc2626' }}>
+                          <span>− Lieferskonto ({lieferskonto}%)</span>
+                          <span>−{(kidsZielEK * lieferskonto / 100).toFixed(2)} €</span>
+                        </div>}
+                        {bezugskostenKids > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Bezugskosten</span>
+                          <span>+{bezugskostenKids.toFixed(2)} €</span>
+                        </div>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.15rem 0', fontWeight: 600, background: 'rgba(22, 101, 52, 0.1)', borderRadius: '4px', paddingLeft: '0.3rem', paddingRight: '0.3rem' }}>
                           <span>= Bezugspreis</span>
                           <span>{kidsBezug.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
-                          <span>+ Gemeinkosten ({gemeinkosten}%) + Gewinn ({gewinnzuschlag}%)</span>
-                          <span></span>
+                        {/* SELBSTKOSTEN */}
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#166534', marginTop: '0.3rem' }}>🏭 Selbstkosten</div>
+                        {gemeinkosten > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Gemeinkosten ({gemeinkosten}%)</span>
+                          <span>+{(kidsBezug * gemeinkosten / 100).toFixed(2)} €</span>
+                        </div>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.15rem 0', fontWeight: 600, background: 'rgba(22, 101, 52, 0.1)', borderRadius: '4px', paddingLeft: '0.3rem', paddingRight: '0.3rem' }}>
+                          <span>= Selbstkosten</span>
+                          <span>{kidsSelbstkosten.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#047857' }}>
+                        {/* VERKAUFSKALKULATION */}
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#166534', marginTop: '0.3rem' }}>💰 Verkaufskalkulation</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Gewinnzuschlag ({gewinnzuschlag}%)</span>
+                          <span>+{(kidsSelbstkosten * gewinnzuschlag / 100).toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
+                          <span>= Barverkaufspreis</span>
+                          <span>{kidsBarVK.toFixed(2)} €</span>
+                        </div>
+                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Kundenskonto ({kundenskonto}%)</span>
+                          <span>+{(kidsZielVK - kidsBarVK).toFixed(2)} €</span>
+                        </div>}
+                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
+                          <span>= Zielverkaufspreis</span>
+                          <span>{kidsZielVK.toFixed(2)} €</span>
+                        </div>}
+                        {kundenrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Kundenrabatt ({kundenrabatt}%)</span>
+                          <span>+{(kidsNettoVK - kidsZielVK).toFixed(2)} €</span>
+                        </div>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.15rem 0', fontWeight: 600, background: 'rgba(4, 120, 87, 0.15)', borderRadius: '4px', paddingLeft: '0.3rem', paddingRight: '0.3rem' }}>
                           <span>= Netto-VK</span>
                           <span>{kidsNettoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
                           <span>+ MwSt ({mwst}%)</span>
                           <span>+{(kidsNettoVK * mwst / 100).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0.3rem', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.2rem', background: 'rgba(22, 101, 52, 0.2)', borderRadius: '4px' }}>
                           <span>= BRUTTO-VK</span>
                           <span style={{ color: '#166534', fontSize: '1.1rem' }}>{kidsBruttoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac' }}>
-                          <span>💰 Gewinn</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac', marginTop: '0.3rem' }}>
+                          <span>💰 Gewinn (Netto - Bezug)</span>
                           <span style={{ fontWeight: 700 }}>{kidsGewinn.toFixed(2)} € ({kidsGewinnProzent.toFixed(0)}%)</span>
                         </div>
                       </div>
@@ -1340,35 +1414,69 @@ const ArtikelFormular = ({ mode }) => {
                         <div style={{ fontWeight: 700, color: '#1e40af', marginBottom: '0.5rem', fontSize: '0.95rem', borderBottom: '1px solid #93c5fd', paddingBottom: '0.4rem' }}>
                           🧑 ERWACHSENE ({formData.varianten_groessen?.filter(g => formData.groessen_erwachsene?.includes(g)).join(', ') || 'alle'})
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.15rem 0' }}>
+                        {/* BEZUGSKALKULATION */}
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#1e40af', marginTop: '0.3rem' }}>📦 Bezugskalkulation</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
                           <span>Listeneinkaufspreis</span>
                           <span>{erwEK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
+                        {lieferrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#dc2626' }}>
                           <span>− Lieferrabatt ({lieferrabatt}%)</span>
-                          <span>= {erwZielEK.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
-                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskostenErw.toFixed(2)}€)</span>
-                          <span>= {erwBezug.toFixed(2)} €</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#1e40af' }}>
+                          <span>−{(erwEK * lieferrabatt / 100).toFixed(2)} €</span>
+                        </div>}
+                        {lieferskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#dc2626' }}>
+                          <span>− Lieferskonto ({lieferskonto}%)</span>
+                          <span>−{(erwZielEK * lieferskonto / 100).toFixed(2)} €</span>
+                        </div>}
+                        {bezugskostenErw > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Bezugskosten</span>
+                          <span>+{bezugskostenErw.toFixed(2)} €</span>
+                        </div>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.15rem 0', fontWeight: 600, background: 'rgba(30, 64, 175, 0.1)', borderRadius: '4px', paddingLeft: '0.3rem', paddingRight: '0.3rem' }}>
                           <span>= Bezugspreis</span>
                           <span>{erwBezug.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
-                          <span>+ Gemeinkosten ({gemeinkosten}%) + Gewinn ({gewinnzuschlag}%)</span>
-                          <span></span>
+                        {/* SELBSTKOSTEN */}
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#1e40af', marginTop: '0.3rem' }}>🏭 Selbstkosten</div>
+                        {gemeinkosten > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Gemeinkosten ({gemeinkosten}%)</span>
+                          <span>+{(erwBezug * gemeinkosten / 100).toFixed(2)} €</span>
+                        </div>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.15rem 0', fontWeight: 600, background: 'rgba(30, 64, 175, 0.1)', borderRadius: '4px', paddingLeft: '0.3rem', paddingRight: '0.3rem' }}>
+                          <span>= Selbstkosten</span>
+                          <span>{erwSelbstkosten.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#047857' }}>
+                        {/* VERKAUFSKALKULATION */}
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#1e40af', marginTop: '0.3rem' }}>💰 Verkaufskalkulation</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Gewinnzuschlag ({gewinnzuschlag}%)</span>
+                          <span>+{(erwSelbstkosten * gewinnzuschlag / 100).toFixed(2)} €</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
+                          <span>= Barverkaufspreis</span>
+                          <span>{erwBarVK.toFixed(2)} €</span>
+                        </div>
+                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Kundenskonto ({kundenskonto}%)</span>
+                          <span>+{(erwZielVK - erwBarVK).toFixed(2)} €</span>
+                        </div>}
+                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
+                          <span>= Zielverkaufspreis</span>
+                          <span>{erwZielVK.toFixed(2)} €</span>
+                        </div>}
+                        {kundenrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                          <span>+ Kundenrabatt ({kundenrabatt}%)</span>
+                          <span>+{(erwNettoVK - erwZielVK).toFixed(2)} €</span>
+                        </div>}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.15rem 0', fontWeight: 600, background: 'rgba(4, 120, 87, 0.15)', borderRadius: '4px', paddingLeft: '0.3rem', paddingRight: '0.3rem' }}>
                           <span>= Netto-VK</span>
                           <span>{erwNettoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
                           <span>+ MwSt ({mwst}%)</span>
                           <span>+{(erwNettoVK * mwst / 100).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0.3rem', borderTop: '2px solid #93c5fd', fontWeight: 700, marginTop: '0.2rem', background: 'rgba(30, 64, 175, 0.2)', borderRadius: '4px' }}>
                           <span>= BRUTTO-VK</span>
                           <span style={{ color: '#1e40af', fontSize: '1.1rem' }}>{erwBruttoVK.toFixed(2)} €</span>
                         </div>
