@@ -753,7 +753,7 @@ const ArtikelFormular = ({ mode }) => {
                 </p>
 
                 {/* EK-Eingaben */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>
                       👶 Listeneinkaufspreis Kids (€)
@@ -798,6 +798,54 @@ const ArtikelFormular = ({ mode }) => {
                         background: '#eff6ff'
                       }}
                       placeholder="z.B. 35.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Bezugskosten-Eingaben */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: '#166534', marginBottom: '0.3rem' }}>
+                      📦 Bezugskosten Kids (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="bezugskosten_kids_euro"
+                      value={formData.bezugskosten_kids_euro}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        border: '1px solid #86efac',
+                        borderRadius: '6px',
+                        fontSize: '0.9rem',
+                        background: '#f0fdf4'
+                      }}
+                      placeholder="z.B. 5.00"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: '#1e40af', marginBottom: '0.3rem' }}>
+                      📦 Bezugskosten Erwachsene (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="bezugskosten_erwachsene_euro"
+                      value={formData.bezugskosten_erwachsene_euro}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        border: '1px solid #93c5fd',
+                        borderRadius: '6px',
+                        fontSize: '0.9rem',
+                        background: '#eff6ff'
+                      }}
+                      placeholder="z.B. 5.00"
                     />
                   </div>
                 </div>
