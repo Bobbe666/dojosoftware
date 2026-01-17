@@ -1031,8 +1031,8 @@ const ArtikelFormular = ({ mode }) => {
                   const einzelBezug = einzelBareEK + bezugskosten;
                   const einzelSelbstkosten = einzelBezug * (1 + gemeinkosten / 100);
                   const einzelBarVK = einzelSelbstkosten * (1 + gewinnzuschlag / 100);
-                  const einzelZielVK = einzelBarVK / (1 - kundenskonto / 100);
-                  const einzelNettoVK = einzelZielVK / (1 - kundenrabatt / 100);
+                  const einzelZielVK = einzelBarVK * (1 + kundenskonto / 100);
+                  const einzelNettoVK = einzelZielVK * (1 + kundenrabatt / 100);
                   const einzelBruttoVK = einzelNettoVK * (1 + mwst / 100);
 
                   // Größenabhängige Kalkulation - Kids
@@ -1042,8 +1042,8 @@ const ArtikelFormular = ({ mode }) => {
                   const kidsBezug = kidsBareEK + bezugskosten;
                   const kidsSelbstkosten = kidsBezug * (1 + gemeinkosten / 100);
                   const kidsBarVK = kidsSelbstkosten * (1 + gewinnzuschlag / 100);
-                  const kidsZielVK = kidsBarVK / (1 - kundenskonto / 100);
-                  const kidsNettoVK = kidsZielVK / (1 - kundenrabatt / 100);
+                  const kidsZielVK = kidsBarVK * (1 + kundenskonto / 100);
+                  const kidsNettoVK = kidsZielVK * (1 + kundenrabatt / 100);
                   const kidsBruttoVK = kidsNettoVK * (1 + mwst / 100);
 
                   // Größenabhängige Kalkulation - Erwachsene
@@ -1053,8 +1053,8 @@ const ArtikelFormular = ({ mode }) => {
                   const erwBezug = erwBareEK + bezugskosten;
                   const erwSelbstkosten = erwBezug * (1 + gemeinkosten / 100);
                   const erwBarVK = erwSelbstkosten * (1 + gewinnzuschlag / 100);
-                  const erwZielVK = erwBarVK / (1 - kundenskonto / 100);
-                  const erwNettoVK = erwZielVK / (1 - kundenrabatt / 100);
+                  const erwZielVK = erwBarVK * (1 + kundenskonto / 100);
+                  const erwNettoVK = erwZielVK * (1 + kundenrabatt / 100);
                   const erwBruttoVK = erwNettoVK * (1 + mwst / 100);
 
                   // Prüfen ob Kalkulation Ergebnisse liefert
@@ -1315,8 +1315,8 @@ const ArtikelFormular = ({ mode }) => {
                 const kidsBezug = kidsBareEK + bezugskostenKids;
                 const kidsSelbstkosten = kidsBezug * (1 + gemeinkosten / 100);
                 const kidsBarVK = kidsSelbstkosten * (1 + gewinnzuschlag / 100);
-                const kidsZielVK = kidsBarVK / (1 - kundenskonto / 100);
-                const kidsNettoVK = kidsZielVK / (1 - kundenrabatt / 100);
+                const kidsZielVK = kidsBarVK * (1 + kundenskonto / 100);
+                const kidsNettoVK = kidsZielVK * (1 + kundenrabatt / 100);
                 const kidsBruttoVK = kidsNettoVK * (1 + mwst / 100);
                 const kidsGewinn = kidsNettoVK - kidsBezug;
                 const kidsGewinnProzent = kidsBezug > 0 ? (kidsGewinn / kidsBezug) * 100 : 0;
@@ -1328,8 +1328,8 @@ const ArtikelFormular = ({ mode }) => {
                 const erwBezug = erwBareEK + bezugskostenErw;
                 const erwSelbstkosten = erwBezug * (1 + gemeinkosten / 100);
                 const erwBarVK = erwSelbstkosten * (1 + gewinnzuschlag / 100);
-                const erwZielVK = erwBarVK / (1 - kundenskonto / 100);
-                const erwNettoVK = erwZielVK / (1 - kundenrabatt / 100);
+                const erwZielVK = erwBarVK * (1 + kundenskonto / 100);
+                const erwNettoVK = erwZielVK * (1 + kundenrabatt / 100);
                 const erwBruttoVK = erwNettoVK * (1 + mwst / 100);
                 const erwGewinn = erwNettoVK - erwBezug;
                 const erwGewinnProzent = erwBezug > 0 ? (erwGewinn / erwBezug) * 100 : 0;
