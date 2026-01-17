@@ -82,8 +82,8 @@
 .artikelgruppen-verwaltung .header-controls {
   display: flex;
   align-items: center;
-  gap: var(--abstand-lg);
-  flex-wrap: wrap;
+  gap: var(--abstand-md);
+  flex-wrap: nowrap;
   margin-top: var(--abstand-md);
   padding-top: var(--abstand-md);
   border-top: 1px solid var(--rand-farbe);
@@ -91,7 +91,9 @@
 
 .artikelgruppen-verwaltung .header-controls .search-box {
   position: relative;
-  width: 250px;
+  flex: 1;
+  min-width: 150px;
+  max-width: 300px;
 }
 
 .artikelgruppen-verwaltung .header-controls .search-box input {
@@ -136,7 +138,8 @@
   color: var(--text-hauptfarbe);
   cursor: pointer;
   transition: all 0.3s ease;
-  width: 250px;
+  min-width: 140px;
+  max-width: 180px;
 }
 
 .artikelgruppen-verwaltung .header-controls .filter-select:focus {
@@ -233,6 +236,7 @@
    ============================================ */
 .groups-container {
   animation: fadeInUp 0.8s ease-out 0.4s both;
+  margin-top: 2rem;
 }
 
 .groups-grid {
@@ -318,23 +322,32 @@
 }
 
 .stat {
-  color: var(--text-hell);
+  color: #6B4423;
   font-size: 0.875rem;
-  background: var(--hintergrund-hover);
-  padding: 0.25rem 0.75rem;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
+  border: none;
+}
+
+/* Dark Mode - Stats mit Hintergrund */
+[data-theme="dark"] .stat,
+.dark-mode .stat {
+  color: var(--text-hell);
+  background: var(--hintergrund-hover);
   border: 1px solid var(--rand-farbe);
 }
 
 .group-actions {
   display: flex !important;
-  gap: var(--abstand-sm) !important;
+  gap: 0.75rem !important;
   align-items: center !important;
-  justify-content: flex-end !important;
+  justify-content: center !important;
   margin-top: var(--abstand-md) !important;
   padding-top: var(--abstand-md) !important;
   border-top: 1px solid var(--rand-farbe) !important;
   flex-direction: row !important;
+  flex-wrap: wrap !important;
 }
 
 .group-actions.sub-tabs {
@@ -413,7 +426,7 @@
   border-top: 1px solid var(--rand-farbe);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--abstand-md);
+  gap: 2.5rem;
 }
 
 .unterkategorie-card {
@@ -478,18 +491,21 @@
 
 .unterkategorie-actions {
   display: flex !important;
-  gap: var(--abstand-sm) !important;
+  gap: 1rem !important;
   align-items: center !important;
-  justify-content: flex-end !important;
+  justify-content: center !important;
   margin-top: auto !important;
+  padding-top: var(--abstand-sm) !important;
+  border-top: 1px solid var(--rand-farbe) !important;
   flex-direction: row !important;
 }
 
 .unterkategorie-actions.sub-tabs {
-  gap: 0.5rem;
+  gap: 1rem;
   background: transparent !important;
   border: none !important;
-  padding: 0 !important;
+  border-top: 1px solid var(--rand-farbe) !important;
+  padding: var(--abstand-sm) 0 0 0 !important;
   margin-bottom: 0 !important;
 }
 
@@ -792,11 +808,19 @@
 }
 
 .detail-stats .stat {
-  color: var(--text-hell);
+  color: #6B4423;
   font-size: 0.95rem;
-  background: var(--hintergrund-hover);
-  padding: 0.5rem 1rem;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
+  border: none;
+}
+
+/* Dark Mode */
+[data-theme="dark"] .detail-stats .stat,
+.dark-mode .detail-stats .stat {
+  color: var(--text-hell);
+  background: var(--hintergrund-hover);
   border: 1px solid var(--rand-farbe);
 }
 
@@ -979,35 +1003,132 @@
   .page-header {
     padding: var(--abstand-md);
   }
-  
+
   .header-content h1 {
     font-size: 1.75rem;
   }
-  
+
   .group-card {
     padding: var(--abstand-md);
   }
-  
+
   .group-icon {
     font-size: 2rem;
     width: 50px;
     height: 50px;
   }
-  
+
   .group-name {
     font-size: 1.1rem;
   }
-  
+
   .unterkategorie-card {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .unterkategorie-info {
     flex-direction: column;
   }
-  
+
   .unterkategorie-actions {
     justify-content: center;
   }
+}
+
+/* ============================================
+   LIGHT MODE OVERRIDES
+   ============================================ */
+
+/* Light Mode - Icon OHNE Hintergrund */
+:root:not([data-theme="dark"]) .group-icon,
+body:not(.dark-mode):not(.dark) .group-icon,
+:root:not([data-theme="dark"]) .unterkategorie-icon,
+body:not(.dark-mode):not(.dark) .unterkategorie-icon,
+:root:not([data-theme="dark"]) .detail-icon,
+body:not(.dark-mode):not(.dark) .detail-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Light Mode - Unterkategorien Cards mehr Abstand */
+.artikelgruppen-verwaltung .unterkategorien-grid {
+  gap: 2rem !important;
+}
+
+/* Light Mode - Action Buttons für ALLE Buttons */
+.artikelgruppen-verwaltung .group-actions {
+  gap: 1.5rem !important;
+}
+
+.artikelgruppen-verwaltung .unterkategorie-actions,
+.artikelgruppen-verwaltung .unterkategorie-detail-actions {
+  gap: 1.5rem !important;
+}
+
+/* Hauptkategorie Buttons - größer */
+.artikelgruppen-verwaltung .group-actions .sub-tab-btn,
+.artikelgruppen-verwaltung .group-actions .details-btn,
+.artikelgruppen-verwaltung .group-actions .edit-btn,
+.artikelgruppen-verwaltung .group-actions .delete-btn {
+  background: rgba(107, 68, 35, 0.08) !important;
+  border: 1px solid rgba(107, 68, 35, 0.2) !important;
+  color: #6B4423 !important;
+  padding: 0.45rem 0.85rem !important;
+  font-size: 0.8rem !important;
+  border-radius: 4px !important;
+}
+
+/* Unterkategorie Buttons - kleiner */
+.artikelgruppen-verwaltung .unterkategorie-actions .sub-tab-btn,
+.artikelgruppen-verwaltung .unterkategorie-actions .details-btn,
+.artikelgruppen-verwaltung .unterkategorie-actions .edit-btn,
+.artikelgruppen-verwaltung .unterkategorie-actions .delete-btn,
+.artikelgruppen-verwaltung .unterkategorie-detail-actions .sub-tab-btn {
+  background: rgba(107, 68, 35, 0.08) !important;
+  border: 1px solid rgba(107, 68, 35, 0.2) !important;
+  color: #6B4423 !important;
+  padding: 0.3rem 0.55rem !important;
+  font-size: 0.7rem !important;
+  border-radius: 4px !important;
+}
+
+/* Dark Mode überschreibt */
+[data-theme="dark"] .artikelgruppen-verwaltung .sub-tab-btn,
+[data-theme="dark"] .artikelgruppen-verwaltung .details-btn,
+[data-theme="dark"] .artikelgruppen-verwaltung .edit-btn,
+[data-theme="dark"] .artikelgruppen-verwaltung .delete-btn,
+.dark-mode .artikelgruppen-verwaltung .sub-tab-btn,
+.dark-mode .artikelgruppen-verwaltung .details-btn,
+.dark-mode .artikelgruppen-verwaltung .edit-btn,
+.dark-mode .artikelgruppen-verwaltung .delete-btn {
+  border-radius: 20px !important;
+}
+
+[data-theme="dark"] .artikelgruppen-verwaltung .details-btn,
+.dark-mode .artikelgruppen-verwaltung .details-btn {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #3b82f6 !important;
+}
+
+[data-theme="dark"] .artikelgruppen-verwaltung .edit-btn,
+.dark-mode .artikelgruppen-verwaltung .edit-btn {
+  background: rgba(245, 158, 11, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  color: #f59e0b !important;
+}
+
+[data-theme="dark"] .artikelgruppen-verwaltung .delete-btn,
+.dark-mode .artikelgruppen-verwaltung .delete-btn {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #ef4444 !important;
+}
+
+/* Light Mode - Stats Badges OHNE Hintergrund */
+.artikelgruppen-verwaltung .stat {
+  background: transparent !important;
+  border: none !important;
+  color: #6B4423 !important;
 }

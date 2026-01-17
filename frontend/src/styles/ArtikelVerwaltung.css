@@ -348,7 +348,7 @@
 .artikel-table td {
   padding: var(--abstand-md);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .artikel-table tbody tr:hover {
@@ -380,38 +380,67 @@
 }
 
 /* ============================================
-   ARTIKELGRUPPE BADGE
+   ARTIKELGRUPPE BADGE - Hell: eckig, Dunkel: rund
    ============================================ */
 .artikelgruppe-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-dunkel));
+  display: inline-block !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 4px !important;
+  color: #6B4423 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  background: rgba(107, 68, 35, 0.15) !important;
+  border: 1px solid rgba(107, 68, 35, 0.3) !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  line-height: 1.4 !important;
 }
 
 /* ============================================
-   KATEGORIE BADGE
+   KATEGORIE BADGE - Hell: eckig, Dunkel: rund
    ============================================ */
 
 .kategorie-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: inline-block !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 4px !important;
+  color: #6B4423 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  background: rgba(107, 68, 35, 0.15) !important;
+  border: 1px solid rgba(107, 68, 35, 0.3) !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  line-height: 1.4 !important;
+}
+
+/* Dark Mode - runde Badges mit Gold */
+[data-theme="dark"] .artikelgruppe-badge,
+[data-theme="dark"] .kategorie-badge,
+.dark .artikelgruppe-badge,
+.dark .kategorie-badge,
+body.dark-mode .artikelgruppe-badge,
+body.dark-mode .kategorie-badge {
+  border-radius: 20px !important;
+  background: #6B4423 !important;
+  color: #FFD700 !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
 }
 
 /* ============================================
-   PREIS INFO
+   PREIS CELL - Einzelne Preis-Spalten
+   ============================================ */
+
+.preis-cell {
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+}
+
+/* ============================================
+   PREIS INFO (Legacy)
    ============================================ */
 
 .preis-info {
@@ -459,12 +488,19 @@
 .lager-status {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 20px;
+  border-radius: 4px;
   font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Dark Mode - runde Status Badges */
+[data-theme="dark"] .lager-status,
+.dark .lager-status,
+body.dark-mode .lager-status {
+  border-radius: 20px;
 }
 
 .lager-status.in-stock {
@@ -2393,4 +2429,39 @@ html body .modal-overlay .modal-content.lager-modal,
   margin-top: 0.25rem;
   font-size: 0.8rem;
   line-height: 1.3;
+}
+
+/* ============================================
+   ARCHIVIERTE ARTIKEL
+   ============================================ */
+
+/* Archiviert Status Badge */
+.lager-status.archived {
+  background: rgba(156, 163, 175, 0.2);
+  color: #6b7280;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+/* Dark Mode - runde archivierte Badges */
+[data-theme="dark"] .lager-status.archived,
+.dark .lager-status.archived,
+body.dark-mode .lager-status.archived {
+  background: rgba(107, 114, 128, 0.3);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.4);
+}
+
+/* Archivierte Zeilen ausgegraut */
+.artikel-archiviert {
+  opacity: 0.6;
+}
+
+.artikel-archiviert:hover {
+  opacity: 0.8;
+}
+
+/* Archivierte Artikel Name durchgestrichen */
+.artikel-archiviert .artikel-name {
+  text-decoration: line-through;
+  color: #9ca3af;
 }

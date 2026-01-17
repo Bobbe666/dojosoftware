@@ -301,7 +301,7 @@ const ArtikelgruppenVerwaltung = () => {
         <div className="page-header-top">
           <div className="header-content">
             <h1>Artikelgruppen-Verwaltung</h1>
-            <p>Kampfsport-spezifische Kategorien und Unterkategorien verwalten</p>
+            <p>Kategorien und Unterkategorien verwalten</p>
           </div>
           {selectedGroup && (
             <button className="btn-secondary" onClick={closeGroupDetail}>

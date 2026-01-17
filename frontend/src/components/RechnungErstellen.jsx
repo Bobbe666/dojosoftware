@@ -124,7 +124,9 @@ const RechnungErstellen = () => {
 
   const loadArtikel = async () => {
     try {
-      const response = await axios.get(`/artikel`, {
+      const dojoId = activeDojo?.dojo_id || activeDojo?.id;
+      const url = dojoId ? `/artikel?dojo_id=${dojoId}` : `/artikel`;
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setArtikel(response.data.data || []);

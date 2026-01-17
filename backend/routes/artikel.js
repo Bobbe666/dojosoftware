@@ -74,10 +74,16 @@ const formatArtikel = (artikel) => ({
   verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
   einkaufspreis_euro: artikel.einkaufspreis_cent / 100,
   zusatzkosten_euro: artikel.zusatzkosten_cent ? artikel.zusatzkosten_cent / 100 : 0,
-  // Handelskalkulation - Bezugskalkulation
+  // Handelskalkulation - Bezugskalkulation (Einzelpreis)
   listeneinkaufspreis_euro: artikel.listeneinkaufspreis_cent ? artikel.listeneinkaufspreis_cent / 100 : 0,
   bezugskosten_euro: artikel.bezugskosten_cent ? artikel.bezugskosten_cent / 100 : 0,
-  // Varianten-Preise
+  // Handelskalkulation - Größenabhängig (Kids)
+  listeneinkaufspreis_kids_euro: artikel.listeneinkaufspreis_kids_cent ? artikel.listeneinkaufspreis_kids_cent / 100 : 0,
+  bezugskosten_kids_euro: artikel.bezugskosten_kids_cent ? artikel.bezugskosten_kids_cent / 100 : 0,
+  // Handelskalkulation - Größenabhängig (Erwachsene)
+  listeneinkaufspreis_erwachsene_euro: artikel.listeneinkaufspreis_erwachsene_cent ? artikel.listeneinkaufspreis_erwachsene_cent / 100 : 0,
+  bezugskosten_erwachsene_euro: artikel.bezugskosten_erwachsene_cent ? artikel.bezugskosten_erwachsene_cent / 100 : 0,
+  // Varianten-Preise (VK)
   preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
   preis_erwachsene_euro: artikel.preis_erwachsene_cent ? artikel.preis_erwachsene_cent / 100 : null,
   // JSON-Felder parsen
@@ -224,12 +230,14 @@ router.get('/', (req, res) => {
   const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
   const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
 
+  // Hole dojo_id aus verschiedenen Quellen (Tenant, Query-Parameter, User-Token)
+  const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+
   // Tenant check (Super-Admin darf ohne dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  if (!isSuperAdmin && !dojoId) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
-  const dojoId = req.tenant?.dojo_id;
   const { kategorie_id, aktiv, sichtbar_kasse } = req.query;
 
   // Datenbank verwenden - Super-Admin sieht alle
@@ -429,6 +437,14 @@ router.get('/:id', (req, res) => {
     }
     
     const artikel = formatArtikel(results[0]);
+    // DEBUG: Log loaded Handelskalkulation fields
+    console.log('🔍 GET /artikel/:id - Handelskalkulation:', {
+      listeneinkaufspreis_euro: artikel.listeneinkaufspreis_euro,
+      lieferrabatt_prozent: artikel.lieferrabatt_prozent,
+      gemeinkosten_prozent: artikel.gemeinkosten_prozent,
+      gewinnzuschlag_prozent: artikel.gewinnzuschlag_prozent,
+      verkaufspreis_euro: artikel.verkaufspreis_euro
+    });
     res.json({ success: true, data: artikel });
   });
 });
@@ -453,10 +469,13 @@ router.post('/', (req, res) => {
   const {
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
     einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
-    // Handelskalkulation Felder
+    // Handelskalkulation Felder (Einzelpreis)
     listeneinkaufspreis_euro, lieferrabatt_prozent, lieferskonto_prozent, bezugskosten_euro,
     gemeinkosten_prozent, gewinnzuschlag_prozent,
     kundenskonto_prozent, kundenrabatt_prozent,
+    // Handelskalkulation Felder (Größenabhängig)
+    listeneinkaufspreis_kids_euro, listeneinkaufspreis_erwachsene_euro,
+    bezugskosten_kids_euro, bezugskosten_erwachsene_euro,
     lagerbestand, mindestbestand, lager_tracking,
     farbe_hex, aktiv, sichtbar_kasse,
     // Varianten-Felder
@@ -464,6 +483,14 @@ router.post('/', (req, res) => {
     preis_kids_euro, preis_erwachsene_euro,
     hat_preiskategorien, groessen_kids, groessen_erwachsene
   } = req.body;
+
+  // DEBUG: Log Handelskalkulation fields beim Erstellen
+  console.log('🔍 POST /artikel - Handelskalkulation:', {
+    listeneinkaufspreis_euro, bezugskosten_euro,
+    listeneinkaufspreis_kids_euro, listeneinkaufspreis_erwachsene_euro,
+    gemeinkosten_prozent, gewinnzuschlag_prozent,
+    verkaufspreis_euro, preis_kids_euro, preis_erwachsene_euro
+  });
 
   // Validierung
   if (!kategorie_id || !name || !verkaufspreis_euro) {
@@ -488,7 +515,13 @@ router.post('/', (req, res) => {
   const kundenskonto_p = kundenskonto_prozent ? parseFloat(kundenskonto_prozent) : 0;
   const kundenrabatt_p = kundenrabatt_prozent ? parseFloat(kundenrabatt_prozent) : 0;
 
-  // Varianten-Preise in Cent
+  // Größenabhängige EK-Preise in Cent
+  const listeneinkaufspreis_kids_cent = listeneinkaufspreis_kids_euro ? Math.round(parseFloat(listeneinkaufspreis_kids_euro) * 100) : 0;
+  const listeneinkaufspreis_erwachsene_cent = listeneinkaufspreis_erwachsene_euro ? Math.round(parseFloat(listeneinkaufspreis_erwachsene_euro) * 100) : 0;
+  const bezugskosten_kids_cent = bezugskosten_kids_euro ? Math.round(parseFloat(bezugskosten_kids_euro) * 100) : 0;
+  const bezugskosten_erwachsene_cent = bezugskosten_erwachsene_euro ? Math.round(parseFloat(bezugskosten_erwachsene_euro) * 100) : 0;
+
+  // Varianten-Preise (VK) in Cent
   const preis_kids_cent = preis_kids_euro ? Math.round(parseFloat(preis_kids_euro) * 100) : null;
   const preis_erwachsene_cent = preis_erwachsene_euro ? Math.round(parseFloat(preis_erwachsene_euro) * 100) : null;
 
@@ -503,11 +536,13 @@ router.post('/', (req, res) => {
       listeneinkaufspreis_cent, lieferrabatt_prozent, lieferskonto_prozent, bezugskosten_cent,
       gemeinkosten_prozent, gewinnzuschlag_prozent,
       kundenskonto_prozent, kundenrabatt_prozent,
+      listeneinkaufspreis_kids_cent, listeneinkaufspreis_erwachsene_cent,
+      bezugskosten_kids_cent, bezugskosten_erwachsene_cent,
       lagerbestand, mindestbestand, lager_tracking,
       bild_url, bild_base64, farbe_hex, aktiv, sichtbar_kasse, dojo_id,
       hat_varianten, varianten_groessen, varianten_farben, varianten_material, varianten_bestand,
       preis_kids_cent, preis_erwachsene_cent, hat_preiskategorien, groessen_kids, groessen_erwachsene
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
@@ -516,6 +551,8 @@ router.post('/', (req, res) => {
     listeneinkaufspreis_cent, lieferrabatt_p, lieferskonto_p, bezugskosten_cent,
     gemeinkosten_p, gewinnzuschlag_p,
     kundenskonto_p, kundenrabatt_p,
+    listeneinkaufspreis_kids_cent, listeneinkaufspreis_erwachsene_cent,
+    bezugskosten_kids_cent, bezugskosten_erwachsene_cent,
     lagerbestand || 0, mindestbestand || 0, lager_tracking !== 'false',
     bild_url, bild_base64, farbe_hex || '#FFFFFF',
     aktiv !== 'false', sichtbar_kasse !== 'false', dojoId,
@@ -580,10 +617,13 @@ router.put('/:id', (req, res) => {
   const {
     kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
     einkaufspreis_euro, zusatzkosten_euro, marge_prozent, verkaufspreis_euro, mwst_prozent,
-    // Handelskalkulation Felder
+    // Handelskalkulation Felder (Einzelpreis)
     listeneinkaufspreis_euro, lieferrabatt_prozent, lieferskonto_prozent, bezugskosten_euro,
     gemeinkosten_prozent, gewinnzuschlag_prozent,
     kundenskonto_prozent, kundenrabatt_prozent,
+    // Handelskalkulation Felder (Größenabhängig)
+    listeneinkaufspreis_kids_euro, listeneinkaufspreis_erwachsene_euro,
+    bezugskosten_kids_euro, bezugskosten_erwachsene_euro,
     lagerbestand, mindestbestand, lager_tracking,
     farbe_hex, aktiv, sichtbar_kasse,
     // Varianten-Felder
@@ -591,6 +631,14 @@ router.put('/:id', (req, res) => {
     preis_kids_euro, preis_erwachsene_euro,
     hat_preiskategorien, groessen_kids, groessen_erwachsene
   } = req.body;
+
+  // DEBUG: Log Handelskalkulation fields
+  console.log('🔍 PUT /artikel/:id - Handelskalkulation:', {
+    listeneinkaufspreis_euro, bezugskosten_euro,
+    listeneinkaufspreis_kids_euro, listeneinkaufspreis_erwachsene_euro,
+    gemeinkosten_prozent, gewinnzuschlag_prozent,
+    verkaufspreis_euro, preis_kids_euro, preis_erwachsene_euro
+  });
 
   // Zuerst aktuellen Artikel abrufen
   db.query('SELECT * FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, currentResults) => {
@@ -657,6 +705,28 @@ router.put('/:id', (req, res) => {
       const bezugskosten_cent = Math.round(parseFloat(bezugskosten_euro || 0) * 100);
       updateFields.push('bezugskosten_cent = ?');
       updateValues.push(bezugskosten_cent);
+    }
+
+    // Größenabhängige EK-Preise
+    if (listeneinkaufspreis_kids_euro !== undefined) {
+      const listeneinkaufspreis_kids_cent = Math.round(parseFloat(listeneinkaufspreis_kids_euro || 0) * 100);
+      updateFields.push('listeneinkaufspreis_kids_cent = ?');
+      updateValues.push(listeneinkaufspreis_kids_cent);
+    }
+    if (listeneinkaufspreis_erwachsene_euro !== undefined) {
+      const listeneinkaufspreis_erwachsene_cent = Math.round(parseFloat(listeneinkaufspreis_erwachsene_euro || 0) * 100);
+      updateFields.push('listeneinkaufspreis_erwachsene_cent = ?');
+      updateValues.push(listeneinkaufspreis_erwachsene_cent);
+    }
+    if (bezugskosten_kids_euro !== undefined) {
+      const bezugskosten_kids_cent = Math.round(parseFloat(bezugskosten_kids_euro || 0) * 100);
+      updateFields.push('bezugskosten_kids_cent = ?');
+      updateValues.push(bezugskosten_kids_cent);
+    }
+    if (bezugskosten_erwachsene_euro !== undefined) {
+      const bezugskosten_erwachsene_cent = Math.round(parseFloat(bezugskosten_erwachsene_euro || 0) * 100);
+      updateFields.push('bezugskosten_erwachsene_cent = ?');
+      updateValues.push(bezugskosten_erwachsene_cent);
     }
 
     // Varianten-Felder
@@ -761,35 +831,72 @@ router.put('/:id', (req, res) => {
   });
 });
 
-// DELETE /api/artikel/:id - Artikel löschen (soft delete)
+// DELETE /api/artikel/:id - Artikel löschen oder archivieren
+// Löschen nur wenn kein Verkauf existiert, sonst nur archivieren
 router.delete('/:id', (req, res) => {
   // Super-Admin Check (darf alles)
   const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
   const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
 
-  // Tenant check (Super-Admin braucht kein dojo_id)
-  if (!isSuperAdmin && !req.tenant?.dojo_id) {
+  // Hole dojo_id aus verschiedenen Quellen
+  const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.dojo_id || req.user?.dojo_id || (isSuperAdmin ? 2 : null);
+
+  if (!isSuperAdmin && !dojoId) {
     return res.status(403).json({ error: 'No tenant' });
   }
 
-  // Super-Admin ohne dojo_id - Standard-Dojo 2 verwenden
-  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
-  if (!dojoId) {
-    return res.status(403).json({ error: 'No dojo_id available' });
-  }
+  const artikelId = req.params.id;
 
-  const query = 'UPDATE artikel SET aktiv = FALSE, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ? AND dojo_id = ?';
+  // Prüfe ob Artikel verkauft wurde
+  const checkSalesQuery = 'SELECT COUNT(*) as verkauf_count FROM verkauf_positionen WHERE artikel_id = ?';
 
-  db.query(query, [req.params.id, dojoId], (error, results) => {
+  db.query(checkSalesQuery, [artikelId], (error, results) => {
     if (error) {
-      console.error('Fehler beim Deaktivieren des Artikels:', error);
-      return res.status(500).json({ error: 'Fehler beim Deaktivieren des Artikels' });
+      console.error('Fehler beim Prüfen der Verkäufe:', error);
+      return res.status(500).json({ error: 'Fehler beim Prüfen der Verkäufe' });
     }
-    
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Artikel nicht gefunden' });
+
+    const hasBeenSold = results[0].verkauf_count > 0;
+
+    if (hasBeenSold) {
+      // Artikel wurde verkauft -> nur archivieren (soft delete)
+      const archiveQuery = 'UPDATE artikel SET aktiv = FALSE, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ? AND dojo_id = ?';
+
+      db.query(archiveQuery, [artikelId, dojoId], (error, results) => {
+        if (error) {
+          console.error('Fehler beim Archivieren des Artikels:', error);
+          return res.status(500).json({ error: 'Fehler beim Archivieren des Artikels' });
+        }
+
+        if (results.affectedRows === 0) {
+          return res.status(404).json({ error: 'Artikel nicht gefunden' });
+        }
+        res.json({
+          success: true,
+          action: 'archived',
+          message: 'Artikel wurde archiviert (Verkäufe vorhanden)'
+        });
+      });
+    } else {
+      // Artikel wurde nie verkauft -> komplett löschen
+      const deleteQuery = 'DELETE FROM artikel WHERE artikel_id = ? AND dojo_id = ?';
+
+      db.query(deleteQuery, [artikelId, dojoId], (error, results) => {
+        if (error) {
+          console.error('Fehler beim Löschen des Artikels:', error);
+          return res.status(500).json({ error: 'Fehler beim Löschen des Artikels' });
+        }
+
+        if (results.affectedRows === 0) {
+          return res.status(404).json({ error: 'Artikel nicht gefunden' });
+        }
+        res.json({
+          success: true,
+          action: 'deleted',
+          message: 'Artikel wurde gelöscht'
+        });
+      });
     }
-    res.json({ success: true, message: 'Artikel erfolgreich deaktiviert' });
   });
 });
 

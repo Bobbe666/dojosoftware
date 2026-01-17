@@ -33,7 +33,7 @@ const ArtikelVerwaltung = () => {
   const [selectedArtikel, setSelectedArtikel] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKategorie, setSelectedKategorie] = useState('');
-  const [showOnlyActive, setShowOnlyActive] = useState(true);
+  const [showOnlyActive, setShowOnlyActive] = useState(false);
 
   // Tab Navigation States (ersetzt Steps)
   const [activeTab, setActiveTab] = useState('basis'); // 'basis', 'preise', 'lager', 'einstellungen'
@@ -289,18 +289,23 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   
   const renderLagerStatus = (artikel) => {
+    // Archivierte Artikel zuerst prüfen
+    if (!artikel.aktiv) {
+      return <span className="lager-status archived">Archiviert</span>;
+    }
+
     if (!artikel.lager_tracking) {
       return <span className="lager-status unlimited">∞ Unbegrenzt</span>;
     }
-    
+
     if (artikel.lagerbestand === 0) {
       return <span className="lager-status out-of-stock">Ausverkauft</span>;
     }
-    
+
     if (artikel.lagerbestand <= artikel.mindestbestand) {
       return <span className="lager-status low-stock">Nachbestellen</span>;
     }
-    
+
     return <span className="lager-status in-stock">Verfügbar</span>;
   };
   
@@ -1081,7 +1086,10 @@ const ArtikelVerwaltung = () => {
               <th>Artikel</th>
               <th>Artikelgruppe</th>
               <th>Kategorie</th>
-              <th>Preis</th>
+              <th>EK</th>
+              <th>VK Netto</th>
+              <th>VK Brutto</th>
+              <th>MwSt</th>
               <th>Lager</th>
               <th>Status</th>
               <th>Aktionen</th>
@@ -1089,7 +1097,7 @@ const ArtikelVerwaltung = () => {
           </thead>
           <tbody>
             {filteredArtikel.map(artikel => (
-              <tr key={artikel.artikel_id}>
+              <tr key={artikel.artikel_id} className={!artikel.aktiv ? 'artikel-archiviert' : ''}>
                 <td className="artikel-info">
                   <div className="artikel-name">{artikel.name}</div>
                   <div className="artikel-details">
@@ -1099,32 +1107,33 @@ const ArtikelVerwaltung = () => {
                 </td>
                 
                 <td>
-                  <span 
-                    className="artikelgruppe-badge"
-                    style={{ backgroundColor: artikel.artikelgruppe_farbe || '#4A90E2' }}
-                  >
+                  <span className="artikelgruppe-badge">
                     {artikel.artikelgruppe_name || 'Keine Gruppe'}
                   </span>
                 </td>
-                
+
                 <td>
-                  <span 
-                    className="kategorie-badge"
-                    style={{ backgroundColor: artikel.kategorie_farbe }}
-                  >
-                    {artikel.kategorie_name}
+                  <span className="kategorie-badge">
+                    {artikel.kategorie_name || '-'}
                   </span>
                 </td>
-                
-                <td className="preis-info">
-                  <div className="verkaufspreis">
-                    {artikel.verkaufspreis_euro.toFixed(2)}€
-                  </div>
-                  {artikel.einkaufspreis_euro > 0 && (
-                    <div className="einkaufspreis">
-                      EK: {artikel.einkaufspreis_euro.toFixed(2)}€
-                    </div>
-                  )}
+
+                <td className="preis-cell">
+                  {artikel.einkaufspreis_euro > 0 ? `${artikel.einkaufspreis_euro.toFixed(2)}€` : '-'}
+                </td>
+
+                <td className="preis-cell">
+                  {artikel.verkaufspreis_euro > 0 ? `${artikel.verkaufspreis_euro.toFixed(2)}€` : '-'}
+                </td>
+
+                <td className="preis-cell">
+                  {artikel.verkaufspreis_euro > 0
+                    ? `${(artikel.verkaufspreis_euro * (1 + (artikel.mwst_satz || 19) / 100)).toFixed(2)}€`
+                    : '-'}
+                </td>
+
+                <td className="preis-cell">
+                  {artikel.mwst_satz || 19}%
                 </td>
                 
                 <td className="lager-info">

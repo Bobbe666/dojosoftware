@@ -85,10 +85,12 @@ const ArtikelFormular = ({ mode }) => {
     // Artikel-Verkaufspreise
     preis_euro: '', // Netto-VK Einzelpreis
     bruttopreis_euro: '', // Brutto-VK Einzelpreis
-    // Varianten-Preise (größenabhängige EK-Preise)
+    // Varianten-Preise (größenabhängige Preise)
     hat_preiskategorien: false, // Unterschiedliche Preise für Kids/Erwachsene?
-    listeneinkaufspreis_kids_euro: '', // EK für Kids-Größen
-    listeneinkaufspreis_erwachsene_euro: '', // EK für Erwachsene-Größen
+    listeneinkaufspreis_kids_euro: '', // Listen-EK für Kids-Größen
+    listeneinkaufspreis_erwachsene_euro: '', // Listen-EK für Erwachsene-Größen
+    bezugskosten_kids_euro: '', // Bezugskosten für Kids
+    bezugskosten_erwachsene_euro: '', // Bezugskosten für Erwachsene
     preis_kids_euro: '', // Netto-VK Kids
     preis_erwachsene_euro: '', // Netto-VK Erwachsene
     bruttopreis_kids_euro: '', // Brutto-VK Kids
@@ -151,10 +153,20 @@ const ArtikelFormular = ({ mode }) => {
       setLoading(true);
       const response = await apiCall(`/${id}`);
       if (response.success && response.data) {
-        setFormData({
-          ...formData,
-          ...response.data
+        // DEBUG: Log loaded Handelskalkulation data
+        console.log('🔍 ArtikelFormular - Geladene Kalkulation:', {
+          listeneinkaufspreis_euro: response.data.listeneinkaufspreis_euro,
+          lieferrabatt_prozent: response.data.lieferrabatt_prozent,
+          gemeinkosten_prozent: response.data.gemeinkosten_prozent,
+          gewinnzuschlag_prozent: response.data.gewinnzuschlag_prozent,
+          verkaufspreis_euro: response.data.verkaufspreis_euro,
+          bezugskosten_euro: response.data.bezugskosten_euro
         });
+
+        setFormData(prev => ({
+          ...prev,
+          ...response.data
+        }));
         // Tab setzen basierend auf gespeichertem hat_preiskategorien
         if (response.data.hat_preiskategorien) {
           setPreisTab('groessenabhaengig');
@@ -341,6 +353,16 @@ const ArtikelFormular = ({ mode }) => {
       setLoading(true);
       const url = mode === 'create' ? '' : `/${id}`;
       const method = mode === 'create' ? 'POST' : 'PUT';
+
+      // DEBUG: Log Handelskalkulation beim Speichern
+      console.log('🔍 ArtikelFormular - Speichern Kalkulation:', {
+        listeneinkaufspreis_euro: formData.listeneinkaufspreis_euro,
+        lieferrabatt_prozent: formData.lieferrabatt_prozent,
+        gemeinkosten_prozent: formData.gemeinkosten_prozent,
+        gewinnzuschlag_prozent: formData.gewinnzuschlag_prozent,
+        verkaufspreis_euro: formData.verkaufspreis_euro,
+        bezugskosten_euro: formData.bezugskosten_euro
+      });
 
       const response = await apiCall(url, {
         method,
@@ -928,7 +950,10 @@ const ArtikelFormular = ({ mode }) => {
                   const erwNettoVK = erwZielVK / (1 - kundenrabatt / 100);
                   const erwBruttoVK = erwNettoVK * (1 + mwst / 100);
 
+                  // Prüfen ob Kalkulation Ergebnisse liefert
+                  // Einzelpreis nur anzeigen wenn tatsächlich ein Einzel-EK eingegeben wurde
                   const hasEinzel = einzelEK > 0;
+                  // Größenabhängige Preise anzeigen wenn Kids oder Erwachsene EK eingegeben wurde
                   const hasKids = kidsEK > 0;
                   const hasErw = erwEK > 0;
                   const hasGroessen = hasKids || hasErw;
@@ -1044,74 +1069,117 @@ const ArtikelFormular = ({ mode }) => {
               {preisTab === 'uebersicht' ? '✓ Aktuelle Artikelpreise' : preisTab === 'groessenabhaengig' ? '📊 Größenabhängige Kalkulation' : '📊 Handelskalkulation'}
             </h3>
 
-            {/* ÜBERSICHT - Aktuelle gespeicherte Preise */}
+            {/* ÜBERSICHT - Aktuelle gespeicherte Preise mit Varianten */}
             {preisTab === 'uebersicht' && (
               <div>
                 <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1rem' }}>
-                  Aktuell für diesen Artikel gespeicherte Preise:
+                  Artikelpreise nach Variante:
                 </p>
 
                 {(() => {
                   const mwst = parseFloat(formData.mwst_prozent) || 19;
                   const vkNetto = parseFloat(formData.verkaufspreis_euro) || 0;
-                  const vkBrutto = vkNetto * (1 + mwst / 100);
                   const kidsNetto = parseFloat(formData.preis_kids_euro) || 0;
-                  const kidsBrutto = kidsNetto * (1 + mwst / 100);
                   const erwNetto = parseFloat(formData.preis_erwachsene_euro) || 0;
-                  const erwBrutto = erwNetto * (1 + mwst / 100);
+                  const basisArtNr = formData.artikel_nummer || 'ART-XXX';
+                  const groessenKids = formData.groessen_kids || [];
+                  const groessenErw = formData.groessen_erwachsene || [];
+
+                  // Alle Varianten sammeln
+                  const varianten = [];
+
+                  // Wenn Größen aktiviert sind
+                  if (formData.hat_varianten && formData.varianten_groessen?.length > 0) {
+                    formData.varianten_groessen.forEach(groesse => {
+                      const isKids = groessenKids.includes(groesse);
+                      const netto = isKids ? kidsNetto : erwNetto;
+                      const mwstBetrag = netto * (mwst / 100);
+                      const brutto = netto + mwstBetrag;
+                      varianten.push({
+                        artNr: `${basisArtNr}-${groesse}`,
+                        groesse,
+                        typ: isKids ? 'kids' : 'erw',
+                        netto,
+                        mwstBetrag,
+                        brutto
+                      });
+                    });
+                  } else if (vkNetto > 0) {
+                    // Einzelartikel ohne Varianten
+                    const mwstBetrag = vkNetto * (mwst / 100);
+                    varianten.push({
+                      artNr: basisArtNr,
+                      groesse: null,
+                      typ: 'einzel',
+                      netto: vkNetto,
+                      mwstBetrag,
+                      brutto: vkNetto + mwstBetrag
+                    });
+                  }
+
+                  if (varianten.length === 0) {
+                    return (
+                      <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                        <p style={{ marginBottom: '0.5rem' }}>Noch keine Preise gespeichert</p>
+                        <p style={{ fontSize: '0.85rem' }}>Übernehmen Sie links die berechneten Preise</p>
+                      </div>
+                    );
+                  }
 
                   return (
-                    <>
-                      {/* Einzelpreis */}
-                      {vkNetto > 0 && !formData.hat_preiskategorien && (
-                        <div style={{ padding: '0.75rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                          <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>💰 Einzelpreis</div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                            <span>Netto:</span>
-                            <span style={{ fontWeight: 600 }}>{vkNetto.toFixed(2)} €</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                            <span>Brutto ({mwst}% MwSt):</span>
-                            <span style={{ fontWeight: 700, color: '#166534' }}>{vkBrutto.toFixed(2)} €</span>
-                          </div>
+                    <div>
+                      {/* Tabellen-Header */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 80px 70px 80px',
+                        gap: '0.5rem',
+                        padding: '0.5rem',
+                        background: '#047857',
+                        color: '#fff',
+                        borderRadius: '6px 6px 0 0',
+                        fontSize: '0.75rem',
+                        fontWeight: 600
+                      }}>
+                        <span>ArtNr.</span>
+                        <span style={{ textAlign: 'right' }}>Netto</span>
+                        <span style={{ textAlign: 'right' }}>MwSt</span>
+                        <span style={{ textAlign: 'right' }}>Brutto</span>
+                      </div>
+
+                      {/* Varianten-Liste */}
+                      {varianten.map((v, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 80px 70px 80px',
+                            gap: '0.5rem',
+                            padding: '0.5rem',
+                            background: v.typ === 'kids' ? '#dcfce7' : v.typ === 'erw' ? '#dbeafe' : '#f0fdf4',
+                            borderBottom: '1px solid rgba(0,0,0,0.1)',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          <span style={{ fontWeight: 600, color: v.typ === 'kids' ? '#166534' : v.typ === 'erw' ? '#1e40af' : '#047857' }}>
+                            {v.typ === 'kids' ? '👶 ' : v.typ === 'erw' ? '🧑 ' : '💰 '}{v.artNr}
+                          </span>
+                          <span style={{ textAlign: 'right' }}>{v.netto.toFixed(2)} €</span>
+                          <span style={{ textAlign: 'right', color: '#6c757d' }}>{v.mwstBetrag.toFixed(2)} €</span>
+                          <span style={{ textAlign: 'right', fontWeight: 700 }}>{v.brutto.toFixed(2)} €</span>
                         </div>
-                      )}
+                      ))}
 
-                      {/* Größenabhängige Preise */}
-                      {formData.hat_preiskategorien && (
-                        <div style={{ padding: '0.75rem', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                          <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>👶🧑 Größenabhängige Preise</div>
-
-                          {kidsNetto > 0 && (
-                            <div style={{ padding: '0.5rem', background: '#dcfce7', borderRadius: '6px', marginBottom: '0.5rem' }}>
-                              <div style={{ fontWeight: 600, color: '#166534', fontSize: '0.85rem' }}>👶 Kids</div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                <span>Netto: {kidsNetto.toFixed(2)} €</span>
-                                <span style={{ fontWeight: 700 }}>Brutto: {kidsBrutto.toFixed(2)} €</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {erwNetto > 0 && (
-                            <div style={{ padding: '0.5rem', background: '#dbeafe', borderRadius: '6px' }}>
-                              <div style={{ fontWeight: 600, color: '#1e40af', fontSize: '0.85rem' }}>🧑 Erwachsene</div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                <span>Netto: {erwNetto.toFixed(2)} €</span>
-                                <span style={{ fontWeight: 700 }}>Brutto: {erwBrutto.toFixed(2)} €</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Hinweis wenn keine Preise gespeichert */}
-                      {vkNetto <= 0 && !formData.hat_preiskategorien && (
-                        <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
-                          <p style={{ marginBottom: '0.5rem' }}>Noch keine Preise gespeichert</p>
-                          <p style={{ fontSize: '0.85rem' }}>Übernehmen Sie links die berechneten Preise</p>
-                        </div>
-                      )}
-                    </>
+                      {/* Zusammenfassung */}
+                      <div style={{
+                        padding: '0.75rem',
+                        background: '#f3f4f6',
+                        borderRadius: '0 0 6px 6px',
+                        fontSize: '0.8rem',
+                        color: '#6c757d'
+                      }}>
+                        {varianten.length} Artikel | MwSt: {mwst}%
+                      </div>
+                    </div>
                   );
                 })()}
               </div>
