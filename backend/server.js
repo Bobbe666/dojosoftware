@@ -290,7 +290,7 @@ try {
 // 2.1. ARTIKELGRUPPEN ROUTES - ARTIKEL-KATEGORIEN
 try {
   const artikelgruppenRoutes = require('./routes/artikelgruppen');
-  app.use('/api/artikelgruppen', artikelgruppenRoutes);
+  app.use('/api/artikelgruppen', authenticateToken, artikelgruppenRoutes);
   logger.success('Route geladen', { path: '/api/artikelgruppen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {

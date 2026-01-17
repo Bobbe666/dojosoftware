@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import axios from "axios";
 import config from '../config/config.js';
 import "../styles/themes.css";
@@ -10,32 +10,10 @@ import { DatenContext } from "@shared/DatenContext.jsx";
 const GruppenStilVerwaltung = () => {
   const { stile: stileFromContext, gruppen: gruppenFromContext, ladeAlleDaten } = useContext(DatenContext);
 
-  // 🔧 DEVELOPMENT MODE: Mock-Daten für lokale Entwicklung
-  const isDevelopment = import.meta.env.MODE === 'development';
-
-  console.log('🔧 GruppenStilVerwaltung - Development Mode:', isDevelopment);
-
-  const [mockStile, setMockStile] = useState([
-    { stil_id: 1, name: 'Karate' },
-    { stil_id: 2, name: 'Taekwondo' },
-    { stil_id: 3, name: 'Judo' },
-    { stil_id: 4, name: 'Kung Fu' },
-    { stil_id: 5, name: 'Aikido' }
-  ]);
-  const [mockGruppen, setMockGruppen] = useState([
-    { gruppen_id: 1, name: 'Anfänger' },
-    { gruppen_id: 2, name: 'Fortgeschrittene' },
-    { gruppen_id: 3, name: 'Experten' },
-    { gruppen_id: 4, name: 'Kinder' },
-    { gruppen_id: 5, name: 'Erwachsene' }
-  ]);
-
-  // Verwende Mock-Daten im Development, echte Daten in Production
+  // Immer Datenbank verwenden - keine Mock-Daten mehr
   // Filtere nur aktive Stile (aktiv = true oder aktiv = 1 oder aktiv = null)
-  const stile = isDevelopment
-    ? mockStile
-    : (stileFromContext || []).filter(s => s.aktiv !== 0 && s.aktiv !== false);
-  const gruppen = isDevelopment ? mockGruppen : gruppenFromContext;
+  const stile = (stileFromContext || []).filter(s => s.aktiv !== 0 && s.aktiv !== false);
+  const gruppen = gruppenFromContext || [];
 
   // Eingaben für neue Stile/Gruppen
   const [neuerStil, setNeuerStil] = useState("");
@@ -60,20 +38,6 @@ const GruppenStilVerwaltung = () => {
     const wert = typ === "stil" ? neuerStil : neueGruppe;
     if (!wert.trim()) return;
 
-    // 🔧 DEVELOPMENT MODE: Mock-Funktionalität
-    if (isDevelopment) {
-      if (typ === "stil") {
-        const newId = Math.max(...mockStile.map(s => s.stil_id), 0) + 1;
-        setMockStile([...mockStile, { stil_id: newId, name: wert.trim() }]);
-        setNeuerStil("");
-      } else {
-        const newId = Math.max(...mockGruppen.map(g => g.gruppen_id), 0) + 1;
-        setMockGruppen([...mockGruppen, { gruppen_id: newId, name: wert.trim() }]);
-        setNeueGruppe("");
-      }
-      return;
-    }
-
     const endpoint = typ === "stil" ? `/stile` : `/gruppen`;
 
     try {
@@ -90,25 +54,10 @@ const GruppenStilVerwaltung = () => {
   //   Löschen von Stil/Gruppe
   // -----------------------------
   const loeschen = async (id, typ) => {
-    console.log('🗑️ Löschen aufgerufen:', { id, typ, isDevelopment });
+    console.log('Löschen aufgerufen:', { id, typ });
 
     if (!confirm(`Möchten Sie diesen ${typ === "stil" ? "Stil" : "diese Gruppe"} wirklich löschen?`)) {
-      console.log('❌ Löschen abgebrochen durch Benutzer');
-      return;
-    }
-
-    // 🔧 DEVELOPMENT MODE: Mock-Funktionalität
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Verwende Mock-Daten');
-      if (typ === "stil") {
-        console.log('📝 Vor Löschen:', mockStile.length);
-        setMockStile(mockStile.filter(s => s.stil_id !== id));
-        console.log('📝 Nach Löschen sollte es sein:', mockStile.filter(s => s.stil_id !== id).length);
-      } else {
-        console.log('📝 Vor Löschen:', mockGruppen.length);
-        setMockGruppen(mockGruppen.filter(g => g.gruppen_id !== id));
-        console.log('📝 Nach Löschen sollte es sein:', mockGruppen.filter(g => g.gruppen_id !== id).length);
-      }
+      console.log('Löschen abgebrochen durch Benutzer');
       return;
     }
 
@@ -116,12 +65,12 @@ const GruppenStilVerwaltung = () => {
 
     try {
       const response = await axios.delete(`${endpoint}/${id}`);
-      console.log('✅ Erfolgreich gelöscht:', response.data);
+      console.log('Erfolgreich gelöscht:', response.data);
       // Daten neu laden um UI zu aktualisieren
       ladeAlleDaten();
       alert(`${typ === "stil" ? "Stil" : "Gruppe"} wurde erfolgreich gelöscht (deaktiviert)!`);
     } catch (err) {
-      console.error(`❌ Fehler beim Löschen von ${typ}:`, err);
+      console.error(`Fehler beim Löschen von ${typ}:`, err);
 
       // Spezielle Behandlung für 409 Konflikt (Stil hat noch Mitglieder)
       if (err.response?.status === 409) {
@@ -156,15 +105,6 @@ const GruppenStilVerwaltung = () => {
   const saveStil = async (stilId) => {
     if (!editingStilName.trim()) return;
 
-    // 🔧 DEVELOPMENT MODE: Mock-Funktionalität
-    if (isDevelopment) {
-      setMockStile(mockStile.map(s =>
-        s.stil_id === stilId ? { ...s, name: editingStilName.trim() } : s
-      ));
-      abbrechenStil();
-      return;
-    }
-
     try {
       // Update via PUT, da das Backend PUT /api/stile/:id erwartet
       await axios.put(`/stile/${stilId}`, { name: editingStilName.trim() });
@@ -191,15 +131,6 @@ const GruppenStilVerwaltung = () => {
 
   const saveGruppe = async (gruppeId) => {
     if (!editingGruppeName.trim()) return;
-
-    // 🔧 DEVELOPMENT MODE: Mock-Funktionalität
-    if (isDevelopment) {
-      setMockGruppen(mockGruppen.map(g =>
-        g.gruppen_id === gruppeId ? { ...g, name: editingGruppeName.trim() } : g
-      ));
-      abbrechenGruppe();
-      return;
-    }
 
     try {
       // Update via PUT, damit es mit dem Backend (PUT /api/gruppen/:id) übereinstimmt
@@ -231,38 +162,36 @@ const GruppenStilVerwaltung = () => {
     }
   };
 
-  const loescheAusgewaehlteStile = () => {
+  const loescheAusgewaehlteStile = async () => {
     if (selectedStile.length === 0) return;
     if (!confirm(`${selectedStile.length} Stile wirklich löschen?`)) return;
 
-    if (isDevelopment) {
-      setMockStile(mockStile.filter(s => !selectedStile.includes(s.stil_id)));
+    try {
+      await Promise.all(selectedStile.map(id => axios.delete(`/stile/${id}`)));
       setSelectedStile([]);
+      ladeAlleDaten();
+    } catch (err) {
+      console.error('Fehler beim Löschen:', err);
+      alert('Fehler beim Löschen einiger Stile.');
     }
   };
 
-  const loescheAusgewaehlteGruppen = () => {
+  const loescheAusgewaehlteGruppen = async () => {
     if (selectedGruppen.length === 0) return;
     if (!confirm(`${selectedGruppen.length} Gruppen wirklich löschen?`)) return;
 
-    if (isDevelopment) {
-      setMockGruppen(mockGruppen.filter(g => !selectedGruppen.includes(g.gruppen_id)));
+    try {
+      await Promise.all(selectedGruppen.map(id => axios.delete(`/gruppen/${id}`)));
       setSelectedGruppen([]);
+      ladeAlleDaten();
+    } catch (err) {
+      console.error('Fehler beim Löschen:', err);
+      alert('Fehler beim Löschen einiger Gruppen.');
     }
   };
 
   // Position verschieben
   const moveStil = async (index, direction) => {
-    if (isDevelopment) {
-      const newStile = [...mockStile];
-      const newIndex = direction === 'up' ? index - 1 : index + 1;
-      if (newIndex < 0 || newIndex >= newStile.length) return;
-      [newStile[index], newStile[newIndex]] = [newStile[newIndex], newStile[index]];
-      setMockStile(newStile);
-      return;
-    }
-
-    // Production: Tausche Reihenfolge in Datenbank
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= stile.length) return;
 
@@ -295,16 +224,6 @@ const GruppenStilVerwaltung = () => {
   };
 
   const moveGruppe = async (index, direction) => {
-    if (isDevelopment) {
-      const newGruppen = [...mockGruppen];
-      const newIndex = direction === 'up' ? index - 1 : index + 1;
-      if (newIndex < 0 || newIndex >= newGruppen.length) return;
-      [newGruppen[index], newGruppen[newIndex]] = [newGruppen[newIndex], newGruppen[index]];
-      setMockGruppen(newGruppen);
-      return;
-    }
-
-    // Production: Tausche Reihenfolge in Datenbank
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= gruppen.length) return;
 
@@ -359,13 +278,13 @@ const GruppenStilVerwaltung = () => {
                       className="btn btn-success"
                       onClick={() => saveGruppe(gruppe.gruppen_id)}
                     >
-                      💾
+                      Save
                     </button>
                     <button
                       className="btn btn-secondary"
                       onClick={abbrechenGruppe}
                     >
-                      ✕
+                      X
                     </button>
                   </>
                 ) : (
@@ -387,14 +306,14 @@ const GruppenStilVerwaltung = () => {
                         onClick={() => moveGruppe(index, 'up')}
                         disabled={index === 0}
                       >
-                        ▲
+                        Up
                       </button>
                       <button
                         className="sort-btn"
                         onClick={() => moveGruppe(index, 'down')}
                         disabled={index === gruppen.length - 1}
                       >
-                        ▼
+                        Down
                       </button>
                     </div>
                     <span>{gruppe.name}</span>
@@ -402,13 +321,13 @@ const GruppenStilVerwaltung = () => {
                       className="btn btn-primary"
                       onClick={() => bearbeitenGruppe(gruppe)}
                     >
-                      ✏️
+                      Edit
                     </button>
                     <button
                       className="btn btn-danger"
                       onClick={() => loeschen(gruppe.gruppen_id, "gruppe")}
                     >
-                      🗑️
+                      Del
                     </button>
                   </>
                 )}
@@ -427,7 +346,7 @@ const GruppenStilVerwaltung = () => {
               className="btn btn-primary"
               onClick={() => hinzufuegen("gruppe")}
             >
-              Hinzufügen
+              Hinzufuegen
             </button>
           </div>
 
@@ -435,11 +354,11 @@ const GruppenStilVerwaltung = () => {
           {gruppen.length > 0 && (
             <div className="bulk-actions">
               <button className="btn btn-secondary" onClick={toggleAllGruppen}>
-                {selectedGruppen.length === gruppen.length ? 'Alle abwählen' : 'Alle auswählen'}
+                {selectedGruppen.length === gruppen.length ? 'Alle abwaehlen' : 'Alle auswaehlen'}
               </button>
               {selectedGruppen.length > 0 && (
                 <button className="btn btn-danger" onClick={loescheAusgewaehlteGruppen}>
-                  {selectedGruppen.length} löschen
+                  {selectedGruppen.length} loeschen
                 </button>
               )}
             </div>

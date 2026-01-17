@@ -8,61 +8,11 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 const DojosVerwaltung = () => {
   const navigate = useNavigate();
 
-  // 🔧 DEVELOPMENT MODE: Mock-Daten für lokale Entwicklung
-  const isDevelopment = import.meta.env.MODE === 'development';
-
-  const mockDojos = [
-    {
-      id: 1,
-      dojoname: 'Dojo Hamburg',
-      inhaber: 'Max Mustermann',
-      farbe: '#FFD700',
-      ist_hauptdojo: true,
-      steuer_status: 'kleinunternehmer',
-      kleinunternehmer_grenze: 22000,
-      jahresumsatz_aktuell: 15000,
-      ust_satz: 19,
-      strasse: 'Beispielstraße',
-      hausnummer: '123',
-      plz: '20095',
-      ort: 'Hamburg',
-      land: 'Deutschland',
-      telefon: '+49 40 12345678',
-      email: 'info@dojo-hamburg.de',
-      website: 'www.dojo-hamburg.de'
-    },
-    {
-      id: 2,
-      dojoname: 'Dojo Berlin',
-      inhaber: 'Anna Schmidt',
-      farbe: '#3B82F6',
-      ist_hauptdojo: false,
-      steuer_status: 'regelbesteuert',
-      kleinunternehmer_grenze: 22000,
-      jahresumsatz_aktuell: 35000,
-      ust_satz: 19,
-      strasse: 'Alexanderplatz',
-      hausnummer: '1',
-      plz: '10178',
-      ort: 'Berlin',
-      land: 'Deutschland',
-      telefon: '+49 30 98765432',
-      email: 'kontakt@dojo-berlin.de',
-      website: 'www.dojo-berlin.de'
-    }
-  ];
-
-  const mockStatistics = {
-    dojos_anzahl: 2,
-    mitglieder_gesamt: 127,
-    umsatz_gesamt: 50000,
-    ust_gesamt: 6650
-  };
-
-  const [dojos, setDojos] = useState(isDevelopment ? mockDojos : []);
+  // Immer Datenbank verwenden - keine Mock-Daten mehr
+  const [dojos, setDojos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [statistics, setStatistics] = useState(isDevelopment ? mockStatistics : null);
+  const [statistics, setStatistics] = useState(null);
 
   useEffect(() => {
     loadDojos();
@@ -70,13 +20,7 @@ const DojosVerwaltung = () => {
   }, []);
 
   const loadDojos = async () => {
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Verwende Mock-Dojos für DojosVerwaltung');
-      setDojos(mockDojos);
-      return;
-    }
-
+    // Immer Datenbank verwenden
     setLoading(true);
     try {
       // filter=managed: Nur zentral verwaltete Dojos (ohne separate Tenants wie Demo)
@@ -94,13 +38,6 @@ const DojosVerwaltung = () => {
   };
 
   const loadGesamtStatistiken = async () => {
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Verwende Mock-Statistiken');
-      setStatistics(mockStatistics);
-      return;
-    }
-
     // Berechne Statistiken aus den geladenen Dojos
     try {
       // filter=managed: Nur zentral verwaltete Dojos (ohne separate Tenants wie Demo)

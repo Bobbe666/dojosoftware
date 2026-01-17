@@ -342,20 +342,19 @@ router.get('/', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Kritischer Fehler beim Laden der Dashboard-Statistiken:', error);
-    
-    // Fallback auf realistische Werte basierend auf vorherigen Tests
-    const fallbackStats = {
-      mitglieder: 53,  // Aus Ihrem Test
-      kurse: 7,        // Aus Ihrem Test  
-      trainer: 3,      // Aus Ihrem Test
-      anwesenheit: 0,  // Aus Ihrem Test
-      beitraege: 6,    // Aus Ihrem Test
+
+    // Fehler zurückgeben statt Mock-Daten
+    res.status(500).json({
+      error: 'Fehler beim Laden der Dashboard-Statistiken',
+      details: error.message,
+      mitglieder: 0,
+      kurse: 0,
+      trainer: 0,
+      anwesenheit: 0,
+      beitraege: 0,
       checkins_heute: 0,
-      stile: 3         // Default Anzahl Stile
-    };
-    
-    console.log('🔄 Verwende Fallback-Statistiken:', fallbackStats);
-    res.json(fallbackStats);
+      stile: 0
+    });
   }
 });
 
@@ -487,26 +486,13 @@ router.get('/recent', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Fehler beim Laden der Recent Activities:', error);
-    
-    // Fallback Mock-Daten
-    const mockActivities = [
-      {
-        id: 'checkin_mock_1',
-        type: 'checkin',
-        member: 'Max Mustermann',
-        title: 'Max Mustermann',
-        subtitle: 'Check-in erfolgreich',
-        description: 'Check-in erfolgreich',
-        timestamp: new Date().toISOString(),
-        date: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
-      }
-    ];
 
+    // Leere Liste zurückgeben statt Mock-Daten
     res.json({
-      success: true,
-      activities: mockActivities,
-      total: mockActivities.length,
-      note: 'Fallback mock data due to error'
+      success: false,
+      activities: [],
+      total: 0,
+      error: error.message
     });
   }
 });
