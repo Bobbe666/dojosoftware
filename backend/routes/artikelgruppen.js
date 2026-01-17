@@ -3,170 +3,6 @@ const router = express.Router();
 const db = require('../db');
 
 // =====================================================================================
-// MOCK-DATEN für Development Mode
-// =====================================================================================
-const MOCK_ARTIKELGRUPPEN = [
-    // Hauptkategorien
-    {
-        id: 1,
-        name: 'Bekleidung',
-        beschreibung: 'Kampfsportbekleidung und Trainingsequipment',
-        parent_id: null,
-        sortierung: 1,
-        aktiv: true,
-        icon: '👕',
-        farbe: '#3b82f6',
-        typ: 'Hauptkategorie',
-        vollstaendiger_name: 'Bekleidung',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 2,
-        name: 'Ausrüstung',
-        beschreibung: 'Trainings- und Wettkampfausrüstung',
-        parent_id: null,
-        sortierung: 2,
-        aktiv: true,
-        icon: '🥊',
-        farbe: '#ef4444',
-        typ: 'Hauptkategorie',
-        vollstaendiger_name: 'Ausrüstung',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 3,
-        name: 'Prüfungsmaterial',
-        beschreibung: 'Material für Gürtelprüfungen',
-        parent_id: null,
-        sortierung: 3,
-        aktiv: true,
-        icon: '🥋',
-        farbe: '#10b981',
-        typ: 'Hauptkategorie',
-        vollstaendiger_name: 'Prüfungsmaterial',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 4,
-        name: 'Merchandise',
-        beschreibung: 'Dojo Merchandise und Accessoires',
-        parent_id: null,
-        sortierung: 4,
-        aktiv: true,
-        icon: '🎁',
-        farbe: '#f59e0b',
-        typ: 'Hauptkategorie',
-        vollstaendiger_name: 'Merchandise',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    // Unterkategorien - Bekleidung
-    {
-        id: 5,
-        name: 'Gi/Anzüge',
-        beschreibung: 'Karate-Gi und andere Kampfsportanzüge',
-        parent_id: 1,
-        sortierung: 1,
-        aktiv: true,
-        icon: null,
-        farbe: null,
-        typ: 'Unterkategorie',
-        vollstaendiger_name: 'Bekleidung → Gi/Anzüge',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 6,
-        name: 'Gürtel',
-        beschreibung: 'Kampfsportgürtel in allen Farben',
-        parent_id: 1,
-        sortierung: 2,
-        aktiv: true,
-        icon: null,
-        farbe: null,
-        typ: 'Unterkategorie',
-        vollstaendiger_name: 'Bekleidung → Gürtel',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 7,
-        name: 'T-Shirts',
-        beschreibung: 'Trainings-T-Shirts und Tops',
-        parent_id: 1,
-        sortierung: 3,
-        aktiv: true,
-        icon: null,
-        farbe: null,
-        typ: 'Unterkategorie',
-        vollstaendiger_name: 'Bekleidung → T-Shirts',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    // Unterkategorien - Ausrüstung
-    {
-        id: 8,
-        name: 'Schutzausrüstung',
-        beschreibung: 'Protektoren, Kopfschutz, Zahnschutz',
-        parent_id: 2,
-        sortierung: 1,
-        aktiv: true,
-        icon: null,
-        farbe: null,
-        typ: 'Unterkategorie',
-        vollstaendiger_name: 'Ausrüstung → Schutzausrüstung',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 9,
-        name: 'Trainingsgeräte',
-        beschreibung: 'Schlagpolster, Pratzen, Matten',
-        parent_id: 2,
-        sortierung: 2,
-        aktiv: true,
-        icon: null,
-        farbe: null,
-        typ: 'Unterkategorie',
-        vollstaendiger_name: 'Ausrüstung → Trainingsgeräte',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    },
-    {
-        id: 10,
-        name: 'Waffen',
-        beschreibung: 'Trainingswaffen (Bo, Nunchaku, etc.)',
-        parent_id: 2,
-        sortierung: 3,
-        aktiv: true,
-        icon: null,
-        farbe: null,
-        typ: 'Unterkategorie',
-        vollstaendiger_name: 'Ausrüstung → Waffen',
-        artikel_anzahl: 0,
-        erstellt_am: new Date(),
-        aktualisiert_am: new Date()
-    }
-];
-
-// =====================================================================================
-// DEVELOPMENT MODE CHECK
-// =====================================================================================
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
-// =====================================================================================
 // ARTIKELGRUPPEN ROUTES - KAMPFSPORT-SPEZIFISCH
 // =====================================================================================
 
@@ -175,38 +11,11 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 // ============================================
 router.get('/', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
-        // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-        if (isDevelopment) {
-            console.log('🔧 Development Mode: Verwende Mock-Artikelgruppen');
-
-            const hauptkategorien = MOCK_ARTIKELGRUPPEN.filter(g => g.parent_id === null);
-            const unterkategorien = MOCK_ARTIKELGRUPPEN.filter(g => g.parent_id !== null);
-
-            const strukturierteGruppen = hauptkategorien.map(haupt => ({
-                ...haupt,
-                unterkategorien: unterkategorien
-                    .filter(unter => unter.parent_id === haupt.id)
-                    .sort((a, b) => a.sortierung - b.sortierung)
-            }));
-
-            return res.json({
-                success: true,
-                data: strukturierteGruppen,
-                statistik: {
-                    hauptkategorien: hauptkategorien.length,
-                    unterkategorien: unterkategorien.length,
-                    gesamt: MOCK_ARTIKELGRUPPEN.length
-                },
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE: Datenbank verwenden
         const query = `
             SELECT
                 ag.id,
@@ -279,28 +88,11 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/hauptkategorien', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
-        // 🔧 DEVELOPMENT MODE
-        if (isDevelopment) {
-            const hauptkategorien = MOCK_ARTIKELGRUPPEN
-                .filter(g => g.parent_id === null)
-                .map(g => ({
-                    ...g,
-                    unterkategorien_anzahl: MOCK_ARTIKELGRUPPEN.filter(u => u.parent_id === g.id).length
-                }));
-
-            return res.json({
-                success: true,
-                data: hauptkategorien,
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE
         const query = `
             SELECT
                 ag.*,
@@ -338,27 +130,13 @@ router.get('/hauptkategorien', async (req, res) => {
 // ============================================
 router.get('/unterkategorien/:parentId', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
         const { parentId } = req.params;
 
-        // 🔧 DEVELOPMENT MODE
-        if (isDevelopment) {
-            const unterkategorien = MOCK_ARTIKELGRUPPEN
-                .filter(g => g.parent_id === parseInt(parentId))
-                .sort((a, b) => a.sortierung - b.sortierung);
-
-            return res.json({
-                success: true,
-                data: unterkategorien,
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE
         const query = `
             SELECT
                 ag.*,
@@ -395,39 +173,13 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
         const { id } = req.params;
 
-        // 🔧 DEVELOPMENT MODE
-        if (isDevelopment) {
-            const gruppe = MOCK_ARTIKELGRUPPEN.find(g => g.id === parseInt(id));
-
-            if (!gruppe) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Artikelgruppe nicht gefunden'
-                });
-            }
-
-            const parent = gruppe.parent_id
-                ? MOCK_ARTIKELGRUPPEN.find(g => g.id === gruppe.parent_id)
-                : null;
-
-            return res.json({
-                success: true,
-                data: {
-                    ...gruppe,
-                    parent_name: parent?.name || null
-                },
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE
         const query = `
             SELECT
                 ag.*,
@@ -472,8 +224,8 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.post('/', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
@@ -494,24 +246,6 @@ router.post('/', async (req, res) => {
             });
         }
 
-        // 🔧 DEVELOPMENT MODE
-        if (isDevelopment) {
-            console.log('🔧 Development Mode: Neue Artikelgruppe erstellt (Mock)');
-            const newId = Math.max(...MOCK_ARTIKELGRUPPEN.map(g => g.id)) + 1;
-
-            return res.status(201).json({
-                success: true,
-                message: 'Artikelgruppe erfolgreich erstellt',
-                data: {
-                    id: newId,
-                    name: name.trim(),
-                    parent_id: parent_id || null
-                },
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE
         if (parent_id) {
             const parentCheck = await new Promise((resolve, reject) => {
                 db.query(
@@ -585,25 +319,14 @@ router.post('/', async (req, res) => {
 // ============================================
 router.put('/:id', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
         const { id } = req.params;
         const { name, beschreibung, parent_id, sortierung, icon, farbe, aktiv } = req.body;
 
-        // 🔧 DEVELOPMENT MODE
-        if (isDevelopment) {
-            console.log('🔧 Development Mode: Artikelgruppe aktualisiert (Mock)');
-            return res.json({
-                success: true,
-                message: 'Artikelgruppe erfolgreich aktualisiert',
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE
         const existingGroup = await new Promise((resolve, reject) => {
             db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);
@@ -690,24 +413,13 @@ router.put('/:id', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
     try {
-        // Tenant check (skip in dev mode)
-        if (!isDevelopment && !req.tenant?.dojo_id) {
+        // Tenant check
+        if (!req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
         const { id } = req.params;
 
-        // 🔧 DEVELOPMENT MODE
-        if (isDevelopment) {
-            console.log('🔧 Development Mode: Artikelgruppe gelöscht (Mock)');
-            return res.json({
-                success: true,
-                message: 'Artikelgruppe erfolgreich gelöscht',
-                _dev: true
-            });
-        }
-
-        // PRODUCTION MODE
         const existingGroup = await new Promise((resolve, reject) => {
             db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
                 if (error) reject(error);

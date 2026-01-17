@@ -11,53 +11,8 @@ export const useDojoContext = () => {
   return context;
 };
 
-// 🔧 Mock-Daten außerhalb der Komponente (konstante Referenz, wird nicht bei jedem Render neu erstellt)
-const INITIAL_MOCK_DOJOS = [
-  {
-    id: 1,
-    dojoname: 'Dojo Hamburg',
-    inhaber: 'Max Mustermann',
-    farbe: '#FFD700',
-    ist_hauptdojo: true,
-    steuer_status: 'kleinunternehmer',
-    kleinunternehmer_grenze: 22000,
-    jahresumsatz_aktuell: 15000,
-    ust_satz: 19,
-    rechtsform: 'e.V.',
-    strasse: 'Beispielstraße 123',
-    plz: '20095',
-    ort: 'Hamburg',
-    land: 'Deutschland',
-    telefon: '+49 40 12345678',
-    email: 'info@dojo-hamburg.de',
-    website: 'www.dojo-hamburg.de'
-  },
-  {
-    id: 2,
-    dojoname: 'Dojo Berlin',
-    inhaber: 'Anna Schmidt',
-    farbe: '#3B82F6',
-    ist_hauptdojo: false,
-    steuer_status: 'regelbesteuert',
-    kleinunternehmer_grenze: 22000,
-    jahresumsatz_aktuell: 35000,
-    ust_satz: 19,
-    rechtsform: 'GmbH',
-    strasse: 'Alexanderplatz 1',
-    plz: '10178',
-    ort: 'Berlin',
-    land: 'Deutschland',
-    telefon: '+49 30 98765432',
-    email: 'kontakt@dojo-berlin.de',
-    website: 'www.dojo-berlin.de'
-  }
-];
-
 export const DojoProvider = ({ children }) => {
-  // 🔧 DEVELOPMENT MODE: Mock-Daten für lokale Entwicklung
-  const isDevelopment = import.meta.env.MODE === 'development';
-
-  const [dojos, setDojos] = useState(isDevelopment ? [...INITIAL_MOCK_DOJOS] : []);
+  const [dojos, setDojos] = useState([]);
   const [activeDojo, setActiveDojo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'current', 'all', 'compare' - Standard: alle Dojos anzeigen
@@ -99,13 +54,6 @@ export const DojoProvider = ({ children }) => {
   }, [dojos, activeDojo]);
 
   const loadDojos = useCallback(async () => {
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden (nur beim initialen Laden)
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Mock-Dojos bereits geladen (keine Überschreibung)');
-      setLoading(false);
-      return;
-    }
-
     try {
       const token = localStorage.getItem('dojo_auth_token');
 
@@ -148,7 +96,7 @@ export const DojoProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [isDevelopment]);
+  }, []);
 
   const switchDojo = useCallback((dojo) => {
     setActiveDojo(dojo);

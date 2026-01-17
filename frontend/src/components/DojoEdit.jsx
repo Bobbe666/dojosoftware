@@ -187,85 +187,6 @@ const DojoEdit = () => {
   const loadDojo = async () => {
     setLoading(true);
 
-    // 🔧 DEVELOPMENT MODE: Mock-Daten verwenden
-    const isDevelopment = import.meta.env.MODE === 'development';
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Verwende Mock-Dojo für DojoEdit', id);
-
-      // Mock-Dojo basierend auf ID
-      const mockDojos = {
-        '1': {
-          id: 1,
-          dojoname: 'Dojo Hamburg',
-          inhaber: 'Max Mustermann',
-          farbe: '#FFD700',
-          ist_hauptdojo: true,
-          steuer_status: 'kleinunternehmer',
-          kleinunternehmer_grenze: 22000,
-          jahresumsatz_aktuell: 15000,
-          ust_satz: 0,
-          strasse: 'Beispielstraße',
-          hausnummer: '123',
-          plz: '20095',
-          ort: 'Hamburg',
-          land: 'Deutschland',
-          telefon: '+49 40 12345678',
-          email: 'info@dojo-hamburg.de',
-          website: 'www.dojo-hamburg.de',
-          rechtsform: 'Verein',
-          gruendungsjahr: '1985'
-        },
-        '2': {
-          id: 2,
-          dojoname: 'Dojo Berlin',
-          inhaber: 'Anna Schmidt',
-          farbe: '#3B82F6',
-          ist_hauptdojo: false,
-          steuer_status: 'regelbesteuert',
-          kleinunternehmer_grenze: 22000,
-          jahresumsatz_aktuell: 35000,
-          ust_satz: 19,
-          strasse: 'Alexanderplatz',
-          hausnummer: '1',
-          plz: '10178',
-          ort: 'Berlin',
-          land: 'Deutschland',
-          telefon: '+49 30 98765432',
-          email: 'kontakt@dojo-berlin.de',
-          website: 'www.dojo-berlin.de',
-          rechtsform: 'GmbH',
-          gruendungsjahr: '2010'
-        }
-      };
-
-      const dojo = mockDojos[id] || mockDojos['1'];
-
-      setTimeout(() => {
-        setFormData(prev => ({
-          ...prev,
-          dojoname: dojo.dojoname || '',
-          inhaber: dojo.inhaber || '',
-          strasse: dojo.strasse || '',
-          hausnummer: dojo.hausnummer || '',
-          plz: dojo.plz || '',
-          ort: dojo.ort || '',
-          land: dojo.land || 'Deutschland',
-          telefon: dojo.telefon || '',
-          email: dojo.email || '',
-          internet: dojo.website || '',
-          steuer_status: dojo.steuer_status || 'kleinunternehmer',
-          ust_satz: dojo.ust_satz || 0,
-          kleinunternehmer_grenze: dojo.kleinunternehmer_grenze || 22000,
-          rechtsform: dojo.rechtsform || 'Verein',
-          gruendungsjahr: dojo.gruendungsjahr || '',
-          farbe: dojo.farbe || '#FFD700'
-        }));
-        setLoading(false);
-      }, 100);
-
-      return;
-    }
-
     try {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}`);
       if (!response.ok) throw new Error('Fehler beim Laden des Dojos');
@@ -483,23 +404,6 @@ const DojoEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // 🔧 DEVELOPMENT MODE: Mock-Speichern
-    const isDevelopment = import.meta.env.MODE === 'development';
-    if (isDevelopment) {
-      console.log('🔧 Development Mode: Speichere Dojo-Änderungen', formData);
-
-      // Aktualisiere Mock-Daten im DojoContext
-      if (!isNewDojo) {
-        updateDojo(id, formData);
-        console.log('✅ Dojo im Context aktualisiert');
-      }
-
-      setMessage(`✅ Dojo erfolgreich ${isNewDojo ? 'erstellt' : 'aktualisiert'}! (Mock-Modus)`);
-      setLoading(false);
-
-      return;
-    }
 
     try {
       const url = isNewDojo ? `${config.apiBaseUrl}/dojos` : `${config.apiBaseUrl}/dojos/${id}`;

@@ -341,21 +341,8 @@ router.get('/', async (req, res) => {
     res.json(stats);
 
   } catch (error) {
-    console.error('❌ Kritischer Fehler beim Laden der Dashboard-Statistiken:', error);
-    
-    // Fallback auf realistische Werte basierend auf vorherigen Tests
-    const fallbackStats = {
-      mitglieder: 53,  // Aus Ihrem Test
-      kurse: 7,        // Aus Ihrem Test  
-      trainer: 3,      // Aus Ihrem Test
-      anwesenheit: 0,  // Aus Ihrem Test
-      beitraege: 6,    // Aus Ihrem Test
-      checkins_heute: 0,
-      stile: 3         // Default Anzahl Stile
-    };
-    
-    console.log('🔄 Verwende Fallback-Statistiken:', fallbackStats);
-    res.json(fallbackStats);
+    console.error('Kritischer Fehler beim Laden der Dashboard-Statistiken:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Dashboard-Statistiken' });
   }
 });
 
@@ -486,28 +473,8 @@ router.get('/recent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Fehler beim Laden der Recent Activities:', error);
-    
-    // Fallback Mock-Daten
-    const mockActivities = [
-      {
-        id: 'checkin_mock_1',
-        type: 'checkin',
-        member: 'Max Mustermann',
-        title: 'Max Mustermann',
-        subtitle: 'Check-in erfolgreich',
-        description: 'Check-in erfolgreich',
-        timestamp: new Date().toISOString(),
-        date: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
-      }
-    ];
-
-    res.json({
-      success: true,
-      activities: mockActivities,
-      total: mockActivities.length,
-      note: 'Fallback mock data due to error'
-    });
+    console.error('Fehler beim Laden der Recent Activities:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Recent Activities' });
   }
 });
 
@@ -554,20 +521,8 @@ router.get('/checkin/today', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Fehler beim Laden der Check-in Daten:', error);
-    
-    // Fallback Mock-Daten
-    res.json({
-      success: true,
-      checkins: [],
-      stats: {
-        total_checkins: 0,
-        currently_training: 0,
-        completed_sessions: 0
-      },
-      date: new Date().toISOString().split('T')[0],
-      message: 'Fallback data - database error'
-    });
+    console.error('Fehler beim Laden der Check-in Daten:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Check-in Daten' });
   }
 });
 
