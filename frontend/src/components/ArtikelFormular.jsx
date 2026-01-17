@@ -741,10 +741,12 @@ const ArtikelFormular = ({ mode }) => {
                 </button>
               </div>
             )}
+            </>
+            )}
 
             {/* GRÖSSENABHÄNGIGE EINKAUFSPREISE - nur wenn Tab aktiv */}
             {preisTab === 'groessenabhaengig' && (
-              <div style={{marginTop: '1.5rem', padding: '1rem', background: '#ffffff', border: '2px solid #6B4423', borderRadius: '12px'}}>
+              <div style={{marginTop: '0.5rem', padding: '1rem', background: '#ffffff', border: '2px solid #6B4423', borderRadius: '12px'}}>
                 <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#6B4423', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                   👶🧑 Größenabhängige Einkaufspreise
                 </h4>
@@ -999,8 +1001,6 @@ const ArtikelFormular = ({ mode }) => {
                   </div>
                 )}
               </div>
-            )}
-            </>
             )}
 
             {/* ÜBERSICHT TAB - Preise übernehmen */}
