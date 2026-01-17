@@ -1191,18 +1191,21 @@ const ArtikelFormular = ({ mode }) => {
                 // Prozentsätze aus der Handelskalkulation
                 const lieferrabatt = parseFloat(formData.lieferrabatt_prozent) || 0;
                 const lieferskonto = parseFloat(formData.lieferskonto_prozent) || 0;
-                const bezugskosten = parseFloat(formData.bezugskosten_euro) || 0;
                 const gemeinkosten = parseFloat(formData.gemeinkosten_prozent) || 0;
                 const gewinnzuschlag = parseFloat(formData.gewinnzuschlag_prozent) || 0;
                 const kundenskonto = parseFloat(formData.kundenskonto_prozent) || 0;
                 const kundenrabatt = parseFloat(formData.kundenrabatt_prozent) || 0;
                 const mwst = parseFloat(formData.mwst_prozent) || 19;
 
+                // Separate Bezugskosten für Kids und Erwachsene
+                const bezugskostenKids = parseFloat(formData.bezugskosten_kids_euro) || 0;
+                const bezugskostenErw = parseFloat(formData.bezugskosten_erwachsene_euro) || 0;
+
                 // Kids Kalkulation
                 const kidsEK = parseFloat(formData.listeneinkaufspreis_kids_euro) || 0;
                 const kidsZielEK = kidsEK * (1 - lieferrabatt / 100);
                 const kidsBareEK = kidsZielEK * (1 - lieferskonto / 100);
-                const kidsBezug = kidsBareEK + bezugskosten;
+                const kidsBezug = kidsBareEK + bezugskostenKids;
                 const kidsSelbstkosten = kidsBezug * (1 + gemeinkosten / 100);
                 const kidsBarVK = kidsSelbstkosten * (1 + gewinnzuschlag / 100);
                 const kidsZielVK = kidsBarVK / (1 - kundenskonto / 100);
@@ -1215,7 +1218,7 @@ const ArtikelFormular = ({ mode }) => {
                 const erwEK = parseFloat(formData.listeneinkaufspreis_erwachsene_euro) || 0;
                 const erwZielEK = erwEK * (1 - lieferrabatt / 100);
                 const erwBareEK = erwZielEK * (1 - lieferskonto / 100);
-                const erwBezug = erwBareEK + bezugskosten;
+                const erwBezug = erwBareEK + bezugskostenErw;
                 const erwSelbstkosten = erwBezug * (1 + gemeinkosten / 100);
                 const erwBarVK = erwSelbstkosten * (1 + gewinnzuschlag / 100);
                 const erwZielVK = erwBarVK / (1 - kundenskonto / 100);
@@ -1253,7 +1256,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= {kidsZielEK.toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
-                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskosten.toFixed(2)}€)</span>
+                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskostenKids.toFixed(2)}€)</span>
                           <span>= {kidsBezug.toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#166534' }}>
@@ -1298,7 +1301,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= {erwZielEK.toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0', color: '#6c757d' }}>
-                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskosten.toFixed(2)}€)</span>
+                          <span>− Skonto ({lieferskonto}%) + Bezug ({bezugskostenErw.toFixed(2)}€)</span>
                           <span>= {erwBezug.toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', fontWeight: 600, color: '#1e40af' }}>
