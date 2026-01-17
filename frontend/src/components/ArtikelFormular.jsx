@@ -749,7 +749,7 @@ const ArtikelFormular = ({ mode }) => {
                   👶🧑 Größenabhängige Einkaufspreise
                 </h4>
                 <p style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '1rem' }}>
-                  Unterschiedliche EK-Preise für Kids und Erwachsene eingeben. Die Kalkulation verwendet die Prozentsätze von oben.
+                  Unterschiedliche EK-Preise für Kids und Erwachsene eingeben. Die Kalkulationsparameter unten gelten für beide.
                 </p>
 
                 {/* EK-Eingaben */}
@@ -851,41 +851,60 @@ const ArtikelFormular = ({ mode }) => {
                 </div>
 
                 {/* Kalkulationsparameter für Größen */}
-                <div style={{ background: '#f8f9fa', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #e9ecef' }}>
-                  <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.5rem' }}>
+                <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '2px solid #f59e0b' }}>
+                  <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#92400e', marginBottom: '0.75rem' }}>
                     📊 Kalkulationsparameter (für beide Kategorien)
                   </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Lieferrabatt (%)</label>
-                      <input type="number" name="lieferrabatt_prozent" value={formData.lieferrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+
+                  {/* Bezugskalkulation */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.3rem' }}>📦 Bezugskalkulation</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Lieferrabatt (%)</label>
+                        <input type="number" name="lieferrabatt_prozent" value={formData.lieferrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Lieferskonto (%)</label>
+                        <input type="number" name="lieferskonto_prozent" value={formData.lieferskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Lieferskonto (%)</label>
-                      <input type="number" name="lieferskonto_prozent" value={formData.lieferskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
+                  </div>
+
+                  {/* Selbstkosten */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.3rem' }}>🏭 Selbstkosten</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Gemeinkosten (%)</label>
+                        <input type="number" name="gemeinkosten_prozent" value={formData.gemeinkosten_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Gewinnzuschlag (%)</label>
+                        <input type="number" name="gewinnzuschlag_prozent" value={formData.gewinnzuschlag_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Gemeinkosten (%)</label>
-                      <input type="number" name="gemeinkosten_prozent" value={formData.gemeinkosten_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Gewinn (%)</label>
-                      <input type="number" name="gewinnzuschlag_prozent" value={formData.gewinnzuschlag_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Kundenskonto (%)</label>
-                      <input type="number" name="kundenskonto_prozent" value={formData.kundenskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>Kundenrabatt (%)</label>
-                      <input type="number" name="kundenrabatt_prozent" value={formData.kundenrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '26px', padding: '0.2rem 0.4rem', fontSize: '0.8rem' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.65rem', color: '#6c757d', display: 'block' }}>MwSt. (%)</label>
-                      <select name="mwst_prozent" value={formData.mwst_prozent} onChange={handleInputChange} className="form-select" style={{ height: '26px', padding: '0.1rem 0.3rem', fontSize: '0.8rem' }}>
-                        <option value="7.00">7%</option>
-                        <option value="19.00">19%</option>
-                      </select>
+                  </div>
+
+                  {/* Verkauf */}
+                  <div>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.3rem' }}>💰 Verkauf</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Kundenskonto (%)</label>
+                        <input type="number" name="kundenskonto_prozent" value={formData.kundenskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Kundenrabatt (%)</label>
+                        <input type="number" name="kundenrabatt_prozent" value={formData.kundenrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>MwSt. (%)</label>
+                        <select name="mwst_prozent" value={formData.mwst_prozent} onChange={handleInputChange} className="form-select" style={{ height: '30px', padding: '0.2rem 0.4rem', fontSize: '0.85rem' }}>
+                          <option value="7.00">7%</option>
+                          <option value="19.00">19%</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
