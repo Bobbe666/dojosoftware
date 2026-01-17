@@ -12,9 +12,54 @@ const getDojoId = (req) => {
     return req.tenant?.dojo_id || req.user?.dojo_id || req.query.dojo_id || null;
 };
 
-// Helper: Prüfe ob Zugriff erlaubt
-const checkAccess = (req, res) => {
-    const dojo_id = getDojoId(req);
+// Helper: Hole alle Dojos eines Users aus admin_user_dojos
+const getUserDojos = async (userId) => {
+    return new Promise((resolve, reject) => {
+        db.query(
+            'SELECT dojo_id FROM admin_user_dojos WHERE admin_user_id = ?',
+            [userId],
+            (error, results) => {
+                if (error) reject(error);
+                else resolve(results.map(r => r.dojo_id));
+            }
+        );
+    });
+};
+
+// Helper: Prüfe ob Zugriff erlaubt (mit Multi-Dojo-Support)
+const checkAccess = async (req, res) => {
+    // 1. Versuche dojo_id aus Token oder Query zu holen
+    let dojo_id = getDojoId(req);
+
+    // 2. Falls keine dojo_id, prüfe ob User mehrere Dojos hat
+    if (!dojo_id && req.user?.id) {
+        const userDojos = await getUserDojos(req.user.id);
+
+        if (userDojos.length === 0) {
+            res.status(403).json({
+                error: 'Kein Zugriff - keine Dojo-Zuordnung',
+                message: 'Sie sind keinem Dojo zugeordnet.'
+            });
+            return null;
+        }
+
+        // Wenn Query-Parameter dojo_id vorhanden, validieren
+        if (req.query.dojo_id) {
+            const requestedDojo = parseInt(req.query.dojo_id);
+            if (!userDojos.includes(requestedDojo)) {
+                res.status(403).json({
+                    error: 'Kein Zugriff auf dieses Dojo',
+                    message: 'Sie haben keinen Zugriff auf das angeforderte Dojo.'
+                });
+                return null;
+            }
+            dojo_id = requestedDojo;
+        } else {
+            // Kein dojo_id angegeben - nimm das erste zugeordnete Dojo
+            dojo_id = userDojos[0];
+        }
+    }
+
     if (!dojo_id) {
         res.status(403).json({
             error: 'Kein Zugriff - dojo_id erforderlich',
@@ -22,6 +67,7 @@ const checkAccess = (req, res) => {
         });
         return null;
     }
+
     return dojo_id;
 };
 
@@ -30,13 +76,7 @@ const checkAccess = (req, res) => {
 // ============================================
 router.get('/', async (req, res) => {
     try {
-        console.log('🔍 ARTIKELGRUPPEN DEBUG:', {
-            user: req.user,
-            tenant: req.tenant,
-            query_dojo_id: req.query.dojo_id
-        });
-        const dojo_id = checkAccess(req, res);
-        console.log('🔍 ARTIKELGRUPPEN dojo_id:', dojo_id);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const query = `
@@ -112,7 +152,7 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/hauptkategorien', async (req, res) => {
     try {
-        const dojo_id = checkAccess(req, res);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const query = `
@@ -152,7 +192,7 @@ router.get('/hauptkategorien', async (req, res) => {
 // ============================================
 router.get('/unterkategorien/:parentId', async (req, res) => {
     try {
-        const dojo_id = checkAccess(req, res);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const { parentId } = req.params;
@@ -193,7 +233,7 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
     try {
-        const dojo_id = checkAccess(req, res);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const { id } = req.params;
@@ -242,7 +282,7 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.post('/', async (req, res) => {
     try {
-        const dojo_id = checkAccess(req, res);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const {
@@ -337,7 +377,7 @@ router.post('/', async (req, res) => {
 // ============================================
 router.put('/:id', async (req, res) => {
     try {
-        const dojo_id = checkAccess(req, res);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const { id } = req.params;
@@ -430,7 +470,7 @@ router.put('/:id', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
     try {
-        const dojo_id = checkAccess(req, res);
+        const dojo_id = await checkAccess(req, res);
         if (!dojo_id) return;
 
         const { id } = req.params;
