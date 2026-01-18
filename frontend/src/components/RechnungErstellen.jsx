@@ -1269,7 +1269,7 @@ const RechnungErstellen = () => {
                     src={dojoLogo}
                     alt={activeDojo?.dojoname || 'Dojo Logo'}
                     className="invoice-logo"
-                    style={{ maxWidth: '150px', maxHeight: '80px', objectFit: 'contain' }}
+                    style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain' }}
                   />
                 ) : (
                   <div className="logo-placeholder">{activeDojo?.dojoname?.substring(0, 3)?.toUpperCase() || 'LOGO'}</div>

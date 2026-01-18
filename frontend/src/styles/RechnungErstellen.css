@@ -638,9 +638,17 @@
 /* Invoice Logo */
 .invoice-logo {
   display: block;
+  margin-left: auto;
 }
 
-/* Light Mode Dojo Selection */
+/* ============================================
+   LIGHT MODE (TDA-VIB) - DOJO SELECTION
+   ============================================ */
+
+[data-theme="tda-vib"] .dojo-selection-modal .modal-body p {
+  color: rgba(26, 26, 26, 0.7);
+}
+
 [data-theme="tda-vib"] .dojo-selection-card {
   background: #ffffff;
   border: 2px solid rgba(26, 26, 26, 0.1);
@@ -667,4 +675,16 @@
 
 [data-theme="tda-vib"] .dojo-selection-card .dojo-address {
   color: rgba(26, 26, 26, 0.6);
+}
+
+[data-theme="tda-vib"] .dojo-selection-card .steuer-badge.kleinunternehmer {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="tda-vib"] .dojo-selection-card .steuer-badge.regelbesteuert {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
