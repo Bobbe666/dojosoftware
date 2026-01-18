@@ -498,6 +498,7 @@ const BankTabs = ({ dojoId }) => {
         ))}
 
         <button
+          type="button"
           className="tab tab-add"
           onClick={() => {
             setFormData({
@@ -534,11 +535,11 @@ const BankTabs = ({ dojoId }) => {
             <h2 className="bank-form-title">NEUE BANKVERBINDUNG HINZUFÜGEN</h2>
             {renderBankForm(true)}
             <div className="form-actions">
-              <button onClick={handleAddBank} className="logout-button">
+              <button type="button" onClick={handleAddBank} className="logout-button">
                 <Plus size={16} />
                 Speichern
               </button>
-              <button onClick={() => setShowNewBankDialog(false)} className="logout-button">
+              <button type="button" onClick={() => setShowNewBankDialog(false)} className="logout-button">
                 Abbrechen
               </button>
             </div>
@@ -548,6 +549,7 @@ const BankTabs = ({ dojoId }) => {
             {renderBankForm()}
             <div className="form-actions">
               <button
+                type="button"
                 onClick={handleSaveBank}
                 disabled={loading}
                 className="logout-button"
@@ -558,6 +560,7 @@ const BankTabs = ({ dojoId }) => {
 
               {banken.length > 2 && (
                 <button
+                  type="button"
                   onClick={() => handleDeleteBank(activeTab)}
                   disabled={loading}
                   className="logout-button"
@@ -573,6 +576,7 @@ const BankTabs = ({ dojoId }) => {
               )}
 
               <button
+                type="button"
                 onClick={() => {
                   if (activeTab) {
                     const currentBank = banken.find(b => b.id === activeTab);
