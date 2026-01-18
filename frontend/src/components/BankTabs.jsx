@@ -90,20 +90,33 @@ const BankTabs = ({ dojoId }) => {
   };
 
   const handleSaveBank = async () => {
+    console.log('🔄 handleSaveBank aufgerufen', { dojoId, activeTab, formData });
+
     if (!formData.bank_name) {
       setMessage('Bankname ist erforderlich');
       return;
     }
 
+    if (!dojoId || !activeTab) {
+      console.error('❌ dojoId oder activeTab fehlt:', { dojoId, activeTab });
+      setMessage('Fehler: Dojo oder Bank nicht ausgewählt');
+      return;
+    }
+
     try {
       setLoading(true);
-      await axios.put(`/dojo-banken/${dojoId}/${activeTab}`, formData);
+      const url = `/dojo-banken/${dojoId}/${activeTab}`;
+      console.log('📤 PUT Request an:', url, 'mit Daten:', formData);
+
+      const response = await axios.put(url, formData);
+      console.log('✅ Speichern erfolgreich:', response.data);
+
       setMessage('Bank erfolgreich gespeichert');
       loadBanken();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Fehler beim Speichern:', error);
-      setMessage('Fehler beim Speichern der Bank');
+      console.error('❌ Fehler beim Speichern:', error.response?.data || error.message);
+      setMessage('Fehler beim Speichern der Bank: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
