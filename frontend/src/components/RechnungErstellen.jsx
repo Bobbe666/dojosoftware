@@ -4,11 +4,17 @@ import config from '../config/config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import { QRCodeSVG } from 'qrcode.react';
+import { Building2, Check } from 'lucide-react';
 import '../styles/RechnungErstellen.css';
 
 const RechnungErstellen = () => {
   const { token } = useAuth();
-  const { activeDojo } = useDojoContext();
+  const { activeDojo, dojos, switchDojo } = useDojoContext();
+
+  // Dojo-Auswahl Modal State
+  const [showDojoSelection, setShowDojoSelection] = useState(false);
+  const [dojoSelectionDone, setDojoSelectionDone] = useState(false);
+  const [dojoLogo, setDojoLogo] = useState(null);
 
   // Form Data
   const [mitglieder, setMitglieder] = useState([]);
@@ -77,13 +83,62 @@ const RechnungErstellen = () => {
     loadData();
   }, []);
 
-  // Lade Bankdaten neu, wenn sich activeDojo ändert
+  // Zeige Dojo-Auswahl wenn mehrere Dojos vorhanden sind
   useEffect(() => {
-    if (activeDojo) {
-      console.log('🔄 activeDojo geändert, lade Bankdaten neu...');
+    if (!dojoSelectionDone && dojos && dojos.length > 1 && activeDojo !== 'super-admin') {
+      setShowDojoSelection(true);
+    } else if (dojos && dojos.length <= 1) {
+      setDojoSelectionDone(true);
+    }
+  }, [dojos, dojoSelectionDone]);
+
+  // Lade Bankdaten und Logo neu, wenn sich activeDojo ändert
+  useEffect(() => {
+    if (activeDojo && activeDojo !== 'super-admin') {
+      console.log('🔄 activeDojo geändert, lade Bankdaten und Logo neu...');
       loadBankDaten();
+      loadDojoLogo();
     }
   }, [activeDojo?.dojo_id, activeDojo?.id]);
+
+  // Lade Dojo-Logo
+  const loadDojoLogo = async () => {
+    try {
+      if (!activeDojo?.dojo_id && !activeDojo?.id) {
+        setDojoLogo(null);
+        return;
+      }
+
+      const dojoId = activeDojo.dojo_id || activeDojo.id;
+      console.log('🖼️ Lade Logo für Dojo:', dojoId);
+
+      const response = await axios.get(`/dojos/${dojoId}/logos`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Suche nach Haupt-Logo
+      const logos = response.data || [];
+      const hauptLogo = logos.find(l => l.logo_type === 'haupt');
+
+      if (hauptLogo?.url) {
+        console.log('✅ Haupt-Logo gefunden:', hauptLogo.url);
+        setDojoLogo(hauptLogo.url);
+      } else {
+        console.log('⚠️ Kein Haupt-Logo vorhanden');
+        setDojoLogo(null);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden des Logos:', error);
+      setDojoLogo(null);
+    }
+  };
+
+  // Handle Dojo-Auswahl
+  const handleDojoSelect = (dojo) => {
+    switchDojo(dojo);
+    setShowDojoSelection(false);
+    setDojoSelectionDone(true);
+  };
 
   // Debug: Logge Bankdaten, wenn sie sich ändern
   useEffect(() => {
@@ -1209,7 +1264,16 @@ const RechnungErstellen = () => {
                 </div>
               </div>
               <div className="invoice-meta">
-                <div className="logo-placeholder">LOGO</div>
+                {dojoLogo ? (
+                  <img
+                    src={dojoLogo}
+                    alt={activeDojo?.dojoname || 'Dojo Logo'}
+                    className="invoice-logo"
+                    style={{ maxWidth: '150px', maxHeight: '80px', objectFit: 'contain' }}
+                  />
+                ) : (
+                  <div className="logo-placeholder">{activeDojo?.dojoname?.substring(0, 3)?.toUpperCase() || 'LOGO'}</div>
+                )}
                 <div className="invoice-numbers">
                   <div>Rechnungs-Nr.: {rechnungsDaten.rechnungsnummer || 'wird generiert'}</div>
                   <div>Kundennummer: {rechnungsDaten.kundennummer}</div>
@@ -1487,6 +1551,50 @@ const RechnungErstellen = () => {
           </div>
         </div>
       </div>
+
+      {/* Dojo-Auswahl Modal */}
+      {showDojoSelection && (
+        <div className="modal-overlay" onClick={(e) => {
+          if (e.target === e.currentTarget && dojoSelectionDone) {
+            setShowDojoSelection(false);
+          }
+        }}>
+          <div className="modal-content dojo-selection-modal">
+            <div className="modal-header">
+              <h2><Building2 size={24} /> Dojo auswählen</h2>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '1rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                Für welches Dojo soll die Rechnung erstellt werden?
+              </p>
+              <div className="dojo-selection-grid">
+                {dojos.filter(d => d && d.id).map((dojo) => (
+                  <div
+                    key={dojo.id}
+                    className={`dojo-selection-card ${activeDojo?.id === dojo.id ? 'active' : ''}`}
+                    onClick={() => handleDojoSelect(dojo)}
+                  >
+                    <div className="dojo-card-header">
+                      <Building2 size={32} />
+                      {activeDojo?.id === dojo.id && <Check size={20} className="check-icon" />}
+                    </div>
+                    <h3>{dojo.dojoname}</h3>
+                    <p className="dojo-address">
+                      {dojo.strasse} {dojo.hausnummer}<br />
+                      {dojo.plz} {dojo.ort}
+                    </p>
+                    {dojo.steuer_status && (
+                      <span className={`steuer-badge ${dojo.steuer_status}`}>
+                        {dojo.steuer_status === 'kleinunternehmer' ? 'Kleinunternehmer' : 'Regelbesteuert'}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -542,3 +542,129 @@
     box-shadow: none;
   }
 }
+
+/* ============================================
+   DOJO SELECTION MODAL
+   ============================================ */
+
+.dojo-selection-modal {
+  max-width: 700px;
+  width: 90%;
+}
+
+.dojo-selection-modal .modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dojo-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.dojo-selection-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.dojo-selection-card:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.dojo-selection-card.active {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.dojo-selection-card .dojo-card-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+}
+
+.dojo-selection-card .check-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #22c55e;
+}
+
+.dojo-selection-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.dojo-selection-card .dojo-address {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.dojo-selection-card .steuer-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.dojo-selection-card .steuer-badge.kleinunternehmer {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.dojo-selection-card .steuer-badge.regelbesteuert {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Invoice Logo */
+.invoice-logo {
+  display: block;
+}
+
+/* Light Mode Dojo Selection */
+[data-theme="tda-vib"] .dojo-selection-card {
+  background: #ffffff;
+  border: 2px solid rgba(26, 26, 26, 0.1);
+}
+
+[data-theme="tda-vib"] .dojo-selection-card:hover {
+  background: #f5f0e6;
+  border-color: rgba(107, 68, 35, 0.3);
+}
+
+[data-theme="tda-vib"] .dojo-selection-card.active {
+  background: #f5f0e6;
+  border-color: #6B4423;
+  box-shadow: 0 0 20px rgba(107, 68, 35, 0.15);
+}
+
+[data-theme="tda-vib"] .dojo-selection-card .dojo-card-header {
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .dojo-selection-card h3 {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .dojo-selection-card .dojo-address {
+  color: rgba(26, 26, 26, 0.6);
+}
