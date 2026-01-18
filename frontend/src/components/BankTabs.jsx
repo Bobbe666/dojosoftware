@@ -164,9 +164,12 @@ const BankTabs = ({ dojoId }) => {
     }
   };
 
-  const renderBankForm = () => {
-    const currentBank = banken.find(b => b.id === activeTab);
-    if (!currentBank) return null;
+  const renderBankForm = (isNewBank = false) => {
+    // Bei neuer Bank kein currentBank Check
+    if (!isNewBank) {
+      const currentBank = banken.find(b => b.id === activeTab);
+      if (!currentBank) return null;
+    }
 
     return (
       <div className="bank-form">
@@ -529,7 +532,7 @@ const BankTabs = ({ dojoId }) => {
         ) : showNewBankDialog ? (
           <div className="bank-form">
             <h2 className="bank-form-title">NEUE BANKVERBINDUNG HINZUFÜGEN</h2>
-            {renderBankForm()}
+            {renderBankForm(true)}
             <div className="form-actions">
               <button onClick={handleAddBank} className="logout-button">
                 <Plus size={16} />
