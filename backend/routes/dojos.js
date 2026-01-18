@@ -77,11 +77,10 @@ router.get('/', async (req, res) => {
         d.ust_satz,
         d.kleinunternehmer_grenze,
         COALESCE(
-          (SELECT SUM(v.monatsbeitrag * 12)
-           FROM vertraege v
-           INNER JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-           WHERE v.dojo_id = d.id
-           AND v.status = 'aktiv'),
+          (SELECT SUM(b.betrag)
+           FROM beitraege b
+           WHERE b.dojo_id = d.id
+           AND YEAR(b.zahlungsdatum) = YEAR(CURDATE())),
           0
         ) as jahresumsatz_aktuell,
         d.jahresumsatz_vorjahr,
@@ -110,13 +109,6 @@ router.get('/', async (req, res) => {
     `;
 
     const [results] = await req.db.promise().query(query, queryParams);
-    console.log('🏯 Dojos API Response:', JSON.stringify(results.map(r => ({
-      id: r.id,
-      dojoname: r.dojoname,
-      steuer_status: r.steuer_status,
-      jahresumsatz_aktuell: r.jahresumsatz_aktuell,
-      kleinunternehmer_grenze: r.kleinunternehmer_grenze
-    })), null, 2));
     res.json(results);
     
   } catch (err) {
