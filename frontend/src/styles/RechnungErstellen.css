@@ -645,8 +645,26 @@
    LIGHT MODE (TDA-VIB) - DOJO SELECTION
    ============================================ */
 
+[data-theme="tda-vib"] .dojo-selection-modal {
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 26, 26, 0.1) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .dojo-selection-modal .modal-header {
+  border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+}
+
+[data-theme="tda-vib"] .dojo-selection-modal .modal-header h2 {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-selection-modal .modal-header h2 svg {
+  color: #6B4423 !important;
+}
+
 [data-theme="tda-vib"] .dojo-selection-modal .modal-body p {
-  color: rgba(26, 26, 26, 0.7);
+  color: rgba(26, 26, 26, 0.7) !important;
 }
 
 [data-theme="tda-vib"] .dojo-selection-card {
