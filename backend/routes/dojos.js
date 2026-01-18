@@ -110,6 +110,13 @@ router.get('/', async (req, res) => {
     `;
 
     const [results] = await req.db.promise().query(query, queryParams);
+    console.log('🏯 Dojos API Response:', JSON.stringify(results.map(r => ({
+      id: r.id,
+      dojoname: r.dojoname,
+      steuer_status: r.steuer_status,
+      jahresumsatz_aktuell: r.jahresumsatz_aktuell,
+      kleinunternehmer_grenze: r.kleinunternehmer_grenze
+    })), null, 2));
     res.json(results);
     
   } catch (err) {
