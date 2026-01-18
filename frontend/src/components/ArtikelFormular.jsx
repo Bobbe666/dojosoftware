@@ -16,7 +16,8 @@ const ArtikelFormular = ({ mode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [kategorien, setKategorien] = useState([]);
-  const [artikelgruppen, setArtikelgruppen] = useState([]);
+  const [artikelgruppen, setArtikelgruppen] = useState([]); // Hierarchische Struktur mit unterkategorien
+  const [selectedHauptkategorieId, setSelectedHauptkategorieId] = useState('');
   const [activeTab, setActiveTab] = useState('basis');
   const [preisTab, setPreisTab] = useState('einzelkalkulation'); // 'groessenabhaengig' | 'einzelkalkulation'
 
@@ -132,27 +133,25 @@ const ArtikelFormular = ({ mode }) => {
     }
   };
 
-  // Load Artikelgruppen
+  // Load Artikelgruppen (hierarchische Struktur)
   const loadArtikelgruppen = async () => {
     try {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/artikelgruppen`);
       const data = await response.json();
       if (data.success) {
-        // Flatten hierarchical structure: include both hauptkategorien and unterkategorien
-        const flatList = [];
-        (data.data || []).forEach(hauptkategorie => {
-          // Add hauptkategorie
-          flatList.push(hauptkategorie);
-          // Add all unterkategorien (they already have vollstaendiger_name from backend)
-          if (hauptkategorie.unterkategorien && hauptkategorie.unterkategorien.length > 0) {
-            flatList.push(...hauptkategorie.unterkategorien);
-          }
-        });
-        setArtikelgruppen(flatList);
+        // Behalte hierarchische Struktur: Hauptkategorien mit unterkategorien Array
+        setArtikelgruppen(data.data || []);
       }
     } catch (error) {
       console.error('Fehler beim Laden der Artikelgruppen:', error);
     }
+  };
+
+  // Unterkategorien der gewählten Hauptkategorie
+  const getUnterkategorien = () => {
+    if (!selectedHauptkategorieId) return [];
+    const hauptkategorie = artikelgruppen.find(g => g.id == selectedHauptkategorieId);
+    return hauptkategorie?.unterkategorien || [];
   };
 
   // Load Artikel for Edit Mode
@@ -197,13 +196,42 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [mode, id]);
 
+  // Im Edit-Modus: Hauptkategorie setzen wenn Artikelgruppen und Artikel geladen sind
+  useEffect(() => {
+    if (mode === 'edit' && formData.artikelgruppe_id && artikelgruppen.length > 0) {
+      // Finde die Hauptkategorie, die diese Unterkategorie enthält
+      for (const hauptkat of artikelgruppen) {
+        // Prüfe ob artikelgruppe_id direkt eine Hauptkategorie ist
+        if (hauptkat.id == formData.artikelgruppe_id) {
+          setSelectedHauptkategorieId(hauptkat.id.toString());
+          return;
+        }
+        // Prüfe ob artikelgruppe_id eine Unterkategorie dieser Hauptkategorie ist
+        if (hauptkat.unterkategorien?.some(u => u.id == formData.artikelgruppe_id)) {
+          setSelectedHauptkategorieId(hauptkat.id.toString());
+          return;
+        }
+      }
+    }
+  }, [mode, formData.artikelgruppe_id, artikelgruppen]);
+
+  // Hilfsfunktion: Finde Gruppe in hierarchischer Struktur (Haupt- oder Unterkategorie)
+  const findGruppeById = (gruppeId) => {
+    for (const hauptkat of artikelgruppen) {
+      if (hauptkat.id == gruppeId) return hauptkat;
+      const unter = hauptkat.unterkategorien?.find(u => u.id == gruppeId);
+      if (unter) return unter;
+    }
+    return null;
+  };
+
   // Generate next Artikelnummer based on Artikelgruppe
   const generateArtikelNummer = async (gruppeId) => {
     if (!gruppeId) return '';
 
     try {
-      // Find the selected group to get its prefix/code
-      const gruppe = artikelgruppen.find(g => g.id == gruppeId);
+      // Find the selected group to get its prefix/code (kann Haupt- oder Unterkategorie sein)
+      const gruppe = findGruppeById(gruppeId);
       if (!gruppe) return '';
 
       // Create a 3-letter prefix from gruppe name
@@ -428,33 +456,37 @@ const ArtikelFormular = ({ mode }) => {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={basisLabelStyle}>Artikelgruppe *</label>
           <select
-            name="artikelgruppe_id"
-            value={formData.artikelgruppe_id}
-            onChange={handleInputChange}
+            value={selectedHauptkategorieId}
+            onChange={(e) => {
+              setSelectedHauptkategorieId(e.target.value);
+              // Reset artikelgruppe_id wenn Hauptkategorie wechselt
+              setFormData(prev => ({ ...prev, artikelgruppe_id: '' }));
+            }}
             required
             style={{ ...basisInputStyle, cursor: 'pointer' }}
           >
             <option value="">Wählen Sie eine Artikelgruppe...</option>
             {artikelgruppen.map(gruppe => (
               <option key={gruppe.id} value={gruppe.id}>
-                {gruppe.vollstaendiger_name || gruppe.name}
+                {gruppe.name}
               </option>
             ))}
           </select>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={basisLabelStyle}>Kategorie</label>
+          <label style={basisLabelStyle}>Unterkategorie</label>
           <select
-            name="kategorie_id"
-            value={formData.kategorie_id}
+            name="artikelgruppe_id"
+            value={formData.artikelgruppe_id}
             onChange={handleInputChange}
             style={{ ...basisInputStyle, cursor: 'pointer' }}
+            disabled={!selectedHauptkategorieId || getUnterkategorien().length === 0}
           >
-            <option value="">Wählen Sie eine Kategorie...</option>
-            {kategorien.map(kat => (
-              <option key={kat.kategorie_id} value={kat.kategorie_id}>
-                {kat.name}
+            <option value="">{!selectedHauptkategorieId ? 'Erst Artikelgruppe wählen...' : getUnterkategorien().length === 0 ? 'Keine Unterkategorien vorhanden' : 'Wählen Sie eine Unterkategorie...'}</option>
+            {getUnterkategorien().map(unter => (
+              <option key={unter.id} value={unter.id}>
+                {unter.name}
               </option>
             ))}
           </select>
