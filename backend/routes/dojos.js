@@ -77,10 +77,10 @@ router.get('/', async (req, res) => {
         d.ust_satz,
         d.kleinunternehmer_grenze,
         COALESCE(
-          (SELECT SUM(b.betrag)
-           FROM beitraege b
-           WHERE b.dojo_id = d.id
-           AND b.zahlungsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)),
+          (SELECT SUM(v.monatsbeitrag * 12)
+           FROM vertraege v
+           WHERE v.dojo_id = d.id
+           AND v.status = 'aktiv'),
           0
         ) as jahresumsatz_aktuell,
         d.jahresumsatz_vorjahr,
