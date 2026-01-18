@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// Helper function to promisify db.query
+const query = (sql, params) => {
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (error, results) => {
+      if (error) reject(error);
+      else resolve(results);
+    });
+  });
+};
+
 /**
  * GET /mitglieder/:mitgliedId/zehnerkarten
  * Alle 10er-Karten eines Mitglieds abrufen
@@ -10,7 +20,7 @@ router.get('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
   try {
     const { mitgliedId } = req.params;
 
-    const query = `
+    const sql = `
       SELECT
         z.*,
         t.name as tarif_name,
@@ -21,7 +31,7 @@ router.get('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
       ORDER BY z.gekauft_am DESC
     `;
 
-    const [zehnerkarten] = await db.query(query, [mitgliedId]);
+    const zehnerkarten = await query(sql, [mitgliedId]);
 
     // Status automatisch aktualisieren
     for (const karte of zehnerkarten) {
@@ -39,7 +49,7 @@ router.get('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
 
       // Status aktualisieren falls geändert
       if (newStatus !== karte.status) {
-        await db.query(
+        await query(
           'UPDATE zehnerkarten SET status = ? WHERE id = ?',
           [newStatus, karte.id]
         );
@@ -64,7 +74,7 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
     const { tarif_id, gekauft_am, einheiten_gesamt = 10 } = req.body;
 
     // Tarif-Details abrufen
-    const [tarife] = await db.query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
+    const tarife = await query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
 
     if (tarife.length === 0) {
       return res.status(404).json({ success: false, error: 'Tarif nicht gefunden' });
@@ -78,7 +88,7 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
     gueltigBis.setMonth(gueltigBis.getMonth() + (tarif.duration_months || 6));
 
     // 10er-Karte erstellen
-    const insertQuery = `
+    const insertSql = `
       INSERT INTO zehnerkarten (
         mitglied_id,
         tarif_id,
@@ -91,7 +101,7 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, 'aktiv', ?)
     `;
 
-    const [result] = await db.query(insertQuery, [
+    const result = await query(insertSql, [
       mitgliedId,
       tarif_id,
       kaufdatum,
@@ -102,7 +112,7 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
     ]);
 
     // Erstellte 10er-Karte abrufen
-    const [neueKarte] = await db.query(
+    const neueKarte = await query(
       `SELECT z.*, t.name as tarif_name
        FROM zehnerkarten z
        LEFT JOIN tarife t ON z.tarif_id = t.id
@@ -125,7 +135,7 @@ router.get('/zehnerkarten/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const query = `
+    const sql = `
       SELECT
         z.*,
         t.name as tarif_name,
@@ -138,7 +148,7 @@ router.get('/zehnerkarten/:id', async (req, res) => {
       WHERE z.id = ?
     `;
 
-    const [zehnerkarten] = await db.query(query, [id]);
+    const zehnerkarten = await query(sql, [id]);
 
     if (zehnerkarten.length === 0) {
       return res.status(404).json({ success: false, error: '10er-Karte nicht gefunden' });
@@ -156,22 +166,17 @@ router.get('/zehnerkarten/:id', async (req, res) => {
  * Check-in durchführen (Einheit abbuchen)
  */
 router.post('/zehnerkarten/:id/checkin', async (req, res) => {
-  const connection = await db.getConnection();
-
   try {
-    await connection.beginTransaction();
-
     const { id } = req.params;
     const { buchungsdatum = new Date(), notiz = '' } = req.body;
 
     // 10er-Karte abrufen
-    const [zehnerkarten] = await connection.query(
+    const zehnerkarten = await query(
       'SELECT * FROM zehnerkarten WHERE id = ?',
       [id]
     );
 
     if (zehnerkarten.length === 0) {
-      await connection.rollback();
       return res.status(404).json({ success: false, error: '10er-Karte nicht gefunden' });
     }
 
@@ -179,7 +184,6 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
 
     // Validierungen
     if (karte.status !== 'aktiv') {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         error: `10er-Karte ist ${karte.status}`
@@ -187,7 +191,6 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
     }
 
     if (karte.einheiten_verbleibend <= 0) {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         error: 'Keine Einheiten mehr verfügbar'
@@ -195,7 +198,6 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
     }
 
     if (new Date(karte.gueltig_bis) < new Date()) {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         error: '10er-Karte ist abgelaufen'
@@ -204,13 +206,12 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
 
     // Prüfen ob heute bereits eingecheckt
     const datum = new Date(buchungsdatum).toISOString().split('T')[0];
-    const [existingBooking] = await connection.query(
+    const existingBooking = await query(
       'SELECT * FROM zehnerkarten_buchungen WHERE zehnerkarte_id = ? AND buchungsdatum = ?',
       [id, datum]
     );
 
     if (existingBooking.length > 0) {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         error: 'Für dieses Datum wurde bereits ein Check-in durchgeführt'
@@ -218,7 +219,7 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
     }
 
     // Buchung erstellen
-    await connection.query(
+    await query(
       `INSERT INTO zehnerkarten_buchungen
        (zehnerkarte_id, mitglied_id, buchungsdatum, buchungszeit, einheiten, notiz)
        VALUES (?, ?, ?, NOW(), 1, ?)`,
@@ -234,15 +235,13 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
       neuerStatus = 'aufgebraucht';
     }
 
-    await connection.query(
+    await query(
       'UPDATE zehnerkarten SET einheiten_verbleibend = ?, status = ? WHERE id = ?',
       [neueEinheiten, neuerStatus, id]
     );
 
-    await connection.commit();
-
     // Aktualisierte Karte abrufen
-    const [updatedKarte] = await connection.query(
+    const updatedKarte = await query(
       `SELECT z.*, t.name as tarif_name
        FROM zehnerkarten z
        LEFT JOIN tarife t ON z.tarif_id = t.id
@@ -254,10 +253,9 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
       success: true,
       data: updatedKarte[0],
       message: `Check-in erfolgreich. ${neueEinheiten} Einheiten verbleibend.`,
-      isLastUnit: neueEinheiten === 0 // Flag für letzte Einheit
+      isLastUnit: neueEinheiten === 0
     });
   } catch (error) {
-    await connection.rollback();
     console.error('Fehler beim Check-in:', error);
 
     // Spezielle Behandlung für Unique Constraint Error
@@ -269,8 +267,6 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
     }
 
     res.status(500).json({ success: false, error: error.message });
-  } finally {
-    connection.release();
   }
 });
 
@@ -282,7 +278,7 @@ router.get('/zehnerkarten/:id/buchungen', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const query = `
+    const sql = `
       SELECT
         b.*,
         m.vorname,
@@ -293,7 +289,7 @@ router.get('/zehnerkarten/:id/buchungen', async (req, res) => {
       ORDER BY b.buchungsdatum DESC
     `;
 
-    const [buchungen] = await db.query(query, [id]);
+    const buchungen = await query(sql, [id]);
 
     res.json({ success: true, data: buchungen });
   } catch (error) {
@@ -307,21 +303,16 @@ router.get('/zehnerkarten/:id/buchungen', async (req, res) => {
  * Neue 10er-Karte nach Ablauf der alten kaufen (mit Zahlungsauswahl)
  */
 router.post('/zehnerkarten/nachkauf', async (req, res) => {
-  const connection = await db.getConnection();
-
   try {
-    await connection.beginTransaction();
-
     const {
       mitglied_id,
       tarif_id,
-      zahlungsart, // 'bar', 'lastschrift', 'rechnung'
+      zahlungsart,
       einheiten_gesamt = 10
     } = req.body;
 
     // Validierung
     if (!mitglied_id || !tarif_id || !zahlungsart) {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         error: 'Mitglied-ID, Tarif-ID und Zahlungsart sind erforderlich'
@@ -329,7 +320,6 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
     }
 
     if (!['bar', 'lastschrift', 'rechnung'].includes(zahlungsart)) {
-      await connection.rollback();
       return res.status(400).json({
         success: false,
         error: 'Ungültige Zahlungsart. Erlaubt: bar, lastschrift, rechnung'
@@ -337,23 +327,21 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
     }
 
     // Mitglied-Daten abrufen
-    const [mitglieder] = await connection.query(
+    const mitglieder = await query(
       'SELECT * FROM mitglieder WHERE mitglied_id = ?',
       [mitglied_id]
     );
 
     if (mitglieder.length === 0) {
-      await connection.rollback();
       return res.status(404).json({ success: false, error: 'Mitglied nicht gefunden' });
     }
 
     const mitglied = mitglieder[0];
 
     // Tarif-Details abrufen
-    const [tarife] = await connection.query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
+    const tarife = await query('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
 
     if (tarife.length === 0) {
-      await connection.rollback();
       return res.status(404).json({ success: false, error: 'Tarif nicht gefunden' });
     }
 
@@ -365,7 +353,7 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
     gueltigBis.setMonth(gueltigBis.getMonth() + (tarif.duration_months || 6));
 
     // 10er-Karte erstellen
-    const [karteResult] = await connection.query(
+    const karteResult = await query(
       `INSERT INTO zehnerkarten (
         mitglied_id,
         tarif_id,
@@ -394,14 +382,14 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
 
     if (zahlungsart === 'bar') {
       // Admin-Benachrichtigung erstellen
-      const [admins] = await connection.query(
+      const admins = await query(
         'SELECT mitglied_id FROM mitglieder WHERE rolle = "admin" OR rolle = "trainer"'
       );
 
-      const notificationText = `💵 Barzahlung erforderlich: ${mitglied.vorname} ${mitglied.nachname} möchte eine ${tarif.name} für €${(tarif.price_cents / 100).toFixed(2)} bar bezahlen.`;
+      const notificationText = `Barzahlung erforderlich: ${mitglied.vorname} ${mitglied.nachname} möchte eine ${tarif.name} für ${(tarif.price_cents / 100).toFixed(2)} EUR bar bezahlen.`;
 
       for (const admin of admins) {
-        await connection.query(
+        await query(
           `INSERT INTO benachrichtigungen (mitglied_id, nachricht, typ, erstellt_am)
            VALUES (?, ?, 'barzahlung', NOW())`,
           [admin.mitglied_id, notificationText]
@@ -413,7 +401,7 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       // Offenen Posten für nächste SEPA-Buchung erstellen
       const beschreibung = `10er-Karte: ${tarif.name}`;
 
-      await connection.query(
+      await query(
         `INSERT INTO offene_posten (
           mitglied_id,
           zehnerkarte_id,
@@ -435,9 +423,9 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       zusatzInfo.lastschrift = 'Betrag wird bei nächster SEPA-Buchung eingezogen';
     } else if (zahlungsart === 'rechnung') {
       // Rechnung erstellen
-      const rechnungsnummer = await generateRechnungsnummer(connection);
+      const rechnungsnummer = await generateRechnungsnummer();
 
-      const [rechnungResult] = await connection.query(
+      const rechnungResult = await query(
         `INSERT INTO rechnungen (
           mitglied_id,
           rechnungsnummer,
@@ -462,7 +450,7 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       const rechnungId = rechnungResult.insertId;
 
       // Rechnungsposition hinzufügen
-      await connection.query(
+      await query(
         `INSERT INTO rechnungspositionen (
           rechnung_id,
           position,
@@ -479,8 +467,6 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
         ]
       );
 
-      // TODO: Rechnung per E-Mail versenden
-      // Dies würde einen separaten E-Mail-Service aufrufen
       zusatzInfo.rechnung = {
         rechnungsnummer,
         rechnungId,
@@ -488,10 +474,8 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       };
     }
 
-    await connection.commit();
-
     // Erstellte 10er-Karte abrufen
-    const [neueKarte] = await connection.query(
+    const neueKarte = await query(
       `SELECT z.*, t.name as tarif_name
        FROM zehnerkarten z
        LEFT JOIN tarife t ON z.tarif_id = t.id
@@ -507,18 +491,15 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       message: `10er-Karte erfolgreich erstellt (${zahlungsart})`
     });
   } catch (error) {
-    await connection.rollback();
     console.error('Fehler beim Nachkauf:', error);
     res.status(500).json({ success: false, error: error.message });
-  } finally {
-    connection.release();
   }
 });
 
 /**
  * Hilfsfunktion: Rechnungsnummer generieren
  */
-async function generateRechnungsnummer(connection) {
+async function generateRechnungsnummer() {
   const heute = new Date();
   const jahr = heute.getFullYear();
   const monat = String(heute.getMonth() + 1).padStart(2, '0');
@@ -528,7 +509,7 @@ async function generateRechnungsnummer(connection) {
   const prefix = `${jahr}/${monat}/${tag}`;
 
   // Letzte Rechnung des Tages suchen
-  const [rechnungen] = await connection.query(
+  const rechnungen = await query(
     `SELECT rechnungsnummer FROM rechnungen
      WHERE rechnungsnummer LIKE ?
      ORDER BY rechnungsnummer DESC
@@ -554,7 +535,7 @@ router.delete('/zehnerkarten/:id', async (req, res) => {
     const { id } = req.params;
 
     // Prüfen ob Buchungen vorhanden
-    const [buchungen] = await db.query(
+    const buchungen = await query(
       'SELECT COUNT(*) as count FROM zehnerkarten_buchungen WHERE zehnerkarte_id = ?',
       [id]
     );
@@ -566,7 +547,7 @@ router.delete('/zehnerkarten/:id', async (req, res) => {
       });
     }
 
-    await db.query('DELETE FROM zehnerkarten WHERE id = ?', [id]);
+    await query('DELETE FROM zehnerkarten WHERE id = ?', [id]);
 
     res.json({ success: true, message: '10er-Karte erfolgreich gelöscht' });
   } catch (error) {
