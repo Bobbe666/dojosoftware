@@ -80,7 +80,7 @@ router.get('/', async (req, res) => {
           (SELECT SUM(b.betrag)
            FROM beitraege b
            WHERE b.dojo_id = d.id
-           AND YEAR(b.zahlungsdatum) = YEAR(CURDATE())),
+           AND b.zahlungsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)),
           0
         ) as jahresumsatz_aktuell,
         d.jahresumsatz_vorjahr,
