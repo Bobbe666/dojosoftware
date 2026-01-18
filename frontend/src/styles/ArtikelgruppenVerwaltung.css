@@ -1165,13 +1165,13 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn:hover {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.3) !important;
+  background: rgba(255, 215, 0, 0.15) !important;
+  border-color: rgba(255, 215, 0, 0.6) !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn[type="submit"] {
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-  color: white !important;
+  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  color: #1e293b !important;
   border: none !important;
 }
 
@@ -1186,13 +1186,13 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group input:focus,
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group select:focus,
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group textarea:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15) !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-  color: white !important;
+  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
+  color: #1e293b !important;
   border: none !important;
 }
 
