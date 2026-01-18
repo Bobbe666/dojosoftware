@@ -11,10 +11,17 @@ const db = require('../db');
 // ============================================
 router.get('/', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        // Tenant check (Super-Admin darf ohne dojo_id)
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
+
+        // Super-Admin ohne dojo_id - Standard-Dojo 3 verwenden
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
 
         const query = `
             SELECT
@@ -47,7 +54,7 @@ router.get('/', async (req, res) => {
         `;
 
         const gruppen = await new Promise((resolve, reject) => {
-            db.query(query, [req.tenant.dojo_id], (error, results) => {
+            db.query(query, [dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -88,10 +95,15 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/hauptkategorien', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
+
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
 
         const query = `
             SELECT
@@ -104,7 +116,7 @@ router.get('/hauptkategorien', async (req, res) => {
         `;
 
         const hauptkategorien = await new Promise((resolve, reject) => {
-            db.query(query, [req.tenant.dojo_id, req.tenant.dojo_id], (error, results) => {
+            db.query(query, [dojoId, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -130,11 +142,15 @@ router.get('/hauptkategorien', async (req, res) => {
 // ============================================
 router.get('/unterkategorien/:parentId', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
         const { parentId } = req.params;
 
         const query = `
@@ -147,7 +163,7 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
         `;
 
         const unterkategorien = await new Promise((resolve, reject) => {
-            db.query(query, [parentId, req.tenant.dojo_id], (error, results) => {
+            db.query(query, [parentId, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -173,11 +189,15 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
         const { id } = req.params;
 
         const query = `
@@ -191,7 +211,7 @@ router.get('/:id', async (req, res) => {
         `;
 
         const gruppen = await new Promise((resolve, reject) => {
-            db.query(query, [id, req.tenant.dojo_id], (error, results) => {
+            db.query(query, [id, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -224,10 +244,15 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.post('/', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
+
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
 
         const {
             name,
@@ -250,7 +275,7 @@ router.post('/', async (req, res) => {
             const parentCheck = await new Promise((resolve, reject) => {
                 db.query(
                     'SELECT id FROM artikelgruppen WHERE id = ? AND parent_id IS NULL AND dojo_id = ?',
-                    [parent_id, req.tenant.dojo_id],
+                    [parent_id, dojoId],
                     (error, results) => {
                         if (error) reject(error);
                         else resolve(results);
@@ -279,7 +304,7 @@ router.post('/', async (req, res) => {
                 sortierung,
                 icon || null,
                 farbe || null,
-                req.tenant.dojo_id
+                dojoId
             ], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
@@ -319,16 +344,20 @@ router.post('/', async (req, res) => {
 // ============================================
 router.put('/:id', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
         const { id } = req.params;
         const { name, beschreibung, parent_id, sortierung, icon, farbe, aktiv } = req.body;
 
         const existingGroup = await new Promise((resolve, reject) => {
-            db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
+            db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -345,7 +374,7 @@ router.put('/:id', async (req, res) => {
             const parentCheck = await new Promise((resolve, reject) => {
                 db.query(
                     'SELECT id FROM artikelgruppen WHERE id = ? AND parent_id IS NULL AND dojo_id = ?',
-                    [parent_id, req.tenant.dojo_id],
+                    [parent_id, dojoId],
                     (error, results) => {
                         if (error) reject(error);
                         else resolve(results);
@@ -378,7 +407,7 @@ router.put('/:id', async (req, res) => {
                 farbe || existingGroup[0].farbe,
                 aktiv !== undefined ? aktiv : existingGroup[0].aktiv,
                 id,
-                req.tenant.dojo_id
+                dojoId
             ], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
@@ -413,15 +442,19 @@ router.put('/:id', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
     try {
-        // Tenant check
-        if (!req.tenant?.dojo_id) {
+        // Super-Admin Check
+        const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+        const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+
+        if (!isSuperAdmin && !req.tenant?.dojo_id) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
+        const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 3 : null);
         const { id } = req.params;
 
         const existingGroup = await new Promise((resolve, reject) => {
-            db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
+            db.query('SELECT * FROM artikelgruppen WHERE id = ? AND dojo_id = ?', [id, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -435,7 +468,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         const artikelCheck = await new Promise((resolve, reject) => {
-            db.query('SELECT COUNT(*) as count FROM artikel WHERE artikelgruppe_id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
+            db.query('SELECT COUNT(*) as count FROM artikel WHERE artikelgruppe_id = ? AND dojo_id = ?', [id, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
@@ -451,7 +484,7 @@ router.delete('/:id', async (req, res) => {
         const unterkategorienCheck = await new Promise((resolve, reject) => {
             db.query(
                 'SELECT COUNT(*) as count FROM artikelgruppen WHERE parent_id = ? AND aktiv = TRUE AND dojo_id = ?',
-                [id, req.tenant.dojo_id],
+                [id, dojoId],
                 (error, results) => {
                     if (error) reject(error);
                     else resolve(results);
@@ -467,7 +500,7 @@ router.delete('/:id', async (req, res) => {
         }
 
         await new Promise((resolve, reject) => {
-            db.query('UPDATE artikelgruppen SET aktiv = FALSE WHERE id = ? AND dojo_id = ?', [id, req.tenant.dojo_id], (error, results) => {
+            db.query('UPDATE artikelgruppen SET aktiv = FALSE WHERE id = ? AND dojo_id = ?', [id, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });
