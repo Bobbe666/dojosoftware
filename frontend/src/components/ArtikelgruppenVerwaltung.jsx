@@ -483,8 +483,11 @@ const ArtikelgruppenVerwaltung = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={(e) => {
+          // Nur schließen wenn direkt auf Overlay geklickt wird, nicht auf Kinder
+          if (e.target === e.currentTarget) closeModal();
+        }}>
+          <div className="modal-content">
             <div className="modal-header">
               <h2>{editingGroup ? 'Gruppe bearbeiten' : 'Neue Gruppe erstellen'}</h2>
               <button className="close-btn" onClick={closeModal}>✕</button>
@@ -577,6 +580,7 @@ const ArtikelgruppenVerwaltung = () => {
                   />
                   <input
                     type="text"
+                    name="farbe"
                     value={formData.farbe}
                     onChange={handleInputChange}
                     placeholder="#4A90E2"
