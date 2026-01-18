@@ -4611,6 +4611,43 @@ input:focus {
   box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
 }
 
+/* ========== LIGHT MODE STYLES für Vertrag-Buttons ========== */
+[data-theme="light"] .vertragsfrei-button,
+[data-theme="light"] .neuer-vertrag-button,
+[data-theme="light"] .neue-zehnerkarte-button {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: #1e293b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .vertragsfrei-button:hover,
+[data-theme="light"] .neuer-vertrag-button:hover,
+[data-theme="light"] .neue-zehnerkarte-button:hover {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.6);
+  color: #0f172a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .vertragsfrei-button::before,
+[data-theme="light"] .neuer-vertrag-button::before,
+[data-theme="light"] .neue-zehnerkarte-button::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+}
+
+[data-theme="light"] .vertragsfrei-button-active {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #059669;
+}
+
+[data-theme="light"] .vertragsfrei-button-active:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.7);
+  color: #047857;
+}
+
 /* Bank & SEPA Styling - Schriftgrößen wie Tabellenüberschriften */
 .bank-sepa-card h3.bank-sepa-heading {
   font-size: 0.8rem;
