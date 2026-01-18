@@ -134,14 +134,14 @@ const ArtikelgruppenVerwaltung = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
-      const url = editingGroup 
-        ? `/artikelgruppen/${editingGroup.id}`
-        : '/artikelgruppen';
-      
+      const url = editingGroup
+        ? `${config.apiBaseUrl}/artikelgruppen/${editingGroup.id}`
+        : `${config.apiBaseUrl}/artikelgruppen`;
+
       const method = editingGroup ? 'PUT' : 'POST';
-      
+
       const response = await fetchWithAuth(url, {
         method,
         headers: {
@@ -171,9 +171,9 @@ const ArtikelgruppenVerwaltung = () => {
     if (!window.confirm(`Möchten Sie die Gruppe "${group.name}" wirklich löschen?`)) {
       return;
     }
-    
+
     try {
-      const response = await fetchWithAuth(`/artikelgruppen/${group.id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/artikelgruppen/${group.id}`, {
         method: 'DELETE'
       });
       
