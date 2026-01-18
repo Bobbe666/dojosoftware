@@ -21,7 +21,9 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    cb(null, `dojo-${req.params.id}-${req.body.logoType}-${uniqueSuffix}${ext}`);
+    // logoType kommt aus URL-Parameter statt Body (weil multer body erst nach file-processing hat)
+    const logoType = req.params.logoType || 'unknown';
+    cb(null, `dojo-${req.params.id}-${logoType}-${uniqueSuffix}${ext}`);
   }
 });
 
@@ -88,11 +90,11 @@ router.get('/:id/logos', (req, res) => {
 });
 
 // =============================================================================
-// POST /api/dojos/:id/logos - Upload a logo
+// POST /api/dojos/:id/logos/:logoType - Upload a logo
 // =============================================================================
-router.post('/:id/logos', upload.single('logo'), (req, res) => {
+router.post('/:id/logos/:logoType', upload.single('logo'), (req, res) => {
   const dojoId = req.params.id;
-  const logoType = req.body.logoType;
+  const logoType = req.params.logoType; // Aus URL-Parameter statt Body
   const uploadedBy = req.body.uploadedBy || null;
 
   if (!req.file) {

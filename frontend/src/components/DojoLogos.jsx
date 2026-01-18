@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Trash2, AlertCircle, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import axios from 'axios';
-import config from '../config/config.js';
 import '../styles/DojoLogos.css';
 
 const DojoLogos = ({ dojoId }) => {
@@ -70,10 +69,10 @@ const DojoLogos = ({ dojoId }) => {
 
       const formData = new FormData();
       formData.append('logo', file);
-      formData.append('logoType', logoType);
+      // logoType jetzt in URL statt Body (wegen multer filename callback)
 
       const response = await axios.post(
-        `/dojos/${dojoId}/logos`,
+        `/dojos/${dojoId}/logos/${logoType}`,
         formData,
         {
           headers: {
@@ -173,7 +172,7 @@ const DojoLogos = ({ dojoId }) => {
                   <>
                     <div className="logo-preview">
                       <img
-                        src={`${config.apiBaseUrl}${existingLogo.url}`}
+                        src={existingLogo.url}
                         alt={type.label}
                         className="logo-image"
                       />
