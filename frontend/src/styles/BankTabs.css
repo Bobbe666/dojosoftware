@@ -432,9 +432,89 @@
   .tabs-content {
     padding: 14px;
   }
-  
+
   .form-section {
     padding: 12px;
   }
+}
+
+/* ============================================
+   LIGHT MODE (TDA-VIB) STYLES
+   ============================================ */
+
+[data-theme="tda-vib"] .tabs-header {
+  background: rgba(26, 26, 26, 0.02);
+  border-bottom-color: rgba(26, 26, 26, 0.1);
+}
+
+[data-theme="tda-vib"] .tab {
+  background: #e8e0d0;
+  border: 1px solid rgba(26, 26, 26, 0.15);
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .tab:hover {
+  background: #f5f0e6;
+  border-color: rgba(26, 26, 26, 0.25);
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .tab.active {
+  background: #f5f0e6;
+  border-color: #6B4423;
+  color: #6B4423;
+  box-shadow: 0 2px 8px rgba(107, 68, 35, 0.2);
+}
+
+[data-theme="tda-vib"] .tab-add {
+  background: transparent;
+  border: 1px dashed rgba(26, 26, 26, 0.3);
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .tab-add:hover {
+  background: rgba(107, 68, 35, 0.1);
+  border-color: #6B4423;
+}
+
+[data-theme="tda-vib"] .form-section-three-column .form-section {
+  background: #ffffff;
+  border: 1px solid rgba(26, 26, 26, 0.1);
+}
+
+[data-theme="tda-vib"] .form-group label {
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .form-group input,
+[data-theme="tda-vib"] .form-group select,
+[data-theme="tda-vib"] .form-group textarea {
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .form-group input:focus,
+[data-theme="tda-vib"] .form-group select:focus,
+[data-theme="tda-vib"] .form-group textarea:focus {
+  border-color: rgba(26, 26, 26, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05) !important;
+}
+
+[data-theme="tda-vib"] .bank-form .form-actions {
+  border-top-color: rgba(26, 26, 26, 0.1);
+  background: rgba(26, 26, 26, 0.02);
+}
+
+[data-theme="tda-vib"] .checkbox-group span {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .bank-form-title {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .form-section h3 {
+  color: #6B4423 !important;
 }
 

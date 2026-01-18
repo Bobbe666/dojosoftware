@@ -510,3 +510,103 @@
     flex-direction: column;
   }
 }
+
+/* ============================================
+   LIGHT MODE (TDA-VIB) STYLES
+   ============================================ */
+
+[data-theme="tda-vib"] .dojo-edit-page .tab-vertical-btn {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .tab-vertical-btn:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .tab-vertical-btn.active {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.3) !important;
+  box-shadow: inset 3px 0 0 #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .back-button {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .back-button:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-primary,
+[data-theme="tda-vib"] .dojo-edit-page .btn {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-primary:hover,
+[data-theme="tda-vib"] .dojo-edit-page .btn:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-secondary {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-secondary:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-danger {
+  background: rgba(244, 67, 54, 0.1) !important;
+  border: 1px solid rgba(244, 67, 54, 0.3) !important;
+  color: #dc2626 !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-danger:hover {
+  background: rgba(244, 67, 54, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-section {
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 26, 26, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-group label {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-group input,
+[data-theme="tda-vib"] .dojo-edit-page .form-group select,
+[data-theme="tda-vib"] .dojo-edit-page .form-group textarea {
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-group input:focus,
+[data-theme="tda-vib"] .dojo-edit-page .form-group select:focus,
+[data-theme="tda-vib"] .dojo-edit-page .form-group textarea:focus {
+  border-color: rgba(26, 26, 26, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .sidebar-toggle-btn {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .sidebar-toggle-btn:hover {
+  background: #f5f0e6 !important;
+}
