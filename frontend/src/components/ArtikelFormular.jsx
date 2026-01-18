@@ -138,7 +138,17 @@ const ArtikelFormular = ({ mode }) => {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/artikelgruppen`);
       const data = await response.json();
       if (data.success) {
-        setArtikelgruppen(data.data || []);
+        // Flatten hierarchical structure: include both hauptkategorien and unterkategorien
+        const flatList = [];
+        (data.data || []).forEach(hauptkategorie => {
+          // Add hauptkategorie
+          flatList.push(hauptkategorie);
+          // Add all unterkategorien (they already have vollstaendiger_name from backend)
+          if (hauptkategorie.unterkategorien && hauptkategorie.unterkategorien.length > 0) {
+            flatList.push(...hauptkategorie.unterkategorien);
+          }
+        });
+        setArtikelgruppen(flatList);
       }
     } catch (error) {
       console.error('Fehler beim Laden der Artikelgruppen:', error);
