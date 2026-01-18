@@ -652,11 +652,16 @@
 }
 
 [data-theme="tda-vib"] .dojo-selection-modal .modal-header {
-  border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+  background: #f5f0e6 !important;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.1) !important;
+  margin: -1.5rem -1.5rem 1.5rem -1.5rem !important;
+  padding: 1rem 1.5rem !important;
+  border-radius: 12px 12px 0 0 !important;
 }
 
 [data-theme="tda-vib"] .dojo-selection-modal .modal-header h2 {
   color: #1a1a1a !important;
+  margin: 0 !important;
 }
 
 [data-theme="tda-vib"] .dojo-selection-modal .modal-header h2 svg {
