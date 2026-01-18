@@ -574,7 +574,7 @@
 }
 
 .modal-header {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
@@ -613,7 +613,7 @@
    FORM STYLES
    ============================================ */
 .group-form {
-  padding: 1rem;
+  padding: 1rem !important;
 }
 
 .form-row {
@@ -704,7 +704,7 @@
 }
 
 .modal-footer {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem !important;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: flex-end;
@@ -1135,56 +1135,8 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 }
 
 /* ============================================
-   LIGHT MODE (TDA-VIB) BUTTON STYLES
+   LIGHT MODE (TDA-VIB) MODAL STYLES
    ============================================ */
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .sub-tab-btn,
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .details-btn,
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .edit-btn,
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .delete-btn {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  color: #1e293b !important;
-  border-radius: 6px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .sub-tab-btn:hover {
-  background: rgba(255, 255, 255, 1) !important;
-  border-color: rgba(0, 0, 0, 0.25) !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .details-btn {
-  background: rgba(59, 130, 246, 0.1) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
-  color: #2563eb !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .details-btn:hover {
-  background: rgba(59, 130, 246, 0.2) !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .edit-btn {
-  background: rgba(245, 158, 11, 0.1) !important;
-  border-color: rgba(245, 158, 11, 0.3) !important;
-  color: #d97706 !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .edit-btn:hover {
-  background: rgba(245, 158, 11, 0.2) !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .delete-btn {
-  background: rgba(239, 68, 68, 0.1) !important;
-  border-color: rgba(239, 68, 68, 0.3) !important;
-  color: #dc2626 !important;
-}
-
-[data-theme="tda-vib"] .artikelgruppen-verwaltung .delete-btn:hover {
-  background: rgba(239, 68, 68, 0.2) !important;
-}
-
-/* Light Mode Modal Styles */
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-overlay {
   background: rgba(0, 0, 0, 0.5) !important;
 }
@@ -1202,6 +1154,25 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer {
   border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Modal Footer Buttons im Light Mode */
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn:hover {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn[type="submit"] {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: white !important;
+  border: none !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group input,
