@@ -1156,23 +1156,23 @@ body:not(.dark-mode):not(.dark) .detail-icon {
   border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Modal Footer Buttons im Light Mode */
+/* Modal Footer Buttons im Light Mode - Washi Style */
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.2) !important;
-  color: #1e293b !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+  box-shadow: none !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn:hover {
-  background: rgba(255, 215, 0, 0.15) !important;
-  border-color: rgba(255, 215, 0, 0.6) !important;
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .modal-footer .sub-tab-btn[type="submit"] {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
-  color: #1e293b !important;
-  border: none !important;
+  background: #e8e0d0 !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group input,
@@ -1186,18 +1186,28 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group input:focus,
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group select:focus,
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .form-group textarea:focus {
-  border-color: #ffd700 !important;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15) !important;
+  border-color: rgba(26, 26, 26, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05) !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important;
-  color: #1e293b !important;
-  border: none !important;
+  background: #e8e0d0 !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-primary:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
 }
 
 [data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-secondary {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  color: #1e293b !important;
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .artikelgruppen-verwaltung .btn-secondary:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
 }
