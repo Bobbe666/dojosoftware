@@ -1640,7 +1640,7 @@ const RechnungErstellen = () => {
               }
               return hasBankData;
             })() ? (
-              <div className="qr-codes-section" style={{ flex: '0 1 auto', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'flex-start', marginRight: '1rem' }}>
+              <div className="qr-codes-section" style={{ flex: '0 1 auto', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'flex-start', marginRight: '4rem' }}>
                 {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
                   <>
                     {/* QR-Code mit Skonto */}
