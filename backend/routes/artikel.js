@@ -221,7 +221,7 @@ router.get('/', (req, res) => {
           ELSE CONCAT(pag.name, ' → ', ag.name)
         END AS artikelgruppe_vollstaendig
       FROM artikel a
-      LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+      LEFT JOIN artikelgruppen kat ON a.kategorie_id = kat.id
       LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
       LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
       WHERE 1=1
@@ -231,9 +231,9 @@ router.get('/', (req, res) => {
     query = `
       SELECT
         a.*,
-        ak.name as kategorie_name,
-        ak.farbe_hex as kategorie_farbe,
-        ak.icon as kategorie_icon,
+        kat.name as kategorie_name,
+        kat.farbe as kategorie_farbe,
+        kat.icon as kategorie_icon,
         ag.name as artikelgruppe_name,
         ag.farbe as artikelgruppe_farbe,
         ag.icon as artikelgruppe_icon,
@@ -242,7 +242,7 @@ router.get('/', (req, res) => {
           ELSE CONCAT(pag.name, ' → ', ag.name)
         END AS artikelgruppe_vollstaendig
       FROM artikel a
-      LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+      LEFT JOIN artikelgruppen kat ON a.kategorie_id = kat.id
       LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
       LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
       WHERE a.dojo_id = ?
@@ -308,19 +308,19 @@ router.get('/kasse', (req, res) => {
       a.hat_preiskategorien,
       a.groessen_kids,
       a.groessen_erwachsene,
-      ak.name as kategorie_name,
-      ak.farbe_hex as kategorie_farbe,
-      ak.icon as kategorie_icon,
-      ak.kategorie_id,
+      kat.name as kategorie_name,
+      kat.farbe as kategorie_farbe,
+      kat.icon as kategorie_icon,
+      kat.id as kategorie_id,
       ag.name as artikelgruppe_name,
       ag.farbe as artikelgruppe_farbe,
       ag.icon as artikelgruppe_icon,
       ag.id as artikelgruppe_id
     FROM artikel a
-    LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+    LEFT JOIN artikelgruppen kat ON a.kategorie_id = kat.id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
     WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
-    ORDER BY ak.reihenfolge ASC, a.name ASC
+    ORDER BY kat.position ASC, a.name ASC
   `;
   params = [];
 
@@ -412,10 +412,10 @@ router.get('/:id', (req, res) => {
   const query = `
     SELECT
       a.*,
-      ak.name as kategorie_name,
-      ak.farbe_hex as kategorie_farbe
+      ag.name as kategorie_name,
+      ag.farbe as kategorie_farbe
     FROM artikel a
-    JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+    LEFT JOIN artikelgruppen ag ON a.kategorie_id = ag.id
     WHERE a.artikel_id = ? AND a.dojo_id = ?
   `;
 
