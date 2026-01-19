@@ -332,6 +332,7 @@
   border-collapse: collapse;
   margin-bottom: 2rem;
   font-size: 9pt;
+  table-layout: fixed;
 }
 
 .invoice-table thead {
@@ -341,31 +342,50 @@
 }
 
 .invoice-table th {
-  padding: 0.5rem 0.25rem;
+  padding: 0.5rem 0.4rem;
   text-align: left;
   font-weight: bold;
   font-size: 8pt;
+  vertical-align: bottom;
 }
+
+/* Column widths */
+.invoice-table th:nth-child(1),
+.invoice-table td:nth-child(1) { width: 28px; text-align: center; }  /* Pos. */
+
+.invoice-table th:nth-child(2),
+.invoice-table td:nth-child(2) { width: auto; }  /* Bezeichnung - takes remaining space */
 
 .invoice-table th:nth-child(3),
+.invoice-table td:nth-child(3) { width: 70px; text-align: left; word-break: break-all; font-size: 7pt; }  /* Artikelnummer */
+
 .invoice-table th:nth-child(4),
+.invoice-table td:nth-child(4) { width: 40px; text-align: right; }  /* Menge */
+
+.invoice-table th:nth-child(5),
+.invoice-table td:nth-child(5) { width: 35px; text-align: center; }  /* Einheit */
+
 .invoice-table th:nth-child(6),
+.invoice-table td:nth-child(6) { width: 55px; text-align: right; }  /* Preis */
+
 .invoice-table th:nth-child(7),
-.invoice-table th:nth-child(8) {
-  text-align: right;
-}
+.invoice-table td:nth-child(7) { width: 50px; text-align: right; }  /* Rabatt % */
+
+.invoice-table th:nth-child(8),
+.invoice-table td:nth-child(8) { width: 50px; text-align: right; }  /* USt % */
+
+.invoice-table th:nth-child(9),
+.invoice-table td:nth-child(9) { width: 60px; text-align: right; font-weight: 600; }  /* Betrag EUR */
 
 .invoice-table td {
-  padding: 0.5rem 0.25rem;
+  padding: 0.5rem 0.4rem;
   border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
 }
 
-.invoice-table td:nth-child(3),
-.invoice-table td:nth-child(4),
-.invoice-table td:nth-child(6),
-.invoice-table td:nth-child(7),
-.invoice-table td:nth-child(8) {
-  text-align: right;
+.invoice-table td:nth-child(2) {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Invoice Totals */
