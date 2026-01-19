@@ -2465,3 +2465,19 @@ body.dark-mode .lager-status.archived {
   text-decoration: line-through;
   color: #9ca3af;
 }
+
+/* Preiskategorien in der Tabelle */
+.preis-kategorien {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.preis-kategorien .preis-kids {
+  color: #3b82f6;
+}
+
+.preis-kategorien .preis-erw {
+  color: #10b981;
+}
