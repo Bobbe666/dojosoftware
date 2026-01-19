@@ -210,9 +210,9 @@ router.get('/', (req, res) => {
     query = `
       SELECT
         a.*,
-        ak.name as kategorie_name,
-        ak.farbe_hex as kategorie_farbe,
-        ak.icon as kategorie_icon,
+        kat.name as kategorie_name,
+        kat.farbe as kategorie_farbe,
+        kat.icon as kategorie_icon,
         ag.name as artikelgruppe_name,
         ag.farbe as artikelgruppe_farbe,
         ag.icon as artikelgruppe_icon,
@@ -265,7 +265,7 @@ router.get('/', (req, res) => {
     params.push(sichtbar_kasse === 'true');
   }
 
-  query += ' ORDER BY ak.reihenfolge ASC, a.name ASC';
+  query += ' ORDER BY kat.position ASC, a.name ASC';
 
   db.query(query, params, (error, results) => {
     if (error) {
