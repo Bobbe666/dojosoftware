@@ -1211,12 +1211,12 @@ const RechnungErstellen = () => {
 
             {/* Rabattfähigkeit */}
             <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={neuePosition.ist_rabattfaehig}
                   onChange={(e) => setNeuePosition({...neuePosition, ist_rabattfaehig: e.target.checked, rabatt_prozent: e.target.checked ? neuePosition.rabatt_prozent : 0})}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', width: '14px', height: '14px', flexShrink: 0 }}
                 />
                 <span className="checkbox-label" style={{ fontSize: '0.85rem' }}>Rabattfähig</span>
               </label>
