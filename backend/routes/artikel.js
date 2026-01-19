@@ -298,6 +298,16 @@ router.get('/kasse', (req, res) => {
       a.lager_tracking,
       a.bild_url,
       a.bild_base64,
+      a.hat_varianten,
+      a.varianten_groessen,
+      a.varianten_farben,
+      a.varianten_material,
+      a.varianten_bestand,
+      a.preis_kids_cent,
+      a.preis_erwachsene_cent,
+      a.hat_preiskategorien,
+      a.groessen_kids,
+      a.groessen_erwachsene,
       ak.name as kategorie_name,
       ak.farbe_hex as kategorie_farbe,
       ak.icon as kategorie_icon,
@@ -343,6 +353,13 @@ router.get('/kasse', (req, res) => {
         };
       }
       
+      // Parse JSON variant fields
+      const parseJson = (val) => {
+        if (!val) return null;
+        try { return typeof val === 'string' ? JSON.parse(val) : val; }
+        catch { return null; }
+      };
+
       kategorien[katId].artikel.push({
         artikel_id: artikel.artikel_id,
         name: artikel.name,
@@ -353,7 +370,20 @@ router.get('/kasse', (req, res) => {
         lager_tracking: artikel.lager_tracking,
         bild_url: artikel.bild_url,
         bild_base64: artikel.bild_base64,
-        verfuegbar: artikel.lager_tracking ? artikel.lagerbestand > 0 : true
+        verfuegbar: artikel.lager_tracking ? artikel.lagerbestand > 0 : true,
+        // Varianten-Daten
+        hat_varianten: artikel.hat_varianten === 1,
+        varianten_groessen: parseJson(artikel.varianten_groessen) || [],
+        varianten_farben: parseJson(artikel.varianten_farben) || [],
+        varianten_material: parseJson(artikel.varianten_material) || [],
+        varianten_bestand: parseJson(artikel.varianten_bestand) || {},
+        hat_preiskategorien: artikel.hat_preiskategorien === 1,
+        preis_kids_cent: artikel.preis_kids_cent,
+        preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
+        preis_erwachsene_cent: artikel.preis_erwachsene_cent,
+        preis_erwachsene_euro: artikel.preis_erwachsene_cent ? artikel.preis_erwachsene_cent / 100 : null,
+        groessen_kids: parseJson(artikel.groessen_kids) || [],
+        groessen_erwachsene: parseJson(artikel.groessen_erwachsene) || []
       });
     });
     

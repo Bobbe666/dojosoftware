@@ -62,6 +62,11 @@ const RechnungErstellen = () => {
   });
   const [showRabattHinweis, setShowRabattHinweis] = useState(false);
 
+  // Varianten-Modal State
+  const [showVariantenModal, setShowVariantenModal] = useState(false);
+  const [selectedArtikelForVariant, setSelectedArtikelForVariant] = useState(null);
+  const [selectedVariante, setSelectedVariante] = useState({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -358,15 +363,69 @@ const RechnungErstellen = () => {
   const handleArtikelChange = (artikel_id) => {
     const art = artikel.find(a => a.artikel_id === parseInt(artikel_id));
     if (art) {
-      setNeuePosition({
-        ...neuePosition,
-        artikel_id: art.artikel_id,
-        bezeichnung: art.name,
-        artikelnummer: art.artikel_nummer || '',
-        einzelpreis: Number(art.verkaufspreis_cent) / 100,
-        ust_prozent: Number(art.mwst_prozent) || 19
-      });
+      // Prüfe ob Artikel Varianten hat
+      const hatVarianten = art.hat_varianten && (
+        (art.varianten_groessen && art.varianten_groessen.length > 0) ||
+        (art.varianten_farben && art.varianten_farben.length > 0) ||
+        (art.varianten_material && art.varianten_material.length > 0) ||
+        art.hat_preiskategorien
+      );
+
+      if (hatVarianten) {
+        setSelectedArtikelForVariant(art);
+        setSelectedVariante({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+        setShowVariantenModal(true);
+      } else {
+        setNeuePosition({
+          ...neuePosition,
+          artikel_id: art.artikel_id,
+          bezeichnung: art.name,
+          artikelnummer: art.artikel_nummer || '',
+          einzelpreis: Number(art.verkaufspreis_cent) / 100,
+          ust_prozent: Number(art.mwst_prozent) || 19
+        });
+      }
     }
+  };
+
+  // Variante auswählen und Position setzen
+  const selectVariantAndSetPosition = () => {
+    if (!selectedArtikelForVariant) return;
+
+    const art = selectedArtikelForVariant;
+
+    // Bestimme den Preis basierend auf Preiskategorie
+    let preisCent = art.verkaufspreis_cent;
+    if (art.hat_preiskategorien && selectedVariante.preiskategorie) {
+      if (selectedVariante.preiskategorie === 'kids' && art.preis_kids_cent) {
+        preisCent = art.preis_kids_cent;
+      } else if (selectedVariante.preiskategorie === 'erwachsene' && art.preis_erwachsene_cent) {
+        preisCent = art.preis_erwachsene_cent;
+      }
+    }
+
+    // Erstelle Varianten-String für Bezeichnung
+    const variantenText = [
+      selectedVariante.groesse && `Gr. ${selectedVariante.groesse}`,
+      selectedVariante.farbe,
+      selectedVariante.material,
+      selectedVariante.preiskategorie && (selectedVariante.preiskategorie === 'kids' ? 'Kids' : 'Erwachsene')
+    ].filter(Boolean).join(', ');
+
+    const bezeichnung = variantenText ? `${art.name} (${variantenText})` : art.name;
+
+    setNeuePosition({
+      ...neuePosition,
+      artikel_id: art.artikel_id,
+      bezeichnung: bezeichnung,
+      artikelnummer: art.artikel_nummer || '',
+      einzelpreis: Number(preisCent) / 100,
+      ust_prozent: Number(art.mwst_prozent) || 19,
+      variante: { ...selectedVariante }
+    });
+
+    setShowVariantenModal(false);
+    setSelectedArtikelForVariant(null);
   };
 
   const addPosition = () => {
@@ -885,6 +944,166 @@ const RechnungErstellen = () => {
       </div>
     );
   }
+
+  // Varianten-Modal Render Funktion
+  const renderVariantenModal = () => {
+    if (!showVariantenModal || !selectedArtikelForVariant) return null;
+
+    const art = selectedArtikelForVariant;
+    const hasGroessen = art.varianten_groessen && art.varianten_groessen.length > 0;
+    const hasFarben = art.varianten_farben && art.varianten_farben.length > 0;
+    const hasMaterial = art.varianten_material && art.varianten_material.length > 0;
+    const hasPreiskategorien = art.hat_preiskategorien;
+
+    // Bestimme verfügbare Größen basierend auf Preiskategorie
+    let verfuegbareGroessen = art.varianten_groessen || [];
+    if (hasPreiskategorien && selectedVariante.preiskategorie) {
+      if (selectedVariante.preiskategorie === 'kids' && art.groessen_kids?.length > 0) {
+        verfuegbareGroessen = art.groessen_kids;
+      } else if (selectedVariante.preiskategorie === 'erwachsene' && art.groessen_erwachsene?.length > 0) {
+        verfuegbareGroessen = art.groessen_erwachsene;
+      }
+    }
+
+    // Prüfe ob alle erforderlichen Varianten ausgewählt sind
+    const isComplete = (
+      (!hasGroessen || selectedVariante.groesse) &&
+      (!hasFarben || selectedVariante.farbe) &&
+      (!hasMaterial || selectedVariante.material) &&
+      (!hasPreiskategorien || selectedVariante.preiskategorie)
+    );
+
+    // Berechne aktuellen Preis
+    let aktuellerPreis = art.verkaufspreis_cent / 100;
+    if (hasPreiskategorien && selectedVariante.preiskategorie === 'kids' && art.preis_kids_cent) {
+      aktuellerPreis = art.preis_kids_cent / 100;
+    } else if (hasPreiskategorien && selectedVariante.preiskategorie === 'erwachsene' && art.preis_erwachsene_cent) {
+      aktuellerPreis = art.preis_erwachsene_cent / 100;
+    }
+
+    return (
+      <div className="varianten-modal-overlay" onClick={() => setShowVariantenModal(false)}>
+        <div className="varianten-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="varianten-modal-header">
+            <h3>{art.name}</h3>
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowVariantenModal(false)}
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="varianten-modal-content">
+            {/* Preiskategorie (Kids/Erwachsene) */}
+            {hasPreiskategorien && (
+              <div className="varianten-section">
+                <label>Preiskategorie:</label>
+                <div className="varianten-options">
+                  {art.preis_kids_cent && (
+                    <button
+                      type="button"
+                      className={`variante-btn ${selectedVariante.preiskategorie === 'kids' ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, preiskategorie: 'kids', groesse: '' }))}
+                    >
+                      Kids - {(art.preis_kids_cent / 100).toFixed(2)}€
+                    </button>
+                  )}
+                  {art.preis_erwachsene_cent && (
+                    <button
+                      type="button"
+                      className={`variante-btn ${selectedVariante.preiskategorie === 'erwachsene' ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, preiskategorie: 'erwachsene', groesse: '' }))}
+                    >
+                      Erwachsene - {(art.preis_erwachsene_cent / 100).toFixed(2)}€
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Größen */}
+            {hasGroessen && verfuegbareGroessen.length > 0 && (
+              <div className="varianten-section">
+                <label>Größe:</label>
+                <div className="varianten-options groessen-grid">
+                  {verfuegbareGroessen.map(groesse => (
+                    <button
+                      key={groesse}
+                      type="button"
+                      className={`variante-btn ${selectedVariante.groesse === groesse ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, groesse }))}
+                    >
+                      {groesse}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Farben */}
+            {hasFarben && (
+              <div className="varianten-section">
+                <label>Farbe:</label>
+                <div className="varianten-options">
+                  {art.varianten_farben.map(farbe => (
+                    <button
+                      key={farbe}
+                      type="button"
+                      className={`variante-btn ${selectedVariante.farbe === farbe ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, farbe }))}
+                    >
+                      {farbe}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Material */}
+            {hasMaterial && (
+              <div className="varianten-section">
+                <label>Material:</label>
+                <div className="varianten-options">
+                  {art.varianten_material.map(material => (
+                    <button
+                      key={material}
+                      type="button"
+                      className={`variante-btn ${selectedVariante.material === material ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, material }))}
+                    >
+                      {material}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="varianten-preis">
+              <span>Preis:</span>
+              <span className="preis-wert">{aktuellerPreis.toFixed(2)}€</span>
+            </div>
+          </div>
+
+          <div className="varianten-modal-actions">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowVariantenModal(false)}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={selectVariantAndSetPosition}
+              disabled={!isComplete}
+            >
+              Auswählen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="rechnung-erstellen-container">
@@ -1551,6 +1770,9 @@ const RechnungErstellen = () => {
           </div>
         </div>
       </div>
+
+      {/* Varianten-Modal */}
+      {renderVariantenModal()}
 
       {/* Dojo-Auswahl Modal */}
       {showDojoSelection && (

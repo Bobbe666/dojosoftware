@@ -87,6 +87,11 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   const [checkinsHeute, setCheckinsHeute] = useState([]);
   const [selectedMitglied, setSelectedMitglied] = useState(null);
 
+  // Varianten-Modal State
+  const [showVariantenModal, setShowVariantenModal] = useState(false);
+  const [selectedArtikelForVariant, setSelectedArtikelForVariant] = useState(null);
+  const [selectedVariante, setSelectedVariante] = useState({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+
   const aggregierteCheckins = useMemo(
     () => aggregateCheckinsByMember(checkinsHeute),
     [checkinsHeute]
@@ -254,18 +259,111 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   // WARENKORB FUNCTIONS
   // =====================================================================================
   
+  // Prüft ob Artikel Varianten hat und öffnet ggf. Modal
+  const handleArtikelClick = (artikelItem) => {
+    if (!artikelItem.verfuegbar) {
+      setError('Artikel nicht verfügbar');
+      return;
+    }
+
+    // Prüfe ob Artikel Varianten hat
+    const hatVarianten = artikelItem.hat_varianten && (
+      (artikelItem.varianten_groessen && artikelItem.varianten_groessen.length > 0) ||
+      (artikelItem.varianten_farben && artikelItem.varianten_farben.length > 0) ||
+      (artikelItem.varianten_material && artikelItem.varianten_material.length > 0) ||
+      artikelItem.hat_preiskategorien
+    );
+
+    if (hatVarianten) {
+      setSelectedArtikelForVariant(artikelItem);
+      setSelectedVariante({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+      setShowVariantenModal(true);
+    } else {
+      addToWarenkorb(artikelItem);
+    }
+  };
+
+  // Fügt Artikel mit ausgewählter Variante zum Warenkorb hinzu
+  const addVariantToWarenkorb = () => {
+    if (!selectedArtikelForVariant) return;
+
+    const artikel = selectedArtikelForVariant;
+
+    // Erstelle eindeutige ID für Variante
+    const variantenKey = [
+      selectedVariante.groesse,
+      selectedVariante.farbe,
+      selectedVariante.material,
+      selectedVariante.preiskategorie
+    ].filter(Boolean).join('-');
+
+    const uniqueId = `${artikel.artikel_id}-${variantenKey || 'default'}`;
+
+    // Bestimme den Preis basierend auf Preiskategorie
+    let preisCent = artikel.verkaufspreis_cent;
+    let preisEuro = artikel.verkaufspreis_euro;
+
+    if (artikel.hat_preiskategorien && selectedVariante.preiskategorie) {
+      if (selectedVariante.preiskategorie === 'kids' && artikel.preis_kids_cent) {
+        preisCent = artikel.preis_kids_cent;
+        preisEuro = artikel.preis_kids_euro;
+      } else if (selectedVariante.preiskategorie === 'erwachsene' && artikel.preis_erwachsene_cent) {
+        preisCent = artikel.preis_erwachsene_cent;
+        preisEuro = artikel.preis_erwachsene_euro;
+      }
+    }
+
+    // Erstelle Varianten-String für Anzeige
+    const variantenText = [
+      selectedVariante.groesse && `Gr. ${selectedVariante.groesse}`,
+      selectedVariante.farbe,
+      selectedVariante.material,
+      selectedVariante.preiskategorie && (selectedVariante.preiskategorie === 'kids' ? 'Kids' : 'Erwachsene')
+    ].filter(Boolean).join(', ');
+
+    const artikelMitVariante = {
+      ...artikel,
+      unique_id: uniqueId,
+      verkaufspreis_cent: preisCent,
+      verkaufspreis_euro: preisEuro,
+      name: variantenText ? `${artikel.name} (${variantenText})` : artikel.name,
+      original_name: artikel.name,
+      variante: { ...selectedVariante }
+    };
+
+    setWarenkorb(prev => {
+      const existingItem = prev.find(item => item.unique_id === uniqueId);
+
+      if (existingItem) {
+        return prev.map(item =>
+          item.unique_id === uniqueId
+            ? { ...item, menge: item.menge + 1 }
+            : item
+        );
+      } else {
+        return [...prev, {
+          ...artikelMitVariante,
+          menge: 1
+        }];
+      }
+    });
+
+    setShowVariantenModal(false);
+    setSelectedArtikelForVariant(null);
+  };
+
   const addToWarenkorb = (artikelItem) => {
     if (!artikelItem.verfuegbar) {
       setError('Artikel nicht verfügbar');
       return;
     }
-    
+
     setWarenkorb(prev => {
-      const existingItem = prev.find(item => item.artikel_id === artikelItem.artikel_id);
-      
+      const existingItem = prev.find(item => item.artikel_id === artikelItem.artikel_id && !item.unique_id);
+
       if (existingItem) {
         return prev.map(item =>
-          item.artikel_id === artikelItem.artikel_id
+          item.artikel_id === artikelItem.artikel_id && !item.unique_id
             ? { ...item, menge: item.menge + 1 }
             : item
         );
@@ -278,22 +376,30 @@ const VerkaufKasse = ({ kunde, onClose }) => {
     });
   };
   
-  const removeFromWarenkorb = (artikelId) => {
-    setWarenkorb(prev => prev.filter(item => item.artikel_id !== artikelId));
+  const removeFromWarenkorb = (artikelId, uniqueId = null) => {
+    setWarenkorb(prev => prev.filter(item => {
+      if (uniqueId) {
+        return item.unique_id !== uniqueId;
+      }
+      return item.artikel_id !== artikelId || item.unique_id;
+    }));
   };
-  
-  const updateMenge = (artikelId, neueMenge) => {
+
+  const updateMenge = (artikelId, neueMenge, uniqueId = null) => {
     if (neueMenge <= 0) {
-      removeFromWarenkorb(artikelId);
+      removeFromWarenkorb(artikelId, uniqueId);
       return;
     }
-    
+
     setWarenkorb(prev =>
-      prev.map(item =>
-        item.artikel_id === artikelId
+      prev.map(item => {
+        if (uniqueId) {
+          return item.unique_id === uniqueId ? { ...item, menge: neueMenge } : item;
+        }
+        return (item.artikel_id === artikelId && !item.unique_id)
           ? { ...item, menge: neueMenge }
-          : item
-      )
+          : item;
+      })
     );
   };
   
@@ -347,42 +453,55 @@ const VerkaufKasse = ({ kunde, onClose }) => {
   // =====================================================================================
   
   const renderArtikelGrid = () => {
-    const kategorie = selectedKategorie 
+    const kategorie = selectedKategorie
       ? kategorien.find(kat => kat.kategorie_id === selectedKategorie)
       : null;
-    
-    const artikelList = kategorie ? kategorie.artikel : 
+
+    const artikelList = kategorie ? kategorie.artikel :
       kategorien.flatMap(kat => kat.artikel);
-    
+
     return (
       <div className="artikel-grid">
-        {artikelList.map(artikel => (
-          <button
-            key={artikel.artikel_id}
-            className={`artikel-button ${!artikel.verfuegbar ? 'disabled' : ''}`}
-            onClick={() => addToWarenkorb(artikel)}
-            disabled={!artikel.verfuegbar}
-          >
-            <div className="artikel-bild">
-              {artikel.bild_url ? (
-                <img src={artikel.bild_url} alt={artikel.name} />
-              ) : (
-                <div className="artikel-placeholder">📦</div>
-              )}
-            </div>
-            <div className="artikel-info">
-              <div className="artikel-name">{artikel.name}</div>
-              <div className="artikel-preis">
-                {artikel.verkaufspreis_euro.toFixed(2)}€
+        {artikelList.map(artikel => {
+          const hatVarianten = artikel.hat_varianten && (
+            (artikel.varianten_groessen && artikel.varianten_groessen.length > 0) ||
+            (artikel.varianten_farben && artikel.varianten_farben.length > 0) ||
+            (artikel.varianten_material && artikel.varianten_material.length > 0) ||
+            artikel.hat_preiskategorien
+          );
+
+          return (
+            <button
+              key={artikel.artikel_id}
+              className={`artikel-button ${!artikel.verfuegbar ? 'disabled' : ''} ${hatVarianten ? 'has-variants' : ''}`}
+              onClick={() => handleArtikelClick(artikel)}
+              disabled={!artikel.verfuegbar}
+            >
+              <div className="artikel-bild">
+                {artikel.bild_url ? (
+                  <img src={artikel.bild_url} alt={artikel.name} />
+                ) : (
+                  <div className="artikel-placeholder">📦</div>
+                )}
+                {hatVarianten && <span className="variant-badge">Varianten</span>}
               </div>
-              {artikel.lager_tracking && (
-                <div className="artikel-lager">
-                  Lager: {artikel.lagerbestand}
+              <div className="artikel-info">
+                <div className="artikel-name">{artikel.name}</div>
+                <div className="artikel-preis">
+                  {artikel.verkaufspreis_euro.toFixed(2)}€
+                  {hatVarianten && artikel.hat_preiskategorien && (
+                    <span className="preis-hinweis"> (ab)</span>
+                  )}
                 </div>
-              )}
-            </div>
-          </button>
-        ))}
+                {artikel.lager_tracking && (
+                  <div className="artikel-lager">
+                    Lager: {artikel.lagerbestand}
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -402,7 +521,7 @@ const VerkaufKasse = ({ kunde, onClose }) => {
       
       <div className="warenkorb-items">
         {warenkorb.map(item => (
-          <div key={item.artikel_id} className="warenkorb-item">
+          <div key={item.unique_id || item.artikel_id} className="warenkorb-item">
             <div className="item-info">
               <div className="item-name">{item.name}</div>
               <div className="item-details">
@@ -420,7 +539,7 @@ const VerkaufKasse = ({ kunde, onClose }) => {
 
             <button
               className="item-remove-btn"
-              onClick={() => removeFromWarenkorb(item.artikel_id)}
+              onClick={() => removeFromWarenkorb(item.artikel_id, item.unique_id)}
               title="Entfernen"
             >
               ×
@@ -588,7 +707,7 @@ const VerkaufKasse = ({ kunde, onClose }) => {
         {letzterVerkauf?.rueckgeld_euro > 0 && (
           <p>Rückgeld: <strong>{letzterVerkauf.rueckgeld_euro.toFixed(2)}€</strong></p>
         )}
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => setVerkaufErfolgreich(false)}
         >
@@ -597,7 +716,166 @@ const VerkaufKasse = ({ kunde, onClose }) => {
       </div>
     </div>
   );
-  
+
+  const renderVariantenModal = () => {
+    if (!showVariantenModal || !selectedArtikelForVariant) return null;
+
+    const artikel = selectedArtikelForVariant;
+    const hasGroessen = artikel.varianten_groessen && artikel.varianten_groessen.length > 0;
+    const hasFarben = artikel.varianten_farben && artikel.varianten_farben.length > 0;
+    const hasMaterial = artikel.varianten_material && artikel.varianten_material.length > 0;
+    const hasPreiskategorien = artikel.hat_preiskategorien;
+
+    // Bestimme verfügbare Größen basierend auf Preiskategorie
+    let verfuegbareGroessen = artikel.varianten_groessen || [];
+    if (hasPreiskategorien && selectedVariante.preiskategorie) {
+      if (selectedVariante.preiskategorie === 'kids' && artikel.groessen_kids?.length > 0) {
+        verfuegbareGroessen = artikel.groessen_kids;
+      } else if (selectedVariante.preiskategorie === 'erwachsene' && artikel.groessen_erwachsene?.length > 0) {
+        verfuegbareGroessen = artikel.groessen_erwachsene;
+      }
+    }
+
+    // Prüfe ob alle erforderlichen Varianten ausgewählt sind
+    const isComplete = (
+      (!hasGroessen || selectedVariante.groesse) &&
+      (!hasFarben || selectedVariante.farbe) &&
+      (!hasMaterial || selectedVariante.material) &&
+      (!hasPreiskategorien || selectedVariante.preiskategorie)
+    );
+
+    // Berechne aktuellen Preis
+    let aktuellerPreis = artikel.verkaufspreis_euro;
+    if (hasPreiskategorien && selectedVariante.preiskategorie === 'kids' && artikel.preis_kids_euro) {
+      aktuellerPreis = artikel.preis_kids_euro;
+    } else if (hasPreiskategorien && selectedVariante.preiskategorie === 'erwachsene' && artikel.preis_erwachsene_euro) {
+      aktuellerPreis = artikel.preis_erwachsene_euro;
+    }
+
+    return (
+      <div className="varianten-modal-overlay" onClick={() => setShowVariantenModal(false)}>
+        <div className="varianten-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="varianten-modal-header">
+            <h3>{artikel.name}</h3>
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowVariantenModal(false)}
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="varianten-modal-content">
+            {/* Preiskategorie (Kids/Erwachsene) */}
+            {hasPreiskategorien && (
+              <div className="varianten-section">
+                <label>Preiskategorie:</label>
+                <div className="varianten-options">
+                  {artikel.preis_kids_cent && (
+                    <button
+                      type="button"
+                      className={`variante-btn ${selectedVariante.preiskategorie === 'kids' ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, preiskategorie: 'kids', groesse: '' }))}
+                    >
+                      Kids - {artikel.preis_kids_euro?.toFixed(2)}€
+                    </button>
+                  )}
+                  {artikel.preis_erwachsene_cent && (
+                    <button
+                      type="button"
+                      className={`variante-btn ${selectedVariante.preiskategorie === 'erwachsene' ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, preiskategorie: 'erwachsene', groesse: '' }))}
+                    >
+                      Erwachsene - {artikel.preis_erwachsene_euro?.toFixed(2)}€
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Größen */}
+            {hasGroessen && verfuegbareGroessen.length > 0 && (
+              <div className="varianten-section">
+                <label>Größe:</label>
+                <div className="varianten-options groessen-grid">
+                  {verfuegbareGroessen.map(groesse => (
+                    <button
+                      key={groesse}
+                      type="button"
+                      className={`variante-btn ${selectedVariante.groesse === groesse ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, groesse }))}
+                    >
+                      {groesse}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Farben */}
+            {hasFarben && (
+              <div className="varianten-section">
+                <label>Farbe:</label>
+                <div className="varianten-options">
+                  {artikel.varianten_farben.map(farbe => (
+                    <button
+                      key={farbe}
+                      type="button"
+                      className={`variante-btn ${selectedVariante.farbe === farbe ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, farbe }))}
+                    >
+                      {farbe}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Material */}
+            {hasMaterial && (
+              <div className="varianten-section">
+                <label>Material:</label>
+                <div className="varianten-options">
+                  {artikel.varianten_material.map(material => (
+                    <button
+                      key={material}
+                      type="button"
+                      className={`variante-btn ${selectedVariante.material === material ? 'selected' : ''}`}
+                      onClick={() => setSelectedVariante(prev => ({ ...prev, material }))}
+                    >
+                      {material}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="varianten-preis">
+              <span>Preis:</span>
+              <span className="preis-wert">{aktuellerPreis?.toFixed(2)}€</span>
+            </div>
+          </div>
+
+          <div className="varianten-modal-actions">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowVariantenModal(false)}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={addVariantToWarenkorb}
+              disabled={!isComplete}
+            >
+              In den Warenkorb
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // =====================================================================================
   // MAIN RENDER
   // =====================================================================================
@@ -754,6 +1032,9 @@ const VerkaufKasse = ({ kunde, onClose }) => {
         
         {/* Zahlungsmodal */}
         {showZahlung && renderZahlung()}
+
+        {/* Varianten-Modal */}
+        {renderVariantenModal()}
       </div>
     </div>
   );
