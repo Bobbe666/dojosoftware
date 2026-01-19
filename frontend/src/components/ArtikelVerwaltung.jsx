@@ -1119,7 +1119,14 @@ const ArtikelVerwaltung = () => {
                 </td>
 
                 <td className="preis-cell">
-                  {artikel.einkaufspreis_euro > 0 ? `${artikel.einkaufspreis_euro.toFixed(2)}€` : '-'}
+                  {artikel.hat_preiskategorien ? (
+                    <div className="preis-kategorien">
+                      <div className="preis-kids">Kids: {artikel.listeneinkaufspreis_kids_euro?.toFixed(2) || '-'}€</div>
+                      <div className="preis-erw">Erw: {artikel.listeneinkaufspreis_erwachsene_euro?.toFixed(2) || '-'}€</div>
+                    </div>
+                  ) : (
+                    artikel.einkaufspreis_euro > 0 ? `${artikel.einkaufspreis_euro.toFixed(2)}€` : '-'
+                  )}
                 </td>
 
                 <td className="preis-cell">
