@@ -487,6 +487,10 @@ router.post('/', (req, res) => {
 
   // Validierung
   if (!kategorie_id || !name || !verkaufspreis_euro) {
+    console.log('❌ POST /artikel - Validierung fehlgeschlagen:', {
+      kategorie_id, name, verkaufspreis_euro,
+      hat_preiskategorien, preis_kids_euro, preis_erwachsene_euro
+    });
     return res.status(400).json({
       error: 'Kategorie, Name und Verkaufspreis sind erforderlich'
     });
@@ -781,6 +785,7 @@ router.put('/:id', (req, res) => {
     }
     
     if (updateFields.length === 0) {
+      console.log('❌ PUT /artikel - Keine Änderungen erkannt:', { artikel_id, body: req.body });
       return res.status(400).json({ error: 'Keine Änderungen erkannt' });
     }
     
