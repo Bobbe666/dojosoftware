@@ -204,11 +204,15 @@ const ArtikelFormular = ({ mode }) => {
         // Prüfe ob artikelgruppe_id direkt eine Hauptkategorie ist
         if (hauptkat.id == formData.artikelgruppe_id) {
           setSelectedHauptkategorieId(hauptkat.id.toString());
+          // Setze auch kategorie_id für Backend
+          setFormData(prev => ({ ...prev, kategorie_id: hauptkat.id.toString() }));
           return;
         }
         // Prüfe ob artikelgruppe_id eine Unterkategorie dieser Hauptkategorie ist
         if (hauptkat.unterkategorien?.some(u => u.id == formData.artikelgruppe_id)) {
           setSelectedHauptkategorieId(hauptkat.id.toString());
+          // Setze auch kategorie_id für Backend
+          setFormData(prev => ({ ...prev, kategorie_id: hauptkat.id.toString() }));
           return;
         }
       }
@@ -459,8 +463,8 @@ const ArtikelFormular = ({ mode }) => {
             value={selectedHauptkategorieId}
             onChange={(e) => {
               setSelectedHauptkategorieId(e.target.value);
-              // Reset artikelgruppe_id wenn Hauptkategorie wechselt
-              setFormData(prev => ({ ...prev, artikelgruppe_id: '' }));
+              // Reset artikelgruppe_id und setze kategorie_id wenn Hauptkategorie wechselt
+              setFormData(prev => ({ ...prev, artikelgruppe_id: '', kategorie_id: e.target.value }));
             }}
             required
             style={{ ...basisInputStyle, cursor: 'pointer' }}
