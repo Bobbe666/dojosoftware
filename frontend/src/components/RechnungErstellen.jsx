@@ -1650,7 +1650,7 @@ const RechnungErstellen = () => {
               }
               return hasBankData;
             })() ? (
-              <div className="qr-codes-section" style={{ flex: '0 1 auto', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'flex-start', marginRight: '8rem' }}>
+              <div className="qr-codes-section" style={{ flex: '0 0 auto', display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', width: '200px' }}>
                 {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
                   <>
                     {/* QR-Code mit Skonto */}
@@ -1663,7 +1663,7 @@ const RechnungErstellen = () => {
                       }
                       const skontoDatum = formatDateDDMMYYYY(rechnungsDaten.belegdatum, Number(rechnungsDaten.skonto_tage));
                       return (
-                        <div style={{ textAlign: 'center', flex: '0 0 auto', minWidth: '120px' }}>
+                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
                           <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
                           <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
                             <QRCodeSVG 
@@ -1691,7 +1691,7 @@ const RechnungErstellen = () => {
                       }
                       const zahlungsfristDatum = formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist);
                       return (
-                        <div style={{ textAlign: 'center', flex: '0 0 auto', minWidth: '120px' }}>
+                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
                           <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
                           <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
                             <QRCodeSVG 
@@ -1721,7 +1721,7 @@ const RechnungErstellen = () => {
                     }
                     const zahlungsfristDatum = formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist);
                     return (
-                      <div style={{ textAlign: 'center', flex: '0 0 auto', minWidth: '120px' }}>
+                      <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
                         <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
                         <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
                           <QRCodeSVG 
