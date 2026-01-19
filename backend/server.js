@@ -204,14 +204,14 @@ try {
     });
 }
 
-// 1.2 MARKETING-AKTIONEN (TODO: Route noch nicht implementiert)
-// try {
-//   const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
-//   app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db; next(); }, marketingAktionenRoutes);
-//   logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
-// } catch (error) {
-//   logger.error('Fehler beim Laden der Route', { route: 'marketing-aktionen', error: error.message });
-// }
+// 1.2 MARKETING-AKTIONEN (Social Media Integration)
+try {
+  const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
+  app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db; next(); }, marketingAktionenRoutes);
+  logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'marketing-aktionen', error: error.message, stack: error.stack });
+}
 
 // 1.3 REFERRAL-CODES (TODO: Route noch nicht implementiert)
 // try {
