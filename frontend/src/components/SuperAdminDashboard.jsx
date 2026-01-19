@@ -319,13 +319,6 @@ const SuperAdminDashboard = () => {
             <span>{tab.label}</span>
           </button>
         ))}
-        <button
-          className="tab-button theme-toggle"
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Zu hellem Design wechseln' : 'Zu dunklem Design wechseln'}
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
       </div>
 
       {/* Tab Content */}

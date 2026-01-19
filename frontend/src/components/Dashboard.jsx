@@ -646,6 +646,29 @@ function Dashboard() {
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
+            {/* 🎨 Theme Toggle */}
+            <button
+              className="theme-toggle-button"
+              onClick={toggleDarkMode}
+              title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
+                borderRadius: '8px',
+                color: isDarkMode ? '#ffd700' : '#333',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}
+            >
+              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+              <span>{isDarkMode ? 'Hell' : 'Dunkel'}</span>
+            </button>
             {userDisplayName && (
               <div className="user-display">
                 <span className="user-greeting">Willkommen</span>
