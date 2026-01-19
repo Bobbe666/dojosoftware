@@ -414,9 +414,19 @@ const RechnungErstellen = () => {
 
     const bezeichnung = variantenText ? `${art.name} (${variantenText})` : art.name;
 
+    // Erstelle eindeutige Varianten-ID
+    const variantenKey = [
+      selectedVariante.groesse,
+      selectedVariante.farbe,
+      selectedVariante.material,
+      selectedVariante.preiskategorie
+    ].filter(Boolean).join('-');
+    const uniqueVariantId = `${art.artikel_id}-${variantenKey || 'default'}`;
+
     setNeuePosition({
       ...neuePosition,
       artikel_id: art.artikel_id,
+      unique_variant_id: uniqueVariantId,
       bezeichnung: bezeichnung,
       artikelnummer: art.artikel_nummer || '',
       einzelpreis: Number(preisCent) / 100,
@@ -432,20 +442,20 @@ const RechnungErstellen = () => {
     if (!neuePosition.bezeichnung || neuePosition.menge <= 0) return;
 
     // Prüfe, ob der Artikel bereits in der Liste ist
-    // Vergleich nach artikel_id, Bezeichnung UND Preis (wegen unterschiedlicher Varianten/Preiskategorien)
     const existingIndex = positionen.findIndex(pos => {
+      // Wenn unique_variant_id vorhanden ist, vergleiche danach (für Artikel mit Varianten)
+      if (neuePosition.unique_variant_id && pos.unique_variant_id) {
+        return pos.unique_variant_id === neuePosition.unique_variant_id;
+      }
+      // Wenn artikel_id vorhanden aber keine Varianten-ID, vergleiche nach ID + Bezeichnung + Preis
       if (neuePosition.artikel_id && pos.artikel_id) {
-        // Beide haben artikel_id - vergleiche nach ID, Bezeichnung UND Preis
-        // Bei unterschiedlichen Preiskategorien (Kids/Erwachsene) oder Varianten
-        // ist die Bezeichnung anders und/oder der Preis unterschiedlich
         return pos.artikel_id === neuePosition.artikel_id &&
                pos.bezeichnung === neuePosition.bezeichnung &&
-               pos.einzelpreis === neuePosition.einzelpreis;
-      } else {
-        // Fallback: vergleiche nach Bezeichnung und Einzelpreis
-        return pos.bezeichnung === neuePosition.bezeichnung &&
-               pos.einzelpreis === neuePosition.einzelpreis;
+               Number(pos.einzelpreis) === Number(neuePosition.einzelpreis);
       }
+      // Fallback: vergleiche nach Bezeichnung und Einzelpreis
+      return pos.bezeichnung === neuePosition.bezeichnung &&
+             Number(pos.einzelpreis) === Number(neuePosition.einzelpreis);
     });
 
     if (existingIndex !== -1) {
@@ -1640,7 +1650,7 @@ const RechnungErstellen = () => {
               }
               return hasBankData;
             })() ? (
-              <div className="qr-codes-section" style={{ flex: '0 1 auto', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'flex-start', marginRight: '4rem' }}>
+              <div className="qr-codes-section" style={{ flex: '0 1 auto', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'flex-start', marginRight: '8rem' }}>
                 {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
                   <>
                     {/* QR-Code mit Skonto */}
