@@ -48,6 +48,11 @@ const SuperAdminDashboard = () => {
   // State für Tab-Navigation
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Theme State
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('dojo-theme') || 'light';
+  });
+
   // Prüfe ob Main Super-Admin (nur für den Hauptadministrator)
   useEffect(() => {
     if (token) {
@@ -60,6 +65,16 @@ const SuperAdminDashboard = () => {
       }
     }
   }, [token]);
+
+  // Theme beim Laden anwenden
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dojo-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   // Daten laden beim Mount
   useEffect(() => {
@@ -304,6 +319,13 @@ const SuperAdminDashboard = () => {
             <span>{tab.label}</span>
           </button>
         ))}
+        <button
+          className="tab-button theme-toggle"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Zu hellem Design wechseln' : 'Zu dunklem Design wechseln'}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
 
       {/* Tab Content */}

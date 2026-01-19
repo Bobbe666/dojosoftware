@@ -294,6 +294,21 @@
   color: var(--bg-secondary);
 }
 
+.tab-button.theme-toggle {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem;
+  font-size: 1.2rem;
+  margin-left: auto;
+}
+
+[data-theme="light"] .tab-button.theme-toggle {
+  background: rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="light"] .tab-button.theme-toggle:hover {
+  background: rgba(139, 90, 43, 0.2);
+}
+
 .tab-content {
   animation: fadeIn 0.3s ease-in;
 }
