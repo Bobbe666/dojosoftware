@@ -432,14 +432,18 @@ const RechnungErstellen = () => {
     if (!neuePosition.bezeichnung || neuePosition.menge <= 0) return;
 
     // Prüfe, ob der Artikel bereits in der Liste ist
-    // Vergleich nach artikel_id (wenn vorhanden) oder nach bezeichnung
+    // Vergleich nach artikel_id, Bezeichnung UND Preis (wegen unterschiedlicher Varianten/Preiskategorien)
     const existingIndex = positionen.findIndex(pos => {
       if (neuePosition.artikel_id && pos.artikel_id) {
-        // Beide haben artikel_id - vergleiche nach ID
-        return pos.artikel_id === neuePosition.artikel_id;
+        // Beide haben artikel_id - vergleiche nach ID, Bezeichnung UND Preis
+        // Bei unterschiedlichen Preiskategorien (Kids/Erwachsene) oder Varianten
+        // ist die Bezeichnung anders und/oder der Preis unterschiedlich
+        return pos.artikel_id === neuePosition.artikel_id &&
+               pos.bezeichnung === neuePosition.bezeichnung &&
+               pos.einzelpreis === neuePosition.einzelpreis;
       } else {
         // Fallback: vergleiche nach Bezeichnung und Einzelpreis
-        return pos.bezeichnung === neuePosition.bezeichnung && 
+        return pos.bezeichnung === neuePosition.bezeichnung &&
                pos.einzelpreis === neuePosition.einzelpreis;
       }
     });
