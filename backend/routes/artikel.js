@@ -265,7 +265,7 @@ router.get('/', (req, res) => {
     params.push(sichtbar_kasse === 'true');
   }
 
-  query += ' ORDER BY kat.position ASC, a.name ASC';
+  query += ' ORDER BY kat.sortierung ASC, a.name ASC';
 
   db.query(query, params, (error, results) => {
     if (error) {
@@ -320,7 +320,7 @@ router.get('/kasse', (req, res) => {
     LEFT JOIN artikelgruppen kat ON a.kategorie_id = kat.id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
     WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
-    ORDER BY kat.position ASC, a.name ASC
+    ORDER BY kat.sortierung ASC, a.name ASC
   `;
   params = [];
 
