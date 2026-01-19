@@ -1306,10 +1306,12 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: 5vh;
   z-index: 1000;
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
 }
 
 .varianten-modal {
@@ -1317,12 +1319,13 @@
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
-  max-height: 85vh;
+  max-height: 80vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   animation: fadeInUp 0.3s ease;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  margin-bottom: 5vh;
 }
 
 .varianten-modal-header {
