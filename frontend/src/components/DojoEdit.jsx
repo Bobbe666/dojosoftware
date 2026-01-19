@@ -6,6 +6,7 @@ import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
 import DojoLogos from './DojoLogos';
 import { useDojoContext } from '../context/DojoContext';
+import { useAuth } from '../context/AuthContext';
 import config from '../config/config.js';
 import '../styles/MitgliedDetail.css';
 import '../styles/DojoEdit.css';
@@ -16,6 +17,7 @@ const DojoEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { updateDojo } = useDojoContext();
+  const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('grunddaten');
@@ -27,7 +29,7 @@ const DojoEdit = () => {
   const isNewDojo = id === 'new';
 
   // Tab-Konfiguration mit Icons
-  const tabs = [
+  const allTabs = [
     { key: 'grunddaten', label: 'Grunddaten', icon: '🏯' },
     { key: 'kontakt', label: 'Kontakt', icon: '📍' },
     { key: 'steuer', label: 'Steuern', icon: '⚖️' },
@@ -41,10 +43,13 @@ const DojoEdit = () => {
     { key: 'dokumente', label: 'Dokumente', icon: '📄' },
     { key: 'logos', label: 'Logos', icon: '🖼️' },
     { key: 'admins', label: 'Admin-Accounts', icon: '🔐' },
-    { key: 'api', label: 'API-Zugang', icon: '🔗' },
+    { key: 'api', label: 'API-Zugang', icon: '🔗', adminOnly: true },
     { key: 'system', label: 'System', icon: '⚙️' },
     { key: 'design', label: 'Design', icon: '🎨' }
   ];
+
+  // Filter tabs based on user role - API tab only visible to admins
+  const tabs = allTabs.filter(tab => !tab.adminOnly || isAdmin);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -1560,19 +1565,13 @@ const DojoEdit = () => {
               </div>
 
               {/* Instructions */}
-              <div className="api-instructions" style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '2px solid #3b82f6',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                marginTop: '2rem'
-              }}>
-                <h4 style={{ color: '#3b82f6', marginBottom: '1rem' }}>📝 So verwenden Sie den API-Token:</h4>
-                <ol style={{ marginLeft: '1.5rem', lineHeight: '1.8', color: '#e0e0e0' }}>
+              <div className="api-instructions">
+                <h4>📝 So verwenden Sie den API-Token:</h4>
+                <ol>
                   <li>Generieren Sie einen API-Token (falls noch nicht vorhanden)</li>
                   <li>Öffnen Sie die TDA-Turnierverwaltung Registrierung</li>
                   <li>Geben Sie im <strong>Schritt 2</strong> folgende Daten ein:
-                    <ul style={{ marginTop: '0.5rem', marginLeft: '1rem' }}>
+                    <ul>
                       <li><strong>API-URL:</strong> {window.location.origin}/api</li>
                       <li><strong>API-Token:</strong> Ihr generierter Token (kopieren Sie ihn mit dem Button)</li>
                     </ul>
@@ -1584,15 +1583,9 @@ const DojoEdit = () => {
               </div>
 
               {/* Security Note */}
-              <div className="api-security-note" style={{
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '2px solid #ef4444',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginTop: '1.5rem'
-              }}>
-                <p style={{ margin: 0, lineHeight: '1.6', color: '#e0e0e0' }}>
-                  <strong style={{ color: '#ef4444' }}>🔒 Sicherheitshinweise:</strong><br />
+              <div className="api-security-note">
+                <p>
+                  <strong>🔒 Sicherheitshinweise:</strong><br />
                   • Jedes Dojo hat einen eindeutigen, sicheren Token<br />
                   • Geben Sie Ihren Token niemals an Dritte weiter<br />
                   • Bei Verdacht auf Kompromittierung: Token sofort regenerieren<br />

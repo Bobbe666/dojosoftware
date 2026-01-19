@@ -858,3 +858,85 @@
 [data-theme="tda-vib"] .api-save-hint {
   color: #dc2626 !important;
 }
+
+/* API Instructions Box */
+.api-instructions {
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.api-instructions h4 {
+  color: #3b82f6;
+  margin-bottom: 1rem;
+}
+
+.api-instructions ol {
+  margin-left: 1.5rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.api-instructions ul {
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+}
+
+.api-instructions strong {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* API Security Note */
+.api-security-note {
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+}
+
+.api-security-note p {
+  margin: 0;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.api-security-note strong {
+  color: #ef4444;
+}
+
+/* Light Mode - API Instructions */
+[data-theme="tda-vib"] .api-instructions {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: #3b82f6 !important;
+}
+
+[data-theme="tda-vib"] .api-instructions h4 {
+  color: #2563eb !important;
+}
+
+[data-theme="tda-vib"] .api-instructions ol,
+[data-theme="tda-vib"] .api-instructions ul,
+[data-theme="tda-vib"] .api-instructions li {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-instructions strong {
+  color: #1a1a1a !important;
+}
+
+/* Light Mode - API Security Note */
+[data-theme="tda-vib"] .api-security-note {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: #ef4444 !important;
+}
+
+[data-theme="tda-vib"] .api-security-note p {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-security-note strong {
+  color: #dc2626 !important;
+}
