@@ -14,6 +14,240 @@
   z-index: 1;
 }
 
+/* =============================================
+   LIGHT MODE (WASHI THEME)
+   ============================================= */
+
+[data-theme="light"] .super-admin-dashboard {
+  background: linear-gradient(135deg, #F5F5DC 0%, #EDE8D0 50%, #E8E4C9 100%);
+  color: #2c3e50;
+}
+
+[data-theme="light"] .tab-navigation {
+  background: rgba(139, 90, 43, 0.1);
+  border: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="light"] .tab-button {
+  color: #5a4a3a;
+}
+
+[data-theme="light"] .tab-button:hover {
+  background: rgba(139, 90, 43, 0.15);
+  color: #3d2914;
+}
+
+[data-theme="light"] .tab-button.active {
+  background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+  color: white;
+}
+
+[data-theme="light"] .super-admin-dashboard .section-title {
+  color: #8B4513 !important;
+  text-shadow: none;
+}
+
+[data-theme="light"] .stats-section,
+[data-theme="light"] .dojos-section,
+[data-theme="light"] .top-dojos-section {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(139, 90, 43, 0.15);
+}
+
+[data-theme="light"] .super-admin-dashboard .stat-card {
+  background: white;
+  border: 1px solid rgba(139, 90, 43, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .super-admin-dashboard .stat-label {
+  color: #5a4a3a;
+}
+
+[data-theme="light"] .super-admin-dashboard .stat-sublabel {
+  color: #8B7355;
+}
+
+[data-theme="light"] .dojos-table-container {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(139, 90, 43, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .dojos-table thead {
+  background: rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="light"] .dojos-table th {
+  color: #8B4513;
+  border-bottom: 2px solid rgba(139, 90, 43, 0.3);
+  background: rgba(139, 90, 43, 0.08);
+}
+
+[data-theme="light"] .dojos-table td {
+  color: #2c3e50;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="light"] .dojos-table td.font-bold {
+  color: #3d2914;
+}
+
+[data-theme="light"] .dojos-table tbody tr:hover {
+  background: rgba(139, 90, 43, 0.05);
+}
+
+[data-theme="light"] .subdomain {
+  background: rgba(139, 90, 43, 0.1);
+  color: #5a4a3a;
+  border: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="light"] .top-dojo-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(139, 90, 43, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .top-dojo-card:hover {
+  box-shadow: 0 8px 24px rgba(139, 90, 43, 0.15);
+  border-color: rgba(139, 90, 43, 0.4);
+}
+
+[data-theme="light"] .dojo-info h3 {
+  color: #8B4513;
+}
+
+[data-theme="light"] .dojo-stats {
+  color: #5a4a3a;
+}
+
+[data-theme="light"] .tab-placeholder {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px dashed rgba(139, 90, 43, 0.3);
+}
+
+[data-theme="light"] .tab-placeholder h2 {
+  color: #8B4513;
+}
+
+[data-theme="light"] .tab-placeholder p {
+  color: #5a4a3a;
+}
+
+[data-theme="light"] .kpi-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(139, 90, 43, 0.15);
+}
+
+[data-theme="light"] .kpi-label {
+  color: #5a4a3a;
+}
+
+[data-theme="light"] .kpi-sublabel {
+  color: #8B7355;
+}
+
+[data-theme="light"] .chart-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(139, 90, 43, 0.15);
+}
+
+[data-theme="light"] .chart-title {
+  color: #8B4513;
+}
+
+[data-theme="light"] .chart-title svg {
+  color: #8B4513;
+}
+
+[data-theme="light"] .finance-section {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(139, 90, 43, 0.15);
+}
+
+[data-theme="light"] .section-title {
+  color: #8B4513;
+}
+
+[data-theme="light"] .subscription-card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="light"] .sub-plan {
+  color: #8B4513;
+}
+
+[data-theme="light"] .sub-count {
+  color: #5a4a3a;
+}
+
+[data-theme="light"] .finance-table thead {
+  background: rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="light"] .finance-table th {
+  color: #8B4513;
+  border-bottom: 2px solid rgba(139, 90, 43, 0.3);
+}
+
+[data-theme="light"] .finance-table td {
+  color: #2c3e50;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="light"] .finance-table tbody tr:hover {
+  background: rgba(139, 90, 43, 0.05);
+}
+
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-secondary {
+  background: linear-gradient(135deg, rgba(139, 90, 43, 0.2) 0%, rgba(139, 90, 43, 0.1) 100%);
+  color: #5a4a3a;
+  border: 1px solid rgba(139, 90, 43, 0.3);
+}
+
+[data-theme="light"] .btn-primary:hover,
+[data-theme="light"] .btn-secondary:hover {
+  background: linear-gradient(135deg, rgba(139, 90, 43, 0.3) 0%, rgba(139, 90, 43, 0.15) 100%);
+  color: #3d2914;
+  border-color: rgba(139, 90, 43, 0.5);
+}
+
+[data-theme="light"] .expand-toggle {
+  color: rgba(139, 90, 43, 0.6);
+}
+
+[data-theme="light"] .expand-toggle:hover {
+  color: #8B4513;
+}
+
+[data-theme="light"] .expandable-cell {
+  background: rgba(139, 90, 43, 0.05);
+  border-top: 1px solid rgba(139, 90, 43, 0.2) !important;
+}
+
+[data-theme="light"] .expandable-section {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="light"] .expandable-section h4 {
+  color: #8B4513;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="light"] .info-item {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .info-item strong {
+  color: #8B4513;
+}
+
 /* Tab Navigation */
 .tab-navigation {
   display: flex;
