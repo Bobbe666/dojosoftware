@@ -817,16 +817,21 @@ const VerkaufKasse = ({ kunde, onClose }) => {
               <div className="varianten-section">
                 <label>Farbe:</label>
                 <div className="varianten-options">
-                  {artikel.varianten_farben.map(farbe => (
-                    <button
-                      key={farbe}
-                      type="button"
-                      className={`variante-btn ${selectedVariante.farbe === farbe ? 'selected' : ''}`}
-                      onClick={() => setSelectedVariante(prev => ({ ...prev, farbe }))}
-                    >
-                      {farbe}
-                    </button>
-                  ))}
+                  {artikel.varianten_farben.map((farbe, idx) => {
+                    const farbeName = typeof farbe === 'object' ? farbe.name : farbe;
+                    const farbeHex = typeof farbe === 'object' ? farbe.hex : null;
+                    return (
+                      <button
+                        key={farbeName || idx}
+                        type="button"
+                        className={`variante-btn ${selectedVariante.farbe === farbeName ? 'selected' : ''}`}
+                        onClick={() => setSelectedVariante(prev => ({ ...prev, farbe: farbeName }))}
+                        style={farbeHex ? { borderLeftColor: farbeHex, borderLeftWidth: '4px' } : {}}
+                      >
+                        {farbeName}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -836,16 +841,19 @@ const VerkaufKasse = ({ kunde, onClose }) => {
               <div className="varianten-section">
                 <label>Material:</label>
                 <div className="varianten-options">
-                  {artikel.varianten_material.map(material => (
-                    <button
-                      key={material}
-                      type="button"
-                      className={`variante-btn ${selectedVariante.material === material ? 'selected' : ''}`}
-                      onClick={() => setSelectedVariante(prev => ({ ...prev, material }))}
-                    >
-                      {material}
-                    </button>
-                  ))}
+                  {artikel.varianten_material.map((material, idx) => {
+                    const materialName = typeof material === 'object' ? material.name : material;
+                    return (
+                      <button
+                        key={materialName || idx}
+                        type="button"
+                        className={`variante-btn ${selectedVariante.material === materialName ? 'selected' : ''}`}
+                        onClick={() => setSelectedVariante(prev => ({ ...prev, material: materialName }))}
+                      >
+                        {materialName}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
