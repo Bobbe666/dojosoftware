@@ -1443,15 +1443,9 @@ const DojoEdit = () => {
             <div className="form-section">
               <h3>🔗 API-Token für TDA-Turnierverwaltung</h3>
 
-              <div className="api-info-box" style={{
-                background: 'rgba(255, 215, 0, 0.1)',
-                border: '2px solid #ffd700',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                marginBottom: '2rem'
-              }}>
-                <p style={{ margin: 0, lineHeight: '1.6', color: '#e0e0e0' }}>
-                  <strong style={{ color: '#ffd700' }}>ℹ️ Sicherer API-Zugang</strong><br />
+              <div className="api-info-box">
+                <p>
+                  <strong>ℹ️ Sicherer API-Zugang</strong><br />
                   Jedes Dojo hat einen eindeutigen API-Token für die sichere Verbindung zur TDA-Turnierverwaltung.
                   Dieser Token ermöglicht den automatischen Import Ihrer Mitglieder.
                 </p>
@@ -1462,34 +1456,22 @@ const DojoEdit = () => {
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span>🌐 API Base URL</span>
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="api-input-group">
                   <input
                     type="text"
                     value={window.location.origin + '/api'}
                     readOnly
-                    style={{
-                      flex: 1,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      cursor: 'text'
-                    }}
+                    className="api-input-readonly"
                   />
                   <button
                     type="button"
                     onClick={() => copyToClipboard(window.location.origin + '/api', 'API URL')}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: '#ffd700',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
+                    className="api-copy-btn"
                   >
                     📋 Kopieren
                   </button>
                 </div>
-                <small style={{ color: '#999', display: 'block', marginTop: '0.5rem' }}>
+                <small className="api-hint">
                   Diese URL verwenden Sie im Schritt 2 der TDA-Registrierung
                 </small>
               </div>
@@ -1499,69 +1481,40 @@ const DojoEdit = () => {
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                   <span>🔑 API-Token</span>
                   {apiToken && (
-                    <span style={{
-                      background: '#2ed573',
-                      color: '#fff',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold'
-                    }}>
-                      ✓ Aktiv
-                    </span>
+                    <span className="api-status-badge">✓ Aktiv</span>
                   )}
                 </label>
 
                 {apiToken ? (
                   <>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <div className="api-input-group" style={{ marginBottom: '1rem' }}>
                       <input
                         type="text"
                         value={apiToken}
                         readOnly
-                        style={{
-                          flex: 1,
-                          background: 'rgba(46, 213, 115, 0.1)',
-                          border: '2px solid #2ed573',
-                          cursor: 'text',
-                          fontFamily: 'monospace',
-                          fontSize: '0.9rem'
-                        }}
+                        className="api-input-token"
                       />
                       <button
                         type="button"
                         onClick={() => copyToClipboard(apiToken, 'API-Token')}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          background: '#2ed573',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontWeight: 'bold'
-                        }}
+                        className="api-copy-btn api-copy-btn-green"
                       >
                         📋 Kopieren
                       </button>
                     </div>
 
                     {/* Token Metadata */}
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      padding: '1rem',
-                      borderRadius: '8px',
-                      marginBottom: '1rem'
-                    }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem' }}>
+                    <div className="api-metadata-box">
+                      <div className="api-metadata-grid">
                         <div>
-                          <strong style={{ color: '#ffd700' }}>Erstellt am:</strong>
-                          <div style={{ color: '#e0e0e0', marginTop: '0.25rem' }}>
+                          <span className="api-metadata-label">Erstellt am:</span>
+                          <div className="api-metadata-value">
                             {apiTokenCreatedAt ? new Date(apiTokenCreatedAt).toLocaleString('de-DE') : 'N/A'}
                           </div>
                         </div>
                         <div>
-                          <strong style={{ color: '#ffd700' }}>Zuletzt verwendet:</strong>
-                          <div style={{ color: '#e0e0e0', marginTop: '0.25rem' }}>
+                          <span className="api-metadata-label">Zuletzt verwendet:</span>
+                          <div className="api-metadata-value">
                             {apiTokenLastUsed ? new Date(apiTokenLastUsed).toLocaleString('de-DE') : 'Noch nie'}
                           </div>
                         </div>
@@ -1573,34 +1526,18 @@ const DojoEdit = () => {
                       type="button"
                       onClick={generateApiToken}
                       disabled={tokenLoading}
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        background: 'rgba(239, 68, 68, 0.8)',
-                        color: '#fff',
-                        border: '2px solid #ef4444',
-                        borderRadius: '8px',
-                        cursor: tokenLoading ? 'not-allowed' : 'pointer',
-                        fontWeight: 'bold',
-                        opacity: tokenLoading ? 0.6 : 1
-                      }}
+                      className="api-regenerate-btn"
                     >
                       {tokenLoading ? '⏳ Generiere...' : '🔄 Token regenerieren'}
                     </button>
-                    <small style={{ color: '#ff6b6b', display: 'block', marginTop: '0.5rem' }}>
+                    <small className="api-warning-text">
                       ⚠️ Warnung: Das Regenerieren macht den alten Token ungültig!
                     </small>
                   </>
                 ) : (
                   <>
-                    <div style={{
-                      background: 'rgba(255, 107, 53, 0.1)',
-                      border: '2px dashed #ff6b35',
-                      borderRadius: '8px',
-                      padding: '2rem',
-                      textAlign: 'center',
-                      marginBottom: '1rem'
-                    }}>
-                      <p style={{ color: '#e0e0e0', marginBottom: '1rem' }}>
+                    <div className="api-empty-state">
+                      <p>
                         <strong>Kein API-Token vorhanden</strong><br />
                         Generieren Sie einen Token, um die TDA-Integration zu nutzen.
                       </p>
@@ -1608,22 +1545,12 @@ const DojoEdit = () => {
                         type="button"
                         onClick={generateApiToken}
                         disabled={tokenLoading || isNewDojo}
-                        style={{
-                          padding: '0.75rem 2rem',
-                          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: (tokenLoading || isNewDojo) ? 'not-allowed' : 'pointer',
-                          fontWeight: 'bold',
-                          fontSize: '1rem',
-                          opacity: (tokenLoading || isNewDojo) ? 0.6 : 1
-                        }}
+                        className="api-generate-btn"
                       >
                         {tokenLoading ? '⏳ Generiere...' : '🔑 API-Token generieren'}
                       </button>
                       {isNewDojo && (
-                        <small style={{ color: '#ff6b35', display: 'block', marginTop: '0.75rem' }}>
+                        <small className="api-save-hint">
                           Bitte speichern Sie das Dojo zuerst
                         </small>
                       )}

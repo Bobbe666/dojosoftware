@@ -610,3 +610,251 @@
 [data-theme="tda-vib"] .dojo-edit-page .sidebar-toggle-btn:hover {
   background: #f5f0e6 !important;
 }
+
+/* ============================================
+   API TOKEN SECTION STYLES
+   ============================================ */
+
+.api-info-box {
+  background: rgba(255, 215, 0, 0.1);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.api-info-box p {
+  margin: 0;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.api-info-box strong {
+  color: #ffd700;
+}
+
+.api-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.api-input-readonly {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: text;
+}
+
+.api-input-token {
+  flex: 1;
+  background: rgba(46, 213, 115, 0.1);
+  border: 2px solid #2ed573;
+  cursor: text;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.api-copy-btn {
+  padding: 0.5rem 1rem;
+  background: #ffd700;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.api-copy-btn:hover {
+  background: #e6c200;
+}
+
+.api-copy-btn-green {
+  background: #2ed573;
+  color: #fff;
+}
+
+.api-copy-btn-green:hover {
+  background: #26b863;
+}
+
+.api-hint {
+  color: rgba(255, 255, 255, 0.6);
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.api-status-badge {
+  background: #2ed573;
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.api-metadata-box {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.api-metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.api-metadata-label {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.api-metadata-value {
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 0.25rem;
+}
+
+.api-regenerate-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(239, 68, 68, 0.8);
+  color: #fff;
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.api-regenerate-btn:hover {
+  background: #ef4444;
+}
+
+.api-regenerate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.api-warning-text {
+  color: #ff6b6b;
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.api-empty-state {
+  background: rgba(255, 107, 53, 0.1);
+  border: 2px dashed #ff6b35;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.api-empty-state p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1rem;
+}
+
+.api-generate-btn {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.api-generate-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.api-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.api-save-hint {
+  color: #ff6b35;
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* ============================================
+   API TOKEN - LIGHT MODE (TDA-VIB)
+   ============================================ */
+
+[data-theme="tda-vib"] .api-info-box {
+  background: rgba(107, 68, 35, 0.08) !important;
+  border-color: #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .api-info-box p {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-info-box strong {
+  color: #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .api-input-readonly {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-input-token {
+  background: rgba(46, 213, 115, 0.08) !important;
+  border-color: #2ed573 !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-copy-btn {
+  background: #6B4423 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="tda-vib"] .api-copy-btn:hover {
+  background: #8B5A2B !important;
+}
+
+[data-theme="tda-vib"] .api-hint {
+  color: #666666 !important;
+}
+
+[data-theme="tda-vib"] .api-metadata-box {
+  background: #f5f0e6 !important;
+  border: 1px solid rgba(26, 26, 26, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .api-metadata-label {
+  color: #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .api-metadata-value {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-empty-state {
+  background: rgba(255, 107, 53, 0.08) !important;
+  border-color: #ff6b35 !important;
+}
+
+[data-theme="tda-vib"] .api-empty-state p {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-warning-text {
+  color: #dc2626 !important;
+}
+
+[data-theme="tda-vib"] .api-save-hint {
+  color: #dc2626 !important;
+}
