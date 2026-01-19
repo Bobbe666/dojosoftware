@@ -351,31 +351,31 @@
 
 /* Column widths */
 .invoice-table th:nth-child(1),
-.invoice-table td:nth-child(1) { width: 24px; text-align: center; }  /* Pos. */
+.invoice-table td:nth-child(1) { width: 35px; text-align: center; }  /* Pos. */
 
 .invoice-table th:nth-child(2),
 .invoice-table td:nth-child(2) { width: auto; }  /* Bezeichnung - takes remaining space */
 
 .invoice-table th:nth-child(3),
-.invoice-table td:nth-child(3) { width: 85px; text-align: left; font-size: 7.5pt; }  /* Artikelnummer */
+.invoice-table td:nth-child(3) { width: 110px; text-align: left; font-size: 8pt; }  /* Artikelnummer */
 
 .invoice-table th:nth-child(4),
-.invoice-table td:nth-child(4) { width: 38px; text-align: right; }  /* Menge */
+.invoice-table td:nth-child(4) { width: 50px; text-align: right; }  /* Menge */
 
 .invoice-table th:nth-child(5),
-.invoice-table td:nth-child(5) { width: 32px; text-align: center; }  /* Einheit */
+.invoice-table td:nth-child(5) { width: 45px; text-align: center; }  /* Einheit */
 
 .invoice-table th:nth-child(6),
-.invoice-table td:nth-child(6) { width: 52px; text-align: right; }  /* Preis */
+.invoice-table td:nth-child(6) { width: 70px; text-align: right; }  /* Preis */
 
 .invoice-table th:nth-child(7),
-.invoice-table td:nth-child(7) { width: 42px; text-align: right; }  /* Rabatt % */
+.invoice-table td:nth-child(7) { width: 60px; text-align: right; }  /* Rabatt % */
 
 .invoice-table th:nth-child(8),
-.invoice-table td:nth-child(8) { width: 42px; text-align: right; }  /* USt % */
+.invoice-table td:nth-child(8) { width: 55px; text-align: right; }  /* USt % */
 
 .invoice-table th:nth-child(9),
-.invoice-table td:nth-child(9) { width: 58px; text-align: right; font-weight: 600; }  /* Betrag EUR */
+.invoice-table td:nth-child(9) { width: 80px; text-align: right; font-weight: 600; }  /* Betrag EUR */
 
 .invoice-table td {
   padding: 0.4rem 0.3rem;
@@ -504,6 +504,17 @@
 
 [data-theme="dark"] .rechnung-erstellen-container .position-item-divider {
   border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.rechnung-erstellen-container input[type="checkbox"] {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  max-width: 14px !important;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
 }
 
 .rechnung-erstellen-container .checkbox-label {
