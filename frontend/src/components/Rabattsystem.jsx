@@ -32,11 +32,14 @@ const Rabattsystem = () => {
     beschreibung: "",
     rabatt_typ: "prozent",
     rabatt_prozent: "",
-    rabatt_betrag_cents: "",
+    rabatt_betrag_euro: "",  // String für Euro-Eingabe
     gueltig_von: "",
     gueltig_bis: "",
     max_nutzungen: "",
-    aktiv: true
+    aktiv: true,
+    ist_familien_rabatt: false,
+    familie_position_min: "",
+    familie_position_max: ""
   });
 
   const getDojoId = () => {
@@ -71,7 +74,10 @@ const Rabattsystem = () => {
           gueltig_bis: rabatt.gueltig_bis,
           max_nutzungen: rabatt.max_nutzungen,
           aktiv: rabatt.aktiv === 1,
-          genutzt: rabatt.genutzt || 0
+          genutzt: rabatt.genutzt || 0,
+          ist_familien_rabatt: rabatt.ist_familien_rabatt === 1,
+          familie_position_min: rabatt.familie_position_min,
+          familie_position_max: rabatt.familie_position_max
         }));
         setRabatte(mappedRabatte);
       }
@@ -87,11 +93,20 @@ const Rabattsystem = () => {
       const dojoId = getDojoId();
       const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
 
+      // Konvertiere Euro-String zu Cent für die API
+      const dataToSend = {
+        ...rabattData,
+        rabatt_betrag_cents: rabattData.rabatt_betrag_euro
+          ? Math.round(parseFloat(rabattData.rabatt_betrag_euro.replace(',', '.')) * 100)
+          : null
+      };
+      delete dataToSend.rabatt_betrag_euro;
+
       let response;
       if (rabattData.id) {
-        response = await axios.put(`/tarife/rabatte/${rabattData.id}${dojoParam}`, rabattData);
+        response = await axios.put(`/tarife/rabatte/${rabattData.id}${dojoParam}`, dataToSend);
       } else {
-        response = await axios.post(`/tarife/rabatte${dojoParam}`, rabattData);
+        response = await axios.post(`/tarife/rabatte${dojoParam}`, dataToSend);
       }
 
       if (response.data.success) {
@@ -103,11 +118,14 @@ const Rabattsystem = () => {
           beschreibung: "",
           rabatt_typ: "prozent",
           rabatt_prozent: "",
-          rabatt_betrag_cents: "",
+          rabatt_betrag_euro: "",
           gueltig_von: "",
           gueltig_bis: "",
           max_nutzungen: "",
-          aktiv: true
+          aktiv: true,
+          ist_familien_rabatt: false,
+          familie_position_min: "",
+          familie_position_max: ""
         });
       } else {
         alert('Fehler beim Speichern: ' + response.data.error);
@@ -160,6 +178,18 @@ const Rabattsystem = () => {
     if (rabatt.max_nutzungen && rabatt.genutzt >= rabatt.max_nutzungen) return false;
 
     return true;
+  };
+
+  // Bereitet Rabatt für Bearbeitung vor (konvertiert Cent zu Euro-String)
+  const prepareRabattForEdit = (rabatt) => {
+    return {
+      ...rabatt,
+      rabatt_betrag_euro: rabatt.rabatt_betrag_cents
+        ? (rabatt.rabatt_betrag_cents / 100).toFixed(2)
+        : '',
+      familie_position_min: rabatt.familie_position_min || '',
+      familie_position_max: rabatt.familie_position_max || ''
+    };
   };
 
   // Modal Header Style für Light Mode
@@ -277,12 +307,20 @@ const Rabattsystem = () => {
                 <div className="tarif-header">
                   <div className="tarif-title">
                     <h3>{rabatt.name}</h3>
-                    <span className="status-badge active">Aktiv</span>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <span className="status-badge active">Aktiv</span>
+                      {rabatt.ist_familien_rabatt && (
+                        <span className="status-badge" style={{ background: '#8b5cf6' }}>
+                          <Users size={12} style={{ marginRight: '0.25rem' }} />
+                          Familie
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="tarif-actions">
                     <button
                       className="action-btn edit"
-                      onClick={() => setEditingRabatt(rabatt)}
+                      onClick={() => setEditingRabatt(prepareRabattForEdit(rabatt))}
                       title="Bearbeiten"
                     >
                       <Edit size={16} />
@@ -343,6 +381,21 @@ const Rabattsystem = () => {
                       {rabatt.genutzt || 0}{rabatt.max_nutzungen ? ` / ${rabatt.max_nutzungen}` : ' (unbegrenzt)'}
                     </div>
                   </div>
+                  {rabatt.ist_familien_rabatt && (
+                    <div className="detail-item">
+                      <span className="label">
+                        <Users size={14} /> Gilt für
+                      </span>
+                      <div className="value">
+                        {rabatt.familie_position_min === rabatt.familie_position_max
+                          ? `${rabatt.familie_position_min}. Familienmitglied`
+                          : rabatt.familie_position_max
+                            ? `${rabatt.familie_position_min}. - ${rabatt.familie_position_max}. Familienmitglied`
+                            : `${rabatt.familie_position_min}.+ Familienmitglied`
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -379,7 +432,7 @@ const Rabattsystem = () => {
                   <div className="tarif-actions">
                     <button
                       className="action-btn edit"
-                      onClick={() => setEditingRabatt(rabatt)}
+                      onClick={() => setEditingRabatt(prepareRabattForEdit(rabatt))}
                       title="Bearbeiten"
                     >
                       <Edit size={16} />
@@ -473,7 +526,7 @@ const Rabattsystem = () => {
                       name="rabatt_typ"
                       value="prozent"
                       checked={newRabatt.rabatt_typ === 'prozent'}
-                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_typ: e.target.value, rabatt_betrag_cents: ''})}
+                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_typ: e.target.value, rabatt_betrag_euro: ''})}
                     />
                     <Percent size={16} /> Prozent
                   </label>
@@ -512,12 +565,11 @@ const Rabattsystem = () => {
                       Rabatt-Betrag (EUR) *
                     </label>
                     <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={newRabatt.rabatt_betrag_cents ? (newRabatt.rabatt_betrag_cents / 100).toFixed(2) : ''}
-                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_betrag_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                      placeholder="z.B. 5.00"
+                      type="text"
+                      inputMode="decimal"
+                      value={newRabatt.rabatt_betrag_euro}
+                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_betrag_euro: e.target.value})}
+                      placeholder="z.B. 5.00 oder 10,50"
                       style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
                     />
                   </div>
@@ -562,7 +614,7 @@ const Rabattsystem = () => {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
@@ -571,6 +623,50 @@ const Rabattsystem = () => {
                   />
                   Rabatt ist aktiv
                 </label>
+              </div>
+
+              {/* Familien-Rabatt Einstellungen */}
+              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--background-secondary, #f3f4f6)', borderRadius: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '0.75rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={newRabatt.ist_familien_rabatt}
+                    onChange={(e) => setNewRabatt({...newRabatt, ist_familien_rabatt: e.target.checked})}
+                  />
+                  <Users size={16} />
+                  Familien-Rabatt (für 2., 3., ... Familienmitglied)
+                </label>
+
+                {newRabatt.ist_familien_rabatt && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                        Ab Position *
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        value={newRabatt.familie_position_min}
+                        onChange={(e) => setNewRabatt({...newRabatt, familie_position_min: e.target.value})}
+                        placeholder="z.B. 2 für 2. Mitglied"
+                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                        Bis Position <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        value={newRabatt.familie_position_max}
+                        onChange={(e) => setNewRabatt({...newRabatt, familie_position_max: e.target.value})}
+                        placeholder="z.B. 2 für nur 2. Mitglied"
+                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
@@ -584,7 +680,7 @@ const Rabattsystem = () => {
                 <button
                   className="btn btn-primary"
                   onClick={() => handleSaveRabatt(newRabatt)}
-                  disabled={!newRabatt.name || !newRabatt.gueltig_von || (newRabatt.rabatt_typ === 'prozent' ? !newRabatt.rabatt_prozent : !newRabatt.rabatt_betrag_cents)}
+                  disabled={!newRabatt.name || !newRabatt.gueltig_von || (newRabatt.rabatt_typ === 'prozent' ? !newRabatt.rabatt_prozent : !newRabatt.rabatt_betrag_euro)}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
@@ -648,7 +744,7 @@ const Rabattsystem = () => {
                       name="edit_rabatt_typ"
                       value="prozent"
                       checked={editingRabatt.rabatt_typ === 'prozent'}
-                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_typ: e.target.value, rabatt_betrag_cents: null})}
+                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_typ: e.target.value, rabatt_betrag_euro: ''})}
                     />
                     <Percent size={16} /> Prozent
                   </label>
@@ -686,12 +782,11 @@ const Rabattsystem = () => {
                       Rabatt-Betrag (EUR) *
                     </label>
                     <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={editingRabatt.rabatt_betrag_cents ? (editingRabatt.rabatt_betrag_cents / 100).toFixed(2) : ''}
-                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_betrag_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
-                      placeholder="z.B. 5.00"
+                      type="text"
+                      inputMode="decimal"
+                      value={editingRabatt.rabatt_betrag_euro || ''}
+                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_betrag_euro: e.target.value})}
+                      placeholder="z.B. 5.00 oder 10,50"
                       style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
                     />
                   </div>
@@ -736,7 +831,7 @@ const Rabattsystem = () => {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
@@ -745,6 +840,50 @@ const Rabattsystem = () => {
                   />
                   Rabatt ist aktiv
                 </label>
+              </div>
+
+              {/* Familien-Rabatt Einstellungen */}
+              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--background-secondary, #f3f4f6)', borderRadius: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '0.75rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={editingRabatt.ist_familien_rabatt}
+                    onChange={(e) => setEditingRabatt({...editingRabatt, ist_familien_rabatt: e.target.checked})}
+                  />
+                  <Users size={16} />
+                  Familien-Rabatt (für 2., 3., ... Familienmitglied)
+                </label>
+
+                {editingRabatt.ist_familien_rabatt && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                        Ab Position *
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        value={editingRabatt.familie_position_min || ''}
+                        onChange={(e) => setEditingRabatt({...editingRabatt, familie_position_min: e.target.value})}
+                        placeholder="z.B. 2 für 2. Mitglied"
+                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                        Bis Position <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        value={editingRabatt.familie_position_max || ''}
+                        onChange={(e) => setEditingRabatt({...editingRabatt, familie_position_max: e.target.value})}
+                        placeholder="z.B. 2 für nur 2. Mitglied"
+                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
@@ -758,7 +897,7 @@ const Rabattsystem = () => {
                 <button
                   className="btn btn-primary"
                   onClick={() => handleSaveRabatt(editingRabatt)}
-                  disabled={!editingRabatt.name || (editingRabatt.rabatt_typ === 'prozent' ? !editingRabatt.rabatt_prozent : !editingRabatt.rabatt_betrag_cents)}
+                  disabled={!editingRabatt.name || (editingRabatt.rabatt_typ === 'prozent' ? !editingRabatt.rabatt_prozent : !editingRabatt.rabatt_betrag_euro)}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />

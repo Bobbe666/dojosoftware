@@ -622,13 +622,14 @@
 .mitglied-detail-container .mitglied-content .field-group input[type="date"],
 .mitglied-detail-container .mitglied-content .field-group input[type="password"],
 .mitglied-detail-container .mitglied-content .field-group textarea,
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="number"],
-input[type="date"],
-input[type="password"],
-textarea {
+/* Globale Input-Styles - NICHT für registration-modal */
+.mitglied-detail-container input[type="text"],
+.mitglied-detail-container input[type="email"],
+.mitglied-detail-container input[type="tel"],
+.mitglied-detail-container input[type="number"],
+.mitglied-detail-container input[type="date"],
+.mitglied-detail-container input[type="password"],
+.mitglied-detail-container textarea {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -655,13 +656,13 @@ textarea {
 .mitglied-detail-container .mitglied-content .field-group input[type="date"]:focus,
 .mitglied-detail-container .mitglied-content .field-group input[type="password"]:focus,
 .mitglied-detail-container .mitglied-content .field-group textarea:focus,
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="tel"]:focus,
-input[type="number"]:focus,
-input[type="date"]:focus,
-input[type="password"]:focus,
-textarea:focus {
+.mitglied-detail-container input[type="text"]:focus,
+.mitglied-detail-container input[type="email"]:focus,
+.mitglied-detail-container input[type="tel"]:focus,
+.mitglied-detail-container input[type="number"]:focus,
+.mitglied-detail-container input[type="date"]:focus,
+.mitglied-detail-container input[type="password"]:focus,
+.mitglied-detail-container textarea:focus {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -680,13 +681,13 @@ textarea:focus {
 .mitglied-detail-container .mitglied-content .field-group input[type="date"]:hover,
 .mitglied-detail-container .mitglied-content .field-group input[type="password"]:hover,
 .mitglied-detail-container .mitglied-content .field-group textarea:hover,
-input[type="text"]:hover,
-input[type="email"]:hover,
-input[type="tel"]:hover,
-input[type="number"]:hover,
-input[type="date"]:hover,
-input[type="password"]:hover,
-textarea:hover {
+.mitglied-detail-container input[type="text"]:hover,
+.mitglied-detail-container input[type="email"]:hover,
+.mitglied-detail-container input[type="tel"]:hover,
+.mitglied-detail-container input[type="number"]:hover,
+.mitglied-detail-container input[type="date"]:hover,
+.mitglied-detail-container input[type="password"]:hover,
+.mitglied-detail-container textarea:hover {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -1993,7 +1994,7 @@ h1, h2, h3, h4, h5, h6,
   padding: 0.75rem 0;
   border-bottom: 1px solid rgba(255, 215, 0, 0.1);
 }
-input {
+.mitglied-detail-container .field input {
   width: 100%;
   padding: 10px;
   border: 1px solid #ccc;
@@ -2002,7 +2003,7 @@ input {
   background-color: var(--farbe-weiss);
   line-height: 1.4;
 }
-input:focus {
+.mitglied-detail-container .field input:focus {
   outline: none;
   border-color: var(--farbe-rot);
   box-shadow: 0 0 6px rgba(139, 0, 0, 0.5);
@@ -6091,8 +6092,8 @@ input:focus {
   }
 }
 
-/* === 🚨 GLOBALE INPUT-ÜBERSCHREIBUNG - HÖCHSTE PRIORITÄT === */
-input, textarea {
+/* === 🚨 MITGLIED-DETAIL INPUT-ÜBERSCHREIBUNG - HÖCHSTE PRIORITÄT === */
+.mitglied-detail-container input, .mitglied-detail-container textarea {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -6154,7 +6155,7 @@ input, textarea {
   outline: none !important;
 }
 
-input:focus, textarea:focus {
+.mitglied-detail-container input:focus, .mitglied-detail-container textarea:focus {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -6166,7 +6167,7 @@ input:focus, textarea:focus {
   backdrop-filter: none !important;
 }
 
-input:hover, textarea:hover {
+.mitglied-detail-container input:hover, .mitglied-detail-container textarea:hover {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;

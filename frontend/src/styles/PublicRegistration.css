@@ -110,25 +110,40 @@
   color: var(--text-color);
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.registration-modal .form-group input,
+.registration-modal .form-group select,
+.registration-modal .form-group textarea {
   width: 100%;
   padding: 0.8rem;
   border: 2px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
-  background: var(--background-color);
-  color: var(--text-color);
+  background: #ffffff !important;
+  color: #000000 !important;
   transition: all 0.3s ease;
+  -webkit-text-fill-color: #000000 !important;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.registration-modal .form-group input::placeholder,
+.registration-modal .form-group textarea::placeholder {
+  color: #666666 !important;
+  -webkit-text-fill-color: #666666 !important;
+}
+
+.registration-modal .form-group select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.registration-modal .form-group input:focus,
+.registration-modal .form-group select:focus,
+.registration-modal .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 
 .form-group textarea {
@@ -168,8 +183,10 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: var(--background-color);
+  background: #ffffff !important;
   text-align: center;
+  pointer-events: auto !important;
+  color: #000000;
 }
 
 .tariff-card:hover {
@@ -180,8 +197,8 @@
 
 .tariff-card.selected {
   border-color: var(--primary-color);
-  background: rgba(var(--primary-color-rgb), 0.05);
-  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  background: #e8f4e8 !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
 }
 
 .tariff-card h4 {
@@ -193,13 +210,13 @@
 .tariff-card .price {
   font-size: 1.8rem;
   font-weight: bold;
-  color: var(--secondary-color);
+  color: #16a34a;
   margin-bottom: 0.5rem;
 }
 
 .tariff-card p {
   margin: 0;
-  color: var(--text-muted);
+  color: #555555;
   font-size: 0.9rem;
   line-height: 1.4;
 }
@@ -840,4 +857,63 @@
   .info-item span {
     text-align: left;
   }
+}
+
+/* ============================================
+   GLOBALE INPUT-STYLING FÜR REGISTRIERUNG
+   Überschreibt die globalen MitgliedDetail.css Styles
+   die alle Inputs weiß machen
+   ============================================ */
+.modal-overlay .modal-content.registration-modal input[type="text"],
+.modal-overlay .modal-content.registration-modal input[type="email"],
+.modal-overlay .modal-content.registration-modal input[type="tel"],
+.modal-overlay .modal-content.registration-modal input[type="number"],
+.modal-overlay .modal-content.registration-modal input[type="date"],
+.modal-overlay .modal-content.registration-modal input[type="password"],
+.modal-overlay .modal-content.registration-modal textarea,
+.modal-overlay .modal-content.registration-modal select {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 8px !important;
+  padding: 0.8rem !important;
+}
+
+.modal-overlay .modal-content.registration-modal input[type="text"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="email"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="tel"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="number"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="date"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="password"]:focus,
+.modal-overlay .modal-content.registration-modal textarea:focus,
+.modal-overlay .modal-content.registration-modal select:focus {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border-color: var(--primary-color) !important;
+  outline: none !important;
+}
+
+.modal-overlay .modal-content.registration-modal input::placeholder,
+.modal-overlay .modal-content.registration-modal textarea::placeholder {
+  color: #888888 !important;
+  -webkit-text-fill-color: #888888 !important;
+}
+
+.modal-overlay .modal-content.registration-modal select option {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill,
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill:hover,
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill:focus,
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+  -webkit-text-fill-color: #000000 !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
 }

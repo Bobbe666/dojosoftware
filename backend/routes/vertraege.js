@@ -23,6 +23,130 @@ const queryAsync = (sql, params = []) => {
   });
 };
 
+// =============================================
+// FAMILIEN-KÜNDIGUNGS-HILFSFUNKTIONEN
+// =============================================
+
+// Hilfsfunktion: Berechnet Familien-Positionen neu nach Kündigung
+async function recalculateFamilyPositions(familienId) {
+  if (!familienId) return;
+
+  // Alle aktiven Familienmitglieder nach Geburtsdatum sortieren (älteste zuerst)
+  const members = await queryAsync(`
+    SELECT m.mitglied_id, m.geburtsdatum
+    FROM mitglieder m
+    JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+    WHERE m.familien_id = ? AND v.status = 'aktiv'
+    ORDER BY m.geburtsdatum ASC
+  `, [familienId]);
+
+  // Positionen neu zuweisen
+  for (let i = 0; i < members.length; i++) {
+    await queryAsync(`
+      UPDATE mitglieder
+      SET familie_position = ?, ist_hauptmitglied = ?
+      WHERE mitglied_id = ?
+    `, [i + 1, i === 0, members[i].mitglied_id]);
+  }
+
+  console.log(`Familien-Positionen neu berechnet für Familie ${familienId}: ${members.length} aktive Mitglieder`);
+  return members;
+}
+
+// Hilfsfunktion: Berechnet Familien-Rabatte neu
+async function recalculateFamilyDiscounts(familienId) {
+  if (!familienId) return;
+
+  const members = await queryAsync(`
+    SELECT m.mitglied_id, m.familie_position, m.dojo_id
+    FROM mitglieder m
+    WHERE m.familien_id = ?
+  `, [familienId]);
+
+  for (const member of members) {
+    // Alten Familien-Rabatt deaktivieren
+    await queryAsync(`
+      UPDATE mitglied_rabatte mr
+      JOIN rabatte r ON mr.rabatt_id = r.id
+      SET mr.aktiv = FALSE, mr.entfernt_am = NOW(),
+          mr.entfernt_grund = 'Familien-Neuberechnung nach Kündigung'
+      WHERE mr.mitglied_id = ? AND r.ist_familien_rabatt = TRUE AND mr.aktiv = TRUE
+    `, [member.mitglied_id]);
+
+    // Position 1 = Hauptmitglied = kein Familien-Rabatt
+    if (member.familie_position === 1) continue;
+
+    // Passenden Familien-Rabatt finden
+    const rabatt = await queryAsync(`
+      SELECT id FROM rabatte
+      WHERE ist_familien_rabatt = TRUE
+        AND aktiv = TRUE
+        AND (dojo_id = ? OR dojo_id IS NULL)
+        AND familie_position_min <= ?
+        AND (familie_position_max IS NULL OR familie_position_max >= ?)
+      ORDER BY dojo_id DESC, familie_position_min DESC
+      LIMIT 1
+    `, [member.dojo_id, member.familie_position, member.familie_position]);
+
+    if (rabatt.length > 0) {
+      // Neuen Rabatt zuweisen
+      await queryAsync(`
+        INSERT INTO mitglied_rabatte (mitglied_id, rabatt_id, aktiv)
+        VALUES (?, ?, TRUE)
+        ON DUPLICATE KEY UPDATE aktiv = TRUE, angewendet_am = NOW(), entfernt_am = NULL, entfernt_grund = NULL
+      `, [member.mitglied_id, rabatt[0].id]);
+    }
+  }
+
+  console.log(`Familien-Rabatte neu berechnet für Familie ${familienId}`);
+}
+
+// Hilfsfunktion: Prüft und verarbeitet Familien-Kündigung
+async function handleFamilyCancellation(mitgliedId) {
+  // Prüfe ob das Mitglied ein Hauptmitglied ist
+  const mitglied = await queryAsync(`
+    SELECT mitglied_id, familien_id, ist_hauptmitglied, familie_position
+    FROM mitglieder
+    WHERE mitglied_id = ?
+  `, [mitgliedId]);
+
+  if (mitglied.length === 0 || !mitglied[0].familien_id) {
+    return { isFamilyMember: false };
+  }
+
+  const member = mitglied[0];
+  const familienId = member.familien_id;
+
+  // Wenn es das Hauptmitglied war, müssen wir einen neuen Hauptmitglied bestimmen
+  if (member.ist_hauptmitglied) {
+    console.log(`Hauptmitglied ${mitgliedId} kündigt - suche neues Hauptmitglied für Familie ${familienId}`);
+
+    // Berechne Positionen neu (das wird automatisch ein neues Hauptmitglied setzen)
+    const remainingMembers = await recalculateFamilyPositions(familienId);
+
+    // Berechne Rabatte neu
+    await recalculateFamilyDiscounts(familienId);
+
+    return {
+      isFamilyMember: true,
+      wasHauptmitglied: true,
+      familienId,
+      remainingMembers: remainingMembers.length,
+      newHauptmitgliedId: remainingMembers.length > 0 ? remainingMembers[0].mitglied_id : null
+    };
+  } else {
+    // Normales Familienmitglied kündigt - nur Positionen und Rabatte neu berechnen
+    await recalculateFamilyPositions(familienId);
+    await recalculateFamilyDiscounts(familienId);
+
+    return {
+      isFamilyMember: true,
+      wasHauptmitglied: false,
+      familienId
+    };
+  }
+}
+
 // Helper: Erstelle Dokumente-Verzeichnis falls es nicht existiert
 async function ensureDocumentsDir() {
   const docsDir = path.join(__dirname, '..', 'generated_documents');
@@ -662,7 +786,32 @@ router.put('/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Vertrag nicht gefunden oder keine Berechtigung' });
         }
-        res.json({ success: true, message: 'Vertrag erfolgreich aktualisiert' });
+
+        // =============================================
+        // FAMILIEN-LOGIK BEI KÜNDIGUNG
+        // =============================================
+        let familyResult = null;
+        if (status === 'gekuendigt' || status === 'inaktiv' || status === 'beendet') {
+            try {
+                // Hole mitglied_id vom Vertrag
+                const vertrag = await queryAsync('SELECT mitglied_id FROM vertraege WHERE id = ?', [id]);
+                if (vertrag.length > 0) {
+                    familyResult = await handleFamilyCancellation(vertrag[0].mitglied_id);
+                    if (familyResult.isFamilyMember) {
+                        console.log(`Familien-Kündigung verarbeitet:`, familyResult);
+                    }
+                }
+            } catch (familyErr) {
+                console.error('Fehler bei Familien-Kündigungs-Verarbeitung (nicht kritisch):', familyErr);
+                // Fahre fort auch wenn Familien-Logik fehlschlägt
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'Vertrag erfolgreich aktualisiert',
+            familyUpdate: familyResult
+        });
     } catch (err) {
         console.error('Fehler beim Aktualisieren des Vertrags:', err);
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
@@ -742,7 +891,22 @@ router.delete('/:id', async (req, res) => {
             WHERE ${whereConditions.join(' AND ')}
         `, queryParams);
 
-        res.json({ success: true, message: 'Vertrag erfolgreich archiviert' });
+        // 4. Familien-Logik: Positionen und Rabatte neu berechnen
+        let familyResult = null;
+        try {
+            familyResult = await handleFamilyCancellation(vertragData.mitglied_id);
+            if (familyResult.isFamilyMember) {
+                console.log(`Familien-Archivierung verarbeitet:`, familyResult);
+            }
+        } catch (familyErr) {
+            console.error('Fehler bei Familien-Archivierungs-Verarbeitung (nicht kritisch):', familyErr);
+        }
+
+        res.json({
+            success: true,
+            message: 'Vertrag erfolgreich archiviert',
+            familyUpdate: familyResult
+        });
     } catch (err) {
         console.error('Fehler beim Archivieren des Vertrags:', err);
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });

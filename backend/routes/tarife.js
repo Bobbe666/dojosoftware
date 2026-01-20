@@ -16,6 +16,19 @@ const queryAsync = (sql, params = []) => {
   });
 };
 
+// Hilfsfunktion: ISO-Datum zu MySQL-Date konvertieren (YYYY-MM-DD)
+const parseDate = (dateValue) => {
+  if (!dateValue) return null;
+  // Falls schon im richtigen Format (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+  // ISO-Format oder anderes Format parsen
+  const date = new Date(dateValue);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString().split('T')[0];
+};
+
 // GET /api/tarife - Alle Tarife abrufen (fallback zu altem Schema wenn nötig)
 router.get('/', async (req, res) => {
     try {
@@ -243,7 +256,8 @@ router.get('/rabatte', async (req, res) => {
         let query = `
             SELECT id AS rabatt_id, dojo_id, name, beschreibung, rabatt_prozent,
                    rabatt_typ, rabatt_betrag_cents,
-                   gueltig_von, gueltig_bis, max_nutzungen, genutzt, aktiv, erstellt_am
+                   gueltig_von, gueltig_bis, max_nutzungen, genutzt, aktiv, erstellt_am,
+                   ist_familien_rabatt, familie_position_min, familie_position_max
             FROM rabatte`;
         let params = [];
 
@@ -273,21 +287,24 @@ router.post('/rabatte', async (req, res) => {
         }
         const parsedDojoId = parseInt(dojoId, 10);
 
-        const { name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
+        const { name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv, ist_familien_rabatt, familie_position_min, familie_position_max } = req.body;
         const result = await queryAsync(`
-            INSERT INTO rabatte (name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv, dojo_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO rabatte (name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv, dojo_id, ist_familien_rabatt, familie_position_min, familie_position_max)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             name,
             beschreibung,
             rabatt_typ === 'prozent' ? rabatt_prozent : null,
             rabatt_typ || 'prozent',
             rabatt_typ === 'betrag' ? rabatt_betrag_cents : null,
-            gueltig_von,
-            gueltig_bis || null,  // null = unbegrenzt gültig
+            parseDate(gueltig_von),
+            parseDate(gueltig_bis),  // null = unbegrenzt gültig
             max_nutzungen || null,
             aktiv,
-            parsedDojoId
+            parsedDojoId,
+            ist_familien_rabatt || false,
+            ist_familien_rabatt ? (familie_position_min || null) : null,
+            ist_familien_rabatt ? (familie_position_max || null) : null
         ]);
         res.json({
             success: true,
@@ -302,7 +319,10 @@ router.post('/rabatte', async (req, res) => {
                 gueltig_bis: gueltig_bis || null,
                 max_nutzungen: max_nutzungen || null,
                 aktiv,
-                genutzt: 0
+                genutzt: 0,
+                ist_familien_rabatt: ist_familien_rabatt || false,
+                familie_position_min: ist_familien_rabatt ? familie_position_min : null,
+                familie_position_max: ist_familien_rabatt ? familie_position_max : null
             }
         });
     } catch (err) {
@@ -322,11 +342,12 @@ router.put('/rabatte/:id', async (req, res) => {
         const parsedDojoId = parseInt(dojoId, 10);
 
         const { id } = req.params;
-        const { name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
+        const { name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv, ist_familien_rabatt, familie_position_min, familie_position_max } = req.body;
         await queryAsync(`
             UPDATE rabatte
             SET name = ?, beschreibung = ?, rabatt_prozent = ?, rabatt_typ = ?, rabatt_betrag_cents = ?,
-                gueltig_von = ?, gueltig_bis = ?, max_nutzungen = ?, aktiv = ?
+                gueltig_von = ?, gueltig_bis = ?, max_nutzungen = ?, aktiv = ?,
+                ist_familien_rabatt = ?, familie_position_min = ?, familie_position_max = ?
             WHERE id = ? AND dojo_id = ?
         `, [
             name,
@@ -334,10 +355,13 @@ router.put('/rabatte/:id', async (req, res) => {
             rabatt_typ === 'prozent' ? rabatt_prozent : null,
             rabatt_typ || 'prozent',
             rabatt_typ === 'betrag' ? rabatt_betrag_cents : null,
-            gueltig_von,
-            gueltig_bis || null,
+            parseDate(gueltig_von),
+            parseDate(gueltig_bis),
             max_nutzungen || null,
             aktiv,
+            ist_familien_rabatt || false,
+            ist_familien_rabatt ? (familie_position_min || null) : null,
+            ist_familien_rabatt ? (familie_position_max || null) : null,
             id,
             parsedDojoId
         ]);

@@ -8,11 +8,26 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const PublicRegistration = ({ onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [totalSteps] = useState(7);
+  const [totalSteps, setTotalSteps] = useState(7);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [availableTarife, setAvailableTarife] = useState([]);
+
+  // Familien-Registrierung State
+  const [familyMode, setFamilyMode] = useState(false);
+  const [showFamilyQuestion, setShowFamilyQuestion] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [addingFamilyMember, setAddingFamilyMember] = useState(false);
+  const [newFamilyMember, setNewFamilyMember] = useState({
+    vorname: "",
+    nachname: "",
+    geburtsdatum: "",
+    geschlecht: "",
+    email: "",
+    password: "",
+    passwordConfirm: ""
+  });
 
   const [formData, setFormData] = useState({
     email: "",
@@ -80,6 +95,97 @@ const PublicRegistration = ({ onClose }) => {
     } catch (err) {
       console.error('Fehler beim Laden der Tarife:', err);
     }
+  };
+
+  // Hilfsfunktion: Prüft ob jemand unter 18 ist
+  const isMinor = (geburtsdatum) => {
+    if (!geburtsdatum) return false;
+    const today = new Date();
+    const birthDate = new Date(geburtsdatum);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age < 18;
+  };
+
+  // Familienmitglied hinzufügen
+  const addFamilyMember = async () => {
+    // Validierung
+    if (!newFamilyMember.vorname || !newFamilyMember.nachname || !newFamilyMember.geburtsdatum ||
+        !newFamilyMember.geschlecht || !newFamilyMember.email || !newFamilyMember.password) {
+      setError("Bitte füllen Sie alle Pflichtfelder aus.");
+      return;
+    }
+    if (newFamilyMember.password !== newFamilyMember.passwordConfirm) {
+      setError("Passwörter stimmen nicht überein.");
+      return;
+    }
+    if (newFamilyMember.password.length < 8) {
+      setError("Passwort muss mindestens 8 Zeichen haben.");
+      return;
+    }
+    // E-Mail darf nicht bereits verwendet werden
+    if (newFamilyMember.email === formData.email ||
+        familyMembers.some(m => m.email === newFamilyMember.email)) {
+      setError("Diese E-Mail-Adresse wird bereits verwendet.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Backend-API aufrufen um Familienmitglied zu registrieren
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/public/register/family/member`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hauptmitglied_email: formData.email,
+          vorname: newFamilyMember.vorname,
+          nachname: newFamilyMember.nachname,
+          geburtsdatum: newFamilyMember.geburtsdatum,
+          geschlecht: newFamilyMember.geschlecht,
+          email: newFamilyMember.email,
+          password: newFamilyMember.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFamilyMembers(prev => [...prev, { ...newFamilyMember, familiePosition: data.data.familiePosition }]);
+        setNewFamilyMember({
+          vorname: "",
+          nachname: "",
+          geburtsdatum: "",
+          geschlecht: "",
+          email: "",
+          password: "",
+          passwordConfirm: ""
+        });
+        setAddingFamilyMember(false);
+        setError("");
+      } else {
+        setError(data.error || "Fehler beim Hinzufügen des Familienmitglieds");
+      }
+    } catch (err) {
+      console.error("Fehler beim Hinzufügen des Familienmitglieds:", err);
+      setError("Verbindungsfehler. Bitte versuchen Sie es später erneut.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Familienmitglied entfernen
+  const removeFamilyMember = async (index) => {
+    const member = familyMembers[index];
+    if (!member) return;
+
+    // Aus lokalem State entfernen (optimistisch)
+    setFamilyMembers(prev => prev.filter((_, i) => i !== index));
+
+    // TODO: Backend-Call zum Entfernen könnte hier hinzugefügt werden
+    // Da die Registrierung noch nicht abgeschlossen ist, reicht lokales Entfernen
   };
 
   const handleInputChange = (field, value) => {
@@ -247,6 +353,9 @@ const PublicRegistration = ({ onClose }) => {
             setCurrentStep(2);
             setSuccess("");
           }, 2000);
+        } else if (currentStep === 2) {
+          // Nach Schritt 2: Familien-Frage anzeigen
+          setShowFamilyQuestion(true);
         } else {
           setCurrentStep(currentStep + 1);
         }
@@ -270,6 +379,11 @@ const PublicRegistration = ({ onClose }) => {
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const renderStep = () => {
+    // Familien-Schritt hat Vorrang wenn aktiv
+    if (showFamilyQuestion) {
+      return renderFamilyStep();
+    }
+
     switch (currentStep) {
       case 1:
         return renderStep1();
@@ -784,6 +898,264 @@ const PublicRegistration = ({ onClose }) => {
     </div>
   );
 
+  // Familien-Schritt: Frage ob weitere Mitglieder + Formular
+  const renderFamilyStep = () => {
+    // Handler für Familienmitglied-Eingabefeld
+    const handleFamilyMemberChange = (field, value) => {
+      setNewFamilyMember(prev => ({ ...prev, [field]: value }));
+      setError("");
+    };
+
+    // Ohne weitere Familienmitglieder fortfahren
+    const continueWithoutFamily = () => {
+      setShowFamilyQuestion(false);
+      setFamilyMode(false);
+      setCurrentStep(3);
+    };
+
+    // Familie aktivieren
+    const activateFamilyMode = () => {
+      setFamilyMode(true);
+      setAddingFamilyMember(true);
+    };
+
+    // Familienmitglied speichern und weiteres hinzufügen
+    const saveAndAddMore = () => {
+      addFamilyMember();
+      setAddingFamilyMember(true);
+    };
+
+    // Familien-Registrierung abschließen und zu Bankdaten gehen
+    const finishFamilyAndContinue = () => {
+      if (addingFamilyMember && newFamilyMember.vorname) {
+        // Falls Formular ausgefüllt, erst speichern
+        addFamilyMember();
+      }
+      setShowFamilyQuestion(false);
+      setAddingFamilyMember(false);
+      setCurrentStep(3);
+    };
+
+    return (
+      <div className="registration-step family-step">
+        <h3>Familien-Registrierung</h3>
+
+        {/* Initiale Frage */}
+        {!familyMode && familyMembers.length === 0 && (
+          <div className="family-question">
+            <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+              Möchten Sie weitere Familienmitglieder anmelden?
+            </p>
+            <div className="info-box" style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+              <p style={{ margin: 0 }}>
+                <strong>Familienmitglieder teilen Adresse und Bankverbindung</strong>, erhalten aber jeweils ein eigenes Konto und einen eigenen Vertrag.
+                Ab dem 2. Familienmitglied gilt ein Familien-Rabatt.
+              </p>
+            </div>
+            <div className="family-choice-buttons" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={activateFamilyMode}
+              >
+                Ja, weitere Mitglieder anmelden
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={continueWithoutFamily}
+              >
+                Nein, nur mich anmelden
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Familien-Übersicht */}
+        {(familyMode || familyMembers.length > 0) && (
+          <div className="family-overview">
+            {/* Hauptmitglied anzeigen */}
+            <div className="family-member-card hauptmitglied" style={{ padding: '1rem', marginBottom: '1rem', border: '2px solid var(--color-primary)', borderRadius: '8px', backgroundColor: 'var(--bg-secondary)' }}>
+              <span style={{ display: 'inline-block', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-primary)', color: 'white', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                Hauptmitglied (voller Beitrag)
+              </span>
+              <h4 style={{ margin: '0.5rem 0' }}>{formData.vorname} {formData.nachname}</h4>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{formData.email}</p>
+            </div>
+
+            {/* Weitere Familienmitglieder */}
+            {familyMembers.map((member, index) => (
+              <div key={index} className="family-member-card" style={{ padding: '1rem', marginBottom: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', position: 'relative' }}>
+                <span style={{ display: 'inline-block', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-success)', color: 'white', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  {index + 2}. Familienmitglied (mit Rabatt)
+                </span>
+                {isMinor(member.geburtsdatum) && (
+                  <span style={{ display: 'inline-block', marginLeft: '0.5rem', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-warning)', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>
+                    Minderjährig
+                  </span>
+                )}
+                <h4 style={{ margin: '0.5rem 0' }}>{member.vorname} {member.nachname}</h4>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{member.email}</p>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                  onClick={() => removeFamilyMember(index)}
+                >
+                  Entfernen
+                </button>
+              </div>
+            ))}
+
+            {/* Neues Familienmitglied Formular */}
+            {addingFamilyMember && (
+              <div className="family-member-form" style={{ padding: '1.5rem', border: '2px dashed var(--border-color)', borderRadius: '8px', marginBottom: '1rem' }}>
+                <h4 style={{ marginTop: 0 }}>Neues Familienmitglied ({familyMembers.length + 2}. Mitglied)</h4>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Vorname *</label>
+                    <input
+                      type="text"
+                      value={newFamilyMember.vorname}
+                      onChange={(e) => handleFamilyMemberChange("vorname", e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Nachname *</label>
+                    <input
+                      type="text"
+                      value={newFamilyMember.nachname}
+                      onChange={(e) => handleFamilyMemberChange("nachname", e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Geburtsdatum *</label>
+                    <input
+                      type="date"
+                      value={newFamilyMember.geburtsdatum}
+                      onChange={(e) => handleFamilyMemberChange("geburtsdatum", e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Geschlecht *</label>
+                    <select
+                      value={newFamilyMember.geschlecht}
+                      onChange={(e) => handleFamilyMemberChange("geschlecht", e.target.value)}
+                      required
+                    >
+                      <option value="">Bitte wählen</option>
+                      <option value="m">Männlich</option>
+                      <option value="w">Weiblich</option>
+                      <option value="d">Divers</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>E-Mail-Adresse * (für eigenes Konto)</label>
+                  <input
+                    type="email"
+                    value={newFamilyMember.email}
+                    onChange={(e) => handleFamilyMemberChange("email", e.target.value)}
+                    placeholder="familienmitglied@beispiel.de"
+                    required
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Passwort * (mindestens 8 Zeichen)</label>
+                    <input
+                      type="password"
+                      value={newFamilyMember.password}
+                      onChange={(e) => handleFamilyMemberChange("password", e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Passwort bestätigen *</label>
+                    <input
+                      type="password"
+                      value={newFamilyMember.passwordConfirm}
+                      onChange={(e) => handleFamilyMemberChange("passwordConfirm", e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Hinweis für geteilte Daten */}
+                <div className="info-box" style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', fontSize: '0.9rem' }}>
+                  <p style={{ margin: 0 }}>
+                    <strong>Hinweis:</strong> Adresse und Bankverbindung werden vom Hauptmitglied übernommen.
+                  </p>
+                </div>
+
+                {/* Hinweis für Minderjährige */}
+                {isMinor(newFamilyMember.geburtsdatum) && (
+                  <div className="info-box" style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#fff3cd', borderRadius: '6px', fontSize: '0.9rem' }}>
+                    <p style={{ margin: 0 }}>
+                      Da dieses Mitglied minderjährig ist, wird <strong>{formData.vorname} {formData.nachname}</strong> als Erziehungsberechtigte/r hinterlegt.
+                    </p>
+                  </div>
+                )}
+
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={addFamilyMember}
+                  >
+                    Hinzufügen
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setAddingFamilyMember(false);
+                      setNewFamilyMember({
+                        vorname: "", nachname: "", geburtsdatum: "",
+                        geschlecht: "", email: "", password: "", passwordConfirm: ""
+                      });
+                    }}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Aktionen */}
+            {!addingFamilyMember && (
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setAddingFamilyMember(true)}
+                >
+                  + Weiteres Familienmitglied hinzufügen
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={finishFamilyAndContinue}
+                >
+                  Weiter zu Bankdaten
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderStep6 = () => (
     <div className="registration-step">
       <h3>Schritt 7: Rechtliche Zustimmungen</h3>
@@ -855,6 +1227,64 @@ const PublicRegistration = ({ onClose }) => {
 
   return (
     <div className="modal-overlay">
+      {/* Überschreibende Styles für Inputs - höchste Spezifität */}
+      <style>{`
+        .modal-overlay .modal-content.registration-modal input[type="text"],
+        .modal-overlay .modal-content.registration-modal input[type="email"],
+        .modal-overlay .modal-content.registration-modal input[type="password"],
+        .modal-overlay .modal-content.registration-modal input[type="date"],
+        .modal-overlay .modal-content.registration-modal input[type="tel"],
+        .modal-overlay .modal-content.registration-modal input[type="number"],
+        .modal-overlay .modal-content.registration-modal textarea,
+        .modal-overlay .modal-content.registration-modal select,
+        .registration-modal input[type="text"],
+        .registration-modal input[type="email"],
+        .registration-modal input[type="password"],
+        .registration-modal input[type="date"],
+        .registration-modal input[type="tel"],
+        .registration-modal input[type="number"],
+        .registration-modal textarea,
+        .registration-modal select,
+        input[type="text"].reg-input,
+        input[type="email"].reg-input,
+        input[type="password"].reg-input,
+        input[type="date"].reg-input {
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          background-image: none !important;
+          color: #000000 !important;
+          -webkit-text-fill-color: #000000 !important;
+          border: 2px solid #cccccc !important;
+          border-radius: 8px !important;
+          padding: 0.8rem !important;
+          font-size: 1rem !important;
+          caret-color: #000000 !important;
+        }
+        .modal-overlay .modal-content.registration-modal input:focus,
+        .modal-overlay .modal-content.registration-modal select:focus,
+        .modal-overlay .modal-content.registration-modal textarea:focus,
+        .registration-modal input:focus,
+        .registration-modal select:focus,
+        .registration-modal textarea:focus {
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          -webkit-text-fill-color: #000000 !important;
+          border-color: #ffd700 !important;
+          outline: none !important;
+          box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3) !important;
+        }
+        .registration-modal input::placeholder,
+        .registration-modal textarea::placeholder {
+          color: #888888 !important;
+          -webkit-text-fill-color: #888888 !important;
+          opacity: 1 !important;
+        }
+        .registration-modal select option {
+          background: #ffffff !important;
+          color: #000000 !important;
+        }
+      `}</style>
       <div className="modal-content registration-modal">
         <div className="modal-header">
           <h2>Mitgliedschaft beantragen</h2>
@@ -880,28 +1310,31 @@ const PublicRegistration = ({ onClose }) => {
           {renderStep()}
         </div>
 
-        <div className="modal-footer">
-          <div className="button-group">
-            {currentStep > 1 && (
+        {/* Footer-Buttons verstecken wenn Familien-Schritt aktiv (hat eigene Buttons) */}
+        {!showFamilyQuestion && (
+          <div className="modal-footer">
+            <div className="button-group">
+              {currentStep > 1 && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={handlePrevStep}
+                  disabled={loading}
+                >
+                  Zurück
+                </button>
+              )}
+
               <button
-                className="btn btn-secondary"
-                onClick={handlePrevStep}
+                className="btn btn-primary"
+                onClick={handleNextStep}
                 disabled={loading}
               >
-                Zurück
+                {loading ? "Wird verarbeitet..." :
+                 currentStep === totalSteps ? "Registrierung abschließen" : "Weiter"}
               </button>
-            )}
-
-            <button
-              className="btn btn-primary"
-              onClick={handleNextStep}
-              disabled={loading}
-            >
-              {loading ? "Wird verarbeitet..." :
-               currentStep === totalSteps ? "Registrierung abschließen" : "Weiter"}
-            </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
