@@ -16,7 +16,8 @@ const VertragFormular = ({
   schuelerStudent = false,
   mode = 'create', // 'create' oder 'edit'
   showMindestlaufzeitOptions = true,
-  mitgliedId = null
+  mitgliedId = null,
+  isPublic = false // Für öffentliche Registrierung ohne Auth
 }) => {
   const [tarife, setTarife] = useState([]);
   const [zahlungszyklen, setZahlungszyklen] = useState([]);
@@ -153,8 +154,9 @@ const VertragFormular = ({
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Tarife laden
-        const tarifeRes = await axios.get('/tarife');
+        // Tarife laden - bei öffentlicher Registrierung den public-Endpunkt verwenden
+        const tarifeEndpoint = isPublic ? '/api/public/tarife' : '/tarife';
+        const tarifeRes = await axios.get(tarifeEndpoint);
         let allTarife = tarifeRes.data?.data || tarifeRes.data || [];
 
         // Filtere archivierte Tarife heraus (alte Tarife nicht für neue Mitglieder)

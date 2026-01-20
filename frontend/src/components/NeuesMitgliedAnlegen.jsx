@@ -306,7 +306,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     setLoading(true);
     setError("");
     try {
-      const response = await axios.post('/mitglieder/check-duplicate', {
+      // Bei öffentlicher Registrierung den public-Endpunkt verwenden
+      const endpoint = isRegistrationFlow ? '/api/public/check-duplicate' : '/mitglieder/check-duplicate';
+      const response = await axios.post(endpoint, {
         vorname: memberData.vorname,
         nachname: memberData.nachname,
         geburtsdatum: memberData.geburtsdatum,
@@ -377,7 +379,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     if (!iban || iban.length < 22) return;
 
     try {
-      const response = await axios.post('/banken/validate-iban', { iban });
+      // Bei öffentlicher Registrierung den public-Endpunkt verwenden
+      const endpoint = isRegistrationFlow ? '/api/public/banken/validate-iban' : '/banken/validate-iban';
+      const response = await axios.post(endpoint, { iban });
       const result = response.data;
       setIbanValidation(result);
 
@@ -403,7 +407,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     }
 
     try {
-      const response = await axios.post('/banken/kto-blz-to-iban', { kontonummer, bankleitzahl });
+      // Bei öffentlicher Registrierung den public-Endpunkt verwenden
+      const endpoint = isRegistrationFlow ? '/api/public/banken/kto-blz-to-iban' : '/banken/kto-blz-to-iban';
+      const response = await axios.post(endpoint, { kontonummer, bankleitzahl });
       const result = response.data;
 
       setMemberData(prev => ({
@@ -429,7 +435,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     }
 
     try {
-      const response = await axios.get('/banken/search', { params: { q: searchTerm } });
+      // Bei öffentlicher Registrierung den public-Endpunkt verwenden
+      const endpoint = isRegistrationFlow ? '/api/public/banken/search' : '/banken/search';
+      const response = await axios.get(endpoint, { params: { q: searchTerm } });
       setBankSearchResults(response.data);
     } catch (error) {
       console.error("Fehler bei der Bankensuche:", error);
@@ -1334,6 +1342,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         schuelerStudent={memberData.schueler_student}
         mode="create"
         mitgliedId={null}
+        isPublic={isRegistrationFlow}
       />
     </div>
   );

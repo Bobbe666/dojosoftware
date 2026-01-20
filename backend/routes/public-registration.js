@@ -678,6 +678,207 @@ router.delete('/register/family/member/:id', async (req, res) => {
   }
 });
 
+// =============================================
+// PUBLIC BANK ENDPOINTS (für Registrierung ohne Auth)
+// =============================================
+
+// POST /api/public/banken/validate-iban - IBAN validieren
+router.post('/banken/validate-iban', async (req, res) => {
+  try {
+    const { iban } = req.body;
+
+    if (!iban) {
+      return res.status(400).json({ error: "IBAN ist erforderlich" });
+    }
+
+    // IBAN bereinigen (Leerzeichen entfernen)
+    const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+
+    // Deutsche IBAN validieren (DE + 20 Zeichen)
+    if (!/^DE\d{20}$/.test(cleanIban)) {
+      return res.status(400).json({
+        error: "Ungültige deutsche IBAN. Format: DE + 20 Ziffern"
+      });
+    }
+
+    // Bankleitzahl aus IBAN extrahieren (Zeichen 4-11)
+    const bankleitzahl = cleanIban.substring(4, 12);
+
+    // BIC aus Bankleitzahl suchen
+    const results = await queryAsync(
+      "SELECT bankname, bic FROM banken WHERE bankleitzahl = ?",
+      [bankleitzahl]
+    );
+
+    if (results.length === 0) {
+      return res.json({
+        valid: true,
+        iban: cleanIban,
+        bankleitzahl: bankleitzahl,
+        bankname: "Unbekannte Bank",
+        bic: "",
+        message: "IBAN ist gültig, aber Bank nicht in der Datenbank gefunden"
+      });
+    }
+
+    const bank = results[0];
+    res.json({
+      valid: true,
+      iban: cleanIban,
+      bankleitzahl: bankleitzahl,
+      bankname: bank.bankname,
+      bic: bank.bic,
+      message: "IBAN ist gültig und Bank wurde gefunden"
+    });
+
+  } catch (err) {
+    console.error('Fehler bei IBAN-Validierung:', err);
+    res.status(500).json({ error: 'Serverfehler bei IBAN-Validierung' });
+  }
+});
+
+// GET /api/public/banken/search - Banken suchen
+router.get('/banken/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.length < 2) {
+      return res.json([]);
+    }
+
+    const searchTerm = `%${q}%`;
+    const results = await queryAsync(`
+      SELECT bankleitzahl, bankname, bic, ort
+      FROM banken
+      WHERE bankname LIKE ? OR ort LIKE ?
+      ORDER BY bankname
+      LIMIT 10
+    `, [searchTerm, searchTerm]);
+
+    res.json(results);
+
+  } catch (err) {
+    console.error('Fehler bei Bankensuche:', err);
+    res.status(500).json({ error: 'Serverfehler bei Bankensuche' });
+  }
+});
+
+// POST /api/public/banken/kto-blz-to-iban - Kontonummer + BLZ zu IBAN
+router.post('/banken/kto-blz-to-iban', async (req, res) => {
+  try {
+    const { kontonummer, bankleitzahl } = req.body;
+
+    if (!kontonummer || !bankleitzahl) {
+      return res.status(400).json({
+        error: "Kontonummer und Bankleitzahl sind erforderlich"
+      });
+    }
+
+    // Kontonummer auf 10 Stellen auffüllen
+    const paddedKto = kontonummer.padStart(10, '0');
+
+    // Bankleitzahl validieren (8 Stellen)
+    if (!/^\d{8}$/.test(bankleitzahl)) {
+      return res.status(400).json({
+        error: "Bankleitzahl muss 8 Ziffern haben"
+      });
+    }
+
+    // BBAN erstellen (Bankleitzahl + Kontonummer)
+    const bban = bankleitzahl + paddedKto;
+
+    // Prüfziffer berechnen
+    const checkDigits = calculateIbanCheckDigits(bban);
+
+    // IBAN erstellen
+    const iban = `DE${checkDigits}${bban}`;
+
+    // BIC aus Bankleitzahl suchen
+    const results = await queryAsync(
+      "SELECT bankname, bic FROM banken WHERE bankleitzahl = ?",
+      [bankleitzahl]
+    );
+
+    const bank = results.length > 0 ? results[0] : { bankname: "Unbekannte Bank", bic: "" };
+
+    res.json({
+      iban: iban,
+      bankleitzahl: bankleitzahl,
+      kontonummer: kontonummer,
+      bankname: bank.bankname,
+      bic: bank.bic,
+      message: "IBAN wurde erfolgreich erstellt"
+    });
+
+  } catch (err) {
+    console.error('Fehler bei IBAN-Konvertierung:', err);
+    res.status(500).json({ error: 'Serverfehler bei IBAN-Konvertierung' });
+  }
+});
+
+// POST /api/public/check-duplicate - Duplikatsprüfung (öffentlich)
+router.post('/check-duplicate', async (req, res) => {
+  try {
+    const { vorname, nachname, geburtsdatum, email } = req.body;
+
+    if (!vorname || !nachname) {
+      return res.json({ isDuplicate: false });
+    }
+
+    // Einfache Prüfung auf existierende Mitglieder mit gleichem Namen und Geburtsdatum
+    let query = `
+      SELECT mitglied_id, vorname, nachname, geburtsdatum, email
+      FROM mitglieder
+      WHERE LOWER(vorname) = LOWER(?) AND LOWER(nachname) = LOWER(?)
+    `;
+    const params = [vorname, nachname];
+
+    if (geburtsdatum) {
+      query += ' AND geburtsdatum = ?';
+      params.push(geburtsdatum);
+    }
+
+    const results = await queryAsync(query, params);
+
+    if (results.length > 0) {
+      return res.json({
+        isDuplicate: true,
+        message: 'Ein Mitglied mit diesem Namen existiert bereits',
+        existingMember: {
+          vorname: results[0].vorname,
+          nachname: results[0].nachname
+        }
+      });
+    }
+
+    res.json({ isDuplicate: false });
+
+  } catch (err) {
+    console.error('Fehler bei Duplikatsprüfung:', err);
+    res.status(500).json({ error: 'Serverfehler bei Duplikatsprüfung' });
+  }
+});
+
+// Hilfsfunktion für IBAN-Prüfziffer
+function calculateIbanCheckDigits(bban) {
+  // BBAN + "DE" für Prüfziffer-Berechnung
+  const rearranged = bban + "1314"; // DE = 13, 14
+
+  // Modulo 97 berechnen
+  let remainder = 0;
+  for (let i = 0; i < rearranged.length; i++) {
+    remainder = (remainder * 10 + parseInt(rearranged[i])) % 97;
+  }
+
+  // Prüfziffer berechnen
+  const checkDigits = (98 - remainder).toString().padStart(2, '0');
+  return checkDigits;
+}
+
+// =============================================
+// TARIFE ENDPOINT
+// =============================================
+
 // GET /api/public/tarife - Öffentlich verfügbare Tarife
 router.get('/tarife', async (req, res) => {
   try {
