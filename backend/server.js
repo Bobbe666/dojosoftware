@@ -528,7 +528,7 @@ try {
 // 3. TARIFE
 try {
   const tarifeRouter = require(path.join(__dirname, "routes", "tarife.js"));
-  app.use("/api/tarife", tarifeRouter);
+  app.use("/api/tarife", authenticateToken, tarifeRouter);
   logger.success('Route gemountet', { path: '/api/tarife' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
