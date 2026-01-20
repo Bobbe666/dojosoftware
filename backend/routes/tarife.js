@@ -235,7 +235,9 @@ router.get('/rabatte', async (req, res) => {
         const parsedDojoId = parseInt(dojoId, 10);
 
         const rabatte = await queryAsync(`
-            SELECT * FROM rabatte
+            SELECT id AS rabatt_id, dojo_id, name, beschreibung, rabatt_prozent,
+                   gueltig_von, gueltig_bis, max_nutzungen, genutzt, aktiv, erstellt_am
+            FROM rabatte
             WHERE dojo_id = ?
             ORDER BY name ASC
         `, [parsedDojoId]);
@@ -296,7 +298,7 @@ router.put('/rabatte/:id', async (req, res) => {
         await queryAsync(`
             UPDATE rabatte
             SET name = ?, beschreibung = ?, rabatt_prozent = ?, gueltig_von = ?, gueltig_bis = ?, max_nutzungen = ?, aktiv = ?
-            WHERE rabatt_id = ? AND dojo_id = ?
+            WHERE id = ? AND dojo_id = ?
         `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv, id, parsedDojoId]);
         res.json({ success: true, message: 'Rabatt erfolgreich aktualisiert' });
     } catch (err) {
@@ -318,7 +320,7 @@ router.delete('/rabatte/:id', async (req, res) => {
         const { id } = req.params;
         // Vorerst ohne Verwendungscheck - kann später erweitert werden
 
-        await queryAsync('DELETE FROM rabatte WHERE rabatt_id = ? AND dojo_id = ?', [id, parsedDojoId]);
+        await queryAsync('DELETE FROM rabatte WHERE id = ? AND dojo_id = ?', [id, parsedDojoId]);
         res.json({ success: true, message: 'Rabatt erfolgreich gelöscht' });
     } catch (err) {
         console.error('Fehler beim Löschen des Rabatts:', err);
