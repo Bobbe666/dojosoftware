@@ -45,11 +45,13 @@ router.get('/', async (req, res) => {
         // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
         const parsedDojoId = dojoId ? parseInt(dojoId, 10) : null;
 
-        if (!parsedDojoId && req.user?.role === 'super_admin') {
-            // Super-Admin ohne spezifisches Dojo: Tarife aller zentral verwalteten Dojos
-            query += ` WHERE dojo_id NOT IN (
-                SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
-            )`;
+        // User mit dojo_id=null gilt als Super-Admin (kann alle Dojos sehen)
+        const isSuperAdmin = req.user?.role === 'super_admin' || req.user?.dojo_id === null;
+
+        if (!parsedDojoId && isSuperAdmin) {
+            // Super-Admin ohne spezifisches Dojo: Tarife ALLER zentral verwalteten Dojos
+            // Keine WHERE-Klausel = alle Tarife
+            console.log('📊 Super-Admin Modus: Zeige alle Tarife');
         } else if (parsedDojoId) {
             // Normaler Admin oder Super-Admin mit gewähltem Dojo: Nur dieses Dojo
             query += ' WHERE dojo_id = ?';
@@ -229,18 +231,30 @@ router.get('/rabatte', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
         const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
-        if (!dojoId) {
+        const parsedDojoId = dojoId ? parseInt(dojoId, 10) : null;
+
+        // User mit dojo_id=null gilt als Super-Admin (kann alle Dojos sehen)
+        const isSuperAdmin = req.user?.role === 'super_admin' || req.user?.dojo_id === null;
+
+        if (!parsedDojoId && !isSuperAdmin) {
             return res.status(403).json({ error: 'No tenant' });
         }
-        const parsedDojoId = parseInt(dojoId, 10);
 
-        const rabatte = await queryAsync(`
+        let query = `
             SELECT id AS rabatt_id, dojo_id, name, beschreibung, rabatt_prozent,
                    gueltig_von, gueltig_bis, max_nutzungen, genutzt, aktiv, erstellt_am
-            FROM rabatte
-            WHERE dojo_id = ?
-            ORDER BY name ASC
-        `, [parsedDojoId]);
+            FROM rabatte`;
+        let params = [];
+
+        if (parsedDojoId) {
+            query += ' WHERE dojo_id = ?';
+            params.push(parsedDojoId);
+        }
+        // Super-Admin ohne Dojo: alle Rabatte (keine WHERE-Klausel)
+
+        query += ' ORDER BY name ASC';
+
+        const rabatte = await queryAsync(query, params);
         res.json({ success: true, data: rabatte });
     } catch (err) {
         console.error('Fehler beim Abrufen der Rabatte:', err);
