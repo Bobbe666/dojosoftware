@@ -96,6 +96,7 @@ import LastschriftManagement from "./components/LastschriftManagement";
 
 // Tarife & Preise Management
 import TarifePreise from "./components/TarifePreise";
+import Rabattsystem from "./components/Rabattsystem";
 
 // Zahlungszyklen-Management
 import ZahlungszyklenSeite from "./components/ZahlungszyklenSeite";
@@ -507,6 +508,7 @@ const App = () => {
 
               {/* Tarife & Preise Management */}
               <Route path="tarife" element={<TarifePreise />} />
+              <Route path="rabattsystem" element={<Rabattsystem />} />
 
               {/* Personal-Management */}
               <Route path="personal" element={<Personal />} />

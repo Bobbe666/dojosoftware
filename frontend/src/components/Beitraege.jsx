@@ -315,9 +315,9 @@ const Beitraege = () => {
               >
                 Tarife bearbeiten
               </button>
-              <button 
+              <button
                 className="btn btn-secondary"
-                onClick={() => navigate('/dashboard/tarife')}
+                onClick={() => navigate('/dashboard/rabattsystem')}
               >
                 Rabatt-System
               </button>
