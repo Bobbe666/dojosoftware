@@ -22,6 +22,15 @@ router.get('/', async (req, res) => {
         // dojo_id aus verschiedenen Quellen extrahieren
         const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
 
+        console.log('📊 Tarife GET Request:', {
+            tenant_dojo_id: req.tenant?.dojo_id,
+            req_dojo_id: req.dojo_id,
+            query_dojo_id: req.query.dojo_id,
+            user_dojo_id: req.user?.dojo_id,
+            final_dojo_id: dojoId,
+            user_role: req.user?.role
+        });
+
         // Super-Admin (dojo_id = null): Kann Tarife aller zentral verwalteten Dojos sehen
         // Normaler Admin: Muss dojo_id haben
         if (!dojoId && !req.user) {
@@ -50,7 +59,12 @@ router.get('/', async (req, res) => {
 
         query += ' ORDER BY id ASC';
 
+        console.log('📊 Tarife Query:', { query, params, parsedDojoId });
+
         const tarife = await queryAsync(query, params);
+
+        console.log('📊 Tarife Result:', { count: tarife.length, firstItem: tarife[0] });
+
         res.json({ success: true, data: tarife });
     } catch (err) {
         console.error('Fehler beim Abrufen der Tarife:', err);
