@@ -248,6 +248,47 @@
   color: #334155;
 }
 
+/* Light Mode - Stat Value Colors (darker for better visibility) */
+[data-theme="tda-vib"] .stat-card.primary .stat-value {
+  color: #92400e !important; /* Darker gold/amber */
+}
+
+[data-theme="tda-vib"] .stat-card.success .stat-value {
+  color: #047857 !important; /* Darker green */
+}
+
+[data-theme="tda-vib"] .stat-card.info .stat-value {
+  color: #1d4ed8 !important; /* Darker blue */
+}
+
+[data-theme="tda-vib"] .stat-card.warning .stat-value {
+  color: #b45309 !important; /* Darker amber */
+}
+
+[data-theme="tda-vib"] .stat-card.global-primary .stat-value {
+  color: #6d28d9 !important; /* Darker purple */
+}
+
+[data-theme="tda-vib"] .stat-card.global-success .stat-value {
+  color: #0e7490 !important; /* Darker cyan */
+}
+
+[data-theme="tda-vib"] .stat-card.global-info .stat-value {
+  color: #be185d !important; /* Darker pink */
+}
+
+[data-theme="tda-vib"] .stat-card.global-warning .stat-value {
+  color: #be123c !important; /* Darker red */
+}
+
+[data-theme="tda-vib"] .kpi-value {
+  color: #92400e !important; /* Darker gold for KPI values */
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .stat-value {
+  color: #334155 !important;
+}
+
 /* Tab Navigation */
 .tab-navigation {
   display: flex;
