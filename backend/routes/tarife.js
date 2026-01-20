@@ -28,7 +28,9 @@ router.get('/', async (req, res) => {
             query_dojo_id: req.query.dojo_id,
             user_dojo_id: req.user?.dojo_id,
             final_dojo_id: dojoId,
-            user_role: req.user?.role
+            user_role: req.user?.role,
+            user_exists: !!req.user,
+            full_user: req.user ? JSON.stringify(req.user).substring(0, 200) : 'no user'
         });
 
         // Super-Admin (dojo_id = null): Kann Tarife aller zentral verwalteten Dojos sehen
