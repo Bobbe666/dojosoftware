@@ -688,3 +688,241 @@
     font-size: 1.75rem;
   }
 }
+
+/* =============================================
+   TDA-VIB LIGHT MODE THEME
+   ============================================= */
+
+[data-theme="tda-vib"] .tarife-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarife-header {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarife-header h1 {
+  color: #92400e !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarife-header p {
+  color: #334155 !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .loading-state {
+  color: #64748b !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .loading-spinner {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-top-color: #92400e !important;
+}
+
+/* Stats Grid - Light Mode */
+[data-theme="tda-vib"] .tarife-container .stat-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .stat-icon {
+  background: rgba(146, 64, 14, 0.1) !important;
+  color: #92400e !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .stat-info h3 {
+  color: #64748b !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .stat-value {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .stat-trend {
+  color: #64748b !important;
+  text-shadow: none !important;
+}
+
+/* Section - Light Mode */
+[data-theme="tda-vib"] .tarife-container .section {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .section-header {
+  border-bottom-color: rgba(203, 213, 225, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .section-header h2 {
+  color: #92400e !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .section-header.collapsible:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Tarif Cards - Light Mode */
+[data-theme="tda-vib"] .tarife-container .tarif-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(203, 213, 225, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarif-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(146, 64, 14, 0.3) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarif-header h3,
+[data-theme="tda-vib"] .tarife-container .tarif-title h3 {
+  color: #0f172a !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarif-price {
+  color: #92400e !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarif-price .period {
+  color: #64748b !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .tarif-details {
+  background: rgba(248, 250, 252, 0.8) !important;
+  border-color: rgba(203, 213, 225, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .detail-item .label {
+  color: #64748b !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .detail-item .value {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+/* Buttons - Light Mode */
+[data-theme="tda-vib"] .tarife-container .btn-primary {
+  background: rgba(146, 64, 14, 0.1) !important;
+  border: 1px solid rgba(146, 64, 14, 0.3) !important;
+  color: #92400e !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #92400e !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .btn-primary:hover {
+  background: rgba(146, 64, 14, 0.2) !important;
+  border-color: rgba(146, 64, 14, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .header-actions .btn-primary,
+[data-theme="tda-vib"] .tarife-container .header-actions .btn-primary:hover {
+  color: #92400e !important;
+  -webkit-text-fill-color: #92400e !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .action-btn.edit {
+  color: #92400e !important;
+  border-color: #92400e !important;
+  background: rgba(146, 64, 14, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .action-btn.edit:hover {
+  background: rgba(146, 64, 14, 0.2) !important;
+}
+
+/* Status Badges - Light Mode */
+[data-theme="tda-vib"] .tarife-container .status-badge.active {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #15803d !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .status-badge.inactive {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #dc2626 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Tarif Count Badge - Light Mode */
+[data-theme="tda-vib"] .tarife-container .tarif-count {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  color: #0f172a !important;
+}
+
+/* Modal - Light Mode */
+[data-theme="tda-vib"] .tarife-container .modal-overlay {
+  background: rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .modal {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
+  border: 1px solid rgba(203, 213, 225, 0.5) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .modal-header {
+  border-bottom-color: rgba(203, 213, 225, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .modal-header h3 {
+  color: #92400e !important;
+  text-shadow: none !important;
+}
+
+/* Form - Light Mode */
+[data-theme="tda-vib"] .tarife-container .form-group label {
+  color: #334155 !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .form-group input,
+[data-theme="tda-vib"] .tarife-container .form-group textarea,
+[data-theme="tda-vib"] .tarife-container .form-group select {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.5) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .form-group input:focus,
+[data-theme="tda-vib"] .tarife-container .form-group textarea:focus,
+[data-theme="tda-vib"] .tarife-container .form-group select:focus {
+  border-color: #92400e !important;
+  box-shadow: 0 0 0 3px rgba(146, 64, 14, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .form-actions {
+  border-top-color: rgba(203, 213, 225, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .save-btn {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  color: #0f172a !important;
+  border-color: #f59e0b !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .cancel-btn {
+  color: #64748b !important;
+  border-color: rgba(203, 213, 225, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .cancel-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #334155 !important;
+}
+
+[data-theme="tda-vib"] .tarife-container .checkbox-label {
+  color: #334155 !important;
+}
