@@ -1252,49 +1252,49 @@
    LIGHT MODE OVERRIDES
    ============================================= */
 
-[data-theme="light"] .dashboard-container {
+[data-theme="tda-vib"] .dashboard-container {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
   color: #0f172a;
 }
 
-[data-theme="light"] .dashboard-header {
+[data-theme="tda-vib"] .dashboard-header {
   background: rgba(255, 255, 255, 0.9) !important;
   border: 1px solid rgba(203, 213, 225, 0.5) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
 }
 
-[data-theme="light"] .dashboard-header h2 {
+[data-theme="tda-vib"] .dashboard-header h2 {
   color: #334155 !important;
 }
 
-[data-theme="light"] .dashboard-header-right .logout-button {
+[data-theme="tda-vib"] .dashboard-header-right .logout-button {
   background: rgba(0, 0, 0, 0.05) !important;
   color: #334155 !important;
   border: 1px solid rgba(203, 213, 225, 0.5) !important;
 }
 
-[data-theme="light"] .dashboard-header-right .logout-button:hover {
+[data-theme="tda-vib"] .dashboard-header-right .logout-button:hover {
   background: rgba(0, 0, 0, 0.1) !important;
   color: #0f172a !important;
 }
 
-[data-theme="light"] .dashboard-main {
+[data-theme="tda-vib"] .dashboard-main {
   background: transparent;
 }
 
-[data-theme="light"] .content-card {
+[data-theme="tda-vib"] .content-card {
   background: transparent !important;
 }
 
-[data-theme="light"] .user-display {
+[data-theme="tda-vib"] .user-display {
   color: #334155;
 }
 
-[data-theme="light"] .user-display .user-name {
+[data-theme="tda-vib"] .user-display .user-name {
   color: #0f172a;
 }
 
-[data-theme="light"] .version-badge {
+[data-theme="tda-vib"] .version-badge {
   background: rgba(255, 215, 0, 0.15);
   color: #92400e;
 }
