@@ -155,7 +155,7 @@ const VertragFormular = ({
       setLoading(true);
       try {
         // Tarife laden - bei öffentlicher Registrierung den public-Endpunkt verwenden
-        const tarifeEndpoint = isPublic ? '/api/public/tarife' : '/tarife';
+        const tarifeEndpoint = isPublic ? '/public/tarife' : '/tarife';
         const tarifeRes = await axios.get(tarifeEndpoint);
         let allTarife = tarifeRes.data?.data || tarifeRes.data || [];
 

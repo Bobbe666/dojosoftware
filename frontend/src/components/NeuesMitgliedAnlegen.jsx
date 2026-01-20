@@ -307,7 +307,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     setError("");
     try {
       // Bei öffentlicher Registrierung den public-Endpunkt verwenden
-      const endpoint = isRegistrationFlow ? '/api/public/check-duplicate' : '/mitglieder/check-duplicate';
+      const endpoint = isRegistrationFlow ? '/public/check-duplicate' : '/mitglieder/check-duplicate';
       const response = await axios.post(endpoint, {
         vorname: memberData.vorname,
         nachname: memberData.nachname,
@@ -380,7 +380,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
     try {
       // Bei öffentlicher Registrierung den public-Endpunkt verwenden
-      const endpoint = isRegistrationFlow ? '/api/public/banken/validate-iban' : '/banken/validate-iban';
+      const endpoint = isRegistrationFlow ? '/public/banken/validate-iban' : '/banken/validate-iban';
       const response = await axios.post(endpoint, { iban });
       const result = response.data;
       setIbanValidation(result);
@@ -408,7 +408,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
     try {
       // Bei öffentlicher Registrierung den public-Endpunkt verwenden
-      const endpoint = isRegistrationFlow ? '/api/public/banken/kto-blz-to-iban' : '/banken/kto-blz-to-iban';
+      const endpoint = isRegistrationFlow ? '/public/banken/kto-blz-to-iban' : '/banken/kto-blz-to-iban';
       const response = await axios.post(endpoint, { kontonummer, bankleitzahl });
       const result = response.data;
 
@@ -436,7 +436,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
     try {
       // Bei öffentlicher Registrierung den public-Endpunkt verwenden
-      const endpoint = isRegistrationFlow ? '/api/public/banken/search' : '/banken/search';
+      const endpoint = isRegistrationFlow ? '/public/banken/search' : '/banken/search';
       const response = await axios.get(endpoint, { params: { q: searchTerm } });
       setBankSearchResults(response.data);
     } catch (error) {
