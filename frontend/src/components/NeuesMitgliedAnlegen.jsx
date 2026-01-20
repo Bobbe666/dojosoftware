@@ -266,33 +266,22 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   // Anzahl der tatsächlichen Schritte (für Navigation)
   const getTotalSteps = () => {
-    // 8 Schritte für öffentliche Registrierung, 7 für interne Admin-Erstellung
-    return isRegistrationFlow ? 8 : 7;
+    // 7 Schritte für öffentliche Registrierung (mit Account), 6 für interne Admin-Erstellung
+    return isRegistrationFlow ? 7 : 6;
   };
 
   // Anzahl der angezeigten Schritte (für Progress Bar)
   const getDisplayStepCount = () => {
-    // Für öffentliche Registrierung: 8/7 Schritte (mit/ohne Erziehungsberechtigte)
-    // Für interne Admin-Erstellung: 7/6 Schritte (mit/ohne Erziehungsberechtigte)
-    if (isRegistrationFlow) {
-      return isMinor() ? 8 : 7;
-    } else {
-      return isMinor() ? 7 : 6;
-    }
+    // 7 Schritte für öffentliche Registrierung (mit Account), 6 für interne Admin-Erstellung
+    return isRegistrationFlow ? 7 : 6;
   };
 
-  // Mapping für Schrittnummern (überspringe Schritt 3 bei Volljährigen)
+  // Mapping für Schrittnummern (1:1 Zuordnung - keine Schritte werden übersprungen)
   const getActualStep = (displayStep) => {
-    if (!isMinor() && displayStep >= 3) {
-      return displayStep + 1; // Überspringe Schritt 3
-    }
     return displayStep;
   };
 
   const getDisplayStep = (actualStep) => {
-    if (!isMinor() && actualStep > 3) {
-      return actualStep - 1;
-    }
     return actualStep;
   };
 
@@ -478,46 +467,51 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }
     }
 
-    // Validierung Schritt 3: Erziehungsberechtigte (nur für Minderjährige)
-    if (currentStep === 3 && isMinor()) {
-      if (!memberData.erziehungsberechtigt_vorname || !memberData.erziehungsberechtigt_nachname ||
-          !memberData.erziehungsberechtigt_telefon || !memberData.erziehungsberechtigt_email || !memberData.verhaeltnis) {
-        setError("Bitte füllen Sie alle Pflichtfelder der Erziehungsberechtigten aus");
+    // Validierung Schritt 3: Vertragsdaten
+    if (currentStep === 3) {
+      if (!memberData.vertrag_tarif_id) {
+        setError("Bitte wählen Sie einen Tarif aus");
+        return;
+      }
+      if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
+          !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
+        setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
         return;
       }
     }
 
-    // Validierung Schritt 5: Zahlungsdaten
-    if (currentStep === 5) {
-      if (!memberData.kontoinhaber || !memberData.iban || !memberData.bic || !memberData.bankname) {
-        setError("Bitte füllen Sie alle Pflichtfelder der Zahlungsdaten aus (Kontoinhaber, IBAN, BIC, Bankname)");
+    // Validierung Schritt 4: Bankdaten
+    if (currentStep === 4) {
+      if (!memberData.kontoinhaber || !memberData.iban) {
+        setError("Bitte füllen Sie alle Pflichtfelder der Bankdaten aus (Kontoinhaber, IBAN)");
+        return;
+      }
+    }
+
+    // Schritt 5: Medizinisch - keine Pflichtfelder
+
+    // Validierung Schritt 6: Widerrufsrecht
+    if (currentStep === 6) {
+      if (!memberData.vertragsbeginn_option) {
+        setError("Bitte wählen Sie eine Option für den Vertragsbeginn");
+        return;
+      }
+      if (memberData.vertragsbeginn_option === 'sofort' &&
+          (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme)) {
+        setError("Bei Sofortbeginn müssen Sie beide Bestätigungen akzeptieren");
         return;
       }
     }
 
     const totalSteps = getTotalSteps();
     if (currentStep < totalSteps) {
-      let nextStep = currentStep + 1;
-
-      // Überspringe Schritt 3 (Erziehungsberechtigte) wenn volljährig
-      if (!isMinor() && nextStep === 3) {
-        nextStep = 4;
-      }
-
-      setCurrentStep(nextStep);
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      let prevStep = currentStep - 1;
-
-      // Überspringe Schritt 3 (Erziehungsberechtigte) wenn volljährig
-      if (!isMinor() && prevStep === 3) {
-        prevStep = 2;
-      }
-
-      setCurrentStep(prevStep);
+      setCurrentStep(currentStep - 1);
     }
   };
 
@@ -1080,7 +1074,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderStep4 = () => (
     <div className="step-content">
-      <h3>Schritt 4: Medizinische Angaben</h3>
+      <h3>Schritt 5: Medizinische Angaben</h3>
       <div className="input-container">
         <div className="input-group">
           <label htmlFor="allergien" className="input-label">Allergien</label>
@@ -1150,7 +1144,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderStep5 = () => (
     <div className="step-content">
-      <h3>Schritt 5: Zahlungsdaten</h3>
+      <h3>Schritt 4: Bankdaten</h3>
       <div className="input-container">
         <div className="input-group">
           <label htmlFor="kontoinhaber" className="input-label">Kontoinhaber *</label>
@@ -1295,7 +1289,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderStep6 = () => (
     <div className="step-content">
-      <h3>Schritt 6: Vertragsauswahl</h3>
+      <h3>Schritt 3: Vertragsauswahl</h3>
       <VertragFormular
         vertrag={{
           tarif_id: memberData.vertrag_tarif_id,
@@ -1349,7 +1343,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderStep7 = () => (
     <div className="step-content">
-      <h3>Schritt 7: Widerrufsrecht & Vertragsbeginn</h3>
+      <h3>Schritt 6: Widerrufsrecht & Vertragsbeginn</h3>
 
       <div style={{
         padding: '1.5rem',
@@ -1478,7 +1472,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderStep8 = () => (
     <div className="step-content">
-      <h3>Schritt 8: Benutzerkonto erstellen</h3>
+      <h3>Schritt 7: Benutzerkonto erstellen</h3>
 
       <div style={{
         padding: '1.5rem',
@@ -1575,14 +1569,13 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 1: return renderStep1();
-      case 2: return renderStep2();
-      case 3: return renderStep3();
-      case 4: return renderStep4();
-      case 5: return renderStep5();
-      case 6: return renderStep6();
-      case 7: return renderStep7();
-      case 8: return renderStep8();
+      case 1: return renderStep1();  // Grunddaten
+      case 2: return renderStep2();  // Kontakt
+      case 3: return renderStep6();  // Vertrag (war Schritt 6)
+      case 4: return renderStep5();  // Bank (war Schritt 5 "Zahlungen")
+      case 5: return renderStep4();  // Medizinisch (war Schritt 4)
+      case 6: return renderStep7();  // Widerruf (war Schritt 7)
+      case 7: return renderStep8();  // Account (war Schritt 8)
       default: return renderStep1();
     }
   };
@@ -1706,12 +1699,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               }}>
                 {actualStep === 1 && 'Grunddaten'}
                 {actualStep === 2 && 'Kontakt'}
-                {actualStep === 3 && 'Erziehungsber.'}
-                {actualStep === 4 && 'Medizinisch'}
-                {actualStep === 5 && 'Zahlungen'}
-                {actualStep === 6 && 'Vertrag'}
-                {actualStep === 7 && 'Widerruf'}
-                {actualStep === 8 && 'Account'}
+                {actualStep === 3 && 'Vertrag'}
+                {actualStep === 4 && 'Bank'}
+                {actualStep === 5 && 'Medizinisch'}
+                {actualStep === 6 && 'Widerruf'}
+                {actualStep === 7 && 'Account'}
               </div>
             </div>
             );
@@ -1774,8 +1766,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </button>
         </div>
 
-        {/* Warnung bei Schritt 6 */}
-        {currentStep === 6 && (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert || !memberData.vertrag_tarif_id) && (
+        {/* Warnung bei Schritt 3 (Vertrag) */}
+        {currentStep === 3 && (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert || !memberData.vertrag_tarif_id) && (
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
@@ -1790,8 +1782,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         )}
 
-        {/* Warnung bei Schritt 7 */}
-        {currentStep === 7 && !memberData.vertragsbeginn_option && (
+        {/* Warnung bei Schritt 6 (Widerruf) */}
+        {currentStep === 6 && !memberData.vertragsbeginn_option && (
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
@@ -1806,7 +1798,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         )}
 
-        {currentStep === 7 && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
+        {currentStep === 6 && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
@@ -1821,8 +1813,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         )}
 
-        {/* Warnung bei Schritt 8 */}
-        {currentStep === 8 && isRegistrationFlow && (
+        {/* Warnung bei Schritt 7 (Account) */}
+        {currentStep === 7 && isRegistrationFlow && (
           <>
             {(!memberData.benutzername || memberData.benutzername.length < 4) && (
               <div style={{
