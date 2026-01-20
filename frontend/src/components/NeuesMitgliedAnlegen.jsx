@@ -134,6 +134,19 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   const [bankSearchResults, setBankSearchResults] = useState([]);
   const [showBankSearch, setShowBankSearch] = useState(false);
 
+  // Familien-Registrierung State
+  const [familyMode, setFamilyMode] = useState(false);
+  const [familySessionId, setFamilySessionId] = useState(null);
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [addingFamilyMember, setAddingFamilyMember] = useState(false);
+  const [newFamilyMember, setNewFamilyMember] = useState({
+    vorname: '',
+    nachname: '',
+    geburtsdatum: '',
+    geschlecht: '',
+    email: ''
+  });
+
   // Modal immer von oben starten - aggressive Lösung
   useEffect(() => {
     // Scroll zur obersten Position
@@ -266,14 +279,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   // Anzahl der tatsächlichen Schritte (für Navigation)
   const getTotalSteps = () => {
-    // 7 Schritte für öffentliche Registrierung (mit Account), 6 für interne Admin-Erstellung
-    return isRegistrationFlow ? 7 : 6;
+    // 8 Schritte für öffentliche Registrierung (mit Familie + Account), 6 für interne Admin-Erstellung
+    return isRegistrationFlow ? 8 : 6;
   };
 
   // Anzahl der angezeigten Schritte (für Progress Bar)
   const getDisplayStepCount = () => {
-    // 7 Schritte für öffentliche Registrierung (mit Account), 6 für interne Admin-Erstellung
-    return isRegistrationFlow ? 7 : 6;
+    // 8 Schritte für öffentliche Registrierung (mit Familie + Account), 6 für interne Admin-Erstellung
+    return isRegistrationFlow ? 8 : 6;
   };
 
   // Mapping für Schrittnummern (1:1 Zuordnung - keine Schritte werden übersprungen)
@@ -283,6 +296,63 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const getDisplayStep = (actualStep) => {
     return actualStep;
+  };
+
+  // Hilfsfunktion: Prüfen ob ein Familienmitglied minderjährig ist
+  const isFamilyMemberMinor = (geburtsdatum) => {
+    if (!geburtsdatum) return false;
+    const birthDate = new Date(geburtsdatum);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      return age - 1 < 18;
+    }
+    return age < 18;
+  };
+
+  // Familienmitglied hinzufügen
+  const addFamilyMember = () => {
+    if (!newFamilyMember.vorname || !newFamilyMember.nachname || !newFamilyMember.geburtsdatum || !newFamilyMember.geschlecht || !newFamilyMember.email) {
+      setError("Bitte füllen Sie alle Pflichtfelder für das Familienmitglied aus");
+      return;
+    }
+
+    setFamilyMembers(prev => [...prev, {
+      ...newFamilyMember,
+      position: prev.length + 2, // Position 1 = Hauptmitglied
+      isMinor: isFamilyMemberMinor(newFamilyMember.geburtsdatum)
+    }]);
+
+    // Reset form
+    setNewFamilyMember({
+      vorname: '',
+      nachname: '',
+      geburtsdatum: '',
+      geschlecht: '',
+      email: ''
+    });
+    setAddingFamilyMember(false);
+    setError("");
+  };
+
+  // Familienmitglied entfernen
+  const removeFamilyMember = (index) => {
+    setFamilyMembers(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      // Positionen neu berechnen
+      return updated.map((member, i) => ({
+        ...member,
+        position: i + 2
+      }));
+    });
+  };
+
+  // Familien-Session starten
+  const startFamilySession = () => {
+    const sessionId = `family_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setFamilySessionId(sessionId);
+    setFamilyMode(true);
   };
 
   // Duplikatsprüfung
@@ -447,7 +517,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   };
 
   const handleNext = () => {
-    // Validierung Schritt 1: Grunddaten
+    // Validierung Schritt 1: Grunddaten (gleich für beide Flows)
     if (currentStep === 1) {
       if (!memberData.vorname || !memberData.nachname || !memberData.geburtsdatum || !memberData.geschlecht) {
         setError("Bitte füllen Sie alle Felder aus");
@@ -459,7 +529,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }
     }
 
-    // Validierung Schritt 2: Kontaktdaten
+    // Validierung Schritt 2: Kontaktdaten (gleich für beide Flows)
     if (currentStep === 2) {
       if (!memberData.email || !memberData.telefon_mobil || !memberData.strasse || !memberData.hausnummer || !memberData.plz || !memberData.ort) {
         setError("Bitte füllen Sie alle Pflichtfelder aus (E-Mail, Telefon Mobil, Straße, Hausnummer, PLZ, Ort)");
@@ -467,39 +537,82 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }
     }
 
-    // Validierung Schritt 3: Vertragsdaten
-    if (currentStep === 3) {
-      if (!memberData.vertrag_tarif_id) {
-        setError("Bitte wählen Sie einen Tarif aus");
-        return;
-      }
-      if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
-          !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
-        setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
-        return;
-      }
-    }
+    // Für öffentliche Registrierung (8 Schritte mit Familie)
+    if (isRegistrationFlow) {
+      // Schritt 3: Familie - keine Pflichtfelder, wird im Step selbst gehandhabt
 
-    // Validierung Schritt 4: Bankdaten
-    if (currentStep === 4) {
-      if (!memberData.kontoinhaber || !memberData.iban) {
-        setError("Bitte füllen Sie alle Pflichtfelder der Bankdaten aus (Kontoinhaber, IBAN)");
-        return;
+      // Validierung Schritt 4: Vertragsdaten
+      if (currentStep === 4) {
+        if (!memberData.vertrag_tarif_id) {
+          setError("Bitte wählen Sie einen Tarif aus");
+          return;
+        }
+        if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
+            !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
+          setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
+          return;
+        }
       }
-    }
 
-    // Schritt 5: Medizinisch - keine Pflichtfelder
-
-    // Validierung Schritt 6: Widerrufsrecht
-    if (currentStep === 6) {
-      if (!memberData.vertragsbeginn_option) {
-        setError("Bitte wählen Sie eine Option für den Vertragsbeginn");
-        return;
+      // Validierung Schritt 5: Bankdaten
+      if (currentStep === 5) {
+        if (!memberData.kontoinhaber || !memberData.iban) {
+          setError("Bitte füllen Sie alle Pflichtfelder der Bankdaten aus (Kontoinhaber, IBAN)");
+          return;
+        }
       }
-      if (memberData.vertragsbeginn_option === 'sofort' &&
-          (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme)) {
-        setError("Bei Sofortbeginn müssen Sie beide Bestätigungen akzeptieren");
-        return;
+
+      // Schritt 6: Medizinisch - keine Pflichtfelder
+
+      // Validierung Schritt 7: Widerrufsrecht
+      if (currentStep === 7) {
+        if (!memberData.vertragsbeginn_option) {
+          setError("Bitte wählen Sie eine Option für den Vertragsbeginn");
+          return;
+        }
+        if (memberData.vertragsbeginn_option === 'sofort' &&
+            (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme)) {
+          setError("Bei Sofortbeginn müssen Sie beide Bestätigungen akzeptieren");
+          return;
+        }
+      }
+    } else {
+      // Für Admin-Bereich (6 Schritte ohne Familie)
+
+      // Validierung Schritt 3: Vertragsdaten
+      if (currentStep === 3) {
+        if (!memberData.vertrag_tarif_id) {
+          setError("Bitte wählen Sie einen Tarif aus");
+          return;
+        }
+        if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
+            !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
+          setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
+          return;
+        }
+      }
+
+      // Validierung Schritt 4: Bankdaten
+      if (currentStep === 4) {
+        if (!memberData.kontoinhaber || !memberData.iban) {
+          setError("Bitte füllen Sie alle Pflichtfelder der Bankdaten aus (Kontoinhaber, IBAN)");
+          return;
+        }
+      }
+
+      // Schritt 5: Medizinisch - keine Pflichtfelder
+
+      // Validierung Schritt 6: Widerrufsrecht
+      if (currentStep === 6) {
+        if (!memberData.vertragsbeginn_option) {
+          setError("Bitte wählen Sie eine Option für den Vertragsbeginn");
+          return;
+        }
+        if (memberData.vertragsbeginn_option === 'sofort' &&
+            (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme)) {
+          setError("Bei Sofortbeginn müssen Sie beide Bestätigungen akzeptieren");
+          return;
+        }
       }
     }
 
@@ -623,7 +736,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       const submitData = {
         ...memberData,
         registration_complete: isRegistrationFlow, // Flag für vollständige Registrierung
-        registration_source: isRegistrationFlow ? 'public_registration' : 'admin_panel'
+        registration_source: isRegistrationFlow ? 'public_registration' : 'admin_panel',
+        // Familien-Daten hinzufügen (wenn vorhanden)
+        family_session_id: familySessionId,
+        family_members: familyMembers,
+        is_hauptmitglied: familyMembers.length > 0, // Nur Hauptmitglied wenn Familie
+        familie_position: 1 // Hauptmitglied ist immer Position 1
       };
 
       const response = await axios.post('/mitglieder', submitData);
@@ -984,6 +1102,401 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           />
         </div>
       </div>
+    </div>
+  );
+
+  // Familien-Schritt (nur für öffentliche Registrierung)
+  const renderFamilyStep = () => (
+    <div className="step-content">
+      <h3 style={{
+        color: 'var(--primary-color)',
+        marginTop: '1rem',
+        marginBottom: '1.5rem',
+        fontSize: '1.1rem',
+        borderBottom: '2px solid var(--primary-color)',
+        paddingBottom: '0.5rem'
+      }}>Schritt 3: Familien-Registrierung</h3>
+
+      {/* Wenn noch nicht entschieden */}
+      {!familyMode && familyMembers.length === 0 && (
+        <div style={{
+          padding: '1.5rem',
+          background: 'rgba(31, 41, 55, 0.8)',
+          borderRadius: '12px',
+          border: '2px solid rgba(59, 130, 246, 0.5)',
+          marginBottom: '1.5rem'
+        }}>
+          <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>
+            Möchten Sie weitere Familienmitglieder anmelden?
+          </h4>
+          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+            Familienmitglieder teilen Adresse und Bankverbindung, erhalten aber jeweils ein eigenes Konto
+            und einen eigenen Vertrag. Ab dem 2. Familienmitglied gilt ein Familien-Rabatt.
+          </p>
+
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={startFamilySession}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.95rem'
+              }}
+            >
+              Ja, weitere Mitglieder anmelden
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrentStep(4)}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: 'rgba(255, 255, 255, 0.95)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.95rem'
+              }}
+            >
+              Nein, nur mich anmelden
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Familien-Übersicht wenn im Familien-Modus */}
+      {(familyMode || familyMembers.length > 0) && (
+        <div>
+          {/* Hauptmitglied */}
+          <div style={{
+            padding: '1rem',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '2px solid rgba(16, 185, 129, 0.5)',
+            borderRadius: '10px',
+            marginBottom: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <span style={{
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.75rem',
+                fontWeight: '700'
+              }}>Hauptmitglied</span>
+            </div>
+            <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+              {memberData.vorname} {memberData.nachname}
+            </h4>
+            <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+              Voller Beitrag
+            </p>
+          </div>
+
+          {/* Weitere Familienmitglieder */}
+          {familyMembers.map((member, index) => (
+            <div key={index} style={{
+              padding: '1rem',
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '2px solid rgba(59, 130, 246, 0.5)',
+              borderRadius: '10px',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '700'
+                  }}>{member.position}. Familienmitglied</span>
+                  {member.isMinor && (
+                    <span style={{
+                      background: 'rgba(245, 158, 11, 0.3)',
+                      color: '#fbbf24',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '20px',
+                      fontSize: '0.7rem',
+                      fontWeight: '600'
+                    }}>Minderjährig</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFamilyMember(index)}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    borderRadius: '6px',
+                    padding: '0.25rem 0.5rem',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  Entfernen
+                </button>
+              </div>
+              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+                {member.vorname} {member.nachname}
+              </h4>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+                Mit Familien-Rabatt • {member.email}
+              </p>
+              {member.isMinor && (
+                <p style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0.5rem 0 0 0', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                  {memberData.vorname} {memberData.nachname} wird als Erziehungsberechtigte/r hinterlegt.
+                </p>
+              )}
+            </div>
+          ))}
+
+          {/* Neues Familienmitglied hinzufügen */}
+          {!addingFamilyMember ? (
+            <button
+              type="button"
+              onClick={() => setAddingFamilyMember(true)}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '2px dashed rgba(255, 255, 255, 0.3)',
+                borderRadius: '10px',
+                color: 'rgba(255, 255, 255, 0.8)',
+                cursor: 'pointer',
+                fontSize: '0.95rem',
+                marginBottom: '1rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+            >
+              + Weiteres Familienmitglied hinzufügen
+            </button>
+          ) : (
+            /* Formular für neues Familienmitglied */
+            <div style={{
+              padding: '1.25rem',
+              background: 'rgba(31, 41, 55, 0.8)',
+              border: '2px solid rgba(59, 130, 246, 0.5)',
+              borderRadius: '12px',
+              marginBottom: '1rem'
+            }}>
+              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>
+                Familienmitglied {familyMembers.length + 2} hinzufügen
+              </h4>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                    Vorname *
+                  </label>
+                  <input
+                    type="text"
+                    value={newFamilyMember.vorname}
+                    onChange={(e) => setNewFamilyMember(prev => ({ ...prev, vorname: e.target.value }))}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                    Nachname *
+                  </label>
+                  <input
+                    type="text"
+                    value={newFamilyMember.nachname}
+                    onChange={(e) => setNewFamilyMember(prev => ({ ...prev, nachname: e.target.value }))}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                    Geburtsdatum *
+                  </label>
+                  <input
+                    type="date"
+                    value={newFamilyMember.geburtsdatum}
+                    onChange={(e) => setNewFamilyMember(prev => ({ ...prev, geburtsdatum: e.target.value }))}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                    Geschlecht *
+                  </label>
+                  <select
+                    value={newFamilyMember.geschlecht}
+                    onChange={(e) => setNewFamilyMember(prev => ({ ...prev, geschlecht: e.target.value }))}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  >
+                    <option value="">Bitte wählen</option>
+                    <option value="m">Männlich</option>
+                    <option value="w">Weiblich</option>
+                    <option value="d">Divers</option>
+                  </select>
+                </div>
+
+                <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                    E-Mail-Adresse * (für eigenes Konto)
+                  </label>
+                  <input
+                    type="email"
+                    value={newFamilyMember.email}
+                    onChange={(e) => setNewFamilyMember(prev => ({ ...prev, email: e.target.value }))}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Info-Box */}
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: 'rgba(59, 130, 246, 0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(59, 130, 246, 0.3)'
+              }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                  ℹ️ Adresse und Bankverbindung werden vom Hauptmitglied übernommen.
+                </p>
+              </div>
+
+              {/* Minderjährig-Hinweis */}
+              {newFamilyMember.geburtsdatum && isFamilyMemberMinor(newFamilyMember.geburtsdatum) && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem',
+                  background: 'rgba(245, 158, 11, 0.1)',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(245, 158, 11, 0.3)'
+                }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                    👶 Dieses Mitglied ist minderjährig. {memberData.vorname} {memberData.nachname} wird als Erziehungsberechtigte/r hinterlegt.
+                  </p>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={addFamilyMember}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Hinzufügen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingFamilyMember(false);
+                    setNewFamilyMember({
+                      vorname: '',
+                      nachname: '',
+                      geburtsdatum: '',
+                      geschlecht: '',
+                      email: ''
+                    });
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '6px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Info zum Familien-Rabatt */}
+          {familyMembers.length > 0 && (
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(16, 185, 129, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              marginBottom: '1rem'
+            }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                ✓ <strong>{familyMembers.length}</strong> weitere{familyMembers.length === 1 ? 's' : ''} Familienmitglied{familyMembers.length === 1 ? '' : 'er'} hinzugefügt<br/>
+                ✓ Familien-Rabatt wird automatisch angewendet<br/>
+                ✓ Jedes Mitglied erhält ein eigenes Konto und einen eigenen Vertrag
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -1568,15 +2081,30 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   );
 
   const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 1: return renderStep1();  // Grunddaten
-      case 2: return renderStep2();  // Kontakt
-      case 3: return renderStep6();  // Vertrag (war Schritt 6)
-      case 4: return renderStep5();  // Bank (war Schritt 5 "Zahlungen")
-      case 5: return renderStep4();  // Medizinisch (war Schritt 4)
-      case 6: return renderStep7();  // Widerruf (war Schritt 7)
-      case 7: return renderStep8();  // Account (war Schritt 8)
-      default: return renderStep1();
+    // Für öffentliche Registrierung: 8 Schritte mit Familie
+    if (isRegistrationFlow) {
+      switch (currentStep) {
+        case 1: return renderStep1();      // Grunddaten
+        case 2: return renderStep2();      // Kontakt
+        case 3: return renderFamilyStep(); // Familie (NEU)
+        case 4: return renderStep6();      // Vertrag
+        case 5: return renderStep5();      // Bank
+        case 6: return renderStep4();      // Medizinisch
+        case 7: return renderStep7();      // Widerruf
+        case 8: return renderStep8();      // Account
+        default: return renderStep1();
+      }
+    } else {
+      // Für Admin-Bereich: 6 Schritte ohne Familie
+      switch (currentStep) {
+        case 1: return renderStep1();  // Grunddaten
+        case 2: return renderStep2();  // Kontakt
+        case 3: return renderStep6();  // Vertrag
+        case 4: return renderStep5();  // Bank
+        case 5: return renderStep4();  // Medizinisch
+        case 6: return renderStep7();  // Widerruf
+        default: return renderStep1();
+      }
     }
   };
 
@@ -1697,13 +2225,30 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 textShadow: 'none',
                 animation: 'none'
               }}>
-                {actualStep === 1 && 'Grunddaten'}
-                {actualStep === 2 && 'Kontakt'}
-                {actualStep === 3 && 'Vertrag'}
-                {actualStep === 4 && 'Bank'}
-                {actualStep === 5 && 'Medizinisch'}
-                {actualStep === 6 && 'Widerruf'}
-                {actualStep === 7 && 'Account'}
+                {/* Labels für öffentliche Registrierung (8 Schritte) */}
+                {isRegistrationFlow && (
+                  <>
+                    {actualStep === 1 && 'Grunddaten'}
+                    {actualStep === 2 && 'Kontakt'}
+                    {actualStep === 3 && 'Familie'}
+                    {actualStep === 4 && 'Vertrag'}
+                    {actualStep === 5 && 'Bank'}
+                    {actualStep === 6 && 'Medizinisch'}
+                    {actualStep === 7 && 'Widerruf'}
+                    {actualStep === 8 && 'Account'}
+                  </>
+                )}
+                {/* Labels für Admin-Bereich (6 Schritte) */}
+                {!isRegistrationFlow && (
+                  <>
+                    {actualStep === 1 && 'Grunddaten'}
+                    {actualStep === 2 && 'Kontakt'}
+                    {actualStep === 3 && 'Vertrag'}
+                    {actualStep === 4 && 'Bank'}
+                    {actualStep === 5 && 'Medizinisch'}
+                    {actualStep === 6 && 'Widerruf'}
+                  </>
+                )}
               </div>
             </div>
             );
@@ -1766,8 +2311,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </button>
         </div>
 
-        {/* Warnung bei Schritt 3 (Vertrag) */}
-        {currentStep === 3 && (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert || !memberData.vertrag_tarif_id) && (
+        {/* Warnung bei Vertrag-Schritt (Schritt 4 für Registration, Schritt 3 für Admin) */}
+        {((isRegistrationFlow && currentStep === 4) || (!isRegistrationFlow && currentStep === 3)) &&
+         (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert || !memberData.vertrag_tarif_id) && (
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
@@ -1782,8 +2328,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         )}
 
-        {/* Warnung bei Schritt 6 (Widerruf) */}
-        {currentStep === 6 && !memberData.vertragsbeginn_option && (
+        {/* Warnung bei Widerruf-Schritt (Schritt 7 für Registration, Schritt 6 für Admin) */}
+        {((isRegistrationFlow && currentStep === 7) || (!isRegistrationFlow && currentStep === 6)) && !memberData.vertragsbeginn_option && (
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
@@ -1798,7 +2344,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         )}
 
-        {currentStep === 6 && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
+        {((isRegistrationFlow && currentStep === 7) || (!isRegistrationFlow && currentStep === 6)) && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
           <div style={{
             marginTop: '1rem',
             padding: '0.75rem',
@@ -1813,8 +2359,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         )}
 
-        {/* Warnung bei Schritt 7 (Account) */}
-        {currentStep === 7 && isRegistrationFlow && (
+        {/* Warnung bei Schritt 8 (Account) */}
+        {currentStep === 8 && isRegistrationFlow && (
           <>
             {(!memberData.benutzername || memberData.benutzername.length < 4) && (
               <div style={{
