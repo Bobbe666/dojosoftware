@@ -242,6 +242,7 @@ router.get('/rabatte', async (req, res) => {
 
         let query = `
             SELECT id AS rabatt_id, dojo_id, name, beschreibung, rabatt_prozent,
+                   rabatt_typ, rabatt_betrag_cents,
                    gueltig_von, gueltig_bis, max_nutzungen, genutzt, aktiv, erstellt_am
             FROM rabatte`;
         let params = [];
@@ -272,20 +273,33 @@ router.post('/rabatte', async (req, res) => {
         }
         const parsedDojoId = parseInt(dojoId, 10);
 
-        const { name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
+        const { name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
         const result = await queryAsync(`
-            INSERT INTO rabatte (name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv, dojo_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv, parsedDojoId]);
+            INSERT INTO rabatte (name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv, dojo_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            name,
+            beschreibung,
+            rabatt_typ === 'prozent' ? rabatt_prozent : null,
+            rabatt_typ || 'prozent',
+            rabatt_typ === 'betrag' ? rabatt_betrag_cents : null,
+            gueltig_von,
+            gueltig_bis || null,  // null = unbegrenzt gültig
+            max_nutzungen || null,
+            aktiv,
+            parsedDojoId
+        ]);
         res.json({
             success: true,
             data: {
                 rabatt_id: result.insertId,
                 name,
                 beschreibung,
-                rabatt_prozent,
+                rabatt_prozent: rabatt_typ === 'prozent' ? rabatt_prozent : null,
+                rabatt_typ: rabatt_typ || 'prozent',
+                rabatt_betrag_cents: rabatt_typ === 'betrag' ? rabatt_betrag_cents : null,
                 gueltig_von,
-                gueltig_bis,
+                gueltig_bis: gueltig_bis || null,
                 max_nutzungen: max_nutzungen || null,
                 aktiv,
                 genutzt: 0
@@ -308,12 +322,25 @@ router.put('/rabatte/:id', async (req, res) => {
         const parsedDojoId = parseInt(dojoId, 10);
 
         const { id } = req.params;
-        const { name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
+        const { name, beschreibung, rabatt_prozent, rabatt_typ, rabatt_betrag_cents, gueltig_von, gueltig_bis, max_nutzungen, aktiv } = req.body;
         await queryAsync(`
             UPDATE rabatte
-            SET name = ?, beschreibung = ?, rabatt_prozent = ?, gueltig_von = ?, gueltig_bis = ?, max_nutzungen = ?, aktiv = ?
+            SET name = ?, beschreibung = ?, rabatt_prozent = ?, rabatt_typ = ?, rabatt_betrag_cents = ?,
+                gueltig_von = ?, gueltig_bis = ?, max_nutzungen = ?, aktiv = ?
             WHERE id = ? AND dojo_id = ?
-        `, [name, beschreibung, rabatt_prozent, gueltig_von, gueltig_bis, max_nutzungen || null, aktiv, id, parsedDojoId]);
+        `, [
+            name,
+            beschreibung,
+            rabatt_typ === 'prozent' ? rabatt_prozent : null,
+            rabatt_typ || 'prozent',
+            rabatt_typ === 'betrag' ? rabatt_betrag_cents : null,
+            gueltig_von,
+            gueltig_bis || null,
+            max_nutzungen || null,
+            aktiv,
+            id,
+            parsedDojoId
+        ]);
         res.json({ success: true, message: 'Rabatt erfolgreich aktualisiert' });
     } catch (err) {
         console.error('Fehler beim Aktualisieren des Rabatts:', err);

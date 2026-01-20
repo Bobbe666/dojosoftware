@@ -11,13 +11,14 @@ import {
   Tag,
   CheckCircle,
   XCircle,
-  AlertCircle
+  DollarSign,
+  Infinity
 } from "lucide-react";
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import "../styles/themes.css";
 import "../styles/components.css";
-import "../styles/TarifePreise.css"; // Wiederverwendung der bestehenden Styles
+import "../styles/TarifePreise.css";
 
 const Rabattsystem = () => {
   const { activeDojo } = useDojoContext();
@@ -29,14 +30,15 @@ const Rabattsystem = () => {
   const [newRabatt, setNewRabatt] = useState({
     name: "",
     beschreibung: "",
+    rabatt_typ: "prozent",
     rabatt_prozent: "",
+    rabatt_betrag_cents: "",
     gueltig_von: "",
     gueltig_bis: "",
     max_nutzungen: "",
     aktiv: true
   });
 
-  // Ermittle die dojo_id aus dem aktivem Dojo
   const getDojoId = () => {
     if (!activeDojo || activeDojo === 'super-admin') {
       return null;
@@ -62,7 +64,9 @@ const Rabattsystem = () => {
           id: rabatt.rabatt_id,
           name: rabatt.name,
           beschreibung: rabatt.beschreibung,
-          rabatt_prozent: parseFloat(rabatt.rabatt_prozent),
+          rabatt_typ: rabatt.rabatt_typ || 'prozent',
+          rabatt_prozent: rabatt.rabatt_prozent ? parseFloat(rabatt.rabatt_prozent) : null,
+          rabatt_betrag_cents: rabatt.rabatt_betrag_cents,
           gueltig_von: rabatt.gueltig_von,
           gueltig_bis: rabatt.gueltig_bis,
           max_nutzungen: rabatt.max_nutzungen,
@@ -97,7 +101,9 @@ const Rabattsystem = () => {
         setNewRabatt({
           name: "",
           beschreibung: "",
+          rabatt_typ: "prozent",
           rabatt_prozent: "",
+          rabatt_betrag_cents: "",
           gueltig_von: "",
           gueltig_bis: "",
           max_nutzungen: "",
@@ -132,8 +138,15 @@ const Rabattsystem = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
+    if (!dateString) return 'Unbegrenzt';
     return new Date(dateString).toLocaleDateString('de-DE');
+  };
+
+  const formatRabattValue = (rabatt) => {
+    if (rabatt.rabatt_typ === 'betrag' && rabatt.rabatt_betrag_cents) {
+      return `${(rabatt.rabatt_betrag_cents / 100).toFixed(2)} €`;
+    }
+    return `${rabatt.rabatt_prozent || 0}%`;
   };
 
   const isRabattActive = (rabatt) => {
@@ -147,6 +160,24 @@ const Rabattsystem = () => {
     if (rabatt.max_nutzungen && rabatt.genutzt >= rabatt.max_nutzungen) return false;
 
     return true;
+  };
+
+  // Modal Header Style für Light Mode
+  const modalHeaderStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1rem 1.5rem',
+    borderBottom: '1px solid var(--border-color, #e5e7eb)',
+    background: 'var(--card-bg, #1e293b)',
+    borderRadius: '0.5rem 0.5rem 0 0'
+  };
+
+  const modalHeaderTitleStyle = {
+    margin: 0,
+    fontSize: '1.25rem',
+    fontWeight: '600',
+    color: 'var(--text-primary, #f8fafc)'
   };
 
   if (loading) {
@@ -166,7 +197,7 @@ const Rabattsystem = () => {
   return (
     <div className="tarife-container">
       <div className="tarife-header">
-        <h1>🏷️ Rabattsystem</h1>
+        <h1>Rabattsystem</h1>
         <p>Verwalte alle Rabatte und Sonderkonditionen für Mitgliedschaften</p>
       </div>
 
@@ -267,8 +298,8 @@ const Rabattsystem = () => {
                 </div>
 
                 <div className="tarif-price">
-                  <span className="currency">-</span>{rabatt.rabatt_prozent}
-                  <span className="period">%</span>
+                  <span className="currency">{rabatt.rabatt_typ === 'betrag' ? '-' : '-'}</span>
+                  {formatRabattValue(rabatt)}
                 </div>
 
                 <div className="tarif-details">
@@ -282,6 +313,12 @@ const Rabattsystem = () => {
                   )}
                   <div className="detail-item">
                     <span className="label">
+                      {rabatt.rabatt_typ === 'betrag' ? <DollarSign size={14} /> : <Percent size={14} />} Typ
+                    </span>
+                    <div className="value">{rabatt.rabatt_typ === 'betrag' ? 'Festbetrag' : 'Prozent'}</div>
+                  </div>
+                  <div className="detail-item">
+                    <span className="label">
                       <Calendar size={14} /> Gültig von
                     </span>
                     <div className="value">{formatDate(rabatt.gueltig_von)}</div>
@@ -290,7 +327,13 @@ const Rabattsystem = () => {
                     <span className="label">
                       <Calendar size={14} /> Gültig bis
                     </span>
-                    <div className="value">{formatDate(rabatt.gueltig_bis)}</div>
+                    <div className="value" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      {rabatt.gueltig_bis ? formatDate(rabatt.gueltig_bis) : (
+                        <>
+                          <Infinity size={14} /> Unbegrenzt
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="detail-item">
                     <span className="label">
@@ -352,8 +395,8 @@ const Rabattsystem = () => {
                 </div>
 
                 <div className="tarif-price">
-                  <span className="currency">-</span>{rabatt.rabatt_prozent}
-                  <span className="period">%</span>
+                  <span className="currency">-</span>
+                  {formatRabattValue(rabatt)}
                 </div>
 
                 <div className="tarif-details">
@@ -380,13 +423,14 @@ const Rabattsystem = () => {
       {showNewRabatt && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Neuer Rabatt</h3>
+            <div style={modalHeaderStyle}>
+              <h3 style={modalHeaderTitleStyle}>Neuer Rabatt</h3>
               <button
                 className="close-btn"
                 onClick={() => setShowNewRabatt(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
               >
-                <X size={20} />
+                <X size={20} style={{ color: 'var(--text-primary, #f8fafc)' }} />
               </button>
             </div>
 
@@ -417,21 +461,67 @@ const Rabattsystem = () => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                    Rabatt (%) *
+              {/* Rabatt-Typ Auswahl */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  Rabatt-Typ *
+                </label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="rabatt_typ"
+                      value="prozent"
+                      checked={newRabatt.rabatt_typ === 'prozent'}
+                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_typ: e.target.value, rabatt_betrag_cents: ''})}
+                    />
+                    <Percent size={16} /> Prozent
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={newRabatt.rabatt_prozent}
-                    onChange={(e) => setNewRabatt({...newRabatt, rabatt_prozent: e.target.value})}
-                    placeholder="z.B. 10"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
-                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="rabatt_typ"
+                      value="betrag"
+                      checked={newRabatt.rabatt_typ === 'betrag'}
+                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_typ: e.target.value, rabatt_prozent: ''})}
+                    />
+                    <DollarSign size={16} /> Festbetrag
+                  </label>
                 </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                {newRabatt.rabatt_typ === 'prozent' ? (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                      Rabatt (%) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={newRabatt.rabatt_prozent}
+                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_prozent: e.target.value})}
+                      placeholder="z.B. 10"
+                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                      Rabatt-Betrag (EUR) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={newRabatt.rabatt_betrag_cents ? (newRabatt.rabatt_betrag_cents / 100).toFixed(2) : ''}
+                      onChange={(e) => setNewRabatt({...newRabatt, rabatt_betrag_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
+                      placeholder="z.B. 5.00"
+                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    />
+                  </div>
+                )}
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
                     Max. Nutzungen
@@ -461,7 +551,7 @@ const Rabattsystem = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                    Gültig bis *
+                    Gültig bis <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
                   </label>
                   <input
                     type="date"
@@ -494,7 +584,7 @@ const Rabattsystem = () => {
                 <button
                   className="btn btn-primary"
                   onClick={() => handleSaveRabatt(newRabatt)}
-                  disabled={!newRabatt.name || !newRabatt.rabatt_prozent || !newRabatt.gueltig_von || !newRabatt.gueltig_bis}
+                  disabled={!newRabatt.name || !newRabatt.gueltig_von || (newRabatt.rabatt_typ === 'prozent' ? !newRabatt.rabatt_prozent : !newRabatt.rabatt_betrag_cents)}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
@@ -510,13 +600,14 @@ const Rabattsystem = () => {
       {editingRabatt && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Rabatt bearbeiten</h3>
+            <div style={modalHeaderStyle}>
+              <h3 style={modalHeaderTitleStyle}>Rabatt bearbeiten</h3>
               <button
                 className="close-btn"
                 onClick={() => setEditingRabatt(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
               >
-                <X size={20} />
+                <X size={20} style={{ color: 'var(--text-primary, #f8fafc)' }} />
               </button>
             </div>
 
@@ -545,20 +636,66 @@ const Rabattsystem = () => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                    Rabatt (%) *
+              {/* Rabatt-Typ Auswahl */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  Rabatt-Typ *
+                </label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="edit_rabatt_typ"
+                      value="prozent"
+                      checked={editingRabatt.rabatt_typ === 'prozent'}
+                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_typ: e.target.value, rabatt_betrag_cents: null})}
+                    />
+                    <Percent size={16} /> Prozent
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={editingRabatt.rabatt_prozent}
-                    onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_prozent: parseFloat(e.target.value)})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
-                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="edit_rabatt_typ"
+                      value="betrag"
+                      checked={editingRabatt.rabatt_typ === 'betrag'}
+                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_typ: e.target.value, rabatt_prozent: null})}
+                    />
+                    <DollarSign size={16} /> Festbetrag
+                  </label>
                 </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                {editingRabatt.rabatt_typ === 'prozent' ? (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                      Rabatt (%) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={editingRabatt.rabatt_prozent || ''}
+                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_prozent: parseFloat(e.target.value)})}
+                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                      Rabatt-Betrag (EUR) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={editingRabatt.rabatt_betrag_cents ? (editingRabatt.rabatt_betrag_cents / 100).toFixed(2) : ''}
+                      onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_betrag_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
+                      placeholder="z.B. 5.00"
+                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    />
+                  </div>
+                )}
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
                     Max. Nutzungen
@@ -588,7 +725,7 @@ const Rabattsystem = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                    Gültig bis *
+                    Gültig bis <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
                   </label>
                   <input
                     type="date"
@@ -621,7 +758,7 @@ const Rabattsystem = () => {
                 <button
                   className="btn btn-primary"
                   onClick={() => handleSaveRabatt(editingRabatt)}
-                  disabled={!editingRabatt.name || !editingRabatt.rabatt_prozent}
+                  disabled={!editingRabatt.name || (editingRabatt.rabatt_typ === 'prozent' ? !editingRabatt.rabatt_prozent : !editingRabatt.rabatt_betrag_cents)}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
