@@ -152,6 +152,17 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   });
   const [availableTarife, setAvailableTarife] = useState([]); // Tarife für Familienmitglieder
 
+  // Bestehendes Mitglied - Nachträgliche Familien-Anmeldung
+  const [existingMemberMode, setExistingMemberMode] = useState(false); // Ist bestehendes Mitglied?
+  const [existingMemberLogin, setExistingMemberLogin] = useState({
+    email: '',
+    passwort: '',
+    loading: false,
+    error: '',
+    loggedIn: false
+  });
+  const [existingMemberData, setExistingMemberData] = useState(null); // Daten des bestehenden Mitglieds
+
   // Modal immer von oben starten - aggressive Lösung
   useEffect(() => {
     // Scroll zur obersten Position
@@ -369,6 +380,72 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     const sessionId = `family_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setFamilySessionId(sessionId);
     setFamilyMode(true);
+  };
+
+  // Login für bestehendes Mitglied (nachträgliche Familien-Anmeldung)
+  const handleExistingMemberLogin = async () => {
+    if (!existingMemberLogin.email || !existingMemberLogin.passwort) {
+      setExistingMemberLogin(prev => ({ ...prev, error: 'Bitte E-Mail und Passwort eingeben' }));
+      return;
+    }
+
+    setExistingMemberLogin(prev => ({ ...prev, loading: true, error: '' }));
+
+    try {
+      // Login durchführen
+      const loginResponse = await axios.post('/public/family-login', {
+        email: existingMemberLogin.email,
+        passwort: existingMemberLogin.passwort
+      });
+
+      if (loginResponse.data.success) {
+        const memberData = loginResponse.data.member;
+
+        // Mitgliederdaten speichern
+        setExistingMemberData(memberData);
+
+        // Adress- und Bankdaten ins Formular übernehmen
+        setMemberData(prev => ({
+          ...prev,
+          // Adressdaten übernehmen
+          strasse: memberData.strasse || '',
+          hausnummer: memberData.hausnummer || '',
+          plz: memberData.plz || '',
+          ort: memberData.ort || '',
+          // Bankdaten übernehmen
+          kontoinhaber: memberData.kontoinhaber || '',
+          iban: memberData.iban || '',
+          bic: memberData.bic || '',
+          bank_name: memberData.bank_name || ''
+        }));
+
+        // Familien-Session starten
+        startFamilySession();
+
+        setExistingMemberLogin(prev => ({
+          ...prev,
+          loading: false,
+          loggedIn: true,
+          error: ''
+        }));
+
+        // Erfolgsmeldung
+        setError('');
+      } else {
+        setExistingMemberLogin(prev => ({
+          ...prev,
+          loading: false,
+          error: loginResponse.data.message || 'Login fehlgeschlagen'
+        }));
+      }
+    } catch (error) {
+      console.error('Login-Fehler:', error);
+      setExistingMemberLogin(prev => ({
+        ...prev,
+        loading: false,
+        error: error.response?.data?.message || 'Login fehlgeschlagen. Bitte prüfen Sie Ihre Zugangsdaten.'
+      }));
+    }
   };
 
   // Tarife für Familienmitglieder laden
@@ -630,14 +707,17 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       // Validierung Schritt 4: Vertragsdaten
       if (currentStep === 4) {
-        if (!memberData.vertrag_tarif_id) {
-          setError("Bitte wählen Sie einen Tarif aus");
-          return;
-        }
-        if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
-            !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
-          setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
-          return;
+        // Hauptmitglied-Vertrag nur validieren wenn NICHT im existing member mode
+        if (!existingMemberMode) {
+          if (!memberData.vertrag_tarif_id) {
+            setError("Bitte wählen Sie einen Tarif aus");
+            return;
+          }
+          if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
+              !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
+            setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
+            return;
+          }
         }
         // Prüfen ob alle Familienmitglieder einen Tarif haben
         if (familyMembers.length > 0) {
@@ -646,6 +726,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             setError(`Bitte wählen Sie einen Tarif für ${missingTarif.vorname} ${missingTarif.nachname}`);
             return;
           }
+        }
+        // Bei existing member mode muss mindestens ein Familienmitglied vorhanden sein
+        if (existingMemberMode && familyMembers.length === 0) {
+          setError("Bitte fügen Sie mindestens ein Familienmitglied hinzu");
+          return;
         }
       }
 
@@ -835,8 +920,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         // Familien-Daten hinzufügen (wenn vorhanden)
         family_session_id: familySessionId,
         family_members: familyMembers,
-        is_hauptmitglied: familyMembers.length > 0, // Nur Hauptmitglied wenn Familie
-        familie_position: 1 // Hauptmitglied ist immer Position 1
+        is_hauptmitglied: familyMembers.length > 0 && !existingMemberMode, // Nur Hauptmitglied wenn neue Familie
+        familie_position: existingMemberMode ? null : 1, // Bei bestehendem Mitglied: Position wird vom Backend berechnet
+        // Nachträgliche Familien-Anmeldung (bestehendes Mitglied)
+        existing_member_mode: existingMemberMode,
+        existing_member_id: existingMemberData?.mitglied_id || null,
+        existing_member_familien_id: existingMemberData?.familien_id || null
       };
 
       const response = await axios.post('/mitglieder', submitData);
@@ -1213,7 +1302,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }}>Schritt 3: Familien-Registrierung</h3>
 
       {/* Wenn noch nicht entschieden */}
-      {!familyMode && familyMembers.length === 0 && (
+      {!familyMode && familyMembers.length === 0 && !existingMemberMode && (
         <div style={{
           padding: '1.5rem',
           background: 'rgba(31, 41, 55, 0.8)',
@@ -1222,78 +1311,298 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           marginBottom: '1.5rem'
         }}>
           <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>
-            Möchten Sie weitere Familienmitglieder anmelden?
+            Familien-Registrierung
           </h4>
           <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
             Familienmitglieder teilen Adresse und Bankverbindung, erhalten aber jeweils ein eigenes Konto
             und einen eigenen Vertrag. Ab dem 2. Familienmitglied gilt ein Familien-Rabatt.
           </p>
 
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {/* Option 1: Weitere Mitglieder anmelden (Neukunde) */}
             <button
               type="button"
               onClick={startFamilySession}
               style={{
-                padding: '0.75rem 1.5rem',
+                padding: '1rem 1.5rem',
                 background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontWeight: '600',
-                fontSize: '0.95rem'
+                fontSize: '0.95rem',
+                textAlign: 'left'
               }}
             >
-              Ja, weitere Mitglieder anmelden
+              <span style={{ display: 'block', marginBottom: '0.25rem' }}>Ja, weitere Familienmitglieder anmelden</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'normal' }}>
+                Ich bin neu und möchte mich zusammen mit meiner Familie anmelden
+              </span>
             </button>
+
+            {/* Option 2: Nur mich anmelden */}
             <button
               type="button"
               onClick={() => setCurrentStep(4)}
               style={{
-                padding: '0.75rem 1.5rem',
+                padding: '1rem 1.5rem',
                 background: 'rgba(255, 255, 255, 0.1)',
                 color: 'rgba(255, 255, 255, 0.95)',
                 border: '2px solid rgba(255, 255, 255, 0.3)',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontWeight: '600',
-                fontSize: '0.95rem'
+                fontSize: '0.95rem',
+                textAlign: 'left'
               }}
             >
-              Nein, nur mich anmelden
+              <span style={{ display: 'block', marginBottom: '0.25rem' }}>Nein, nur mich anmelden</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>
+                Ich möchte mich einzeln ohne weitere Familienmitglieder anmelden
+              </span>
+            </button>
+
+            {/* Option 3: Bestehendes Mitglied - Familienmitglied hinzufügen */}
+            <button
+              type="button"
+              onClick={() => setExistingMemberMode(true)}
+              style={{
+                padding: '1rem 1.5rem',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.95rem',
+                textAlign: 'left'
+              }}
+            >
+              <span style={{ display: 'block', marginBottom: '0.25rem' }}>Ich bin bereits Mitglied</span>
+              <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'normal' }}>
+                Ich möchte ein Familienmitglied zu meiner bestehenden Mitgliedschaft hinzufügen
+              </span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Login-Formular für bestehendes Mitglied */}
+      {existingMemberMode && !existingMemberLogin.loggedIn && (
+        <div style={{
+          padding: '1.5rem',
+          background: 'rgba(16, 185, 129, 0.1)',
+          borderRadius: '12px',
+          border: '2px solid rgba(16, 185, 129, 0.5)',
+          marginBottom: '1.5rem'
+        }}>
+          <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '0.5rem' }}>
+            Anmelden als bestehendes Mitglied
+          </h4>
+          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+            Bitte melden Sie sich mit Ihren Zugangsdaten an. Ihre Adresse und Bankdaten werden
+            automatisch für das neue Familienmitglied übernommen.
+          </p>
+
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            <div>
+              <label style={{
+                display: 'block',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '0.4rem',
+                fontSize: '0.85rem'
+              }}>
+                E-Mail-Adresse *
+              </label>
+              <input
+                type="email"
+                value={existingMemberLogin.email}
+                onChange={(e) => setExistingMemberLogin(prev => ({ ...prev, email: e.target.value, error: '' }))}
+                placeholder="Ihre E-Mail-Adresse"
+                style={{
+                  width: '100%',
+                  padding: '0.6rem',
+                  borderRadius: '6px',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  fontSize: '0.9rem'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{
+                display: 'block',
+                color: 'rgba(255, 255, 255, 0.9)',
+                marginBottom: '0.4rem',
+                fontSize: '0.85rem'
+              }}>
+                Passwort *
+              </label>
+              <input
+                type="password"
+                value={existingMemberLogin.passwort}
+                onChange={(e) => setExistingMemberLogin(prev => ({ ...prev, passwort: e.target.value, error: '' }))}
+                placeholder="Ihr Passwort"
+                onKeyDown={(e) => e.key === 'Enter' && handleExistingMemberLogin()}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem',
+                  borderRadius: '6px',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  fontSize: '0.9rem'
+                }}
+              />
+            </div>
+
+            {/* Fehlermeldung */}
+            {existingMemberLogin.error && (
+              <div style={{
+                padding: '0.75rem',
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                borderRadius: '6px',
+                color: '#ef4444',
+                fontSize: '0.85rem'
+              }}>
+                {existingMemberLogin.error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={handleExistingMemberLogin}
+                disabled={existingMemberLogin.loading}
+                style={{
+                  padding: '0.6rem 1.5rem',
+                  background: existingMemberLogin.loading ? 'rgba(16, 185, 129, 0.5)' : 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: existingMemberLogin.loading ? 'wait' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '0.9rem'
+                }}
+              >
+                {existingMemberLogin.loading ? 'Wird geprüft...' : 'Anmelden'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setExistingMemberMode(false);
+                  setExistingMemberLogin({ email: '', passwort: '', loading: false, error: '', loggedIn: false });
+                }}
+                style={{
+                  padding: '0.6rem 1.5rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Zurück
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Erfolgreich eingeloggt - Bestätigung */}
+      {existingMemberMode && existingMemberLogin.loggedIn && existingMemberData && (
+        <div style={{
+          padding: '1rem',
+          background: 'rgba(16, 185, 129, 0.15)',
+          border: '2px solid rgba(16, 185, 129, 0.6)',
+          borderRadius: '10px',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <span style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: 'white',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: '700'
+            }}>Bestehendes Mitglied</span>
+            <span style={{ color: '#10b981', fontSize: '0.85rem' }}>✓ Angemeldet</span>
+          </div>
+          <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+            {existingMemberData.vorname} {existingMemberData.nachname}
+          </h4>
+          <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+            {existingMemberData.strasse} {existingMemberData.hausnummer}, {existingMemberData.plz} {existingMemberData.ort}
+          </p>
+          <p style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0.5rem 0 0 0', fontSize: '0.8rem', fontStyle: 'italic' }}>
+            Adresse und Bankdaten werden für das neue Familienmitglied übernommen.
+          </p>
         </div>
       )}
 
       {/* Familien-Übersicht wenn im Familien-Modus */}
       {(familyMode || familyMembers.length > 0) && (
         <div>
-          {/* Hauptmitglied */}
-          <div style={{
-            padding: '1rem',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '2px solid rgba(16, 185, 129, 0.5)',
-            borderRadius: '10px',
-            marginBottom: '1rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <span style={{
-                background: 'linear-gradient(135deg, #10b981, #059669)',
-                color: 'white',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '20px',
-                fontSize: '0.75rem',
-                fontWeight: '700'
-              }}>Hauptmitglied</span>
+          {/* Hauptmitglied - unterschiedliche Anzeige je nach Modus */}
+          {existingMemberMode && existingMemberData ? (
+            /* Bestehendes Mitglied als Hauptmitglied */
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '2px solid rgba(16, 185, 129, 0.5)',
+              borderRadius: '10px',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <span style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: '700'
+                }}>Bestehendes Hauptmitglied</span>
+              </div>
+              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+                {existingMemberData.vorname} {existingMemberData.nachname}
+              </h4>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+                Bestehender Vertrag - keine Änderung
+              </p>
             </div>
-            <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
-              {memberData.vorname} {memberData.nachname}
-            </h4>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
-              Voller Beitrag
-            </p>
-          </div>
+          ) : (
+            /* Neues Hauptmitglied (normale Registrierung) */
+            <div style={{
+              padding: '1rem',
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '2px solid rgba(16, 185, 129, 0.5)',
+              borderRadius: '10px',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <span style={{
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: 'white',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: '700'
+                }}>Hauptmitglied</span>
+              </div>
+              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+                {memberData.vorname} {memberData.nachname}
+              </h4>
+              <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+                Voller Beitrag
+              </p>
+            </div>
+          )}
 
           {/* Weitere Familienmitglieder */}
           {familyMembers.map((member, index) => (
@@ -1927,85 +2236,116 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     <div className="step-content">
       <h3>Schritt {isRegistrationFlow ? '4' : '3'}: Vertragsauswahl</h3>
 
-      {/* Hauptmitglied Vertrag */}
+      {/* Hauptmitglied Vertrag - unterschiedlich je nach Modus */}
       {familyMembers.length > 0 && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '2px solid rgba(16, 185, 129, 0.5)',
-          borderRadius: '8px',
-          marginBottom: '1rem'
-        }}>
-          <span style={{
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            color: 'white',
-            padding: '0.2rem 0.6rem',
-            borderRadius: '15px',
-            fontSize: '0.7rem',
-            fontWeight: '700',
-            marginRight: '0.5rem'
-          }}>Hauptmitglied</span>
-          <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
-            {memberData.vorname} {memberData.nachname}
-          </strong>
-          <span style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
-            (voller Beitrag)
-          </span>
-        </div>
+        existingMemberMode && existingMemberData ? (
+          /* Bestehendes Mitglied - kein neuer Vertrag nötig */
+          <div style={{
+            padding: '0.75rem 1rem',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '2px solid rgba(16, 185, 129, 0.5)',
+            borderRadius: '8px',
+            marginBottom: '1rem'
+          }}>
+            <span style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: 'white',
+              padding: '0.2rem 0.6rem',
+              borderRadius: '15px',
+              fontSize: '0.7rem',
+              fontWeight: '700',
+              marginRight: '0.5rem'
+            }}>Bestehendes Hauptmitglied</span>
+            <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+              {existingMemberData.vorname} {existingMemberData.nachname}
+            </strong>
+            <span style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
+              (bestehender Vertrag - keine Änderung)
+            </span>
+          </div>
+        ) : (
+          /* Neues Hauptmitglied */
+          <div style={{
+            padding: '0.75rem 1rem',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '2px solid rgba(16, 185, 129, 0.5)',
+            borderRadius: '8px',
+            marginBottom: '1rem'
+          }}>
+            <span style={{
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: 'white',
+              padding: '0.2rem 0.6rem',
+              borderRadius: '15px',
+              fontSize: '0.7rem',
+              fontWeight: '700',
+              marginRight: '0.5rem'
+            }}>Hauptmitglied</span>
+            <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+              {memberData.vorname} {memberData.nachname}
+            </strong>
+            <span style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
+              (voller Beitrag)
+            </span>
+          </div>
+        )
       )}
 
-      <VertragFormular
-        vertrag={{
-          tarif_id: memberData.vertrag_tarif_id,
-          billing_cycle: memberData.vertrag_billing_cycle,
-          payment_method: memberData.vertrag_payment_method,
-          vertragsbeginn: memberData.vertrag_vertragsbeginn,
-          vertragsende: memberData.vertrag_vertragsende,
-          kuendigungsfrist_monate: memberData.vertrag_kuendigungsfrist_monate,
-          mindestlaufzeit_monate: memberData.vertrag_mindestlaufzeit_monate,
-          aufnahmegebuehr_cents: memberData.vertrag_aufnahmegebuehr_cents,
-          agb_akzeptiert: memberData.vertrag_agb_akzeptiert,
-          datenschutz_akzeptiert: memberData.vertrag_datenschutz_akzeptiert,
-          dojo_regeln_akzeptiert: memberData.vertrag_dojo_regeln_akzeptiert,
-          hausordnung_akzeptiert: memberData.vertrag_hausordnung_akzeptiert,
-          haftungsausschluss_akzeptiert: memberData.vertrag_haftungsausschluss_akzeptiert,
-          gesundheitserklaerung: memberData.vertrag_gesundheitserklaerung,
-          foto_einverstaendnis: memberData.vertrag_foto_einverstaendnis,
-          agb_version: memberData.vertrag_agb_version,
-          datenschutz_version: memberData.vertrag_datenschutz_version
-        }}
-        onChange={(updatedVertrag) => {
-          setMemberData(prev => ({
-            ...prev,
-            vertrag_tarif_id: updatedVertrag.tarif_id,
-            vertrag_billing_cycle: updatedVertrag.billing_cycle,
-            vertrag_payment_method: updatedVertrag.payment_method,
-            vertrag_vertragsbeginn: updatedVertrag.vertragsbeginn,
-            vertrag_vertragsende: updatedVertrag.vertragsende,
-            vertrag_kuendigungsfrist_monate: updatedVertrag.kuendigungsfrist_monate,
-            vertrag_mindestlaufzeit_monate: updatedVertrag.mindestlaufzeit_monate,
-            vertrag_aufnahmegebuehr_cents: updatedVertrag.aufnahmegebuehr_cents,
-            vertrag_agb_akzeptiert: updatedVertrag.agb_akzeptiert,
-            vertrag_datenschutz_akzeptiert: updatedVertrag.datenschutz_akzeptiert,
-            vertrag_dojo_regeln_akzeptiert: updatedVertrag.dojo_regeln_akzeptiert,
-            vertrag_hausordnung_akzeptiert: updatedVertrag.hausordnung_akzeptiert,
-            vertrag_haftungsausschluss_akzeptiert: updatedVertrag.haftungsausschluss_akzeptiert,
-            vertrag_gesundheitserklaerung: updatedVertrag.gesundheitserklaerung,
-            vertrag_foto_einverstaendnis: updatedVertrag.foto_einverstaendnis,
-            vertrag_agb_version: updatedVertrag.agb_version,
-            vertrag_datenschutz_version: updatedVertrag.datenschutz_version
-          }));
-        }}
-        geburtsdatum={memberData.geburtsdatum}
-        schuelerStudent={memberData.schueler_student}
-        mode="create"
-        mitgliedId={null}
-        isPublic={isRegistrationFlow}
-      />
+      {/* VertragFormular nur anzeigen wenn NICHT im existing member mode */}
+      {!existingMemberMode && (
+        <VertragFormular
+          vertrag={{
+            tarif_id: memberData.vertrag_tarif_id,
+            billing_cycle: memberData.vertrag_billing_cycle,
+            payment_method: memberData.vertrag_payment_method,
+            vertragsbeginn: memberData.vertrag_vertragsbeginn,
+            vertragsende: memberData.vertrag_vertragsende,
+            kuendigungsfrist_monate: memberData.vertrag_kuendigungsfrist_monate,
+            mindestlaufzeit_monate: memberData.vertrag_mindestlaufzeit_monate,
+            aufnahmegebuehr_cents: memberData.vertrag_aufnahmegebuehr_cents,
+            agb_akzeptiert: memberData.vertrag_agb_akzeptiert,
+            datenschutz_akzeptiert: memberData.vertrag_datenschutz_akzeptiert,
+            dojo_regeln_akzeptiert: memberData.vertrag_dojo_regeln_akzeptiert,
+            hausordnung_akzeptiert: memberData.vertrag_hausordnung_akzeptiert,
+            haftungsausschluss_akzeptiert: memberData.vertrag_haftungsausschluss_akzeptiert,
+            gesundheitserklaerung: memberData.vertrag_gesundheitserklaerung,
+            foto_einverstaendnis: memberData.vertrag_foto_einverstaendnis,
+            agb_version: memberData.vertrag_agb_version,
+            datenschutz_version: memberData.vertrag_datenschutz_version
+          }}
+          onChange={(updatedVertrag) => {
+            setMemberData(prev => ({
+              ...prev,
+              vertrag_tarif_id: updatedVertrag.tarif_id,
+              vertrag_billing_cycle: updatedVertrag.billing_cycle,
+              vertrag_payment_method: updatedVertrag.payment_method,
+              vertrag_vertragsbeginn: updatedVertrag.vertragsbeginn,
+              vertrag_vertragsende: updatedVertrag.vertragsende,
+              vertrag_kuendigungsfrist_monate: updatedVertrag.kuendigungsfrist_monate,
+              vertrag_mindestlaufzeit_monate: updatedVertrag.mindestlaufzeit_monate,
+              vertrag_aufnahmegebuehr_cents: updatedVertrag.aufnahmegebuehr_cents,
+              vertrag_agb_akzeptiert: updatedVertrag.agb_akzeptiert,
+              vertrag_datenschutz_akzeptiert: updatedVertrag.datenschutz_akzeptiert,
+              vertrag_dojo_regeln_akzeptiert: updatedVertrag.dojo_regeln_akzeptiert,
+              vertrag_hausordnung_akzeptiert: updatedVertrag.hausordnung_akzeptiert,
+              vertrag_haftungsausschluss_akzeptiert: updatedVertrag.haftungsausschluss_akzeptiert,
+              vertrag_gesundheitserklaerung: updatedVertrag.gesundheitserklaerung,
+              vertrag_foto_einverstaendnis: updatedVertrag.foto_einverstaendnis,
+              vertrag_agb_version: updatedVertrag.agb_version,
+              vertrag_datenschutz_version: updatedVertrag.datenschutz_version
+            }));
+          }}
+          geburtsdatum={memberData.geburtsdatum}
+          schuelerStudent={memberData.schueler_student}
+          mode="create"
+          mitgliedId={null}
+          isPublic={isRegistrationFlow}
+        />
+      )}
 
       {/* Familienmitglieder Verträge - nur wenn vorhanden */}
       {familyMembers.length > 0 && (
-        <div style={{ marginTop: '2rem' }}>
+        <div style={{ marginTop: existingMemberMode ? '0' : '2rem' }}>
           <h4 style={{
             color: 'var(--primary-color)',
             borderBottom: '2px solid var(--primary-color)',
@@ -2168,25 +2508,46 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             borderRadius: '12px'
           }}>
             <h5 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 1rem 0' }}>
-              Gesamtübersicht Familie
+              {existingMemberMode ? 'Neue Mitglieder - Übersicht' : 'Gesamtübersicht Familie'}
             </h5>
 
-            {/* Hauptmitglied */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '0.5rem 0',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                {memberData.vorname} {memberData.nachname} (Hauptmitglied)
-              </span>
-              <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                {memberData.vertrag_tarif_id ?
-                  `${((availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €` :
-                  '-- €'}
-              </span>
-            </div>
+            {/* Hauptmitglied - unterschiedlich je nach Modus */}
+            {existingMemberMode && existingMemberData ? (
+              /* Bestehendes Mitglied */
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '0.5rem 0',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                  {existingMemberData.vorname} {existingMemberData.nachname}
+                  <span style={{ color: '#10b981', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                    (Bestehendes Mitglied)
+                  </span>
+                </span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                  bereits Mitglied
+                </span>
+              </div>
+            ) : (
+              /* Neues Hauptmitglied */
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '0.5rem 0',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                  {memberData.vorname} {memberData.nachname} (Hauptmitglied)
+                </span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                  {memberData.vertrag_tarif_id ?
+                    `${((availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €` :
+                    '-- €'}
+                </span>
+              </div>
+            )}
 
             {/* Familienmitglieder */}
             {familyMembers.map((member, index) => {
@@ -2214,7 +2575,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               );
             })}
 
-            {/* Gesamtsumme */}
+            {/* Gesamtsumme - unterschiedlich je nach Modus */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -2223,10 +2584,15 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               fontWeight: '700',
               fontSize: '1.1rem'
             }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.95)' }}>Gesamt pro Monat:</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                {existingMemberMode ? 'Neue Kosten pro Monat:' : 'Gesamt pro Monat:'}
+              </span>
               <span style={{ color: '#ffd700' }}>
                 {(() => {
-                  const hauptmitgliedPreis = (availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0);
+                  // Bei existing member mode: nur Familienmitglieder-Preise
+                  // Sonst: Hauptmitglied + Familienmitglieder
+                  const hauptmitgliedPreis = existingMemberMode ? 0 :
+                    (availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0);
                   const familienPreis = familyMembers.reduce((sum, member) => {
                     const discount = getFamilyDiscount(member.position);
                     const price = member.tarif_preis || 0;

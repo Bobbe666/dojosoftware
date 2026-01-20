@@ -906,4 +906,112 @@ router.get('/tarife', async (req, res) => {
   }
 });
 
+// =============================================
+// FAMILIEN-LOGIN ENDPOINT
+// =============================================
+
+// POST /api/public/family-login - Login für bestehendes Mitglied (Familien-Anmeldung)
+router.post('/family-login', async (req, res) => {
+  try {
+    const { email, passwort } = req.body;
+
+    if (!email || !passwort) {
+      return res.status(400).json({
+        success: false,
+        message: 'E-Mail und Passwort sind erforderlich'
+      });
+    }
+
+    // Benutzer anhand der E-Mail finden
+    const benutzer = await queryAsync(`
+      SELECT b.id, b.email, b.password_hash, b.mitglied_id
+      FROM benutzer b
+      WHERE b.email = ? AND b.aktiv = 1
+      LIMIT 1
+    `, [email]);
+
+    if (benutzer.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'E-Mail oder Passwort ist falsch'
+      });
+    }
+
+    const user = benutzer[0];
+
+    // Passwort prüfen
+    const passwordValid = await bcrypt.compare(passwort, user.password_hash);
+    if (!passwordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'E-Mail oder Passwort ist falsch'
+      });
+    }
+
+    // Mitgliederdaten abrufen (inkl. Adresse und Bankdaten)
+    const mitglieder = await queryAsync(`
+      SELECT
+        m.mitglied_id,
+        m.vorname,
+        m.nachname,
+        m.email,
+        m.strasse,
+        m.hausnummer,
+        m.plz,
+        m.ort,
+        m.telefon_mobil,
+        m.kontoinhaber,
+        m.iban,
+        m.bic,
+        m.bank_name,
+        m.familien_id
+      FROM mitglieder m
+      WHERE m.mitglied_id = ?
+      LIMIT 1
+    `, [user.mitglied_id]);
+
+    if (mitglieder.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mitgliedsdaten nicht gefunden'
+      });
+    }
+
+    const member = mitglieder[0];
+
+    logger.info('Familien-Login erfolgreich', { email, mitglied_id: member.mitglied_id });
+
+    res.json({
+      success: true,
+      message: 'Login erfolgreich',
+      member: {
+        mitglied_id: member.mitglied_id,
+        vorname: member.vorname,
+        nachname: member.nachname,
+        email: member.email,
+        // Adressdaten
+        strasse: member.strasse,
+        hausnummer: member.hausnummer,
+        plz: member.plz,
+        ort: member.ort,
+        telefon_mobil: member.telefon_mobil,
+        // Bankdaten
+        kontoinhaber: member.kontoinhaber,
+        iban: member.iban,
+        bic: member.bic,
+        bank_name: member.bank_name,
+        // Familien-Info
+        familien_id: member.familien_id
+      }
+    });
+
+  } catch (err) {
+    console.error('Fehler beim Familien-Login:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Serverfehler beim Login'
+    });
+  }
+});
+
 module.exports = router;
