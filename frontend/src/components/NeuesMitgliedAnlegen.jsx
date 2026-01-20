@@ -144,8 +144,13 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     nachname: '',
     geburtsdatum: '',
     geschlecht: '',
-    email: ''
+    email: '',           // Optional - entweder E-Mail oder Benutzername
+    benutzername: '',    // Optional - Alternative zu E-Mail
+    tarif_id: '',        // Vertrag wird in Schritt 4 ausgewählt
+    tarif_name: '',      // Name des gewählten Tarifs
+    tarif_preis: 0       // Preis des Tarifs in Cents
   });
+  const [availableTarife, setAvailableTarife] = useState([]); // Tarife für Familienmitglieder
 
   // Modal immer von oben starten - aggressive Lösung
   useEffect(() => {
@@ -313,8 +318,15 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   // Familienmitglied hinzufügen
   const addFamilyMember = () => {
-    if (!newFamilyMember.vorname || !newFamilyMember.nachname || !newFamilyMember.geburtsdatum || !newFamilyMember.geschlecht || !newFamilyMember.email) {
-      setError("Bitte füllen Sie alle Pflichtfelder für das Familienmitglied aus");
+    // Validierung: Grunddaten erforderlich
+    if (!newFamilyMember.vorname || !newFamilyMember.nachname || !newFamilyMember.geburtsdatum || !newFamilyMember.geschlecht) {
+      setError("Bitte füllen Sie Vorname, Nachname, Geburtsdatum und Geschlecht aus");
+      return;
+    }
+
+    // Validierung: Entweder E-Mail ODER Benutzername erforderlich
+    if (!newFamilyMember.email && !newFamilyMember.benutzername) {
+      setError("Bitte geben Sie entweder eine E-Mail-Adresse oder einen Benutzernamen ein");
       return;
     }
 
@@ -330,7 +342,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       nachname: '',
       geburtsdatum: '',
       geschlecht: '',
-      email: ''
+      email: '',
+      benutzername: '',
+      tarif_id: '',
+      tarif_name: '',
+      tarif_preis: 0
     });
     setAddingFamilyMember(false);
     setError("");
@@ -353,6 +369,77 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     const sessionId = `family_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setFamilySessionId(sessionId);
     setFamilyMode(true);
+  };
+
+  // Tarife für Familienmitglieder laden
+  useEffect(() => {
+    const loadTarife = async () => {
+      try {
+        const endpoint = isRegistrationFlow ? '/public/tarife' : '/tarife';
+        const response = await axios.get(endpoint);
+        setAvailableTarife(response.data || []);
+      } catch (error) {
+        console.error("Fehler beim Laden der Tarife:", error);
+      }
+    };
+
+    if (familyMembers.length > 0 || familyMode) {
+      loadTarife();
+    }
+  }, [familyMembers.length, familyMode, isRegistrationFlow]);
+
+  // Tarif für Familienmitglied aktualisieren
+  const updateFamilyMemberTarif = (index, tarifId) => {
+    const tarif = availableTarife.find(t => t.tarif_id === parseInt(tarifId));
+    if (tarif) {
+      setFamilyMembers(prev => prev.map((member, i) => {
+        if (i === index) {
+          return {
+            ...member,
+            tarif_id: tarif.tarif_id,
+            tarif_name: tarif.name,
+            tarif_preis: tarif.monatlicher_beitrag_cents
+          };
+        }
+        return member;
+      }));
+    }
+  };
+
+  // Tarife nach Alter filtern (Kids = unter 18, Erwachsene = 18+)
+  const getFilteredTarife = (geburtsdatum) => {
+    const isKid = isFamilyMemberMinor(geburtsdatum);
+    return availableTarife.filter(tarif => {
+      const tarifName = (tarif.name || '').toLowerCase();
+      const tarifBeschreibung = (tarif.beschreibung || '').toLowerCase();
+
+      // Kids-Tarife erkennen
+      const isKidsTarif = tarifName.includes('kind') || tarifName.includes('kids') ||
+                          tarifName.includes('jugend') || tarifName.includes('schüler') ||
+                          tarifBeschreibung.includes('kind') || tarifBeschreibung.includes('kids');
+
+      // Erwachsenen-Tarife erkennen
+      const isAdultTarif = tarifName.includes('erwachsen') || tarifName.includes('adult') ||
+                          (!isKidsTarif); // Wenn nicht explizit Kids, dann Erwachsene
+
+      if (isKid) {
+        // Für Kinder: Kids-Tarife oder allgemeine Tarife anzeigen
+        return isKidsTarif || (!tarifName.includes('erwachsen') && !tarifName.includes('adult'));
+      } else {
+        // Für Erwachsene: Erwachsenen-Tarife oder allgemeine Tarife (keine Kids-Tarife)
+        return !isKidsTarif;
+      }
+    });
+  };
+
+  // Familien-Rabatt berechnen (aus Rabattsystem)
+  const getFamilyDiscount = (position) => {
+    // Standard-Rabatte basierend auf Position
+    // Diese sollten später aus dem Rabattsystem kommen
+    if (position === 2) return { prozent: 10, name: 'Familien-Rabatt (2. Mitglied)' };
+    if (position === 3) return { prozent: 15, name: 'Familien-Rabatt (3. Mitglied)' };
+    if (position >= 4) return { prozent: 20, name: 'Familien-Rabatt (4.+ Mitglied)' };
+    return { prozent: 0, name: '' };
   };
 
   // Duplikatsprüfung
@@ -551,6 +638,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
           setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
           return;
+        }
+        // Prüfen ob alle Familienmitglieder einen Tarif haben
+        if (familyMembers.length > 0) {
+          const missingTarif = familyMembers.find(m => !m.tarif_id);
+          if (missingTarif) {
+            setError(`Bitte wählen Sie einen Tarif für ${missingTarif.vorname} ${missingTarif.nachname}`);
+            return;
+          }
         }
       }
 
@@ -1386,15 +1481,38 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   </select>
                 </div>
 
-                <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+                {/* E-Mail ODER Benutzername */}
+                <div className="input-group">
                   <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
-                    E-Mail-Adresse * (für eigenes Konto)
+                    E-Mail-Adresse {!newFamilyMember.benutzername && '*'}
                   </label>
                   <input
                     type="email"
                     value={newFamilyMember.email}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, email: e.target.value }))}
                     className="input-field"
+                    placeholder="Optional wenn Benutzername"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)'
+                    }}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                    Benutzername {!newFamilyMember.email && '*'}
+                  </label>
+                  <input
+                    type="text"
+                    value={newFamilyMember.benutzername}
+                    onChange={(e) => setNewFamilyMember(prev => ({ ...prev, benutzername: e.target.value }))}
+                    className="input-field"
+                    placeholder="Optional wenn E-Mail"
                     style={{
                       width: '100%',
                       padding: '0.5rem',
@@ -1416,7 +1534,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 border: '1px solid rgba(59, 130, 246, 0.3)'
               }}>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                  ℹ️ Adresse und Bankverbindung werden vom Hauptmitglied übernommen.
+                  ℹ️ Adresse und Bankverbindung werden vom Hauptmitglied übernommen.<br/>
+                  💡 E-Mail oder Benutzername - mindestens eines ist erforderlich.
                 </p>
               </div>
 
@@ -1461,7 +1580,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                       nachname: '',
                       geburtsdatum: '',
                       geschlecht: '',
-                      email: ''
+                      email: '',
+                      benutzername: '',
+                      tarif_id: '',
+                      tarif_name: '',
+                      tarif_preis: 0
                     });
                   }}
                   style={{
@@ -1802,7 +1925,35 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   const renderStep6 = () => (
     <div className="step-content">
-      <h3>Schritt 3: Vertragsauswahl</h3>
+      <h3>Schritt {isRegistrationFlow ? '4' : '3'}: Vertragsauswahl</h3>
+
+      {/* Hauptmitglied Vertrag */}
+      {familyMembers.length > 0 && (
+        <div style={{
+          padding: '0.75rem 1rem',
+          background: 'rgba(16, 185, 129, 0.1)',
+          border: '2px solid rgba(16, 185, 129, 0.5)',
+          borderRadius: '8px',
+          marginBottom: '1rem'
+        }}>
+          <span style={{
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            color: 'white',
+            padding: '0.2rem 0.6rem',
+            borderRadius: '15px',
+            fontSize: '0.7rem',
+            fontWeight: '700',
+            marginRight: '0.5rem'
+          }}>Hauptmitglied</span>
+          <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+            {memberData.vorname} {memberData.nachname}
+          </strong>
+          <span style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
+            (voller Beitrag)
+          </span>
+        </div>
+      )}
+
       <VertragFormular
         vertrag={{
           tarif_id: memberData.vertrag_tarif_id,
@@ -1851,6 +2002,243 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         mitgliedId={null}
         isPublic={isRegistrationFlow}
       />
+
+      {/* Familienmitglieder Verträge - nur wenn vorhanden */}
+      {familyMembers.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <h4 style={{
+            color: 'var(--primary-color)',
+            borderBottom: '2px solid var(--primary-color)',
+            paddingBottom: '0.5rem',
+            marginBottom: '1rem'
+          }}>
+            Verträge für Familienmitglieder
+          </h4>
+
+          {familyMembers.map((member, index) => {
+            const filteredTarife = getFilteredTarife(member.geburtsdatum);
+            const discount = getFamilyDiscount(member.position);
+            const selectedTarif = availableTarife.find(t => t.tarif_id === member.tarif_id);
+            const originalPrice = selectedTarif ? selectedTarif.monatlicher_beitrag_cents : 0;
+            const discountAmount = Math.round(originalPrice * discount.prozent / 100);
+            const finalPrice = originalPrice - discountAmount;
+
+            return (
+              <div key={index} style={{
+                padding: '1.25rem',
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '2px solid rgba(59, 130, 246, 0.5)',
+                borderRadius: '12px',
+                marginBottom: '1rem'
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '700'
+                  }}>{member.position}. Familienmitglied</span>
+                  <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                    {member.vorname} {member.nachname}
+                  </strong>
+                  {member.isMinor && (
+                    <span style={{
+                      background: 'rgba(245, 158, 11, 0.3)',
+                      color: '#fbbf24',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '15px',
+                      fontSize: '0.7rem',
+                      fontWeight: '600'
+                    }}>Kind (unter 18)</span>
+                  )}
+                </div>
+
+                {/* Tarif-Auswahl */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{
+                    display: 'block',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    marginBottom: '0.4rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '600'
+                  }}>
+                    Vertrag auswählen * {member.isMinor ? '(Kids-Tarife)' : '(Erwachsenen-Tarife)'}
+                  </label>
+                  <select
+                    value={member.tarif_id || ''}
+                    onChange={(e) => updateFamilyMemberTarif(index, e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem',
+                      borderRadius: '6px',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      color: 'rgba(255, 255, 255, 0.95)',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    <option value="">Bitte Tarif wählen...</option>
+                    {filteredTarife.map(tarif => (
+                      <option key={tarif.tarif_id} value={tarif.tarif_id}>
+                        {tarif.name} - {(tarif.monatlicher_beitrag_cents / 100).toFixed(2)} €/Monat
+                        {tarif.mindestlaufzeit_monate ? ` (${tarif.mindestlaufzeit_monate} Mon. Laufzeit)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Preis-Berechnung mit Rabatt */}
+                {member.tarif_id && selectedTarif && (
+                  <div style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '8px',
+                    padding: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Regulärer Preis:</span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                        {(originalPrice / 100).toFixed(2)} €/Monat
+                      </span>
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.5rem',
+                      color: '#10b981'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{
+                          background: 'rgba(16, 185, 129, 0.3)',
+                          padding: '0.15rem 0.4rem',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: '700'
+                        }}>-{discount.prozent}%</span>
+                        {discount.name}:
+                      </span>
+                      <span style={{ fontWeight: '600' }}>
+                        -{(discountAmount / 100).toFixed(2)} €
+                      </span>
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      paddingTop: '0.5rem',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+                      fontWeight: '700',
+                      fontSize: '1.1rem'
+                    }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.95)' }}>Endpreis:</span>
+                      <span style={{ color: '#10b981' }}>
+                        {(finalPrice / 100).toFixed(2)} €/Monat
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Warnung wenn kein Tarif ausgewählt */}
+                {!member.tarif_id && (
+                  <div style={{
+                    padding: '0.5rem',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    color: '#fbbf24'
+                  }}>
+                    ⚠️ Bitte wählen Sie einen Tarif für dieses Familienmitglied
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Gesamtübersicht */}
+          <div style={{
+            marginTop: '1.5rem',
+            padding: '1.25rem',
+            background: 'rgba(31, 41, 55, 0.9)',
+            border: '2px solid rgba(59, 130, 246, 0.6)',
+            borderRadius: '12px'
+          }}>
+            <h5 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 1rem 0' }}>
+              Gesamtübersicht Familie
+            </h5>
+
+            {/* Hauptmitglied */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '0.5rem 0',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                {memberData.vorname} {memberData.nachname} (Hauptmitglied)
+              </span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                {memberData.vertrag_tarif_id ?
+                  `${((availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €` :
+                  '-- €'}
+              </span>
+            </div>
+
+            {/* Familienmitglieder */}
+            {familyMembers.map((member, index) => {
+              const discount = getFamilyDiscount(member.position);
+              const originalPrice = member.tarif_preis || 0;
+              const finalPrice = originalPrice - Math.round(originalPrice * discount.prozent / 100);
+
+              return (
+                <div key={index} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                    {member.vorname} {member.nachname}
+                    <span style={{ color: '#10b981', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                      (-{discount.prozent}%)
+                    </span>
+                  </span>
+                  <span style={{ color: member.tarif_id ? '#10b981' : 'rgba(255, 255, 255, 0.5)' }}>
+                    {member.tarif_id ? `${(finalPrice / 100).toFixed(2)} €` : '-- €'}
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Gesamtsumme */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '1rem 0 0 0',
+              marginTop: '0.5rem',
+              fontWeight: '700',
+              fontSize: '1.1rem'
+            }}>
+              <span style={{ color: 'rgba(255, 255, 255, 0.95)' }}>Gesamt pro Monat:</span>
+              <span style={{ color: '#ffd700' }}>
+                {(() => {
+                  const hauptmitgliedPreis = (availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0);
+                  const familienPreis = familyMembers.reduce((sum, member) => {
+                    const discount = getFamilyDiscount(member.position);
+                    const price = member.tarif_preis || 0;
+                    return sum + price - Math.round(price * discount.prozent / 100);
+                  }, 0);
+                  return `${((hauptmitgliedPreis + familienPreis) / 100).toFixed(2)} €`;
+                })()}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
