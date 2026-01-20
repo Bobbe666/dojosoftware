@@ -22,6 +22,7 @@ import {
   GraduationCap
 } from "lucide-react";
 import axios from 'axios';
+import { useDojoContext } from '../context/DojoContext';
 import "../styles/themes.css";       // Centralized theme system
 import "../styles/components.css";   // Universal component styles
 import "../styles/TarifePreise.css";
@@ -44,6 +45,7 @@ function translateBillingCycle(cycle) {
 }
 
 const TarifePreise = () => {
+  const { activeDojo } = useDojoContext();
   const [tarife, setTarife] = useState([]);
   const [rabatte, setRabatte] = useState([]);
   const [zahlungszyklen, setZahlungszyklen] = useState([]);
@@ -59,6 +61,14 @@ const TarifePreise = () => {
   const [individuellCollapsed, setIndividuellCollapsed] = useState(false);
   const [alteTarifeCollapsed, setAlteTarifeCollapsed] = useState(true);
   const [showNewIndividuell, setShowNewIndividuell] = useState(false);
+
+  // Ermittle die dojo_id aus dem aktivem Dojo
+  const getDojoId = () => {
+    if (!activeDojo || activeDojo === 'super-admin') {
+      return null; // Super-Admin sieht alle zentral verwalteten Dojos
+    }
+    return activeDojo.id;
+  };
 
   const [newIndividuell, setNewIndividuell] = useState({
     name: "",
@@ -92,18 +102,24 @@ const TarifePreise = () => {
 
   useEffect(() => {
     loadTarifeUndRabatte();
-  }, []);
+  }, [activeDojo]); // Neu laden wenn sich das aktive Dojo ändert
 
   const loadTarifeUndRabatte = async () => {
     try {
       setLoading(true);
 
+      // Dojo-ID für API-Calls
+      const dojoId = getDojoId();
+      const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+
+      console.log('📊 TarifePreise: Lade Tarife für Dojo:', dojoId, 'activeDojo:', activeDojo);
+
       // Alle benötigten APIs laden
       const [tarifeResponse, rabatteResponse, zahlungszyklenResponse, laufzeitenResponse] = await Promise.all([
-        axios.get('/tarife'),
-        axios.get('/tarife/rabatte'),
-        axios.get('/zahlungszyklen').catch(() => ({ data: { data: [] } })),
-        axios.get('/laufzeiten').catch(() => ({ data: { data: [] } }))
+        axios.get(`/tarife${dojoParam}`),
+        axios.get(`/tarife/rabatte${dojoParam}`),
+        axios.get(`/zahlungszyklen${dojoParam}`).catch(() => ({ data: { data: [] } })),
+        axios.get(`/laufzeiten${dojoParam}`).catch(() => ({ data: { data: [] } }))
       ]);
 
       const tarifeData = tarifeResponse.data;
@@ -175,11 +191,14 @@ const TarifePreise = () => {
 
   const handleSaveTarif = async (tarifData) => {
     try {
+      const dojoId = getDojoId();
+      const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+
       let response;
       if (tarifData.id) {
-        response = await axios.put(`/tarife/${tarifData.id}`, tarifData);
+        response = await axios.put(`/tarife/${tarifData.id}${dojoParam}`, tarifData);
       } else {
-        response = await axios.post('/tarife', tarifData);
+        response = await axios.post(`/tarife${dojoParam}`, tarifData);
       }
 
       const result = response.data;
@@ -211,7 +230,9 @@ const TarifePreise = () => {
   const handleDeleteTarif = async (tarifId) => {
     if (window.confirm('Sind Sie sicher, dass Sie diesen Tarif löschen möchten?')) {
       try {
-        const response = await axios.delete(`/tarife/${tarifId}`);
+        const dojoId = getDojoId();
+        const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+        const response = await axios.delete(`/tarife/${tarifId}${dojoParam}`);
         const result = response.data;
 
         if (result.success) {
@@ -234,7 +255,9 @@ const TarifePreise = () => {
 
     if (window.confirm(confirmMessage)) {
       try {
-        const response = await axios.patch(`/tarife/${tarifId}/archivieren`, {
+        const dojoId = getDojoId();
+        const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+        const response = await axios.patch(`/tarife/${tarifId}/archivieren${dojoParam}`, {
           ist_archiviert: newStatus
         });
 
@@ -925,7 +948,9 @@ const TarifePreise = () => {
                 className="btn btn-primary"
                 onClick={async () => {
                   try {
-                    await axios.post('/tarife', {
+                    const dojoId = getDojoId();
+                    const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+                    await axios.post(`/tarife${dojoParam}`, {
                       name: newIndividuell.name,
                       duration_months: parseInt(newIndividuell.duration_months),
                       mindestlaufzeit_monate: parseInt(newIndividuell.mindestlaufzeit_monate),
