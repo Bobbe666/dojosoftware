@@ -690,18 +690,18 @@
 }
 
 /* =============================================
-   TDA-VIB LIGHT MODE THEME
+   TDA-VIB LIGHT MODE THEME - Warme Washi-Papierfarben
    ============================================= */
 
 [data-theme="tda-vib"] .tarife-container {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
-  color: #0f172a !important;
+  background: linear-gradient(135deg, #faf7f0 0%, #f5f0e6 50%, #e8e0d0 100%) !important;
+  color: #1a1a1a !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .tarife-header {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(203, 213, 225, 0.5) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  background: rgba(245, 240, 230, 0.95) !important;
+  border: 1px solid rgba(139, 90, 43, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(139, 90, 43, 0.1) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .tarife-header h1 {
@@ -725,13 +725,13 @@
 
 /* Stats Grid - Light Mode */
 [data-theme="tda-vib"] .tarife-container .stat-card {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(203, 213, 225, 0.5) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  background: rgba(245, 240, 230, 0.9) !important;
+  border: 1px solid rgba(139, 90, 43, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.08) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(139, 90, 43, 0.15) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .stat-icon {
@@ -756,13 +756,13 @@
 
 /* Section - Light Mode */
 [data-theme="tda-vib"] .tarife-container .section {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(203, 213, 225, 0.5) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  background: rgba(245, 240, 230, 0.9) !important;
+  border: 1px solid rgba(139, 90, 43, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(139, 90, 43, 0.1) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .section-header {
-  border-bottom-color: rgba(203, 213, 225, 0.5) !important;
+  border-bottom-color: rgba(139, 90, 43, 0.2) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .section-header h2 {
@@ -776,14 +776,14 @@
 
 /* Tarif Cards - Light Mode */
 [data-theme="tda-vib"] .tarife-container .tarif-card {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(203, 213, 225, 0.5) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  background: rgba(250, 247, 240, 0.95) !important;
+  border: 1px solid rgba(139, 90, 43, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.08) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .tarif-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-  border-color: rgba(146, 64, 14, 0.3) !important;
+  box-shadow: 0 8px 24px rgba(139, 90, 43, 0.15) !important;
+  border-color: rgba(139, 90, 43, 0.4) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .tarif-header h3,
@@ -801,8 +801,8 @@
 }
 
 [data-theme="tda-vib"] .tarife-container .tarif-details {
-  background: rgba(248, 250, 252, 0.8) !important;
-  border-color: rgba(203, 213, 225, 0.5) !important;
+  background: rgba(232, 224, 208, 0.5) !important;
+  border-color: rgba(139, 90, 43, 0.2) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .detail-item .label {
@@ -869,13 +869,13 @@
 }
 
 [data-theme="tda-vib"] .tarife-container .modal {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
-  border: 1px solid rgba(203, 213, 225, 0.5) !important;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, #faf7f0 0%, #f5f0e6 50%, #e8e0d0 100%) !important;
+  border: 1px solid rgba(139, 90, 43, 0.3) !important;
+  box-shadow: 0 20px 60px rgba(139, 90, 43, 0.2) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .modal-header {
-  border-bottom-color: rgba(203, 213, 225, 0.5) !important;
+  border-bottom-color: rgba(139, 90, 43, 0.2) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .modal-header h3 {
@@ -891,9 +891,9 @@
 [data-theme="tda-vib"] .tarife-container .form-group input,
 [data-theme="tda-vib"] .tarife-container .form-group textarea,
 [data-theme="tda-vib"] .tarife-container .form-group select {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid rgba(203, 213, 225, 0.5) !important;
-  color: #0f172a !important;
+  background: rgba(250, 247, 240, 0.95) !important;
+  border: 1px solid rgba(139, 90, 43, 0.25) !important;
+  color: #1a1a1a !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .form-group input:focus,
@@ -904,7 +904,7 @@
 }
 
 [data-theme="tda-vib"] .tarife-container .form-actions {
-  border-top-color: rgba(203, 213, 225, 0.5) !important;
+  border-top-color: rgba(139, 90, 43, 0.2) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .save-btn {
@@ -915,7 +915,7 @@
 
 [data-theme="tda-vib"] .tarife-container .cancel-btn {
   color: #64748b !important;
-  border-color: rgba(203, 213, 225, 0.5) !important;
+  border-color: rgba(139, 90, 43, 0.25) !important;
 }
 
 [data-theme="tda-vib"] .tarife-container .cancel-btn:hover {
