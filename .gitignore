@@ -38,3 +38,7 @@ backend/uploads/
 
 # PM2
 .pm2/
+
+# Auto-sync
+auto-commit.sh
+*.backup
