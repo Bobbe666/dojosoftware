@@ -37,7 +37,7 @@ axios.interceptors.request.use(
   }
 );
 
-// React Query Client mit Default-Optionen
+// React Query Client mit Default-Optionen für API-Caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

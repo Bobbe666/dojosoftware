@@ -93,18 +93,46 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false, // F�r Production auf false setzen
+    sourcemap: false, // Für Production auf false setzen
     minify: 'terser',
-    // CSS Minify auf esbuild umstellen (unterdr�ckt die Warnungen)
+    // CSS Minify auf esbuild umstellen (unterdrückt die Warnungen)
     cssMinify: 'esbuild',
+    // Chunk Size Warnungslimit erhöhen (da wir bewusst größere Chunks haben)
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
+        // Manuelle Chunks für große Libraries
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          icons: ['lucide-react'],
-          charts: ['recharts'],
-          animation: ['framer-motion'],
-          editor: ['grapesjs', 'grapesjs-preset-webpage'],
+          // Core React - wird immer gebraucht
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-router': ['react-router-dom'],
+          // UI Libraries
+          'icons': ['lucide-react'],
+          'charts': ['recharts'],
+          'animation': ['framer-motion'],
+          // Heavy Libraries - selten genutzt
+          'editor': ['grapesjs', 'grapesjs-preset-webpage'],
+          // React Query für API-Caching
+          'query': ['@tanstack/react-query'],
+        },
+        // Bessere Chunk-Namen
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId || '';
+          // Komponenten-basierte Chunks
+          if (facadeModuleId.includes('/components/')) {
+            const match = facadeModuleId.match(/\/components\/([^/]+)\.jsx?$/);
+            if (match) {
+              return `assets/${match[1]}-[hash].js`;
+            }
+          }
+          // Pages
+          if (facadeModuleId.includes('/pages/')) {
+            const match = facadeModuleId.match(/\/pages\/([^/]+)\.jsx?$/);
+            if (match) {
+              return `assets/${match[1]}-[hash].js`;
+            }
+          }
+          return 'assets/[name]-[hash].js';
         },
       },
     },
