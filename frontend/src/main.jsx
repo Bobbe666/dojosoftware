@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.jsx';
 
 // Design System - Neue zentrale Styles
@@ -36,11 +37,25 @@ axios.interceptors.request.use(
   }
 );
 
+// React Query Client mit Default-Optionen
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,       // 5 Minuten fresh
+      gcTime: 30 * 60 * 1000,          // 30 Minuten im Cache
+      retry: 1,                        // 1 Retry bei Fehler
+      refetchOnWindowFocus: false,     // Kein Auto-Refetch bei Fokus
+    },
+  },
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <DatenProvider>
-      <App />
-    </DatenProvider>
+    <QueryClientProvider client={queryClient}>
+      <DatenProvider>
+        <App />
+      </DatenProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );
 

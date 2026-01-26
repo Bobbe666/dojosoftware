@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from 'axios';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { SkeletonProfile, LoadingSpinner, LoadingButton } from "./ui/Skeleton";
 import MitgliedFortschritt from './MitgliedFortschritt';
 import PruefungsStatus from './PruefungsStatus';
 import Kuendigungshinweis from './Kuendigungshinweis';
@@ -165,6 +167,56 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   // Determine which ID to use: URL param (admin) or dynamically loaded (member)
   const id = isAdmin ? (memberIdProp || urlId) : resolvedMemberId;
 
+  // 🚀 React Query für gecachte Daten
+  const queryClient = useQueryClient();
+  
+  // Mitglied-Daten mit React Query (15 Min Cache)
+  const { 
+    data: mitgliedQuery, 
+    isLoading: mitgliedLoading, 
+    error: mitgliedError,
+    refetch: refetchMitglied 
+  } = useQuery({
+    queryKey: ['mitglied', id],
+    queryFn: async () => {
+      const res = await axios.get(`/mitglieddetail/${id}`);
+      return res.data;
+    },
+    enabled: !!id,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // Tarife mit React Query (30 Min Cache)
+  const { data: tarifeQuery } = useQuery({
+    queryKey: ['tarife'],
+    queryFn: async () => {
+      const res = await axios.get('/tarife');
+      return res.data?.data || res.data || [];
+    },
+    staleTime: 30 * 60 * 1000,
+  });
+
+  // Zahlungszyklen mit React Query (60 Min Cache)
+  const { data: zahlungszyklenQuery } = useQuery({
+    queryKey: ['zahlungszyklen'],
+    queryFn: async () => {
+      const res = await axios.get('/zahlungszyklen');
+      return res.data?.data || res.data || [];
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+
+  // Stile mit React Query (60 Min Cache)
+  const { data: stileQuery } = useQuery({
+    queryKey: ['stile'],
+    queryFn: async () => {
+      const res = await axios.get('/stile');
+      return res.data || [];
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+
   const [mitglied, setMitglied] = useState(null);
   const [updatedData, setUpdatedData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -290,6 +342,36 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [tarife, setTarife] = useState([]);
   const [zahlungszyklen, setZahlungszyklen] = useState([]);
   const [beitraege, setBeiträge] = useState([]);
+  // 🔄 Sync React Query data to local state (für Kompatibilität)
+  useEffect(() => {
+    if (mitgliedQuery) {
+      setMitglied(mitgliedQuery);
+      setUpdatedData(mitgliedQuery);
+      setLoading(false);
+    }
+    if (mitgliedError) {
+      setError('Fehler beim Abrufen der Mitgliedsdaten.');
+      setLoading(false);
+    }
+  }, [mitgliedQuery, mitgliedError]);
+
+  useEffect(() => {
+    if (tarifeQuery) {
+      setTarife(Array.isArray(tarifeQuery) ? tarifeQuery : []);
+    }
+  }, [tarifeQuery]);
+
+  useEffect(() => {
+    if (zahlungszyklenQuery) {
+      setZahlungszyklen(Array.isArray(zahlungszyklenQuery) ? zahlungszyklenQuery : []);
+    }
+  }, [zahlungszyklenQuery]);
+
+  useEffect(() => {
+    if (stileQuery) {
+      setStile(Array.isArray(stileQuery) ? stileQuery : []);
+    }
+  }, [stileQuery]);
 
   // Sicherheit-Tab State (muss vor frühen Returns deklariert werden)
   const [currentPassword, setCurrentPassword] = useState('');
@@ -1700,14 +1782,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
     const controller = new AbortController();
 
-    fetchMitgliedDetail(controller.signal);
+    // fetchMitgliedDetail - jetzt via React Query (useQuery)
+    // fetchStile - jetzt via React Query (useQuery)
+    // fetchTarifeUndZahlungszyklen - jetzt via React Query (useQuery)
     fetchAnwesenheitsDaten(null, controller.signal); // Lade alle Anwesenheitsdaten initial
     fetchFinanzDaten(controller.signal);
-    fetchStile(controller.signal);
     loadMemberStyles(controller.signal);
     loadSepaMandate(controller.signal);
     loadArchivierteMandate(controller.signal);
-    fetchTarifeUndZahlungszyklen(controller.signal);
 
     return () => {
       controller.abort();
@@ -2300,7 +2382,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   };
 
-  if (loading) return <p>Lade Mitgliedsdaten...</p>;
+  if (loading) return (
+    <div className="mitglied-detail-container" style={{ padding: '2rem' }}>
+      <SkeletonProfile />
+    </div>
+  );
   if (error) return <p className="error">{error}</p>;
   if (!mitglied) return <p>Keine Daten gefunden.</p>;
 

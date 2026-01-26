@@ -1,0 +1,356 @@
+/* ============================================
+   SKELETON LOADER STYLES
+   Einheitliche Loading-Platzhalter
+   ============================================ */
+
+/* Base Skeleton Animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Base Skeleton Styles */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, rgba(128, 128, 128, 0.1)) 0%,
+    var(--skeleton-highlight, rgba(128, 128, 128, 0.2)) 50%,
+    var(--skeleton-base, rgba(128, 128, 128, 0.1)) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .skeleton,
+.dark .skeleton {
+  --skeleton-base: rgba(255, 255, 255, 0.05);
+  --skeleton-highlight: rgba(255, 255, 255, 0.1);
+}
+
+/* Light Mode */
+[data-theme="light"] .skeleton,
+.light .skeleton {
+  --skeleton-base: rgba(0, 0, 0, 0.06);
+  --skeleton-highlight: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   SKELETON VARIANTS
+   ============================================ */
+
+.skeleton-text {
+  height: 16px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+  margin-bottom: 0;
+  width: 80%;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeleton-thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+}
+
+.skeleton-card {
+  width: 100%;
+  height: 120px;
+  border-radius: 12px;
+}
+
+.skeleton-table-row {
+  height: 48px;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.skeleton-button {
+  height: 40px;
+  width: 120px;
+  border-radius: 8px;
+}
+
+.skeleton-input {
+  height: 44px;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* ============================================
+   SKELETON GROUP
+   ============================================ */
+
+.skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-group .skeleton:last-child {
+  width: 70%;
+}
+
+/* ============================================
+   SKELETON CARD LAYOUT
+   ============================================ */
+
+.skeleton-card {
+  background: var(--bg-secondary, #1a1a2e);
+  border: 1px solid var(--border-default, rgba(255,255,255,0.1));
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.skeleton-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.skeleton-card-header-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ============================================
+   SKELETON TABLE
+   ============================================ */
+
+.skeleton-table {
+  width: 100%;
+}
+
+.skeleton-table-header {
+  display: flex;
+  gap: 24px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-default, rgba(255,255,255,0.1));
+  margin-bottom: 8px;
+}
+
+.skeleton-table-row {
+  display: flex;
+  gap: 24px;
+  padding: 12px 16px;
+  align-items: center;
+}
+
+/* ============================================
+   SKELETON PROFILE
+   ============================================ */
+
+.skeleton-profile {
+  padding: 1.5rem;
+}
+
+.skeleton-profile-header {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.skeleton-profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-profile-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.skeleton-profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================
+   SKELETON LIST
+   ============================================ */
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary, #1a1a2e);
+  border-radius: 8px;
+}
+
+.skeleton-list-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+
+.loading-spinner {
+  animation: spinner-rotate 1s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner-track {
+  stroke: currentColor;
+  opacity: 0.2;
+}
+
+.loading-spinner-head {
+  stroke: currentColor;
+  stroke-dasharray: 45 90;
+  stroke-dashoffset: 0;
+}
+
+/* ============================================
+   LOADING BUTTON
+   ============================================ */
+
+.loading-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.loading-button.is-loading {
+  pointer-events: none;
+}
+
+.loading-button.is-loading .loading-button-text {
+  opacity: 0.7;
+}
+
+.loading-button .loading-spinner {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   LOADING OVERLAY
+   ============================================ */
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-overlay, rgba(0, 0, 0, 0.7));
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  border-radius: inherit;
+}
+
+.loading-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-primary, #fff);
+}
+
+.loading-overlay-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.skeleton-inline {
+  display: inline-block;
+}
+
+.skeleton-rounded {
+  border-radius: 50%;
+}
+
+.skeleton-no-animation {
+  animation: none;
+  background: var(--skeleton-base, rgba(128, 128, 128, 0.1));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .skeleton-profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .skeleton-profile-stats {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .skeleton-table-header,
+  .skeleton-table-row {
+    gap: 12px;
+  }
+}
