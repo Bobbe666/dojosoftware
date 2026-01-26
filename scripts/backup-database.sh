@@ -15,8 +15,6 @@
 #
 # ============================================================================
 
-set -e
-
 # Konfiguration
 BACKUP_DIR="/var/www/dojosoftware/backups/database"
 LOG_FILE="/var/log/dojo-backup.log"
@@ -75,7 +73,7 @@ create_backup() {
     local backup_type=$1
     local backup_file="$BACKUP_DIR/$backup_type/dojo_${backup_type}_${DATETIME}.sql.gz"
 
-    log "Starte $backup_type Backup..."
+    log "Starte $backup_type Backup nach: $backup_file"
 
     # MySQL-Dump mit allen wichtigen Optionen
     mysqldump \
@@ -91,12 +89,16 @@ create_backup() {
         --quick \
         "$DB_NAME" 2>/dev/null | gzip > "$backup_file"
 
-    if [ $? -eq 0 ]; then
+    local exit_code=$?
+
+    if [ $exit_code -eq 0 ] && [ -f "$backup_file" ]; then
         local size=$(du -h "$backup_file" | cut -f1)
-        log_success "$backup_type Backup erstellt: $backup_file ($size)"
-        echo "$backup_file"
+        log_success "$backup_type Backup erstellt: $(basename $backup_file) ($size)"
+        # Rückgabe des Dateipfads über globale Variable
+        LAST_BACKUP_FILE="$backup_file"
+        return 0
     else
-        log_error "Backup fehlgeschlagen!"
+        log_error "Backup fehlgeschlagen! (Exit code: $exit_code)"
         return 1
     fi
 }
@@ -143,24 +145,24 @@ show_stats() {
 verify_backup() {
     local backup_file=$1
 
-    if [ -f "$backup_file" ]; then
-        # Prüfe ob gzip-Datei gültig ist
-        if gzip -t "$backup_file" 2>/dev/null; then
-            # Prüfe Mindestgröße (sollte > 1KB sein)
-            local size=$(stat -f%z "$backup_file" 2>/dev/null || stat -c%s "$backup_file" 2>/dev/null)
-            if [ "$size" -gt 1024 ]; then
-                log_success "Backup verifiziert: $(basename $backup_file)"
-                return 0
-            else
-                log_error "Backup zu klein: $size Bytes"
-                return 1
-            fi
+    if [ -z "$backup_file" ] || [ ! -f "$backup_file" ]; then
+        log_error "Backup-Datei nicht gefunden: $backup_file"
+        return 1
+    fi
+
+    # Prüfe ob gzip-Datei gültig ist
+    if gzip -t "$backup_file" 2>/dev/null; then
+        # Prüfe Mindestgröße (sollte > 1KB sein) - Linux-kompatibel
+        local size=$(stat -c%s "$backup_file" 2>/dev/null || stat -f%z "$backup_file" 2>/dev/null)
+        if [ "$size" -gt 1024 ]; then
+            log_success "Backup verifiziert: $(basename $backup_file) ($(numfmt --to=iec $size 2>/dev/null || echo $size bytes))"
+            return 0
         else
-            log_error "Backup-Datei ist korrupt!"
+            log_error "Backup zu klein: $size Bytes"
             return 1
         fi
     else
-        log_error "Backup-Datei nicht gefunden!"
+        log_error "Backup-Datei ist korrupt!"
         return 1
     fi
 }
@@ -177,24 +179,30 @@ main() {
     # Verzeichnisse vorbereiten
     setup_directories
 
+    # Globale Variable für letzten Backup-Pfad
+    LAST_BACKUP_FILE=""
+
     # Tägliches Backup (immer)
-    daily_backup=$(create_backup "daily")
-    verify_backup "$daily_backup"
+    if create_backup "daily"; then
+        verify_backup "$LAST_BACKUP_FILE"
+    fi
     rotate_backups "daily" $KEEP_DAILY
 
     # Wöchentliches Backup (Sonntags)
     if [ "$DAY_OF_WEEK" -eq 7 ]; then
         log "Sonntag - Erstelle wöchentliches Backup..."
-        weekly_backup=$(create_backup "weekly")
-        verify_backup "$weekly_backup"
+        if create_backup "weekly"; then
+            verify_backup "$LAST_BACKUP_FILE"
+        fi
         rotate_backups "weekly" $KEEP_WEEKLY
     fi
 
     # Monatliches Backup (1. des Monats)
     if [ "$DAY_OF_MONTH" -eq "01" ]; then
         log "Monatsanfang - Erstelle monatliches Backup..."
-        monthly_backup=$(create_backup "monthly")
-        verify_backup "$monthly_backup"
+        if create_backup "monthly"; then
+            verify_backup "$LAST_BACKUP_FILE"
+        fi
         rotate_backups "monthly" $KEEP_MONTHLY
     fi
 
