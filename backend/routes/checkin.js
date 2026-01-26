@@ -571,9 +571,10 @@ router.get('/tresen/:datum', async (req, res) => {
                 console.log(`📋 Check-ins Details:`, allCheckins);
                 // Prüfe warum sie nicht gefunden werden
                 const mitgliedIds = allCheckins.map(c => c.mitglied_id);
+                const placeholders = mitgliedIds.map(() => '?').join(',');
                 const members = await queryAsync(
-                    `SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id IN (${mitgliedIds.join(',')})`,
-                    []
+                    `SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id IN (${placeholders})`,
+                    mitgliedIds
                 );
                 console.log(`👥 Mitglieder-Daten:`, members);
             }

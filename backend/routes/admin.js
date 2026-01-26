@@ -1803,11 +1803,14 @@ router.post('/sepa/batch/create', requireSuperAdmin, async (req, res) => {
         AND ds.monthly_price > 0
     `;
     
+    let mandateParams = [];
     if (dojo_ids && dojo_ids.length > 0) {
-      mandateQuery += ` AND m.dojo_id IN (${dojo_ids.join(',')})`;
+      const placeholders = dojo_ids.map(() => '?').join(',');
+      mandateQuery += ` AND m.dojo_id IN (${placeholders})`;
+      mandateParams = dojo_ids;
     }
-    
-    const [mandate] = await db.promise().query(mandateQuery);
+
+    const [mandate] = await db.promise().query(mandateQuery, mandateParams);
     
     if (!mandate.length) {
       return res.status(400).json({ error: 'Keine aktiven Mandate gefunden' });
@@ -1978,9 +1981,11 @@ router.get('/sepa/batch/:id/xml', requireSuperAdmin, async (req, res) => {
     // Mandate auf RCUR setzen (Folgelastschrift)
     const mandatIds = transaktionen.map(t => t.mandat_id);
     if (mandatIds.length > 0) {
-      await db.promise().query(`
-        UPDATE sepa_mandate SET sequenz_typ = 'RCUR', letzte_nutzung = CURDATE() WHERE id IN (${mandatIds.join(',')})
-      `);
+      const placeholders = mandatIds.map(() => '?').join(',');
+      await db.promise().query(
+        `UPDATE sepa_mandate SET sequenz_typ = 'RCUR', letzte_nutzung = CURDATE() WHERE id IN (${placeholders})`,
+        mandatIds
+      );
     }
     
     res.setHeader('Content-Type', 'application/xml');
