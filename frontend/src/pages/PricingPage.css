@@ -629,3 +629,22 @@
     padding: 0.75rem 0.5rem;
   }
 }
+
+/* Override Events.css card-header styles */
+.pricing-page .card-header {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.pricing-page .card-header h3 {
+  font-size: 1.75rem;
+  color: #ffd700 !important;
+  -webkit-text-fill-color: #ffd700 !important;
+  background: none !important;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-page .card-description {
+  color: rgba(255, 255, 255, 0.8) !important;
+}

@@ -11,57 +11,82 @@ function LandingPage() {
     {
       icon: '👥',
       title: 'Mitgliederverwaltung',
-      description: 'Verträge, Kündigungen, Dokumente - alles an einem Ort'
+      description: 'Verträge, Kündigungen, Dokumente, Familienverbund - alles an einem Ort'
+    },
+    {
+      icon: '🌐',
+      title: 'Online-Registrierung',
+      description: 'Selbstständige Anmeldung mit automatischer Vertragserstellung'
+    },
+    {
+      icon: '📱',
+      title: 'Mitglieder-Portal',
+      description: 'Self-Service: Adressänderung, Kündigung, Ruhepause - ohne deinen Aufwand'
     },
     {
       icon: '✅',
       title: 'Check-In System',
-      description: 'QR-Code basiertes Check-In mit Live-Display'
+      description: 'QR-Code basiertes Check-In mit Live-Display für dein Dojo'
     },
     {
       icon: '💶',
-      title: 'SEPA-Lastschrift',
-      description: 'Automatische Beitragseinzüge per SEPA-Mandat'
+      title: 'SEPA & Finanzen',
+      description: 'Automatische Lastschriften, Rabattsystem, Mahnwesen, Buchführung'
     },
     {
       icon: '🥋',
-      title: 'Prüfungsverwaltung',
-      description: 'Gürtelprüfungen digital organisieren'
+      title: 'Prüfungswesen',
+      description: 'Gürtelprüfungen, historische Prüfungen, Lehrgänge & Ehrungen'
     },
     {
-      icon: '📊',
-      title: 'Statistiken & Reports',
-      description: 'Dashboard mit Echtzeit-Auswertungen'
+      icon: '📄',
+      title: 'Vertragsverwaltung',
+      description: 'Automatische Verlängerung, Tarifwechsel, Rabatte, PDF-Export'
+    },
+    {
+      icon: '👨‍👩‍👧‍👦',
+      title: 'Familienverwaltung',
+      description: 'Familienrabatte, Erziehungsberechtigte, verknüpfte Konten'
     },
     {
       icon: '🛒',
       title: 'Verkauf & Lager',
-      description: 'Artikel, Kasse und Bestandsverwaltung'
+      description: 'Artikel, Kassensystem, Bestandsverwaltung, Verkaufsstatistik'
     },
     {
-      icon: '📈',
-      title: 'Buchführung',
-      description: 'Professionelle Finanzverwaltung und Rechnungswesen'
-    },
-    {
-      icon: '🌐',
-      title: 'Online-Registrierung für Neumitglieder',
-      description: 'Selbstständige Anmeldung neuer Mitglieder online'
+      icon: '📊',
+      title: 'Dashboard & Statistiken',
+      description: 'Echtzeit-Auswertungen, Einnahmen, Austritte, Anwesenheit'
     },
     {
       icon: '📅',
-      title: 'Terminverwaltung & Stundenplan',
-      description: 'Trainingszeiten, Kursplanung und Termine verwalten'
-    },
-    {
-      icon: '🎯',
-      title: 'Events & Veranstaltungen',
-      description: 'Turniere, Seminare und Events organisieren'
+      title: 'Stundenplan & Events',
+      description: 'Trainingszeiten, Turniere, Seminare, Veranstaltungen'
     },
     {
       icon: '📧',
-      title: 'Kommunikation & Newsletter',
-      description: 'E-Mail-Versand und Mitgliederansprache'
+      title: 'Kommunikation',
+      description: 'E-Mail-Versand, Newsletter, Benachrichtigungen'
+    },
+    {
+      icon: '🔔',
+      title: 'Benachrichtigungen',
+      description: 'Automatische Erinnerungen, Zahlungseingänge, Kündigungen'
+    },
+    {
+      icon: '🏢',
+      title: 'Multi-Dojo',
+      description: 'Mehrere Standorte zentral verwalten mit einem Account'
+    },
+    {
+      icon: '📁',
+      title: 'Dokumentenverwaltung',
+      description: 'Upload, Speicherung und Verwaltung aller Dokumente'
+    },
+    {
+      icon: '🔒',
+      title: 'Sicherheit & DSGVO',
+      description: 'Verschlüsselte Daten, deutsche Server, 100% DSGVO-konform'
     }
   ];
 
@@ -332,10 +357,6 @@ function LandingPage() {
               <p>Registriere dich kostenlos und teste alle Features 14 Tage lang. Keine Kreditkarte erforderlich.</p>
             </div>
             <div className="faq-item">
-              <h3>Kann ich jederzeit kündigen?</h3>
-              <p>Ja, du kannst monatlich kündigen. Keine Mindestlaufzeit, keine versteckten Kosten.</p>
-            </div>
-            <div className="faq-item">
               <h3>Sind meine Daten sicher (DSGVO)?</h3>
               <p>Ja, alle Daten werden verschlüsselt auf deutschen Servern gespeichert. 100% DSGVO-konform.</p>
             </div>
@@ -390,6 +411,7 @@ function LandingPage() {
           </div>
           <div className="footer-bottom">
             <p>© 2026 DojoSoftware by TDA International • Alle Rechte vorbehalten</p>
+            <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", opacity: 0.7 }}>Coming soon: English • Español • Français • Italiano</p>
           </div>
         </div>
       </footer>

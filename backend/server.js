@@ -933,7 +933,18 @@ try {
 try {
   const pruefungenRouter = require(path.join(__dirname, "routes", "pruefungen.js"));
   app.use("/api/pruefungen", pruefungenRouter);
+  const pruefungenHistorischRouter = require(path.join(__dirname, "routes", "pruefungen-historisch.js"));
+  app.use("/api/pruefungen-historisch", pruefungenHistorischRouter);
+  logger.success("Route gemountet", { path: "/api/pruefungen-historisch" });
+  const ehrungenLehrgaengeRouter = require(path.join(__dirname, "routes", "ehrungen-lehrgaenge.js"));
+  app.use("/api/ehrungen-lehrgaenge", ehrungenLehrgaengeRouter);
+  logger.success("Route gemountet", { path: "/api/ehrungen-lehrgaenge" });
   logger.success('Route gemountet', { path: '/api/pruefungen' });
+
+  // Zusatzdaten Route (Lehrgänge, Ehrungen, Zertifikate)
+  const zusatzdatenRouter = require(path.join(__dirname, "routes", "zusatzdaten.js"));
+  app.use("/api/zusatzdaten", zusatzdatenRouter);
+  logger.success("Route gemountet", { path: "/api/zusatzdaten" });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'pruefungen',

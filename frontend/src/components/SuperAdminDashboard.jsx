@@ -10,12 +10,13 @@ import config from '../config/config';
 import {
   Building2, Users, TrendingUp, Globe, Plus, Edit, Trash2,
   CheckCircle, XCircle, BarChart3, Activity, Award, Calendar, HardDrive, Clock, AlertTriangle,
-  ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog
+  ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
 import FinanceTab from './FinanceTab';
 import ContractsTab from './ContractsTab';
 import UsersTab from './UsersTab';
+import SepaTab from './SepaTab';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -37,7 +38,7 @@ const SuperAdminDashboard = () => {
   const [showExtendTrialModal, setShowExtendTrialModal] = useState(false);
   const [showActivateSubscriptionModal, setShowActivateSubscriptionModal] = useState(false);
   const [trialDays, setTrialDays] = useState(14);
-  const [subscriptionPlan, setSubscriptionPlan] = useState('basic');
+  const [subscriptionPlan, setSubscriptionPlan] = useState('starter');
   const [subscriptionInterval, setSubscriptionInterval] = useState('monthly');
   const [subscriptionDuration, setSubscriptionDuration] = useState(12);
   const [customPrice, setCustomPrice] = useState('');
@@ -47,6 +48,10 @@ const SuperAdminDashboard = () => {
 
   // State für Tab-Navigation
   const [activeTab, setActiveTab] = useState('overview');
+  // State für Pläne-Verwaltung
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [plansLoading, setPlansLoading] = useState(false);
 
   // Theme State
   const [theme, setTheme] = useState(() => {
@@ -79,6 +84,7 @@ const SuperAdminDashboard = () => {
   // Daten laden beim Mount
   useEffect(() => {
     loadAllData();
+    loadSubscriptionPlans();
   }, []);
 
   const loadAllData = async () => {
@@ -109,6 +115,40 @@ const SuperAdminDashboard = () => {
       setError(err.response?.data?.message || 'Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Subscription-Pläne laden
+  const loadSubscriptionPlans = async () => {
+    try {
+      setPlansLoading(true);
+      const response = await axios.get('/admin/subscription-plans', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setSubscriptionPlans(response.data.plans);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Pläne:', error);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  // Plan aktualisieren
+  const updatePlan = async (planId, updates) => {
+    try {
+      const response = await axios.put(`/admin/subscription-plans/${planId}`, updates, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        loadSubscriptionPlans();
+        setEditingPlan(null);
+        alert('Plan erfolgreich aktualisiert');
+      }
+    } catch (error) {
+      console.error('Fehler beim Aktualisieren:', error);
+      alert('Fehler beim Aktualisieren des Plans');
     }
   };
 
@@ -302,7 +342,9 @@ const SuperAdminDashboard = () => {
     { id: 'statistics', label: 'Statistiken', icon: <PieChart size={18} /> },
     { id: 'finance', label: 'Finanzen', icon: <DollarSign size={18} /> },
     { id: 'contracts', label: 'Verträge', icon: <FileText size={18} /> },
-    { id: 'users', label: 'Benutzer', icon: <UserCog size={18} /> }
+    { id: 'users', label: 'Benutzer', icon: <UserCog size={18} /> },
+    { id: 'plans', label: 'Pläne & Preise', icon: <CreditCard size={18} /> },
+    { id: 'sepa', label: 'SEPA Lastschrift', icon: <Euro size={18} /> }
   ];
 
   return (
@@ -715,6 +757,171 @@ const SuperAdminDashboard = () => {
         )}
 
         {/* Benutzer Tab */}
+        {activeTab === 'plans' && (
+          <div className="plans-management">
+            <h2 className="section-title" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <CreditCard size={24} /> Pläne & Preise verwalten
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+              Änderungen hier werden automatisch auf der Pricing-Seite und im Vertragsmodul übernommen.
+            </p>
+
+            {plansLoading ? (
+              <p>Lade Pläne...</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
+                {subscriptionPlans.map(plan => (
+                  <div key={plan.plan_id} className="plan-card" style={{
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    border: '1px solid var(--border-default)',
+                    opacity: plan.is_visible ? 1 : 0.6
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <h3 style={{ margin: 0, color: 'var(--primary)' }}>{plan.display_name}</h3>
+                      <button
+                        onClick={() => setEditingPlan(editingPlan === plan.plan_id ? null : plan.plan_id)}
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: '6px',
+                          padding: '0.4rem 0.8rem',
+                          cursor: 'pointer',
+                          color: 'var(--text-primary)'
+                        }}
+                      >
+                        <Edit size={14} /> {editingPlan === plan.plan_id ? 'Abbrechen' : 'Bearbeiten'}
+                      </button>
+                    </div>
+
+                    {editingPlan === plan.plan_id ? (
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        updatePlan(plan.plan_id, {
+                          display_name: formData.get('display_name'),
+                          description: formData.get('description'),
+                          price_monthly: parseFloat(formData.get('price_monthly')),
+                          price_yearly: parseFloat(formData.get('price_yearly')),
+                          max_members: parseInt(formData.get('max_members')),
+                          max_dojos: parseInt(formData.get('max_dojos')),
+                          storage_limit_mb: parseInt(formData.get('storage_limit_mb')),
+                          feature_verkauf: formData.get('feature_verkauf') === 'on',
+                          feature_buchfuehrung: formData.get('feature_buchfuehrung') === 'on',
+                          feature_events: formData.get('feature_events') === 'on',
+                          feature_multidojo: formData.get('feature_multidojo') === 'on',
+                          feature_api: formData.get('feature_api') === 'on',
+                          is_visible: formData.get('is_visible') === 'on'
+                        });
+                      }}>
+                        <div style={{ display: 'grid', gap: '0.75rem' }}>
+                          <div>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Anzeigename</label>
+                            <input name="display_name" defaultValue={plan.display_name} className="form-control" style={{ width: '100%', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Beschreibung</label>
+                            <input name="description" defaultValue={plan.description} className="form-control" style={{ width: '100%', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }} />
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            <div>
+                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Preis/Monat</label>
+                              <input name="price_monthly" type="number" step="0.01" defaultValue={plan.price_monthly} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Preis/Jahr</label>
+                              <input name="price_yearly" type="number" step="0.01" defaultValue={plan.price_yearly} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                            <div>
+                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Mitglieder</label>
+                              <input name="max_members" type="number" defaultValue={plan.max_members} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Dojos</label>
+                              <input name="max_dojos" type="number" defaultValue={plan.max_dojos} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Speicher MB</label>
+                              <input name="storage_limit_mb" type="number" defaultValue={plan.storage_limit_mb} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
+                            </div>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
+                              <input name="feature_verkauf" type="checkbox" defaultChecked={plan.feature_verkauf} /> Verkauf
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
+                              <input name="feature_buchfuehrung" type="checkbox" defaultChecked={plan.feature_buchfuehrung} /> Buchführung
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
+                              <input name="feature_events" type="checkbox" defaultChecked={plan.feature_events} /> Events
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
+                              <input name="feature_multidojo" type="checkbox" defaultChecked={plan.feature_multidojo} /> Multi-Dojo
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
+                              <input name="feature_api" type="checkbox" defaultChecked={plan.feature_api} /> API
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
+                              <input name="is_visible" type="checkbox" defaultChecked={plan.is_visible} /> Sichtbar
+                            </label>
+                          </div>
+                          <button type="submit" style={{
+                            marginTop: '1rem',
+                            background: 'var(--primary)',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '0.6rem 1rem',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            justifyContent: 'center'
+                          }}>
+                            <Save size={16} /> Speichern
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>{plan.description}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                          <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Monatlich</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary)' }}>{plan.price_monthly}€</div>
+                          </div>
+                          <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Jährlich</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary)' }}>{plan.price_yearly}€</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          <div>Max. {plan.max_members >= 999999 ? 'Unbegrenzt' : plan.max_members} Mitglieder</div>
+                          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {plan.feature_verkauf ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Verkauf</span> : null}
+                            {plan.feature_buchfuehrung ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Buchführung</span> : null}
+                            {plan.feature_events ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Events</span> : null}
+                            {plan.feature_multidojo ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Multi-Dojo</span> : null}
+                            {plan.feature_api ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>API</span> : null}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'sepa' && (
+          <SepaTab token={token} />
+        )}
+
         {activeTab === 'users' && (
           <UsersTab token={token} />
         )}
@@ -815,9 +1022,10 @@ const SuperAdminDashboard = () => {
                   onChange={(e) => setSubscriptionPlan(e.target.value)}
                   className="form-control"
                 >
-                  <option value="basic">Basic (29€/Monat)</option>
-                  <option value="premium">Premium (49€/Monat)</option>
-                  <option value="enterprise">Enterprise (99€/Monat)</option>
+                  <option value="starter">Starter (49€/Monat)</option>
+                  <option value="professional">Professional (89€/Monat)</option>
+                  <option value="premium">Premium (149€/Monat)</option>
+                  <option value="enterprise">Enterprise (249€/Monat)</option>
                   {isMainSuperAdmin && (
                     <>
                       <option value="free">🎁 Kostenloser Account (Lifetime)</option>

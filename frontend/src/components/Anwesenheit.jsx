@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
@@ -20,7 +20,9 @@ const Anwesenheit = () => {
   const [gefilterteStunden, setGefilterteStunden] = useState([]);
   const [suchbegriff, setSuchbegriff] = useState("");
   const [nurNichtAnwesend, setNurNichtAnwesend] = useState(false);
+  const [nurAnwesend, setNurAnwesend] = useState(false);
   const [expandedCards, setExpandedCards] = useState({});
+  const [selectedMember, setSelectedMember] = useState(null); // Für Popup-Modal
   
   // NEU: Check-in Integration
   const [showAllMembers, setShowAllMembers] = useState(false);
@@ -31,6 +33,7 @@ const Anwesenheit = () => {
   // 🆕 NEU: Intelligente Suche
   const [allMembersForSearch, setAllMembersForSearch] = useState([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const suchfeldRef = useRef(null);
 
   // NEU: Kurse für Datum laden statt Stundenplan
   useEffect(() => {
@@ -398,6 +401,17 @@ const Anwesenheit = () => {
           return newState;
         });
 
+        // 🆕 Bei "entfernt" auch den Checkin-Status im Frontend aktualisieren
+        if (neuerStatus === "entfernt") {
+          setMitglieder(prevMitglieder =>
+            prevMitglieder.map(m =>
+              m.mitglied_id === mitgliedId
+                ? { ...m, checkin_status: 'entfernt' }
+                : m
+            )
+          );
+        }
+
         // Bei Suche das Mitglied sofort zur Hauptliste hinzufügen
         if (isSearchActive && neuerStatus === "anwesend") {
           // Mitglied aus Search-Liste finden
@@ -421,12 +435,48 @@ const Anwesenheit = () => {
                 }];
               }
             });
+
+            // Suchfeld leeren und Focus setzen für nächste Suche
+            setSuchbegriff("");
+            setTimeout(() => suchfeldRef.current?.focus(), 50);
           }
         }
       } else {
         console.error(`❌ API-Fehler: ${response.status}`, responseData);
+
+        // 🆕 Auch bei Fehler (z.B. "bereits eingecheckt") das Mitglied zur Liste hinzufügen
+        if (isSearchActive && status === "anwesend") {
+          const searchMember = allMembersForSearch.find(m => m.mitglied_id === mitgliedId);
+          if (searchMember) {
+            setMitglieder(prevMitglieder => {
+              const exists = prevMitglieder.some(m => m.mitglied_id === mitgliedId);
+              if (!exists) {
+                return [...prevMitglieder, {
+                  ...searchMember,
+                  anwesend: 1,
+                  checkin_status: 'eingecheckt',
+                  checkin_time: new Date().toISOString()
+                }];
+              }
+              return prevMitglieder;
+            });
+
+            // Anwesenheit-State auch updaten
+            setAnwesenheit((prev) => ({
+              ...prev,
+              [mitgliedId]: {
+                ...prev[mitgliedId],
+                status: "anwesend",
+                gespeichert: true,
+              },
+            }));
+
+            setSuchbegriff("");
+            setTimeout(() => suchfeldRef.current?.focus(), 50);
+          }
+        }
       }
-      
+
     } catch (error) {
       console.error("❌ Fehler beim Speichern der Anwesenheit:", error);
     }
@@ -443,14 +493,36 @@ const Anwesenheit = () => {
     }));
   };
 
-  const toggleCard = (mitgliedId) => {
+  const toggleCard = (mitgliedId, mitglied) => {
     const currentStatus = anwesenheit[mitgliedId]?.status;
 
     if (currentStatus !== "anwesend") {
+      // Nicht anwesend -> direkt als anwesend markieren
       updateStatus(mitgliedId, "anwesend");
+      // Filter deaktivieren damit das Mitglied sichtbar bleibt
+      if (nurNichtAnwesend) {
+        setNurNichtAnwesend(false);
+      }
       return;
     }
-    setExpandedCards((prev) => ({ ...prev, [mitgliedId]: !prev[mitgliedId] }));
+    // Anwesend -> Popup öffnen für weitere Optionen
+    setSelectedMember({ ...mitglied, id: mitgliedId });
+  };
+
+  const closePopup = () => {
+    setSelectedMember(null);
+  };
+
+  const handlePopupAction = (action) => {
+    if (!selectedMember) return;
+    const id = selectedMember.id;
+
+    if (action === 'entfernen') {
+      updateStatus(id, 'entfernt');
+    } else {
+      updateStatus(id, action);
+    }
+    closePopup();
   };
 
   const handleSuchbegriffChange = (neuerBegriff) => {
@@ -512,6 +584,7 @@ const Anwesenheit = () => {
       }
       
       if (nurNichtAnwesend && status === "anwesend") return;
+      if (nurAnwesend && status !== "anwesend") return;
       
       if (status === "entfernt") {
         entfernt.push(mitglied);
@@ -527,26 +600,24 @@ const Anwesenheit = () => {
 
   return (
     <div className="anwesenheit-container">
-      {/* Header Section */}
+      {/* Header Section mit Wochentagen und Datum */}
       <div className="anwesenheit-header">
         <div className="anwesenheit-header-content">
-          <h2>Anwesenheitsverwaltung</h2>
-          <p className="anwesenheit-subtitle">Kurse auswählen und Anwesenheit verwalten</p>
-        </div>
-      </div>
-
-      {/* Wochentagsbuttons und Datumsauswahl in einer Zeile */}
-      <div className="wochentag-und-datum-container">
-        <div className="wochentag-buttons">
-          {["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"].map((tag) => (
-            <button key={tag} onClick={() => handleWochentagClick(tag)}>
-              {tag}
-            </button>
-          ))}
-        </div>
-        
-        <div className="datum-auswahl-kompakt">
-          <input type="date" value={ausgewaehltesDatum} onChange={(e) => handleDatumWechsel(e.target.value)} />
+          <div className="anwesenheit-header-top">
+            <div className="anwesenheit-header-title">
+              <h2>Anwesenheitsverwaltung</h2>
+            </div>
+            <div className="wochentag-buttons">
+              {["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"].map((tag) => (
+                <button key={tag} onClick={() => handleWochentagClick(tag)}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+            <div className="datum-auswahl-kompakt">
+              <input type="date" value={ausgewaehltesDatum} onChange={(e) => handleDatumWechsel(e.target.value)} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -611,21 +682,15 @@ const Anwesenheit = () => {
                   ? "🔍 Durchsuche ALLE Kursmitglieder..."
                   : "Mitglied suchen..."
                 }
+                ref={suchfeldRef}
                 value={suchbegriff}
                 onChange={(e) => handleSuchbegriffChange(e.target.value)}
-                className="suchfeld"
-                style={{
-                  ...(isSearchActive && {
-                    borderColor: '#1976d2',
-                    backgroundColor: '#e3f2fd',
-                    boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.2)'
-                  })
-                }}
+                className={`suchfeld ${isSearchActive ? 'suchfeld-aktiv' : ''}`}
               />
             </div>
 
             {/* NEU: Filter-Buttons in Gruppe */}
-            <div className="filter-buttons-gruppe" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div className="filter-buttons-gruppe">
               {/* Button 1: Kurs-Mitglieder (Standard) */}
               <button
                 onClick={async () => {
@@ -654,18 +719,7 @@ const Anwesenheit = () => {
                   }
                   setLoading(false);
                 }}
-                className={!showAllMembers && !showStyleOnly ? 'filter-button-active' : 'filter-button-inactive'}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '2px solid',
-                  borderColor: !showAllMembers && !showStyleOnly ? '#1976d2' : '#ccc',
-                  backgroundColor: !showAllMembers && !showStyleOnly ? '#e3f2fd' : '#fff',
-                  color: !showAllMembers && !showStyleOnly ? '#1976d2' : '#666',
-                  fontWeight: !showAllMembers && !showStyleOnly ? 'bold' : 'normal',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className={`filter-btn ${!showAllMembers && !showStyleOnly ? 'active-blue' : ''}`}
               >
                 📋 Kurs-Mitglieder
               </button>
@@ -698,18 +752,7 @@ const Anwesenheit = () => {
                   }
                   setLoading(false);
                 }}
-                className={showStyleOnly ? 'filter-button-active' : 'filter-button-inactive'}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '2px solid',
-                  borderColor: showStyleOnly ? '#ff9800' : '#ccc',
-                  backgroundColor: showStyleOnly ? '#fff3e0' : '#fff',
-                  color: showStyleOnly ? '#ff9800' : '#666',
-                  fontWeight: showStyleOnly ? 'bold' : 'normal',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className={`filter-btn ${showStyleOnly ? 'active-orange' : ''}`}
               >
                 🥋 Alle Stil-Mitglieder
               </button>
@@ -742,33 +785,31 @@ const Anwesenheit = () => {
                   }
                   setLoading(false);
                 }}
-                className={showAllMembers ? 'filter-button-active' : 'filter-button-inactive'}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: '2px solid',
-                  borderColor: showAllMembers ? '#4caf50' : '#ccc',
-                  backgroundColor: showAllMembers ? '#e8f5e9' : '#fff',
-                  color: showAllMembers ? '#4caf50' : '#666',
-                  fontWeight: showAllMembers ? 'bold' : 'normal',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className={`filter-btn ${showAllMembers ? 'active-green' : ''}`}
               >
                 🔍 Alle Mitglieder
               </button>
             </div>
 
-            <div className="filter-checkbox-kompakt">
-              <label className="filter-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={nurNichtAnwesend}
-                  onChange={() => setNurNichtAnwesend(!nurNichtAnwesend)}
-                  className="filter-checkbox"
-                />
-                Nur nicht anwesende Mitglieder anzeigen
-              </label>
+            <div className="anwesenheit-filter-buttons">
+              <button
+                onClick={() => {
+                  setNurAnwesend(!nurAnwesend);
+                  if (!nurAnwesend) setNurNichtAnwesend(false);
+                }}
+                className={`filter-btn-small ${nurAnwesend ? 'active-green' : ''}`}
+              >
+                ✅ Nur Anwesende
+              </button>
+              <button
+                onClick={() => {
+                  setNurNichtAnwesend(!nurNichtAnwesend);
+                  if (!nurNichtAnwesend) setNurAnwesend(false);
+                }}
+                className={`filter-btn-small ${nurNichtAnwesend ? 'active-red' : ''}`}
+              >
+                ❌ Nur Fehlende
+              </button>
             </div>
 
             <div className="anwesend-button-rechts">
@@ -815,7 +856,6 @@ const Anwesenheit = () => {
               const statusKlasse = eintrag.status ? `status-${eintrag.status}` : "";
               const gespeicherteKlasse =
                 eintrag.status === "anwesend" && eintrag.gespeichert ? "block-gespeichert" : "";
-              const expanded = expandedCards[id];
               
               // NEU: Check-in Status anzeigen
               const checkinStatus = mitglied.checkin_status || 'nicht_eingecheckt';
@@ -829,7 +869,7 @@ const Anwesenheit = () => {
                 <div
                   key={id}
                   className={`mitglied-block ${statusKlasse} ${gespeicherteKlasse} ${checkinKlasse} ${searchHighlight}`}
-                  onClick={() => toggleCard(id)}
+                  onClick={() => toggleCard(id, mitglied)}
                   style={{
                     ...(isFromSearch && {
                       borderColor: '#1976d2',
@@ -876,43 +916,63 @@ const Anwesenheit = () => {
                     </div>
                   </div>
 
-                  {expanded && (
-                    <div className="mitglied-details">
-                      <select
-                        value={eintrag.status ?? ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => updateStatus(id, e.target.value)}
-                      >
-                        <option value="">Status wählen</option>
-                        <option value="anwesend">Anwesend</option>
-                        <option value="verspätet">Verspätet</option>
-                        <option value="entschuldigt">Entschuldigt</option>
-                        <option value="unentschuldigt">Unentschuldigt</option>
-                        <option value="abgebrochen">Abgebrochen</option>
-                      </select>
-
-                      <button
-                        className="anwesenheit-quick"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateStatus(id, "anwesend");
-                        }}
-                      >
-                        {eintrag.status === "anwesend" ? "Entfernen ✕" : "Anwesend ✓"}
-                      </button>
-
-                      <input
-                        type="text"
-                        placeholder="Bemerkung"
-                        value={eintrag.bemerkung ?? ""}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => updateBemerkung(id, e.target.value)}
-                      />
-                    </div>
-                  )}
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Popup-Modal für Mitglied-Aktionen */}
+      {selectedMember && (
+        <div className="anwesenheit-popup-overlay" onClick={closePopup}>
+          <div className="anwesenheit-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header">
+              <img
+                src={selectedMember.profilbild || "/default-user.png"}
+                alt="Profil"
+                className="popup-profilbild"
+              />
+              <div className="popup-name">
+                <strong>{selectedMember.vorname} {selectedMember.nachname}</strong>
+                {selectedMember.gurtfarbe && <span className="popup-gurt">{selectedMember.gurtfarbe}</span>}
+              </div>
+              <button className="popup-close" onClick={closePopup}>✕</button>
+            </div>
+
+            <div className="popup-status">
+              ✅ Aktuell als anwesend markiert
+            </div>
+
+            <div className="popup-actions">
+              <button
+                className="popup-btn popup-btn-red"
+                onClick={() => handlePopupAction('entfernt')}
+              >
+                ❌ Aus Stunde entfernen
+              </button>
+              <button
+                className="popup-btn popup-btn-yellow"
+                onClick={() => handlePopupAction('verspätet')}
+              >
+                🕐 Verspätet
+              </button>
+              <button
+                className="popup-btn popup-btn-orange"
+                onClick={() => handlePopupAction('abgebrochen')}
+              >
+                🚪 Abgebrochen
+              </button>
+            </div>
+
+            <div className="popup-bemerkung">
+              <input
+                type="text"
+                placeholder="Bemerkung hinzufügen..."
+                value={anwesenheit[selectedMember.id]?.bemerkung ?? ""}
+                onChange={(e) => updateBemerkung(selectedMember.id, e.target.value)}
+              />
+            </div>
           </div>
         </div>
       )}

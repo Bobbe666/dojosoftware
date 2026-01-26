@@ -29,12 +29,12 @@ function PricingPage() {
   };
 
   const getPrice = (plan) => {
-    return billingInterval === 'yearly' ? plan.price_yearly : plan.price_monthly;
+    return billingInterval === "yearly" ? (plan.price_yearly || 0) : (plan.price_monthly || 0);
   };
 
   const getSavings = (plan) => {
-    const monthlyTotal = plan.price_monthly * 12;
-    const yearlySavings = monthlyTotal - plan.price_yearly;
+    const monthlyTotal = (plan.price_monthly || 0) * 12;
+    const yearlySavings = monthlyTotal - (plan.price_yearly || 0);
     return yearlySavings;
   };
 
@@ -163,17 +163,17 @@ function PricingPage() {
 
                 <div className="card-price">
                   <div className="price-amount">
-                    €{getPrice(plan).toFixed(0)}
+                    €{(Number(getPrice(plan)) || 0).toFixed(0)}
                     <span className="price-period">/{billingInterval === 'yearly' ? 'Jahr' : 'Monat'}</span>
                   </div>
                   {billingInterval === 'yearly' && (
                     <div className="price-savings">
-                      Spare €{getSavings(plan).toFixed(0)} pro Jahr
+                      Spare €{(Number(getSavings(plan)) || 0).toFixed(0)} pro Jahr
                     </div>
                   )}
                   {billingInterval === 'monthly' && plan.max_members < 999999 && (
                     <div className="price-note">
-                      ca. €{(getPrice(plan) / plan.max_members).toFixed(2)} pro Mitglied
+                      ca. €{(Number(getPrice(plan)) / (Number(plan.max_members) || 1)).toFixed(2)} pro Mitglied
                     </div>
                   )}
                 </div>

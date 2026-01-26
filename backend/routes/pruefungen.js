@@ -1625,7 +1625,9 @@ router.post('/', (req, res) => {
     einzelbewertungen = null,
     status = 'geplant',
     anmerkungen = null,
-    erstellt_von = null
+    erstellt_von = null,
+    ist_historisch = false,
+    historisch_bemerkung = null
   } = pruefungData;
 
   const insertQuery = `
@@ -1966,7 +1968,7 @@ router.get('/termine/:datum/pdf', (req, res) => {
     doc.text('Aktuell', col4X, tableTop);
     doc.text('Ziel', col5X, tableTop);
 
-    doc.moveTo(col1X, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+    doc.moveTo(col1X, tableTop + 15).lineTo(560, tableTop + 15).stroke();
     doc.moveDown(0.5);
 
     // Teilnehmer-Liste
@@ -1983,7 +1985,7 @@ router.get('/termine/:datum/pdf', (req, res) => {
         doc.text('Geb.', col3X, 50);
         doc.text('Aktuell', col4X, 50);
         doc.text('Ziel', col5X, 50);
-        doc.moveTo(col1X, 65).lineTo(550, 65).stroke();
+        doc.moveTo(col1X, 65).lineTo(560, 65).stroke();
         doc.font('Helvetica').moveDown(0.5);
       }
 
@@ -1992,7 +1994,8 @@ router.get('/termine/:datum/pdf', (req, res) => {
       doc.text(`${teilnehmer.nachname}, ${teilnehmer.vorname}`, col2X, currentY, { width: 160 });
       doc.text(teilnehmer.geburtsdatum ? new Date(teilnehmer.geburtsdatum).toLocaleDateString('de-DE') : '-', col3X, currentY);
       doc.text(teilnehmer.aktuelle_graduierung || '-', col4X, currentY, { width: 90 });
-      doc.text(teilnehmer.ziel_graduierung || '-', col5X, currentY, { width: 90 });
+      doc.text(teilnehmer.ziel_graduierung || '-', col5X, currentY, { width: 70 });
+      doc.text(teilnehmer.gebuehr_bezahlt ? '✓' : 'offen', col6X, currentY, { width: 60 });
 
       doc.moveDown(0.8);
     });
@@ -2011,63 +2014,128 @@ router.get('/termine/:datum/pdf', (req, res) => {
   });
 });
 
+
+// ==========================================
+// HISTORISCHE PRÜFUNG FÜR MITGLIED HINZUFÜGEN
+// ==========================================
+router.post('/mitglied/:mitglied_id/historisch', (req, res) => {
+  const { mitglied_id } = req.params;
+  const {
+    stil_id,
+    dojo_id,
+    graduierung_vorher_id,
+    graduierung_nachher_id,
+    pruefungsdatum,
+    pruefungsort,
+    historisch_bemerkung,
+    pruefer_name
+  } = req.body;
+
+  console.log('📜 Historische Prüfung hinzufügen:', { mitglied_id, stil_id, graduierung_nachher_id, pruefungsdatum });
+
+  if (!stil_id || !graduierung_nachher_id || !pruefungsdatum || !dojo_id) {
+    return res.status(400).json({
+      success: false,
+      message: 'Stil, Ziel-Graduierung, Datum und Dojo sind erforderlich'
+    });
+  }
+
+  const insertQuery = `
+    INSERT INTO pruefungen (
+      mitglied_id, stil_id, dojo_id,
+      graduierung_vorher_id, graduierung_nachher_id,
+      pruefungsdatum, pruefungsort,
+      bestanden, status,
+      ist_historisch, historisch_bemerkung,
+      prueferkommentar,
+      erstellt_am
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'bestanden', 1, ?, ?, NOW())
+  `;
+
+  const insertValues = [
+    mitglied_id, stil_id, dojo_id,
+    graduierung_vorher_id || null, graduierung_nachher_id,
+    pruefungsdatum, pruefungsort || null,
+    historisch_bemerkung || 'Historische Prüfung (nachträglich erfasst)',
+    pruefer_name ? 'Prüfer: ' + pruefer_name : null
+  ];
+
+  db.query(insertQuery, insertValues, (err, result) => {
+    if (err) {
+      console.error('❌ Fehler beim Hinzufügen der historischen Prüfung:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'Fehler beim Speichern der historischen Prüfung',
+        error: err.message
+      });
+    }
+
+    // Graduierung des Mitglieds aktualisieren (für diesen Stil)
+    const updateQuery = `
+      UPDATE mitglied_stile
+      SET current_graduierung_id = ?,
+          letzte_pruefung = ?
+      WHERE mitglied_id = ? AND stil_id = ?
+    `;
+
+    db.query(updateQuery, [graduierung_nachher_id, pruefungsdatum, mitglied_id, stil_id], (updateErr) => {
+      if (updateErr) {
+        console.warn('⚠️ Graduierung konnte nicht aktualisiert werden:', updateErr.message);
+      }
+
+      console.log('✅ Historische Prüfung erfolgreich hinzugefügt:', result.insertId);
+
+      res.json({
+        success: true,
+        message: 'Historische Prüfung erfolgreich hinzugefügt',
+        pruefung_id: result.insertId
+      });
+    });
+  });
+});
+
+// Historische Prüfung löschen
+router.delete('/historisch/:pruefung_id', (req, res) => {
+  const { pruefung_id } = req.params;
+
+  // Nur historische Prüfungen können gelöscht werden
+  db.query(
+    'SELECT * FROM pruefungen WHERE pruefung_id = ? AND ist_historisch = 1',
+    [pruefung_id],
+    (err, results) => {
+      if (err) {
+        console.error('❌ Fehler beim Suchen:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Datenbankfehler',
+          error: err.message
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Historische Prüfung nicht gefunden'
+        });
+      }
+
+      db.query('DELETE FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (deleteErr) => {
+        if (deleteErr) {
+          console.error('❌ Fehler beim Löschen:', deleteErr);
+          return res.status(500).json({
+            success: false,
+            message: 'Fehler beim Löschen',
+            error: deleteErr.message
+          });
+        }
+
+        res.json({
+          success: true,
+          message: 'Historische Prüfung gelöscht'
+        });
+      });
+    }
+  );
+});
+
 module.exports = router;
-
-/*
-================================================================================
-PRÜFUNGSVERWALTUNG API - DOKUMENTATION
-================================================================================
-
-HAUPT-ENDPUNKTE:
-GET    /api/pruefungen                     -> Alle Prüfungen mit Filtern
-GET    /api/pruefungen/:id                 -> Einzelne Prüfung
-POST   /api/pruefungen                     -> Neue Prüfung erstellen
-PUT    /api/pruefungen/:id                 -> Prüfung aktualisieren
-DELETE /api/pruefungen/:id                 -> Prüfung löschen
-
-SPEZIELLE ENDPUNKTE:
-GET    /api/pruefungen/mitglied/:id/historie    -> Prüfungshistorie
-GET    /api/pruefungen/status/anstehend         -> Anstehende Prüfungen
-GET    /api/pruefungen/stats/statistiken        -> Statistiken
-
-FILTER-PARAMETER (GET /api/pruefungen):
-- dojo_id: Dojo-Filter
-- mitglied_id: Nach Mitglied filtern
-- stil_id: Nach Stil filtern
-- status: Nach Status filtern (geplant, durchgefuehrt, bestanden, nicht_bestanden, abgesagt)
-- von_datum: Ab Datum
-- bis_datum: Bis Datum
-- bestanden: true/false
-- limit: Anzahl Ergebnisse (default: 100)
-- offset: Offset für Paginierung
-
-DATENFELDER:
-- mitglied_id: ID des Mitglieds
-- stil_id: ID des Stils
-- dojo_id: ID des Dojos
-- graduierung_vorher_id: Graduierung vor Prüfung (nullable)
-- graduierung_nachher_id: Angestrebte Graduierung
-- pruefungsdatum: Datum der Prüfung
-- pruefungsort: Ort (optional)
-- bestanden: Boolean
-- punktzahl: Erreichte Punkte
-- max_punktzahl: Max. Punkte
-- pruefer_id: Prüfer
-- prueferkommentar: Kommentar
-- pruefungsgebuehr: Gebühr
-- gebuehr_bezahlt: Boolean
-- bezahldatum: Bezahldatum
-- urkunde_ausgestellt: Boolean
-- urkunde_nr: Urkunden-Nummer
-- urkunde_pfad: Pfad zur Urkunde
-- pruefungsinhalte: JSON
-- einzelbewertungen: JSON
-- status: ENUM
-- anmerkungen: Text
-
-WICHTIG:
-1. Route muss als '/api/pruefungen' in server.js registriert werden
-2. Benötigt dojo, stile, graduierungen, mitglieder Tabellen
-3. Foreign Keys müssen vorhanden sein
-================================================================================
-*/

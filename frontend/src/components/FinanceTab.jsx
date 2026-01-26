@@ -88,7 +88,7 @@ const FinanceTab = ({ token }) => {
           <div className="kpi-content">
             <div className="kpi-label">Gesamt-Umsatz 2026</div>
             <div className="kpi-value">
-              {parseFloat(finance.overview.totalRevenue).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+              {parseFloat(finance?.overview?.totalRevenue || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
             </div>
             <div className="kpi-sublabel">{finance.overview.totalInvoices} Rechnungen</div>
           </div>
@@ -101,9 +101,9 @@ const FinanceTab = ({ token }) => {
           <div className="kpi-content">
             <div className="kpi-label">MRR (Monthly Recurring Revenue)</div>
             <div className="kpi-value">
-              {parseFloat(finance.subscriptionRevenue.monthlyRecurringRevenue).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+              {parseFloat(finance?.subscriptionRevenue?.monthlyRecurringRevenue || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
             </div>
-            <div className="kpi-sublabel">ARR: {parseFloat(finance.subscriptionRevenue.annualRecurringRevenue).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
+            <div className="kpi-sublabel">ARR: {parseFloat(finance?.subscriptionRevenue?.annualRecurringRevenue || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
           </div>
         </div>
 
@@ -114,7 +114,7 @@ const FinanceTab = ({ token }) => {
           <div className="kpi-content">
             <div className="kpi-label">Offene Rechnungen</div>
             <div className="kpi-value">
-              {parseFloat(finance.overview.unpaidAmount).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
+              {parseFloat(finance?.overview?.unpaidAmount || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €
             </div>
             <div className="kpi-sublabel">{finance.overview.unpaidInvoices} Rechnungen</div>
           </div>
@@ -126,7 +126,7 @@ const FinanceTab = ({ token }) => {
           </div>
           <div className="kpi-content">
             <div className="kpi-label">Zahlungsmoral</div>
-            <div className="kpi-value">{finance.paymentBehavior.onTimeRate}%</div>
+            <div className="kpi-value">{finance?.paymentBehavior?.onTimeRate || 0}%</div>
             <div className="kpi-sublabel">Pünktlich bezahlt</div>
           </div>
         </div>

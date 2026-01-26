@@ -37,7 +37,9 @@ const PruefungsVerwaltung = () => {
     anmeldefrist: '',
     gurtlaenge: '',
     bemerkungen: '',
-    teilnahmebedingungen: ''
+    teilnahmebedingungen: '',
+    ist_historisch: false,
+    historisch_bemerkung: ''
   });
 
   // Prüfungsergebnis Modal
@@ -74,7 +76,9 @@ const PruefungsVerwaltung = () => {
     anmeldefrist: '',
     gurtlaenge: '',
     bemerkungen: '',
-    teilnahmebedingungen: ''
+    teilnahmebedingungen: '',
+    ist_historisch: false,
+    historisch_bemerkung: ''
   });
 
   // Termin bearbeiten Modal
@@ -583,7 +587,9 @@ const PruefungsVerwaltung = () => {
         anmeldefrist: '',
         gurtlaenge: '',
         bemerkungen: '',
-        teilnahmebedingungen: ''
+        teilnahmebedingungen: '',
+    ist_historisch: false,
+    historisch_bemerkung: ''
       });
 
       setSuccess(`${selectedKandidaten.length} Kandidaten wurden zur Prüfung am ${new Date(pruefungsDaten.pruefungsdatum).toLocaleDateString('de-DE')} zugelassen!`);
@@ -746,7 +752,9 @@ const PruefungsVerwaltung = () => {
         anmeldefrist: '',
         gurtlaenge: '',
         bemerkungen: '',
-        teilnahmebedingungen: ''
+        teilnahmebedingungen: '',
+    ist_historisch: false,
+    historisch_bemerkung: ''
       });
 
       // Aktualisiere Termin-Liste
@@ -3781,6 +3789,32 @@ const PruefungsVerwaltung = () => {
               <small style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
                 Diese Bedingungen müssen Teilnehmer bei der Anmeldung akzeptieren
               </small>
+            </div>
+
+            {/* Historische Prüfung */}
+            <div className="form-group" style={{ marginTop: "1.5rem", padding: "1rem", backgroundColor: "rgba(255, 193, 7, 0.1)", borderRadius: "0.5rem", border: "1px solid rgba(255, 193, 7, 0.3)" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", marginBottom: "0.5rem" }}>
+                <input
+                  type="checkbox"
+                  checked={pruefungsDaten.ist_historisch}
+                  onChange={(e) => setPruefungsDaten({ ...pruefungsDaten, ist_historisch: e.target.checked })}
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                <span style={{ fontWeight: "600", color: "#d97706" }}>Historische Prüfung (vergangene Daten erfassen)</span>
+              </label>
+              <small style={{ color: "#6b7280", fontSize: "0.875rem", display: "block", marginBottom: "0.75rem" }}>
+                Aktivieren Sie diese Option, um Prüfungen zu erfassen, die vor der Systemeinführung stattfanden.
+              </small>
+              {pruefungsDaten.ist_historisch && (
+                <textarea
+                  value={pruefungsDaten.historisch_bemerkung}
+                  onChange={(e) => setPruefungsDaten({ ...pruefungsDaten, historisch_bemerkung: e.target.value })}
+                  className="form-input"
+                  rows="2"
+                  placeholder="Zusaetzliche Informationen zur historischen Pruefung"
+                  style={{ marginTop: "0.5rem" }}
+                />
+              )}
             </div>
 
             <div className="modal-actions" style={{ marginTop: '1.5rem' }}>

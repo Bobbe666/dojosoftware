@@ -11,9 +11,21 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
   const [anmerkungen, setAnmerkungen] = useState('');
   const [tempAnmerkungen, setTempAnmerkungen] = useState('');
 
+  // Historische Prüfung Modal State (einfache Freitextfelder)
+  const [showHistorischModal, setShowHistorischModal] = useState(false);
+  const [historischForm, setHistorischForm] = useState({
+    stil_name: '',
+    graduierung_name: '',
+    pruefungsdatum: '',
+    bemerkung: ''
+  });
+  const [historischePruefungen, setHistorischePruefungen] = useState([]);
+
+
   useEffect(() => {
     if (mitgliedId) {
       loadPruefungsdaten();
+      loadHistorischePruefungen();
     }
   }, [mitgliedId]);
 
@@ -170,6 +182,60 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       link.remove();
     } catch (error) {
       console.error('Fehler beim Download der Urkunde:', error);
+    }
+  };
+
+  // Lade historische Prüfungen
+  const loadHistorischePruefungen = async () => {
+    try {
+      const response = await axios.get('/pruefungen-historisch/mitglied/' + mitgliedId);
+      setHistorischePruefungen(response.data?.data || []);
+    } catch (error) {
+      console.error('Fehler beim Laden historischer Prüfungen:', error);
+    }
+  };
+
+  // Öffne Modal für historische Prüfung
+  const openHistorischModal = () => {
+    setHistorischForm({
+      stil_name: '',
+      graduierung_name: '',
+      pruefungsdatum: '',
+      bemerkung: ''
+    });
+    setShowHistorischModal(true);
+  };
+
+  // Speichere historische Prüfung
+  const handleSaveHistorisch = async () => {
+    if (!historischForm.stil_name || !historischForm.graduierung_name || !historischForm.pruefungsdatum) {
+      alert('Bitte Stil, Graduierung und Datum eingeben');
+      return;
+    }
+
+    try {
+      await axios.post('/pruefungen-historisch', {
+        mitglied_id: mitgliedId,
+        ...historischForm
+      });
+
+      setShowHistorischModal(false);
+      loadHistorischePruefungen();
+    } catch (error) {
+      console.error('Fehler beim Speichern:', error);
+      alert('Fehler beim Speichern');
+    }
+  };
+
+  // Lösche historische Prüfung
+  const handleDeleteHistorisch = async (id) => {
+    if (!window.confirm('Wirklich löschen?')) return;
+
+    try {
+      await axios.delete('/pruefungen-historisch/' + id);
+      loadHistorischePruefungen();
+    } catch (error) {
+      console.error('Fehler beim Löschen:', error);
     }
   };
 
@@ -390,9 +456,28 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
               </div>
 
               {/* Karte 4: Prüfungshistorie */}
-              {stilDaten.historie.length > 0 && (
-                <div className="field-group card" style={{ gridColumn: '1 / -1' }}>
-                  <h3>📋 Prüfungshistorie</h3>
+              <div className="field-group card" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0 }}>📋 Prüfungshistorie</h3>
+                  {!readOnly && (
+                    <button
+                      onClick={() => openHistorischModal()}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontSize: '0.85rem',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Historische Prüfung
+                    </button>
+                  )}
+                </div>
+                {stilDaten.historie.length > 0 ? (
                   <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
                     <table style={{
                       width: '100%',
@@ -437,34 +522,59 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                                   : '#ef4444'
                               }}>
                                 {pruefung.status}
+                                {pruefung.ist_historisch && ' (hist.)'}
                               </span>
                             </td>
                             <td style={{ padding: '0.75rem' }}>{pruefung.punktzahl || '-'}</td>
                             <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                              {pruefung.status === 'bestanden' && (
-                                <button
-                                  onClick={() => handleUrkundeDownload(pruefung.pruefung_id)}
-                                  style={{
-                                    background: 'rgba(255, 215, 0, 0.2)',
-                                    border: '1px solid #FFD700',
-                                    padding: '0.25rem 0.5rem',
-                                    borderRadius: '4px',
-                                    color: '#FFD700',
-                                    cursor: 'pointer',
-                                    fontSize: '0.8rem'
-                                  }}
-                                >
-                                  <Download size={14} />
-                                </button>
-                              )}
+                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                {pruefung.status === 'bestanden' && !pruefung.ist_historisch && (
+                                  <button
+                                    onClick={() => handleUrkundeDownload(pruefung.pruefung_id)}
+                                    style={{
+                                      background: 'rgba(255, 215, 0, 0.2)',
+                                      border: '1px solid #FFD700',
+                                      padding: '0.25rem 0.5rem',
+                                      borderRadius: '4px',
+                                      color: '#FFD700',
+                                      cursor: 'pointer',
+                                      fontSize: '0.8rem'
+                                    }}
+                                    title="Urkunde herunterladen"
+                                  >
+                                    <Download size={14} />
+                                  </button>
+                                )}
+                                {pruefung.ist_historisch && !readOnly && (
+                                  <button
+                                    onClick={() => handleDeleteHistorisch(pruefung.pruefung_id)}
+                                    style={{
+                                      background: 'rgba(239, 68, 68, 0.2)',
+                                      border: '1px solid #ef4444',
+                                      padding: '0.25rem 0.5rem',
+                                      borderRadius: '4px',
+                                      color: '#ef4444',
+                                      cursor: 'pointer',
+                                      fontSize: '0.8rem'
+                                    }}
+                                    title="Historische Prüfung löschen"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                ) : (
+                  <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '1rem' }}>
+                    Noch keine Prüfungen dokumentiert. Klicken Sie auf "+ Historische Prüfung" um vergangene Prüfungen zu erfassen.
+                  </p>
+                )}
                 </div>
-              )}
 
             </div>
           </div>
@@ -475,7 +585,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       {showAnmerkungenModal && (
         <div className="modal-overlay" onClick={() => setShowAnmerkungenModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255, 215, 0, 0.2)" }}>
               <h3>Prüfungsanmerkungen bearbeiten</h3>
               <button className="close-btn" onClick={() => setShowAnmerkungenModal(false)}>
                 <X size={20} />
@@ -501,6 +611,180 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
           </div>
         </div>
       )}
+
+{/* Historische Prüfung Modal - Einfache Freitextfelder */}
+      {showHistorischModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }} onClick={() => setShowHistorischModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)", borderRadius: "16px", width: "90%", maxWidth: "450px", maxHeight: "80vh", overflowY: "auto", border: "1px solid rgba(255, 215, 0, 0.3)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255, 215, 0, 0.2)" }}>
+              <h3 style={{ color: '#FFD700' }}>📜 Historische Prüfung</h3>
+              <button onClick={() => setShowHistorischModal(false)} style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", padding: "0.5rem" }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '1.5rem' }}>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                  Stil *
+                </label>
+                <input
+                  type="text"
+                  value={historischForm.stil_name}
+                  onChange={(e) => setHistorischForm({...historischForm, stil_name: e.target.value})}
+                  placeholder="z.B. Karate, Judo, Taekwondo..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                  Graduierung *
+                </label>
+                <input
+                  type="text"
+                  value={historischForm.graduierung_name}
+                  onChange={(e) => setHistorischForm({...historischForm, graduierung_name: e.target.value})}
+                  placeholder="z.B. Gelbgurt, 5. Kyu, 1. Dan..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                  Datum *
+                </label>
+                <input
+                  type="date"
+                  value={historischForm.pruefungsdatum}
+                  onChange={(e) => setHistorischForm({...historischForm, pruefungsdatum: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                  Bemerkung (optional)
+                </label>
+                <input
+                  type="text"
+                  value={historischForm.bemerkung}
+                  onChange={(e) => setHistorischForm({...historischForm, bemerkung: e.target.value})}
+                  placeholder="Optional..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                />
+              </div>
+
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', padding: '1rem 1.5rem' }}>
+              <button
+                onClick={() => setShowHistorischModal(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer'
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleSaveHistorisch}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#000',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Historische Prüfungen Liste */}
+      {historischePruefungen.length > 0 && (
+        <div className="field-group card" style={{ marginTop: '1rem' }}>
+          <h3>📜 Vergangene Prüfungen (vor Systemeinführung)</h3>
+          <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid rgba(255, 215, 0, 0.3)' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Datum</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Stil</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Graduierung</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Bemerkung</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'center', color: '#FFD700' }}>Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historischePruefungen.map((p) => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <td style={{ padding: '0.75rem' }}>{new Date(p.pruefungsdatum).toLocaleDateString('de-DE')}</td>
+                    <td style={{ padding: '0.75rem' }}>{p.stil_name}</td>
+                    <td style={{ padding: '0.75rem' }}>{p.graduierung_name}</td>
+                    <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>{p.bemerkung || '-'}</td>
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      {!readOnly && (
+                        <button
+                          onClick={() => handleDeleteHistorisch(p.id)}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.2)',
+                            border: '1px solid #ef4444',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );

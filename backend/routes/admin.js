@@ -641,13 +641,13 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
     const { plan, interval, duration_months, is_free, custom_price, custom_notes } = req.body;
 
     // Validierung
-    const validPlans = ['basic', 'premium', 'enterprise', 'free', 'custom'];
+    const validPlans = ['starter', 'professional', 'premium', 'enterprise', 'free', 'custom'];
     const validIntervals = ['monthly', 'quarterly', 'yearly'];
 
     if (!plan || !validPlans.includes(plan)) {
       return res.status(400).json({
         error: 'Ungültiger Plan',
-        message: 'Plan muss basic, premium, enterprise, free oder custom sein'
+        message: 'Plan muss starter, professional, premium, enterprise, free oder custom sein'
       });
     }
 
@@ -1607,3 +1607,644 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+// ==========================================
+// SUBSCRIPTION PLANS VERWALTUNG
+// ==========================================
+
+// GET /api/admin/subscription-plans - Alle Pläne abrufen
+router.get('/subscription-plans', requireSuperAdmin, async (req, res) => {
+  try {
+    const [plans] = await db.promise().query(
+      'SELECT * FROM subscription_plans ORDER BY sort_order ASC'
+    );
+    res.json({ success: true, plans });
+  } catch (error) {
+    console.error('Fehler beim Laden der Pläne:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Pläne' });
+  }
+});
+
+// PUT /api/admin/subscription-plans/:id - Plan aktualisieren
+router.put('/subscription-plans/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      display_name,
+      description,
+      price_monthly,
+      price_yearly,
+      feature_verkauf,
+      feature_buchfuehrung,
+      feature_events,
+      feature_multidojo,
+      feature_api,
+      max_members,
+      max_dojos,
+      storage_limit_mb,
+      is_visible
+    } = req.body;
+
+    await db.promise().query(
+      `UPDATE subscription_plans SET
+        display_name = ?,
+        description = ?,
+        price_monthly = ?,
+        price_yearly = ?,
+        feature_verkauf = ?,
+        feature_buchfuehrung = ?,
+        feature_events = ?,
+        feature_multidojo = ?,
+        feature_api = ?,
+        max_members = ?,
+        max_dojos = ?,
+        storage_limit_mb = ?,
+        is_visible = ?,
+        updated_at = NOW()
+      WHERE plan_id = ?`,
+      [
+        display_name,
+        description,
+        price_monthly,
+        price_yearly,
+        feature_verkauf ? 1 : 0,
+        feature_buchfuehrung ? 1 : 0,
+        feature_events ? 1 : 0,
+        feature_multidojo ? 1 : 0,
+        feature_api ? 1 : 0,
+        max_members,
+        max_dojos,
+        storage_limit_mb,
+        is_visible ? 1 : 0,
+        id
+      ]
+    );
+
+    // Audit Log
+    console.log(`✅ Plan ${id} aktualisiert von Admin`);
+
+    res.json({ success: true, message: 'Plan erfolgreich aktualisiert' });
+  } catch (error) {
+    console.error('Fehler beim Aktualisieren des Plans:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren des Plans' });
+  }
+});
+
+
+// =============================================
+// SEPA LASTSCHRIFT MANAGEMENT
+// =============================================
+
+// GET /api/admin/sepa/mandate - Alle SEPA-Mandate abrufen
+router.get('/sepa/mandate', requireSuperAdmin, async (req, res) => {
+  try {
+    const [mandate] = await db.promise().query(`
+      SELECT 
+        m.*,
+        d.dojoname,
+        ds.plan_type,
+        ds.monthly_price,
+        ds.billing_interval
+      FROM sepa_mandate m
+      JOIN dojo d ON m.dojo_id = d.id
+      LEFT JOIN dojo_subscriptions ds ON m.dojo_id = ds.dojo_id
+      ORDER BY m.created_at DESC
+    `);
+    
+    res.json({ success: true, mandate });
+  } catch (error) {
+    console.error('Fehler beim Laden der Mandate:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Mandate' });
+  }
+});
+
+// POST /api/admin/sepa/mandate - Neues SEPA-Mandat erstellen
+router.post('/sepa/mandate', requireSuperAdmin, async (req, res) => {
+  try {
+    const { dojo_id, kontoinhaber, iban, bic, mandats_datum } = req.body;
+    
+    // Generiere Mandatsreferenz: TDA-DOJO{id}-{timestamp}
+    const mandats_referenz = `TDA-DOJO${dojo_id}-${Date.now()}`;
+    
+    await db.promise().query(`
+      INSERT INTO sepa_mandate (dojo_id, mandats_referenz, mandats_datum, kontoinhaber, iban, bic, status, sequenz_typ)
+      VALUES (?, ?, ?, ?, ?, ?, 'aktiv', 'FRST')
+    `, [dojo_id, mandats_referenz, mandats_datum, kontoinhaber, iban.replace(/\s/g, ''), bic]);
+    
+    // Update dojo_subscriptions payment_method
+    await db.promise().query(`
+      UPDATE dojo_subscriptions SET payment_method = 'sepa' WHERE dojo_id = ?
+    `, [dojo_id]);
+    
+    res.json({ success: true, mandats_referenz });
+  } catch (error) {
+    console.error('Fehler beim Erstellen des Mandats:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen des Mandats' });
+  }
+});
+
+// PUT /api/admin/sepa/mandate/:id - Mandat aktualisieren
+router.put('/sepa/mandate/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    await db.promise().query(`
+      UPDATE sepa_mandate SET status = ? WHERE id = ?
+    `, [status, req.params.id]);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Fehler beim Aktualisieren:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+  }
+});
+
+// GET /api/admin/sepa/batches - Alle Lastschrift-Batches
+router.get('/sepa/batches', requireSuperAdmin, async (req, res) => {
+  try {
+    const [batches] = await db.promise().query(`
+      SELECT * FROM sepa_batches ORDER BY created_at DESC LIMIT 50
+    `);
+    
+    res.json({ success: true, batches });
+  } catch (error) {
+    console.error('Fehler beim Laden der Batches:', error);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
+// POST /api/admin/sepa/batch/create - Neuen Lastschrift-Batch erstellen
+router.post('/sepa/batch/create', requireSuperAdmin, async (req, res) => {
+  try {
+    const { ausfuehrungsdatum, dojo_ids } = req.body;
+    
+    // TDA Bankdaten laden
+    const [tdaBank] = await db.promise().query(`
+      SELECT * FROM dojo_banken WHERE dojo_id = 2 AND ist_standard = 1
+    `);
+    
+    if (!tdaBank.length || !tdaBank[0].sepa_glaeubiger_id) {
+      return res.status(400).json({ error: 'TDA Bankdaten oder Gläubiger-ID nicht konfiguriert' });
+    }
+    
+    // Aktive Mandate mit Subscription-Daten laden
+    let mandateQuery = `
+      SELECT 
+        m.*,
+        d.dojoname,
+        ds.monthly_price,
+        ds.billing_interval,
+        ds.plan_type
+      FROM sepa_mandate m
+      JOIN dojo d ON m.dojo_id = d.id
+      JOIN dojo_subscriptions ds ON m.dojo_id = ds.dojo_id
+      WHERE m.status = 'aktiv' 
+        AND ds.status = 'active'
+        AND ds.monthly_price > 0
+    `;
+    
+    if (dojo_ids && dojo_ids.length > 0) {
+      mandateQuery += ` AND m.dojo_id IN (${dojo_ids.join(',')})`;
+    }
+    
+    const [mandate] = await db.promise().query(mandateQuery);
+    
+    if (!mandate.length) {
+      return res.status(400).json({ error: 'Keine aktiven Mandate gefunden' });
+    }
+    
+    // Batch erstellen
+    const batchRef = `TDA-BATCH-${Date.now()}`;
+    const gesamtbetrag = mandate.reduce((sum, m) => sum + parseFloat(m.monthly_price), 0);
+    
+    const [batchResult] = await db.promise().query(`
+      INSERT INTO sepa_batches (batch_referenz, erstelldatum, ausfuehrungsdatum, anzahl_transaktionen, gesamtbetrag, status)
+      VALUES (?, NOW(), ?, ?, ?, 'erstellt')
+    `, [batchRef, ausfuehrungsdatum, mandate.length, gesamtbetrag]);
+    
+    const batchId = batchResult.insertId;
+    
+    // Transaktionen erstellen
+    for (const mandat of mandate) {
+      const endToEndId = `TDA-${mandat.dojo_id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const verwendungszweck = `Dojo-Software ${mandat.plan_type} - ${new Date(ausfuehrungsdatum).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`;
+      
+      await db.promise().query(`
+        INSERT INTO sepa_transaktionen (batch_id, mandat_id, dojo_id, betrag, verwendungszweck, end_to_end_id, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'geplant')
+      `, [batchId, mandat.id, mandat.dojo_id, mandat.monthly_price, verwendungszweck, endToEndId]);
+    }
+    
+    res.json({ success: true, batch_id: batchId, batch_referenz: batchRef, anzahl: mandate.length, gesamtbetrag });
+  } catch (error) {
+    console.error('Fehler beim Erstellen des Batches:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen des Batches' });
+  }
+});
+
+// GET /api/admin/sepa/batch/:id/xml - SEPA XML generieren (Pain.008.001.02)
+router.get('/sepa/batch/:id/xml', requireSuperAdmin, async (req, res) => {
+  try {
+    const batchId = req.params.id;
+    
+    // Batch laden
+    const [batches] = await db.promise().query('SELECT * FROM sepa_batches WHERE id = ?', [batchId]);
+    if (!batches.length) {
+      return res.status(404).json({ error: 'Batch nicht gefunden' });
+    }
+    const batch = batches[0];
+    
+    // TDA Bankdaten
+    const [tdaBank] = await db.promise().query(`
+      SELECT * FROM dojo_banken WHERE dojo_id = 2 AND ist_standard = 1
+    `);
+    const bank = tdaBank[0];
+    
+    // Transaktionen mit Mandatsdaten
+    const [transaktionen] = await db.promise().query(`
+      SELECT 
+        t.*,
+        m.mandats_referenz,
+        m.mandats_datum,
+        m.kontoinhaber,
+        m.iban,
+        m.bic,
+        m.sequenz_typ,
+        d.dojoname
+      FROM sepa_transaktionen t
+      JOIN sepa_mandate m ON t.mandat_id = m.id
+      JOIN dojo d ON t.dojo_id = d.id
+      WHERE t.batch_id = ?
+    `, [batchId]);
+    
+    // SEPA XML Pain.008.001.02 generieren
+    const creationDateTime = new Date().toISOString();
+    const msgId = batch.batch_referenz;
+    
+    let xml = `<?xml version=1.0 encoding=UTF-8?>
+<Document xmlns=urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance>
+  <CstmrDrctDbtInitn>
+    <GrpHdr>
+      <MsgId>${msgId}</MsgId>
+      <CreDtTm>${creationDateTime}</CreDtTm>
+      <NbOfTxs>${transaktionen.length}</NbOfTxs>
+      <CtrlSum>${batch.gesamtbetrag.toFixed(2)}</CtrlSum>
+      <InitgPty>
+        <Nm>${bank.kontoinhaber}</Nm>
+      </InitgPty>
+    </GrpHdr>
+    <PmtInf>
+      <PmtInfId>${msgId}-001</PmtInfId>
+      <PmtMtd>DD</PmtMtd>
+      <NbOfTxs>${transaktionen.length}</NbOfTxs>
+      <CtrlSum>${batch.gesamtbetrag.toFixed(2)}</CtrlSum>
+      <PmtTpInf>
+        <SvcLvl>
+          <Cd>SEPA</Cd>
+        </SvcLvl>
+        <LclInstrm>
+          <Cd>CORE</Cd>
+        </LclInstrm>
+        <SeqTp>RCUR</SeqTp>
+      </PmtTpInf>
+      <ReqdColltnDt>${batch.ausfuehrungsdatum}</ReqdColltnDt>
+      <Cdtr>
+        <Nm>${bank.kontoinhaber}</Nm>
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <IBAN>${bank.iban}</IBAN>
+        </Id>
+      </CdtrAcct>
+      <CdtrAgt>
+        <FinInstnId>
+          <BIC>${bank.bic}</BIC>
+        </FinInstnId>
+      </CdtrAgt>
+      <CdtrSchmeId>
+        <Id>
+          <PrvtId>
+            <Othr>
+              <Id>${bank.sepa_glaeubiger_id}</Id>
+              <SchmeNm>
+                <Prtry>SEPA</Prtry>
+              </SchmeNm>
+            </Othr>
+          </PrvtId>
+        </Id>
+      </CdtrSchmeId>`;
+    
+    // Transaktionen hinzufügen
+    for (const tx of transaktionen) {
+      xml += `
+      <DrctDbtTxInf>
+        <PmtId>
+          <EndToEndId>${tx.end_to_end_id}</EndToEndId>
+        </PmtId>
+        <InstdAmt Ccy=EUR>${parseFloat(tx.betrag).toFixed(2)}</InstdAmt>
+        <DrctDbtTx>
+          <MndtRltdInf>
+            <MndtId>${tx.mandats_referenz}</MndtId>
+            <DtOfSgntr>${tx.mandats_datum}</DtOfSgntr>
+          </MndtRltdInf>
+        </DrctDbtTx>
+        <DbtrAgt>
+          <FinInstnId>
+            <BIC>${tx.bic || 'NOTPROVIDED'}</BIC>
+          </FinInstnId>
+        </DbtrAgt>
+        <Dbtr>
+          <Nm>${tx.kontoinhaber}</Nm>
+        </Dbtr>
+        <DbtrAcct>
+          <Id>
+            <IBAN>${tx.iban}</IBAN>
+          </Id>
+        </DbtrAcct>
+        <RmtInf>
+          <Ustrd>${tx.verwendungszweck}</Ustrd>
+        </RmtInf>
+      </DrctDbtTxInf>`;
+    }
+    
+    xml += `
+    </PmtInf>
+  </CstmrDrctDbtInitn>
+</Document>`;
+    
+    // XML in Batch speichern
+    await db.promise().query('UPDATE sepa_batches SET xml_datei = ?, status = ? WHERE id = ?', [xml, 'exportiert', batchId]);
+    
+    // Mandate auf RCUR setzen (Folgelastschrift)
+    const mandatIds = transaktionen.map(t => t.mandat_id);
+    if (mandatIds.length > 0) {
+      await db.promise().query(`
+        UPDATE sepa_mandate SET sequenz_typ = 'RCUR', letzte_nutzung = CURDATE() WHERE id IN (${mandatIds.join(',')})
+      `);
+    }
+    
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Content-Disposition', `attachment; filename=SEPA-Lastschrift-${batch.batch_referenz}.xml`);
+    res.send(xml);
+  } catch (error) {
+    console.error('Fehler beim Generieren der XML:', error);
+    res.status(500).json({ error: 'Fehler beim Generieren der SEPA-XML' });
+  }
+});
+
+// GET /api/admin/sepa/dojos-without-mandate - Dojos ohne Mandat
+router.get('/sepa/dojos-without-mandate', requireSuperAdmin, async (req, res) => {
+  try {
+    const [dojos] = await db.promise().query(`
+      SELECT d.id, d.dojoname, ds.plan_type, ds.monthly_price, ds.status as subscription_status
+      FROM dojo d
+      JOIN dojo_subscriptions ds ON d.id = ds.dojo_id
+      LEFT JOIN sepa_mandate m ON d.id = m.dojo_id AND m.status = 'aktiv'
+      WHERE m.id IS NULL AND d.id != 2 AND ds.status = 'active'
+    `);
+    
+    res.json({ success: true, dojos });
+  } catch (error) {
+    console.error('Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
+// =============================================
+// SEPA RÜCKLASTSCHRIFTEN
+// =============================================
+
+// SEPA Return Reason Codes
+const SEPA_RETURN_CODES = {
+  'AC01': 'IBAN ungültig',
+  'AC04': 'Konto geschlossen',
+  'AC06': 'Konto gesperrt',
+  'AC13': 'Kontoart ungültig (kein Zahlungskonto)',
+  'AG01': 'Transaktion nicht erlaubt',
+  'AG02': 'Ungültiger Bankcode',
+  'AM04': 'Deckung nicht ausreichend',
+  'AM05': 'Doppelte Einreichung',
+  'BE04': 'Gläubiger-Adresse fehlt',
+  'BE05': 'Kreditgeber-ID ungültig',
+  'CNOR': 'Gläubiger-Bank nicht erreichbar',
+  'DNOR': 'Schuldner-Bank nicht erreichbar',
+  'FF01': 'Dateiformat ungültig',
+  'MD01': 'Kein gültiges Mandat',
+  'MD02': 'Mandat-Daten ungültig',
+  'MD06': 'Rückgabe durch Zahler (Widerspruch)',
+  'MD07': 'Schuldner verstorben',
+  'MS02': 'Unbekannter Grund vom Kunden',
+  'MS03': 'Unbekannter Grund',
+  'RC01': 'BIC ungültig',
+  'RR01': 'Regulatorische Gründe (fehlende Doku)',
+  'RR02': 'Regulatorische Gründe (Name/Adresse)',
+  'RR03': 'Regulatorische Gründe (sonstige)',
+  'RR04': 'Regulatorische Gründe',
+  'SL01': 'Spezifischer Dienst der Schuldner-Bank',
+  'TM01': 'Timeout bei Empfängerbank',
+  'FOCR': 'Rückgabe nach Stornierungsanfrage',
+  'DUPL': 'Doppelte Zahlung',
+  'TECH': 'Technischer Fehler',
+  'FRAD': 'Betrugsverdacht'
+};
+
+// GET /api/admin/sepa/ruecklastschriften - Alle Rücklastschriften
+router.get('/sepa/ruecklastschriften', requireSuperAdmin, async (req, res) => {
+  try {
+    const [returns] = await db.promise().query(`
+      SELECT 
+        r.*,
+        d.dojoname,
+        m.kontoinhaber
+      FROM sepa_ruecklastschriften r
+      LEFT JOIN dojo d ON r.dojo_id = d.id
+      LEFT JOIN sepa_mandate m ON r.mandat_id = m.id
+      ORDER BY r.importiert_am DESC
+      LIMIT 100
+    `);
+    
+    res.json({ success: true, ruecklastschriften: returns, codes: SEPA_RETURN_CODES });
+  } catch (error) {
+    console.error('Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
+// POST /api/admin/sepa/ruecklastschriften/upload - Datei hochladen und parsen
+router.post('/sepa/ruecklastschriften/upload', requireSuperAdmin, async (req, res) => {
+  try {
+    const { content, filename, format } = req.body;
+    
+    let parsedReturns = [];
+    
+    if (format === 'camt054' || filename.endsWith('.xml')) {
+      // Parse camt.054 XML
+      parsedReturns = parseCamt054(content);
+    } else if (format === 'csv' || filename.endsWith('.csv')) {
+      // Parse CSV (einfaches Format)
+      parsedReturns = parseCsvReturns(content);
+    } else {
+      return res.status(400).json({ error: 'Unbekanntes Dateiformat. Unterstützt: XML (camt.054), CSV' });
+    }
+    
+    if (parsedReturns.length === 0) {
+      return res.status(400).json({ error: 'Keine Rücklastschriften in der Datei gefunden' });
+    }
+    
+    // In Datenbank einfügen
+    let inserted = 0;
+    for (const ret of parsedReturns) {
+      // Versuche Original-Transaktion zu finden
+      let transaktionId = null;
+      let mandatId = null;
+      let dojoId = null;
+      
+      if (ret.end_to_end_id) {
+        const [txRows] = await db.promise().query(
+          'SELECT id, mandat_id, dojo_id FROM sepa_transaktionen WHERE end_to_end_id = ?',
+          [ret.end_to_end_id]
+        );
+        if (txRows.length > 0) {
+          transaktionId = txRows[0].id;
+          mandatId = txRows[0].mandat_id;
+          dojoId = txRows[0].dojo_id;
+          
+          // Transaktion als fehlgeschlagen markieren
+          await db.promise().query(
+            'UPDATE sepa_transaktionen SET status = ?, fehler_code = ? WHERE id = ?',
+            ['fehlgeschlagen', ret.rueckgabe_code, transaktionId]
+          );
+        }
+      }
+      
+      // Rücklastschrift einfügen
+      await db.promise().query(`
+        INSERT INTO sepa_ruecklastschriften 
+        (transaktion_id, mandat_id, dojo_id, end_to_end_id, mandats_referenz, 
+         original_betrag, ruecklastschrift_betrag, rueckgabe_code, rueckgabe_grund,
+         rueckgabe_datum, import_datei)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        transaktionId, mandatId, dojoId, ret.end_to_end_id, ret.mandats_referenz,
+        ret.betrag, ret.betrag, ret.rueckgabe_code, 
+        SEPA_RETURN_CODES[ret.rueckgabe_code] || ret.rueckgabe_grund || 'Unbekannt',
+        ret.rueckgabe_datum || new Date(), filename
+      ]);
+      
+      inserted++;
+      
+      // Bei bestimmten Codes Mandat deaktivieren
+      if (mandatId && ['AC01', 'AC04', 'AC06', 'MD01', 'MD07'].includes(ret.rueckgabe_code)) {
+        await db.promise().query(
+          'UPDATE sepa_mandate SET status = ? WHERE id = ?',
+          ['widerrufen', mandatId]
+        );
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `${inserted} Rücklastschrift(en) importiert`,
+      count: inserted 
+    });
+  } catch (error) {
+    console.error('Fehler beim Import:', error);
+    res.status(500).json({ error: 'Fehler beim Importieren: ' + error.message });
+  }
+});
+
+// PUT /api/admin/sepa/ruecklastschriften/:id - Status aktualisieren
+router.put('/sepa/ruecklastschriften/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const { status, notizen } = req.body;
+    
+    await db.promise().query(`
+      UPDATE sepa_ruecklastschriften 
+      SET status = ?, notizen = ?, bearbeitet_am = NOW()
+      WHERE id = ?
+    `, [status, notizen, req.params.id]);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+  }
+});
+
+// GET /api/admin/sepa/return-codes - Alle Return-Codes
+router.get('/sepa/return-codes', requireSuperAdmin, (req, res) => {
+  res.json({ success: true, codes: SEPA_RETURN_CODES });
+});
+
+// Parser-Funktionen
+function parseCamt054(xmlContent) {
+  const returns = [];
+  
+  // Einfacher XML-Parser für camt.054
+  // Suche nach RtrInf (Return Information) Blöcken
+  const rtrInfRegex = /<RtrInf>([\s\S]*?)<\/RtrInf>/g;
+  const ntryRegex = /<Ntry>([\s\S]*?)<\/Ntry>/g;
+  
+  let match;
+  while ((match = ntryRegex.exec(xmlContent)) !== null) {
+    const entry = match[1];
+    
+    // Betrag extrahieren
+    const amtMatch = entry.match(/<Amt[^>]*>([0-9.]+)<\/Amt>/);
+    const betrag = amtMatch ? parseFloat(amtMatch[1]) : 0;
+    
+    // End-to-End-ID
+    const e2eMatch = entry.match(/<EndToEndId>([^<]+)<\/EndToEndId>/);
+    const endToEndId = e2eMatch ? e2eMatch[1] : null;
+    
+    // Mandatsreferenz
+    const mndtMatch = entry.match(/<MndtId>([^<]+)<\/MndtId>/);
+    const mandatsRef = mndtMatch ? mndtMatch[1] : null;
+    
+    // Return Reason Code
+    const rsnMatch = entry.match(/<Rsn><Cd>([^<]+)<\/Cd><\/Rsn>/);
+    const reasonCode = rsnMatch ? rsnMatch[1] : 'MS03';
+    
+    // Buchungsdatum
+    const dtMatch = entry.match(/<BookgDt><Dt>([^<]+)<\/Dt><\/BookgDt>/);
+    const bookingDate = dtMatch ? dtMatch[1] : null;
+    
+    if (endToEndId || mandatsRef) {
+      returns.push({
+        end_to_end_id: endToEndId,
+        mandats_referenz: mandatsRef,
+        betrag: betrag,
+        rueckgabe_code: reasonCode,
+        rueckgabe_datum: bookingDate
+      });
+    }
+  }
+  
+  return returns;
+}
+
+function parseCsvReturns(csvContent) {
+  const returns = [];
+  const lines = csvContent.split('\n');
+  
+  // Erwartetes Format: EndToEndId;MandatsRef;Betrag;Code;Datum
+  // Oder: IBAN;Betrag;Code;Datum;Verwendungszweck
+  
+  for (let i = 1; i < lines.length; i++) { // Skip header
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    const parts = line.split(';');
+    if (parts.length >= 4) {
+      returns.push({
+        end_to_end_id: parts[0] || null,
+        mandats_referenz: parts[1] || null,
+        betrag: parseFloat(parts[2]) || 0,
+        rueckgabe_code: parts[3] || 'MS03',
+        rueckgabe_datum: parts[4] || null
+      });
+    }
+  }
+  
+  return returns;
+}
