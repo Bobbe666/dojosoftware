@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db'); // Verwenden Sie Ihr bestehendes DB-System
 const logger = require('../utils/logger');
 const { JWT_SECRET } = require('../middleware/auth');
+const auditLog = require('../services/auditLogService');
 const router = express.Router();
 
 // ===================================================================
@@ -120,6 +121,16 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
 
         if (!match) {
+          // Audit-Log: Fehlgeschlagener Login
+          auditLog.log({
+            req,
+            aktion: auditLog.AKTION.LOGIN_FEHLGESCHLAGEN,
+            kategorie: auditLog.KATEGORIE.AUTH,
+            entityType: isAdmin ? 'admin_users' : 'users',
+            entityId: user.id,
+            entityName: user.username,
+            beschreibung: `Login fehlgeschlagen (falsches Passwort): ${user.username}`
+          });
 
           return res.status(401).json({
             login: false,
@@ -199,6 +210,18 @@ router.post('/login', async (req, res) => {
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
           loginTime: new Date().toISOString()
         };
+
+        // Audit-Log: Erfolgreicher Login
+        auditLog.log({
+          req,
+          aktion: auditLog.AKTION.LOGIN_ERFOLGREICH,
+          kategorie: auditLog.KATEGORIE.AUTH,
+          entityType: isAdmin ? 'admin_users' : 'users',
+          entityId: user.id,
+          entityName: user.username,
+          dojoId: user.dojo_id,
+          beschreibung: `Login erfolgreich: ${user.username} (${user.role})`
+        });
 
         // Send response
         res.status(200).json({

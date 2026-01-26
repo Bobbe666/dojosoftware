@@ -248,6 +248,19 @@ try {
     });
 }
 
+// AUDIT-LOG ROUTES (Protokollierung aller Änderungen)
+try {
+  const auditLogRoutes = require('./routes/audit-log');
+  app.use('/api/audit-log', authenticateToken, auditLogRoutes);
+  logger.success('Route gemountet', { path: '/api/audit-log' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'audit-log routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // TDA EXPORT API ROUTES (für TDA Software Integration)
 try {
   const tdaExportRoutes = require('./routes/tda-export');

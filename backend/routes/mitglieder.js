@@ -3,6 +3,7 @@ const db = require("../db"); // Verbindung zur DB importieren
 const SepaPdfGenerator = require("../utils/sepaPdfGenerator");
 const MitgliedsausweisGenerator = require("../utils/mitgliedsausweisGenerator");
 const bcrypt = require("bcryptjs"); // Für Passwort-Hashing
+const auditLog = require("../services/auditLogService");
 const router = express.Router();
 
 // Mock-Daten wurden entfernt - verwende immer echte Datenbank
@@ -1263,6 +1264,17 @@ router.put("/:id", (req, res) => {
             return res.status(404).json({ error: 'Mitglied nicht gefunden oder keine Berechtigung' });
         }
 
+        // Audit-Log schreiben
+        auditLog.log({
+            req,
+            aktion: auditLog.AKTION.MITGLIED_AKTUALISIERT,
+            kategorie: auditLog.KATEGORIE.MITGLIED,
+            entityType: 'mitglieder',
+            entityId: id,
+            neueWerte: updateFields,
+            beschreibung: `Mitglied #${id} aktualisiert: ${Object.keys(updateFields).join(', ')}`
+        });
+
         res.json({
             success: true,
             message: 'Mitglied erfolgreich aktualisiert',
@@ -2205,6 +2217,18 @@ router.post("/", (req, res) => {
         }
 
         const newMemberId = result.insertId;
+
+        // Audit-Log: Neues Mitglied erstellt
+        auditLog.log({
+            req,
+            aktion: auditLog.AKTION.MITGLIED_ERSTELLT,
+            kategorie: auditLog.KATEGORIE.MITGLIED,
+            entityType: 'mitglieder',
+            entityId: newMemberId,
+            entityName: `${memberData.vorname} ${memberData.nachname}`,
+            neueWerte: { vorname: memberData.vorname, nachname: memberData.nachname, dojo_id: memberData.dojo_id },
+            beschreibung: `Neues Mitglied erstellt: ${memberData.vorname} ${memberData.nachname}`
+        });
 
         // 🆕 VERTRAG AUTOMATISCH ERSTELLEN (wenn Vertragsdaten vorhanden)
         if (memberData.vertrag_tarif_id) {

@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db"); // MySQL-Datenbankanbindung importieren
+const auditLog = require("../services/auditLogService");
 const router = express.Router();
 
 // API: Beiträge für ein Mitglied abrufen
@@ -77,8 +78,19 @@ router.post("/", (req, res) => {
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
-        res.json({ 
-            success: true, 
+        // Audit-Log
+        auditLog.log({
+            req,
+            aktion: auditLog.AKTION.BEITRAG_ERSTELLT,
+            kategorie: auditLog.KATEGORIE.FINANZEN,
+            entityType: 'beitraege',
+            entityId: result.insertId,
+            neueWerte: { mitglied_id, betrag, zahlungsart, bezahlt },
+            beschreibung: `Beitrag erstellt: ${betrag}€ für Mitglied #${mitglied_id}`
+        });
+
+        res.json({
+            success: true,
             beitrag_id: result.insertId,
             message: 'Beitrag erfolgreich erstellt'
         });
@@ -114,8 +126,19 @@ router.put("/:beitrag_id", (req, res) => {
             return res.status(404).json({ error: 'Beitrag nicht gefunden' });
         }
 
-        res.json({ 
-            success: true, 
+        // Audit-Log
+        auditLog.log({
+            req,
+            aktion: auditLog.AKTION.BEITRAG_AKTUALISIERT,
+            kategorie: auditLog.KATEGORIE.FINANZEN,
+            entityType: 'beitraege',
+            entityId: parseInt(beitrag_id),
+            neueWerte: { betrag, zahlungsart, zahlungsdatum, bezahlt },
+            beschreibung: `Beitrag #${beitrag_id} aktualisiert`
+        });
+
+        res.json({
+            success: true,
             message: 'Beitrag erfolgreich aktualisiert'
         });
     });
@@ -137,8 +160,18 @@ router.delete("/:beitrag_id", (req, res) => {
             return res.status(404).json({ error: 'Beitrag nicht gefunden' });
         }
 
-        res.json({ 
-            success: true, 
+        // Audit-Log
+        auditLog.log({
+            req,
+            aktion: auditLog.AKTION.BEITRAG_GELOESCHT,
+            kategorie: auditLog.KATEGORIE.FINANZEN,
+            entityType: 'beitraege',
+            entityId: parseInt(beitrag_id),
+            beschreibung: `Beitrag #${beitrag_id} gelöscht`
+        });
+
+        res.json({
+            success: true,
             message: 'Beitrag erfolgreich gelöscht'
         });
     });
