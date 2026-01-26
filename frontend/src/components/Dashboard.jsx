@@ -439,6 +439,14 @@ function Dashboard() {
       path: '/dashboard/magicline-import',
       badge: 'IMPORT',
       featured: true
+    },
+    {
+      icon: '📋',
+      title: 'Audit-Log',
+      description: 'Alle Änderungen nachverfolgen - Wer hat wann was geändert?',
+      path: '/dashboard/audit-log',
+      badge: 'NEU',
+      featured: false
     }
   ];
 

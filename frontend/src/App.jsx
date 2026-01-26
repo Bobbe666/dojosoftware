@@ -110,6 +110,9 @@ import ZahlungsEinstellungen from "./components/ZahlungsEinstellungen";
 // Dojo-Einstellungen & Admin-Verwaltung
 import EinstellungenDojo from "./components/EinstellungenDojo";
 
+// Audit-Log (Änderungsprotokoll)
+import AuditLog from "./components/AuditLog";
+
 // Buddy-Gruppen Verwaltung
 import BuddyVerwaltung from "./components/BuddyVerwaltung";
 
@@ -541,6 +544,9 @@ const App = () => {
               <Route path="einstellungen" element={<EinstellungenDojo />} />
               <Route path="einstellungen/meindojo" element={<EinstellungenDojo />} />
               <Route path="einstellungen/zahlungen" element={<ZahlungsEinstellungen />} />
+
+              {/* Audit-Log (Änderungsprotokoll) */}
+              <Route path="audit-log" element={<AuditLog />} />
 
               {/* Fehlerseite f�r ung�ltige Dashboard-Unterrouten */}
               <Route 
