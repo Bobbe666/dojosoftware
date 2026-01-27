@@ -2331,3 +2331,156 @@
     display: inline;
   }
 }
+
+/* ============================================
+   GAST CHECK-IN BUTTON & MODAL
+   ============================================ */
+
+.guest-checkin-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guest-checkin-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--primary-alpha-20);
+}
+
+.guest-checkin-btn:active {
+  transform: translateY(0);
+}
+
+.guest-checkin-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile: Nur Icon anzeigen */
+@media (max-width: 768px) {
+  .guest-checkin-btn .btn-text-desktop {
+    display: none;
+  }
+
+  .guest-checkin-btn {
+    padding: 0.6rem;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    justify-content: center;
+  }
+}
+
+/* Gast Modal */
+.guest-modal {
+  max-width: 550px;
+}
+
+.guest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--primary-alpha-20);
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-input option {
+  background: #1a1a2e;
+  color: var(--text-primary);
+}
+
+.guest-hint {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--primary-alpha-30);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.guest-hint p {
+  margin: 0.25rem 0;
+}
+
+.guest-hint p:first-child {
+  margin-top: 0;
+}
+
+.guest-hint p:last-child {
+  margin-bottom: 0;
+}
+
+/* Gast-Badge in Check-in Liste */
+.guest-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--primary-alpha-20);
+  border: 1px solid var(--primary-alpha-50);
+  border-radius: 12px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-left: 0.5rem;
+}
+
+.guest-badge svg {
+  width: 12px;
+  height: 12px;
+}
