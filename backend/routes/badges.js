@@ -108,10 +108,11 @@ router.delete('/training/:id', (req, res) => {
  * Alle verfuegbaren Badges
  */
 router.get('/', (req, res) => {
+  const { include_inactive } = req.query;
   const query = `
     SELECT * FROM badges
-    WHERE aktiv = TRUE
-    ORDER BY kategorie, kriterium_wert ASC NULLS LAST, name
+    ${include_inactive !== 'true' ? 'WHERE aktiv = TRUE' : ''}
+    ORDER BY kategorie, COALESCE(kriterium_wert, 9999), name
   `;
 
   db.query(query, (err, results) => {
@@ -121,6 +122,139 @@ router.get('/', (req, res) => {
     }
     res.json(results);
   });
+});
+
+/**
+ * POST /api/badges
+ * Neuen Badge erstellen
+ */
+router.post('/', (req, res) => {
+  const { name, beschreibung, icon, farbe, kategorie, kriterium_typ, kriterium_wert, aktiv } = req.body;
+
+  if (!name || !icon || !farbe || !kategorie) {
+    return res.status(400).json({ error: 'Name, Icon, Farbe und Kategorie sind erforderlich' });
+  }
+
+  const query = `
+    INSERT INTO badges (name, beschreibung, icon, farbe, kategorie, kriterium_typ, kriterium_wert, aktiv)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(query, [
+    name,
+    beschreibung || null,
+    icon,
+    farbe,
+    kategorie,
+    kriterium_typ || null,
+    kriterium_wert || null,
+    aktiv !== false ? 1 : 0
+  ], (err, result) => {
+    if (err) {
+      console.error('Fehler beim Erstellen des Badges:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    res.status(201).json({
+      success: true,
+      badge_id: result.insertId,
+      message: 'Badge erfolgreich erstellt'
+    });
+  });
+});
+
+/**
+ * PUT /api/badges/:badge_id
+ * Badge bearbeiten
+ */
+router.put('/:badge_id', (req, res) => {
+  const { badge_id } = req.params;
+  const { name, beschreibung, icon, farbe, kategorie, kriterium_typ, kriterium_wert, aktiv } = req.body;
+
+  if (!name || !icon || !farbe || !kategorie) {
+    return res.status(400).json({ error: 'Name, Icon, Farbe und Kategorie sind erforderlich' });
+  }
+
+  const query = `
+    UPDATE badges SET
+      name = ?,
+      beschreibung = ?,
+      icon = ?,
+      farbe = ?,
+      kategorie = ?,
+      kriterium_typ = ?,
+      kriterium_wert = ?,
+      aktiv = ?
+    WHERE badge_id = ?
+  `;
+
+  db.query(query, [
+    name,
+    beschreibung || null,
+    icon,
+    farbe,
+    kategorie,
+    kriterium_typ || null,
+    kriterium_wert || null,
+    aktiv !== false ? 1 : 0,
+    badge_id
+  ], (err, result) => {
+    if (err) {
+      console.error('Fehler beim Aktualisieren des Badges:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Badge nicht gefunden' });
+    }
+
+    res.json({ success: true, message: 'Badge erfolgreich aktualisiert' });
+  });
+});
+
+/**
+ * DELETE /api/badges/:badge_id
+ * Badge loeschen (oder deaktivieren)
+ */
+router.delete('/:badge_id', (req, res) => {
+  const { badge_id } = req.params;
+  const { permanent } = req.query;
+
+  if (permanent === 'true') {
+    // Permanentes Loeschen (vorsicht: loescht auch alle Zuweisungen)
+    db.query('DELETE FROM mitglieder_badges WHERE badge_id = ?', [badge_id], (err) => {
+      if (err) {
+        console.error('Fehler beim Loeschen der Badge-Zuweisungen:', err);
+        return res.status(500).json({ error: 'Datenbankfehler' });
+      }
+
+      db.query('DELETE FROM badges WHERE badge_id = ?', [badge_id], (err2, result) => {
+        if (err2) {
+          console.error('Fehler beim Loeschen des Badges:', err2);
+          return res.status(500).json({ error: 'Datenbankfehler' });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: 'Badge nicht gefunden' });
+        }
+
+        res.json({ success: true, message: 'Badge permanent geloescht' });
+      });
+    });
+  } else {
+    // Soft-Delete: nur deaktivieren
+    db.query('UPDATE badges SET aktiv = FALSE WHERE badge_id = ?', [badge_id], (err, result) => {
+      if (err) {
+        console.error('Fehler beim Deaktivieren des Badges:', err);
+        return res.status(500).json({ error: 'Datenbankfehler' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Badge nicht gefunden' });
+      }
+
+      res.json({ success: true, message: 'Badge deaktiviert' });
+    });
+  }
 });
 
 /**
