@@ -89,8 +89,9 @@ const BadgeAdminOverview = () => {
     setLoading(true);
     try {
       // Nur dojo_id senden wenn ein spezifisches Dojo ausgewaehlt ist (nicht "Alle Dojos" / super-admin)
-      const isAllDojos = !activeDojo || activeDojo === 'super-admin' || activeDojo?.id === 'all';
+      const isAllDojos = !activeDojo || activeDojo === 'super-admin' || activeDojo === 'all' || activeDojo?.id === 'all';
       const dojoParam = !isAllDojos && activeDojo?.id ? `dojo_id=${activeDojo.id}` : '';
+      console.log('Badge loadData:', { activeDojo, isAllDojos, dojoParam });
       const response = await fetch(`/api/badges/admin/overview?${dojoParam}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -408,7 +409,7 @@ const BadgeAdminOverview = () => {
               <select value={manualBadge.mitglied_id || ''} onChange={(e) => setManualBadge({ ...manualBadge, mitglied_id: e.target.value })}
                 style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}>
                 <option value="">Mitglied waehlen...</option>
-                {data.members?.map(m => <option key={m.mitglied_id} value={m.mitglied_id}>{m.vorname} {m.nachname}</option>)}
+                {data.members?.slice().sort((a, b) => `${a.nachname} ${a.vorname}`.localeCompare(`${b.nachname} ${b.vorname}`)).map(m => <option key={m.mitglied_id} value={m.mitglied_id}>{m.nachname}, {m.vorname}</option>)}
               </select>
             </div>
             <div style={{ marginBottom: '1rem' }}>
