@@ -514,3 +514,40 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
     display: none !important;
   }
 }
+
+/* ===== MOBILE RESPONSIVE GRID FIX ===== */
+/* Prevents horizontal overflow on small screens for grids with large minmax values */
+@media (max-width: 480px) {
+  /* Force single column on very small screens for card grids */
+  .events-list,
+  .dojos-grid,
+  .personal-grid,
+  .standorte-grid,
+  .groups-grid,
+  .ratings-grid,
+  .courses-list,
+  .equipment-list,
+  .contracts-modern-grid,
+  .chart-grid,
+  .stat-grid-modern,
+  .info-warning-container,
+  .rooms-grid,
+  .members-grid,
+  .kurse-grid,
+  .buddy-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure flex containers wrap on mobile */
+  .events-layout,
+  .dashboard-layout,
+  .content-layout {
+    flex-direction: column !important;
+  }
+
+  /* Hide fixed sidebars on mobile */
+  .events-sidebar,
+  .filter-sidebar {
+    display: none !important;
+  }
+}

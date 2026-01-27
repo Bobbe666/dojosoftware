@@ -143,6 +143,46 @@ var(--border-default) /* Standard-Rahmen */
 
 ---
 
+## 5. Mobile Responsiveness Fixes
+
+### Problem:
+Feature-Cards gingen über den Bildschirmrand hinaus auf kleinen Geräten. Grids mit `minmax(400px+, 1fr)` verursachten horizontalen Overflow.
+
+### Lösung:
+1. **CSS `min()` Funktion** für sichere Grid-Spalten: `minmax(min(100%, 380px), 1fr)`
+2. **Globale Mobile-Breakpoints** in utility-classes.css für max-width: 480px
+
+### Geänderte Dateien (12 Stück):
+| Datei | Vorher | Nachher |
+|-------|--------|---------|
+| Events.css | `minmax(450px, 1fr)` | `minmax(min(100%, 400px), 1fr)` |
+| DojosVerwaltung.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| CourseRating.css | `minmax(450px, 1fr)` | `minmax(min(100%, 400px), 1fr)` |
+| CourseRatingAdmin.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| EquipmentManagement.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| Personal.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| MitgliedDetail.css | 2x `minmax(400-450px)` | `minmax(min(100%, 380-400px), 1fr)` |
+| Auswertungen.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| StandortVerwaltung.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| ArtikelgruppenVerwaltung.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| Lastschriftlauf.css | `minmax(400px, 1fr)` | `minmax(min(100%, 380px), 1fr)` |
+| utility-classes.css | - | Globale 480px Breakpoint-Fixes |
+
+### Technik: CSS `min()` Funktion
+```css
+/* Vorher - overflow auf Screens < 400px */
+grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+
+/* Nachher - safe für alle Bildschirmgrößen */
+grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+```
+
+Die `min(100%, 380px)` Funktion wählt den kleineren Wert:
+- Auf breiten Screens: `380px` (normale Card-Breite)
+- Auf schmalen Screens: `100%` (volle Breite, kein Overflow)
+
+---
+
 ## Deployment-Befehl
 
 ```bash
@@ -181,3 +221,10 @@ ssh dojo.tda-intl.org "cd /var/www/dojosoftware && git pull origin main && cd fr
 2. **CSS-Variablen verwenden**: `var(--bg-card)`, `var(--text-primary)`
 3. **Dark-Mode-Overrides** mit `[data-theme="dark"]` Selektor
 4. **Fallback-Werte** angeben: `var(--bg-card, rgba(255,255,255,0.05))`
+
+### Mobile Responsiveness:
+1. **Niemals feste minmax-Werte > 320px** ohne `min()` Funktion
+2. **Sichere Grid-Syntax**: `minmax(min(100%, 380px), 1fr)` statt `minmax(400px, 1fr)`
+3. **Breakpoints testen**: 320px (iPhone SE), 375px (iPhone), 768px (Tablet)
+4. **Flex-Container**: Immer `flex-wrap: wrap` für Mobile-Fallback
+5. **Sidebars**: Mit Media Query verstecken oder stacken auf Mobile

@@ -866,7 +866,7 @@
 
 .contracts-modern-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
   gap: 1.5rem;
   margin-top: 1rem;
 }
@@ -5129,10 +5129,10 @@ h1, h2, h3, h4, h5, h6,
   margin: 0 !important;
 }
 
-/* Statistics Grid - 2 columns minimum 400px width */
+/* Statistics Grid - 2 columns minimum 380px width */
 .mitglied-detail-container .stat-grid-modern {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)) !important;
   gap: 1.5rem !important;
   margin-bottom: 2rem !important;
   padding: 0 !important;
