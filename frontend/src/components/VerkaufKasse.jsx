@@ -62,7 +62,7 @@ const aggregateCheckinsByMember = (checkins = []) => {
   return Array.from(map.values());
 };
 
-const VerkaufKasse = ({ kunde, onClose }) => {
+const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   // =====================================================================================
   // DOJO CONTEXT
   // =====================================================================================
@@ -230,7 +230,8 @@ const VerkaufKasse = ({ kunde, onClose }) => {
         gegeben_cent: zahlungsart === 'bar' ? Math.round(parseFloat(gegebenBetrag) * 100) : null,
         bemerkung: bemerkung || null,
         verkauft_von_name: 'Kassierer', // TODO: Echten Benutzer verwenden
-        dojo_id: activeDojo?.id || null
+        dojo_id: activeDojo?.id || null,
+        checkin_id: checkin_id || null // Verknüpfung zur Anwesenheit
       };
       
       const response = await apiCall('/verkaeufe', {

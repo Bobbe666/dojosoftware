@@ -127,7 +127,8 @@ router.post('/', async (req, res) => {
     gegeben_cent,
     bemerkung,
     verkauft_von_name,
-    dojo_id
+    dojo_id,
+    checkin_id // Optional: Verknüpfung zur Anwesenheit
   } = req.body;
 
   // Dojo-ID aus verschiedenen Quellen ermitteln
@@ -226,8 +227,8 @@ router.post('/', async (req, res) => {
           verkauf_datum, verkauf_uhrzeit, verkauf_timestamp,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, gegeben_cent, rueckgeld_cent,
-          verkauft_von_name, bemerkung, dojo_id
-        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          verkauft_von_name, bemerkung, dojo_id, checkin_id
+        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const verkaufResult = await new Promise((resolve, reject) => {
@@ -235,7 +236,7 @@ router.post('/', async (req, res) => {
           bonNummer, 'KASSE_01', mitglied_id || null, kunde_name || null,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, gegeben_cent || null, rueckgeld_cent,
-          verkauft_von_name || 'System', bemerkung || null, effectiveDojoId
+          verkauft_von_name || 'System', bemerkung || null, effectiveDojoId, checkin_id || null
         ], (error, results) => {
           if (error) return reject(error);
           resolve(results);
@@ -341,6 +342,7 @@ router.post('/', async (req, res) => {
         rueckgeld_cent,
         rueckgeld_euro: rueckgeld_cent / 100,
         artikel_count: artikelDetails.length,
+        checkin_id: checkin_id || null,
         rechnung: rechnungInfo,
         message: 'Verkauf erfolgreich erfasst' + (rechnungInfo ? ` (Rechnung ${rechnungInfo.rechnungsnummer} erstellt)` : '')
       });

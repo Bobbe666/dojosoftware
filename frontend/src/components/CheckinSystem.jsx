@@ -97,6 +97,7 @@ const CheckinSystem = () => {
   // Verkauf State
   const [showVerkauf, setShowVerkauf] = useState(false);
   const [verkaufKunde, setVerkaufKunde] = useState(null);
+  const [verkaufCheckinId, setVerkaufCheckinId] = useState(null);
 
   // QR Scanner State
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -260,7 +261,10 @@ const CheckinSystem = () => {
 
     if (checkedIn) {
       // Bereits eingechecktes Mitglied → Verkauf öffnen
-      startVerkauf(member);
+      // Finde die checkin_id für die Verkauf-Verknüpfung
+      const memberCheckin = todayCheckins.find(c => c.mitglied_id === member.mitglied_id);
+      const checkinId = memberCheckin?.primaryCheckin?.checkin_id || memberCheckin?.checkin_id;
+      startVerkauf(member, checkinId);
     } else {
       // Nicht eingechecktes Mitglied → normaler Check-in Prozess
       setSelectedMember(member);
@@ -282,9 +286,10 @@ const CheckinSystem = () => {
     }
   };
 
-  // Verkauf starten
-  const startVerkauf = (member) => {
+  // Verkauf starten (mit optionaler checkin_id für Verknüpfung)
+  const startVerkauf = (member, checkinId = null) => {
     setVerkaufKunde(member);
+    setVerkaufCheckinId(checkinId);
     setShowVerkauf(true);
   };
 
@@ -292,6 +297,7 @@ const CheckinSystem = () => {
   const closeVerkauf = () => {
     setShowVerkauf(false);
     setVerkaufKunde(null);
+    setVerkaufCheckinId(null);
 
     // Fokussiere das Suchfeld nach dem Schließen des Verkaufs
     setTimeout(() => {
@@ -329,7 +335,10 @@ const CheckinSystem = () => {
       // Bereits eingecheckt -> Verkauf oeffnen
       setSuccess(`${member.vorname} ${member.nachname} ist bereits eingecheckt`);
       setTimeout(() => setSuccess(''), 2000);
-      startVerkauf(member);
+      // Finde die checkin_id für die Verkauf-Verknüpfung
+      const memberCheckin = todayCheckins.find(c => c.mitglied_id === member.mitglied_id);
+      const checkinId = memberCheckin?.primaryCheckin?.checkin_id || memberCheckin?.checkin_id;
+      startVerkauf(member, checkinId);
     } else {
       // Nicht eingecheckt -> Check-in Prozess starten
       selectMemberFromSearch(member);
@@ -926,7 +935,9 @@ const CheckinSystem = () => {
                             gurtfarbe: checkin.gurtfarbe,
                             mitgliedsnummer: checkin.mitgliedsnummer
                           };
-                          startVerkauf(memberData);
+                          // Übergebe checkin_id für Verkauf-Anwesenheit-Verknüpfung
+                          const checkinId = checkin.primaryCheckin?.checkin_id || checkin.checkin_id;
+                          startVerkauf(memberData, checkinId);
                         }}
                         onContextMenu={(e) => handleContextMenu(e, checkin)}
                       >
@@ -1131,6 +1142,7 @@ const CheckinSystem = () => {
         <VerkaufKasse
           kunde={verkaufKunde}
           onClose={closeVerkauf}
+          checkin_id={verkaufCheckinId}
         />
       )}
 
