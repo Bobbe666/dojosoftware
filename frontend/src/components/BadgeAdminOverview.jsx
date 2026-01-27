@@ -399,7 +399,7 @@ const BadgeAdminOverview = () => {
 
       {/* Modal: Manuell verleihen */}
       {showManualModal && (
-        <div onClick={() => setShowManualModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div onClick={() => setShowManualModal(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '1.5rem', width: '400px', maxWidth: '90%', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
             <h3 style={{ color: '#ffd700', margin: '0 0 1rem 0' }}>Badge manuell verleihen</h3>
             <div style={{ marginBottom: '1rem' }}>
@@ -434,7 +434,7 @@ const BadgeAdminOverview = () => {
 
       {/* Modal: Badge erstellen/bearbeiten */}
       {showBadgeModal && editingBadge && (
-        <div onClick={() => setShowBadgeModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div onClick={() => setShowBadgeModal(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '1.5rem', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
             <h3 style={{ color: '#ffd700', margin: '0 0 1rem 0' }}>{editingBadge.badge_id ? 'Badge bearbeiten' : 'Neuer Badge'}</h3>
 
