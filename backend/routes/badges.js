@@ -9,6 +9,12 @@ const router = express.Router();
 const db = require('../db');
 const { sendBadgeEmail } = require('../services/emailService');
 
+// Debug: Log alle Badges-Requests
+router.use((req, res, next) => {
+  console.log('🏅 Badges Route:', req.method, req.path, { user: req.user?.id, role: req.user?.role });
+  next();
+});
+
 // ============================================================================
 // MANUELLE TRAININGSSTUNDEN
 // ============================================================================
@@ -215,6 +221,7 @@ router.delete('/mitglied/:mitglied_id/:badge_id', (req, res) => {
  * Uebersicht fuer Admins: Wer verdient welche Badges?
  */
 router.get('/admin/overview', (req, res) => {
+  console.log('📊 Badge Admin Overview aufgerufen', { user: req.user, query: req.query });
   const { dojo_id } = req.query;
 
   // Hole alle Mitglieder mit ihren Statistiken
