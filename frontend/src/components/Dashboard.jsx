@@ -1283,61 +1283,229 @@ function Dashboard() {
                       {/* ℹ️ Info Tab ℹ️ */}
                       {activeTab === 'info' && (
                         <div className="nav-section">
-                          <h2 className="section-header">ℹ️ Systeminformationen</h2>
-                          <div className="info-container" style={{
-                            background: 'var(--glass-bg)',
-                            borderRadius: '16px',
-                            padding: '2rem',
-                            border: '1px solid var(--border-accent)',
-                            maxWidth: '600px',
+                          <h2 className="section-header">ℹ️ System & Status</h2>
+
+                          {/* Grid Layout für Info-Karten */}
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                            gap: '1.5rem',
+                            maxWidth: '1200px',
                             margin: '0 auto'
                           }}>
-                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
-                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                                Version
-                              </h3>
-                              <p style={{ color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '600' }}>
-                                DojoSoftware v{config.app.version}
-                              </p>
-                              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                Build: {config.app.buildDate}
-                              </p>
+
+                            {/* AGB/DSGVO Status - Wichtig, daher prominent */}
+                            <div style={{
+                              gridColumn: 'span 1',
+                              background: 'var(--glass-bg)',
+                              borderRadius: '16px',
+                              border: '1px solid var(--border-accent)',
+                              overflow: 'hidden'
+                            }}>
+                              <AgbStatusWidget />
                             </div>
 
-                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
-                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                                Kontakt & Support
+                            {/* Dojo Statistiken */}
+                            <div style={{
+                              background: 'var(--glass-bg)',
+                              borderRadius: '16px',
+                              padding: '1.5rem',
+                              border: '1px solid var(--border-accent)'
+                            }}>
+                              <h3 style={{
+                                color: 'var(--primary)',
+                                marginBottom: '1rem',
+                                fontSize: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                📊 Dojo Statistiken
                               </h3>
-                              <p style={{ color: 'var(--text-primary)' }}>
-                                <a href={`mailto:${config.app.contactEmail}`} style={{ color: 'var(--primary)' }}>
-                                  {config.app.contactEmail}
-                                </a>
-                              </p>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div style={{
+                                  background: 'rgba(255,215,0,0.1)',
+                                  padding: '1rem',
+                                  borderRadius: '8px',
+                                  textAlign: 'center'
+                                }}>
+                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)' }}>
+                                    {formatNumber(stats.mitglieder)}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Mitglieder</div>
+                                </div>
+                                <div style={{
+                                  background: 'rgba(96,165,250,0.1)',
+                                  padding: '1rem',
+                                  borderRadius: '8px',
+                                  textAlign: 'center'
+                                }}>
+                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#60A5FA' }}>
+                                    {formatNumber(stats.kurse)}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Kurse</div>
+                                </div>
+                                <div style={{
+                                  background: 'rgba(52,211,153,0.1)',
+                                  padding: '1rem',
+                                  borderRadius: '8px',
+                                  textAlign: 'center'
+                                }}>
+                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#34D399' }}>
+                                    {formatNumber(stats.trainer)}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Trainer</div>
+                                </div>
+                                <div style={{
+                                  background: 'rgba(244,114,182,0.1)',
+                                  padding: '1rem',
+                                  borderRadius: '8px',
+                                  textAlign: 'center'
+                                }}>
+                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#F472B6' }}>
+                                    {formatNumber(stats.checkins_heute)}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Check-ins heute</div>
+                                </div>
+                              </div>
                             </div>
 
-                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
-                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                                Entwickler
+                            {/* System Info */}
+                            <div style={{
+                              background: 'var(--glass-bg)',
+                              borderRadius: '16px',
+                              padding: '1.5rem',
+                              border: '1px solid var(--border-accent)'
+                            }}>
+                              <h3 style={{
+                                color: 'var(--primary)',
+                                marginBottom: '1rem',
+                                fontSize: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                ⚙️ System
                               </h3>
-                              <p style={{ color: 'var(--text-primary)' }}>
-                                {config.app.author}
-                              </p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  padding: '0.5rem 0',
+                                  borderBottom: '1px solid var(--border-accent)'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>Version</span>
+                                  <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>v{config.app.version}</span>
+                                </div>
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  padding: '0.5rem 0',
+                                  borderBottom: '1px solid var(--border-accent)'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>Build</span>
+                                  <span style={{ color: 'var(--text-primary)' }}>{config.app.buildDate}</span>
+                                </div>
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  padding: '0.5rem 0',
+                                  borderBottom: '1px solid var(--border-accent)'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>Entwickler</span>
+                                  <span style={{ color: 'var(--text-primary)' }}>{config.app.author}</span>
+                                </div>
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  padding: '0.5rem 0'
+                                }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>Support</span>
+                                  <a href={`mailto:${config.app.contactEmail}`} style={{ color: 'var(--primary)' }}>
+                                    {config.app.contactEmail}
+                                  </a>
+                                </div>
+                              </div>
                             </div>
 
-                            <div className="info-section" style={{ marginBottom: '1.5rem' }}>
-                              <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                                Beschreibung
+                            {/* Schnellzugriff */}
+                            <div style={{
+                              background: 'var(--glass-bg)',
+                              borderRadius: '16px',
+                              padding: '1.5rem',
+                              border: '1px solid var(--border-accent)'
+                            }}>
+                              <h3 style={{
+                                color: 'var(--primary)',
+                                marginBottom: '1rem',
+                                fontSize: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                🔗 Schnellzugriff
                               </h3>
-                              <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                                {config.app.description} - Eine umfassende Lösung für die Verwaltung von Kampfkunstschulen,
-                                Mitgliedern, Kursen, Prüfungen und Finanzen.
-                              </p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleNavigation('/dashboard/einstellungen')}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    padding: '0.75rem 1rem',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border-accent)',
+                                    borderRadius: '8px',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    width: '100%'
+                                  }}
+                                >
+                                  <span>🏯</span>
+                                  <span>Dojo-Einstellungen</span>
+                                </button>
+                                <button
+                                  onClick={() => handleNavigation('/dashboard/audit-log')}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    padding: '0.75rem 1rem',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border-accent)',
+                                    borderRadius: '8px',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    width: '100%'
+                                  }}
+                                >
+                                  <span>📋</span>
+                                  <span>Audit-Log</span>
+                                </button>
+                                <button
+                                  onClick={() => handleNavigation('/dashboard/vertragsdokumente')}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    padding: '0.75rem 1rem',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid var(--border-accent)',
+                                    borderRadius: '8px',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    width: '100%'
+                                  }}
+                                >
+                                  <span>📄</span>
+                                  <span>AGB & Datenschutz bearbeiten</span>
+                                </button>
+                              </div>
                             </div>
-                          </div>
 
-                          {/* AGB/DSGVO Status Widget */}
-                          <div style={{ marginTop: '2rem', maxWidth: '600px', margin: '2rem auto 0' }}>
-                            <AgbStatusWidget />
                           </div>
                         </div>
                       )}
