@@ -352,11 +352,14 @@
   animation: fadeInUp 0.6s ease-out both;
 }
 
+/* BEM: personal__card-header */
+.personal__card-header,
 .card-header {
   background: linear-gradient(135deg, var(--success), var(--secondary));
   padding: 1.5rem;
 }
 
+.personal__card-header h3,
 .card-header h3 {
   background: var(--gradient-gold);
   -webkit-background-clip: text;
@@ -376,13 +379,16 @@
   align-items: end;
 }
 
-.form-group {
+/* BEM: personal__form-group, personal__form-input, personal__form-select */
+.personal__form-group,
+.neuer-mitarbeiter-card .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-group label {
+.personal__form-group label,
+.neuer-mitarbeiter-card .form-group label {
   font-weight: 700;
   color: var(--text-primary);
   font-size: 1.1rem;
@@ -391,8 +397,10 @@
   margin-bottom: 0.75rem;
 }
 
-.form-input,
-.form-select {
+.personal__form-input,
+.personal__form-select,
+.neuer-mitarbeiter-card .form-input,
+.neuer-mitarbeiter-card .form-select {
   padding: 12px 16px;
   background: var(--glass-bg-hover);
   border: 2px solid var(--primary-alpha-40);
@@ -403,19 +411,23 @@
   transition: all 0.3s ease;
 }
 
-.form-input:focus,
-.form-select:focus {
+.personal__form-input:focus,
+.personal__form-select:focus,
+.neuer-mitarbeiter-card .form-input:focus,
+.neuer-mitarbeiter-card .form-select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.2);
 }
 
-.form-input::placeholder {
+.personal__form-input::placeholder,
+.neuer-mitarbeiter-card .form-input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.form-select option {
+.personal__form-select option,
+.neuer-mitarbeiter-card .form-select option {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: none;

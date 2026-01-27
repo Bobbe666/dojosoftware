@@ -11,6 +11,7 @@ import './styles/designsystem.css';
 import './styles/themes.css';
 import './styles/Buttons.css';
 import './styles/components.css';
+import './styles/utility-classes.css'; // BEM-konforme Utility-Klassen (ds- Präfix)
 
 // Theme-spezifische Styles (global für Theme-Switching)
 import './styles/Dashboard-TdaVib.css';
