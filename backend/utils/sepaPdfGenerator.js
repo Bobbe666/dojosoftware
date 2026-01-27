@@ -49,7 +49,7 @@ class SepaPdfGenerator {
         this.generateDebtorInfo(mandateData);
         this.generateBankingInfo(mandateData);
         this.generateLegalText();
-        this.generateSignatureSection();
+        this.generateSignatureSection(mandateData);
         this.generateFooter();
 
         // PDF finalisieren
@@ -340,10 +340,10 @@ Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, 
     this.doc.addPage();
   }
 
-  generateSignatureSection() {
+  generateSignatureSection(mandateData) {
     let y = 100;
 
-    // Überschrift
+    // Ueberschrift
     this.doc.fontSize(14)
       .font('Helvetica-Bold')
       .fillColor(COLORS.text)
@@ -351,45 +351,106 @@ Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, 
 
     y += 40;
 
-    // Rahmen für Unterschriften
-    this.doc.rect(50, y, this.doc.page.width - 100, 200)
-      .stroke(COLORS.border);
+    // Pruefe auf digitale Unterschrift
+    if (mandateData && mandateData.unterschrift_digital) {
+      // Digitale Unterschrift vorhanden - gruener Rahmen
+      this.doc.rect(50, y, this.doc.page.width - 100, 180)
+        .fillAndStroke('#f0fff0', '#10b981');
 
-    y += 20;
+      y += 15;
 
-    // Datum
-    this.doc.fontSize(11)
-      .font('Helvetica')
-      .fillColor(COLORS.text)
-      .text('Ort, Datum / Place, Date:', 60, y);
+      // Bestaetigung
+      this.doc.fontSize(11)
+        .font('Helvetica-Bold')
+        .fillColor('#10b981')
+        .text('Digital unterschrieben', 60, y);
 
-    // Linie für Datum
-    this.doc.strokeColor(COLORS.border)
-      .lineWidth(1)
-      .moveTo(60, y + 40)
-      .lineTo(250, y + 40)
-      .stroke();
+      y += 25;
 
-    // Unterschrift Zahlungspflichtiger
-    this.doc.text('Unterschrift des Zahlungspflichtigen / Signature of Debtor:', 300, y);
+      // Unterschrift-Bild rendern
+      try {
+        const signatureData = mandateData.unterschrift_digital;
+        // Base64 Data-URL zu Buffer konvertieren
+        const base64Data = signatureData.split(',')[1] || signatureData;
+        const signatureBuffer = Buffer.from(base64Data, 'base64');
 
-    // Linie für Unterschrift
-    this.doc.moveTo(300, y + 40)
-      .lineTo(this.doc.page.width - 60, y + 40)
-      .stroke();
+        this.doc.image(signatureBuffer, 60, y, {
+          width: 300,
+          height: 80,
+          fit: [300, 80]
+        });
+        y += 90;
+      } catch (err) {
+        console.error('Fehler beim Laden der Unterschrift:', err);
+        this.doc.fontSize(10)
+          .fillColor('#ef4444')
+          .text('(Unterschrift konnte nicht geladen werden)', 60, y);
+        y += 20;
+      }
 
-    y += 80;
+      // Metadaten
+      this.doc.fontSize(9)
+        .font('Helvetica')
+        .fillColor(COLORS.text);
 
-    // Zusätzliche Unterschrift (z.B. für Minderjährige)
-    this.doc.fontSize(10)
-      .fillColor('#666666')
-      .text('Bei Minderjährigen: Unterschrift des gesetzlichen Vertreters:', 60, y);
+      if (mandateData.unterschrift_datum) {
+        const datum = new Date(mandateData.unterschrift_datum).toLocaleString('de-DE');
+        this.doc.text(`Unterzeichnet am: ${datum}`, 60, y);
+        y += 15;
+      }
 
-    // Linie für zusätzliche Unterschrift
-    this.doc.strokeColor(COLORS.border)
-      .moveTo(60, y + 30)
-      .lineTo(this.doc.page.width - 60, y + 30)
-      .stroke();
+      if (mandateData.unterschrift_ip) {
+        this.doc.text(`IP-Adresse: ${mandateData.unterschrift_ip}`, 60, y);
+        y += 15;
+      }
+
+      if (mandateData.unterschrift_hash) {
+        this.doc.fontSize(8)
+          .fillColor('#6b7280')
+          .text(`Pruefsumme: ${mandateData.unterschrift_hash.substring(0, 16)}...`, 60, y);
+      }
+
+    } else {
+      // Keine digitale Unterschrift - Platzhalter fuer manuelle Unterschrift
+      this.doc.rect(50, y, this.doc.page.width - 100, 200)
+        .stroke(COLORS.border);
+
+      y += 20;
+
+      // Datum
+      this.doc.fontSize(11)
+        .font('Helvetica')
+        .fillColor(COLORS.text)
+        .text('Ort, Datum / Place, Date:', 60, y);
+
+      // Linie fuer Datum
+      this.doc.strokeColor(COLORS.border)
+        .lineWidth(1)
+        .moveTo(60, y + 40)
+        .lineTo(250, y + 40)
+        .stroke();
+
+      // Unterschrift Zahlungspflichtiger
+      this.doc.text('Unterschrift des Zahlungspflichtigen / Signature of Debtor:', 300, y);
+
+      // Linie fuer Unterschrift
+      this.doc.moveTo(300, y + 40)
+        .lineTo(this.doc.page.width - 60, y + 40)
+        .stroke();
+
+      y += 80;
+
+      // Zusaetzliche Unterschrift (z.B. fuer Minderjaehrige)
+      this.doc.fontSize(10)
+        .fillColor('#666666')
+        .text('Bei Minderjaehrigen: Unterschrift des gesetzlichen Vertreters:', 60, y);
+
+      // Linie fuer zusaetzliche Unterschrift
+      this.doc.strokeColor(COLORS.border)
+        .moveTo(60, y + 30)
+        .lineTo(this.doc.page.width - 60, y + 30)
+        .stroke();
+    }
 
     return y + 60;
   }

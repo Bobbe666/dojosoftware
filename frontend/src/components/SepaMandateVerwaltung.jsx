@@ -11,13 +11,15 @@ import {
   Trash2,
   Plus,
   Download,
-  AlertCircle
+  AlertCircle,
+  PenTool
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/SepaMandateVerwaltung.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import SignatureCanvas from './SignatureCanvas';
 
 
 const SepaMandateVerwaltung = () => {
@@ -41,7 +43,8 @@ const SepaMandateVerwaltung = () => {
     bic: '',
     bank_name: '',
     kontoinhaber: '',
-    mandatsreferenz: ''
+    mandatsreferenz: '',
+    unterschrift_digital: null
   });
 
   useEffect(() => {
@@ -164,14 +167,15 @@ const SepaMandateVerwaltung = () => {
       bic: '',
       bank_name: '',
       kontoinhaber: '',
-      mandatsreferenz: ''
+      mandatsreferenz: '',
+      unterschrift_digital: null
     });
   };
 
   const handleSaveNewMandat = async () => {
     // Validierung
     if (!neuesMandatData.mitglied_id) {
-      alert('Bitte wählen Sie ein Mitglied aus');
+      alert('Bitte waehlen Sie ein Mitglied aus');
       return;
     }
     if (!neuesMandatData.iban) {
@@ -180,6 +184,11 @@ const SepaMandateVerwaltung = () => {
     }
     if (!neuesMandatData.kontoinhaber) {
       alert('Bitte geben Sie einen Kontoinhaber ein');
+      return;
+    }
+    // Unterschrift ist Pflicht
+    if (!neuesMandatData.unterschrift_digital) {
+      alert('Bitte unterschreiben Sie das SEPA-Mandat');
       return;
     }
 
@@ -194,7 +203,11 @@ const SepaMandateVerwaltung = () => {
             bic: neuesMandatData.bic,
             bank_name: neuesMandatData.bank_name,
             kontoinhaber: neuesMandatData.kontoinhaber,
-            mandatsreferenz: neuesMandatData.mandatsreferenz || undefined
+            mandatsreferenz: neuesMandatData.mandatsreferenz || undefined,
+            // Digitale Unterschrift
+            unterschrift_digital: neuesMandatData.unterschrift_digital,
+            unterschrift_datum: new Date().toISOString(),
+            unterschrift_ip: window.location.hostname
           })
         }
       );
@@ -205,12 +218,12 @@ const SepaMandateVerwaltung = () => {
       }
 
       const result = await response.json();
-      alert('✅ SEPA-Mandat erfolgreich erstellt!');
+      alert('SEPA-Mandat erfolgreich erstellt!' + (neuesMandatData.unterschrift_digital ? ' (mit digitaler Unterschrift)' : ''));
       setShowNewMandatModal(false);
       loadMandate();
     } catch (error) {
       console.error('Fehler beim Erstellen:', error);
-      alert('❌ Fehler beim Erstellen: ' + error.message);
+      alert('Fehler beim Erstellen: ' + error.message);
     }
   };
 
@@ -611,8 +624,46 @@ const SepaMandateVerwaltung = () => {
                   className="form-control"
                 />
                 <small style={{ color: '#888', fontSize: '0.85rem' }}>
-                  Leer lassen für automatische Generierung (MANDAT-ID-Timestamp)
+                  Leer lassen fuer automatische Generierung (MANDAT-ID-Timestamp)
                 </small>
+              </div>
+
+              {/* SEPA-Mandatstext */}
+              <div style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                fontSize: '0.85rem',
+                color: 'rgba(255,255,255,0.8)'
+              }}>
+                <strong style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <PenTool size={16} />
+                  SEPA-Lastschriftmandat
+                </strong>
+                <p style={{ marginTop: '0.5rem', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+                  Ich ermachtige den Zahlungsempfaenger, Zahlungen von meinem Konto
+                  mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an,
+                  die vom Zahlungsempfaenger auf mein Konto gezogenen Lastschriften einzuloesen.
+                </p>
+                <p style={{ marginTop: '0.5rem', marginBottom: 0, fontStyle: 'italic', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                  Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem
+                  Belastungsdatum, die Erstattung des belasteten Betrages verlangen.
+                </p>
+              </div>
+
+              {/* Digitale Unterschrift */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <SignatureCanvas
+                  label="Digitale Unterschrift"
+                  required={true}
+                  width={460}
+                  height={150}
+                  onSignatureChange={(data) =>
+                    setNeuesMandatData({ ...neuesMandatData, unterschrift_digital: data })
+                  }
+                />
               </div>
             </div>
             <div className="modal-footer">

@@ -35,7 +35,8 @@
     "qrcode": "^1.5.4",
     "stripe": "^14.25.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "xmlbuilder2": "^4.0.3"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

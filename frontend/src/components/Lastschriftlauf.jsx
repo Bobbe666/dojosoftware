@@ -103,7 +103,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
     if (selectedFormat === 'csv') {
       window.open(`${config.apiBaseUrl}/lastschriftlauf`, '_blank');
     } else if (selectedFormat === 'xml') {
-      alert('SEPA XML (pain.008) Export wird in Kürze verfügbar sein');
+      window.open(`${config.apiBaseUrl}/lastschriftlauf/xml`, '_blank');
     }
   };
 
