@@ -529,24 +529,25 @@ const BadgeAdminOverview = () => {
                 fontSize: '0.85rem',
                 marginBottom: '0.5rem'
               }}>
-                Mitglied
+                Mitglied ({data.members?.length || 0} verfuegbar)
               </label>
               <select
                 value={manualBadge.mitglied_id || ''}
                 onChange={(e) => setManualBadge({ ...manualBadge, mitglied_id: e.target.value })}
                 style={{
                   width: '100%',
-                  background: 'rgba(255,255,255,0.1)',
+                  background: '#2a2a2a',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '6px',
                   padding: '0.6rem',
                   color: 'white',
-                  fontSize: '0.9rem'
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
                 }}
               >
-                <option value="">Mitglied waehlen...</option>
-                {data.members.map(m => (
-                  <option key={m.mitglied_id} value={m.mitglied_id}>
+                <option value="" style={{ background: '#2a2a2a', color: 'white' }}>Mitglied waehlen...</option>
+                {data.members && data.members.map(m => (
+                  <option key={m.mitglied_id} value={m.mitglied_id} style={{ background: '#2a2a2a', color: 'white' }}>
                     {m.vorname} {m.nachname}
                   </option>
                 ))}
@@ -560,24 +561,25 @@ const BadgeAdminOverview = () => {
                 fontSize: '0.85rem',
                 marginBottom: '0.5rem'
               }}>
-                Badge
+                Badge ({data.badges?.length || 0} verfuegbar)
               </label>
               <select
                 value={manualBadge.badge_id || ''}
                 onChange={(e) => setManualBadge({ ...manualBadge, badge_id: e.target.value })}
                 style={{
                   width: '100%',
-                  background: 'rgba(255,255,255,0.1)',
+                  background: '#2a2a2a',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '6px',
                   padding: '0.6rem',
                   color: 'white',
-                  fontSize: '0.9rem'
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
                 }}
               >
-                <option value="">Badge waehlen...</option>
-                {data.badges.map(b => (
-                  <option key={b.badge_id} value={b.badge_id}>
+                <option value="" style={{ background: '#2a2a2a', color: 'white' }}>Badge waehlen...</option>
+                {data.badges && data.badges.map(b => (
+                  <option key={b.badge_id} value={b.badge_id} style={{ background: '#2a2a2a', color: 'white' }}>
                     {b.name} ({b.kategorie})
                   </option>
                 ))}
