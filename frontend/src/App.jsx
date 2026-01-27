@@ -527,8 +527,9 @@ const App = () => {
               <Route path="notifications" element={<Suspense fallback={<LazyLoadFallback />}><NotificationSystem /></Suspense>} />
 
               {/* ======== EINSTELLUNGEN ======== */}
-              <Route path="einstellungen" element={<Suspense fallback={<LazyLoadFallback />}><EinstellungenDojo /></Suspense>} />
-              <Route path="einstellungen/meindojo" element={<Suspense fallback={<LazyLoadFallback />}><EinstellungenDojo /></Suspense>} />
+              {/* Redirect alte "Mein Dojo" Route zur neuen Dojo-Verwaltung */}
+              <Route path="einstellungen" element={<Navigate to="/dashboard/dojos" replace />} />
+              <Route path="einstellungen/meindojo" element={<Navigate to="/dashboard/dojos" replace />} />
               <Route path="einstellungen/zahlungen" element={<Suspense fallback={<LazyLoadFallback />}><ZahlungsEinstellungen /></Suspense>} />
 
               {/* Audit-Log (Änderungsprotokoll) */}
