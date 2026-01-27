@@ -11,6 +11,7 @@ import {
   Check, X, Search, Filter, Plus, Clock
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
+import { getAuthToken } from '../utils/fetchWithAuth';
 import '../styles/themes.css';
 import '../styles/components.css';
 
@@ -37,12 +38,12 @@ const BadgeAdminOverview = () => {
   }, [activeDojo]);
 
   const loadData = async () => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     console.log('Badge Admin loadData aufgerufen, token:', token ? 'vorhanden' : 'FEHLT');
 
     // Warte auf gültigen Token
-    if (!token || token === 'null' || token === 'undefined') {
-      setError(`Kein gültiger Token gefunden (token=${token}). Bitte neu einloggen.`);
+    if (!token) {
+      setError('Kein gültiger Token gefunden. Bitte neu einloggen.');
       setLoading(false);
       return;
     }
@@ -100,7 +101,7 @@ const BadgeAdminOverview = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({
           awards,
@@ -125,7 +126,7 @@ const BadgeAdminOverview = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
         body: JSON.stringify({ verliehen_von_name: 'Admin', kommentar: manualBadge.kommentar })
       });
