@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText
+  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText, QrCode, UserPlus
 } from 'lucide-react';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import VerkaufKasse from './VerkaufKasse';
+import QRScanner from './QRScanner';
 import config from '../config/config.js';
 import "../styles/themes.css";       // Centralized theme system
 import "../styles/components.css";   // Universal component styles
@@ -15,7 +16,11 @@ const aggregateCheckinsByMember = (checkins = []) => {
 
   checkins.forEach((entry) => {
     if (!entry) return;
-    const key = entry.mitglied_id || `${entry.vorname || ""}-${entry.nachname || ""}-${entry.checkin_id}`;
+    // Für Gäste: Verwende checkin_id als Key (da mitglied_id NULL ist)
+    const isGuest = entry.ist_gast === 1 || entry.ist_gast === true;
+    const key = isGuest
+      ? `guest-${entry.checkin_id}`
+      : (entry.mitglied_id || `${entry.vorname || ""}-${entry.nachname || ""}-${entry.checkin_id}`);
 
     if (!map.has(key)) {
       map.set(key, {
@@ -31,6 +36,10 @@ const aggregateCheckinsByMember = (checkins = []) => {
         kurse: [],
         checkins: [],
         primaryCheckin: entry,
+        ist_gast: isGuest,
+        gast_grund: entry.gast_grund,
+        gast_email: entry.gast_email,
+        gast_telefon: entry.gast_telefon,
       });
     }
 
@@ -88,6 +97,22 @@ const CheckinSystem = () => {
   // Verkauf State
   const [showVerkauf, setShowVerkauf] = useState(false);
   const [verkaufKunde, setVerkaufKunde] = useState(null);
+  const [verkaufCheckinId, setVerkaufCheckinId] = useState(null);
+
+  // QR Scanner State
+  const [showQRScanner, setShowQRScanner] = useState(false);
+
+  // Gast Check-in State
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [guestData, setGuestData] = useState({
+    gast_vorname: '',
+    gast_nachname: '',
+    gast_email: '',
+    gast_telefon: '',
+    gast_grund: 'probetraining',
+    stundenplan_id: null
+  });
+  const [guestLoading, setGuestLoading] = useState(false);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState({
@@ -236,7 +261,10 @@ const CheckinSystem = () => {
 
     if (checkedIn) {
       // Bereits eingechecktes Mitglied → Verkauf öffnen
-      startVerkauf(member);
+      // Finde die checkin_id für die Verkauf-Verknüpfung
+      const memberCheckin = todayCheckins.find(c => c.mitglied_id === member.mitglied_id);
+      const checkinId = memberCheckin?.primaryCheckin?.checkin_id || memberCheckin?.checkin_id;
+      startVerkauf(member, checkinId);
     } else {
       // Nicht eingechecktes Mitglied → normaler Check-in Prozess
       setSelectedMember(member);
@@ -258,9 +286,10 @@ const CheckinSystem = () => {
     }
   };
 
-  // Verkauf starten
-  const startVerkauf = (member) => {
+  // Verkauf starten (mit optionaler checkin_id für Verknüpfung)
+  const startVerkauf = (member, checkinId = null) => {
     setVerkaufKunde(member);
+    setVerkaufCheckinId(checkinId);
     setShowVerkauf(true);
   };
 
@@ -268,13 +297,134 @@ const CheckinSystem = () => {
   const closeVerkauf = () => {
     setShowVerkauf(false);
     setVerkaufKunde(null);
-    
+    setVerkaufCheckinId(null);
+
     // Fokussiere das Suchfeld nach dem Schließen des Verkaufs
     setTimeout(() => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
       }
     }, 100);
+  };
+
+  // QR-Code gescannt
+  const handleQRScan = async (qrData, parsedData) => {
+    console.log('QR-Code gescannt:', parsedData);
+
+    if (!parsedData || !parsedData.mitglied_id) {
+      setError('Ungueltiger QR-Code');
+      return;
+    }
+
+    // Finde Mitglied in der Liste
+    const member = members.find(m => m.mitglied_id === parsedData.mitglied_id);
+
+    if (!member) {
+      setError(`Mitglied mit ID ${parsedData.mitglied_id} nicht gefunden`);
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    // Schliesse Scanner
+    setShowQRScanner(false);
+
+    // Pruefe ob bereits eingecheckt
+    const checkedIn = isCheckedIn(member.mitglied_id);
+
+    if (checkedIn) {
+      // Bereits eingecheckt -> Verkauf oeffnen
+      setSuccess(`${member.vorname} ${member.nachname} ist bereits eingecheckt`);
+      setTimeout(() => setSuccess(''), 2000);
+      // Finde die checkin_id für die Verkauf-Verknüpfung
+      const memberCheckin = todayCheckins.find(c => c.mitglied_id === member.mitglied_id);
+      const checkinId = memberCheckin?.primaryCheckin?.checkin_id || memberCheckin?.checkin_id;
+      startVerkauf(member, checkinId);
+    } else {
+      // Nicht eingecheckt -> Check-in Prozess starten
+      selectMemberFromSearch(member);
+    }
+  };
+
+  // Gast Check-in ausführen
+  const executeGuestCheckin = async () => {
+    if (!guestData.gast_vorname.trim() || !guestData.gast_nachname.trim()) {
+      setError('Vorname und Nachname sind erforderlich');
+      return;
+    }
+
+    setGuestLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE}/checkin/guest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          gast_vorname: guestData.gast_vorname.trim(),
+          gast_nachname: guestData.gast_nachname.trim(),
+          gast_email: guestData.gast_email.trim() || null,
+          gast_telefon: guestData.gast_telefon.trim() || null,
+          gast_grund: guestData.gast_grund,
+          stundenplan_id: guestData.stundenplan_id,
+          checkin_method: 'manual'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      const grundLabels = {
+        'probetraining': 'Probetraining',
+        'besucher': 'Besucher',
+        'einmalig': 'Einmaliges Training',
+        'sonstiges': 'Sonstiges'
+      };
+
+      setSuccess(`✅ Gast ${guestData.gast_vorname} ${guestData.gast_nachname} (${grundLabels[guestData.gast_grund]}) eingecheckt!`);
+
+      // Modal schließen und Daten zurücksetzen
+      setShowGuestModal(false);
+      setGuestData({
+        gast_vorname: '',
+        gast_nachname: '',
+        gast_email: '',
+        gast_telefon: '',
+        gast_grund: 'probetraining',
+        stundenplan_id: null
+      });
+
+      // Check-ins neu laden
+      await loadTodayCheckins();
+
+      // Success nach 5 Sekunden ausblenden
+      setTimeout(() => setSuccess(''), 5000);
+
+    } catch (err) {
+      console.error('Gast Check-in Fehler:', err);
+      setError('Gast Check-in Fehler: ' + err.message);
+    } finally {
+      setGuestLoading(false);
+    }
+  };
+
+  // Gast Modal schließen
+  const closeGuestModal = () => {
+    setShowGuestModal(false);
+    setGuestData({
+      gast_vorname: '',
+      gast_nachname: '',
+      gast_email: '',
+      gast_telefon: '',
+      gast_grund: 'probetraining',
+      stundenplan_id: null
+    });
+    setError('');
   };
 
   // Course selection toggle
@@ -626,6 +776,26 @@ const CheckinSystem = () => {
 
           {/* Header Actions rechts */}
           <div className="header-actions">
+            {/* Gast Check-in Button */}
+            <button
+              onClick={() => setShowGuestModal(true)}
+              className="btn btn-secondary guest-checkin-btn"
+              title="Gast einchecken"
+            >
+              <UserPlus size={20} />
+              <span className="btn-text-desktop">Gast</span>
+            </button>
+
+            {/* QR Scanner Button */}
+            <button
+              onClick={() => setShowQRScanner(true)}
+              className="btn btn-primary qr-scan-btn"
+              title="QR-Code scannen"
+            >
+              <QrCode size={20} />
+              <span className="btn-text-desktop">QR-Scan</span>
+            </button>
+
             {/* Reset Button */}
             {step > 1 && (
               <button onClick={resetWorkflow} className="btn btn-secondary">
@@ -750,7 +920,13 @@ const CheckinSystem = () => {
                         key={checkin.mitglied_id || checkoutTargetId} 
                         className="member-card checked-in-card compact"
                         onClick={() => {
-                          // Linksklick öffnet Verkauf
+                          // Linksklick öffnet Verkauf (nur für Mitglieder, nicht für Gäste)
+                          if (checkin.ist_gast) {
+                            // Für Gäste: Zeige Info-Meldung
+                            setSuccess(`Gast: ${checkin.vorname} ${checkin.nachname}`);
+                            setTimeout(() => setSuccess(''), 2000);
+                            return;
+                          }
                           const memberData = {
                             mitglied_id: checkin.mitglied_id,
                             vorname: checkin.vorname,
@@ -759,7 +935,9 @@ const CheckinSystem = () => {
                             gurtfarbe: checkin.gurtfarbe,
                             mitgliedsnummer: checkin.mitgliedsnummer
                           };
-                          startVerkauf(memberData);
+                          // Übergebe checkin_id für Verkauf-Anwesenheit-Verknüpfung
+                          const checkinId = checkin.primaryCheckin?.checkin_id || checkin.checkin_id;
+                          startVerkauf(memberData, checkinId);
                         }}
                         onContextMenu={(e) => handleContextMenu(e, checkin)}
                       >
@@ -787,6 +965,12 @@ const CheckinSystem = () => {
                           {/* Name */}
                           <div className="member-name-checkin">
                             <span>{checkin.vorname} {checkin.nachname}</span>
+                            {(checkin.ist_gast === 1 || checkin.ist_gast === true) && (
+                              <span className="guest-badge">
+                                <UserPlus size={12} />
+                                Gast
+                              </span>
+                            )}
                           </div>
                           
                           {/* Auschecken Button */}
@@ -958,7 +1142,147 @@ const CheckinSystem = () => {
         <VerkaufKasse
           kunde={verkaufKunde}
           onClose={closeVerkauf}
+          checkin_id={verkaufCheckinId}
         />
+      )}
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScan={handleQRScan}
+      />
+
+      {/* Gast Check-in Modal */}
+      {showGuestModal && (
+        <div className="checkin-modal-overlay" onClick={closeGuestModal}>
+          <div className="checkin-modal guest-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="checkin-modal-header">
+              <div className="checkin-modal-title">
+                <UserPlus size={24} />
+                Gast einchecken
+              </div>
+              <button className="checkin-modal-close" onClick={closeGuestModal}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="checkin-modal-body">
+              <div className="guest-form">
+                {/* Name Felder */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="gast_vorname">Vorname *</label>
+                    <input
+                      type="text"
+                      id="gast_vorname"
+                      value={guestData.gast_vorname}
+                      onChange={(e) => setGuestData({...guestData, gast_vorname: e.target.value})}
+                      placeholder="Vorname des Gastes"
+                      className="form-input"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="gast_nachname">Nachname *</label>
+                    <input
+                      type="text"
+                      id="gast_nachname"
+                      value={guestData.gast_nachname}
+                      onChange={(e) => setGuestData({...guestData, gast_nachname: e.target.value})}
+                      placeholder="Nachname des Gastes"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+
+                {/* Kontakt Felder */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="gast_email">E-Mail (optional)</label>
+                    <input
+                      type="email"
+                      id="gast_email"
+                      value={guestData.gast_email}
+                      onChange={(e) => setGuestData({...guestData, gast_email: e.target.value})}
+                      placeholder="email@beispiel.de"
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="gast_telefon">Telefon (optional)</label>
+                    <input
+                      type="tel"
+                      id="gast_telefon"
+                      value={guestData.gast_telefon}
+                      onChange={(e) => setGuestData({...guestData, gast_telefon: e.target.value})}
+                      placeholder="+49 123 456789"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+
+                {/* Grund */}
+                <div className="form-group">
+                  <label htmlFor="gast_grund">Grund des Besuchs</label>
+                  <select
+                    id="gast_grund"
+                    value={guestData.gast_grund}
+                    onChange={(e) => setGuestData({...guestData, gast_grund: e.target.value})}
+                    className="form-input"
+                  >
+                    <option value="probetraining">Probetraining</option>
+                    <option value="besucher">Besucher</option>
+                    <option value="einmalig">Einmaliges Training</option>
+                    <option value="sonstiges">Sonstiges</option>
+                  </select>
+                </div>
+
+                {/* Kurs Auswahl (optional) */}
+                {coursesToday.length > 0 && (
+                  <div className="form-group">
+                    <label htmlFor="gast_kurs">Kurs (optional)</label>
+                    <select
+                      id="gast_kurs"
+                      value={guestData.stundenplan_id || ''}
+                      onChange={(e) => setGuestData({...guestData, stundenplan_id: e.target.value ? parseInt(e.target.value) : null})}
+                      className="form-input"
+                    >
+                      <option value="">Freies Training (kein Kurs)</option>
+                      {coursesToday.map(course => (
+                        <option key={course.stundenplan_id} value={course.stundenplan_id}>
+                          {course.kurs_name} ({course.zeit})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Hinweis */}
+                <div className="guest-hint">
+                  <p>* Pflichtfelder</p>
+                  <p>Gäste werden als temporäre Besucher erfasst.</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="action-buttons">
+                <button onClick={closeGuestModal} className="btn btn-secondary">
+                  Abbrechen
+                </button>
+                <button
+                  onClick={executeGuestCheckin}
+                  disabled={guestLoading || !guestData.gast_vorname.trim() || !guestData.gast_nachname.trim()}
+                  className="btn btn-success"
+                >
+                  {guestLoading ? 'Lädt...' : 'Gast einchecken'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Context Menu */}

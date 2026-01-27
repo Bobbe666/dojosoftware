@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, ShoppingCart, User, CreditCard, Euro } from 'lucide-react';
 import config from '../config/config.js';
+import { useDojoContext } from '../context/DojoContext';
 import '../styles/VerkaufKasse.css';
 import '../styles/CheckinSystem.css';
 
@@ -61,11 +62,16 @@ const aggregateCheckinsByMember = (checkins = []) => {
   return Array.from(map.values());
 };
 
-const VerkaufKasse = ({ kunde, onClose }) => {
+const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
+  // =====================================================================================
+  // DOJO CONTEXT
+  // =====================================================================================
+  const { activeDojo } = useDojoContext();
+
   // =====================================================================================
   // STATE MANAGEMENT
   // =====================================================================================
-  
+
   const [artikel, setArtikel] = useState([]);
   const [kategorien, setKategorien] = useState([]);
   const [warenkorb, setWarenkorb] = useState([]);
@@ -223,7 +229,9 @@ const VerkaufKasse = ({ kunde, onClose }) => {
         zahlungsart,
         gegeben_cent: zahlungsart === 'bar' ? Math.round(parseFloat(gegebenBetrag) * 100) : null,
         bemerkung: bemerkung || null,
-        verkauft_von_name: 'Kassierer' // TODO: Echten Benutzer verwenden
+        verkauft_von_name: 'Kassierer', // TODO: Echten Benutzer verwenden
+        dojo_id: activeDojo?.id || null,
+        checkin_id: checkin_id || null // Verknüpfung zur Anwesenheit
       };
       
       const response = await apiCall('/verkaeufe', {

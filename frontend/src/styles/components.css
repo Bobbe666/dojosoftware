@@ -291,6 +291,26 @@ Glassmorphism-Design mit Theme-Variablen.
   margin-bottom: 3rem;
 }
 
+/* Responsive Stat Card Grid - 4 Karten gleichbreit */
+.stats-grid-responsive {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+  justify-items: stretch !important;
+}
+
+@media (max-width: 900px) {
+  .stats-grid-responsive {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 500px) {
+  .stats-grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Standard Stat Card - wie Personal Check-in Karte Hintergrund */
 /* ===== STATISTIK-KARTEN - Zentrale Standard-Styles ===== */
 /* Diese Styles werden von allen Komponenten verwendet und können bei Bedarf überschrieben werden */

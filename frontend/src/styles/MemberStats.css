@@ -23,9 +23,24 @@
 
 /* Compact grid and cards (override generic styles) */
 .member-stats .stats-grid {
-  grid-template-columns: repeat(4, 1fr) !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 0.6rem !important;
   margin-bottom: 0.1rem !important;
+  justify-items: stretch !important;
+}
+
+/* Responsive: 2 Karten pro Zeile auf kleineren Bildschirmen */
+@media (max-width: 900px) {
+  .member-stats .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 500px) {
+  .member-stats .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .member-stats .stat-card {

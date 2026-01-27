@@ -247,9 +247,115 @@ Ihr ${dojoname} Team
   });
 };
 
+/**
+ * Sendet eine Badge-Benachrichtigungs-E-Mail
+ * @param {Object} data - Daten für die E-Mail
+ * @param {string} data.email - Empfänger-E-Mail
+ * @param {string} data.vorname - Vorname des Mitglieds
+ * @param {string} data.nachname - Nachname des Mitglieds
+ * @param {string} data.badgeName - Name des Badges
+ * @param {string} data.badgeBeschreibung - Beschreibung des Badges
+ * @param {string} data.badgeIcon - Icon des Badges
+ * @param {string} data.badgeFarbe - Farbe des Badges
+ * @param {string} data.dojoname - Name des Dojos
+ * @returns {Promise<Object>} - Ergebnis des E-Mail-Versands
+ */
+const sendBadgeEmail = async (data) => {
+  const { email, vorname, nachname, badgeName, badgeBeschreibung, badgeIcon, badgeFarbe, dojoname } = data;
+
+  // Icon-Emoji-Mapping
+  const iconEmojis = {
+    award: '🏅',
+    star: '⭐',
+    trophy: '🏆',
+    medal: '🎖️',
+    crown: '👑',
+    flame: '🔥',
+    target: '🎯',
+    heart: '❤️',
+    users: '👥',
+    swords: '⚔️',
+    zap: '⚡',
+    'trending-up': '📈',
+    footprints: '👣',
+    layers: '📚',
+    brain: '🧠',
+    shield: '🛡️'
+  };
+
+  const iconEmoji = iconEmojis[badgeIcon] || '🏅';
+  const subject = `${iconEmoji} Herzlichen Glückwunsch! Neue Auszeichnung erhalten - ${dojoname || 'Dojo'}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #FFD700; margin: 0;">🎉 Herzlichen Glückwunsch!</h1>
+        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">Du hast eine neue Auszeichnung erhalten!</p>
+      </div>
+
+      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p style="font-size: 16px; color: #333;">Hallo ${vorname},</p>
+
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          wir freuen uns, dir mitzuteilen, dass du eine neue Auszeichnung erhalten hast!
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <div style="display: inline-block; background: linear-gradient(135deg, ${badgeFarbe || '#FFD700'}40, ${badgeFarbe || '#FFD700'}20); border: 3px solid ${badgeFarbe || '#FFD700'}; border-radius: 50%; width: 80px; height: 80px; line-height: 80px; font-size: 40px; box-shadow: 0 4px 20px ${badgeFarbe || '#FFD700'}60;">
+            ${iconEmoji}
+          </div>
+          <h2 style="color: ${badgeFarbe || '#FFD700'}; margin: 20px 0 10px 0; font-size: 24px;">${badgeName}</h2>
+          ${badgeBeschreibung ? `<p style="font-size: 14px; color: #666; margin: 0;">${badgeBeschreibung}</p>` : ''}
+        </div>
+
+        <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; font-size: 14px; color: #1e40af;">
+            <strong>Weiter so!</strong> Dein Engagement und deine Fortschritte werden belohnt.
+            Besuche dein Profil, um alle deine Auszeichnungen zu sehen.
+          </p>
+        </div>
+
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          Mit sportlichen Grüßen<br>
+          <strong>Dein ${dojoname || 'Dojo'} Team</strong>
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #9ca3af; text-align: center;">
+          Diese E-Mail wurde automatisch generiert. Bitte antworte nicht direkt auf diese Nachricht.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const text = `
+Hallo ${vorname},
+
+wir freuen uns, dir mitzuteilen, dass du eine neue Auszeichnung erhalten hast!
+
+${iconEmoji} ${badgeName}
+${badgeBeschreibung || ''}
+
+Weiter so! Dein Engagement und deine Fortschritte werden belohnt.
+Besuche dein Profil, um alle deine Auszeichnungen zu sehen.
+
+Mit sportlichen Grüßen
+Dein ${dojoname || 'Dojo'} Team
+  `.trim();
+
+  return await sendEmail({
+    to: email,
+    subject,
+    text,
+    html
+  });
+};
+
 module.exports = {
   sendEmail,
   sendVertragEmail,
+  sendBadgeEmail,
   createEmailTransporter,
   getEmailSettings
 };

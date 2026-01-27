@@ -142,13 +142,38 @@ router.get('/:id', (req, res) => {
 // =====================================================
 // POST /api/dojos - Neues Dojo erstellen (dynamisch)
 // =====================================================
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
 
   console.log('Request Body Keys:', Object.keys(req.body));
 
   // Validation
   if (!req.body.dojoname || !req.body.inhaber) {
     return res.status(400).json({ error: 'Dojoname und Inhaber sind Pflichtfelder' });
+  }
+
+  try {
+    // Prüfe Dojo-Limit aus Subscription
+    const [subscriptionResult] = await req.db.promise().query(`
+      SELECT ds.max_dojos,
+             (SELECT COUNT(*) FROM dojo WHERE ist_aktiv = TRUE) as current_dojos
+      FROM dojo_subscriptions ds
+      LIMIT 1
+    `);
+
+    if (subscriptionResult.length > 0) {
+      const { max_dojos, current_dojos } = subscriptionResult[0];
+      if (max_dojos && current_dojos >= max_dojos) {
+        return res.status(403).json({
+          error: `Dojo-Limit erreicht (${current_dojos}/${max_dojos}). Bitte upgraden Sie Ihr Abo für weitere Dojos.`,
+          code: 'DOJO_LIMIT_REACHED',
+          current: current_dojos,
+          max: max_dojos
+        });
+      }
+    }
+  } catch (checkErr) {
+    console.error('Fehler bei Dojo-Limit-Prüfung:', checkErr);
+    // Fortfahren ohne Limit-Check wenn Tabelle nicht existiert
   }
 
   // Hole alle Spalten der Tabelle

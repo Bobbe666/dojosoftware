@@ -1,4 +1,5 @@
 import React from 'react';
+import BadgeDisplay from '../../BadgeDisplay';
 
 // Gemeinsame Card-Styles
 const cardStyle = {
@@ -52,7 +53,7 @@ const MemberStatisticsTab = ({
   return (
     <div className="statistiken-content" style={{ padding: '1rem', background: 'transparent' }}>
       {/* Kompakte Statistik-Karten Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.75rem', marginBottom: '1rem' }} className="stats-grid-responsive">
         {/* Trainings absolviert */}
         <div style={cardStyle}>
           <div style={accentBar('linear-gradient(90deg, #28a745, #20c997)')}></div>
@@ -343,7 +344,7 @@ const MemberStatisticsTab = ({
       )}
 
       {/* Weitere Insights */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.75rem', marginTop: '1rem' }} className="stats-grid-responsive">
         {/* Bester Wochentag */}
         {statistikDaten.bestWeekday && statistikDaten.bestWeekday.count > 0 && (
           <div style={{
@@ -412,6 +413,13 @@ const MemberStatisticsTab = ({
           </div>
         )}
       </div>
+
+      {/* Auszeichnungen / Badges */}
+      {mitglied?.mitglied_id && (
+        <div style={{ marginTop: '1rem' }}>
+          <BadgeDisplay mitgliedId={mitglied.mitglied_id} compact={false} />
+        </div>
+      )}
     </div>
   );
 };

@@ -419,18 +419,10 @@ function Dashboard() {
   const einstellungenCards = [
     {
       icon: '🏯',
-      title: 'Mein Dojo',
-      description: 'Dojo-Einstellungen, Design & Theme-Auswahl',
-      path: '/dashboard/einstellungen',
-      badge: 'DESIGN',
-      featured: true
-    },
-    {
-      icon: '🏢',
       title: 'Dojo-Verwaltung',
-      description: 'Mehrere Dojos & Steuer-Tracking verwalten',
+      description: 'Dojos verwalten, Design, Theme, Verträge & Steuern',
       path: '/dashboard/dojos',
-      badge: 'NEU',
+      badge: 'DESIGN',
       featured: true
     },
     {
@@ -469,6 +461,14 @@ function Dashboard() {
       badge: 'NEU',
       featured: true,
       count: stats.termine || 0
+    },
+    {
+      icon: '🏅',
+      title: 'Auszeichnungen',
+      description: 'Badges vergeben und verwalten',
+      path: '/dashboard/badges',
+      badge: 'NEU',
+      featured: true
     }
   ];
 

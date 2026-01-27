@@ -108,7 +108,15 @@ const EinstellungenDojo = () => {
     verlaengerung_monate: 12,
     kuendigung_erstlaufzeit_monate: 3, // 3 Monate vor Ende der ersten Laufzeit
     kuendigung_verlaengerung_monate: 1, // 1 Monat vor automatischer Verlängerung
-    
+
+    // Vertragsmodell-Auswahl
+    vertragsmodell: 'gesetzlich', // 'gesetzlich' oder 'beitragsgarantie'
+    beitragsgarantie_bei_nichtverlaengerung: 'aktueller_tarif', // 'aktueller_tarif' oder 'vertrag_endet'
+    verlaengerung_erinnerung_tage: 60,
+    verlaengerung_erinnerung2_tage: 30,
+    verlaengerung_erinnerung3_tage: 14,
+    verlaengerung_email_text: '',
+
     // Kontakte
     notfallkontakt_name: "",
     notfallkontakt_telefon: "",
@@ -180,6 +188,7 @@ const EinstellungenDojo = () => {
     { id: "steuer", label: "Steuern & Recht", icon: FileText, color: "#F59E0B" },
     { id: "bank", label: "Bankdaten", icon: CreditCard, color: "#8B5CF6" },
     { id: "versicherung", label: "Versicherungen", icon: Shield, color: "#EF4444" },
+    { id: "vertraege", label: "Vertragsmodell", icon: FileSignature, color: "#14B8A6" },
     { id: "sport", label: "Sport & Verband", icon: Award, color: "#06B6D4" },
     { id: "rechtliches", label: "Rechtliches & Regeln", icon: BookOpen, color: "#DC2626" },
     { id: "zeiten", label: "Öffnungszeiten", icon: Clock, color: "#84CC16" },
@@ -840,6 +849,267 @@ const EinstellungenDojo = () => {
                     onChange={handleChange}
                     disabled={!isEditing}
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "vertraege":
+        return (
+          <div className="tab-content">
+            <h3>📋 Vertragsmodell & Verlängerungen</h3>
+            <p className="section-description" style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem' }}>
+              Wählen Sie das Vertragsmodell für Ihr Dojo. Diese Einstellung gilt für alle neuen Verträge.
+            </p>
+
+            <div className="form-section">
+              <h4>🔄 Vertragsmodell auswählen</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                {/* Option 1: Gesetzliche Verlängerung */}
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: dojo.vertragsmodell === 'gesetzlich' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: dojo.vertragsmodell === 'gesetzlich' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: isEditing ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <input
+                    type="radio"
+                    name="vertragsmodell"
+                    value="gesetzlich"
+                    checked={dojo.vertragsmodell === 'gesetzlich'}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    style={{ marginTop: '4px' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      📜 Gesetzliche Verlängerung (Standard)
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                      Vertrag verlängert sich automatisch. Nach der Verlängerung kann das Mitglied
+                      jederzeit mit <strong>1 Monat Frist</strong> kündigen (gemäß Gesetz für faire Verbraucherverträge 2022).
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 2: Beitragsgarantie */}
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: dojo.vertragsmodell === 'beitragsgarantie' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: dojo.vertragsmodell === 'beitragsgarantie' ? '2px solid #14b8a6' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: isEditing ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <input
+                    type="radio"
+                    name="vertragsmodell"
+                    value="beitragsgarantie"
+                    checked={dojo.vertragsmodell === 'beitragsgarantie'}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    style={{ marginTop: '4px' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      💰 Beitragsgarantie-Modell
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                      Mitglied muss <strong>aktiv verlängern</strong>, um seinen aktuellen Beitrag zu behalten.
+                      Bei Nicht-Verlängerung gilt automatisch der aktuelle Tarifpreis oder der Vertrag endet.
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Einstellungen für Beitragsgarantie-Modell */}
+            {dojo.vertragsmodell === 'beitragsgarantie' && (
+              <div className="form-section" style={{
+                background: 'rgba(20, 184, 166, 0.1)',
+                border: '1px solid rgba(20, 184, 166, 0.3)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                marginTop: '1rem'
+              }}>
+                <h4 style={{ color: '#14b8a6' }}>⚙️ Beitragsgarantie-Einstellungen</h4>
+
+                <div className="form-grid" style={{ marginTop: '1rem' }}>
+                  <div className="form-group">
+                    <label>Bei Nicht-Verlängerung</label>
+                    <select
+                      name="beitragsgarantie_bei_nichtverlaengerung"
+                      value={dojo.beitragsgarantie_bei_nichtverlaengerung || 'aktueller_tarif'}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    >
+                      <option value="aktueller_tarif">Automatisch aktueller Tarifpreis</option>
+                      <option value="vertrag_endet">Vertrag endet</option>
+                    </select>
+                    <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem', display: 'block' }}>
+                      Was passiert, wenn das Mitglied nicht aktiv verlängert?
+                    </small>
+                  </div>
+                </div>
+
+                <h5 style={{ marginTop: '1.5rem', marginBottom: '0.75rem', color: '#fff' }}>📧 Erinnerungs-E-Mails</h5>
+                <div className="form-grid">
+                  <div className="form-group short">
+                    <label>1. Erinnerung</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        name="verlaengerung_erinnerung_tage"
+                        type="number"
+                        min="14"
+                        max="90"
+                        value={dojo.verlaengerung_erinnerung_tage || 60}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        style={{ width: '80px' }}
+                      />
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tage vorher</span>
+                    </div>
+                  </div>
+                  <div className="form-group short">
+                    <label>2. Erinnerung</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        name="verlaengerung_erinnerung2_tage"
+                        type="number"
+                        min="0"
+                        max="60"
+                        value={dojo.verlaengerung_erinnerung2_tage || 30}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        style={{ width: '80px' }}
+                      />
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tage vorher</span>
+                    </div>
+                  </div>
+                  <div className="form-group short">
+                    <label>Letzte Erinnerung</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        name="verlaengerung_erinnerung3_tage"
+                        type="number"
+                        min="0"
+                        max="30"
+                        value={dojo.verlaengerung_erinnerung3_tage || 14}
+                        onChange={handleChange}
+                        disabled={!isEditing}
+                        style={{ width: '80px' }}
+                      />
+                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tage vorher</span>
+                    </div>
+                  </div>
+                </div>
+                <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem', display: 'block' }}>
+                  Setzen Sie einen Wert auf 0, um diese Erinnerung zu deaktivieren.
+                </small>
+              </div>
+            )}
+
+            {/* Allgemeine Vertragseinstellungen */}
+            <div className="form-section" style={{ marginTop: '2rem' }}>
+              <h4>📝 Allgemeine Vertragseinstellungen</h4>
+              <div className="form-grid">
+                <div className="form-group short">
+                  <label>Kündigungsfrist (Erstlaufzeit)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      name="kuendigungsfrist_monate"
+                      type="number"
+                      min="1"
+                      max="3"
+                      value={dojo.kuendigungsfrist_monate || 3}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      style={{ width: '80px' }}
+                    />
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Monate</span>
+                  </div>
+                </div>
+                <div className="form-group short">
+                  <label>Mindestlaufzeit</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      name="mindestlaufzeit_monate"
+                      type="number"
+                      min="1"
+                      max="24"
+                      value={dojo.mindestlaufzeit_monate || 12}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      style={{ width: '80px' }}
+                    />
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Monate</span>
+                  </div>
+                </div>
+                <div className="form-group short">
+                  <label>Verlängerungszeitraum</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      name="verlaengerung_monate"
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={dojo.verlaengerung_monate || 12}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      style={{ width: '80px' }}
+                    />
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Monate</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="checkbox-group" style={{ marginTop: '1rem' }}>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="kuendigung_nur_monatsende"
+                    checked={dojo.kuendigung_nur_monatsende || false}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  />
+                  Kündigung nur zum Monatsende möglich
+                </label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="kuendigung_schriftlich"
+                    checked={dojo.kuendigung_schriftlich || false}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  />
+                  Kündigung muss schriftlich erfolgen
+                </label>
+              </div>
+            </div>
+
+            {/* Info-Box */}
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '12px',
+              padding: '1rem',
+              marginTop: '2rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
+                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
+                  <strong>Hinweis zum deutschen Verbraucherrecht:</strong><br />
+                  Seit März 2022 können Verbraucher nach automatischer Vertragsverlängerung jederzeit mit 1 Monat Frist kündigen.
+                  Das Beitragsgarantie-Modell bietet eine faire Alternative: Mitglieder behalten ihren Preis, wenn sie aktiv verlängern.
                 </div>
               </div>
             </div>

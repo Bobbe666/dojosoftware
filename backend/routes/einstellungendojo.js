@@ -159,7 +159,41 @@ function ensureTableStructure(callback) {
     { name: 'logo_url', definition: 'VARCHAR(500) DEFAULT NULL' },
     { name: 'favicon_url', definition: 'VARCHAR(500) DEFAULT NULL' },
     { name: 'dsgvo_beauftragte', definition: 'VARCHAR(255) DEFAULT NULL' },
-    { name: 'max_mitglieder', definition: 'INT DEFAULT 500' }
+    { name: 'max_mitglieder', definition: 'INT DEFAULT 500' },
+
+    // Vertragseinstellungen (Kuendigungen & Bedingungen)
+    { name: 'kuendigungsfrist_monate', definition: 'INT DEFAULT 3' },
+    { name: 'mindestlaufzeit_monate', definition: 'INT DEFAULT 12' },
+    { name: 'probezeit_tage', definition: 'INT DEFAULT 14' },
+    { name: 'kuendigung_nur_monatsende', definition: 'BOOLEAN DEFAULT TRUE' },
+    { name: 'kuendigung_schriftlich', definition: 'BOOLEAN DEFAULT TRUE' },
+    { name: 'automatische_verlaengerung', definition: 'BOOLEAN DEFAULT TRUE' },
+    { name: 'verlaengerung_monate', definition: 'INT DEFAULT 12' },
+    { name: 'kuendigung_erstlaufzeit_monate', definition: 'INT DEFAULT 3' },
+    { name: 'kuendigung_verlaengerung_monate', definition: 'INT DEFAULT 1' },
+
+    // Vertragslaufzeiten und Preise
+    { name: 'vertrag_3_monate_preis', definition: 'DECIMAL(10,2) DEFAULT NULL' },
+    { name: 'vertrag_6_monate_preis', definition: 'DECIMAL(10,2) DEFAULT NULL' },
+    { name: 'vertrag_12_monate_preis', definition: 'DECIMAL(10,2) DEFAULT NULL' },
+    { name: 'vertrag_3_monate_aktiv', definition: 'BOOLEAN DEFAULT TRUE' },
+    { name: 'vertrag_6_monate_aktiv', definition: 'BOOLEAN DEFAULT TRUE' },
+    { name: 'vertrag_12_monate_aktiv', definition: 'BOOLEAN DEFAULT TRUE' },
+
+    // Rabatte
+    { name: 'jahresbeitrag', definition: 'DECIMAL(10,2) DEFAULT NULL' },
+    { name: 'familienrabatt_prozent', definition: 'DECIMAL(5,2) DEFAULT NULL' },
+    { name: 'schuelerrabatt_prozent', definition: 'DECIMAL(5,2) DEFAULT NULL' },
+    { name: 'vereinsmitglied_rabatt_prozent', definition: 'DECIMAL(5,2) DEFAULT NULL' },
+    { name: 'mehrfachtraining_rabatt_prozent', definition: 'DECIMAL(5,2) DEFAULT NULL' },
+
+    // Vertragsmodell-Auswahl (gesetzlich vs. Beitragsgarantie)
+    { name: 'vertragsmodell', definition: "ENUM('gesetzlich', 'beitragsgarantie') DEFAULT 'gesetzlich'" },
+    { name: 'beitragsgarantie_bei_nichtverlaengerung', definition: "ENUM('aktueller_tarif', 'vertrag_endet') DEFAULT 'aktueller_tarif'" },
+    { name: 'verlaengerung_erinnerung_tage', definition: 'INT DEFAULT 60' },
+    { name: 'verlaengerung_erinnerung2_tage', definition: 'INT DEFAULT 30' },
+    { name: 'verlaengerung_erinnerung3_tage', definition: 'INT DEFAULT 14' },
+    { name: 'verlaengerung_email_text', definition: 'TEXT DEFAULT NULL' }
   ];
 
   let completedColumns = 0;

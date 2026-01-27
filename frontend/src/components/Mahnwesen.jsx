@@ -12,7 +12,11 @@ import {
   ArrowLeft,
   Mail,
   Phone,
-  Calendar
+  Calendar,
+  Download,
+  Play,
+  Settings,
+  RefreshCw
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -28,6 +32,8 @@ const Mahnwesen = () => {
   const [mahnungen, setMahnungen] = useState([]);
   const [statistiken, setStatistiken] = useState({});
   const [selectedView, setSelectedView] = useState('offene'); // 'offene' oder 'mahnungen'
+  const [mahnlaufLoading, setMahnlaufLoading] = useState(false);
+  const [mahnlaufErgebnis, setMahnlaufErgebnis] = useState(null);
 
   useEffect(() => {
     loadMahnwesenData();
@@ -113,6 +119,99 @@ const Mahnwesen = () => {
     }
   };
 
+  // PDF herunterladen
+  const handlePdfDownload = async (mahnung_id, mitgliedName) => {
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mahnwesen/mahnungen/${mahnung_id}/pdf`);
+
+      if (!response.ok) {
+        throw new Error('PDF konnte nicht generiert werden');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Mahnung_${mitgliedName.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Fehler beim PDF-Download:', error);
+      alert('Fehler beim PDF-Download: ' + error.message);
+    }
+  };
+
+  // Mahnung per E-Mail versenden
+  const handleMahnungSenden = async (mahnung_id, email) => {
+    if (!email) {
+      alert('Mitglied hat keine E-Mail-Adresse hinterlegt');
+      return;
+    }
+
+    if (!window.confirm(`Mahnung per E-Mail an ${email} senden?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mahnwesen/mahnungen/${mahnung_id}/senden`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitPdf: true })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'E-Mail konnte nicht gesendet werden');
+      }
+
+      alert('Mahnung erfolgreich versendet!');
+      loadMahnwesenData();
+    } catch (error) {
+      console.error('Fehler beim Versenden:', error);
+      alert('Fehler beim Versenden: ' + error.message);
+    }
+  };
+
+  // Automatischer Mahnlauf
+  const handleMahnlauf = async (nurSimulation = true) => {
+    const confirmMsg = nurSimulation
+      ? 'Mahnlauf simulieren? Es werden keine echten Mahnungen erstellt.'
+      : 'Automatischen Mahnlauf durchfuehren? Es werden echte Mahnungen erstellt!';
+
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      setMahnlaufLoading(true);
+      setMahnlaufErgebnis(null);
+
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/mahnwesen/mahnlauf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nurSimulation })
+      });
+
+      if (!response.ok) {
+        throw new Error('Mahnlauf fehlgeschlagen');
+      }
+
+      const data = await response.json();
+      setMahnlaufErgebnis(data);
+
+      if (!nurSimulation) {
+        loadMahnwesenData();
+      }
+    } catch (error) {
+      console.error('Fehler beim Mahnlauf:', error);
+      alert('Fehler beim Mahnlauf: ' + error.message);
+    } finally {
+      setMahnlaufLoading(false);
+    }
+  };
+
   const getMahnstufeColor = (mahnstufe) => {
     if (mahnstufe === 0) return 'info';
     if (mahnstufe === 1) return 'warning';
@@ -150,7 +249,86 @@ const Mahnwesen = () => {
           <h1>⚠️ Mahnwesen</h1>
           <p>Verwalte offene Beiträge und Mahnungen</p>
         </div>
+        <div className="header-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate('/dashboard/einstellungen/mahnstufen')}
+            title="Mahnstufen konfigurieren"
+          >
+            <Settings size={18} />
+            Einstellungen
+          </button>
+          <button
+            className="btn btn-warning"
+            onClick={() => handleMahnlauf(true)}
+            disabled={mahnlaufLoading}
+            title="Simuliert den Mahnlauf ohne echte Mahnungen zu erstellen"
+          >
+            <Play size={18} />
+            {mahnlaufLoading ? 'Läuft...' : 'Mahnlauf simulieren'}
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={() => handleMahnlauf(false)}
+            disabled={mahnlaufLoading}
+            title="Erstellt echte Mahnungen basierend auf den Mahnstufen-Einstellungen"
+          >
+            <RefreshCw size={18} />
+            Mahnlauf starten
+          </button>
+        </div>
       </div>
+
+      {/* Mahnlauf Ergebnis */}
+      {mahnlaufErgebnis && (
+        <div className="mahnlauf-ergebnis" style={{
+          background: mahnlaufErgebnis.simulation ? 'rgba(251, 191, 36, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+          border: `1px solid ${mahnlaufErgebnis.simulation ? '#f59e0b' : '#22c55e'}`,
+          borderRadius: '12px',
+          padding: '1rem',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <h3 style={{ margin: 0, color: mahnlaufErgebnis.simulation ? '#f59e0b' : '#22c55e' }}>
+              {mahnlaufErgebnis.simulation ? '🔍 Simulation' : '✅ Mahnlauf durchgeführt'}
+            </h3>
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => setMahnlaufErgebnis(null)}
+              style={{ padding: '0.25rem 0.5rem' }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', fontSize: '0.9rem' }}>
+            <div>
+              <strong>Geprüft:</strong> {mahnlaufErgebnis.zusammenfassung?.geprueft || 0}
+            </div>
+            <div style={{ color: '#22c55e' }}>
+              <strong>Neue Mahnungen:</strong> {mahnlaufErgebnis.zusammenfassung?.neueMahnungen || 0}
+            </div>
+            <div style={{ color: '#6b7280' }}>
+              <strong>Übersprungen:</strong> {mahnlaufErgebnis.zusammenfassung?.uebersprungen || 0}
+            </div>
+            <div style={{ color: '#ef4444' }}>
+              <strong>Fehler:</strong> {mahnlaufErgebnis.zusammenfassung?.fehler || 0}
+            </div>
+          </div>
+          {mahnlaufErgebnis.ergebnisse?.neueMahnungen?.length > 0 && (
+            <div style={{ marginTop: '1rem' }}>
+              <strong>Neue Mahnungen:</strong>
+              <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+                {mahnlaufErgebnis.ergebnisse.neueMahnungen.slice(0, 5).map((m, i) => (
+                  <li key={i}>{m.mitglied} - {m.mahnstufe}. Mahnung (€{parseFloat(m.betrag).toFixed(2)})</li>
+                ))}
+                {mahnlaufErgebnis.ergebnisse.neueMahnungen.length > 5 && (
+                  <li>... und {mahnlaufErgebnis.ergebnisse.neueMahnungen.length - 5} weitere</li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Statistiken */}
       <div className="stats-grid">
@@ -316,7 +494,7 @@ const Mahnwesen = () => {
                     <th>Mahndatum</th>
                     <th>Mahngebühr</th>
                     <th>Status</th>
-                    <th>Versandart</th>
+                    <th>Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -338,7 +516,25 @@ const Mahnwesen = () => {
                           <span className="badge badge-warning">Ausstehend</span>
                         )}
                       </td>
-                      <td>{mahnung.versand_art}</td>
+                      <td className="actions">
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => handlePdfDownload(mahnung.mahnung_id, mahnung.mitglied_name)}
+                          title="PDF herunterladen"
+                        >
+                          <Download size={14} />
+                        </button>
+                        {!mahnung.versandt && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => handleMahnungSenden(mahnung.mahnung_id, mahnung.email)}
+                            title={mahnung.email ? `E-Mail an ${mahnung.email}` : 'Keine E-Mail hinterlegt'}
+                            disabled={!mahnung.email}
+                          >
+                            <Send size={14} />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

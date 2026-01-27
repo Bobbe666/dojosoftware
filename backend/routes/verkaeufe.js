@@ -126,8 +126,13 @@ router.post('/', async (req, res) => {
     zahlungsart,
     gegeben_cent,
     bemerkung,
-    verkauft_von_name
+    verkauft_von_name,
+    dojo_id,
+    checkin_id // Optional: Verknüpfung zur Anwesenheit
   } = req.body;
+
+  // Dojo-ID aus verschiedenen Quellen ermitteln
+  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
 
   // Validierung
   if (!artikel || artikel.length === 0) {
@@ -222,16 +227,16 @@ router.post('/', async (req, res) => {
           verkauf_datum, verkauf_uhrzeit, verkauf_timestamp,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, gegeben_cent, rueckgeld_cent,
-          verkauft_von_name, bemerkung
-        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?)
+          verkauft_von_name, bemerkung, dojo_id, checkin_id
+        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
-      
+
       const verkaufResult = await new Promise((resolve, reject) => {
         connection.query(verkaufQuery, [
           bonNummer, 'KASSE_01', mitglied_id || null, kunde_name || null,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, gegeben_cent || null, rueckgeld_cent,
-          verkauft_von_name || 'System', bemerkung || null
+          verkauft_von_name || 'System', bemerkung || null, effectiveDojoId, checkin_id || null
         ], (error, results) => {
           if (error) return reject(error);
           resolve(results);
@@ -337,6 +342,7 @@ router.post('/', async (req, res) => {
         rueckgeld_cent,
         rueckgeld_euro: rueckgeld_cent / 100,
         artikel_count: artikelDetails.length,
+        checkin_id: checkin_id || null,
         rechnung: rechnungInfo,
         message: 'Verkauf erfolgreich erfasst' + (rechnungInfo ? ` (Rechnung ${rechnungInfo.rechnungsnummer} erstellt)` : '')
       });
@@ -370,38 +376,49 @@ router.post('/', async (req, res) => {
 
 // GET /api/verkaeufe - Alle Verkäufe abrufen (mit Filterung)
 router.get('/', (req, res) => {
-  const { 
-    datum_von, datum_bis, mitglied_id, zahlungsart, 
-    limit = 50, offset = 0 
+  const {
+    datum_von, datum_bis, mitglied_id, zahlungsart, dojo_id,
+    limit = 50, offset = 0
   } = req.query;
-  
+
+  // Dojo-ID aus verschiedenen Quellen ermitteln
+  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+
   let query = `
-    SELECT 
+    SELECT
       v.*,
       m.vorname, m.nachname,
+      d.dojoname,
       COUNT(vp.position_id) as anzahl_positionen
     FROM verkaeufe v
     LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
     LEFT JOIN verkauf_positionen vp ON v.verkauf_id = vp.verkauf_id
+    LEFT JOIN dojos d ON v.dojo_id = d.id
     WHERE v.storniert = FALSE
   `;
   const params = [];
-  
+
+  // Filter nach Dojo
+  if (effectiveDojoId) {
+    query += ' AND v.dojo_id = ?';
+    params.push(effectiveDojoId);
+  }
+
   if (datum_von) {
     query += ' AND v.verkauf_datum >= ?';
     params.push(datum_von);
   }
-  
+
   if (datum_bis) {
     query += ' AND v.verkauf_datum <= ?';
     params.push(datum_bis);
   }
-  
+
   if (mitglied_id) {
     query += ' AND v.mitglied_id = ?';
     params.push(mitglied_id);
   }
-  
+
   if (zahlungsart) {
     query += ' AND v.zahlungsart = ?';
     params.push(zahlungsart);
@@ -425,9 +442,10 @@ router.get('/', (req, res) => {
       brutto_gesamt_euro: verkauf.brutto_gesamt_cent / 100,
       netto_gesamt_euro: verkauf.netto_gesamt_cent / 100,
       mwst_gesamt_euro: verkauf.mwst_gesamt_cent / 100,
-      kunde_anzeige: verkauf.vorname ? 
-        `${verkauf.vorname} ${verkauf.nachname}` : 
-        verkauf.kunde_name || 'Laufkunde'
+      kunde_anzeige: verkauf.vorname ?
+        `${verkauf.vorname} ${verkauf.nachname}` :
+        verkauf.kunde_name || 'Laufkunde',
+      dojo_anzeige: verkauf.dojoname || '-'
     }));
     res.json({ success: true, data: formattedResults });
   });
@@ -608,10 +626,13 @@ router.post('/:id/storno', (req, res) => {
 
 // GET /api/verkaeufe/stats/tagesumsatz - Tagesumsatz-Statistiken
 router.get('/stats/tagesumsatz', (req, res) => {
-  const { datum = new Date().toISOString().slice(0, 10) } = req.query;
-  
-  const query = `
-    SELECT 
+  const { datum = new Date().toISOString().slice(0, 10), dojo_id } = req.query;
+
+  // Dojo-ID aus verschiedenen Quellen ermitteln
+  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+
+  let query = `
+    SELECT
       COUNT(*) as anzahl_verkaeufe,
       SUM(brutto_gesamt_cent) as umsatz_cent,
       SUM(CASE WHEN zahlungsart = 'bar' THEN brutto_gesamt_cent ELSE 0 END) as bar_umsatz_cent,
@@ -621,8 +642,14 @@ router.get('/stats/tagesumsatz', (req, res) => {
     FROM verkaeufe
     WHERE verkauf_datum = ? AND storniert = FALSE
   `;
-  
-  db.query(query, [datum], (error, results) => {
+  const params = [datum];
+
+  if (effectiveDojoId) {
+    query += ' AND dojo_id = ?';
+    params.push(effectiveDojoId);
+  }
+
+  db.query(query, params, (error, results) => {
     if (error) {
       console.error('Fehler bei Tagesumsatz-Statistiken:', error);
       return res.status(500).json({ error: 'Fehler bei Tagesumsatz-Statistiken' });
@@ -645,18 +672,40 @@ router.get('/stats/tagesumsatz', (req, res) => {
 
 // GET /api/verkaeufe/stats/kassenstand - Aktueller Kassenstand
 router.get('/stats/kassenstand', (req, res) => {
-  getKassenstand().then(kassenstand => {
-    res.json({ 
-      success: true, 
+  const { dojo_id } = req.query;
+  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+
+  // Kassenstand mit optionalem Dojo-Filter
+  let query = `
+    SELECT kassenstand_nachher_cent
+    FROM kassenbuch
+    WHERE geschaeft_datum = CURDATE()
+  `;
+  const params = [];
+
+  if (effectiveDojoId) {
+    query += ' AND dojo_id = ?';
+    params.push(effectiveDojoId);
+  }
+
+  query += ' ORDER BY eintrag_timestamp DESC LIMIT 1';
+
+  db.query(query, params, (error, results) => {
+    if (error) {
+      console.error('Fehler beim Abrufen des Kassenstands:', error);
+      return res.status(500).json({ error: 'Fehler beim Abrufen des Kassenstands' });
+    }
+
+    const kassenstand = results.length > 0 ? results[0].kassenstand_nachher_cent : 0;
+    res.json({
+      success: true,
       data: {
         kassenstand_cent: kassenstand,
         kassenstand_euro: kassenstand / 100,
-        datum: new Date().toISOString().slice(0, 10)
+        datum: new Date().toISOString().slice(0, 10),
+        dojo_id: effectiveDojoId
       }
     });
-  }).catch(error => {
-    console.error('Fehler beim Abrufen des Kassenstands:', error);
-    res.status(500).json({ error: 'Fehler beim Abrufen des Kassenstands' });
   });
 });
 

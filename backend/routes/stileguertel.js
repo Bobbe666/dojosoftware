@@ -1555,28 +1555,160 @@ router.get('/:id/statistiken', (req, res) => {
           `;
 
           connection.query(geschlechtStatsQuery, [stilId], (geschlechtError, geschlechtStats) => {
-            connection.release(); // Connection immer freigeben
-
             if (geschlechtError) {
               console.error(`Fehler beim Abrufen der Geschlechts-Statistiken für Stil ${stilId}:`, geschlechtError);
-              return res.status(500).json({ 
+              connection.release();
+              return res.status(500).json({
                 error: 'Fehler beim Abrufen der Geschlechts-Statistiken',
-                details: geschlechtError.message 
+                details: geschlechtError.message
               });
             }
 
-            const erweitertStatistiken = {
-              graduierungen: graduierungStats,
-              kategorien: kategorieStats,
-              altersgruppen: altersStats,
-              geschlecht: geschlechtStats,
-              summary: {
-                total_graduierungen: graduierungStats.length,
-                total_mitglieder: graduierungStats.reduce((sum, g) => sum + g.anzahl_mitglieder, 0),
-                kategorien_count: kategorieStats.length
+            // Pruefungs-Punkte Statistiken
+            const pruefungsPunkteQuery = `
+              SELECT
+                g_nachher.name as graduierung_name,
+                g_nachher.farbe_hex as graduierung_farbe,
+                g_nachher.reihenfolge,
+                COUNT(p.pruefung_id) as anzahl_pruefungen,
+                AVG(p.punktzahl) as durchschnitt_punkte,
+                MIN(p.punktzahl) as min_punkte,
+                MAX(p.punktzahl) as max_punkte,
+                AVG(p.max_punktzahl) as durchschnitt_max_punkte,
+                SUM(CASE WHEN p.bestanden = 1 THEN 1 ELSE 0 END) as bestanden_anzahl,
+                SUM(CASE WHEN p.bestanden = 0 AND p.status IN ('bestanden', 'nicht_bestanden') THEN 1 ELSE 0 END) as nicht_bestanden_anzahl
+              FROM pruefungen p
+              JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
+              WHERE g_nachher.stil_id = ?
+                AND p.status IN ('bestanden', 'nicht_bestanden')
+                AND p.punktzahl IS NOT NULL
+              GROUP BY g_nachher.graduierung_id, g_nachher.name, g_nachher.farbe_hex, g_nachher.reihenfolge
+              ORDER BY g_nachher.reihenfolge ASC
+            `;
+
+            connection.query(pruefungsPunkteQuery, [stilId], (punkteError, punkteStats) => {
+              if (punkteError) {
+                console.error(`Fehler beim Abrufen der Punkte-Statistiken für Stil ${stilId}:`, punkteError);
+                connection.release();
+                return res.status(500).json({
+                  error: 'Fehler beim Abrufen der Punkte-Statistiken',
+                  details: punkteError.message
+                });
               }
-            };
-            res.json(erweitertStatistiken);
+
+              // Hochstufungen / Promotions (letzte 12 Monate)
+              const hochstufungenQuery = `
+                SELECT
+                  DATE_FORMAT(p.pruefungsdatum, '%Y-%m') as monat,
+                  DATE_FORMAT(p.pruefungsdatum, '%b %Y') as monat_label,
+                  COUNT(p.pruefung_id) as anzahl_hochstufungen,
+                  g_nachher.name as ziel_graduierung,
+                  g_nachher.farbe_hex as ziel_farbe
+                FROM pruefungen p
+                JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
+                WHERE g_nachher.stil_id = ?
+                  AND p.bestanden = 1
+                  AND p.pruefungsdatum >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                GROUP BY monat, monat_label, g_nachher.graduierung_id, g_nachher.name, g_nachher.farbe_hex
+                ORDER BY monat DESC, g_nachher.reihenfolge ASC
+              `;
+
+              connection.query(hochstufungenQuery, [stilId], (hochstufungenError, hochstufungenStats) => {
+                if (hochstufungenError) {
+                  console.error(`Fehler beim Abrufen der Hochstufungen für Stil ${stilId}:`, hochstufungenError);
+                  connection.release();
+                  return res.status(500).json({
+                    error: 'Fehler beim Abrufen der Hochstufungen',
+                    details: hochstufungenError.message
+                  });
+                }
+
+                // Letzte Hochstufungen (Details)
+                const letzteHochstufungenQuery = `
+                  SELECT
+                    p.pruefung_id,
+                    p.pruefungsdatum,
+                    p.punktzahl,
+                    p.max_punktzahl,
+                    m.vorname,
+                    m.nachname,
+                    g_vorher.name as von_graduierung,
+                    g_vorher.farbe_hex as von_farbe,
+                    g_nachher.name as zu_graduierung,
+                    g_nachher.farbe_hex as zu_farbe
+                  FROM pruefungen p
+                  JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+                  LEFT JOIN graduierungen g_vorher ON p.graduierung_vorher_id = g_vorher.graduierung_id
+                  JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
+                  WHERE g_nachher.stil_id = ?
+                    AND p.bestanden = 1
+                    AND p.pruefungsdatum >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+                  ORDER BY p.pruefungsdatum DESC
+                  LIMIT 20
+                `;
+
+                connection.query(letzteHochstufungenQuery, [stilId], (letzteError, letzteHochstufungen) => {
+                  connection.release(); // Connection immer freigeben
+
+                  if (letzteError) {
+                    console.error(`Fehler beim Abrufen der letzten Hochstufungen für Stil ${stilId}:`, letzteError);
+                    return res.status(500).json({
+                      error: 'Fehler beim Abrufen der letzten Hochstufungen',
+                      details: letzteError.message
+                    });
+                  }
+
+                  // Gesamtpunkte-Statistik berechnen
+                  const gesamtPunkteStats = punkteStats.length > 0 ? {
+                    durchschnitt: punkteStats.reduce((sum, p) => sum + (parseFloat(p.durchschnitt_punkte) || 0), 0) / punkteStats.filter(p => p.durchschnitt_punkte).length || 0,
+                    gesamt_pruefungen: punkteStats.reduce((sum, p) => sum + parseInt(p.anzahl_pruefungen), 0),
+                    gesamt_bestanden: punkteStats.reduce((sum, p) => sum + parseInt(p.bestanden_anzahl), 0),
+                    gesamt_nicht_bestanden: punkteStats.reduce((sum, p) => sum + parseInt(p.nicht_bestanden_anzahl), 0)
+                  } : null;
+
+                  // Hochstufungen pro Monat aggregieren
+                  const hochstufungenProMonat = {};
+                  hochstufungenStats.forEach(h => {
+                    if (!hochstufungenProMonat[h.monat]) {
+                      hochstufungenProMonat[h.monat] = {
+                        monat: h.monat,
+                        monat_label: h.monat_label,
+                        anzahl: 0,
+                        details: []
+                      };
+                    }
+                    hochstufungenProMonat[h.monat].anzahl += parseInt(h.anzahl_hochstufungen);
+                    hochstufungenProMonat[h.monat].details.push({
+                      graduierung: h.ziel_graduierung,
+                      farbe: h.ziel_farbe,
+                      anzahl: parseInt(h.anzahl_hochstufungen)
+                    });
+                  });
+
+                  const erweitertStatistiken = {
+                    graduierungen: graduierungStats,
+                    kategorien: kategorieStats,
+                    altersgruppen: altersStats,
+                    geschlecht: geschlechtStats,
+                    pruefungsPunkte: {
+                      pro_graduierung: punkteStats,
+                      gesamt: gesamtPunkteStats
+                    },
+                    hochstufungen: {
+                      pro_monat: Object.values(hochstufungenProMonat),
+                      letzte: letzteHochstufungen,
+                      gesamt_12_monate: hochstufungenStats.reduce((sum, h) => sum + parseInt(h.anzahl_hochstufungen), 0)
+                    },
+                    summary: {
+                      total_graduierungen: graduierungStats.length,
+                      total_mitglieder: graduierungStats.reduce((sum, g) => sum + g.anzahl_mitglieder, 0),
+                      kategorien_count: kategorieStats.length
+                    }
+                  };
+                  res.json(erweitertStatistiken);
+                });
+              });
+            });
           });
         });
       });

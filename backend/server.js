@@ -733,6 +733,19 @@ try {
     });
 }
 
+// 10.1 BADGES & MANUELLE TRAININGSSTUNDEN - NEU
+try {
+  const badgesRouter = require(path.join(__dirname, "routes", "badges.js"));
+  app.use("/api/badges", authenticateToken, badgesRouter);
+  logger.success('Route gemountet', { path: '/api/badges' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'badges',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 11. DOKUMENTE (PDF Management & Reports) - NEU
 try {
   const dokumenteRouter = require(path.join(__dirname, "routes", "dokumente.js"));

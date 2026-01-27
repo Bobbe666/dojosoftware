@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Palette } from 'lucide-react';
 import FinanzamtSelector from './FinanzamtSelector';
 import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
 import DojoLogos from './DojoLogos';
+import RaumVerwaltung from './RaumVerwaltung';
 import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import config from '../config/config.js';
 import '../styles/MitgliedDetail.css';
 import '../styles/DojoEdit.css';
@@ -18,6 +20,7 @@ const DojoEdit = () => {
   const navigate = useNavigate();
   const { updateDojo } = useDojoContext();
   const { isAdmin } = useAuth();
+  const { theme, setTheme, currentTheme, themes: contextThemes, isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('grunddaten');
@@ -29,12 +32,17 @@ const DojoEdit = () => {
   const [agbSaveLoading, setAgbSaveLoading] = useState(false);
   const [agbSendNotification, setAgbSendNotification] = useState(false);
   const [agbMessage, setAgbMessage] = useState('');
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
   const isNewDojo = id === 'new';
+
+  // Theme-Liste aus Context
+  const themes = Object.values(contextThemes);
 
   // Tab-Konfiguration mit Icons
   const allTabs = [
     { key: 'grunddaten', label: 'Grunddaten', icon: '🏯' },
     { key: 'kontakt', label: 'Kontakt', icon: '📍' },
+    { key: 'raeume', label: 'Räume', icon: '🚪' },
     { key: 'steuer', label: 'Steuern', icon: '⚖️' },
     { key: 'rechtliches', label: 'Rechtliches', icon: '📜' },
     { key: 'bank', label: 'Bank', icon: '🏦' },
@@ -138,6 +146,29 @@ const DojoEdit = () => {
     kuendigung_erstlaufzeit_monate: 3,
     kuendigung_verlaengerung_monate: 1,
 
+    // Vertragsmodell-Auswahl
+    vertragsmodell: 'gesetzlich',
+    beitragsgarantie_bei_nichtverlaengerung: 'aktueller_tarif',
+    verlaengerung_erinnerung_tage: 60,
+    verlaengerung_erinnerung2_tage: 30,
+    verlaengerung_erinnerung3_tage: 14,
+    verlaengerung_email_text: '',
+
+    // Vertragslaufzeiten und Preise
+    vertrag_3_monate_preis: '',
+    vertrag_6_monate_preis: '',
+    vertrag_12_monate_preis: '',
+    vertrag_3_monate_aktiv: true,
+    vertrag_6_monate_aktiv: true,
+    vertrag_12_monate_aktiv: true,
+
+    // Rabatte
+    jahresbeitrag: '',
+    familienrabatt_prozent: '',
+    schuelerrabatt_prozent: '',
+    vereinsmitglied_rabatt_prozent: '',
+    mehrfachtraining_rabatt_prozent: '',
+
     // Preise
     beitrag_erwachsene: '',
     beitrag_kinder: '',
@@ -149,6 +180,9 @@ const DojoEdit = () => {
     kampfkunst_stil: '',
     verband: '',
     verband_mitgliedsnummer: '',
+    lizenz_trainer_a: 0,
+    lizenz_trainer_b: 0,
+    lizenz_trainer_c: 0,
 
     // Kontakte & Betrieb
     notfallkontakt_name: '',
@@ -285,6 +319,29 @@ const DojoEdit = () => {
         kuendigung_erstlaufzeit_monate: dojo.kuendigung_erstlaufzeit_monate || 3,
         kuendigung_verlaengerung_monate: dojo.kuendigung_verlaengerung_monate || 1,
 
+        // Vertragsmodell-Auswahl
+        vertragsmodell: dojo.vertragsmodell || 'gesetzlich',
+        beitragsgarantie_bei_nichtverlaengerung: dojo.beitragsgarantie_bei_nichtverlaengerung || 'aktueller_tarif',
+        verlaengerung_erinnerung_tage: dojo.verlaengerung_erinnerung_tage || 60,
+        verlaengerung_erinnerung2_tage: dojo.verlaengerung_erinnerung2_tage || 30,
+        verlaengerung_erinnerung3_tage: dojo.verlaengerung_erinnerung3_tage || 14,
+        verlaengerung_email_text: dojo.verlaengerung_email_text || '',
+
+        // Vertragslaufzeiten und Preise
+        vertrag_3_monate_preis: dojo.vertrag_3_monate_preis || '',
+        vertrag_6_monate_preis: dojo.vertrag_6_monate_preis || '',
+        vertrag_12_monate_preis: dojo.vertrag_12_monate_preis || '',
+        vertrag_3_monate_aktiv: dojo.vertrag_3_monate_aktiv ?? true,
+        vertrag_6_monate_aktiv: dojo.vertrag_6_monate_aktiv ?? true,
+        vertrag_12_monate_aktiv: dojo.vertrag_12_monate_aktiv ?? true,
+
+        // Rabatte
+        jahresbeitrag: dojo.jahresbeitrag || '',
+        familienrabatt_prozent: dojo.familienrabatt_prozent || '',
+        schuelerrabatt_prozent: dojo.schuelerrabatt_prozent || '',
+        vereinsmitglied_rabatt_prozent: dojo.vereinsmitglied_rabatt_prozent || '',
+        mehrfachtraining_rabatt_prozent: dojo.mehrfachtraining_rabatt_prozent || '',
+
         // Preise
         beitrag_erwachsene: dojo.beitrag_erwachsene || '',
         beitrag_kinder: dojo.beitrag_kinder || '',
@@ -296,6 +353,9 @@ const DojoEdit = () => {
         kampfkunst_stil: dojo.kampfkunst_stil || '',
         verband: dojo.verband || '',
         verband_mitgliedsnummer: dojo.verband_mitgliedsnummer || '',
+        lizenz_trainer_a: dojo.lizenz_trainer_a || 0,
+        lizenz_trainer_b: dojo.lizenz_trainer_b || 0,
+        lizenz_trainer_c: dojo.lizenz_trainer_c || 0,
 
         // Kontakte & Betrieb
         notfallkontakt_name: dojo.notfallkontakt_name || '',
@@ -474,6 +534,15 @@ const DojoEdit = () => {
     } finally {
       setAgbSaveLoading(false);
     }
+  };
+
+  // Theme wechseln
+  const handleThemeChange = (themeId) => {
+    setTheme(themeId);
+    setShowThemeSelector(false);
+    const themeName = contextThemes[themeId]?.name || themeId;
+    setMessage(`✅ Theme zu "${themeName}" geändert!`);
+    setTimeout(() => setMessage(''), 3000);
   };
 
   // Load API token when component mounts or id changes
@@ -806,6 +875,13 @@ const DojoEdit = () => {
             </div>
           )}
 
+          {/* Räume Tab */}
+          {activeTab === 'raeume' && (
+            <div className="form-section" style={{ padding: 0, background: 'transparent' }}>
+              <RaumVerwaltung />
+            </div>
+          )}
+
           {/* Rechtliches Tab */}
           {activeTab === 'rechtliches' && (
             <div className="form-section">
@@ -971,11 +1047,137 @@ const DojoEdit = () => {
           {/* Verträge Tab */}
           {activeTab === 'vertraege' && (
             <div className="form-section">
-              <h3>Vertragseinstellungen</h3>
+              <h3>Vertragsmodell & Einstellungen</h3>
               <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
-                Diese Einstellungen gelten als Standard für neue Mitgliedsverträge
+                Wählen Sie das Vertragsmodell und konfigurieren Sie die Standardeinstellungen für neue Verträge
               </p>
 
+              {/* Vertragsmodell Auswahl */}
+              <h4 style={{ marginTop: '1rem', marginBottom: '1rem', color: '#ffd700' }}>🔄 Vertragsmodell auswählen</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                {/* Option 1: Gesetzliche Verlängerung */}
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: formData.vertragsmodell === 'gesetzlich' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: formData.vertragsmodell === 'gesetzlich' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <input
+                    type="radio"
+                    name="vertragsmodell"
+                    value="gesetzlich"
+                    checked={formData.vertragsmodell === 'gesetzlich'}
+                    onChange={(e) => setFormData({ ...formData, vertragsmodell: e.target.value })}
+                    style={{ marginTop: '4px' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      📜 Gesetzliche Verlängerung (Standard)
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                      Vertrag verlängert sich automatisch. Nach der Verlängerung kann das Mitglied
+                      jederzeit mit <strong>1 Monat Frist</strong> kündigen (gemäß Gesetz für faire Verbraucherverträge 2022).
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 2: Beitragsgarantie */}
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: formData.vertragsmodell === 'beitragsgarantie' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: formData.vertragsmodell === 'beitragsgarantie' ? '2px solid #14b8a6' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <input
+                    type="radio"
+                    name="vertragsmodell"
+                    value="beitragsgarantie"
+                    checked={formData.vertragsmodell === 'beitragsgarantie'}
+                    onChange={(e) => setFormData({ ...formData, vertragsmodell: e.target.value })}
+                    style={{ marginTop: '4px' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      💰 Beitragsgarantie-Modell
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                      Mitglied muss <strong>aktiv verlängern</strong>, um seinen aktuellen Beitrag zu behalten.
+                      Bei Nicht-Verlängerung gilt automatisch der aktuelle Tarifpreis oder der Vertrag endet.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* Beitragsgarantie Einstellungen */}
+              {formData.vertragsmodell === 'beitragsgarantie' && (
+                <div style={{
+                  background: 'rgba(20, 184, 166, 0.1)',
+                  border: '1px solid rgba(20, 184, 166, 0.3)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <h4 style={{ color: '#14b8a6', marginBottom: '1rem' }}>⚙️ Beitragsgarantie-Einstellungen</h4>
+
+                  <div className="form-group" style={{ marginBottom: '1rem' }}>
+                    <label>Bei Nicht-Verlängerung</label>
+                    <select
+                      value={formData.beitragsgarantie_bei_nichtverlaengerung}
+                      onChange={(e) => setFormData({ ...formData, beitragsgarantie_bei_nichtverlaengerung: e.target.value })}
+                    >
+                      <option value="aktueller_tarif">Automatisch aktueller Tarifpreis</option>
+                      <option value="vertrag_endet">Vertrag endet</option>
+                    </select>
+                  </div>
+
+                  <h5 style={{ marginTop: '1rem', marginBottom: '0.75rem', color: '#fff' }}>📧 Erinnerungs-E-Mails</h5>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>1. Erinnerung (Tage vorher)</label>
+                      <input
+                        type="number"
+                        value={formData.verlaengerung_erinnerung_tage}
+                        onChange={(e) => setFormData({ ...formData, verlaengerung_erinnerung_tage: parseInt(e.target.value) })}
+                        min="14"
+                        max="90"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>2. Erinnerung (Tage vorher)</label>
+                      <input
+                        type="number"
+                        value={formData.verlaengerung_erinnerung2_tage}
+                        onChange={(e) => setFormData({ ...formData, verlaengerung_erinnerung2_tage: parseInt(e.target.value) })}
+                        min="0"
+                        max="60"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Letzte Erinnerung (Tage vorher)</label>
+                      <input
+                        type="number"
+                        value={formData.verlaengerung_erinnerung3_tage}
+                        onChange={(e) => setFormData({ ...formData, verlaengerung_erinnerung3_tage: parseInt(e.target.value) })}
+                        min="0"
+                        max="30"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Allgemeine Vertragseinstellungen */}
+              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>📝 Allgemeine Einstellungen</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Kündigungsfrist (Monate)</label>
@@ -999,6 +1201,17 @@ const DojoEdit = () => {
                     placeholder="z.B. 12"
                   />
                 </div>
+                <div className="form-group">
+                  <label>Verlängerung (Monate)</label>
+                  <input
+                    type="number"
+                    value={formData.verlaengerung_monate}
+                    onChange={(e) => setFormData({ ...formData, verlaengerung_monate: parseInt(e.target.value) })}
+                    min="1"
+                    max="24"
+                    placeholder="z.B. 12"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
@@ -1011,44 +1224,9 @@ const DojoEdit = () => {
                   max="90"
                   placeholder="z.B. 14"
                 />
-                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
-                  Während der Probezeit kann der Vertrag jederzeit gekündigt werden
-                </p>
               </div>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Kündigungsbedingungen</h4>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Kündigung Erstlaufzeit (Monate vorher)</label>
-                  <input
-                    type="number"
-                    value={formData.kuendigung_erstlaufzeit_monate}
-                    onChange={(e) => setFormData({ ...formData, kuendigung_erstlaufzeit_monate: parseInt(e.target.value) })}
-                    min="0"
-                    max="12"
-                    placeholder="z.B. 3"
-                  />
-                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
-                    Kündigungsfrist vor Ende der ersten Vertragslaufzeit
-                  </p>
-                </div>
-                <div className="form-group">
-                  <label>Kündigung Verlängerung (Monate vorher)</label>
-                  <input
-                    type="number"
-                    value={formData.kuendigung_verlaengerung_monate}
-                    onChange={(e) => setFormData({ ...formData, kuendigung_verlaengerung_monate: parseInt(e.target.value) })}
-                    min="0"
-                    max="12"
-                    placeholder="z.B. 1"
-                  />
-                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
-                    Kündigungsfrist vor automatischer Verlängerung
-                  </p>
-                </div>
-              </div>
-
-              <div className="form-row">
+              <div className="form-row" style={{ marginTop: '1rem' }}>
                 <div className="form-group">
                   <label className="checkbox-label">
                     <input
@@ -1071,30 +1249,142 @@ const DojoEdit = () => {
                 </div>
               </div>
 
+              {/* Vertragspreise */}
+              <h4 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#ffd700' }}>💶 Vertragslaufzeiten & Preise</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
-                      checked={formData.automatische_verlaengerung}
-                      onChange={(e) => setFormData({ ...formData, automatische_verlaengerung: e.target.checked })}
+                      checked={formData.vertrag_3_monate_aktiv}
+                      onChange={(e) => setFormData({ ...formData, vertrag_3_monate_aktiv: e.target.checked })}
                     />
-                    <span>Automatische Verlängerung nach Erstlaufzeit</span>
+                    <span>3-Monats-Vertrag aktiv</span>
                   </label>
-                </div>
-                {formData.automatische_verlaengerung && (
-                  <div className="form-group">
-                    <label>Verlängerung um (Monate)</label>
+                  {formData.vertrag_3_monate_aktiv && (
                     <input
                       type="number"
-                      value={formData.verlaengerung_monate}
-                      onChange={(e) => setFormData({ ...formData, verlaengerung_monate: parseInt(e.target.value) })}
-                      min="1"
-                      max="24"
-                      placeholder="z.B. 12"
+                      step="0.01"
+                      value={formData.vertrag_3_monate_preis}
+                      onChange={(e) => setFormData({ ...formData, vertrag_3_monate_preis: e.target.value })}
+                      placeholder="Preis in EUR"
+                      style={{ marginTop: '0.5rem' }}
                     />
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.vertrag_6_monate_aktiv}
+                      onChange={(e) => setFormData({ ...formData, vertrag_6_monate_aktiv: e.target.checked })}
+                    />
+                    <span>6-Monats-Vertrag aktiv</span>
+                  </label>
+                  {formData.vertrag_6_monate_aktiv && (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.vertrag_6_monate_preis}
+                      onChange={(e) => setFormData({ ...formData, vertrag_6_monate_preis: e.target.value })}
+                      placeholder="Preis in EUR"
+                      style={{ marginTop: '0.5rem' }}
+                    />
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.vertrag_12_monate_aktiv}
+                      onChange={(e) => setFormData({ ...formData, vertrag_12_monate_aktiv: e.target.checked })}
+                    />
+                    <span>12-Monats-Vertrag aktiv</span>
+                  </label>
+                  {formData.vertrag_12_monate_aktiv && (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.vertrag_12_monate_preis}
+                      onChange={(e) => setFormData({ ...formData, vertrag_12_monate_preis: e.target.value })}
+                      placeholder="Preis in EUR"
+                      style={{ marginTop: '0.5rem' }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Rabatte */}
+              <h4 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#ffd700' }}>🏷️ Rabatte</h4>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Familienrabatt (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.familienrabatt_prozent}
+                    onChange={(e) => setFormData({ ...formData, familienrabatt_prozent: e.target.value })}
+                    placeholder="z.B. 10"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Schülerrabatt (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.schuelerrabatt_prozent}
+                    onChange={(e) => setFormData({ ...formData, schuelerrabatt_prozent: e.target.value })}
+                    placeholder="z.B. 15"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Vereinsmitglied-Rabatt (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.vereinsmitglied_rabatt_prozent}
+                    onChange={(e) => setFormData({ ...formData, vereinsmitglied_rabatt_prozent: e.target.value })}
+                    placeholder="z.B. 5"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Mehrfachtraining-Rabatt (%)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.mehrfachtraining_rabatt_prozent}
+                    onChange={(e) => setFormData({ ...formData, mehrfachtraining_rabatt_prozent: e.target.value })}
+                    placeholder="z.B. 10"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+
+              {/* Info-Box */}
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '12px',
+                padding: '1rem',
+                marginTop: '2rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
+                    <strong>Hinweis zum deutschen Verbraucherrecht:</strong><br />
+                    Seit März 2022 können Verbraucher nach automatischer Vertragsverlängerung jederzeit mit 1 Monat Frist kündigen.
+                    Das Beitragsgarantie-Modell bietet eine faire Alternative: Mitglieder behalten ihren Preis, wenn sie aktiv verlängern.
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
@@ -1131,6 +1421,40 @@ const DojoEdit = () => {
                     value={formData.verband_mitgliedsnummer}
                     onChange={(e) => setFormData({ ...formData, verband_mitgliedsnummer: e.target.value })}
                     placeholder="123456"
+                  />
+                </div>
+              </div>
+
+              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Trainer-Lizenzen</h4>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>A-Lizenz Trainer</label>
+                  <input
+                    type="number"
+                    value={formData.lizenz_trainer_a}
+                    onChange={(e) => setFormData({ ...formData, lizenz_trainer_a: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    placeholder="Anzahl"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>B-Lizenz Trainer</label>
+                  <input
+                    type="number"
+                    value={formData.lizenz_trainer_b}
+                    onChange={(e) => setFormData({ ...formData, lizenz_trainer_b: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    placeholder="Anzahl"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>C-Lizenz Trainer</label>
+                  <input
+                    type="number"
+                    value={formData.lizenz_trainer_c}
+                    onChange={(e) => setFormData({ ...formData, lizenz_trainer_c: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    placeholder="Anzahl"
                   />
                 </div>
               </div>
@@ -1856,9 +2180,122 @@ const DojoEdit = () => {
           {/* Design Tab */}
           {activeTab === 'design' && (
             <div className="form-section">
-              <h3>Design & Kennzeichnung</h3>
+              <h3>Design & Theme</h3>
+
+              {/* Theme-Auswahl */}
+              <h4 style={{ marginTop: '1rem', marginBottom: '1rem', color: '#ffd700' }}>🎨 Theme-Auswahl</h4>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '8px',
+                    background: currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem'
+                  }}>
+                    {isDarkMode ? '🌙' : '☀️'}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#fff' }}>{currentTheme?.name || 'Midnight Blue'}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{currentTheme?.description}</div>
+                    <span style={{
+                      display: 'inline-block',
+                      marginTop: '0.25rem',
+                      padding: '0.15rem 0.5rem',
+                      fontSize: '0.75rem',
+                      borderRadius: '4px',
+                      background: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(251, 191, 36, 0.2)',
+                      color: isDarkMode ? '#a78bfa' : '#fbbf24'
+                    }}>
+                      {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowThemeSelector(!showThemeSelector)}
+                    style={{
+                      marginLeft: 'auto',
+                      padding: '0.5rem 1rem',
+                      background: '#ffd700',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#000',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <Palette size={18} />
+                    Theme wechseln
+                  </button>
+                </div>
+
+                {showThemeSelector && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: '1rem',
+                    marginTop: '1rem'
+                  }}>
+                    {themes.map(t => (
+                      <div
+                        key={t.id}
+                        onClick={() => handleThemeChange(t.id)}
+                        style={{
+                          padding: '1rem',
+                          background: theme === t.id ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255,255,255,0.05)',
+                          border: theme === t.id ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <div style={{
+                          width: '100%',
+                          height: '40px',
+                          borderRadius: '6px',
+                          background: t.preview,
+                          marginBottom: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {t.isDark ? '🌙' : '☀️'}
+                        </div>
+                        <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.9rem' }}>{t.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{t.description}</div>
+                        {theme === t.id && (
+                          <div style={{
+                            marginTop: '0.5rem',
+                            fontSize: '0.75rem',
+                            color: '#ffd700',
+                            fontWeight: '600'
+                          }}>
+                            ✓ Aktiv
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Dojo-Farbe */}
+              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>🎯 Dojo-Farbe</h4>
               <div className="form-group">
-                <label>Dojo-Farbe</label>
                 <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
                   Diese Farbe wird zur visuellen Kennzeichnung des Dojos verwendet (z.B. im Switcher, Dashboards, etc.)
                 </p>

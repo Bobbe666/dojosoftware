@@ -3965,6 +3965,244 @@ const StilVerwaltung = () => {
 
                         </div>
 
+                        {/* Pruefungs-Punkte Statistik */}
+                        {statistiken?.pruefungsPunkte?.pro_graduierung?.length > 0 && (
+                          <div style={{
+                            marginTop: '30px',
+                            padding: '25px',
+                            background: 'rgba(20, 20, 35, 0.7)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 215, 0, 0.2)',
+                            borderRadius: '12px'
+                          }}>
+                            <h4 style={{
+                              color: '#FFD700',
+                              fontSize: '18px',
+                              marginBottom: '8px',
+                              fontWeight: '600'
+                            }}>
+                              📊 Pruefungs-Punkte nach Graduierung
+                            </h4>
+                            <p style={{
+                              color: 'rgba(255,255,255,0.6)',
+                              fontSize: '14px',
+                              marginBottom: '20px'
+                            }}>
+                              Durchschnittliche Punktzahl bei Pruefungen
+                            </p>
+
+                            {/* Gesamt-Durchschnitt */}
+                            {statistiken.pruefungsPunkte.gesamt && (
+                              <div style={{
+                                display: 'flex',
+                                gap: '20px',
+                                marginBottom: '20px',
+                                padding: '15px',
+                                background: 'rgba(255, 215, 0, 0.1)',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 215, 0, 0.3)'
+                              }}>
+                                <div style={{ textAlign: 'center', flex: 1 }}>
+                                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                    Gesamt-Durchschnitt
+                                  </div>
+                                  <div style={{ color: '#FFD700', fontSize: '24px', fontWeight: 'bold' }}>
+                                    {statistiken.pruefungsPunkte.gesamt.durchschnitt?.toFixed(1) || '0'}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'center', flex: 1 }}>
+                                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                    Pruefungen gesamt
+                                  </div>
+                                  <div style={{ color: '#FFD700', fontSize: '24px', fontWeight: 'bold' }}>
+                                    {statistiken.pruefungsPunkte.gesamt.gesamt_pruefungen || 0}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'center', flex: 1 }}>
+                                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                    Erfolgsquote
+                                  </div>
+                                  <div style={{ color: '#32CD32', fontSize: '24px', fontWeight: 'bold' }}>
+                                    {statistiken.pruefungsPunkte.gesamt.gesamt_pruefungen > 0
+                                      ? Math.round((statistiken.pruefungsPunkte.gesamt.gesamt_bestanden / statistiken.pruefungsPunkte.gesamt.gesamt_pruefungen) * 100)
+                                      : 0}%
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Punkte pro Graduierung */}
+                            <div style={{ display: 'grid', gap: '10px' }}>
+                              {statistiken.pruefungsPunkte.pro_graduierung.map((grad, idx) => (
+                                <div key={idx} style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '15px',
+                                  padding: '10px 15px',
+                                  background: 'rgba(255,255,255,0.03)',
+                                  borderRadius: '8px',
+                                  borderLeft: `4px solid ${grad.graduierung_farbe || '#FFD700'}`
+                                }}>
+                                  <div style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '50%',
+                                    backgroundColor: grad.graduierung_farbe || '#FFD700',
+                                    border: '2px solid rgba(255,255,255,0.3)',
+                                    flexShrink: 0
+                                  }} />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: '600' }}>
+                                      {grad.graduierung_name}
+                                    </div>
+                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+                                      {grad.anzahl_pruefungen} Pruefungen
+                                    </div>
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ color: '#FFD700', fontSize: '18px', fontWeight: 'bold' }}>
+                                      {parseFloat(grad.durchschnitt_punkte)?.toFixed(1) || '0'}
+                                    </div>
+                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                                      ({grad.min_punkte?.toFixed(0)} - {grad.max_punkte?.toFixed(0)})
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Hochstufungen / Promotions */}
+                        {statistiken?.hochstufungen && (
+                          <div style={{
+                            marginTop: '30px',
+                            padding: '25px',
+                            background: 'rgba(20, 20, 35, 0.7)',
+                            backdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 215, 0, 0.2)',
+                            borderRadius: '12px'
+                          }}>
+                            <h4 style={{
+                              color: '#FFD700',
+                              fontSize: '18px',
+                              marginBottom: '8px',
+                              fontWeight: '600'
+                            }}>
+                              🎓 Hochstufungen (letzte 12 Monate)
+                            </h4>
+                            <p style={{
+                              color: 'rgba(255,255,255,0.6)',
+                              fontSize: '14px',
+                              marginBottom: '20px'
+                            }}>
+                              Erfolgreiche Pruefungen und Graduierungswechsel
+                            </p>
+
+                            {/* Gesamt-Zahl */}
+                            <div style={{
+                              textAlign: 'center',
+                              marginBottom: '20px',
+                              padding: '20px',
+                              background: 'linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(50, 205, 50, 0.05))',
+                              borderRadius: '12px',
+                              border: '2px solid rgba(50, 205, 50, 0.3)'
+                            }}>
+                              <div style={{ color: '#32CD32', fontSize: '48px', fontWeight: 'bold' }}>
+                                {statistiken.hochstufungen.gesamt_12_monate || 0}
+                              </div>
+                              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
+                                Hochstufungen in 12 Monaten
+                              </div>
+                            </div>
+
+                            {/* Hochstufungen pro Monat */}
+                            {statistiken.hochstufungen.pro_monat?.length > 0 && (
+                              <div style={{ marginBottom: '20px' }}>
+                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginBottom: '10px' }}>
+                                  Verlauf nach Monat:
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                  {statistiken.hochstufungen.pro_monat.slice(0, 6).map((monat, idx) => (
+                                    <div key={idx} style={{
+                                      padding: '8px 12px',
+                                      background: 'rgba(255,255,255,0.05)',
+                                      borderRadius: '6px',
+                                      textAlign: 'center',
+                                      minWidth: '70px'
+                                    }}>
+                                      <div style={{ color: '#FFD700', fontSize: '18px', fontWeight: 'bold' }}>
+                                        {monat.anzahl}
+                                      </div>
+                                      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                                        {monat.monat_label}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Letzte Hochstufungen */}
+                            {statistiken.hochstufungen.letzte?.length > 0 && (
+                              <div>
+                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginBottom: '10px' }}>
+                                  Letzte Hochstufungen:
+                                </div>
+                                <div style={{ display: 'grid', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                                  {statistiken.hochstufungen.letzte.slice(0, 10).map((h, idx) => (
+                                    <div key={idx} style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '12px',
+                                      padding: '10px 12px',
+                                      background: 'rgba(255,255,255,0.03)',
+                                      borderRadius: '8px',
+                                      borderLeft: `4px solid ${h.zu_farbe || '#FFD700'}`
+                                    }}>
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: '600' }}>
+                                          {h.vorname} {h.nachname}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                          <div style={{
+                                            width: '14px',
+                                            height: '14px',
+                                            borderRadius: '50%',
+                                            backgroundColor: h.von_farbe || '#ccc',
+                                            border: '1px solid rgba(255,255,255,0.3)'
+                                          }} />
+                                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>→</span>
+                                          <div style={{
+                                            width: '14px',
+                                            height: '14px',
+                                            borderRadius: '50%',
+                                            backgroundColor: h.zu_farbe || '#FFD700',
+                                            border: '1px solid rgba(255,255,255,0.3)'
+                                          }} />
+                                          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
+                                            {h.zu_graduierung}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div style={{ textAlign: 'right' }}>
+                                        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+                                          {new Date(h.pruefungsdatum).toLocaleDateString('de-DE')}
+                                        </div>
+                                        {h.punktzahl && (
+                                          <div style={{ color: '#FFD700', fontSize: '13px', fontWeight: '600' }}>
+                                            {h.punktzahl}/{h.max_punktzahl || 100} Pkt.
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                       </div>
                     )}
                   </motion.div>

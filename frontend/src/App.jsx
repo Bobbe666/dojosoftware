@@ -118,6 +118,7 @@ const DokumenteVerwaltung = lazy(() => import(/* webpackChunkName: "documents" *
 const NotificationSystem = lazy(() => import(/* webpackChunkName: "notifications" */ "./components/NotificationSystem"));
 const PruefungsVerwaltung = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungsVerwaltung"));
 const PruefungDurchfuehren = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungDurchfuehren"));
+const BadgeAdminOverview = lazy(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
 
 // ============================================================================
 // LAZY LOADED - Events & News
@@ -470,6 +471,9 @@ const App = () => {
               <Route path="termine" element={<Suspense fallback={<LazyLoadFallback />}><PruefungsVerwaltung /></Suspense>} />
               <Route path="pruefung-durchfuehren" element={<Suspense fallback={<LazyLoadFallback />}><PruefungDurchfuehren /></Suspense>} />
 
+              {/* Badge-Verwaltung (Auszeichnungen) */}
+              <Route path="badges" element={<Suspense fallback={<LazyLoadFallback />}><BadgeAdminOverview /></Suspense>} />
+
               {/* Events-Verwaltung */}
               <Route path="events" element={<Suspense fallback={<LazyLoadFallback />}><Events /></Suspense>} />
               <Route path="meine-events" element={<Suspense fallback={<LazyLoadFallback />}><MeineEvents /></Suspense>} />
@@ -527,8 +531,9 @@ const App = () => {
               <Route path="notifications" element={<Suspense fallback={<LazyLoadFallback />}><NotificationSystem /></Suspense>} />
 
               {/* ======== EINSTELLUNGEN ======== */}
-              <Route path="einstellungen" element={<Suspense fallback={<LazyLoadFallback />}><EinstellungenDojo /></Suspense>} />
-              <Route path="einstellungen/meindojo" element={<Suspense fallback={<LazyLoadFallback />}><EinstellungenDojo /></Suspense>} />
+              {/* Redirect alte "Mein Dojo" Route zur neuen Dojo-Verwaltung */}
+              <Route path="einstellungen" element={<Navigate to="/dashboard/dojos" replace />} />
+              <Route path="einstellungen/meindojo" element={<Navigate to="/dashboard/dojos" replace />} />
               <Route path="einstellungen/zahlungen" element={<Suspense fallback={<LazyLoadFallback />}><ZahlungsEinstellungen /></Suspense>} />
 
               {/* Audit-Log (Änderungsprotokoll) */}

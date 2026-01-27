@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const db = require("../db");
 const router = express.Router();
 
@@ -107,63 +108,71 @@ router.get("/:mitglied_id/sepa-mandate", (req, res) => {
 // API: Neues SEPA-Mandat erstellen
 router.post("/:mitglied_id/sepa-mandate", (req, res) => {
     const { mitglied_id } = req.params;
-    const { iban, bic, bank_name, kontoinhaber, mandatsreferenz } = req.body;
-    
+    const {
+        iban,
+        bic,
+        bank_name,
+        kontoinhaber,
+        mandatsreferenz,
+        // Digitale Unterschrift Felder
+        unterschrift_digital,
+        unterschrift_datum,
+        unterschrift_ip
+    } = req.body;
+
     if (!iban || !kontoinhaber) {
         return res.status(400).json({ error: "IBAN und Kontoinhaber sind erforderlich" });
     }
 
-    // Prüfe ob sepa_mandate Tabelle existiert, wenn nicht erstelle sie
-    const createTableQuery = `
-        CREATE TABLE IF NOT EXISTS sepa_mandate (
-            mandat_id INT AUTO_INCREMENT PRIMARY KEY,
-            mitglied_id INT NOT NULL,
-            iban VARCHAR(34) NOT NULL,
-            bic VARCHAR(11),
-            bank_name VARCHAR(255),
-            kontoinhaber VARCHAR(255) NOT NULL,
-            mandatsreferenz VARCHAR(35) UNIQUE,
-            status ENUM('aktiv', 'pausiert', 'gekuendigt') DEFAULT 'aktiv',
-            erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            letzte_abrechnung DATE NULL,
-            FOREIGN KEY (mitglied_id) REFERENCES mitglieder(mitglied_id) ON DELETE CASCADE,
-            INDEX idx_mitglied (mitglied_id),
-            INDEX idx_status (status)
-        )
+    // Generiere Hash der Unterschrift fuer Integritaet
+    let unterschriftHash = null;
+    if (unterschrift_digital) {
+        unterschriftHash = crypto.createHash('sha256')
+            .update(unterschrift_digital)
+            .digest('hex');
+    }
+
+    // Generiere Mandatsreferenz falls nicht angegeben
+    const finalMandatsreferenz = mandatsreferenz || `DOJO-${mitglied_id}-${Date.now()}`;
+
+    // Mandat erstellen mit Unterschrift
+    const insertQuery = `
+        INSERT INTO sepa_mandate (
+            mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz,
+            unterschrift_digital, unterschrift_datum, unterschrift_ip, unterschrift_hash,
+            status, erstellungsdatum
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktiv', NOW())
     `;
 
-    db.query(createTableQuery, (err) => {
+    const params = [
+        mitglied_id,
+        iban,
+        bic || null,
+        bank_name || null,
+        kontoinhaber,
+        finalMandatsreferenz,
+        unterschrift_digital || null,
+        unterschrift_datum ? new Date(unterschrift_datum) : null,
+        unterschrift_ip || null,
+        unterschriftHash
+    ];
+
+    db.query(insertQuery, params, (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Erstellen der SEPA-Mandate Tabelle:', err);
+            console.error('Fehler beim Erstellen des SEPA-Mandats:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
-        // Mandat erstellen
-        const insertQuery = `
-            INSERT INTO sepa_mandate (mitglied_id, iban, bic, bank_name, kontoinhaber, mandatsreferenz)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `;
+        // Log fuer Audit-Trail
+        console.log(`SEPA-Mandat erstellt: ID=${result.insertId}, Mitglied=${mitglied_id}, ` +
+            `Ref=${finalMandatsreferenz}, Signiert=${!!unterschrift_digital}`);
 
-        const params = [
-            mitglied_id,
-            iban,
-            bic,
-            bank_name,
-            kontoinhaber,
-            mandatsreferenz || `MANDAT-${mitglied_id}-${Date.now()}`
-        ];
-
-        db.query(insertQuery, params, (err, result) => {
-            if (err) {
-                console.error('❌ Fehler beim Erstellen des SEPA-Mandats:', err);
-                return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
-            }
-
-            res.json({ 
-                success: true, 
-                mandat_id: result.insertId,
-                message: 'SEPA-Mandat erfolgreich erstellt'
-            });
+        res.json({
+            success: true,
+            mandat_id: result.insertId,
+            mandatsreferenz: finalMandatsreferenz,
+            message: 'SEPA-Mandat erfolgreich erstellt' +
+                (unterschrift_digital ? ' (mit digitaler Unterschrift)' : '')
         });
     });
 });

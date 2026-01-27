@@ -166,8 +166,8 @@ const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_m
 
 // Health Check
 router.get('/health', (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Check-in API healthy',
     timestamp: new Date().toISOString(),
     endpoints: [
@@ -175,6 +175,7 @@ router.get('/health', (req, res) => {
       'GET /courses-today',
       'POST /',
       'POST /multi-course',
+      'POST /guest',
       'GET /today',
       'POST /checkout',
       'GET /qr/:id',
@@ -403,6 +404,106 @@ router.post('/multi-course', async (req, res) => {
   }
 });
 
+// 🆕 NEU: Gast Check-in (Probetraining, Besucher, etc.)
+router.post('/guest', async (req, res) => {
+  try {
+    const {
+      gast_vorname,
+      gast_nachname,
+      gast_email,
+      gast_telefon,
+      gast_grund,
+      stundenplan_id,
+      checkin_method
+    } = req.body;
+
+    // Pflichtfelder validieren
+    if (!gast_vorname || !gast_nachname) {
+      return res.status(400).json({
+        success: false,
+        error: 'Vorname und Nachname sind erforderlich'
+      });
+    }
+
+    // Gültiger Grund?
+    const validGruende = ['probetraining', 'besucher', 'einmalig', 'sonstiges'];
+    const grund = validGruende.includes(gast_grund) ? gast_grund : 'probetraining';
+
+    const checkinTime = new Date();
+
+    // Gast-Check-in erstellen (mitglied_id = NULL)
+    const result = await queryAsync(
+      `INSERT INTO checkins
+       (mitglied_id, stundenplan_id, checkin_time, checkin_method, status,
+        ist_gast, gast_vorname, gast_nachname, gast_email, gast_telefon, gast_grund,
+        created_at, updated_at)
+       VALUES (NULL, ?, ?, ?, 'active', 1, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [
+        stundenplan_id || null,
+        checkinTime,
+        checkin_method || 'manual',
+        gast_vorname.trim(),
+        gast_nachname.trim(),
+        gast_email ? gast_email.trim() : null,
+        gast_telefon ? gast_telefon.trim() : null,
+        grund
+      ]
+    );
+
+    // Kursinfo laden wenn vorhanden
+    let kursName = 'Freies Training';
+    if (stundenplan_id) {
+      try {
+        const kursInfo = await queryAsync(
+          `SELECT k.gruppenname FROM stundenplan s
+           LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+           WHERE s.stundenplan_id = ?`,
+          [stundenplan_id]
+        );
+        if (kursInfo.length > 0 && kursInfo[0].gruppenname) {
+          kursName = kursInfo[0].gruppenname;
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    }
+
+    const grundLabels = {
+      'probetraining': 'Probetraining',
+      'besucher': 'Besucher',
+      'einmalig': 'Einmaliges Training',
+      'sonstiges': 'Sonstiges'
+    };
+
+    console.log(`✅ Gast Check-in: ${gast_vorname} ${gast_nachname} (${grundLabels[grund]})`);
+
+    res.status(201).json({
+      success: true,
+      message: `Gast ${gast_vorname} ${gast_nachname} erfolgreich eingecheckt`,
+      data: {
+        checkin_id: result.insertId,
+        gast: {
+          vorname: gast_vorname,
+          nachname: gast_nachname,
+          email: gast_email || null,
+          telefon: gast_telefon || null,
+          grund: grund,
+          grund_label: grundLabels[grund]
+        },
+        checkin_time: checkinTime.toISOString(),
+        kurs_name: kursName
+      }
+    });
+
+  } catch (error) {
+    console.error('Fehler beim Gast Check-in:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Get today's check-ins - GEÄNDERT: Nur AKTIVE Check-ins anzeigen
 router.get('/today', async (req, res) => {
   try {
@@ -421,10 +522,10 @@ router.get('/today', async (req, res) => {
       SELECT
         c.checkin_id,
         c.mitglied_id,
-        m.vorname,
-        m.nachname,
-        CONCAT(m.vorname, ' ', m.nachname) as full_name,
-        m.gurtfarbe,
+        COALESCE(m.vorname, c.gast_vorname) as vorname,
+        COALESCE(m.nachname, c.gast_nachname) as nachname,
+        COALESCE(CONCAT(m.vorname, ' ', m.nachname), CONCAT(c.gast_vorname, ' ', c.gast_nachname)) as full_name,
+        COALESCE(m.gurtfarbe, 'weiss') as gurtfarbe,
         m.foto_pfad,
         m.foto_pfad as profilbild,
         c.stundenplan_id,
@@ -433,13 +534,19 @@ router.get('/today', async (req, res) => {
         c.checkin_method,
         c.status,
         TIMESTAMPDIFF(MINUTE, c.checkin_time, NOW()) as minutes_since_checkin,
-        k.gruppenname as kurs_name
+        COALESCE(k.gruppenname, 'Freies Training') as kurs_name,
+        c.ist_gast,
+        c.gast_vorname,
+        c.gast_nachname,
+        c.gast_email,
+        c.gast_telefon,
+        c.gast_grund
       FROM checkins c
-      JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+      LEFT JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
       LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
       WHERE DATE(c.checkin_time) = CURDATE()
-        AND m.aktiv = 1
+        AND (m.aktiv = 1 OR c.ist_gast = 1)
         AND c.status = 'active'
       ORDER BY c.checkin_time DESC
     `;
@@ -518,34 +625,38 @@ router.get('/tresen/:datum', async (req, res) => {
         const testResult = await queryAsync(testQuery, [datum]);
         console.log(`📊 Anzahl aktive Check-ins in DB: ${testResult[0]?.count || 0}`);
         
-        // Dann: Hole alle Check-ins mit Mitglied-Daten
+        // Dann: Hole alle Check-ins mit Mitglied-Daten (inkl. Gäste)
         const checkinsQuery = `
-            SELECT 
+            SELECT
                 c.checkin_id,
                 c.mitglied_id,
                 c.stundenplan_id,
                 c.checkin_time,
                 c.checkout_time,
                 c.status,
-                m.vorname,
-                m.nachname,
-                CONCAT(m.vorname, ' ', m.nachname) as full_name,
-                m.gurtfarbe,
+                COALESCE(m.vorname, c.gast_vorname) as vorname,
+                COALESCE(m.nachname, c.gast_nachname) as nachname,
+                COALESCE(CONCAT(m.vorname, ' ', m.nachname), CONCAT(c.gast_vorname, ' ', c.gast_nachname)) as full_name,
+                COALESCE(m.gurtfarbe, 'weiss') as gurtfarbe,
                 COALESCE(k.gruppenname, 'Freies Training') as kurs_name,
-                CASE 
-                    WHEN s.uhrzeit_start IS NOT NULL AND s.uhrzeit_ende IS NOT NULL 
+                CASE
+                    WHEN s.uhrzeit_start IS NOT NULL AND s.uhrzeit_ende IS NOT NULL
                     THEN CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i'))
                     ELSE NULL
                 END as kurs_zeit,
                 s.uhrzeit_start,
-                s.uhrzeit_ende
+                s.uhrzeit_ende,
+                COALESCE(c.ist_gast, 0) as ist_gast,
+                c.gast_email,
+                c.gast_telefon,
+                c.gast_grund
             FROM checkins c
-            INNER JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+            LEFT JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
             LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
             LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
             WHERE DATE(c.checkin_time) = ?
                 AND c.status = 'active'
-                AND m.aktiv = 1
+                AND (m.aktiv = 1 OR c.ist_gast = 1)
             ORDER BY c.checkin_time DESC
         `;
         
@@ -613,7 +724,11 @@ router.get('/tresen/:datum', async (req, res) => {
             selbst_checkin_time: c.checkin_time,
             checkout_time: c.checkout_time,
             checkin_status: c.status,
-            anwesenheits_prioritaet: 1
+            anwesenheits_prioritaet: 1,
+            ist_gast: c.ist_gast || 0,
+            gast_email: c.gast_email,
+            gast_telefon: c.gast_telefon,
+            gast_grund: c.gast_grund
         }));
         
         console.log(`📊 Gruppierte Ergebnisse: ${results.length} Mitglieder`);
@@ -627,7 +742,9 @@ router.get('/tresen/:datum', async (req, res) => {
             selbst_eingecheckt: results.filter(r => r.anwesenheits_typ === 'selbst_eingecheckt').length,
             trainer_hinzugefuegt: results.filter(r => r.anwesenheits_typ === 'trainer_hinzugefuegt').length,
             noch_aktiv: results.filter(r => r.checkin_status === 'active').length,
-            brauchen_checkin: results.filter(r => r.anwesenheits_typ === 'trainer_hinzugefuegt').length
+            brauchen_checkin: results.filter(r => r.anwesenheits_typ === 'trainer_hinzugefuegt').length,
+            gaeste: results.filter(r => r.ist_gast === 1).length,
+            mitglieder: results.filter(r => r.ist_gast !== 1).length
         };
 
         res.json({

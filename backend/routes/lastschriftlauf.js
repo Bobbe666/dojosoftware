@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const SepaXmlGenerator = require("../utils/sepaXmlGenerator");
 const router = express.Router();
 
 /**
@@ -93,6 +94,175 @@ router.get("/", async (req, res) => {
         });
     }
 });
+
+/**
+ * API-Route: Generiere SEPA-XML (PAIN.008.001.02)
+ * GET /api/lastschriftlauf/xml
+ */
+router.get("/xml", async (req, res) => {
+    try {
+        console.log('📦 Starting SEPA XML generation (PAIN.008.001.02)...');
+
+        // Hole Dojo-Daten fuer Glaeubigerr-Informationen
+        const dojoQuery = `
+            SELECT
+                dojoname, inhaber, strasse, hausnummer, plz, ort,
+                sepa_glaeubiger_id, iban, bic, bank_iban, bank_bic
+            FROM dojo
+            WHERE ist_aktiv = TRUE
+            ORDER BY ist_hauptdojo DESC
+            LIMIT 1
+        `;
+
+        db.query(dojoQuery, (dojoErr, dojoResults) => {
+            if (dojoErr) {
+                console.error('❌ Dojo data error:', dojoErr);
+                return res.status(500).json({
+                    error: 'Dojo-Daten konnten nicht geladen werden',
+                    details: dojoErr.message
+                });
+            }
+
+            if (!dojoResults || dojoResults.length === 0) {
+                return res.status(400).json({
+                    error: 'Kein aktives Dojo gefunden',
+                    details: 'Bitte konfigurieren Sie ein Hauptdojo in den Einstellungen'
+                });
+            }
+
+            const dojo = dojoResults[0];
+
+            // Validiere Glaeubigerr-ID
+            if (!dojo.sepa_glaeubiger_id) {
+                return res.status(400).json({
+                    error: 'Keine SEPA Glaeubigerr-ID konfiguriert',
+                    details: 'Bitte hinterlegen Sie die Glaeubigerr-ID in den Dojo-Einstellungen'
+                });
+            }
+
+            // Validiere Glaeubigerr-IBAN
+            const creditorIban = dojo.iban || dojo.bank_iban;
+            if (!creditorIban) {
+                return res.status(400).json({
+                    error: 'Keine Dojo-IBAN konfiguriert',
+                    details: 'Bitte hinterlegen Sie die IBAN des Dojos in den Einstellungen'
+                });
+            }
+
+            // Hole Lastschrift-Daten (gleiche Query wie CSV)
+            const query = `
+                SELECT
+                    v.id as vertrag_id,
+                    v.mitglied_id,
+                    v.monatsbeitrag as monatlicher_beitrag,
+                    COALESCE(SUM(r.betrag), 0) as offene_rechnungen,
+                    m.vorname,
+                    m.nachname,
+                    m.iban,
+                    m.bic,
+                    m.kontoinhaber,
+                    t.name as tarif_name,
+                    t.price_cents,
+                    sm.mandatsreferenz,
+                    sm.glaeubiger_id,
+                    sm.erstellungsdatum as mandat_datum
+                FROM vertraege v
+                JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+                LEFT JOIN tarife t ON v.tarif_id = t.id
+                LEFT JOIN sepa_mandate sm ON v.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+                LEFT JOIN rechnungen r ON v.mitglied_id = r.mitglied_id
+                    AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
+                    AND r.archiviert = 0
+                WHERE v.status = 'aktiv'
+                  AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+                  AND sm.mandatsreferenz IS NOT NULL
+                  AND m.iban IS NOT NULL
+                  AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+                GROUP BY v.id, v.mitglied_id, v.monatsbeitrag,
+                         m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
+                         t.name, t.price_cents, sm.mandatsreferenz, sm.glaeubiger_id, sm.erstellungsdatum
+                ORDER BY m.nachname, m.vorname
+            `;
+
+            db.query(query, (err, results) => {
+                if (err) {
+                    console.error('❌ Database error:', err);
+                    return res.status(500).json({
+                        error: 'Datenbankfehler',
+                        details: err.message
+                    });
+                }
+
+                if (results.length === 0) {
+                    return res.status(404).json({
+                        error: 'Keine aktiven Vertraege mit SEPA-Lastschrift gefunden'
+                    });
+                }
+
+                // Transformiere Daten fuer XML-Generator
+                const transactions = results.map(r => ({
+                    mitglied_id: r.mitglied_id,
+                    vorname: r.vorname,
+                    nachname: r.nachname,
+                    iban: r.iban,
+                    bic: r.bic,
+                    kontoinhaber: r.kontoinhaber || `${r.vorname} ${r.nachname}`,
+                    betrag: calculateAmount(r),
+                    mandatsreferenz: r.mandatsreferenz,
+                    mandat_datum: r.mandat_datum,
+                    verwendungszweck: `Mitgliedsbeitrag ${r.tarif_name || 'Standard'} - ${new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`
+                }));
+
+                // Berechne Einzugsdatum (5 Bankarbeitstage in der Zukunft)
+                const collectionDate = calculateCollectionDate(5);
+
+                // Generiere XML
+                const generator = new SepaXmlGenerator(dojo);
+                const xml = generator.generatePainXml(transactions, collectionDate);
+
+                // Sende als Download
+                const filename = `SEPA_Lastschrift_${new Date().toISOString().split('T')[0]}.xml`;
+                const totalAmount = transactions.reduce((sum, t) => sum + parseFloat(t.betrag), 0).toFixed(2);
+
+                res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+                res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                res.setHeader('X-Transaction-Count', results.length);
+                res.setHeader('X-Total-Amount', totalAmount);
+                res.setHeader('X-Collection-Date', collectionDate.toISOString().substring(0, 10));
+
+                res.send(xml);
+
+                console.log(`✅ SEPA XML generated: ${filename} with ${results.length} transactions, total: ${totalAmount} EUR`);
+            });
+        });
+
+    } catch (error) {
+        console.error('❌ Error generating SEPA XML:', error);
+        res.status(500).json({
+            error: 'Fehler bei der XML-Generierung',
+            details: error.message
+        });
+    }
+});
+
+/**
+ * Berechnet das naechste gueltige Einzugsdatum (Bankarbeitstage)
+ */
+function calculateCollectionDate(businessDays) {
+    const date = new Date();
+    let added = 0;
+
+    while (added < businessDays) {
+        date.setDate(date.getDate() + 1);
+        const dayOfWeek = date.getDay();
+        // 0 = Sonntag, 6 = Samstag
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            added++;
+        }
+    }
+
+    return date;
+}
 
 /**
  * API-Route: Mitglieder mit Lastschrift aber ohne SEPA-Mandat

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from 'axios';
+import config from '../config/config.js';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SkeletonProfile, LoadingSpinner, LoadingButton } from "./ui/Skeleton";
 import MitgliedFortschritt from './MitgliedFortschritt';
@@ -1633,6 +1634,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           setLoading(false);
           return;
         }
+      }
+
+      // Validierung: SEPA-Mandat ist Pflichtfeld für Lastschrift-Verträge
+      if (!vertragToSave.sepa_mandat_id) {
+        alert('Bitte wählen Sie ein SEPA-Mandat aus. Ohne gültiges SEPA-Mandat kann keine Lastschrift eingezogen werden.');
+        setLoading(false);
+        return;
       }
 
       if (editingVertrag) {
@@ -8153,6 +8161,32 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         </div>
                       </div>
                     )}
+                  </div>
+                  {/* Button für Kündigungsbestätigung PDF */}
+                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => {
+                        window.open(`${config.apiBaseUrl}/vertraege/${selectedVertrag.id}/kuendigungsbestaetigung`, '_blank');
+                      }}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: 'rgba(255, 152, 0, 0.2)',
+                        border: '1px solid rgba(255, 152, 0, 0.4)',
+                        borderRadius: '6px',
+                        color: '#ff9800',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 152, 0, 0.3)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 152, 0, 0.2)'}
+                    >
+                      📄 Kündigungsbestätigung herunterladen
+                    </button>
                   </div>
                 </div>
               )}
