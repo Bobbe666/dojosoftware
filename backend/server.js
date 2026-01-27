@@ -111,12 +111,26 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
+  // Debug: Log für Badges-Route
+  if (req.path.includes('badges') || req.originalUrl.includes('badges')) {
+    console.log('🔐 Auth Debug (badges):', {
+      path: req.path,
+      originalUrl: req.originalUrl,
+      hasToken: !!token,
+      tokenStart: token ? token.substring(0, 20) + '...' : 'none'
+    });
+  }
+
   if (!token) {
     return res.status(401).json({ message: "Kein Token vorhanden" });
   }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
+      // Debug: Log für fehlgeschlagene Token-Verifikation
+      if (req.path.includes('badges') || req.originalUrl.includes('badges')) {
+        console.log('❌ Token-Fehler (badges):', { error: err.message, tokenStart: token.substring(0, 20) });
+      }
       return res.status(403).json({ message: "Token ungültig oder abgelaufen" });
     }
     req.user = decoded;
