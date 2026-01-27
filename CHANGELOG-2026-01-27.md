@@ -99,21 +99,16 @@ Globale CSS-Selektoren wie `.card-header`, `.form-group`, `.btn-primary` übersc
 
 ## Deployment-Befehl
 
-Wenn der Server wieder erreichbar ist:
-
 ```bash
-ssh root@213.136.81.36 "cd /var/www/dojosoftware && git pull origin main && cd frontend && npm install && npm run build && pm2 restart dojo-backend"
+ssh dojo.tda-intl.org "cd /var/www/dojosoftware && git pull origin main && cd frontend && npm install && npm run build && pm2 restart dojosoftware-backend"
 ```
 
-Oder manuell auf dem Server:
-```bash
-cd /var/www/dojosoftware
-git pull origin main
-cd frontend
-npm install
-npm run build
-pm2 restart dojo-backend
-```
+### Server-Details:
+- **Host:** dojo.tda-intl.org (185.80.92.166)
+- **SSH-Config:** `~/.ssh/config` mit Key `id_ed25519_dojo_deploy`
+- **PM2-Prozess:** `dojosoftware-backend`
+- **Frontend:** https://dojo.tda-intl.org
+- **Backend API:** https://dojo.tda-intl.org/api/
 
 ---
 
