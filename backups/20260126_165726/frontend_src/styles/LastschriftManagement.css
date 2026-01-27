@@ -1,0 +1,191 @@
+/* ===== LASTSCHRIFT MANAGEMENT CONTAINER ===== */
+.lastschrift-management-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ===== HEADER WITH TABS ===== */
+.management-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.management-header .btn {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  border: none !important;
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.management-header .btn::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent) !important;
+  transition: left 0.5s !important;
+}
+
+.management-header .btn:hover::before {
+  left: 100% !important;
+}
+
+.management-header .btn:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+  color: var(--primary) !important;
+}
+
+.management-header .btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2) !important;
+}
+
+/* ===== TABS ===== */
+.management-header .sub-tabs-sidebar-style {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn {
+  background: transparent !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 12px 16px !important;
+  text-align: left !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+  flex: 1 !important;
+  min-width: 150px !important;
+  box-shadow: none !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent) !important;
+  transition: left 0.5s !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn:hover::before {
+  left: 100% !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  transform: translateY(-1px) !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2) !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn .tab-icon {
+  font-size: 1rem !important;
+  transition: transform 0.3s ease !important;
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn:hover .tab-icon {
+  transform: scale(1.1) !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn .tab-label {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.management-header .sub-tabs-sidebar-style .tab-vertical-btn.active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid rgba(255, 215, 0, 0.4) !important;
+}
+
+/* ===== TAB CONTENT ===== */
+.tab-content {
+  /* Content nimmt vollen Platz, aber ohne eigenes Padding (wird von Child-Komponenten gehandhabt) */
+  min-height: calc(100vh - 90px);
+}
+
+/* Wenn embedded, entferne doppelte Header/Container */
+.tab-content .lastschriftlauf-container,
+.tab-content .zahllaeufe-container {
+  background: transparent;
+  min-height: auto;
+  padding-top: 0;
+}
+
+.tab-content .lastschriftlauf-header,
+.tab-content .zahllaeufe-header {
+  display: none; /* Header wird durch Tabs ersetzt */
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .management-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .management-header .sub-tabs-sidebar-style {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .management-header .sub-tabs-sidebar-style .tab-vertical-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

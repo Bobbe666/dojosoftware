@@ -1,0 +1,275 @@
+/* ===== MAHNSTUFEN EINSTELLUNGEN CSS ===== */
+
+.mahnstufen-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
+  color: #ffffff;
+  padding: 1.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ===== HEADER ===== */
+.mahnstufen-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mahnstufen-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.2rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.mahnstufen-header p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== INFO BOX ===== */
+.info-box {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.info-box svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.info-box h3 {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.85rem;
+  margin: 0 0 0.3rem 0;
+  font-weight: 600;
+}
+
+.info-box p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.info-box strong {
+  color: var(--primary);
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+}
+
+/* ===== MAHNSTUFE CARD ===== */
+.mahnstufe-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.mahnstufe-card:hover {
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Farbige Border je nach Mahnstufe - updated for collapsible structure */
+.mahnstufe-card:nth-of-type(1) {
+  border-left: 3px solid #f59e0b;
+}
+
+.mahnstufe-card:nth-of-type(2) {
+  border-left: 3px solid #ef4444;
+}
+
+.mahnstufe-card:nth-of-type(3) {
+  border-left: 3px solid #dc2626;
+}
+
+.mahnstufe-card:nth-of-type(n+4) {
+  border-left: 3px solid #a855f7;
+}
+
+.mahnstufe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--primary-alpha-10);
+  transition: background 0.2s ease;
+}
+
+.mahnstufe-header.collapsible:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mahnstufe-header h2 {
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mahnstufe-header h2 svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mahnstufe-header .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.mahnstufe-header .checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* ===== FORM GRID ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+/* Bessere Struktur: Erste 2 Zeilen nebeneinander, dann Email-Felder fullwidth */
+.form-grid .form-group:nth-child(1),
+.form-grid .form-group:nth-child(2),
+.form-grid .form-group:nth-child(3),
+.form-grid .form-group:nth-child(4) {
+  grid-column: auto;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.form-group label svg {
+  color: var(--primary);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-alpha-10);
+  background: var(--glass-bg);
+}
+
+.form-group textarea {
+  resize: vertical;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+  min-height: 100px;
+}
+
+.form-group small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+/* ===== SAVE FOOTER ===== */
+.save-footer {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.btn-large {
+  padding: 0.85rem 1.75rem;
+  font-size: 1rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .mahnstufen-container {
+    padding: 1rem;
+  }
+
+  .mahnstufen-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .mahnstufen-header > div {
+    order: 1;
+  }
+
+  .mahnstufen-header .btn {
+    order: 2;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mahnstufe-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+}

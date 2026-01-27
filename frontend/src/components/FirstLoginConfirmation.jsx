@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Shield, Home, CheckCircle, AlertTriangle, Loader } from "lucide-react";
+import { FileText, Shield, Home, CheckCircle, AlertTriangle, Loader, Scroll } from "lucide-react";
 import config from "../config";
 import { fetchWithAuth } from "../utils/fetchWithAuth";
 import "./FirstLoginConfirmation.css";
 
 /**
  * FirstLoginConfirmation Modal
- * Wird nach dem ersten Login eines importierten Mitglieds angezeigt
- * Erfordert Bestätigung von AGB, Datenschutz und Hausordnung
+ * Wird nach dem ersten Login oder bei neuen Dokumenten-Versionen angezeigt
+ * Erfordert Bestaetigung von AGB, Datenschutz, Dojo-Regeln und Hausordnung
  */
 const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
   const [agbText, setAgbText] = useState("");
   const [datenschutzText, setDatenschutzText] = useState("");
+  const [dojoRegelnText, setDojoRegelnText] = useState("");
   const [hausordnungText, setHausordnungText] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  
+
   const [agbAccepted, setAgbAccepted] = useState(false);
   const [datenschutzAccepted, setDatenschutzAccepted] = useState(false);
+  const [dojoRegelnAccepted, setDojoRegelnAccepted] = useState(false);
   const [hausordnungAccepted, setHausordnungAccepted] = useState(false);
-  
+
   const [activeTab, setActiveTab] = useState("agb");
 
-  // Lade Texte beim Öffnen
   useEffect(() => {
     if (isOpen) {
       loadDocuments();
@@ -34,28 +35,15 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
     setLoading(true);
     try {
       const dojoId = user?.dojo_id || 1;
-      
-      // AGB und Datenschutz laden
+
       const response = await fetchWithAuth(`${config.apiBaseUrl}/agb/${dojoId}`);
       if (response.ok) {
         const data = await response.json();
-        setAgbText(data.agb_text || "AGB nicht verfügbar");
-        setDatenschutzText(data.datenschutz_text || "Datenschutzerklärung nicht verfügbar");
+        setAgbText(data.agb_text || getDefaultAGB());
+        setDatenschutzText(data.dsgvo_text || getDefaultDatenschutz());
+        setDojoRegelnText(data.dojo_regeln_text || getDefaultDojoRegeln());
+        setHausordnungText(data.hausordnung_text || getDefaultHausordnung());
       }
-      
-      // Hausordnung laden (falls vorhanden)
-      try {
-        const hausordnungResponse = await fetchWithAuth(`${config.apiBaseUrl}/dojo/${dojoId}/hausordnung`);
-        if (hausordnungResponse.ok) {
-          const hausData = await hausordnungResponse.json();
-          setHausordnungText(hausData.hausordnung_text || getDefaultHausordnung());
-        } else {
-          setHausordnungText(getDefaultHausordnung());
-        }
-      } catch {
-        setHausordnungText(getDefaultHausordnung());
-      }
-      
     } catch (err) {
       console.error("Fehler beim Laden der Dokumente:", err);
       setError("Dokumente konnten nicht geladen werden");
@@ -64,28 +52,69 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
     }
   };
 
+  const getDefaultAGB = () => {
+    return `Allgemeine Geschaeftsbedingungen
+
+1. Geltungsbereich
+Diese AGB gelten fuer alle Mitgliedschaften und Leistungen des Dojos.
+
+2. Mitgliedschaft
+Die Mitgliedschaft beginnt mit der Annahme des Aufnahmeantrags.
+
+3. Beitraege
+Die Beitraege sind monatlich im Voraus zu entrichten.
+
+4. Kuendigung
+Die Kuendigung ist schriftlich moeglich.`;
+  };
+
+  const getDefaultDatenschutz = () => {
+    return `Datenschutzerklaerung
+
+1. Datenerhebung
+Wir erheben nur die fuer die Mitgliedschaft notwendigen Daten.
+
+2. Datenspeicherung
+Ihre Daten werden sicher gespeichert und nicht an Dritte weitergegeben.
+
+3. Ihre Rechte
+Sie haben das Recht auf Auskunft, Berichtigung und Loeschung Ihrer Daten.`;
+  };
+
+  const getDefaultDojoRegeln = () => {
+    return `Dojo-Regeln
+
+1. Respekt
+Behandeln Sie alle Trainingspartner mit Respekt.
+
+2. Puenktlichkeit
+Erscheinen Sie puenktlich zum Training.
+
+3. Hygiene
+Tragen Sie saubere Trainingskleidung.
+
+4. Sicherheit
+Befolgen Sie die Anweisungen der Trainer.`;
+  };
+
   const getDefaultHausordnung = () => {
-    return `Hausordnung des Dojos
+    return `Hausordnung
 
-1. Respektvolles Verhalten
-   - Alle Mitglieder und Gäste werden mit Respekt behandelt
-   - Pünktlichkeit zu den Trainingszeiten wird erwartet
+1. Allgemeines
+Das Dojo ist ein Ort der Ruhe und Konzentration.
 
-2. Hygiene
-   - Saubere Trainingskleidung ist Pflicht
-   - Nach dem Training sind die Umkleiden ordentlich zu verlassen
+2. Umkleiden
+Bitte verlassen Sie die Umkleiden ordentlich.
 
-3. Sicherheit
-   - Anweisungen der Trainer sind zu befolgen
-   - Schmuck ist vor dem Training abzulegen
+3. Fundsachen
+Fundsachen bitte beim Trainer abgeben.
 
-4. Allgemeines
-   - Das Dojo ist pfleglich zu behandeln
-   - Fundsachen sind beim Trainer abzugeben`;
+4. Wertsachen
+Fuer Wertsachen wird keine Haftung uebernommen.`;
   };
 
   const handleSubmit = async () => {
-    if (!agbAccepted || !datenschutzAccepted || !hausordnungAccepted) {
+    if (!agbAccepted || !datenschutzAccepted || !dojoRegelnAccepted || !hausordnungAccepted) {
       setError("Bitte akzeptieren Sie alle Bedingungen");
       return;
     }
@@ -102,6 +131,7 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
           body: JSON.stringify({
             agb_akzeptiert: true,
             datenschutz_akzeptiert: true,
+            dojo_regeln_akzeptiert: true,
             hausordnung_akzeptiert: true,
             dojo_id: user.dojo_id || 1
           })
@@ -116,7 +146,7 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
         setError(data.error || "Fehler beim Speichern");
       }
     } catch (err) {
-      console.error("Fehler beim Bestätigen:", err);
+      console.error("Fehler beim Bestaetigen:", err);
       setError("Verbindungsfehler - bitte versuchen Sie es erneut");
     } finally {
       setSubmitting(false);
@@ -125,7 +155,14 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
 
   if (!isOpen) return null;
 
-  const allAccepted = agbAccepted && datenschutzAccepted && hausordnungAccepted;
+  const allAccepted = agbAccepted && datenschutzAccepted && dojoRegelnAccepted && hausordnungAccepted;
+
+  const tabs = [
+    { id: "agb", label: "AGB", icon: FileText, accepted: agbAccepted },
+    { id: "datenschutz", label: "Datenschutz", icon: Shield, accepted: datenschutzAccepted },
+    { id: "dojoregeln", label: "Dojo-Regeln", icon: Scroll, accepted: dojoRegelnAccepted },
+    { id: "hausordnung", label: "Hausordnung", icon: Home, accepted: hausordnungAccepted },
+  ];
 
   return (
     <div className="first-login-overlay">
@@ -133,8 +170,8 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
         <div className="first-login-header">
           <AlertTriangle size={28} className="warning-icon" />
           <div>
-            <h2>Willkommen bei uns!</h2>
-            <p>Bitte bestätigen Sie die folgenden Dokumente, um fortzufahren</p>
+            <h2>Willkommen!</h2>
+            <p>Bitte bestaetigen Sie die folgenden Dokumente</p>
           </div>
         </div>
 
@@ -147,30 +184,17 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
           <>
             {/* Tabs */}
             <div className="first-login-tabs">
-              <button
-                className={`tab ${activeTab === "agb" ? "active" : ""} ${agbAccepted ? "accepted" : ""}`}
-                onClick={() => setActiveTab("agb")}
-              >
-                <FileText size={18} />
-                <span>AGB</span>
-                {agbAccepted && <CheckCircle size={16} className="check-icon" />}
-              </button>
-              <button
-                className={`tab ${activeTab === "datenschutz" ? "active" : ""} ${datenschutzAccepted ? "accepted" : ""}`}
-                onClick={() => setActiveTab("datenschutz")}
-              >
-                <Shield size={18} />
-                <span>Datenschutz</span>
-                {datenschutzAccepted && <CheckCircle size={16} className="check-icon" />}
-              </button>
-              <button
-                className={`tab ${activeTab === "hausordnung" ? "active" : ""} ${hausordnungAccepted ? "accepted" : ""}`}
-                onClick={() => setActiveTab("hausordnung")}
-              >
-                <Home size={18} />
-                <span>Hausordnung</span>
-                {hausordnungAccepted && <CheckCircle size={16} className="check-icon" />}
-              </button>
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  className={`tab ${activeTab === tab.id ? "active" : ""} ${tab.accepted ? "accepted" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <tab.icon size={18} />
+                  <span>{tab.label}</span>
+                  {tab.accepted && <CheckCircle size={16} className="check-icon" />}
+                </button>
+              ))}
             </div>
 
             {/* Content */}
@@ -198,7 +222,21 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
                       checked={datenschutzAccepted}
                       onChange={(e) => setDatenschutzAccepted(e.target.checked)}
                     />
-                    <span>Ich habe die Datenschutzerklärung gelesen und akzeptiere sie</span>
+                    <span>Ich habe die Datenschutzerklaerung gelesen und akzeptiere sie</span>
+                  </label>
+                </div>
+              )}
+
+              {activeTab === "dojoregeln" && (
+                <div className="document-section">
+                  <div className="document-text" dangerouslySetInnerHTML={{ __html: dojoRegelnText.replace(/\n/g, "<br>") }} />
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={dojoRegelnAccepted}
+                      onChange={(e) => setDojoRegelnAccepted(e.target.checked)}
+                    />
+                    <span>Ich habe die Dojo-Regeln gelesen und akzeptiere sie</span>
                   </label>
                 </div>
               )}
@@ -231,6 +269,7 @@ const FirstLoginConfirmation = ({ isOpen, onClose, user, onConfirmed }) => {
               <div className="acceptance-summary">
                 <span className={agbAccepted ? "done" : ""}>AGB {agbAccepted ? "✓" : "○"}</span>
                 <span className={datenschutzAccepted ? "done" : ""}>Datenschutz {datenschutzAccepted ? "✓" : "○"}</span>
+                <span className={dojoRegelnAccepted ? "done" : ""}>Regeln {dojoRegelnAccepted ? "✓" : "○"}</span>
                 <span className={hausordnungAccepted ? "done" : ""}>Hausordnung {hausordnungAccepted ? "✓" : "○"}</span>
               </div>
               <button

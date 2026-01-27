@@ -6,6 +6,7 @@ import "../styles/DashboardStart.css"; // Relativer Pfad
 import dojoLogo from "../assets/dojo-logo.png";
 import { Users, CalendarClock, BookOpenCheck, UserCog } from "lucide-react";
 import MemberDashboard from "./MemberDashboard";
+import AgbStatusWidget from "./AgbStatusWidget";
 
 const DashboardStart = () => {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ const DashboardStart = () => {
           <Users size={32} /> <span>Mitglieder</span>
         </a>
         <a href="/dashboard/uebersicht" className="cta-tile">
-          <BookOpenCheck size={32} /> <span>Übersicht</span>
+          <BookOpenCheck size={32} /> <span>Uebersicht</span>
         </a>
         <a href="/dashboard/kursplan" className="cta-tile">
           <CalendarClock size={32} /> <span>Kursplan</span>
@@ -42,6 +43,9 @@ const DashboardStart = () => {
           <UserCog size={32} /> <span>Trainer</span>
         </a>
       </div>
+
+      {/* AGB/DSGVO Status Widget */}
+      <AgbStatusWidget />
     </div>
   );
 };

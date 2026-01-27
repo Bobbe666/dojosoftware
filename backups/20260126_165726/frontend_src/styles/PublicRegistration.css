@@ -1,0 +1,919 @@
+/* Public Registration Modal Styles */
+.registration-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.registration-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.registration-modal .modal-header h2 {
+  color: var(--primary-color);
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff4444;
+}
+
+/* Progress Bar */
+.progress-container {
+  margin-bottom: 2rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Registration Steps */
+.registration-step {
+  min-height: 400px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.registration-step h3 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+}
+
+.registration-step p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.registration-modal .form-group input,
+.registration-modal .form-group select,
+.registration-modal .form-group textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #ffffff !important;
+  color: #000000 !important;
+  transition: all 0.3s ease;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.registration-modal .form-group input::placeholder,
+.registration-modal .form-group textarea::placeholder {
+  color: #666666 !important;
+  -webkit-text-fill-color: #666666 !important;
+}
+
+.registration-modal .form-group select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.registration-modal .form-group input:focus,
+.registration-modal .form-group select:focus,
+.registration-modal .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Form Rows */
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-row .form-group.flex-3 {
+  flex: 3;
+}
+
+.form-row .form-group.flex-1 {
+  flex: 1;
+}
+
+/* Tariff Selection */
+.tariff-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.tariff-card {
+  padding: 1.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #ffffff !important;
+  text-align: center;
+  pointer-events: auto !important;
+  color: #000000;
+}
+
+.tariff-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tariff-card.selected {
+  border-color: var(--primary-color);
+  background: #e8f4e8 !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+}
+
+.tariff-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.tariff-card .price {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #16a34a;
+  margin-bottom: 0.5rem;
+}
+
+.tariff-card p {
+  margin: 0;
+  color: #555555;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Health Questions */
+.health-questions {
+  background: var(--background-secondary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.health-questions h4 {
+  color: var(--primary-color);
+  margin: 1.5rem 0 1rem 0;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.health-questions h4:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+.checkbox-group {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  line-height: 1.8;
+  font-weight: 500;
+  font-size: 1rem;
+  color: #e0e0e0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 1rem;
+  margin-top: 0.3rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.checkbox-label a {
+  color: var(--primary);
+  text-decoration: underline;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label a:hover {
+  color: #ffed4e;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.checkbox-label strong {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.checkbox-label em {
+  color: #a0a0b0;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  display: block;
+  line-height: 1.6;
+}
+
+/* Legal Agreements */
+.legal-agreements {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid var(--primary);
+  margin-bottom: 1.5rem;
+}
+
+.legal-agreements .checkbox-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Completion Info */
+.completion-info {
+  background: #1a3d2e;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #22c55e;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.completion-info h4 {
+  color: var(--primary-color);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+}
+
+.completion-info p {
+  margin: 0;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+/* Modal Footer */
+.modal-footer {
+  border-top: 2px solid var(--border-color);
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+}
+
+.btn-secondary {
+  background: var(--background-secondary);
+  color: var(--text-color);
+  border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--border-color);
+  transform: translateY(-1px);
+}
+
+/* Error and Success Messages */
+.error-message,
+.success-message {
+  padding: 1.2rem 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-align: center;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-message {
+  background: #3d1a1a;
+  color: #ff6b6b;
+  border: 2px solid #ff4545;
+  text-shadow: none;
+}
+
+.success-message {
+  background: #1a3d2e;
+  color: #4ade80;
+  border: 2px solid #22c55e;
+  text-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .registration-modal {
+    max-width: 95%;
+    padding: 1rem;
+    margin: 10px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .tariff-selection {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .registration-modal .modal-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .tariff-card {
+    padding: 1rem;
+  }
+
+  .tariff-card .price {
+    font-size: 1.5rem;
+  }
+}
+
+/* Buddy Invitation Styles */
+.buddy-invitation-section {
+  background: var(--background-secondary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.buddy-friends-section {
+  margin-top: 1.5rem;
+}
+
+.buddy-friends-section h4 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.form-help {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.friend-input-row {
+  background: var(--background-color);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.friend-input-row:last-child {
+  margin-bottom: 0;
+}
+
+.remove-button-group {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.btn-remove {
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.btn-remove:hover {
+  background: #cc0000;
+  transform: scale(1.1);
+}
+
+.btn-add-friend {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.buddy-info {
+  background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.1), rgba(var(--secondary-color-rgb), 0.1));
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(var(--primary-color-rgb), 0.2);
+  margin-top: 1.5rem;
+}
+
+.buddy-info h4 {
+  color: var(--primary-color);
+  margin: 0 0 1rem 0;
+}
+
+.buddy-info ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text-color);
+}
+
+.buddy-info li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.skip-buddy-info {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 1rem;
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .tariff-card {
+    background: var(--background-dark);
+    border-color: var(--border-dark);
+  }
+
+  .tariff-card:hover {
+    border-color: var(--primary-color);
+  }
+
+  .health-questions,
+  .legal-agreements,
+  .buddy-invitation-section {
+    background: var(--background-dark);
+  }
+
+  .friend-input-row {
+    background: var(--background-color);
+    border-color: var(--border-dark);
+  }
+}
+
+/* =============================================================================
+   BUDDY INVITE REGISTRATION PAGE STYLES
+   ============================================================================= */
+
+.buddy-invite-page {
+  min-height: 100vh;
+  background: var(--background-color);
+  color: var(--text-color);
+}
+
+.buddy-invite-header {
+  background: linear-gradient(135deg,
+      rgba(var(--primary-color-rgb), 0.1),
+      rgba(var(--secondary-color-rgb), 0.1));
+  padding: 4rem 0 2rem;
+  text-align: center;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.buddy-invite-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.buddy-invite-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.welcome-section {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: rgba(var(--primary-color-rgb), 0.05);
+  border-radius: 12px;
+  border: 2px solid rgba(var(--primary-color-rgb), 0.1);
+}
+
+.welcome-section h2 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.buddy-benefits {
+  margin-bottom: 3rem;
+}
+
+.buddy-benefits h3 {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.benefit-item {
+  background: var(--background-secondary);
+  padding: 1.5rem;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.benefit-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.benefit-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  background: transparent;
+  color: var(--farbe-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.benefit-item h4 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.benefit-item p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.invitation-info {
+  background: var(--background-secondary);
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 3rem;
+  border: 2px solid var(--border-color);
+}
+
+.invitation-info h3 {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.info-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item strong {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.info-item span {
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.registration-actions {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.registration-actions h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+.registration-actions p {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.registration-note {
+  background: rgba(var(--secondary-color-rgb), 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid rgba(var(--secondary-color-rgb), 0.2);
+  margin-top: 2rem;
+}
+
+.registration-note p {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.security-notice {
+  background: var(--background-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+}
+
+.security-notice h4 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.security-notice ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--text-muted);
+}
+
+.security-notice li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-content {
+  max-width: 500px;
+  background: var(--background-secondary);
+  padding: 2rem;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+}
+
+.error-content h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.error-content p {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Responsive für Buddy-Invite */
+@media (max-width: 768px) {
+  .buddy-invite-header h1 {
+    font-size: 2rem;
+  }
+
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .action-buttons .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .info-item span {
+    text-align: left;
+  }
+}
+
+/* ============================================
+   GLOBALE INPUT-STYLING FÜR REGISTRIERUNG
+   Überschreibt die globalen MitgliedDetail.css Styles
+   die alle Inputs weiß machen
+   ============================================ */
+.modal-overlay .modal-content.registration-modal input[type="text"],
+.modal-overlay .modal-content.registration-modal input[type="email"],
+.modal-overlay .modal-content.registration-modal input[type="tel"],
+.modal-overlay .modal-content.registration-modal input[type="number"],
+.modal-overlay .modal-content.registration-modal input[type="date"],
+.modal-overlay .modal-content.registration-modal input[type="password"],
+.modal-overlay .modal-content.registration-modal textarea,
+.modal-overlay .modal-content.registration-modal select {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 8px !important;
+  padding: 0.8rem !important;
+}
+
+.modal-overlay .modal-content.registration-modal input[type="text"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="email"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="tel"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="number"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="date"]:focus,
+.modal-overlay .modal-content.registration-modal input[type="password"]:focus,
+.modal-overlay .modal-content.registration-modal textarea:focus,
+.modal-overlay .modal-content.registration-modal select:focus {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border-color: var(--primary-color) !important;
+  outline: none !important;
+}
+
+.modal-overlay .modal-content.registration-modal input::placeholder,
+.modal-overlay .modal-content.registration-modal textarea::placeholder {
+  color: #888888 !important;
+  -webkit-text-fill-color: #888888 !important;
+}
+
+.modal-overlay .modal-content.registration-modal select option {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill,
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill:hover,
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill:focus,
+.modal-overlay .modal-content.registration-modal input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+  -webkit-text-fill-color: #000000 !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}

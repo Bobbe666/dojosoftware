@@ -1,0 +1,30 @@
+/* ===========================================
+   DESIGN SYSTEM - MASTER INDEX
+   Importiert alle Tokens, Themes & Components
+   =========================================== */
+
+/* ========== DESIGN TOKENS ========== */
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/shadows.css';
+@import './tokens/animations.css';
+
+/* ========== BASE THEME ========== */
+@import './themes/theme-base.css';
+
+/* ========== THEME VARIANTS ========== */
+@import './themes/theme-midnight.css';
+@import './themes/theme-tda-vib.css';
+
+/* ========== COMPONENT STYLES ========== */
+/* Diese werden nach Erstellung hinzugefügt */
+/* @import './components/Button.css'; */
+/* @import './components/Modal.css'; */
+/* @import './components/Card.css'; */
+/* @import './components/Input.css'; */
+/* @import './components/Tabs.css'; */
+/* @import './components/Badge.css'; */
+/* @import './components/Alert.css'; */
+/* @import './components/Spinner.css'; */
+/* @import './components/Table.css'; */

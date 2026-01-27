@@ -1,0 +1,86 @@
+.kalender-container {
+  width: 100%;
+  padding: 2rem;
+  color: var(--farbe-text);
+}
+
+.kalender-container h3 {
+  color: var(--farbe-rot);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Kalender-Grid */
+.kalender-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+}
+
+.kalender-tag {
+  background-color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0.8rem;
+  text-align: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 60px;
+}
+
+.kalender-tag:hover {
+  background-color: #f9f9f9;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.kalender-tag .datum {
+  font-weight: bold;
+  color: var(--farbe-rot);
+  margin-bottom: 0.4rem;
+}
+
+/* Statusfarben */
+.kalender-tag.anwesend {
+  background-color: #e6ffe6;
+  border-left: 5px solid #4caf50;
+}
+.kalender-tag.verspaetet {
+  background-color: #fff5e6;
+  border-left: 5px solid #ff9800;
+}
+.kalender-tag.entschuldigt {
+  background-color: #e6f2ff;
+  border-left: 5px solid #2196f3;
+}
+.kalender-tag.unentschuldigt {
+  background-color: #ffe6e6;
+  border-left: 5px solid #f44336;
+}
+.kalender-tag.keine-angabe {
+  background-color: #f5f5f5;
+  border-left: 5px solid #9e9e9e;
+}
+
+/* Wochenüberschrift */
+.kalender-wochentage {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  text-align: center;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .kalender-grid,
+  .kalender-wochentage {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .kalender-tag {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+  }
+}

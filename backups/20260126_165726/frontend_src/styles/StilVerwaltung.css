@@ -1,0 +1,3310 @@
+/* 
+================================================================================
+STIL-VERWALTUNG CSS - VOLLSTÄNDIG ERWEITERT MIT BELT-PREVIEW UND @DND-KIT
+================================================================================
+Diese CSS-Datei stylet die komplette Stil-Verwaltung Komponente für Kampfkunst-Stile.
+Verwendet modernes Glassmorphism-Design mit dunklem Hintergrund und Gold-Akzenten.
+NEUE FEATURES: BeltPreview-Komponente, Belt-Selection, erweiterte Modals, @dnd-kit Support
+================================================================================
+*/
+
+/* 
+================================================================================
+ERWEITERTE ANIMATIONEN (@keyframes)
+================================================================================
+CSS-Animationen für verschiedene Effekte - Erweitert um neue Animationen
+*/
+
+/* Einfaches Einblenden */
+@keyframes fadeIn {
+  from { opacity: 0; }           /* Start: unsichtbar */
+  to { opacity: 1; }             /* Ende: vollsichtbar */
+}
+
+/* Einblenden von unten nach oben */
+@keyframes fadeInUp {
+  from { 
+    opacity: 0;                  /* Start: unsichtbar */
+    transform: translateY(30px); /* Start: 30px nach unten verschoben (erweitert) */
+  }
+  to { 
+    opacity: 1;                  /* Ende: vollsichtbar */
+    transform: translateY(0);    /* Ende: normale Position */
+  }
+}
+
+/* NEU: Einblenden von rechts nach links für Modals */
+@keyframes slideInFromRight {
+  from { 
+    opacity: 0;                  /* Start: unsichtbar */
+    transform: translateX(100px); /* Start: 100px nach rechts verschoben */
+  }
+  to { 
+    opacity: 1;                  /* Ende: vollsichtbar */
+    transform: translateX(0);    /* Ende: normale Position */
+  }
+}
+
+/* NEU: Glanz-Effekt für Header und Buttons */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%); /* Start: Links außerhalb */
+  }
+  100% {
+    transform: translateX(100%);  /* Ende: Rechts außerhalb */
+  }
+}
+
+/* NEU: Pulsieren für Loading-States */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;                  /* Start/Ende: vollsichtbar */
+  }
+  50% {
+    opacity: 0.5;                /* Mitte: halbtransparent */
+  }
+}
+
+/* Spinner-Drehung (erweitert) */
+@keyframes spin {
+  0% { transform: rotate(0deg); }    /* Start: 0 Grad */
+  100% { transform: rotate(360deg); } /* Ende: 360 Grad (für Spinner und Rotating Borders) */
+}
+
+/* 
+================================================================================
+HAUPT-CONTAINER (.stil-verwaltung)
+================================================================================
+Der äußerste Container, der die gesamte Stil-Verwaltung umschließt
+*/
+.stil-verwaltung {
+  min-height: 100vh;              /* Mindesthöhe = volle Browserhöhe */
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  /* ^ Diagonaler Gradient von dunkel-blau zu dunkel-lila für Kampfkunst-Atmosphäre */
+  color: #ffffff;                 /* Alle Texte standardmäßig weiß */
+  padding: 2rem;                  /* 32px Innenabstand rundherum */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* ^ Moderne, gut lesbare Schriftart mit Fallbacks für verschiedene Systeme */
+  animation: fadeIn 0.6s ease-out; /* NEU: Sanfte Einblend-Animation beim Laden */
+}
+
+/* NEU: Container für maximale Breite und Zentrierung */
+.stil-verwaltung-container {
+  max-width: 1400px;             /* Maximale Breite für große Bildschirme */
+  margin: 0 auto;                /* Horizontal zentrieren */
+}
+
+/* 
+================================================================================
+HEADER-BEREICH (.stil-header)
+================================================================================
+Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
+*/
+.stil-header {
+  display: flex;                  /* Flexbox für nebeneinander Anordnung */
+  justify-content: space-between; /* Links: Titel, Rechts: Buttons */
+  align-items: flex-start;        /* Oben ausrichten (nicht mittig) */
+  margin-bottom: 3rem;            /* 48px Abstand nach unten */
+  padding: 2rem;                  /* 32px Innenabstand */
+  background: var(--glass-bg); /* Verstärkter Glaseffekt */
+  backdrop-filter: blur(20px);    /* Weichzeichnung des Hintergrunds = Glassmorphism */
+  border-radius: 20px;            /* Abgerundete Ecken */
+  border: 1px solid rgba(255, 215, 0, 0.2); /* NEU: Gold-Rand statt weiß */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);  /* Schatten für Tiefeneffekt */
+  position: relative;             /* NEU: Für Shimmer-Effekt */
+  overflow: hidden;               /* NEU: Für Shimmer-Effekt */
+  animation: fadeInUp 0.8s ease-out; /* NEU: Einblend-Animation */
+}
+
+/* NEU: Shimmer-Effekt für Header - ENTFERNT */
+/* Auskommentierter CSS-Block entfernt */
+
+/* Linke Seite des Headers (Titel + Beschreibung) */
+.header-left h1 {
+  font-size: 2.5rem;             /* 40px große Überschrift */
+  font-weight: 700;              /* Sehr fett/bold */
+  background: var(--gradient-gold);
+  /* ^ Gold-Orange Gradient für Kampfkunst-Thema */
+  -webkit-background-clip: text; /* Gradient nur auf Text anwenden (WebKit) */
+  -webkit-text-fill-color: transparent; /* Text transparent machen für Gradient-Effekt */
+  background-clip: text;         /* Gradient nur auf Text (Standard) */
+  margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); /* NEU: Gold-Glüh-Effekt */
+  position: relative;            /* NEU: Für z-index */
+  z-index: 2;                    /* NEU: Über Shimmer-Effekt */
+}
+
+.header-left p {
+  font-size: 1.1rem;             /* Etwas größer als normaler Text */
+  color: rgba(255, 255, 255, 0.7); /* Halbtransparentes Weiß = gedämpft */
+  margin: 0;                     /* Kein Außenabstand */
+  position: relative;            /* NEU: Für z-index */
+  z-index: 2;                    /* NEU: Über Shimmer-Effekt */
+}
+
+/* Rechte Seite des Headers (Action Buttons) */
+.header-actions {
+  display: flex;                 /* Buttons nebeneinander */
+  gap: 1rem;                     /* 16px Abstand zwischen Buttons */
+  align-items: center;           /* Vertikal mittig ausrichten */
+  position: relative;            /* NEU: Für z-index */
+  z-index: 2;                    /* NEU: Über Shimmer-Effekt */
+}
+
+/* NEU: Header-Buttons Container für Graduierung-Manager */
+.header-buttons {
+  display: flex;                 /* Flexbox Layout */
+  gap: 1rem;                     /* 16px Abstand zwischen Buttons */
+  align-items: center;           /* Vertikal zentrieren */
+  flex-wrap: wrap;               /* Umbruch bei schmalen Bildschirmen */
+}
+
+/* Add-Stil Button - Verwendet zentrales Tab-Design */
+.add-stil-btn {
+  background: transparent;       /* Transparent wie Tab-Design */
+  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand wie Tab-Design */
+  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  padding: 12px 24px;            /* Innenabstand */
+  border-radius: 8px;            /* Abgerundete Ecken */
+  font-weight: 600;              /* Semi-Bold */
+  font-size: 1rem;               /* Normale Schriftgröße */
+  cursor: pointer;               /* Zeiger bei Hover */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  position: relative;            /* Für Shimmer-Effekt */
+  overflow: hidden;              /* Für Shimmer-Effekt */
+}
+
+/* Shimmer-Effekt für add-stil-btn */
+.add-stil-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.add-stil-btn:hover::before {
+  left: 100%;
+}
+
+.add-stil-btn:hover {
+  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund bei Hover */
+  border-color: rgba(255, 215, 0, 0.4); /* Stärkerer Rand bei Hover */
+  color: rgba(255, 255, 255, 0.9); /* Hellerer Text bei Hover */
+  transform: translateY(-1px);   /* Leicht nach oben */
+}
+
+.add-stil-btn:active {
+  background: var(--gradient-gold); /* Gradient nur bei Active */
+  color: var(--bg-secondary);                /* Dunkler Text */
+  border-color: var(--primary);         /* Gold-Rand */
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+}
+
+/* NEU: Back-Button */
+.back-btn {
+  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund */
+  color: rgba(255, 255, 255, 0.8); /* Gedämpfter Text */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+  padding: 10px 20px;            /* Innenabstand */
+  border-radius: 10px;           /* Abgerundete Ecken */
+  cursor: pointer;               /* Zeiger bei Hover */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  text-decoration: none;         /* Keine Unterstreichung */
+  display: inline-flex;          /* Flexbox für Icon + Text */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 0.5rem;                   /* Abstand zwischen Icon und Text */
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2); /* Hellerer Hintergrund */
+  transform: translateX(-5px);   /* Nach links bewegen */
+  color: #fff;                   /* Weißer Text */
+}
+
+/* 
+================================================================================
+BELT-PREVIEW KOMPONENTE - NEU
+================================================================================
+Visuelle Darstellung von Kampfkunst-Gürteln mit Primär- und Sekundärfarben
+*/
+
+/* Basis Belt-Preview (normale Größe) */
+.belt-preview {
+  width: 40px;                   /* 40px Breite */
+  height: 12px;                  /* 12px Höhe (Gürtel-Proportionen) */
+  border-radius: 2px;            /* Leicht abgerundete Ecken */
+  position: relative;            /* Für Sekundär-Streifen */
+  flex-shrink: 0;                /* Größe nicht ändern */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+}
+
+/* Kleine Belt-Preview für Grid-Auswahl */
+.belt-preview-small {
+  width: 30px;                   /* 30px Breite */
+  height: 9px;                   /* 9px Höhe */
+  border-radius: 2px;            /* Leicht abgerundete Ecken */
+  position: relative;            /* Für Sekundär-Streifen */
+  flex-shrink: 0;                /* Größe nicht ändern */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+  margin-bottom: 4px;            /* Abstand zum Text */
+}
+
+/* Große Belt-Preview für Vorschau */
+.belt-preview-large {
+  width: 80px;                   /* 80px Breite */
+  height: 24px;                  /* 24px Höhe */
+  border-radius: 4px;            /* Stärker abgerundete Ecken */
+  position: relative;            /* Für Sekundär-Streifen */
+  flex-shrink: 0;                /* Größe nicht ändern */
+  border: 2px solid rgba(255, 255, 255, 0.3); /* Stärkerer Rand */
+}
+
+/* Basis-Gürtel (Primärfarbe) */
+.belt-base {
+  width: 100%;                   /* Volle Breite des Containers */
+  height: 100%;                  /* Volle Höhe des Containers */
+  border-radius: inherit;        /* Ecken-Radius vom Parent übernehmen */
+  position: relative;            /* Für Sekundär-Streifen */
+  overflow: hidden;              /* Verstecke überstehende Streifen */
+}
+
+/* Sekundär-Streifen (falls vorhanden) */
+.belt-stripe {
+  position: absolute;            /* Absolute Positionierung über Basis */
+  top: 50%;                      /* Vertikal zentriert */
+  left: 0;                       /* Links bei 0 */
+  right: 0;                      /* Rechts bei 0 */
+  height: 30%;                   /* 30% der Gürtel-Höhe */
+  transform: translateY(-50%);   /* Exakte vertikale Zentrierung */
+  border-radius: inherit;        /* Ecken-Radius übernehmen */
+}
+
+/* 
+================================================================================
+BELT-SELECTION KOMPONENTE - NEU
+================================================================================
+Gürtel-Auswahl Grid und Kategorien für Standard-Gürtel
+*/
+
+/* Belt-Kategorien Container */
+.belt-categories {
+  margin: 1rem 0;                /* 16px Abstand oben/unten */
+  max-height: 50vh;              /* Maximale Höhe 50% Viewport */
+  overflow-y: auto;              /* Scrollbar bei zu vielen Gürteln */
+  padding-right: 0.5rem;         /* Abstand für Scrollbar */
+}
+
+/* Scrollbar Styling für Belt Categories */
+.belt-categories::-webkit-scrollbar {
+  width: 6px;
+}
+
+.belt-categories::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.belt-categories::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+}
+
+.belt-categories::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
+}
+
+/* Einzelne Belt-Kategorie (Grundstufe, Mittelstufe, etc.) */
+.belt-category {
+  margin-bottom: 1.5rem;         /* 24px Abstand zwischen Kategorien */
+  padding: 1rem;                 /* 16px Innenabstand */
+  background: rgba(255, 255, 255, 0.05); /* Leicht sichtbarer Hintergrund */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  border: 1px solid rgba(255, 215, 0, 0.1); /* Goldener Rand */
+  overflow: visible;             /* Sicherstellen, dass Text nicht abgeschnitten wird */
+}
+
+/* Kategorie-Titel */
+.category-title {
+  font-size: 1.1rem;             /* 18px Schrift */
+  font-weight: 600;              /* Semi-Bold */
+  margin: 0 0 1rem 0;            /* Nur unten 16px Abstand */
+  color: #ffd700;                /* Gold-Farbe */
+  display: flex;                 /* Flexbox für Emoji + Text */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 0.5rem;                   /* Abstand zwischen Emoji und Text */
+}
+
+/* Belt-Grid für Gürtel-Auswahl */
+.belt-grid {
+  display: grid;                 /* CSS Grid Layout */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  /* ^ Auto-fill für bessere Anpassung, 140px für mehr Platz */
+  gap: 1rem;                     /* 16px Abstand zwischen Gürteln */
+  margin-top: 1rem;              /* Abstand zum Titel */
+}
+
+/* Einzelne Belt-Option zum Anklicken */
+.belt-option {
+  padding: 1rem 0.75rem;         /* Mehr Padding für bessere Lesbarkeit */
+  background: rgba(255, 255, 255, 0.05); /* Dezenter Hintergrund */
+  border: 2px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+  border-radius: 12px;           /* Mehr abgerundete Ecken */
+  cursor: pointer;               /* Zeiger bei Hover */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  text-align: center;            /* Zentrierter Inhalt */
+  position: relative;            /* Für Hover-Effekte */
+  overflow: visible;             /* Text sichtbar lassen */
+  display: flex;                 /* Flexbox für bessere Ausrichtung */
+  flex-direction: column;        /* Vertikale Anordnung */
+  align-items: center;           /* Zentriert */
+  min-height: 110px;             /* Mehr Mindesthöhe für Namen */
+  justify-content: center;       /* Vertikal zentrieren */
+}
+
+/* Belt-Option bei Hover */
+.belt-option:hover {
+  background: rgba(255, 255, 255, 0.1); /* Hellerer Hintergrund */
+  border-color: rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  transform: translateY(-2px);   /* 2px nach oben */
+}
+
+/* Ausgewählte Belt-Option */
+.belt-option.selected {
+  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
+  border-color: var(--primary);         /* Gold-Rand */
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+}
+
+/* Gürtel-Name unter der Vorschau */
+.belt-name {
+  font-size: 0.8rem;             /* 13px kleine Schrift */
+  color: rgba(255, 255, 255, 0.8); /* Leicht gedämpftes Weiß */
+  margin-top: 0.5rem;            /* 8px Abstand nach oben */
+  font-weight: 500;              /* Etwas fetter */
+  line-height: 1.3;              /* Etwas mehr Zeilenhöhe für Umbruch */
+  word-wrap: break-word;         /* Umbrechen bei langen Wörtern */
+  overflow-wrap: break-word;     /* Moderne Alternative */
+  hyphens: auto;                 /* Automatische Silbentrennung */
+  max-width: 100%;               /* Maximale Breite begrenzen */
+  text-align: center;            /* Zentriert */
+  display: block;                /* Als Block-Element */
+}
+
+/* Ausgewählter Gürtel-Name */
+.belt-option.selected .belt-name {
+  color: #ffd700;                /* Gold-Farbe für ausgewählten */
+  font-weight: 600;              /* Semi-Bold */
+}
+
+/* 
+================================================================================
+BELT-PREVIEW SECTION - NEU
+================================================================================
+Vorschau-Bereich für gewählten Gürtel in Modals
+*/
+
+/* Belt-Preview Section Container */
+.belt-preview-section {
+  margin: 1.5rem 0;              /* 24px Abstand oben/unten */
+  padding: 1.5rem;               /* 24px Innenabstand */
+  background: rgba(255, 255, 255, 0.05); /* Dezenter Hintergrund */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+}
+
+/* Vorschau-Überschrift */
+.belt-preview-section h4 {
+  font-size: 1.1rem;             /* 18px Überschrift */
+  color: #ffd700;                /* Gold-Farbe */
+  margin: 0 0 1rem 0;            /* Nur unten 16px Abstand */
+}
+
+/* Ausgewählter Belt Container */
+.selected-belt-preview {
+  display: flex;                 /* Flexbox Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 1rem;                     /* 16px Abstand zwischen Gürtel und Info */
+}
+
+/* Belt-Info neben der Vorschau */
+.belt-info {
+  flex: 1;                       /* Nimmt verfügbaren Platz ein */
+}
+
+.belt-info strong {
+  display: block;                /* Als Block-Element */
+  font-size: 1.1rem;             /* Etwas größere Schrift */
+  color: #fff;                   /* Weißer Text */
+  margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
+}
+
+/* Farb-Codes unter Belt-Info */
+.color-codes {
+  display: flex;                 /* Flexbox Layout */
+  flex-direction: column;        /* Vertikal stapeln */
+  gap: 0.25rem;                  /* 4px Abstand zwischen Codes */
+  font-size: 0.9rem;             /* Kleinere Schrift */
+  color: rgba(255, 255, 255, 0.7); /* Gedämpftes Weiß */
+}
+
+/* 
+================================================================================
+COLOR-SELECTION - NEU
+================================================================================
+Farb-Auswahl für eigene Gürtel-Erstellung
+*/
+
+/* Color-Selection Container */
+.color-selection {
+  margin: 1rem 0;                /* 16px Abstand oben/unten */
+}
+
+/* Color-Picker Group */
+.color-picker-group {
+  display: flex;                 /* Flexbox Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 1rem;                     /* 16px Abstand zwischen Elementen */
+  flex-wrap: wrap;               /* Umbruch bei schmalen Bildschirmen */
+}
+
+/* Color-Picker Input */
+.color-picker {
+  width: 60px;                   /* 60px Breite */
+  height: 40px;                  /* 40px Höhe */
+  border: 2px solid rgba(255, 255, 255, 0.3); /* Dezenter Rand */
+  border-radius: 8px;            /* Abgerundete Ecken */
+  cursor: pointer;               /* Zeiger bei Hover */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  background: none;              /* Kein zusätzlicher Hintergrund */
+}
+
+.color-picker:hover {
+  border-color: #ffd700;         /* Gold-Rand bei Hover */
+  transform: scale(1.05);        /* Leichte Vergrößerung */
+}
+
+/* Color-Preview Anzeige */
+.color-preview {
+  padding: 0.5rem 1rem;          /* 8px oben/unten, 16px links/rechts */
+  border-radius: 6px;            /* Abgerundete Ecken */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+  font-size: 0.85rem;            /* Kleinere Schrift */
+  font-family: 'Courier New', monospace; /* Monospace für HEX-Codes */
+  font-weight: 500;              /* Etwas fetter */
+  color: rgba(0, 0, 0, 0.8);     /* Dunkler Text (lesbar auf hellen Farben) */
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8); /* Weißer Text-Schatten */
+  min-width: 80px;               /* Mindestbreite */
+  text-align: center;            /* Zentrierter Text */
+}
+
+/* 
+================================================================================
+NACHRICHTEN/MELDUNGEN (.message) - ERWEITERT
+================================================================================
+Success- und Error-Meldungen die oben erscheinen - Verbesserte Styles
+*/
+.message {
+  padding: 1rem 1.5rem;          /* Innenabstand: 16px oben/unten, 24px links/rechts */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+  display: flex;                 /* Flexbox für Text + Schließen-Button */
+  align-items: center;           /* Vertikal mittig */
+  justify-content: space-between; /* Text links, X rechts */
+  font-weight: 500;              /* Etwas fetter Text */
+  position: relative;            /* Für absolute Positionierung von Kinder-Elementen */
+  overflow: hidden;              /* Verstecke überstehende Inhalte */
+  animation: fadeInUp 0.5s ease-out; /* NEU: Einblend-Animation */
+}
+
+/* Success-Meldungen (grün) - Erweitert */
+.message.success,
+.success-message {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+  /* ^ Grüner Gradient mit niedriger Transparenz */
+  border: 1px solid rgba(34, 197, 94, 0.3); /* Grüner Rand */
+  color: #90EE90;                /* Hellgrüne Textfarbe für bessere Lesbarkeit */
+}
+
+/* Error-Meldungen (rot) - Erweitert */
+.message.error,
+.error-message {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(220, 20, 60, 0.1));
+  /* ^ Roter Gradient mit niedriger Transparenz */
+  border: 1px solid rgba(220, 20, 60, 0.3); /* Roter Rand */
+  color: #ff6b6b;                /* Hellrote Textfarbe für bessere Lesbarkeit */
+}
+
+/* Schließen-Button (X) bei Meldungen */
+.message-close {
+  background: none;              /* Kein Hintergrund */
+  border: none;                  /* Kein Rand */
+  color: inherit;                /* Farbe von Parent-Element übernehmen */
+  font-size: 1.5rem;             /* Größeres X */
+  cursor: pointer;               /* Zeiger bei Hover */
+  padding: 0;                    /* Kein Innenabstand */
+  width: 2rem;                   /* 32px Breite */
+  height: 2rem;                  /* 32px Höhe */
+  display: flex;                 /* Flexbox für zentriertes X */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  border-radius: 50%;            /* Runder Button */
+  transition: all 0.3s ease;     /* Erweiterte Übergänge */
+}
+
+.message-close:hover {
+  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund bei Hover */
+  transform: rotate(90deg);      /* Drehung bei Hover */
+}
+
+/* 
+================================================================================
+CONTENT-BEREICH (.stil-content)
+================================================================================
+Hauptinhalt mit Animation beim Laden
+*/
+.stil-content {
+  animation: fadeInUp 0.6s ease-out; /* Einblend-Animation von unten nach oben */
+}
+
+/* 
+================================================================================
+STIL-KARTEN GRID (.stil-grid)
+================================================================================
+Das Grid-Layout für die einzelnen Stil-Karten (Karate, BJJ, etc.)
+HINWEIS: Schwarzer Hintergrund zwischen Cards bleibt erhalten (gewünscht)
+*/
+.stil-grid {
+  display: grid;                 /* CSS Grid Layout */
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  /* ^ Automatisch spalten, jede mindestens 350px breit */
+  gap: 1rem;                     /* 16px Abstand zwischen Karten (reduziert von 32px) */
+  padding: 1.5rem;               /* Innenabstand für bessere Optik */
+  animation: fadeInUp 1s ease-out 0.2s both; /* Verzögerte Animation */
+}
+
+/* 
+================================================================================
+EINZELNE STIL-KARTE (.stil-card) - ERWEITERT
+================================================================================
+Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
+*/
+.stil-card {
+  background: rgba(255, 255, 255, 0.1); /* Verstärkter Glassmorphism-Hintergrund */
+  backdrop-filter: blur(20px);   /* Weichzeichnung für Glaseffekt */
+  border-radius: 20px;           /* Stark abgerundete Ecken */
+  padding: 1.5rem;               /* 32px Innenabstand */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Verstärkter Rand */
+  cursor: pointer;               /* Zeiger bei Hover (klickbar) */
+  transition: all 0.4s ease;     /* Langsamere, sanftere Übergänge */
+  position: relative;            /* Für ::before Pseudo-Element */
+  overflow: hidden;              /* Verstecke Slide-Effekt */
+}
+
+/* Rotating Border Effekt bei Hover */
+.stil-card::before {
+  content: '';                   /* Leeres Pseudo-Element */
+  position: absolute;            /* Absolute Positionierung */
+  top: -50%;                     /* Größerer Bereich für Rotation */
+  left: -50%;                    /* Größerer Bereich für Rotation */
+  width: 200%;                   /* Doppelt so groß für Rotation */
+  height: 200%;                  /* Doppelt so groß für Rotation */
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    rgba(255, 215, 0, 0.1),
+    transparent,
+    rgba(255, 107, 53, 0.1),
+    transparent
+  );                             /* Konischer Gradient für Rotating Border */
+  animation: spin 8s linear infinite; /* Langsame Rotation */
+  opacity: 0;                    /* Standardmäßig unsichtbar */
+  transition: opacity 0.3s ease; /* Sanfte Opacity-Übergänge */
+}
+
+/* Rotating Border aktivieren bei Hover */
+.stil-card:hover::before {
+  opacity: 1;                    /* Sichtbar bei Hover */
+}
+
+/* Hover-Effekt für Stil-Karten - Erweitert */
+.stil-card:hover {
+  transform: translateY(-8px) scale(1.02); /* Nach oben + leichte Vergrößerung */
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2); /* Gold-Schatten */
+  border-color: rgba(255, 215, 0, 0.5); /* Gold-Rand bei Hover */
+}
+
+/* Inaktive Stil-Karten */
+.stil-card.inactive {
+  opacity: 0.6; /* Gedämpfte Sichtbarkeit */
+  background: rgba(255, 255, 255, 0.03); /* Dunklerer Hintergrund */
+  border-color: rgba(255, 255, 255, 0.05); /* Schwächerer Rand */
+}
+
+.stil-card.inactive:hover {
+  opacity: 0.8; /* Etwas heller bei Hover */
+  transform: translateY(-4px) scale(1.01); /* Weniger Bewegung */
+}
+
+.stil-card.inactive .stil-card-header h3 {
+  color: #ffd700 !important; /* Gold-Farbe für gute Lesbarkeit auch bei inaktiven Stilen */
+  opacity: 1 !important;
+}
+
+.stil-card.inactive .stil-beschreibung {
+  color: rgba(255, 255, 255, 0.5); /* Gedämpfte Beschreibung */
+}
+
+/* Card-Content mit z-index über Rotating Border */
+.stil-card-content {
+  position: relative;            /* Relative Positionierung */
+  z-index: 2;                    /* Über Rotating Border */
+}
+
+/* Header-Bereich der Stil-Karte (Titel + Badge) */
+.stil-card-header {
+  display: flex;                 /* Flexbox Layout */
+  justify-content: space-between; /* Titel links, Badge rechts */
+  align-items: center;           /* Vertikal zentriert */
+  margin-bottom: 1rem;           /* 16px Abstand nach unten */
+}
+
+/* Titel der Stil-Karte - Erweitert */
+.stil-card-header h3,
+.stil-card h3 {
+  font-size: 1.5rem;             /* 24px Titel */
+  font-weight: 600;              /* Semi-Bold */
+  margin: 0 0 1rem 0;            /* Abstand nach unten */
+  color: #ffd700;                /* Gold-Farbe statt weiß */
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+}
+
+/* Badge mit Anzahl Graduierungen */
+.stil-badge {
+  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gold-Orange Gradient */
+  color: #000;                   /* Schwarzer Text (besser lesbar auf Gold) */
+  padding: 0.25rem 0.75rem;      /* 4px oben/unten, 12px links/rechts */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  font-size: 0.85rem;            /* Kleinerer Text */
+  font-weight: 600;              /* Semi-Bold */
+}
+
+/* Beschreibung des Stils - Erweitert */
+.stil-beschreibung,
+.stil-card p {
+  color: rgba(255, 255, 255, 0.8); /* Weniger gedämpftes Weiß */
+  margin: 0.5rem 0;              /* Oben und unten Abstand */
+  line-height: 1.5;              /* Zeilenhöhe für bessere Lesbarkeit */
+}
+
+/* Stil-Card Stats Container */
+.stil-card-stats {
+  display: flex;                 /* Flexbox Layout */
+  gap: 1rem;                     /* 16px Abstand zwischen Stats */
+  margin-top: 1rem;              /* 16px Abstand nach oben */
+  padding-top: 1rem;             /* 16px Innenabstand nach oben */
+  border-top: 1px solid rgba(255, 255, 255, 0.1); /* Trennlinie */
+}
+
+/* Einzelner Stil-Stat */
+.stil-stat {
+  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
+  padding: 0.5rem 1rem;          /* Innenabstand */
+  border-radius: 8px;            /* Abgerundete Ecken */
+  text-align: center;            /* Zentrierter Text */
+  flex: 1;                       /* Gleichmäßige Aufteilung */
+}
+
+.stil-stat-number {
+  color: #ffd700;                /* Gold-Farbe für Zahlen */
+  font-size: 1.2rem;             /* Größere Zahlen */
+  font-weight: 700;              /* Sehr fett */
+  display: block;                /* Als Block-Element */
+}
+
+.stil-stat-label {
+  color: rgba(255, 255, 255, 0.7); /* Gedämpfte Beschriftung */
+  font-size: 0.8rem;             /* Kleinere Schrift */
+  text-transform: uppercase;     /* Großbuchstaben */
+  letter-spacing: 0.5px;         /* Buchstabenabstand */
+}
+
+/* Status-Bereich (Aktiv/Inaktiv mit Punkt) */
+.stat-status {
+  display: flex;                 /* Flexbox Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 0.5rem;                   /* 8px Abstand zwischen Punkt und Text */
+  font-size: 0.9rem;             /* Etwas kleinerer Text */
+  font-weight: 500;              /* Etwas fetter */
+}
+
+/* Status-Punkt (farbiger Kreis) */
+.status-dot {
+  width: 8px;                    /* 8px breit */
+  height: 8px;                   /* 8px hoch */
+  border-radius: 50%;            /* Perfekter Kreis */
+}
+
+/* Aktiver Status (grüner Punkt mit Glow) */
+.status-dot.active {
+  background: #ffd700;           /* Grüne Farbe */
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5); /* Grüner Glüh-Effekt */
+}
+
+/* Inaktiver Status (grauer Punkt) */
+.status-dot.inactive {
+  background: #6b7280;           /* Grau */
+}
+
+/* 
+================================================================================
+DETAIL-ANSICHT (.stil-detail) - ERWEITERT
+================================================================================
+Ansicht wenn ein einzelner Stil ausgewählt wird - Verbesserte Animationen
+*/
+.stil-detail {
+  background: rgba(255, 255, 255, 0.08); /* Glassmorphism-Hintergrund */
+  backdrop-filter: blur(20px);   /* Weichzeichnung */
+  border-radius: 20px;           /* Abgerundete Ecken */
+  padding: 2rem;                 /* Innenabstand */
+  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand */
+  animation: fadeInUp 0.8s ease-out; /* Einblend-Animation */
+}
+
+/* Header in der Detail-Ansicht - Erweitert */
+.stil-detail-header {
+  display: flex;                 /* Flexbox Layout */
+  justify-content: space-between; /* Titel links, Button rechts */
+  align-items: center;           /* Vertikal zentrieren */
+  margin-bottom: 2rem;           /* Abstand nach unten */
+  padding-bottom: 1rem;          /* Innenabstand nach unten */
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Trennlinie */
+}
+
+/* Titel in Detail-Header - Erweitert */
+.stil-detail-header h2,
+.stil-detail-title {
+  font-size: 2rem;               /* Größere Überschrift */
+  font-weight: 700;              /* Sehr fett */
+  margin: 0;                     /* Kein Außenabstand */
+  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gold-Orange Gradient */
+  -webkit-background-clip: text; /* Gradient auf Text */
+  -webkit-text-fill-color: transparent; /* Transparent für Gradient */
+  background-clip: text;         /* Standard Gradient-Text */
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5); /* Stärkerer Glüh-Effekt */
+}
+
+/* Detail-Stats unter dem Titel */
+.stil-detail-stats {
+  display: flex;                 /* Flexbox Layout */
+  gap: 1.5rem;                   /* Abstand zwischen Stats */
+  margin-top: 0.5rem;            /* Abstand nach oben */
+  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  font-size: 0.9rem;             /* Kleinere Schrift */
+}
+
+/* 
+================================================================================
+TAB-NAVIGATION (.stil-tabs) - ERWEITERT
+================================================================================
+Die 4 Tabs: Allgemein, Graduierungen, Prüfungsinhalte, Statistiken - Neue Glanz-Effekte
+*/
+.stil-tabs,
+.tab-navigation {
+  display: flex;                 /* Flexbox Layout */
+  gap: 1rem;                     /* Größerer Abstand zwischen Tabs */
+  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+  background: rgba(0, 0, 0, 0.3); /* Dunklerer Hintergrund */
+  padding: 0.5rem;               /* 8px Innenabstand */
+  border-radius: 15px;           /* Stärker abgerundete Ecken */
+  backdrop-filter: blur(10px);   /* Glassmorphism-Effekt */
+}
+
+/* Einzelner Tab - Erweitert */
+.tab,
+.tab-btn {
+  background: transparent;       /* Kein Hintergrund */
+  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  border: none;                  /* Kein Rand */
+  padding: 12px 24px;            /* Größerer Innenabstand */
+  border-radius: 10px;           /* Abgerundete Ecken */
+  cursor: pointer;               /* Zeiger bei Hover */
+  font-weight: 500;              /* Etwas fetter */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  font-size: 0.95rem;            /* Etwas kleinerer Text */
+  position: relative;            /* Für Glanz-Effekt */
+  overflow: hidden;              /* Für Glanz-Effekt */
+}
+
+/* Tab-Glanz-Effekt */
+.tab::before,
+.tab-btn::before {
+  content: '';                   /* Leeres Pseudo-Element */
+  position: absolute;            /* Absolute Positionierung */
+  top: 0;                        /* Oben bei 0 */
+  left: -100%;                   /* Startet links außerhalb */
+  width: 100%;                   /* Volle Breite */
+  height: 100%;                  /* Volle Höhe */
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 215, 0, 0.2), 
+    transparent);                /* Horizontaler Gold-Gradient */
+  transition: left 0.5s ease;    /* Sanfte Bewegung */
+}
+
+.tab:hover::before,
+.tab-btn:hover::before,
+.tab.active::before,
+.tab-btn.active::before {
+  left: 0;                       /* Glanz-Effekt bei Hover und Active */
+}
+
+/* Tab bei Hover */
+.tab:hover:not(.active),
+.tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund */
+  color: #fff;                   /* Weißer Text */
+}
+
+/* Aktiver Tab - Erweitert */
+.tab.active,
+.tab-btn.active {
+  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gold-Orange Gradient */
+  color: #1a1a2e;                /* Dunkler Text statt schwarz */
+  font-weight: 600;              /* Semi-Bold */
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+}
+
+/* 
+================================================================================
+TAB-INHALT (.tab-content)
+================================================================================
+Der Inhalt unter den Tabs - Erweitert
+*/
+.tab-content {
+  background: rgba(255, 255, 255, 0.05); /* Glassmorphism-Hintergrund */
+  backdrop-filter: blur(20px);   /* Weichzeichnung */
+  border-radius: 20px;           /* Abgerundete Ecken */
+  padding: 2rem;                 /* 32px Innenabstand */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+  min-height: 400px;             /* Mindesthöhe für Konsistenz */
+  animation: fadeIn 0.5s ease-out; /* Einblend-Animation */
+}
+
+/* Einzelne Tab-Ansichten */
+.allgemein-tab,
+.statistiken-tab {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Stats Grid in Statistiken Tab */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item h4 {
+  color: #ffd700;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.stat-item p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* 
+================================================================================
+GRADUIERUNG MANAGER (.graduierung-manager) - ERWEITERT
+================================================================================
+Bereich zum Verwalten der Gürtel/Graduierungen - Verbesserte Hover-Effekte
+*/
+.graduierung-manager,
+.pruefungsinhalt-manager {
+  background: rgba(30, 30, 50, 0.7); /* Einheitlicher Glassmorphism-Hintergrund */
+  border-radius: 20px;           /* Abgerundete Ecken (vereinheitlicht) */
+  border: 1px solid rgba(255, 215, 0, 0.3); /* Einheitlicher Gold-Rand */
+  padding: 2rem;               /* Innenabstand */
+  backdrop-filter: blur(30px);   /* Einheitliche Weichzeichnung */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); /* Einheitlicher Schatten */
+  animation: fadeIn 0.4s ease-out; /* Einblend-Animation */
+}
+
+/* Section Header (Überschrift + Button) */
+.section-header {
+  display: flex;                 /* Flexbox Layout */
+  justify-content: space-between; /* Titel links, Button rechts */
+  align-items: center;           /* Vertikal zentrieren */
+  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+  padding-bottom: 1.5rem;          /* 16px Abstand nach unten */
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2); /* Trennlinie */
+}
+
+/* Überschrift in Section Header */
+.section-header h3 {
+  font-size: 1.5rem;             /* 24px Überschrift */
+  margin: 0;                     /* Kein Außenabstand */
+  color: #ffd700;                /* Gold-Farbe */
+  font-weight: 700;              /* Fett */
+  text-transform: uppercase;     /* Großbuchstaben */
+  letter-spacing: 2px;           /* Buchstabenabstand */
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+}
+
+/* Container für Sub-Tabs/Buttons */
+.sub-tabs {
+  display: flex;
+  gap: 1rem;                     /* 16px Abstand zwischen Buttons */
+  align-items: center;
+}
+
+/* Sub-Tab Buttons */
+.sub-tab-btn {
+  padding: 0.75rem 1.5rem;       /* 12px oben/unten, 24px links/rechts */
+  background: rgba(255, 215, 0, 0.1); /* Leicht goldener Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  border-radius: 8px;            /* Abgerundete Ecken */
+  color: #ffd700;                /* Gold-Text */
+  font-size: 0.95rem;            /* 15.2px */
+  font-weight: 600;              /* Semi-Bold */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;           /* Kein Zeilenumbruch */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* Text-Schatten für Lesbarkeit */
+}
+
+.sub-tab-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.2); /* Hellerer Hintergrund bei Hover */
+  border-color: #ffd700;         /* Kräftigerer Gold-Rand */
+  transform: translateY(-2px);   /* Leicht nach oben */
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+}
+
+.sub-tab-btn:disabled {
+  opacity: 0.5;                  /* Halbtransparent wenn deaktiviert */
+  cursor: not-allowed;           /* Not-Allowed Cursor */
+}
+
+/* Info-Box für Drag & Drop - Glassmorphism Design */
+.drag-drop-info {
+  background: rgba(30, 30, 50, 0.6); /* Dunkler Glassmorphism */
+  border: 1px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  padding: 1rem 1.5rem;          /* Mehr Innenabstand */
+  margin-bottom: 1.5rem;         /* Abstand nach unten */
+  display: flex;                 /* Flexbox Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 0.75rem;                  /* Abstand zwischen Icon und Text */
+  color: rgba(255, 255, 255, 0.9); /* Weißer Text */
+  font-size: 0.95rem;            /* Größere Schrift */
+  backdrop-filter: blur(20px);   /* Weichzeichnung */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); /* Schatten */
+}
+
+.drag-drop-info strong {
+  color: #ffd700;                /* Gold für wichtige Teile */
+}
+
+.info-icon {
+  font-size: 1.2rem;             /* Größeres Icon */
+}
+
+/* Liste der Graduierungen - Erweitert */
+.graduierung-list {
+  display: grid;                 /* CSS Grid statt Flexbox */
+  gap: 1rem;                     /* 16px Abstand zwischen Items */
+  margin-top: 1rem;              /* Abstand nach oben */
+}
+
+/* 
+================================================================================
+@DND-KIT DRAG & DROP STYLES - NEU
+================================================================================
+Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
+*/
+
+/* Drag Handle (Zieh-Griff) */
+.drag-handle {
+  display: flex;                 /* Flexbox für Zentrierung */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  width: 30px;                   /* 30px Breite */
+  min-width: 30px;               /* Mindestbreite */
+  height: 30px;                  /* 30px Höhe */
+  cursor: grab;                  /* Greif-Cursor */
+  color: rgba(255, 255, 255, 0.5); /* Gedämpfter Text */
+  transition: all 0.2s ease;     /* Sanfte Übergänge */
+  border-radius: 6px;            /* Abgerundete Ecken */
+  margin-right: 0.75rem;         /* Abstand nach rechts */
+}
+
+/* Drag Handle bei Hover */
+.drag-handle:hover {
+  color: #ffd700;                /* Gold-Farbe bei Hover */
+  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
+}
+
+/* Drag Handle beim aktiven Ziehen */
+.drag-handle:active {
+  cursor: grabbing;              /* Grabbing-Cursor beim Ziehen */
+}
+
+/* Drag Handle Icon */
+.drag-handle-icon {
+  font-size: 1.1rem;             /* Icon-Größe */
+  font-weight: bold;             /* Fetter Text */
+  line-height: 1;                /* Kompakte Zeilenhöhe */
+}
+
+/* Einzelne Graduierung in der Liste - Verbessert mit Grid Layout */
+.graduierung-item {
+  background: rgba(40, 40, 65, 0.6);  /* Dunklerer Glassmorphism */
+  border-radius: 15px;           /* Größere abgerundete Ecken */
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Stärkerer Gesamtrand */
+  border-left: 5px solid;        /* Dickere farbige linke Kante */
+  padding: 1.5rem;               /* Mehr Innenabstand */
+  backdrop-filter: blur(25px);   /* Stärkere Weichzeichnung */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* Stärkerer Schatten */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  position: relative;            /* Für Glanz-Effekt */
+  overflow: hidden;              /* Für Glanz-Effekt */
+  display: grid;                 /* Grid Layout statt Flexbox */
+  gap: 1rem;                     /* Einheitlicher Gap */
+  grid-template-columns: 1fr;    /* Single column */
+}
+
+/* Graduierung-Item Content-Bereich */
+.graduierung-item > :not(.drag-handle) {
+  flex: 1;                       /* Nimmt verfügbaren Platz */
+}
+
+/* Graduierung-Item während des Dragging */
+.graduierung-item.is-dragging {
+  opacity: 0.6;                  /* Halbtransparent */
+  transform: rotate(2deg);       /* Leichte Drehung */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Stärkerer Schatten */
+  border-left-color: #ffd700;    /* Gold-Rand links */
+  z-index: 999;                  /* Über anderen Elementen */
+}
+
+/* Graduierung-Item im Drag-Overlay */
+.graduierung-item.is-dragging-overlay {
+  background: rgba(255, 255, 255, 0.15); /* Hellerer Hintergrund */
+  border: 2px solid #ffd700;     /* Gold-Rand rundherum */
+  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+  transform: rotate(3deg) scale(1.05); /* Drehung und Vergrößerung */
+  backdrop-filter: blur(20px);   /* Verstärkte Weichzeichnung */
+}
+
+/* Drop-Zone während Drag-Over */
+.graduierung-list.is-drag-over {
+  background: rgba(255, 215, 0, 0.05); /* Sehr dezenter Gold-Hintergrund */
+  border: 2px dashed rgba(255, 215, 0, 0.3); /* Gestrichelte Gold-Umrandung */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  padding: 0.5rem;               /* Etwas Padding für gestrichelte Umrandung */
+}
+
+/* Graduierung-Item Glanz-Effekt - Erweitert */
+.graduierung-item::before {
+  content: '';                   /* Leeres Pseudo-Element */
+  position: absolute;            /* Absolute Positionierung */
+  top: 0;                        /* Oben bei 0 */
+  left: -100%;                   /* Startet links außerhalb */
+  width: 100%;                   /* Volle Breite */
+  height: 100%;                  /* Volle Höhe */
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);                /* Weißer Glanz-Gradient */
+  transition: left 0.5s ease;    /* Sanfte Bewegung */
+}
+
+.graduierung-item:hover::before {
+  left: 0;                       /* Glanz-Effekt bei Hover */
+}
+
+/* Hover-Effekt für Graduierung Items - Erweitert */
+.graduierung-item:hover {
+  transform: translateY(-2px);   /* 2px nach oben (konsistent mit Cards) */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); /* Stärkerer Schatten */
+  border-color: rgba(255, 215, 0, 0.3); /* Gold-Rand bei Hover */
+}
+
+/* Graduierung Header - Grid Layout */
+.graduierung-header {
+  display: flex;                 /* Flexbox Layout */
+  justify-content: space-between; /* Links Name, rechts Pfeil */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 1rem;                     /* Abstand zwischen Spalten */
+  padding: 0.75rem;              /* Innenabstand */
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15); /* Trennlinie */
+  transition: background 0.3s ease; /* Sanfter Übergang */
+}
+
+.graduierung-header.clickable:hover {
+  background: rgba(255, 215, 0, 0.05); /* Leichter Gold-Hintergrund beim Hover */
+  border-radius: 8px;            /* Abgerundete Ecken beim Hover */
+}
+
+/* Graduierung Name mit Farbkreis */
+.graduierung-name {
+  color: #fff;                   /* Weißer Text */
+  font-weight: 600;              /* Semi-Bold */
+  font-size: 1.1rem;             /* Etwas größere Schrift */
+  display: flex;                 /* Flexbox für Name + Farbkreis */
+  align-items: center;           /* Vertikal zentrieren */
+  gap: 0.5rem;                   /* Abstand zwischen Name und Farbkreis */
+}
+
+/* Graduierung Farbkreis */
+.graduierung-color {
+  width: 20px;                   /* 20px Breite */
+  height: 20px;                  /* 20px Höhe */
+  border-radius: 50%;            /* Perfekter Kreis */
+  border: 2px solid rgba(255, 255, 255, 0.3); /* Dezenter Rand */
+  display: inline-block;         /* Inline-Block für Nebeneinander */
+}
+
+/* Graduierung Details - Grid Layout */
+.graduierung-details {
+  color: rgba(255, 255, 255, 0.8); /* Hellerer Text */
+  font-size: 0.9rem;             /* Kleinere Schrift */
+  display: grid;                 /* Grid Layout */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive Spalten */
+  gap: 0.75rem;                  /* Abstand zwischen Details */
+  padding-top: 0.75rem;          /* Abstand nach oben */
+  border-top: 1px solid rgba(255, 255, 255, 0.08); /* Dezente Trennlinie */
+}
+
+/* Action-Buttons (Bearbeiten, Löschen) - Erweitert */
+
+/* ===== GRADUIERUNG BUTTONS - Extends Central Buttons.css ===== */
+
+/* Graduierung Actions Container */
+.graduierung-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Button Divider */
+.button-divider {
+  width: 2px;
+  height: 36px;
+  background: rgba(255, 215, 0, 0.3);
+  display: inline-block;
+  margin: 0 0.5rem;
+}
+
+/* Move Buttons - Extends btn-info from Buttons.css */
+.graduierung-actions .move-btn {
+  /* Inherits from .btn-info in Buttons.css */
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ===== GRADUIERUNG BUTTONS - Extends Central Buttons.css ===== */
+
+/* Graduierung Actions Container */
+.graduierung-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Button Divider */
+.button-divider {
+  width: 2px;
+  height: 36px;
+  background: rgba(255, 215, 0, 0.3);
+  display: inline-block;
+  margin: 0 0.5rem;
+}
+
+/* Move Buttons - Extends btn-info from Buttons.css */
+.graduierung-actions .move-btn {
+  /* Inherits from .btn-info in Buttons.css */
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Graduierung Actions Button Overrides - Minimal, let Buttons.css handle most */
+.graduierung-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+
+
+/* Reihenfolge Badge */
+.reihenfolge-badge {
+  background: rgba(255, 215, 0, 0.2); /* Gold-Hintergrund */
+  color: #ffd700;                /* Gold-Text */
+  padding: 2px 6px;              /* Kleiner Innenabstand */
+  border-radius: 4px;            /* Abgerundete Ecken */
+  font-size: 0.75rem;            /* Kleinere Schrift */
+  font-weight: 600;              /* Semi-Bold */
+  margin-left: 0.5rem;           /* Abstand zum Namen */
+}
+
+/* Move-Controls - Verbessert */
+.graduierung-move-controls {
+  display: flex;                 /* Flexbox Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  gap: 1rem;                     /* Größerer Abstand zwischen Elementen */
+  padding: 0.75rem;              /* Mehr Innenabstand */
+  background: rgba(0, 123, 255, 0.08); /* Stärkerer blauer Hintergrund */
+  border-radius: 8px;            /* Größere abgerundete Ecken */
+  border: 1px solid rgba(0, 123, 255, 0.2); /* Stärkerer blauer Rand */
+}
+
+/* Move-Button Styling */
+.move-btn {
+  background: rgba(0, 123, 255, 0.2); /* Blauer Hintergrund */
+  border: 1px solid rgba(0, 123, 255, 0.4); /* Blauer Rand */
+  color: #ffd700;                /* Blaue Schrift */
+  padding: 6px 10px;             /* Etwas größerer Innenabstand */
+  border-radius: 4px;            /* Abgerundete Ecken */
+  cursor: pointer;               /* Zeiger-Cursor */
+  transition: all 0.2s ease;     /* Sanfte Übergänge */
+  font-size: 1rem;               /* Normale Schrift */
+  min-width: 32px;               /* Etwas größere Mindestbreite */
+  height: 32px;                  /* Etwas größere Höhe */
+  display: flex;                 /* Flexbox für Zentrierung */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  font-weight: 600;              /* Semi-Bold */
+}
+
+.move-btn:hover:not(:disabled) {
+  background: rgba(0, 123, 255, 0.3); /* Hellerer blauer Hintergrund */
+  border-color: #ffd700;         /* Vollständig blauer Rand */
+  transform: translateY(-1px);   /* Leicht nach oben */
+  color: #0056b3;                /* Dunklere blaue Schrift */
+}
+
+.move-btn:disabled {
+  opacity: 0.3;                  /* Gedämpft wenn disabled */
+  cursor: not-allowed;           /* Verboten-Cursor */
+}
+
+/* Move-Info Text */
+.move-info {
+  color: rgba(255, 255, 255, 0.5); /* Gedämpfter Text */
+  font-size: 0.8rem;             /* Kleinere Schrift */
+  font-style: italic;            /* Kursiv */
+}
+
+
+/* Verbessertes Touch-Support für Mobile Drag & Drop */
+@media (max-width: 768px) {
+  .drag-handle {
+    width: 40px;                 /* Größerer Touch-Bereich */
+    height: 40px;                /* Größerer Touch-Bereich */
+  }
+  
+  .drag-handle-icon {
+    font-size: 1.3rem;           /* Größeres Icon für Touch */
+  }
+}
+
+/* 
+================================================================================
+PRÜFUNGSINHALT MANAGER - ERWEITERT
+================================================================================
+Styling für den Prüfungsinhalt-Bereich
+*/
+
+/* Graduierung Prüfung Container */
+.graduierung-pruefung {
+  background: rgba(255, 255, 255, 0.05); /* Glassmorphism */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  padding: 1.5rem;               /* Innenabstand */
+  margin-bottom: 2rem;           /* Abstand nach unten */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+}
+
+/* Prüfungsinhalt Kategorien */
+.pruefungsinhalt-categories {
+  display: grid;                 /* Grid Layout */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive Spalten */
+  gap: 1.5rem;                   /* Abstand zwischen Kategorien */
+  margin-top: 1rem;              /* Abstand nach oben */
+  padding: 1rem;                 /* Innenabstand */
+  animation: slideDown 0.3s ease-out; /* Slide-Down Animation */
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Einzelne Kategorie */
+.category {
+  background: rgba(255, 255, 255, 0.03); /* Sehr dezenter Hintergrund */
+  border-radius: 10px;           /* Abgerundete Ecken */
+  padding: 1rem;                 /* Innenabstand */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Sehr dezenter Rand */
+  display: flex;                 /* Flexbox für vertikales Layout */
+  flex-direction: column;        /* Vertikal ausrichten */
+  min-height: 300px;             /* Mindesthöhe für einheitliche Karten */
+}
+
+.category h5 {
+  color: #ffd700;                /* Gold-Überschrift */
+  margin: 0 0 0.75rem 0;         /* Abstand nach unten */
+  font-size: 1.1rem;             /* Größere Schrift */
+  flex-shrink: 0;                /* Überschrift darf nicht schrumpfen */
+}
+
+.category ul {
+  list-style: none;             /* Keine Bullet Points */
+  padding: 0;                    /* Kein Padding */
+  margin: 0 0 1rem 0;           /* Abstand nach unten */
+  flex: 1;                       /* Nimmt verfügbaren Platz ein */
+}
+
+.category .sub-tabs {
+  margin-top: auto;              /* Pusht die Buttons nach unten */
+  padding-top: 0.5rem;           /* Abstand nach oben */
+}
+
+.category li {
+  color: rgba(255, 255, 255, 0.8); /* Gedämpftes Weiß */
+  padding: 0.25rem 0;            /* Vertikaler Abstand */
+  font-size: 0.9rem;             /* Kleinere Schrift */
+  display: flex;                 /* Flexbox für horizontales Layout */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: space-between; /* Text links, Buttons rechts */
+  gap: 0.5rem;                   /* Abstand zwischen Text und Buttons */
+}
+
+.category li:before {
+  content: '•';                  /* Bullet Point */
+  color: #ffd700;                /* Gold-Farbe */
+  margin-right: 0.5rem;          /* Abstand nach rechts */
+  flex-shrink: 0;                /* Bullet darf nicht schrumpfen */
+}
+
+.category li > span {
+  flex: 1;                       /* Text nimmt verfügbaren Platz */
+}
+
+.category .inhalt-actions {
+  display: flex;                 /* Flexbox für Buttons */
+  gap: 0.25rem;                  /* Abstand zwischen Buttons */
+  flex-shrink: 0;                /* Buttons dürfen nicht schrumpfen */
+}
+
+/* 
+================================================================================
+MODAL/POPUP (.modal) - ERWEITERT
+================================================================================
+Popup-Fenster für Formulare - Verbesserte Styles und Animationen
+*/
+.modal-overlay {
+  position: fixed;               /* Fixiert über dem ganzen Bildschirm */
+  top: 0;                        /* Oben bei 0 */
+  left: 0;                       /* Links bei 0 */
+  right: 0;                      /* Rechts bei 0 */
+  bottom: 0;                     /* Unten bei 0 */
+  background: rgba(0, 0, 0, 0.8); /* Dunklerer Hintergrund */
+  backdrop-filter: blur(8px);    /* Weichzeichnung des Hintergrunds */
+  display: flex;                 /* Flexbox für Zentrierung */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  z-index: 1000;                 /* Über allem anderen */
+  animation: fadeIn 0.3s ease-out; /* Einblend-Animation */
+}
+
+/* Modal-Inhalt - Erweitert */
+.modal-content:not(.stil-modal) {
+  background: rgba(26, 26, 46, 0.98); /* Dunklerer Hintergrund für bessere Lesbarkeit */
+  backdrop-filter: blur(20px);   /* Weichzeichnung */
+  border-radius: 20px;           /* Stärker abgerundete Ecken */
+  padding: 2rem;                 /* Gleichmäßiges Padding */
+  border: 1px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  max-width: 700px;              /* Etwas größere Breite */
+  width: 90%;                    /* Responsive Breite */
+  max-height: 85vh;              /* Maximal 85% der Bildschirmhöhe */
+  overflow-y: auto;              /* Scrollbar für gesamten Content */
+  animation: slideInFromRight 0.4s ease-out; /* Slide-In Animation */
+  position: relative;            /* Für Gradient-Header */
+  color: rgba(255, 255, 255, 0.9); /* Heller Text im Modal */
+  box-sizing: border-box;        /* Padding inbegriffen */
+}
+
+/* Alle Texte im Modal hell machen */
+.modal-content label,
+.modal-content p,
+.modal-content span,
+.modal-content h4,
+.modal-content h5,
+.modal-content div {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Form-Labels speziell */
+.modal-content .form-label,
+.modal-content .form-group label {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+}
+
+/* Kategorie-Titel */
+.modal-content .category-title {
+  color: #ffd700 !important;
+}
+
+/* Modal Header - NICHT für stil-modal */
+.modal-content:not(.stil-modal) .modal-header {
+  margin: -2rem -2rem 1.5rem -2rem; /* Negatives Margin um Modal-Padding zu überschreiben */
+  padding: 1.5rem 2rem;          /* Eigenes Padding */
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Modal Actions - NICHT für stil-modal */
+.modal-content:not(.stil-modal) .modal-actions {
+  margin: 1.5rem -2rem -2rem -2rem; /* Negatives Margin */
+  padding: 1.5rem 2rem;          /* Eigenes Padding */
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Scrollbar Styling für Modal */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
+}
+
+/* Modal Gradient-Header */
+.modal-content::before {
+  content: '';                   /* Leeres Pseudo-Element */
+  position: absolute;            /* Absolute Positionierung */
+  top: 0;                        /* Oben bei 0 */
+  left: 0;                       /* Links bei 0 */
+  right: 0;                      /* Rechts bei 0 */
+  height: 2px;                   /* 2px hoch */
+  background: linear-gradient(90deg, #ffd700, #ff6b35, #ffd700); /* Gold-Orange-Gold Gradient */
+  border-radius: 20px 20px 0 0;  /* Nur oben abgerundet */
+}
+
+/* Erweiterte Modal für Belt-Auswahl - NICHT für stil-modal */
+.modal-content.belt-modal:not(.stil-modal) {
+  max-width: 900px;              /* Größere Breite für Belt-Grid */
+  max-height: 90vh;              /* Mehr Höhe für Kategorien */
+  overflow-y: auto;              /* Scrollbar bei Bedarf */
+  display: flex;                 /* Flexbox für besseres Layout */
+  flex-direction: column;        /* Vertical stacking */
+}
+
+/* Spezielle Styles für stil-modal - HÖCHSTE PRIORITÄT */
+html body .modal-overlay .modal-content.belt-modal.stil-modal,
+html body .modal-overlay .modal-content.stil-modal {
+  padding: 2.5rem !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+  max-width: 850px !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .modal-header,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-header {
+  margin: 0 !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0 !important;
+  padding-bottom: 1rem !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .modal-actions,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
+  margin: 0 !important;
+  margin-top: 1.5rem !important;
+  padding: 0 !important;
+  padding-top: 1.5rem !important;
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex;                 /* Flexbox Layout */
+  justify-content: space-between; /* Titel links, X rechts */
+  align-items: center;           /* Vertikal zentrieren */
+  margin-bottom: 1.5rem;         /* Abstand nach unten */
+  padding-bottom: 1rem;          /* Innenabstand nach unten */
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Trennlinie */
+}
+
+/* Modal-Überschrift - Erweitert mit höherer Spezifität */
+.modal-overlay .modal-content.create-stil-modal .modal-title {
+  font-size: 1.5rem !important;             /* 24px Überschrift */
+  margin: 0 !important;                     /* Kein Außenabstand */
+  color: #ffd700 !important;                /* Gold-Farbe */
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3) !important; /* Gold-Glüh-Effekt */
+  font-weight: 600 !important;               /* Fette Schrift */
+}
+
+/* Modal Title Section */
+.modal-overlay .modal-content.create-stil-modal .modal-title-section {
+  flex: 1 !important;                    /* Nimmt verfügbaren Platz ein */
+}
+
+/* Modal Close Button */
+.modal-close {
+  background: none;              /* Kein Hintergrund */
+  border: none;                  /* Kein Rand */
+  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  font-size: 1.5rem;             /* Größeres X */
+  cursor: pointer;               /* Zeiger bei Hover */
+  padding: 0;                    /* Kein Innenabstand */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  width: 30px;                   /* 30px Breite */
+  height: 30px;                  /* 30px Höhe */
+  display: flex;                 /* Flexbox für Zentrierung */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  border-radius: 50%;            /* Runder Button */
+}
+
+.modal-close:hover {
+  color: #fff;                   /* Weißer Text */
+  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund */
+  transform: rotate(90deg);      /* Drehung bei Hover */
+}
+
+/* Modal Action-Buttons */
+.modal-actions {
+  display: flex;                 /* Flexbox Layout */
+  gap: 1rem;                     /* 16px Abstand zwischen Buttons */
+  justify-content: flex-end;     /* Rechts ausrichten */
+  margin-top: 2rem;              /* 32px Abstand nach oben */
+  padding-top: 1.5rem;           /* 24px Abstand nach oben */
+  border-top: 1px solid rgba(255, 255, 255, 0.1); /* Trennlinie */
+}
+
+/* ============================================================================
+   MODAL NEUSTRUKTURIERUNG - HÖCHSTE SPEZIFITÄT
+   ============================================================================ */
+
+/* Modal Container - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal {
+  max-width: 700px !important;
+  max-height: 70vh !important;
+  padding: 0 !important;
+  background: rgba(26, 26, 46, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* Modal Header - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 1rem !important;
+  padding: 1.5rem 2.5rem 1rem 2.5rem !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* Modal Title - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .modal-title {
+  font-size: 1.5rem !important;
+  margin: 0 !important;
+  color: #ffd700 !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3) !important;
+  font-weight: 600 !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Modal Steps - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .modal-step {
+  padding: 1.5rem 2.5rem !important;
+  min-height: 300px !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* Step Title - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .step-title {
+  margin-bottom: 1.5rem !important;
+  text-align: center !important;
+  padding: 0 0.5rem !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .step-title h4 {
+  font-size: 1.4rem !important;
+  color: #ffd700 !important;
+  margin: 0 0 0.5rem 0 !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3) !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .step-title p {
+  color: rgba(255, 255, 255, 0.8) !important;
+  margin: 0 !important;
+  font-size: 0.95rem !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Form Groups - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .form-group {
+  margin-bottom: 1rem !important;
+  padding: 0 0.25rem !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* Form Labels - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .form-label {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 0.9rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Form Inputs - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .form-input {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 0.75rem 1rem !important;
+  color: #ffffff !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(20px) !important;
+  transition: all 0.3s ease !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  width: 100% !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .form-input:focus {
+  outline: none !important;
+  border-color: #ffd700 !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Form Textareas - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .form-textarea {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 0.75rem 1rem !important;
+  color: #ffffff !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(20px) !important;
+  transition: all 0.3s ease !important;
+  resize: vertical !important;
+  min-height: 100px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  width: 100% !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .form-textarea:focus {
+  outline: none !important;
+  border-color: #ffd700 !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Form Selects - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .form-select {
+  width: 100% !important;
+  padding: 0.75rem 1rem !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(20px) !important;
+  transition: all 0.3s ease !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffd700' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 1rem !important;
+  padding-right: 2.5rem !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .form-select:hover {
+  border-color: #ffd700 !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body .modal-overlay .modal-content.create-stil-modal .form-select:focus {
+  outline: none !important;
+  border-color: #ffd700 !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important;
+}
+
+/* Modal Actions - Höchste Spezifität */
+body .modal-overlay .modal-content.create-stil-modal .modal-actions {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 1rem 2.5rem 1.5rem 2.5rem !important;
+  border-top: 1px solid rgba(255, 215, 0, 0.2) !important;
+  margin-top: 0.5rem !important;
+  gap: 1rem !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* 
+================================================================================
+FORMULARE (.form-group) - ERWEITERT
+================================================================================
+Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
+*/
+.form-group {
+  margin-bottom: 1.5rem;         /* 24px Abstand nach unten */
+}
+
+/* Formular-Labels - Erweitert */
+.form-group label,
+.form-label {
+  display: block;                /* Als Block-Element */
+  color: #ffd700;                /* Gold-Farbe */
+  font-weight: 600;              /* Semi-Bold */
+  margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
+  font-size: 0.9rem;             /* Etwas kleinere Schrift */
+  text-transform: uppercase;     /* Großbuchstaben */
+  letter-spacing: 0.5px;         /* Buchstabenabstand */
+}
+
+/* Input-Felder, Selects, Textareas - Erweitert */
+.form-group input,
+.form-group select,
+.form-group textarea,
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100% !important;                   /* Volle Breite */
+  padding: 12px 16px !important;            /* Größerer Innenabstand */
+  border: 2px solid rgba(255, 215, 0, 0.4) !important; /* Sichtbarer Gold-Rand */
+  border-radius: 10px !important;           /* Stärker abgerundete Ecken */
+  background: rgba(255, 255, 255, 0.1) !important; /* Leicht sichtbarer Hintergrund */
+  color: #fff !important;                   /* Weißer Text */
+  font-size: 1rem !important;               /* Normale Schriftgröße */
+  font-weight: 600 !important;              /* Fetter für bessere Lesbarkeit */
+  transition: all 0.3s ease !important;     /* Sanfte Übergänge */
+  backdrop-filter: blur(10px) !important;   /* Weichzeichnung */
+  box-sizing: border-box !important;        /* Border-Box für korrekte Breite */
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3) !important; /* Deutlicher Inset-Schatten */
+}
+
+/* Input-Felder bei Hover - NEU */
+.form-group input:hover:not(:focus),
+.form-group select:hover:not(:focus),
+.form-group textarea:hover:not(:focus),
+.form-input:hover:not(:focus),
+.form-textarea:hover:not(:focus),
+.form-select:hover:not(:focus) {
+  border-color: rgba(255, 215, 0, 0.6) !important; /* Hellerer Gold-Rand bei Hover */
+  background: rgba(255, 255, 255, 0.15) !important; /* Etwas hellerer Hintergrund */
+}
+
+/* Input-Felder bei Fokus - Erweitert */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none !important;                 /* Standard-Fokus-Rahmen entfernen */
+  border-color: #ffd700 !important;         /* Gold-Rand bei Fokus */
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3), inset 0 2px 6px rgba(0, 0, 0, 0.3) !important; /* Gold-Glüh-Effekt + Inset */
+  background: rgba(255, 255, 255, 0.18) !important; /* Hellerer Hintergrund */
+}
+
+/* Placeholder-Styling */
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5); /* Gedämpfte Placeholder */
+}
+
+/* Dropdown-Optionen (schwarzer Text auf weißem Hintergrund) */
+.form-group select option {
+  background: #ffffff;           /* Weißer Hintergrund für bessere Lesbarkeit */
+  color: #000000;                /* Schwarzer Text für Kontrast */
+  padding: 0.5rem;               /* Innenabstand für bessere Klickbarkeit */
+}
+
+/* ===== MODAL-SPEZIFISCHE FORM STYLES - Höhere Spezifität ===== */
+.modal-overlay .modal-content.create-stil-modal .form-input {
+  background: rgba(255, 255, 255, 0.08) !important; /* Transparenter Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Rand */
+  border-radius: 8px !important;        /* Abgerundete Ecken */
+  padding: 0.75rem 1rem !important;    /* Innenabstand */
+  color: #ffffff !important;           /* Weiße Textfarbe */
+  font-size: 1rem !important;          /* Schriftgröße */
+  font-weight: 500 !important;          /* Mittlere Schriftstärke */
+  backdrop-filter: blur(20px) !important; /* Weichzeichnung */
+  transition: all 0.3s ease !important; /* Sanfte Übergänge */
+}
+
+.modal-overlay .modal-content.create-stil-modal .form-input:focus {
+  outline: none !important;            /* Entfernt Standard-Outline */
+  border-color: #ffd700 !important;    /* Gold-Rand bei Focus */
+  background-color: rgba(255, 255, 255, 0.12) !important; /* Hellerer Hintergrund */
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important; /* Gold-Glüh-Effekt */
+}
+
+.modal-overlay .modal-content.create-stil-modal .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important; /* Gedämpfte Platzhalter-Farbe */
+}
+
+.modal-overlay .modal-content.create-stil-modal .form-textarea {
+  background: rgba(255, 255, 255, 0.08) !important; /* Transparenter Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Rand */
+  border-radius: 8px !important;        /* Abgerundete Ecken */
+  padding: 0.75rem 1rem !important;    /* Innenabstand */
+  color: #ffffff !important;           /* Weiße Textfarbe */
+  font-size: 1rem !important;          /* Schriftgröße */
+  font-weight: 500 !important;          /* Mittlere Schriftstärke */
+  backdrop-filter: blur(20px) !important; /* Weichzeichnung */
+  transition: all 0.3s ease !important; /* Sanfte Übergänge */
+  resize: vertical !important;          /* Vertikales Resize */
+  min-height: 100px !important;        /* Mindesthöhe */
+}
+
+.modal-overlay .modal-content.create-stil-modal .form-textarea:focus {
+  outline: none !important;            /* Entfernt Standard-Outline */
+  border-color: #ffd700 !important;    /* Gold-Rand bei Focus */
+  background-color: rgba(255, 255, 255, 0.12) !important; /* Hellerer Hintergrund */
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important; /* Gold-Glüh-Effekt */
+}
+
+.modal-overlay .modal-content.create-stil-modal .form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important; /* Gedämpfte Platzhalter-Farbe */
+}
+
+.modal-overlay .modal-content.create-stil-modal .form-label {
+  color: rgba(255, 255, 255, 0.9) !important; /* Weiße Label-Farbe */
+  font-weight: 600 !important;          /* Fette Schrift */
+  margin-bottom: 0.5rem !important;     /* Abstand nach unten */
+  font-size: 0.9rem !important;         /* Kleinere Schrift */
+  text-transform: uppercase !important; /* Großbuchstaben */
+  letter-spacing: 0.5px !important;     /* Buchstabenabstand */
+  word-wrap: break-word !important;     /* Umbruch bei langen Wörtern */
+  box-sizing: border-box !important;    /* Padding wird in die Breite einberechnet */
+}
+
+/* Form Groups mit optimierten Abständen ohne aggressive Overflow-Behandlung */
+.modal-overlay .modal-content.create-stil-modal .form-group {
+  margin-bottom: 1rem !important;     /* Reduzierter Abstand zwischen Form-Gruppen */
+  padding: 0 0.25rem !important;         /* Reduzierter horizontaler Abstand */
+  word-wrap: break-word !important;     /* Umbruch bei langen Wörtern */
+  box-sizing: border-box !important;    /* Padding wird in die Breite einberechnet */
+}
+
+/* Textareas - Erweitert */
+.form-group textarea,
+.form-textarea {
+  resize: vertical;              /* Nur vertikal veränderbar */
+  min-height: 100px;             /* Größere Mindesthöhe */
+}
+
+/* Formular-Reihe (2 Spalten nebeneinander) */
+.form-row {
+  display: grid;                 /* CSS Grid Layout */
+  grid-template-columns: 1fr 1fr; /* 2 gleich große Spalten */
+  gap: 1rem;                     /* 16px Abstand zwischen Spalten */
+}
+
+/* Checkboxen */
+.form-group input[type="checkbox"] {
+  width: auto;                   /* Normale Größe */
+  margin-right: 0.5rem;          /* 8px Abstand nach rechts */
+}
+
+/* 
+================================================================================
+BUTTONS (.btn) - ERWEITERT
+================================================================================
+Alle Button-Stile für die Anwendung - Verbesserte Hover-Effekte
+*/
+.btn {
+  padding: 0.75rem 1.5rem;       /* 12px oben/unten, 24px links/rechts */
+  border: none;                  /* Kein Rand */
+  border-radius: 12px;           /* Abgerundete Ecken */
+  font-weight: 600;              /* Semi-Bold Text */
+  cursor: pointer;               /* Zeiger bei Hover */
+  transition: all 0.3s ease;     /* Sanfte Übergänge */
+  font-size: 0.95rem;            /* Etwas kleinerer Text */
+  display: inline-flex;          /* Flexbox für Icon + Text */
+  align-items: center;           /* Vertikal zentrieren */
+  justify-content: center;       /* Horizontal zentrieren */
+  text-decoration: none;         /* Keine Unterstreichung (für Links) */
+  gap: 0.5rem;                   /* Abstand zwischen Icon und Text */
+  min-height: 44px;              /* Mindesthöhe für Touch-Targets */
+}
+
+/* Deaktivierte Buttons */
+.btn:disabled {
+  opacity: 0.5;                  /* Halbtransparent */
+  cursor: not-allowed;           /* Verboten-Cursor */
+  transform: none !important;    /* Keine Hover-Effekte */
+}
+
+/* Primärer Button - Verwendet zentrales Tab-Design aus Buttons.css */
+.stil-verwaltung .btn-primary {
+  /* Erbt transparentes Design von Buttons.css */
+  /* Gradient nur bei :active State */
+}
+
+/* Sekundärer Button - Verwendet zentrales Tab-Design aus Buttons.css */
+.stil-verwaltung .btn-secondary {
+  /* Erbt transparentes Design von Buttons.css */
+}
+
+/* Formular-Aktionen (Button-Gruppe) */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gefährlicher Button - Verwendet zentrales Tab-Design aus Buttons.css */
+.stil-verwaltung .btn-danger {
+  /* Erbt transparentes Design mit rotem Rand von Buttons.css */
+  /* Rot-Gradient nur bei :active State */
+}
+
+/* Kleine Buttons - Erweitert */
+.btn-small,
+.btn-sm {
+  padding: 0.5rem 1rem;          /* 8px oben/unten, 16px links/rechts */
+  font-size: 0.85rem;            /* Kleinerer Text */
+  min-height: 36px;              /* Kleinere Mindesthöhe */
+}
+
+/* 
+================================================================================
+LOADING-STATES - ERWEITERT
+================================================================================
+Verschiedene Loading-Zustände und Spinner
+*/
+.stil-verwaltung-loading,
+.loading {
+  display: flex;                 /* Flexbox Layout */
+  align-items: center;           /* Horizontal zentrieren */
+  justify-content: center;       /* Vertikal zentrieren */
+  padding: 2rem;                 /* Innenabstand */
+  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+}
+
+/* Großer Loading-Spinner für Hauptseite */
+.stil-verwaltung-loading {
+  flex-direction: column;        /* Vertikal anordnen */
+  height: 100vh;                 /* Volle Bildschirmhöhe */
+  gap: 1rem;                     /* 16px Abstand zwischen Elementen */
+}
+
+/* Standard Loading-Spinner */
+.loading-spinner {
+  width: 40px;                   /* 40px breit */
+  height: 40px;                  /* 40px hoch */
+  border: 3px solid rgba(255, 215, 0, 0.3); /* Gold-Rand mit Transparenz */
+  border-top: 3px solid #ffd700; /* Gold-Rand oben */
+  border-radius: 50%;            /* Perfekter Kreis */
+  animation: spin 1s linear infinite; /* Drehanimation */
+  margin-right: 1rem;            /* Abstand nach rechts */
+}
+
+/* Großer Spinner für Hauptseite */
+.loading-spinner-large {
+  width: 3rem;                   /* 48px breit */
+  height: 3rem;                  /* 48px hoch */
+  border: 3px solid rgba(255, 255, 255, 0.2); /* Grauer Rand */
+  border-top: 3px solid #ffd700; /* Gold-Rand oben */
+  border-radius: 50%;            /* Perfekter Kreis */
+  animation: spin 1s linear infinite; /* Drehanimation */
+}
+
+/* 
+================================================================================
+EMPTY STATES - ERWEITERT
+================================================================================
+Anzeige wenn keine Daten vorhanden sind
+*/
+.empty-state {
+  text-align: center;            /* Zentrierter Text */
+  padding: 4rem 2rem;            /* 64px oben/unten, 32px links/rechts */
+  background: rgba(255, 255, 255, 0.03); /* Sehr dezenter Hintergrund */
+  border-radius: 20px;           /* Abgerundete Ecken */
+  border: 2px dashed rgba(255, 255, 255, 0.1); /* Gestrichelte Umrandung */
+  color: rgba(255, 255, 255, 0.6); /* Gedämpfter Text */
+}
+
+/* Empty State Icon */
+.empty-state-icon {
+  font-size: 3rem;               /* 48px großes Icon */
+  color: rgba(255, 215, 0, 0.5); /* Gold mit Transparenz */
+  margin-bottom: 1rem;           /* Abstand nach unten */
+}
+
+/* Überschrift im Empty State - Erweitert */
+.empty-state h3 {
+  font-size: 1.5rem;             /* 24px Überschrift */
+  color: #ffd700;                /* Gold-Farbe */
+  margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
+}
+
+/* Text im Empty State */
+.empty-state p {
+  color: rgba(255, 255, 255, 0.6); /* Gedämpftes Weiß */
+  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+}
+
+/* 
+================================================================================
+STATISTIK-ÜBERSICHT (.stil-stats) - ERWEITERT
+================================================================================
+Die 3 Statistik-Karten oben (Anzahl Stile, Graduierungen, Schüler) - Neue Hover-Effekte
+*/
+.stil-stats {
+  display: grid;                 /* CSS Grid Layout */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* ^ Automatisch so viele Spalten wie möglich, jede mindestens 200px */
+  gap: 0.75rem !important;                   /* 12px Abstand zwischen Karten (reduziert von 24px) */
+  margin-bottom: 0.5rem;         /* 8px Abstand nach unten - MINIMIERT */
+}
+
+/* Einzelne Statistik-Karte - Erweitert */
+.stil-verwaltung .stil-stats .stat-card {
+  background: rgba(255, 255, 255, 0.05) !important; /* Halbtransparenter weißer Hintergrund */
+  backdrop-filter: blur(20px) !important;   /* Glassmorphism-Effekt */
+  border-radius: 16px !important;           /* Abgerundete Ecken */
+  padding: 1rem !important;                 /* 16px Innenabstand (reduziert von 32px) */
+  text-align: center !important;            /* Zentrierter Text */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Dezenter Rand */
+  transition: all 0.3s ease !important;     /* Sanfte Übergänge für alle Eigenschaften */
+  position: relative !important;            /* Für absolute Positionierung von ::before */
+  overflow: hidden !important;              /* Verstecke überstehende Effekte */
+}
+
+/* Hover-Effekt für Statistik-Karten - Erweitert */
+.stil-verwaltung .stil-stats .stat-card:hover {
+  transform: translateY(-5px) !important;   /* 5px nach oben bewegen */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important; /* Stärkerer Schatten */
+  border-color: rgba(255, 215, 0, 0.3) !important; /* Gold-Rand bei Hover */
+}
+
+/* Große Zahl in Statistik-Karten */
+.stil-verwaltung .stil-stats .stat-card h3 {
+  font-size: 1.8rem !important;             /* 28.8px große Zahl (reduziert von 40px) */
+  font-weight: 700 !important;              /* Sehr fett */
+  margin: 0 0 0.25rem 0 !important;          /* Nur unten 4px Abstand (reduziert von 8px) */
+  background: linear-gradient(135deg, #ffd700, #ff6b35) !important; /* Gold-Orange Gradient */
+  -webkit-background-clip: text !important; /* Gradient auf Text anwenden */
+  -webkit-text-fill-color: transparent !important; /* Text transparent für Gradient */
+  background-clip: text !important;         /* Standard Gradient-Text */
+}
+
+/* Beschriftung unter der Zahl */
+.stil-verwaltung .stil-stats .stat-card p {
+  color: rgba(255, 255, 255, 0.7) !important; /* Gedämpftes Weiß */
+  font-size: 0.9rem !important;             /* Kleinere Schrift (reduziert von 1.1rem) */
+  margin: 0 !important;                     /* Kein Außenabstand */
+  font-weight: 500 !important;              /* Etwas fetter */
+}
+
+/* 
+================================================================================
+CUSTOM SCROLLBARS
+================================================================================
+Angepasste Scrollbalken für moderne Optik
+*/
+::-webkit-scrollbar {
+  width: 8px;                    /* 8px breite Scrollbalken */
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1); /* Dezenter Track-Hintergrund */
+  border-radius: 4px;            /* Abgerundete Ecken */
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.5); /* Gold-Scrollbalken */
+  border-radius: 4px;            /* Abgerundete Ecken */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.7); /* Hellerer Gold-Scrollbalken bei Hover */
+}
+
+/* 
+================================================================================
+ACCESSIBILITY
+================================================================================
+Unterstützung für Benutzer mit reduzierten Animationen
+*/
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important; /* Sehr kurze Animationen */
+    animation-iteration-count: 1 !important; /* Nur einmal abspielen */
+    transition-duration: 0.01ms !important; /* Sehr kurze Übergänge */
+  }
+}
+
+/* 
+================================================================================
+RESPONSIVE DESIGN (@media queries)
+================================================================================
+Anpassungen für verschiedene Bildschirmgrößen
+*/
+@media (max-width: 768px) {      /* Für Bildschirme unter 768px Breite (Tablets/Handys) */
+  
+  /* Hauptcontainer */
+  .stil-verwaltung {
+    padding: 1rem;               /* Weniger Padding auf kleinen Bildschirmen */
+  }
+  
+  /* Header */
+  .stil-header {
+    flex-direction: column;      /* Vertikal stapeln statt nebeneinander */
+    gap: 1rem;                   /* 16px Abstand */
+    text-align: center;          /* Zentrierter Text */
+  }
+  
+  /* Kleinere Hauptüberschrift */
+  .header-left h1 {
+    font-size: 2rem;             /* 32px statt 40px */
+  }
+  
+  /* Add-Button volle Breite auf Mobile */
+  .add-stil-btn {
+    width: 100%;                 /* Volle Breite */
+    justify-content: center;     /* Zentriert */
+  }
+  
+  /* Back-Button Anpassungen */
+  .back-btn {
+    width: 100%;                 /* Volle Breite */
+    justify-content: center;     /* Zentriert */
+  }
+  
+  /* Header-Buttons stapeln */
+  .header-buttons {
+    flex-direction: column;      /* Vertikal stapeln */
+    width: 100%;                 /* Volle Breite */
+  }
+  
+  /* Stil-Grid */
+  .stil-grid {
+    grid-template-columns: 1fr;  /* Nur 1 Spalte auf kleinen Bildschirmen */
+    padding: 0.5rem;             /* Weniger Padding */
+  }
+  
+  /* Stil-Card Stats vertikal stapeln */
+  .stil-card-stats {
+    flex-direction: column;      /* Vertikal stapeln */
+    gap: 0.5rem;                 /* Kleinerer Abstand */
+  }
+  
+  /* Tabs umbruch erlauben */
+  .stil-tabs,
+  .tab-navigation {
+    flex-wrap: wrap;             /* Umbruch erlauben */
+    gap: 0.5rem;                 /* Kleinerer Abstand */
+  }
+  
+  /* Tab-Button Anpassungen */
+  .tab,
+  .tab-btn {
+    flex: 1;                     /* Gleichmäßige Aufteilung */
+    min-width: 120px;            /* Mindestbreite */
+    padding: 10px 16px;          /* Weniger Padding */
+    font-size: 0.9rem;           /* Kleinere Schrift */
+  }
+  
+  /* Detail-Ansicht Anpassungen */
+  .stil-detail {
+    padding: 1rem;               /* Weniger Padding */
+  }
+  
+  /* Form-Rows zu einzelnen Spalten */
+  .form-row {
+    grid-template-columns: 1fr;  /* Nur 1 Spalte */
+  }
+  
+  /* Graduierung Header Mobile */
+  .graduierung-header {
+    flex-direction: column;      /* Vertikal stapeln */
+    align-items: flex-start;     /* Links ausrichten */
+    gap: 0.5rem;                 /* Kleinerer Abstand */
+  }
+  
+  /* Graduierung Details Mobile */
+  .graduierung-details {
+    flex-direction: column;      /* Vertikal stapeln */
+    gap: 0.5rem;                 /* Kleinerer Abstand */
+  }
+  
+  /* Belt-Grid Mobile Anpassungen */
+  .belt-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    /* ^ Kleinere Mindestbreite für Mobile */
+  }
+  
+  /* Belt-Categories Mobile */
+  .belt-categories {
+    max-height: 300px;           /* Niedrigere maximale Höhe */
+  }
+  
+  /* Color-Picker Group Mobile */
+  .color-picker-group {
+    flex-direction: column;      /* Vertikal stapeln */
+    align-items: flex-start;     /* Links ausrichten */
+  }
+  
+  /* Modal weniger Padding */
+  .modal-overlay {
+    padding: 1rem;               /* 16px Padding */
+  }
+
+/* Modal Content Mobile - NICHT für stil-modal */
+.modal-content:not(.stil-modal) {
+  margin: 1rem;                /* Außenabstand */
+  width: calc(100% - 2rem);    /* Breite minus Margin */
+}
+
+/* ============================================================================
+   NEUES MEHRSTUFIGES MODAL DESIGN
+   ============================================================================ */
+
+/* Erweiterte Modal für Stil-Erstellung - Höhere Spezifität mit reduzierter Höhe */
+.modal-overlay .modal-content.create-stil-modal {
+  max-width: 700px !important;            /* Größere Breite für mehrstufiges Design */
+  max-height: 70vh !important;           /* Reduzierte Höhe von 85vh auf 70vh */
+  padding: 0 !important;                 /* Kein Padding - wird intern verwaltet */
+  background: rgba(26, 26, 46, 0.95) !important; /* Dunkler Hintergrund */
+  backdrop-filter: blur(20px) !important; /* Weichzeichnung */
+  border-radius: 20px !important;        /* Stärker abgerundete Ecken */
+  border: 1px solid rgba(255, 215, 0, 0.3) !important; /* Gold-Rand */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important; /* Schatten */
+  word-wrap: break-word !important;     /* Umbruch bei langen Wörtern */
+  box-sizing: border-box !important;    /* Padding wird in die Breite einberechnet */
+}
+
+/* Allgemeine Text-Overflow-Regeln für Modal-Inhalte */
+.modal-overlay .modal-content.create-stil-modal * {
+  box-sizing: border-box !important;    /* Padding wird in die Breite einberechnet */
+  max-width: 100% !important;          /* Verhindert Überlauf */
+}
+
+/* Modal Header mit Fortschritt - Höhere Spezifität mit optimierten Abständen */
+.modal-overlay .modal-content.create-stil-modal .modal-header {
+  display: flex !important;                 /* Flexbox Layout */
+  justify-content: space-between !important; /* Titel links, X rechts */
+  align-items: center !important;           /* Vertikal zentrieren */
+  margin-bottom: 1rem !important;         /* Reduzierter Abstand nach unten */
+  padding: 1.5rem 2.5rem 1rem 2.5rem !important;  /* Optimierte Abstände */
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Trennlinie */
+}
+
+.progress-indicator {
+  display: flex;              /* Flexbox für Fortschrittsanzeige */
+  align-items: center;        /* Vertikal zentrieren */
+  margin-top: 0.5rem;         /* Abstand nach oben */
+  gap: 0.5rem;               /* Abstand zwischen Elementen */
+}
+
+.progress-step {
+  width: 32px;               /* 32px Breite */
+  height: 32px;              /* 32px Höhe */
+  border-radius: 50%;        /* Kreis */
+  background: rgba(255, 255, 255, 0.1); /* Gedämpfter Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  display: flex;             /* Flexbox für Zentrierung */
+  align-items: center;        /* Vertikal zentrieren */
+  justify-content: center;    /* Horizontal zentrieren */
+  font-weight: 600;          /* Fette Schrift */
+  font-size: 0.9rem;         /* Kleinere Schrift */
+  color: rgba(255, 255, 255, 0.6); /* Gedämpfte Textfarbe */
+  transition: all 0.3s ease;  /* Sanfte Übergänge */
+}
+
+.progress-step.active {
+  background: #ffd700;       /* Gold-Hintergrund */
+  color: #1a1a2e;           /* Dunkle Textfarbe */
+  border-color: #ffd700;     /* Gold-Rand */
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); /* Gold-Glüh-Effekt */
+}
+
+.progress-line {
+  height: 2px;               /* 2px Höhe */
+  flex: 1;                  /* Nimmt verfügbaren Platz ein */
+  background: rgba(255, 215, 0, 0.2); /* Gedämpfte Gold-Linie */
+  transition: all 0.3s ease; /* Sanfte Übergänge */
+}
+
+.progress-line.active {
+  background: #ffd700;       /* Gold-Linie */
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+}
+
+/* Modal Steps - Höhere Spezifität ohne aggressive Overflow-Behandlung */
+.modal-overlay .modal-content.create-stil-modal .modal-step {
+  padding: 1.5rem 2.5rem !important;             /* Reduzierte Abstände */
+  min-height: 300px !important;         /* Reduzierte Mindesthöhe von 400px auf 300px */
+  word-wrap: break-word !important;     /* Umbruch bei langen Wörtern */
+  box-sizing: border-box !important;    /* Padding wird in die Breite einberechnet */
+}
+
+.step-title {
+  margin-bottom: 1.5rem;       /* Reduzierter Abstand nach unten */
+  text-align: center;        /* Zentrierte Ausrichtung */
+  padding: 0 0.5rem;           /* Reduzierter horizontaler Abstand für Titel */
+  word-wrap: break-word;      /* Umbruch bei langen Wörtern */
+  box-sizing: border-box;     /* Padding wird in die Breite einberechnet */
+}
+
+.step-title h4 {
+  font-size: 1.4rem;         /* 22px Überschrift */
+  color: #ffd700;            /* Gold-Farbe */
+  margin: 0 0 0.5rem 0;      /* Abstand nach unten */
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+}
+
+.step-title p {
+  color: rgba(255, 255, 255, 0.8); /* Gedämpfte Textfarbe */
+  margin: 0;                 /* Kein Außenabstand */
+  font-size: 0.95rem;       /* Kleinere Schrift */
+}
+
+/* Form Row für nebeneinander liegende Felder */
+.form-row {
+  display: grid;             /* Grid Layout */
+  grid-template-columns: 1fr 1fr; /* Zwei gleich breite Spalten */
+  gap: 1rem;                /* Abstand zwischen Spalten */
+  margin-bottom: 1rem;      /* Abstand nach unten */
+}
+
+/* Form Select Styling - Höhere Spezifität */
+.modal-overlay .modal-content.create-stil-modal .form-select {
+  width: 100% !important;              /* Volle Breite */
+  padding: 0.75rem 1rem !important;    /* Innenabstand */
+  background: rgba(255, 255, 255, 0.08) !important; /* Transparenter Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Rand */
+  border-radius: 8px !important;        /* Abgerundete Ecken */
+  color: #ffffff !important;           /* Weiße Textfarbe */
+  font-size: 1rem !important;          /* Schriftgröße */
+  font-weight: 500 !important;          /* Mittlere Schriftstärke */
+  backdrop-filter: blur(20px) !important; /* Weichzeichnung */
+  transition: all 0.3s ease !important; /* Sanfte Übergänge */
+  appearance: none !important;         /* Entfernt Standard-Pfeil */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffd700' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 1rem !important;
+  padding-right: 2.5rem !important;
+}
+
+.form-select:hover {
+  border-color: #ffd700;     /* Gold-Rand bei Hover */
+  background-color: rgba(255, 255, 255, 0.12); /* Hellerer Hintergrund */
+}
+
+.form-select:focus {
+  outline: none;            /* Entfernt Standard-Outline */
+  border-color: #ffd700;    /* Gold-Rand bei Focus */
+  background-color: rgba(255, 255, 255, 0.15); /* Hellerer Hintergrund */
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); /* Gold-Glüh-Effekt */
+}
+
+/* Equipment Tags */
+.equipment-tags {
+  display: flex;            /* Flexbox Layout */
+  flex-wrap: wrap;          /* Umbruch erlaubt */
+  gap: 0.5rem;            /* Reduzierter Abstand zwischen Tags */
+  margin-top: 0.5rem;      /* Abstand nach oben */
+  padding: 0 0.25rem;        /* Reduzierter horizontaler Abstand */
+  word-wrap: break-word;  /* Umbruch bei langen Wörtern */
+  box-sizing: border-box; /* Padding wird in die Breite einberechnet */
+}
+
+.equipment-tag {
+  display: flex;            /* Flexbox Layout */
+  align-items: center;      /* Vertikal zentrieren */
+  gap: 0.5rem;             /* Abstand zwischen Checkbox und Text */
+  padding: 0.5rem 0.75rem; /* Innenabstand */
+  background: rgba(255, 255, 255, 0.05); /* Transparenter Hintergrund */
+  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand */
+  border-radius: 20px;      /* Abgerundete Ecken */
+  cursor: pointer;           /* Zeiger bei Hover */
+  transition: all 0.3s ease; /* Sanfte Übergänge */
+  font-size: 0.9rem;        /* Kleinere Schrift */
+  color: rgba(255, 255, 255, 0.8); /* Gedämpfte Textfarbe */
+}
+
+.equipment-tag:hover {
+  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund bei Hover */
+  border-color: #ffd700;    /* Gold-Rand bei Hover */
+}
+
+.equipment-tag input[type="checkbox"] {
+  margin: 0;                /* Kein Außenabstand */
+  accent-color: #ffd700;     /* Gold-Akzentfarbe */
+}
+
+.equipment-tag input[type="checkbox"]:checked + span {
+  color: #ffd700;           /* Gold-Textfarbe wenn ausgewählt */
+  font-weight: 600;         /* Fette Schrift */
+}
+
+/* Confirmation Summary */
+.confirmation-summary {
+  background: rgba(255, 255, 255, 0.05); /* Transparenter Hintergrund */
+  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand */
+  border-radius: 12px;      /* Abgerundete Ecken */
+  padding: 1rem;          /* Reduzierter Innenabstand */
+  margin-bottom: 1rem;    /* Reduzierter Abstand nach unten */
+  margin: 0 0.5rem 1rem 0.5rem; /* Reduzierter horizontaler Abstand */
+  word-wrap: break-word;  /* Umbruch bei langen Wörtern */
+  box-sizing: border-box; /* Padding wird in die Breite einberechnet */
+}
+
+.summary-item {
+  display: flex;            /* Flexbox Layout */
+  justify-content: space-between; /* Platz zwischen Label und Wert */
+  align-items: center;      /* Vertikal zentrieren */
+  padding: 0.5rem 0;        /* Vertikaler Innenabstand */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Trennlinie */
+  color: rgba(255, 255, 255, 0.9); /* Textfarbe */
+}
+
+.summary-item:last-child {
+  border-bottom: none;      /* Keine Trennlinie beim letzten Element */
+}
+
+.summary-item strong {
+  color: #ffd700;           /* Gold-Farbe für Labels */
+  font-weight: 600;         /* Fette Schrift */
+}
+
+/* Step Navigation */
+.step-navigation {
+  display: flex;            /* Flexbox Layout */
+  gap: 1rem;               /* Abstand zwischen Buttons */
+  align-items: center;      /* Vertikal zentrieren */
+}
+
+/* Button Varianten */
+.btn-outline {
+  background: transparent;   /* Transparenter Hintergrund */
+  border: 2px solid rgba(255, 215, 0, 0.5); /* Gold-Rand */
+  color: #ffd700;           /* Gold-Textfarbe */
+  padding: 0.75rem 1.5rem; /* Innenabstand */
+  border-radius: 8px;       /* Abgerundete Ecken */
+  font-weight: 600;         /* Fette Schrift */
+  cursor: pointer;          /* Zeiger bei Hover */
+  transition: all 0.3s ease; /* Sanfte Übergänge */
+  text-decoration: none;    /* Keine Unterstreichung */
+  display: inline-flex;     /* Flexbox für Icon-Buttons */
+  align-items: center;      /* Vertikal zentrieren */
+  gap: 0.5rem;             /* Abstand zwischen Icon und Text */
+}
+
+.btn-outline:hover {
+  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund bei Hover */
+  border-color: #ffd700;    /* Gold-Rand bei Hover */
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); /* Gold-Glüh-Effekt */
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #28a745, #20c997); /* Grün-Gradient */
+  border: none;            /* Kein Rand */
+  color: #ffffff;          /* Weiße Textfarbe */
+  padding: 0.75rem 1.5rem; /* Innenabstand */
+  border-radius: 8px;       /* Abgerundete Ecken */
+  font-weight: 600;         /* Fette Schrift */
+  cursor: pointer;          /* Zeiger bei Hover */
+  transition: all 0.3s ease; /* Sanfte Übergänge */
+  text-decoration: none;    /* Keine Unterstreichung */
+  display: inline-flex;     /* Flexbox für Icon-Buttons */
+  align-items: center;      /* Vertikal zentrieren */
+  gap: 0.5rem;             /* Abstand zwischen Icon und Text */
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); /* Grün-Schatten */
+}
+
+.btn-success:hover {
+  transform: translateY(-2px); /* Leicht nach oben bewegen */
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4); /* Stärkerer Schatten */
+}
+
+.btn-success:disabled {
+  opacity: 0.6;            /* Gedämpfte Darstellung */
+  cursor: not-allowed;      /* Nicht erlaubt Cursor */
+  transform: none;          /* Keine Transformation */
+}
+
+/* Modal Button Styles - Höchste Spezifität ohne !important */
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e;
+  border: 1px solid #ffd700;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-primary:hover {
+  background: linear-gradient(135deg, #ffed4e, #ff8c52);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  border-color: #ffed4e;
+  transform: translateY(-2px);
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-secondary {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 215, 0, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-success {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  border: 1px solid #28a745;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-outline {
+  background: transparent;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  color: #ffd700;
+}
+
+body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-outline:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+  
+  /* Belt-Modal Mobile - NICHT für stil-modal */
+  .modal-content.belt-modal:not(.stil-modal) {
+    max-width: none;             /* Keine Breitenbegrenzung */
+    width: calc(100% - 2rem);    /* Volle verfügbare Breite */
+  }
+
+  /* Mehrstufiges Modal Mobile */
+  .modal-content.create-stil-modal {
+    max-width: none;             /* Keine Breitenbegrenzung */
+    width: calc(100% - 2rem);    /* Volle verfügbare Breite */
+    max-height: 90vh;            /* Mehr Höhe auf Mobile */
+  }
+
+  /* Form Row Mobile - Einspaltig */
+  .form-row {
+    grid-template-columns: 1fr;  /* Eine Spalte auf Mobile */
+  }
+
+  /* Equipment Tags Mobile */
+  .equipment-tags {
+    justify-content: center;     /* Zentrierte Ausrichtung */
+  }
+
+  /* Step Navigation Mobile */
+  .step-navigation {
+    flex-direction: column;      /* Vertikal stapeln */
+    gap: 0.75rem;              /* Kleinerer Abstand */
+  }
+
+  /* Progress Indicator Mobile */
+  .progress-indicator {
+    justify-content: center;     /* Zentrierte Ausrichtung */
+  }
+  
+  /* Modal Actions vertikal stapeln */
+  .modal-actions {
+    flex-direction: column;      /* Vertikal stapeln */
+  }
+  
+  /* Drag Handle Mobile - Größer für Touch */
+  .drag-handle {
+    width: 40px;                 /* Größerer Touch-Bereich */
+    height: 40px;                /* Größerer Touch-Bereich */
+  }
+  
+  .drag-handle-icon {
+    font-size: 1.3rem;           /* Größeres Icon für Touch */
+  }
+  
+  /* Graduierung Item Mobile */
+  .graduierung-item {
+    flex-direction: column;      /* Vertikal stapeln bei sehr kleinen Screens */
+    align-items: flex-start;     /* Links ausrichten */
+  }
+  
+  .graduierung-item .drag-handle {
+    align-self: flex-end;        /* Rechts positionieren */
+    margin-bottom: 0.5rem;       /* Abstand nach unten */
+  }
+}
+
+/* Sehr kleine Bildschirme (Smartphones im Hochformat) */
+@media (max-width: 480px) {
+  
+  /* Noch kleinere Hauptüberschrift */
+  .stil-header h1,
+  .header-left h1 {
+    font-size: 1.5rem;           /* 24px Überschrift */
+  }
+  
+  /* Tab-Buttons weitere Anpassungen */
+  .tab,
+  .tab-btn {
+    font-size: 0.9rem;           /* Kleinere Schrift */
+    padding: 8px 12px;           /* Weniger Padding */
+  }
+  
+  /* Belt-Preview Größen anpassen */
+  .belt-preview-large {
+    width: 60px;                 /* Kleinere große Vorschau */
+    height: 18px;                /* Proportional angepasst */
+  }
+  
+  /* Selected Belt Preview Mobile */
+  .selected-belt-preview {
+    flex-direction: column;      /* Vertikal stapeln */
+    align-items: center;         /* Zentrieren */
+    text-align: center;          /* Zentrierter Text */
+  }
+  
+  /* Prüfungsinhalt Categories Mobile */
+  .pruefungsinhalt-categories {
+    grid-template-columns: 1fr;  /* Nur eine Spalte */
+  }
+}
+
+/* 
+================================================================================
+ENDE DER CSS-DATEI - VOLLSTÄNDIG ERWEITERT MIT @DND-KIT SUPPORT
+================================================================================
+Diese CSS-Datei enthält alle modernen Features für die Stil-Verwaltung:
+
+NEUE @DND-KIT FEATURES:
+- Drag-Handle mit .drag-handle und .drag-handle-icon Klassen
+- .is-dragging für Elemente während des Dragging
+- .is-dragging-overlay für das Drag-Overlay Element
+- .is-drag-over für Drop-Zonen während des Hoverns
+- Verbesserte Touch-Unterstützung für Mobile-Geräte
+- Sanfte Animationen und Transitionen für smooth Dragging
+
+BESTEHENDE BELT-PREVIEW FEATURES:
+- BeltPreview-Komponente in 3 Größen (small, normal, large)
+- Belt-Selection mit Kategorien-Grid
+- Standard-Gürtel-Auswahl mit Hover-Effekten
+- Color-Selection für eigene Gürtel
+- Erweiterte Modal-Layouts für Belt-Auswahl
+
+DESIGN-PRINZIPIEN:
+- Glassmorphism 2.0 mit mehrschichtigen Backdrop-Filtern
+- Schwarzer Hintergrund zwischen Cards bleibt erhalten (gewünscht)
+- Gold-Orange Farbschema (#ffd700, #ff6b35) durchgängig
+- Sanfte Animationen und Hover-Effekte für moderne UX
+- Responsive Grid-Layouts für alle Bildschirmgrößen
+- Professionelle Loading- und Empty-States
+- Vollständige @dnd-kit Drag & Drop Integration
+
+TECHNISCHE DETAILS:
+- CSS Grid und Flexbox für moderne Layouts
+- Pseudo-Elemente für aufwendige Effekte
+- Media Queries für vollständige Responsive-Unterstützung
+- Optimierte Performance durch hardware-beschleunigte Transforms
+- Vollständige Accessibility-Unterstützung
+- Touch-optimierte Drag-Handles für Mobile-Geräte
+================================================================================
+*/
+
+/* ============================================================================
+   STIL-CARD ACTIONS - DELETE BUTTON STYLING
+   ============================================================================ */
+
+/* Container für Aktions-Buttons auf Stil-Karten */
+.stil-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  gap: 0.5rem;
+}
+
+/* Löschen-Button - Angepasst an aktuelles Design */
+.stil-card-actions .btn-danger {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: rgba(239, 68, 68, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stil-card-actions .btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.stil-card-actions .btn-danger:active {
+  transform: translateY(0);
+}
+
+
+/* ============================================================================
+   INAKTIVE STILE - AUSKLAPPBARER BEREICH
+   ============================================================================ */
+
+/* Container für inaktive Stile */
+.inactive-stile-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid rgba(255, 215, 0, 0.1);
+}
+
+/* Toggle-Button für inaktive Stile */
+.inactive-stile-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.inactive-stile-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 215, 0, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.inactive-stile-toggle .toggle-icon {
+  font-size: 0.875rem;
+  color: #ffd700;
+  transition: transform 0.3s ease;
+}
+
+.inactive-stile-toggle .toggle-text {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Inaktive Grid */
+.inactive-grid {
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.inactive-grid .stil-card {
+  opacity: 0.7;
+}
+
+.inactive-grid .stil-card:hover {
+  opacity: 1;
+}
+
+/* ============================================================================
+   REIHENFOLGE BUTTONS FÜR STILE
+   ============================================================================ */
+
+/* Info Box für Reihenfolge */
+.drag-drop-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.drag-drop-info .info-icon {
+  font-size: 18px;
+}
+
+.drag-drop-info strong {
+  color: #ffd700;
+}
+
+/* Stil Card Actions */
+.stil-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 15px;
+  margin-top: 15px;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Move Buttons */
+.stil-card-actions .move-btn {
+  min-width: 40px;
+  height: 36px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: bold;
+  background: rgba(52, 152, 219, 0.1);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  color: #3498db;
+  transition: all 0.2s ease;
+}
+
+.stil-card-actions .move-btn:hover:not(:disabled) {
+  background: rgba(52, 152, 219, 0.2);
+  border-color: rgba(52, 152, 219, 0.5);
+  transform: translateY(-2px);
+}
+
+.stil-card-actions .move-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.stil-card-actions .move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: rgba(100, 100, 100, 0.1);
+  border-color: rgba(100, 100, 100, 0.2);
+  color: rgba(100, 100, 100, 0.5);
+}
+
+/* Stil Grid */
+.stil-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  position: relative;
+}
+
+/* Hover Effect für Cards */
+.stil-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+  .stil-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .drag-drop-info {
+    font-size: 16px;
+    padding: 16px 24px;
+  }
+
+  .stil-card-actions .move-btn {
+    min-width: 45px;
+    height: 40px;
+    font-size: 20px;
+  }
+}
+
+/* ============================================================================
+   SECTION HEADER - Graduierung Verwaltung
+   ============================================================================ */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.section-header h3 {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .header-buttons {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-buttons .btn {
+    flex: 1;
+    min-width: 150px;
+  }
+}
+
+/* ============================================================================
+   STIL-MODAL FIX - MUSS AM ENDE STEHEN!
+   ============================================================================ */
+html body .modal-overlay .modal-content.belt-modal.stil-modal,
+html body .modal-overlay .modal-content.stil-modal {
+  padding: 2.5rem !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+  max-width: 850px !important;
+  background: rgba(26, 26, 46, 0.98) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .modal-header,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-header {
+  margin: 0 !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0 !important;
+  padding-bottom: 1rem !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .modal-actions,
+html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
+  margin: 0 !important;
+  margin-top: 1.5rem !important;
+  padding: 0 !important;
+  padding-top: 1.5rem !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal * {
+  color: rgba(255, 255, 255, 0.9) !important;
+  box-sizing: border-box !important;
+}
+
+html body .modal-overlay .modal-content.stil-modal .modal-title,
+html body .modal-overlay .modal-content.stil-modal h3 {
+  color: #ffd700 !important;
+}
+
+/* 
+================================================================================
+PRÜFUNGSEINSTELLUNGEN TAB - WARTEZEITEN UND REGELN
+================================================================================
+Styling für den neuen Prüfungseinstellungen-Tab
+*/
+
+.pruefungseinstellungen-tab {
+  padding: 1.5rem;
+  background: rgba(20, 20, 30, 0.7);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.pruefungseinstellungen-tab h3 {
+  color: #ffd700;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.pruefungseinstellungen-tab .tab-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.pruefungseinstellungen-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 968px) {
+  .pruefungseinstellungen-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Wartezeiten-Sektion */
+.wartezeiten-section,
+.schwarzgurt-section {
+  background: rgba(30, 30, 45, 0.6);
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.wartezeiten-section h4,
+.schwarzgurt-section h4 {
+  color: #ffd700;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+/* Label mit Info-Text */
+.label-info {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+  margin-top: 0.25rem;
+}
+
+/* Checkbox-Gruppe */
+.checkbox-group {
+  margin-top: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #ffd700;
+}
+
+.checkbox-text {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Checkbox-Info Box */
+.checkbox-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.05);
+  border-left: 3px solid #ffd700;
+  border-radius: 6px;
+}
+
+.checkbox-info p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.checkbox-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.checkbox-info ul li {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.checkbox-info ul li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+/* Hover-Effekte */
+.wartezeiten-section:hover,
+.schwarzgurt-section:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Number Input Styling */
+.pruefungseinstellungen-tab .form-input[type="number"] {
+  width: 100%;
+  max-width: 150px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: rgba(40, 40, 60, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.pruefungseinstellungen-tab .form-input[type="number"]:focus {
+  outline: none;
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* Small Text Hinweise */
+.pruefungseinstellungen-tab small {
+  display: block;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* Speichern-Button im Prüfungseinstellungen-Tab */
+.pruefungseinstellungen-tab .sub-tabs {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.pruefungseinstellungen-tab .sub-tab-btn {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.3));
+  color: #ffd700;
+  border: 2px solid #ffd700;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.pruefungseinstellungen-tab .sub-tab-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.4));
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.pruefungseinstellungen-tab .sub-tab-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

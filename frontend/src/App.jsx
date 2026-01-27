@@ -11,6 +11,9 @@ import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx"
 import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 
+// AGB-Bestaetigung Wrapper
+import AgbConfirmationWrapper from "./components/AgbConfirmationWrapper";
+
 // ============================================================================
 // SOFORT GELADEN - Kritisch für Initial Load
 // ============================================================================
@@ -259,6 +262,7 @@ const App = () => {
               <KursProvider>
                 <MitgliederUpdateProvider>
                   <BrowserRouter>
+                    <AgbConfirmationWrapper>
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}
               <Route path="/login" element={<Login />} />
@@ -595,6 +599,7 @@ const App = () => {
               } 
             />
               </Routes>
+                    </AgbConfirmationWrapper>
               </BrowserRouter>
               </MitgliederUpdateProvider>
             </KursProvider>

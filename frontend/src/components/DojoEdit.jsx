@@ -26,6 +26,9 @@ const DojoEdit = () => {
   const [apiTokenCreatedAt, setApiTokenCreatedAt] = useState(null);
   const [apiTokenLastUsed, setApiTokenLastUsed] = useState(null);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const [agbSaveLoading, setAgbSaveLoading] = useState(false);
+  const [agbSendNotification, setAgbSendNotification] = useState(false);
+  const [agbMessage, setAgbMessage] = useState('');
   const isNewDojo = id === 'new';
 
   // Tab-Konfiguration mit Icons
@@ -164,7 +167,11 @@ const DojoEdit = () => {
 
     // Rechtliche Dokumente
     agb_text: '',
+    agb_version: '1.0',
+    agb_letzte_aenderung: null,
     dsgvo_text: '',
+    dsgvo_version: '1.0',
+    dsgvo_letzte_aenderung: null,
     dojo_regeln_text: '',
     hausordnung_text: '',
     haftungsausschluss_text: '',
@@ -307,7 +314,11 @@ const DojoEdit = () => {
 
         // Rechtliche Dokumente
         agb_text: dojo.agb_text || '',
+        agb_version: dojo.agb_version || '1.0',
+        agb_letzte_aenderung: dojo.agb_letzte_aenderung || null,
         dsgvo_text: dojo.dsgvo_text || '',
+        dsgvo_version: dojo.dsgvo_version || '1.0',
+        dsgvo_letzte_aenderung: dojo.dsgvo_letzte_aenderung || null,
         dojo_regeln_text: dojo.dojo_regeln_text || '',
         hausordnung_text: dojo.hausordnung_text || '',
         haftungsausschluss_text: dojo.haftungsausschluss_text || '',
@@ -397,6 +408,72 @@ const DojoEdit = () => {
     navigator.clipboard.writeText(text);
     setMessage(`✅ ${label} kopiert!`);
     setTimeout(() => setMessage(''), 2000);
+  };
+
+  // ===================================================================
+  // AGB/DSGVO VERSIONING HANDLERS
+  // ===================================================================
+
+  const incrementVersion = (currentVersion) => {
+    if (!currentVersion) return '1.1';
+    const parts = currentVersion.split('.');
+    const minor = parseInt(parts[1] || '0') + 1;
+    return `${parts[0]}.${minor}`;
+  };
+
+  const saveAgbDsgvo = async (incrementVersions = false) => {
+    if (isNewDojo) {
+      setAgbMessage('Bitte speichern Sie das Dojo zuerst.');
+      return;
+    }
+
+    setAgbSaveLoading(true);
+    setAgbMessage('');
+
+    try {
+      const newAgbVersion = incrementVersions ? incrementVersion(formData.agb_version) : formData.agb_version;
+      const newDsgvoVersion = incrementVersions ? incrementVersion(formData.dsgvo_version) : formData.dsgvo_version;
+
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/agb/${id}/update`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agb_text: formData.agb_text,
+          agb_version: newAgbVersion,
+          dsgvo_text: formData.dsgvo_text,
+          dsgvo_version: newDsgvoVersion,
+          sendNotification: agbSendNotification
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local state with new versions
+        setFormData(prev => ({
+          ...prev,
+          agb_version: newAgbVersion,
+          dsgvo_version: newDsgvoVersion,
+          agb_letzte_aenderung: new Date().toISOString(),
+          dsgvo_letzte_aenderung: new Date().toISOString()
+        }));
+
+        let successMsg = 'AGB & Datenschutz erfolgreich gespeichert!';
+        if (data.notifications) {
+          successMsg += ` (${data.notifications.sent}/${data.notifications.total} E-Mails gesendet)`;
+        }
+        setAgbMessage(successMsg);
+        setAgbSendNotification(false);
+        setTimeout(() => setAgbMessage(''), 5000);
+      } else {
+        throw new Error(data.error || 'Speichern fehlgeschlagen');
+      }
+    } catch (error) {
+      console.error('Error saving AGB:', error);
+      setAgbMessage('Fehler: ' + error.message);
+    } finally {
+      setAgbSaveLoading(false);
+    }
   };
 
   // Load API token when component mounts or id changes
@@ -1253,29 +1330,143 @@ const DojoEdit = () => {
                 </div>
               </div>
 
-              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
-                Hinterlegen Sie hier die rechtlichen Texte für Ihr Dojo (einfache Textverwaltung)
-              </p>
+              {/* AGB & Datenschutz mit Versionierung */}
+              <div style={{
+                background: 'rgba(255, 215, 0, 0.05)',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                marginBottom: '2rem'
+              }}>
+                <h4 style={{ color: '#FFD700', marginBottom: '1rem' }}>
+                  AGB & Datenschutz (mit Versionierung)
+                </h4>
 
-              <div className="form-group">
-                <label>AGB (Allgemeine Geschäftsbedingungen)</label>
-                <textarea
-                  value={formData.agb_text}
-                  onChange={(e) => setFormData({ ...formData, agb_text: e.target.value })}
-                  rows="6"
-                  placeholder="Ihre AGB..."
-                />
+                {/* Versionsinfo */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '1rem',
+                  marginBottom: '1.5rem',
+                  padding: '1rem',
+                  background: 'rgba(0,0,0,0.2)',
+                  borderRadius: '6px'
+                }}>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>AGB Version:</span>
+                    <strong style={{ marginLeft: '0.5rem', color: '#FFD700' }}>v{formData.agb_version}</strong>
+                    {formData.agb_letzte_aenderung && (
+                      <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                        (geaendert: {new Date(formData.agb_letzte_aenderung).toLocaleDateString('de-DE')})
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>Datenschutz Version:</span>
+                    <strong style={{ marginLeft: '0.5rem', color: '#FFD700' }}>v{formData.dsgvo_version}</strong>
+                    {formData.dsgvo_letzte_aenderung && (
+                      <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                        (geaendert: {new Date(formData.dsgvo_letzte_aenderung).toLocaleDateString('de-DE')})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>AGB (Allgemeine Geschaeftsbedingungen)</label>
+                  <textarea
+                    value={formData.agb_text}
+                    onChange={(e) => setFormData({ ...formData, agb_text: e.target.value })}
+                    rows="8"
+                    placeholder="Ihre AGB..."
+                    style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>DSGVO / Datenschutzerklaerung</label>
+                  <textarea
+                    value={formData.dsgvo_text}
+                    onChange={(e) => setFormData({ ...formData, dsgvo_text: e.target.value })}
+                    rows="8"
+                    placeholder="Ihre Datenschutzerklaerung..."
+                    style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                {/* Benachrichtigung & Speichern */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                  marginTop: '1rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  <label className="checkbox-label" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={agbSendNotification}
+                      onChange={(e) => setAgbSendNotification(e.target.checked)}
+                    />
+                    <span>Mitglieder per E-Mail benachrichtigen</span>
+                  </label>
+
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => saveAgbDsgvo(false)}
+                      disabled={agbSaveLoading || isNewDojo}
+                      style={{
+                        padding: '0.6rem 1rem',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        cursor: agbSaveLoading ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {agbSaveLoading ? 'Speichere...' : 'Speichern'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveAgbDsgvo(true)}
+                      disabled={agbSaveLoading || isNewDojo}
+                      style={{
+                        padding: '0.6rem 1rem',
+                        background: '#FFD700',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#000',
+                        fontWeight: '600',
+                        cursor: agbSaveLoading ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {agbSaveLoading ? 'Speichere...' : 'Speichern + Version erhoehen'}
+                    </button>
+                  </div>
+                </div>
+
+                {agbMessage && (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '6px',
+                    background: agbMessage.includes('Fehler') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                    color: agbMessage.includes('Fehler') ? '#FCA5A5' : '#86EFAC',
+                    fontSize: '0.9rem'
+                  }}>
+                    {agbMessage}
+                  </div>
+                )}
               </div>
 
-              <div className="form-group">
-                <label>DSGVO / Datenschutzerklärung</label>
-                <textarea
-                  value={formData.dsgvo_text}
-                  onChange={(e) => setFormData({ ...formData, dsgvo_text: e.target.value })}
-                  rows="6"
-                  placeholder="Ihre Datenschutzerklärung..."
-                />
-              </div>
+              {/* Weitere Dokumente (ohne Versionierung) */}
+              <h4 style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
+                Weitere Dokumente
+              </h4>
 
               <div className="form-group">
                 <label>Dojo-Regeln</label>

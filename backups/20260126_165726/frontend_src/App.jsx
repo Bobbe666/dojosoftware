@@ -1,0 +1,673 @@
+// Frontend/src/App.jsx - VOLLST�NDIGE VERSION mit korrekten Routes
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Authentifizierung & Context
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import { KursProvider } from "./context/KursContext.jsx";
+import { DojoProvider } from "./context/DojoContext.jsx";
+import { StandortProvider } from "./context/StandortContext.jsx";
+import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx";
+import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
+
+// Bestehende Komponenten
+import Login from "./components/Login";
+import MitgliederLogin from "./components/MitgliederLogin";
+import Dashboard from "./components/Dashboard";
+import DashboardTdaVib from "./components/DashboardTdaVib"; // TDA-Vib Style Test
+import MitgliederListe from "./components/MitgliederListe";
+// LAZY LOADED (wraps MitgliedDetailShared)
+const MitgliedDetail = lazy(() => import("./components/MitgliedDetail"));
+import EhemaligenListe from "./components/EhemaligenListe";
+import InteressentenListe from "./components/InteressentenListe";
+import Anwesenheit from "./components/Anwesenheit";
+import Stundenplan from "./components/Stundenplan";
+import Kurse from "./components/Kurse";
+import Trainer from "./components/Trainer";
+import GruppenStilverwaltung from "./components/GruppenStilverwaltung";
+import StandortVerwaltung from "./components/StandortVerwaltung";
+import AnwesenheitDashboard from "./components/AnwesenheitDashboard";
+import DashboardStart from "./components/DashboardStart";
+
+// Check-In System
+import CheckinSystem from "./components/CheckinSystem";
+
+// Personal Check-In System
+import PersonalCheckin from "./components/PersonalCheckin";
+
+// Public Check-In Display
+import PublicCheckinDisplay from "./components/PublicCheckinDisplay";
+
+// Public Timetable Display
+import PublicTimetableDisplay from "./components/PublicTimetableDisplay";
+
+// Public Registration
+import PublicRegistration from "./components/PublicRegistration";
+
+// Buddy Invite Registration
+import BuddyInviteRegistration from "./components/BuddyInviteRegistration";
+
+// Homepage
+import Homepage from "./components/Homepage";
+
+// Tresen-�bersicht
+import TresenUebersicht from "./components/TresenUebersicht";
+
+// Artikelverwaltung & Verkaufssystem
+import ArtikelVerwaltung from "./components/ArtikelVerwaltung";
+import ArtikelFormular from "./components/ArtikelFormular";
+import VerkaufKasse from "./components/VerkaufKasse";
+import ArtikelgruppenVerwaltung from "./components/ArtikelgruppenVerwaltung";
+
+// ERWEITERTE STIL-VERWALTUNG (mit Graduierungen und Drag & Drop) - LAZY LOADED
+const Stilverwaltung = lazy(() => import("./components/Stilverwaltung"));
+
+// MEMBER-KOMPONENTEN
+import MemberDashboard from "./components/MemberDashboard";
+import AppInstallPage from "./pages/AppInstallPage";
+import CourseRating from "./components/CourseRating";
+import MemberSchedule from "./components/MemberSchedule";
+import MemberEvents from "./components/MemberEvents";
+import MemberPayments from "./components/MemberPayments";
+import MemberStats from "./components/MemberStats";
+import MemberStyles from "./components/MemberStyles";
+import EquipmentChecklist from "./components/EquipmentChecklist";
+import CourseRatingAdmin from "./components/CourseRatingAdmin";
+// LAZY LOADED - Large component (9975 lines)
+const MitgliedDetailShared = lazy(() => import("./components/MitgliedDetailShared"));
+import MemberHeader from "./components/MemberHeader";
+
+// TRAINER-KOMPONENTEN
+import TrainerDashboard from "./components/TrainerDashboard";
+import TrainerOnlyRoute from "./components/TrainerOnlyRoute";
+
+// Beitrags-Management
+import Finanzcockpit from "./components/Finanzcockpit";
+const Tariferhohung = lazy(() => import("./components/Tariferhohung"));
+import MitgliederFilter from "./components/MitgliederFilter";
+import Beitraege from "./components/Beitraege";
+import Mahnwesen from "./components/Mahnwesen";
+import MahnstufenEinstellungen from "./components/MahnstufenEinstellungen";
+import Rechnungsverwaltung from "./components/Rechnungsverwaltung";
+import RechnungErstellen from "./components/RechnungErstellen";
+import Lastschriftlauf from "./components/Lastschriftlauf";
+import SepaMandateVerwaltung from "./components/SepaMandateVerwaltung";
+import Zahllaeufe from "./components/Zahllaeufe";
+import LastschriftManagement from "./components/LastschriftManagement";
+
+// Tarife & Preise Management
+import TarifePreise from "./components/TarifePreise";
+import Rabattsystem from "./components/Rabattsystem";
+
+// Zahlungszyklen-Management
+import ZahlungszyklenSeite from "./components/ZahlungszyklenSeite";
+
+// Personal-Management
+import Personal from "./components/Personal";
+
+// Zahlungseinstellungen (Stripe + DATEV Integration)
+import ZahlungsEinstellungen from "./components/ZahlungsEinstellungen";
+
+// Dojo-Einstellungen & Admin-Verwaltung
+import EinstellungenDojo from "./components/EinstellungenDojo";
+
+// Buddy-Gruppen Verwaltung
+import BuddyVerwaltung from "./components/BuddyVerwaltung";
+
+// Auswertungen (Analytics & Reports)
+import Auswertungen from "./components/Auswertungen";
+
+// Berichte & Dokumente (PDF Management)
+import BerichteDokumente from "./components/BerichteDokumente";
+
+// Multi-Dojo-Verwaltung & Steuer-Tracking
+import DojosVerwaltung from "./components/DojosVerwaltung";
+import DojoEdit from "./components/DojoEdit";
+
+// Vertrags-Dokumentenverwaltung - LAZY LOADED (2304 lines)
+const DokumenteVerwaltung = lazy(() => import("./components/DokumenteVerwaltung"));
+
+// Newsletter & Benachrichtigungssystem - LAZY LOADED (2435 lines)
+const NotificationSystem = lazy(() => import("./components/NotificationSystem"));
+
+// Pr�fungsverwaltung (Gurtpr�fungen) - LAZY LOADED (4748 lines)
+const PruefungsVerwaltung = lazy(() => import("./components/PruefungsVerwaltung"));
+import PruefungDurchfuehren from "./components/PruefungDurchfuehren";
+
+// Events-Verwaltung
+import Events from "./components/Events";
+import MeineEvents from "./components/MeineEvents";
+
+// News-Verwaltung (Haupt-Admin)
+import NewsVerwaltung from "./components/NewsVerwaltung";
+import NewsFormular from "./components/NewsFormular";
+
+// MagicLine Import
+import MagicLineImport from "./pages/MagicLineImport";
+
+// Public Marketing Pages
+import LandingPage from "./pages/LandingPage";
+import PricingPage from "./pages/PricingPage";
+import RegisterPage from "./pages/RegisterPage";
+import ContactPage from "./pages/ContactPage";
+import ImpressumPage from "./pages/ImpressumPage";
+import AboutPage from "./pages/AboutPage";
+import DatenschutzPage from "./pages/DatenschutzPage";
+import AGBPage from "./pages/AGBPage";
+import HelpPage from "./pages/HelpPage";
+import GaleriePage from "./pages/GaleriePage";
+import DemoPage from "./pages/DemoPage";
+
+// Loading Fallback für Lazy-Loaded Komponenten
+const LazyLoadFallback = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '200px',
+    fontSize: '1rem',
+    color: '#666'
+  }}>
+    <div className="loading-spinner"></div>
+  </div>
+);
+
+// Protected Route Komponente mit AuthContext
+const ProtectedRoute = ({ children }) => {
+  const { token, loading } = useAuth();
+
+  // 🔧 DEVELOPMENT BYPASS - Temporär deaktiviert für Multi-Tenant Testing
+  // const isDevelopment = import.meta.env.MODE === 'development';
+  // if (isDevelopment) {
+  //   console.log('🔧 Development Mode: Login-Bypass aktiv');
+  //   return children;
+  // }
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '1.2rem',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div className="loading-spinner-large"></div>
+        <div>Authentifizierung wird gepr�ft...</div>
+      </div>
+    );
+  }
+
+  if (!token) {
+    console.log('Kein Token gefunden, Weiterleitung zu Login');
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+// Member-Only Route - Only allows users with 'member' role
+const MemberOnlyRoute = ({ children }) => {
+  const { token, user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '1.2rem',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div className="loading-spinner-large"></div>
+        <div>Authentifizierung wird gepr�ft...</div>
+      </div>
+    );
+  }
+
+  if (!token) {
+    console.log('Kein Token gefunden, Weiterleitung zu Login');
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect admins to their dashboard
+  if (user?.role === 'admin') {
+    console.log('Admin versucht auf Member-Route zuzugreifen, Weiterleitung zu Dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
+// Root Redirect basierend auf Authentifizierungsstatus
+const RootRedirect = () => {
+  const { token, user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Lade...</div>;
+  }
+
+  // Wenn nicht eingeloggt, zeige Landing Page
+  if (!token) {
+    return <LandingPage />;
+  }
+
+  // Wenn eingeloggt, weiter zum Dashboard
+  return <Navigate to="/dashboard" replace />;
+};
+
+// Haupt-App Komponente
+const App = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <DojoProvider>
+            <StandortProvider>
+              <KursProvider>
+                <MitgliederUpdateProvider>
+                  <BrowserRouter>
+              <Routes>
+              {/* ======== PUBLIC ROUTES ======== */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/mitglieder-login" element={<MitgliederLogin />} />
+
+              {/* Public Marketing Pages */}
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/impressum" element={<ImpressumPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/datenschutz" element={<DatenschutzPage />} />
+              <Route path="/agb" element={<AGBPage />} />
+              <Route path="/help" element={<HelpPage />} />
+              <Route path="/galerie" element={<GaleriePage />} />
+              <Route path="/demo" element={<DemoPage />} />
+
+            {/* Public Homepage - No authentication required */}
+            <Route path="/home" element={<Homepage />} />
+
+            {/* Public Check-in Display - No authentication required */}
+            <Route path="/public-checkin" element={<PublicCheckinDisplay />} />
+
+            {/* Public Timetable Display - No authentication required */}
+            <Route path="/public-timetable" element={<PublicTimetableDisplay />} />
+
+            {/* Buddy Invite Registration - No authentication required */}
+            <Route path="/registration/buddy-invite/:token" element={<BuddyInviteRegistration />} />
+
+            {/* ======== MITGLIEDER-ROUTEN ======== */}
+            <Route
+              path="/app-install"
+              element={
+                <MemberOnlyRoute>
+                  <AppInstallPage />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/profile"
+              element={
+                <MemberOnlyRoute>
+                  <div className="member-profile-wrapper">
+                    <MemberHeader />
+                    <Suspense fallback={<LazyLoadFallback />}>
+                      <MitgliedDetailShared isAdmin={false} />
+                    </Suspense>
+                  </div>
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/schedule"
+              element={
+                <MemberOnlyRoute>
+                  <MemberSchedule />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/events"
+              element={
+                <MemberOnlyRoute>
+                  <MemberEvents />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/trainer"
+              element={
+                <TrainerOnlyRoute>
+                  <TrainerDashboard />
+                </TrainerOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/payments"
+              element={
+                <MemberOnlyRoute>
+                  <MemberPayments />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/stats"
+              element={
+                <MemberOnlyRoute>
+                  <MemberStats />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/rating"
+              element={
+                <MemberOnlyRoute>
+                  <CourseRating />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/equipment"
+              element={
+                <MemberOnlyRoute>
+                  <EquipmentChecklist />
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/styles"
+              element={
+                <MemberOnlyRoute>
+                  <MemberStyles />
+                </MemberOnlyRoute>
+              }
+            />
+
+            {/* Standard-Weiterleitung basierend auf Authentifizierung */}
+            <Route path="/" element={<RootRedirect />} />
+
+            {/* ======== TDA-VIB STYLE DASHBOARD (TEST) ======== */}
+            <Route
+              path="/dashboard-tda-vib"
+              element={
+                <ProtectedRoute>
+                  <DashboardTdaVib />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ======== PROTECTED DASHBOARD ROUTES ======== */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            >
+              {/* Dashboard Startseite */}
+              <Route index element={<DashboardStart />} />
+              
+              {/* ======== HAUPTBEREICHE ======== */}
+              
+              {/* �bersicht mit Statistiken */}
+              <Route path="uebersicht" element={<AnwesenheitDashboard />} />
+              
+              {/* ======== MITGLIEDER-BEREICHE ======== */}
+              
+              {/* Mitglieder-spezifische Bereiche - Diese Routen sind jetzt im Member-Bereich definiert */}
+              
+              {/* Anwesenheits-Management */}
+              <Route path="anwesenheit" element={<Anwesenheit />} />
+              
+              {/* Mitglieder-Management */}
+              <Route path="mitglieder" element={<MitgliederListe />} />
+              <Route path="mitglieder/:id" element={<Suspense fallback={<LazyLoadFallback />}><MitgliedDetail /></Suspense>} />
+
+              {/* Ehemalige & Interessenten */}
+              <Route path="ehemalige" element={<EhemaligenListe />} />
+              <Route path="interessenten" element={<InteressentenListe />} />
+              
+              {/* Check-In System */}
+              <Route path="checkin" element={<CheckinSystem />} />
+              
+              {/* Personal Check-In System */}
+              <Route path="personal-checkin" element={<PersonalCheckin />} />
+              
+              {/* Tresen-�bersicht */}
+              <Route path="tresen" element={<TresenUebersicht />} />
+              
+              {/* ======== VERKAUFSSYSTEM ======== */}
+              
+              {/* Artikelgruppen-Verwaltung */}
+              <Route path="artikelgruppen" element={<ArtikelgruppenVerwaltung />} />
+              
+              {/* Artikelverwaltung */}
+              <Route path="artikel" element={<ArtikelVerwaltung />} />
+              <Route path="artikel/neu" element={<ArtikelFormular mode="create" />} />
+              <Route path="artikel/bearbeiten/:id" element={<ArtikelFormular mode="edit" />} />
+              
+              {/* Kassensystem */}
+              <Route path="kasse" element={<VerkaufKasse />} />
+              
+              {/* ======== STIL-VERWALTUNG (ERWEITERT) ======== */}
+              {/* 
+                WICHTIG: Diese Routen verwenden momentan GruppenStilverwaltung als Fallback
+                TODO: Erweiterte StilVerwaltung mit Graduierungen implementieren
+              */}
+              <Route path="stile" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />
+              <Route path="stile/:stilId" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />
+              
+              {/* ======== VERWALTUNGSBEREICHE ======== */}
+              
+              {/* Gruppen-Verwaltung */}
+              <Route path="gruppen" element={<GruppenStilverwaltung />} />
+
+              {/* Standort-Verwaltung */}
+              <Route path="standorte" element={<StandortVerwaltung />} />
+
+              {/* Kurs-Management */}
+              <Route path="kurse" element={<Kurse />} />
+              
+              {/* Stundenplan-Management */}
+              <Route path="stundenplan" element={<Stundenplan />} />
+              
+              {/* Trainer-Management */}
+              <Route path="trainer" element={<Trainer />} />
+
+              {/* Pr�fungsverwaltung (Gurtpr�fungen) */}
+              <Route path="termine" element={<Suspense fallback={<LazyLoadFallback />}><PruefungsVerwaltung /></Suspense>} />
+              <Route path="pruefung-durchfuehren" element={<PruefungDurchfuehren />} />
+
+              {/* Events-Verwaltung */}
+              <Route path="events" element={<Events />} />
+              <Route path="meine-events" element={<MeineEvents />} />
+
+              {/* News-Verwaltung (nur Haupt-Admin) */}
+              <Route path="news" element={<NewsVerwaltung />} />
+              <Route path="news/neu" element={<NewsFormular mode="create" />} />
+              <Route path="news/bearbeiten/:id" element={<NewsFormular mode="edit" />} />
+
+              {/* Beitrags-Management */}
+              <Route path="finanzcockpit" element={<Finanzcockpit />} />
+              <Route path="tariferhohung" element={<Suspense fallback={<div>Laden...</div>}><Tariferhohung /></Suspense>} />
+              <Route path="mitglieder-filter/:filterType" element={<MitgliederFilter />} />
+              <Route path="beitraege" element={<Beitraege />} />
+              <Route path="mahnwesen" element={<Mahnwesen />} />
+              <Route path="mahnstufen-einstellungen" element={<MahnstufenEinstellungen />} />
+              <Route path="rechnungen" element={<Rechnungsverwaltung />} />
+              <Route path="rechnungen/:id" element={<Rechnungsverwaltung />} />
+              <Route path="rechnung-erstellen" element={<RechnungErstellen />} />
+              <Route path="lastschriftlauf" element={<LastschriftManagement />} />
+              <Route path="sepa-mandate" element={<SepaMandateVerwaltung />} />
+              <Route path="zahllaeufe" element={<LastschriftManagement />} />
+
+              {/* Zahlungszyklen-Management */}
+              <Route path="zahlungszyklen" element={<ZahlungszyklenSeite />} />
+
+              {/* Tarife & Preise Management */}
+              <Route path="tarife" element={<TarifePreise />} />
+              <Route path="rabattsystem" element={<Rabattsystem />} />
+
+              {/* Personal-Management */}
+              <Route path="personal" element={<Personal />} />
+
+              {/* Buddy-Gruppen Verwaltung */}
+              <Route path="buddy-gruppen" element={<BuddyVerwaltung />} />
+
+              {/* Auswertungen (Analytics & Reports) */}
+              <Route path="auswertungen" element={<Auswertungen />} />
+              <Route path="course-ratings" element={<CourseRatingAdmin />} />
+
+              {/* MagicLine Import */}
+              <Route path="magicline-import" element={<MagicLineImport />} />
+
+              {/* Berichte & Dokumente (PDF Management) */}
+              <Route path="berichte" element={<BerichteDokumente />} />
+
+              {/* Vertrags-Dokumentenverwaltung (AGB, Datenschutz, etc.) */}
+              <Route path="vertragsdokumente" element={<Suspense fallback={<LazyLoadFallback />}><DokumenteVerwaltung /></Suspense>} />
+
+              {/* Multi-Dojo-Verwaltung & Steuer-Tracking */}
+              <Route path="dojos" element={<DojosVerwaltung />} />
+              <Route path="dojos/edit/:id" element={<DojoEdit />} />
+              <Route path="dojos/new" element={<DojoEdit />} />
+
+              {/* Newsletter & Benachrichtigungssystem */}
+              <Route path="notifications" element={<Suspense fallback={<LazyLoadFallback />}><NotificationSystem /></Suspense>} />
+
+              {/* ======== EINSTELLUNGEN ======== */}
+              <Route path="einstellungen" element={<EinstellungenDojo />} />
+              <Route path="einstellungen/meindojo" element={<EinstellungenDojo />} />
+              <Route path="einstellungen/zahlungen" element={<ZahlungsEinstellungen />} />
+
+              {/* Fehlerseite f�r ung�ltige Dashboard-Unterrouten */}
+              <Route 
+                path="*" 
+                element={
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '2rem',
+                    color: '#666'
+                  }}>
+                    <h2>Seite nicht gefunden</h2>
+                    <p>Die angeforderte Dashboard-Seite existiert nicht.</p>
+                    <button 
+                      onClick={() => window.history.back()}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Zur�ck
+                    </button>
+                  </div>
+                } 
+              />
+            </Route>
+            
+            {/* ======== GLOBAL 404 ======== */}
+            <Route 
+              path="*" 
+              element={
+                <div style={{ 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100vh',
+                  textAlign: 'center',
+                  backgroundColor: '#f8f9fa'
+                }}>
+                  <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>404</h1>
+                  <h2 style={{ marginBottom: '1rem' }}>Seite nicht gefunden</h2>
+                  <p style={{ marginBottom: '2rem', color: '#666' }}>
+                    Die angeforderte URL existiert nicht.
+                  </p>
+                  <button
+                    onClick={() => window.location.href = '/dashboard'}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '1rem'
+                    }}
+                  >
+                    Zum Dashboard
+                  </button>
+                </div>
+              } 
+            />
+              </Routes>
+              </BrowserRouter>
+              </MitgliederUpdateProvider>
+            </KursProvider>
+          </StandortProvider>
+        </DojoProvider>
+      </SubscriptionProvider>
+    </AuthProvider>
+  </ThemeProvider>
+);
+};
+
+export default App;
+
+/*
+================================================================================
+APP.JSX ROUTE-DOKUMENTATION
+================================================================================
+
+ROUTE-STRUKTUR:
+/                           -> Redirect zu /dashboard
+/login                      -> Login-Seite
+/dashboard                  -> Dashboard Layout (Protected)
+  +-- /                     -> DashboardStart (Startseite)
+  +-- /uebersicht          -> AnwesenheitDashboard  
+  +-- /anwesenheit         -> Anwesenheit
+  +-- /mitglieder          -> MitgliederListe
+  +-- /mitglieder/:id      -> MitgliedDetail
+  +-- /checkin             -> CheckinSystem
+  +-- /tresen              -> TresenUebersicht
+  +-- /stile               -> Stilverwaltung (FALLBACK: GruppenStilverwaltung)
+  +-- /stile/:stilId       -> Stilverwaltung (Detail - FALLBACK)
+  +-- /stil                -> GruppenStilverwaltung (Alt)
+  +-- /kurse               -> Kurse
+  +-- /stundenplan         -> Stundenplan
+  +-- /trainer             -> Trainer
+  +-- /einstellungen       -> EinstellungenDojo
+  +-- /einstellungen/meindojo -> EinstellungenDojo
+
+WICHTIGE HINWEISE:
+- /stile nutzt momentan GruppenStilverwaltung als Fallback
+- TODO: Erweiterte StilVerwaltung-Komponente mit Graduierungen erstellen
+- /stil = alte einfache Stil-Verwaltung (bleibt als Alternative)
+
+�NDERUNGEN IN DIESER VERSION:
+- Import von StilVerwaltung zeigt nun auf GruppenStilverwaltung (Zeile 55)
+- Kommentar hinzugef�gt: TODO f�r zuk�nftige Implementierung
+- Routen /stile und /stile/:stilId funktionieren nun ohne Fehler
+
+API-ANFORDERUNGEN F�R ZUK�NFTIGE /stile IMPLEMENTIERUNG:
+- GET /api/stile                           -> Alle Stile mit Graduierungen
+- GET /api/stile/:id                       -> Einzelner Stil mit Graduierungen  
+- POST /api/stile                          -> Neuen Stil erstellen
+- PUT /api/stile/:id                       -> Stil aktualisieren
+- DELETE /api/stile/:id                    -> Stil l�schen
+- POST /api/stile/:stilId/graduierungen    -> Graduierung hinzuf�gen
+- PUT /api/stile/graduierungen/:id         -> Graduierung aktualisieren
+- DELETE /api/stile/graduierungen/:id      -> Graduierung l�schen
+- PUT /api/stile/:stilId/graduierungen/reorder -> Drag & Drop Reordering
+================================================================================
+*/
