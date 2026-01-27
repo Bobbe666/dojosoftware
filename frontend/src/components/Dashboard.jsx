@@ -14,7 +14,7 @@ import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
 import logo from '../assets/dojo-logo.png';
-import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun } from 'lucide-react';
+import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, ArrowLeft } from 'lucide-react';
 import DojoSwitcher from './DojoSwitcher';
 import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
@@ -708,6 +708,31 @@ function Dashboard() {
         <div className="dashboard-header-right">
           {role === 'admin' && <DojoSwitcher />}
           {role === 'admin' && <StandortSwitcher />}
+          {/* Zurück-Button - nutzt Browser History */}
+          {!isMainDashboard && window.history.length > 1 && (
+            <button
+              onClick={() => navigate(-1)}
+              className="back-button"
+              title="Zur vorherigen Seite"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 14px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Zurück</span>
+            </button>
+          )}
           {!isMainDashboard && (
             <button
               onClick={() => navigate('/dashboard')}
