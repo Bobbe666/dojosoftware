@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Target, TrendingUp, Award, BookOpen, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Target, TrendingUp, Award, BookOpen, Plus, Edit2, Trash2, Check, X, Medal } from 'lucide-react';
 import '../styles/MitgliedFortschritt.css';
 import '../styles/SliderStyles.css';
 
@@ -8,9 +8,10 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
   const [fortschritte, setFortschritte] = useState([]);
   const [ziele, setZiele] = useState([]);
   const [meilensteine, setMeilensteine] = useState([]);
+  const [badges, setBadges] = useState([]);
   const [kategorien, setKategorien] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('skills'); // skills, ziele, meilensteine
+  const [activeTab, setActiveTab] = useState('skills'); // skills, ziele, meilensteine, badges
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -79,17 +80,19 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [fortschrittRes, zieleRes, meilensteineRes, kategorienRes] = await Promise.all([
+      const [fortschrittRes, zieleRes, meilensteineRes, kategorienRes, badgesRes] = await Promise.all([
         axios.get(`/fortschritt/mitglied/${mitgliedId}`),
         axios.get(`/fortschritt/mitglied/${mitgliedId}/ziele`),
         axios.get(`/fortschritt/mitglied/${mitgliedId}/meilensteine`),
-        axios.get(`/fortschritt/kategorien`)
+        axios.get(`/fortschritt/kategorien`),
+        axios.get(`/badges/mitglied/${mitgliedId}`)
       ]);
 
       setFortschritte(fortschrittRes.data);
       setZiele(zieleRes.data);
       setMeilensteine(meilensteineRes.data);
       setKategorien(kategorienRes.data);
+      setBadges(badgesRes.data || []);
     } catch (error) {
       console.error('❌ Fehler beim Laden der Fortschritts-Daten:', error);
     } finally {
@@ -281,6 +284,14 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
             <Award size={18} />
             <span>Meilensteine</span>
             <span className="tab-badge">{meilensteine.filter(m => m.erreicht).length}</span>
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'badges' ? 'active' : ''}`}
+            onClick={() => setActiveTab('badges')}
+          >
+            <Medal size={18} />
+            <span>Auszeichnungen</span>
+            <span className="tab-badge">{badges.length}</span>
           </button>
         </div>
         {!readOnly && (
@@ -496,6 +507,138 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
                   )}
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {activeTab === 'badges' && (
+          <div className="badges-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '16px',
+            padding: '8px 0'
+          }}>
+            {badges.length === 0 ? (
+              <div className="empty-state">
+                <Medal size={48} />
+                <p>Noch keine Auszeichnungen erhalten</p>
+                <p style={{ fontSize: '14px', color: '#888', marginTop: '8px' }}>
+                  Auszeichnungen werden für besondere Leistungen vergeben.
+                </p>
+              </div>
+            ) : (
+              badges.map((badge) => {
+                // Icon-Emoji-Mapping
+                const iconEmojis = {
+                  award: '🏅',
+                  star: '⭐',
+                  trophy: '🏆',
+                  medal: '🎖️',
+                  crown: '👑',
+                  flame: '🔥',
+                  target: '🎯',
+                  heart: '❤️',
+                  users: '👥',
+                  swords: '⚔️',
+                  zap: '⚡',
+                  'trending-up': '📈',
+                  footprints: '👣',
+                  layers: '📚',
+                  brain: '🧠',
+                  shield: '🛡️'
+                };
+                const iconEmoji = iconEmojis[badge.icon] || '🏅';
+
+                return (
+                  <div
+                    key={badge.badge_id}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: `2px solid ${badge.farbe || '#ffd700'}`,
+                      borderRadius: '12px',
+                      padding: '20px',
+                      textAlign: 'center',
+                      transition: 'all 0.3s ease',
+                      cursor: 'default'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = `0 8px 24px ${badge.farbe || '#ffd700'}40`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{
+                      width: '64px',
+                      height: '64px',
+                      margin: '0 auto 12px',
+                      background: `linear-gradient(135deg, ${badge.farbe || '#ffd700'}40, ${badge.farbe || '#ffd700'}20)`,
+                      border: `2px solid ${badge.farbe || '#ffd700'}`,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '32px',
+                      boxShadow: `0 4px 12px ${badge.farbe || '#ffd700'}30`
+                    }}>
+                      {iconEmoji}
+                    </div>
+
+                    <h3 style={{
+                      color: badge.farbe || '#ffd700',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      margin: '0 0 8px 0'
+                    }}>
+                      {badge.name}
+                    </h3>
+
+                    {badge.beschreibung && (
+                      <p style={{
+                        color: '#ccc',
+                        fontSize: '13px',
+                        margin: '0 0 12px 0',
+                        lineHeight: '1.4'
+                      }}>
+                        {badge.beschreibung}
+                      </p>
+                    )}
+
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      {badge.kategorie && (
+                        <span style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          color: '#aaa'
+                        }}>
+                          {badge.kategorie}
+                        </span>
+                      )}
+                      {badge.verliehen_am && (
+                        <span style={{
+                          background: 'rgba(34, 197, 94, 0.2)',
+                          color: '#22c55e',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '11px'
+                        }}>
+                          {new Date(badge.verliehen_am).toLocaleDateString('de-DE')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         )}

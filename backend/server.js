@@ -760,6 +760,45 @@ try {
     });
 }
 
+// 10.2 iCAL EXPORT - Kalender-Sync für Google, Outlook, Apple
+try {
+  const icalRouter = require(path.join(__dirname, "routes", "ical.js"));
+  app.use("/api/ical", icalRouter);
+  logger.success('Route gemountet', { path: '/api/ical' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'ical',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 10.3 WEBHOOKS - Zapier & externe Integrationen
+try {
+  const webhooksRouter = require(path.join(__dirname, "routes", "webhooks.js"));
+  app.use("/api/webhooks", webhooksRouter);
+  logger.success('Route gemountet', { path: '/api/webhooks' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'webhooks',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 10.4 INTEGRATIONS - PayPal, LexOffice, DATEV
+try {
+  const integrationsRouter = require(path.join(__dirname, "routes", "integrations.js"));
+  app.use("/api/integrations", integrationsRouter);
+  logger.success('Route gemountet', { path: '/api/integrations' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'integrations',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 11. DOKUMENTE (PDF Management & Reports) - NEU
 try {
   const dokumenteRouter = require(path.join(__dirname, "routes", "dokumente.js"));
