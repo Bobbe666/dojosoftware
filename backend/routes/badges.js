@@ -358,6 +358,10 @@ router.get('/admin/overview', (req, res) => {
   console.log('📊 Badge Admin Overview aufgerufen', { user: req.user, query: req.query });
   const { dojo_id } = req.query;
 
+  // Debug: Prüfe ob dojo_id gültig ist
+  const validDojoId = dojo_id && dojo_id !== 'all' && dojo_id !== 'undefined' && !isNaN(parseInt(dojo_id));
+  console.log('📊 dojo_id Filter:', { dojo_id, validDojoId });
+
   // Hole alle Mitglieder mit ihren Statistiken
   let memberQuery = `
     SELECT
@@ -396,13 +400,16 @@ router.get('/admin/overview', (req, res) => {
     WHERE m.aktiv = 1
   `;
 
-  if (dojo_id) {
+  if (validDojoId) {
     memberQuery += ` AND m.dojo_id = ${parseInt(dojo_id)}`;
   }
 
   memberQuery += ` ORDER BY total_trainings DESC`;
 
+  console.log('📊 Member Query (Dojo-Filter):', validDojoId ? `dojo_id=${dojo_id}` : 'ALLE DOJOS');
+
   db.query(memberQuery, (err, members) => {
+    console.log('📊 Members gefunden:', members?.length || 0);
     if (err) {
       console.error('Fehler beim Laden der Uebersicht:', err);
       return res.status(500).json({ error: 'Datenbankfehler' });
