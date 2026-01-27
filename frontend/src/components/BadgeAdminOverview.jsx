@@ -88,8 +88,9 @@ const BadgeAdminOverview = () => {
     setError(null);
     setLoading(true);
     try {
-      // Nur dojo_id senden wenn ein spezifisches Dojo ausgewaehlt ist (nicht "Alle Dojos")
-      const dojoParam = activeDojo?.id && activeDojo.id !== 'all' ? `dojo_id=${activeDojo.id}` : '';
+      // Nur dojo_id senden wenn ein spezifisches Dojo ausgewaehlt ist (nicht "Alle Dojos" / super-admin)
+      const isAllDojos = !activeDojo || activeDojo === 'super-admin' || activeDojo?.id === 'all';
+      const dojoParam = !isAllDojos && activeDojo?.id ? `dojo_id=${activeDojo.id}` : '';
       const response = await fetch(`/api/badges/admin/overview?${dojoParam}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
