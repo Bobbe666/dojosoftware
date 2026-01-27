@@ -36,18 +36,28 @@ const BadgeAdminOverview = () => {
   }, [activeDojo]);
 
   const loadData = async () => {
+    const token = localStorage.getItem('token');
+    // Warte auf gültigen Token
+    if (!token || token === 'null' || token === 'undefined') {
+      console.log('Badge Admin: Warte auf Token...');
+      setTimeout(loadData, 500);
+      return;
+    }
+
     setLoading(true);
     try {
       const dojoParam = activeDojo?.id ? `dojo_id=${activeDojo.id}` : '';
       const response = await fetch(`/api/badges/admin/overview?${dojoParam}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else if (response.status === 403) {
+        console.error('Badge Admin: Keine Berechtigung - Token ungültig?');
       }
     } catch (error) {
       console.error('Fehler beim Laden:', error);

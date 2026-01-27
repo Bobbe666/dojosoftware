@@ -9,7 +9,7 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 // Extrahierte Sub-Komponenten
-import { AnwesenheitPopup, MitgliedKarte } from './anwesenheit';
+import { AnwesenheitPopup, MitgliedKarte } from './anwesenheit/index.js';
 
 
 const Anwesenheit = () => {
