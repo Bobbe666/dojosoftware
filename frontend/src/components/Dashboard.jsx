@@ -785,9 +785,6 @@ function Dashboard() {
               {/* 🔔 Trial/Subscription Banner */}
               <TrialBanner stats={stats} />
 
-              {/* 📋 AGB/DSGVO Status Widget - Zeigt fehlende Akzeptanzen */}
-              {role === 'admin' && <AgbStatusWidget />}
-
               {/* Navigation basierend auf Rolle */}
               {role === 'admin' && (
                 <>
@@ -1336,6 +1333,11 @@ function Dashboard() {
                                 Mitgliedern, Kursen, Prüfungen und Finanzen.
                               </p>
                             </div>
+                          </div>
+
+                          {/* AGB/DSGVO Status Widget */}
+                          <div style={{ marginTop: '2rem', maxWidth: '600px', margin: '2rem auto 0' }}>
+                            <AgbStatusWidget />
                           </div>
                         </div>
                       )}

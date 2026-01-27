@@ -21,7 +21,14 @@ const AgbStatusWidget = () => {
   }, [selectedDojo]);
 
   const loadAgbStatus = async () => {
-    const dojoId = selectedDojo?.id || localStorage.getItem('dojo_id') || 1;
+    // Wenn "Alle Dojos" ausgewählt ist, kein spezifisches Dojo laden
+    const dojoId = selectedDojo?.id || localStorage.getItem('dojo_id');
+
+    if (!dojoId) {
+      setData({ count: 0, members: [], noDojoSelected: true });
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -73,7 +80,12 @@ const AgbStatusWidget = () => {
 
   const count = data?.count || 0;
   const members = data?.members || [];
-  const allGood = count === 0;
+  const allGood = count === 0 && !data?.noDojoSelected;
+
+  // Wenn kein Dojo ausgewählt, Widget nicht anzeigen
+  if (data?.noDojoSelected) {
+    return null;
+  }
 
   return (
     <div style={widgetStyle}>
