@@ -1635,6 +1635,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
         }
       }
 
+      // Validierung: SEPA-Mandat ist Pflichtfeld für Lastschrift-Verträge
+      if (!vertragToSave.sepa_mandat_id) {
+        alert('Bitte wählen Sie ein SEPA-Mandat aus. Ohne gültiges SEPA-Mandat kann keine Lastschrift eingezogen werden.');
+        setLoading(false);
+        return;
+      }
+
       if (editingVertrag) {
         // Update existing
         const response = await axios.put(`/vertraege/${editingVertrag.id}`, {

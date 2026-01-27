@@ -532,16 +532,25 @@ const VertragFormular = ({
           </div>
         )}
 
-        {/* SEPA-Mandat bei Lastschrift */}
-        {vertrag.payment_method === 'direct_debit' && mitgliedId && (
+        {/* SEPA-Mandat - PFLICHTFELD für Lastschrift */}
+        {mitgliedId && (
           <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', display: 'block' }}>SEPA-Mandat</label>
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', display: 'block' }}>
+              SEPA-Mandat <span style={{ color: '#EF4444' }}>*</span>
+            </label>
             <select
               value={vertrag.sepa_mandat_id || ''}
               onChange={(e) => onChange({...vertrag, sepa_mandat_id: e.target.value ? parseInt(e.target.value) : null})}
-              style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
+              style={{
+                padding: '0.6rem 0.75rem',
+                fontSize: '0.9rem',
+                lineHeight: '1.5',
+                minHeight: '44px',
+                height: 'auto',
+                borderColor: !vertrag.sepa_mandat_id && (sepaMandate || archivierteMandate.length > 0) ? '#EF4444' : undefined
+              }}
             >
-              <option value="">Kein SEPA-Mandat ausgewählt</option>
+              <option value="">-- Bitte SEPA-Mandat auswählen --</option>
               {sepaMandate && (
                 <option value={sepaMandate.id}>
                   ✓ Aktives Mandat: {sepaMandate.mandatsreferenz} - {sepaMandate.iban}
@@ -553,11 +562,74 @@ const VertragFormular = ({
                 </option>
               ))}
             </select>
-            {!sepaMandate && archivierteMandate.length === 0 && (
-              <p style={{ fontSize: '0.75rem', color: '#F59E0B', marginTop: '0.3rem', marginBottom: 0, fontStyle: 'italic' }}>
-                ℹ️ Hinweis: Kein SEPA-Mandat vorhanden. {mitgliedId ? 'Sie können später ein SEPA-Mandat im Finanzen-Tab erstellen.' : 'Das SEPA-Mandat kann nach der Mitgliedserstellung hinzugefügt werden.'}
+
+            {/* Fehler: Kein Mandat ausgewählt aber Mandate vorhanden */}
+            {!vertrag.sepa_mandat_id && (sepaMandate || archivierteMandate.length > 0) && (
+              <p style={{
+                fontSize: '0.8rem',
+                color: '#EF4444',
+                marginTop: '0.4rem',
+                marginBottom: 0,
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(239, 68, 68, 0.3)'
+              }}>
+                ⚠️ <strong>Pflichtfeld:</strong> Bitte wählen Sie ein SEPA-Mandat aus. Ohne SEPA-Mandat kann keine Lastschrift eingezogen werden.
               </p>
             )}
+
+            {/* Hinweis: Kein Mandat vorhanden */}
+            {!sepaMandate && archivierteMandate.length === 0 && (
+              <p style={{
+                fontSize: '0.8rem',
+                color: '#F59E0B',
+                marginTop: '0.4rem',
+                marginBottom: 0,
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(245, 158, 11, 0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(245, 158, 11, 0.3)'
+              }}>
+                ⚠️ <strong>Kein SEPA-Mandat vorhanden!</strong> Bitte erstellen Sie zuerst ein SEPA-Mandat im Finanzen-Tab, bevor Sie den Vertrag speichern.
+              </p>
+            )}
+
+            {/* Bestätigung: Mandat ausgewählt */}
+            {vertrag.sepa_mandat_id && (
+              <p style={{
+                fontSize: '0.8rem',
+                color: '#10B981',
+                marginTop: '0.4rem',
+                marginBottom: 0,
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(16, 185, 129, 0.1)',
+                borderRadius: '6px',
+                border: '1px solid rgba(16, 185, 129, 0.3)'
+              }}>
+                ✓ SEPA-Mandat ausgewählt. Lastschriften können eingezogen werden.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Hinweis für neue Mitglieder ohne ID */}
+        {!mitgliedId && (
+          <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
+            <div style={{
+              padding: '0.75rem 1rem',
+              background: 'rgba(59, 130, 246, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              fontSize: '0.85rem',
+              color: '#60A5FA'
+            }}>
+              <strong>💳 SEPA-Lastschriftmandat:</strong>
+              <p style={{ margin: '0.5rem 0 0 0', color: 'rgba(255, 255, 255, 0.8)' }}>
+                Das SEPA-Mandat wird nach dem Speichern des Mitglieds im Finanzen-Tab erstellt.
+                Ohne gültiges SEPA-Mandat können keine Lastschriften eingezogen werden.
+              </p>
+            </div>
           </div>
         )}
       </div>
