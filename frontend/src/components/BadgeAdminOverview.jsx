@@ -30,6 +30,7 @@ const BadgeAdminOverview = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualBadge, setManualBadge] = useState({ mitglied_id: null, badge_id: null });
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -37,13 +38,15 @@ const BadgeAdminOverview = () => {
 
   const loadData = async () => {
     const token = localStorage.getItem('token');
+    console.log('Badge Admin loadData aufgerufen, token:', token ? 'vorhanden' : 'FEHLT');
+
     // Warte auf gültigen Token
     if (!token || token === 'null' || token === 'undefined') {
-      console.log('Badge Admin: Warte auf Token...');
-      setTimeout(loadData, 500);
+      setError(`Kein gültiger Token gefunden (token=${token}). Bitte neu einloggen.`);
+      setLoading(false);
       return;
     }
-
+    setError(null);
     setLoading(true);
     try {
       const dojoParam = activeDojo?.id ? `dojo_id=${activeDojo.id}` : '';
@@ -57,10 +60,13 @@ const BadgeAdminOverview = () => {
         const result = await response.json();
         setData(result);
       } else if (response.status === 403) {
-        console.error('Badge Admin: Keine Berechtigung - Token ungültig?');
+        setError('Keine Berechtigung (403). Bitte neu einloggen.');
+      } else {
+        setError(`Server-Fehler: ${response.status}`);
       }
-    } catch (error) {
-      console.error('Fehler beim Laden:', error);
+    } catch (err) {
+      console.error('Fehler beim Laden:', err);
+      setError(`Netzwerkfehler: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -148,6 +154,30 @@ const BadgeAdminOverview = () => {
     return (
       <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
         Lade Daten...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div style={{ color: '#ef4444', marginBottom: '1rem' }}>
+          ⚠️ Fehler: {error}
+        </div>
+        <button
+          onClick={() => window.location.href = '/login'}
+          style={{
+            background: '#ffd700',
+            color: '#1a1a1a',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 600
+          }}
+        >
+          Zum Login
+        </button>
       </div>
     );
   }
