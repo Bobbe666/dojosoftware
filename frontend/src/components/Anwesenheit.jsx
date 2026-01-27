@@ -8,6 +8,9 @@ import "../styles/Anwesenheit.css";
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
+// Extrahierte Sub-Komponenten
+import { AnwesenheitPopup, MitgliedKarte } from './anwesenheit';
+
 
 const Anwesenheit = () => {
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
@@ -853,70 +856,16 @@ const Anwesenheit = () => {
 
               const id = mitglied.mitglied_id || mitglied.id;
               const eintrag = anwesenheit[id] || { status: "", bemerkung: "" };
-              const statusKlasse = eintrag.status ? `status-${eintrag.status}` : "";
-              const gespeicherteKlasse =
-                eintrag.status === "anwesend" && eintrag.gespeichert ? "block-gespeichert" : "";
-              
-              // NEU: Check-in Status anzeigen
-              const checkinStatus = mitglied.checkin_status || 'nicht_eingecheckt';
-              const checkinKlasse = `checkin-${checkinStatus}`;
-
-              // 🆕 Such-Hervorhebung
               const isFromSearch = isSearchActive && !mitglieder.some(m => m.mitglied_id === id);
-              const searchHighlight = isFromSearch ? 'search-result' : '';
 
               return (
-                <div
+                <MitgliedKarte
                   key={id}
-                  className={`mitglied-block ${statusKlasse} ${gespeicherteKlasse} ${checkinKlasse} ${searchHighlight}`}
-                  onClick={() => toggleCard(id, mitglied)}
-                  style={{
-                    ...(isFromSearch && {
-                      borderColor: '#1976d2',
-                      backgroundColor: '#e3f2fd'
-                    })
-                  }}
-                >
-                  <div className="mitglied-header">
-                    <img
-                      src={mitglied.profilbild || "/default-user.png"}
-                      alt="Profil"
-                      className="mitglied-profilbild"
-                    />
-                    <div className="mitglied-info">
-                      <strong>
-                        {mitglied.vorname} {mitglied.nachname}
-                        {/* 🆕 Suchindikator */}
-                        {isFromSearch && (
-                          <span style={{ 
-                            color: '#1976d2', 
-                            fontSize: '12px', 
-                            marginLeft: '8px',
-                            background: '#bbdefb',
-                            padding: '2px 6px',
-                            borderRadius: '10px'
-                          }}>
-                            🔍 Suchergebnis
-                          </span>
-                        )}
-                      </strong>
-                      <div className="mitglied-details-inline">
-                        {mitglied.gurtfarbe && <span className="gurtfarbe">{mitglied.gurtfarbe}</span>}
-                        {checkinStatus === 'eingecheckt' && eintrag.status !== "entfernt" && (
-                          <span className="checkin-badge">
-                            📱 Eingecheckt
-                          </span>
-                        )}
-                      </div>
-                      {eintrag.status === "entfernt" && (
-                        <div className="entfernt-hinweis">
-                          ❌ aus der Stunde entfernt
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
+                  mitglied={mitglied}
+                  anwesenheitEintrag={eintrag}
+                  isFromSearch={isFromSearch}
+                  onClick={toggleCard}
+                />
               );
             })}
           </div>
@@ -924,58 +873,13 @@ const Anwesenheit = () => {
       )}
 
       {/* Popup-Modal für Mitglied-Aktionen */}
-      {selectedMember && (
-        <div className="anwesenheit-popup-overlay" onClick={closePopup}>
-          <div className="anwesenheit-popup" onClick={(e) => e.stopPropagation()}>
-            <div className="popup-header">
-              <img
-                src={selectedMember.profilbild || "/default-user.png"}
-                alt="Profil"
-                className="popup-profilbild"
-              />
-              <div className="popup-name">
-                <strong>{selectedMember.vorname} {selectedMember.nachname}</strong>
-                {selectedMember.gurtfarbe && <span className="popup-gurt">{selectedMember.gurtfarbe}</span>}
-              </div>
-              <button className="popup-close" onClick={closePopup}>✕</button>
-            </div>
-
-            <div className="popup-status">
-              ✅ Aktuell als anwesend markiert
-            </div>
-
-            <div className="popup-actions">
-              <button
-                className="popup-btn popup-btn-red"
-                onClick={() => handlePopupAction('entfernt')}
-              >
-                ❌ Aus Stunde entfernen
-              </button>
-              <button
-                className="popup-btn popup-btn-yellow"
-                onClick={() => handlePopupAction('verspätet')}
-              >
-                🕐 Verspätet
-              </button>
-              <button
-                className="popup-btn popup-btn-orange"
-                onClick={() => handlePopupAction('abgebrochen')}
-              >
-                🚪 Abgebrochen
-              </button>
-            </div>
-
-            <div className="popup-bemerkung">
-              <input
-                type="text"
-                placeholder="Bemerkung hinzufügen..."
-                value={anwesenheit[selectedMember.id]?.bemerkung ?? ""}
-                onChange={(e) => updateBemerkung(selectedMember.id, e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <AnwesenheitPopup
+        member={selectedMember}
+        anwesenheitEintrag={selectedMember ? anwesenheit[selectedMember.id] : null}
+        onClose={closePopup}
+        onAction={handlePopupAction}
+        onBemerkungChange={(value) => updateBemerkung(selectedMember?.id, value)}
+      />
     </div>
   );
 };

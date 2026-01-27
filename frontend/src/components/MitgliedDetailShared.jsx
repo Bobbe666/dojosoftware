@@ -17,6 +17,9 @@ import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
 import "../styles/MitgliedDetail.css";
 
+// Extrahierte Tab-Komponenten
+import { MemberSecurityTab, MemberAdditionalDataTab } from './mitglied-detail';
+
 // Hilfsfunktion: Wandelt einen ISO-Datumsstring in "yyyy-MM-dd" um.
 function toMySqlDate(dateString) {
   if (!dateString) return "";
@@ -257,10 +260,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // Neue State-Variablen für erweiterte Daten
   const [anwesenheitsDaten, setAnwesenheitsDaten] = useState([]);
-  const [zusatzdaten, setZusatzdaten] = useState([]);
-  const [showZusatzdatenModal, setShowZusatzdatenModal] = useState(false);
-  const [editingZusatzdaten, setEditingZusatzdaten] = useState(null);
-  const [zusatzdatenForm, setZusatzdatenForm] = useState({ art: "Lehrgang", bezeichnung: "", datum: "", lizenz: "" });
   const [finanzDaten, setFinanzDaten] = useState([]);
   const [statistikDaten, setStatistikDaten] = useState({});
   const [verträge, setVerträge] = useState([]);
@@ -2016,23 +2015,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   }, [activeTab, mitglied?.email]);
 
-  // Load Zusatzdaten when zusatzdaten tab is active
-  useEffect(() => {
-    if (activeTab === "zusatzdaten" && id) {
-      const loadZusatzdaten = async () => {
-        try {
-          const response = await axios.get(`/ehrungen-lehrgaenge/mitglied/${id}`);
-          if (response.data.success) {
-            setZusatzdaten(response.data.data || []);
-          }
-        } catch (err) {
-          console.error("Fehler beim Laden der Zusatzdaten:", err);
-        }
-      };
-      loadZusatzdaten();
-    }
-  }, [activeTab, id]);
-
   // Load buddy groups when buddy_gruppen tab is active
   useEffect(() => {
     if (activeTab === "buddy_gruppen" && mitglied?.mitglied_id && token) {
@@ -2411,57 +2393,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   // Sicherheit-Tab State
   // (bereits weiter oben deklariert, doppelte Deklaration entfernen)
 
-  // Zusatzdaten CRUD functions
-  const handleSaveZusatzdaten = async () => {
-    try {
-      if (editingZusatzdaten) {
-        await axios.put(`/ehrungen-lehrgaenge/${editingZusatzdaten.id}`, zusatzdatenForm);
-      } else {
-        await axios.post("/ehrungen-lehrgaenge", {
-          ...zusatzdatenForm,
-          mitglied_id: id,
-          dojo_id: mitglied?.dojo_id
-        });
-      }
-      // Reload data
-      const response = await axios.get(`/ehrungen-lehrgaenge/mitglied/${id}`);
-      if (response.data.success) {
-        setZusatzdaten(response.data.data || []);
-      }
-      setShowZusatzdatenModal(false);
-      setEditingZusatzdaten(null);
-      setZusatzdatenForm({ art: "Lehrgang", bezeichnung: "", datum: "", lizenz: "" });
-    } catch (err) {
-      console.error("Fehler beim Speichern:", err);
-      alert("Fehler beim Speichern: " + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleDeleteZusatzdaten = async (item) => {
-    if (!window.confirm(`"${item.bezeichnung}" wirklich loeschen?`)) return;
-    try {
-      await axios.delete(`/ehrungen-lehrgaenge/${item.id}`);
-      setZusatzdaten(zusatzdaten.filter(z => z.id !== item.id));
-    } catch (err) {
-      console.error("Fehler beim Loeschen:", err);
-      alert("Fehler beim Loeschen: " + (err.response?.data?.error || err.message));
-    }
-  };
-
-  const handleEditZusatzdaten = (item) => {
-    setEditingZusatzdaten(item);
-    setZusatzdatenForm({
-      typ: item.typ,
-      bezeichnung: item.bezeichnung,
-      datum: item.datum ? item.datum.split("T")[0] : "",
-      datum_bis: item.datum_bis ? item.datum_bis.split("T")[0] : "",
-      ort: item.ort || "",
-      beschreibung: item.beschreibung || "",
-      aussteller: item.aussteller || ""
-    });
-    setShowZusatzdatenModal(true);
-  };
-
   const passwordMeetsPolicy = (pwd) => {
     const hasDigit = /\d/.test(pwd);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>_+\-=/\\\[\];'`~]/.test(pwd);
@@ -2717,150 +2648,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               transition={{ duration: 0.3 }}
             >
           {activeTab === "sicherheit" && (
-            <div className="grid-container">
-              <div className="field-group card mitglied-detail-card" style={{
-                borderRadius: '16px',
-                padding: '2rem'
-              }}>
-                <h3>Passwort & Sicherheitsfrage</h3>
-
-                {/* Aktuelles Passwort */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label>Aktuelles Passwort:</label>
-                  <div className="password-wrapper" style={{ position: 'relative' }}>
-                    <input
-                      className="mitglied-detail-input"
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Aktuelles Passwort"
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    >
-                      {showCurrentPassword ? '👁️' : '•••••••'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Neues Passwort */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label>Neues Passwort:</label>
-                  <div className="password-wrapper" style={{ position: 'relative' }}>
-                    <input
-                      className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Neues Passwort"
-                      disabled={!currentPassword}
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                    >
-                      {showNewPassword ? '👁️' : '•••••••'}
-                    </button>
-                  </div>
-                  {!currentPassword && (
-                    <small className="input-hint mitglied-detail-hint-warning">
-                      ℹ️ Bitte zuerst das aktuelle Passwort eingeben
-                    </small>
-                  )}
-                  {currentPassword && (
-                    <small className="input-hint">Mind. 8 Zeichen, mindestens 1 Zahl und 1 Sonderzeichen.</small>
-                  )}
-                </div>
-
-                {/* Neues Passwort bestätigen */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label>Neues Passwort bestätigen:</label>
-                  <div className="password-wrapper" style={{ position: 'relative' }}>
-                    <input
-                      className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Passwort bestätigen"
-                      disabled={!currentPassword}
-                    />
-                    <button
-                      type="button"
-                      className="password-toggle-btn"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? '👁️' : '•••••••'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Sicherheitsfrage */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label>Sicherheitsfrage:</label>
-                  <CustomSelect
-                    value={securityQuestion}
-                    onChange={(e) => setSecurityQuestion(e.target.value)}
-                    options={[
-                      { value: 'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?', label: 'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?' },
-                      { value: 'Wie heißt Ihr erstes Haustier?', label: 'Wie heißt Ihr erstes Haustier?' },
-                      { value: 'In welcher Stadt wurden Sie geboren?', label: 'In welcher Stadt wurden Sie geboren?' },
-                      { value: 'Wie lautet der Name Ihrer Grundschule?', label: 'Wie lautet der Name Ihrer Grundschule?' },
-                      { value: 'Wie lautet der zweite Vorname Ihres Vaters?', label: 'Wie lautet der zweite Vorname Ihres Vaters?' }
-                    ]}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label>Antwort auf Sicherheitsfrage:</label>
-                  <input
-                    className="mitglied-detail-input"
-                    type="text"
-                    value={securityAnswer}
-                    onChange={(e) => setSecurityAnswer(e.target.value)}
-                    placeholder="Antwort"
-                  />
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div className="mitglied-detail-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.5rem' }}>
-                  <button
-                    className={`mitglied-detail-btn mitglied-detail-btn-primary ${(!currentPassword || !newPassword || !confirmPassword) ? 'disabled' : ''}`}
-                    onClick={handleChangePassword}
-                    disabled={!currentPassword || !newPassword || !confirmPassword}
-                  >
-                    🔒 Passwort Ändern
-                  </button>
-
-                  <button
-                    className="mitglied-detail-btn mitglied-detail-btn-secondary"
-                    onClick={handleSaveSecurity}
-                  >
-                    👁️ Sicherheitsfrage speichern
-                  </button>
-                </div>
-
-                {/* SUCCESS/ERROR MESSAGES */}
-                {securityMessage && (
-                  <div className={`mitglied-detail-message ${securityMessage.type === 'error' ? 'error' : 'success'}`} style={{
-                    marginTop: '1.25rem',
-                    padding: '1rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    fontSize: '0.95rem'
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>
-                      {securityMessage.type === 'error' ? '?' : '?'}
-                    </span>
-                    {securityMessage.text}
-                  </div>
-                )}
-              </div>
-            </div>
+            <MemberSecurityTab CustomSelect={CustomSelect} />
           )}
           {activeTab === "allgemein" && (
             <div className="grid-container">
@@ -7776,204 +7564,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
 
           {activeTab === "zusatzdaten" && (
-            <div className="zusatzdaten-content" style={{ padding: '1rem' }}>
-              {/* Header */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1.5rem',
-                paddingBottom: '1rem',
-                borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
-              }}>
-                <h2 style={{ margin: 0, color: '#FFD700', fontSize: '1.5rem', fontWeight: '700' }}>
-                  🏆 Lehrgänge & Ehrungen
-                </h2>
-                {editMode && (
-                  <button
-                    onClick={() => {
-                      setZusatzdatenForm({ art: 'Lehrgang', bezeichnung: '', datum: '', lizenz: '' });
-                      setShowZusatzdatenModal(true);
-                    }}
-                    style={{
-                      padding: '0.6rem 1.2rem',
-                      background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#000',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    + Neuer Eintrag
-                  </button>
-                )}
-              </div>
-
-              {/* Content */}
-              {zusatzdaten.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '3rem',
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
-                  <p>Noch keine Lehrgänge oder Ehrungen erfasst.</p>
-                  {editMode && <p style={{ fontSize: '0.9rem' }}>Klicken Sie auf "Neuer Eintrag" um einen hinzuzufügen.</p>}
-                </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid rgba(255, 215, 0, 0.3)' }}>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Datum</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Art</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Bezeichnung</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Lizenz</th>
-                        {editMode && <th style={{ padding: '0.75rem', textAlign: 'center', color: '#FFD700' }}>Aktion</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {zusatzdaten.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                          <td style={{ padding: '0.75rem' }}>{new Date(item.datum).toLocaleDateString('de-DE')}</td>
-                          <td style={{ padding: '0.75rem' }}>
-                            <span style={{
-                              padding: '0.2rem 0.6rem',
-                              borderRadius: '4px',
-                              fontSize: '0.8rem',
-                              background: item.art === 'Ehrung' ? 'rgba(255, 215, 0, 0.2)' :
-                                         item.art === 'Seminar' ? 'rgba(59, 130, 246, 0.2)' :
-                                         item.art === 'Lehrgang' ? 'rgba(16, 185, 129, 0.2)' :
-                                         'rgba(139, 92, 246, 0.2)',
-                              color: item.art === 'Ehrung' ? '#FFD700' :
-                                     item.art === 'Seminar' ? '#3b82f6' :
-                                     item.art === 'Lehrgang' ? '#10b981' :
-                                     '#8b5cf6'
-                            }}>
-                              {item.art}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.75rem' }}>{item.bezeichnung}</td>
-                          <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>{item.lizenz || '-'}</td>
-                          {editMode && (
-                            <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                              <button
-                                onClick={() => handleDeleteZusatzdaten(item)}
-                                style={{
-                                  background: 'rgba(239, 68, 68, 0.2)',
-                                  border: '1px solid #ef4444',
-                                  padding: '0.25rem 0.5rem',
-                                  borderRadius: '4px',
-                                  color: '#ef4444',
-                                  cursor: 'pointer',
-                                  fontSize: '0.8rem'
-                                }}
-                              >
-                                🗑️
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Modal */}
-              {showZusatzdatenModal && (
-                <div style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 9999
-                }} onClick={() => setShowZusatzdatenModal(false)}>
-                  <div onClick={e => e.stopPropagation()} style={{
-                    background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
-                    borderRadius: '16px',
-                    width: '90%',
-                    maxWidth: '450px',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                      <h3 style={{ color: '#FFD700', margin: 0 }}>🏆 Neuer Eintrag</h3>
-                      <button onClick={() => setShowZusatzdatenModal(false)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.5rem' }}>×</button>
-                    </div>
-                    <div style={{ padding: '1.5rem' }}>
-
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Datum *</label>
-                        <input
-                          type="date"
-                          value={zusatzdatenForm.datum}
-                          onChange={(e) => setZusatzdatenForm({...zusatzdatenForm, datum: e.target.value})}
-                          style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px', color: '#fff' }}
-                        />
-                      </div>
-
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Art *</label>
-                        <select
-                          value={zusatzdatenForm.art}
-                          onChange={(e) => setZusatzdatenForm({...zusatzdatenForm, art: e.target.value})}
-                          style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px', color: '#fff' }}
-                        >
-                          <option value="Lehrgang">Lehrgang</option>
-                          <option value="Seminar">Seminar</option>
-                          <option value="Ehrung">Ehrung</option>
-                        </select>
-                      </div>
-
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Bezeichnung *</label>
-                        <input
-                          type="text"
-                          value={zusatzdatenForm.bezeichnung}
-                          onChange={(e) => setZusatzdatenForm({...zusatzdatenForm, bezeichnung: e.target.value})}
-                          placeholder="z.B. Dan-Lehrgang, Trainer C-Lizenz..."
-                          style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px', color: '#fff' }}
-                        />
-                      </div>
-
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Lizenz (optional)</label>
-                        <input
-                          type="text"
-                          value={zusatzdatenForm.lizenz}
-                          onChange={(e) => setZusatzdatenForm({...zusatzdatenForm, lizenz: e.target.value})}
-                          placeholder="z.B. Trainer C, Übungsleiter B..."
-                          style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px', color: '#fff' }}
-                        />
-                      </div>
-
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', padding: '1rem 1.5rem', borderTop: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                      <button
-                        onClick={() => setShowZusatzdatenModal(false)}
-                        style={{ padding: '0.75rem 1.5rem', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '8px', color: '#fff', cursor: 'pointer' }}
-                      >
-                        Abbrechen
-                      </button>
-                      <button
-                        onClick={handleSaveZusatzdaten}
-                        style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #FFD700, #FFA500)', border: 'none', borderRadius: '8px', color: '#000', fontWeight: '600', cursor: 'pointer' }}
-                      >
-                        Speichern
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <MemberAdditionalDataTab
+              mitgliedId={id}
+              dojoId={mitglied?.dojo_id}
+              editMode={editMode}
+            />
           )}
 
                     {activeTab === "gurt_stil" && (
