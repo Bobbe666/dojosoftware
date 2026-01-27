@@ -1140,6 +1140,7 @@ const skipFiles = [
   "raeume.js",
   "standorte.js",
   "stundenplan.js",
+  "badges.js",
   // Keine Router-Module (exportieren nur Funktionen oder sind Notizen):
   "stileguertel_stats_fixed.js",
   "templatePdfGenerator.js",
