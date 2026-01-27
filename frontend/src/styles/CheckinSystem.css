@@ -2275,3 +2275,59 @@
   width: 16px;
   height: 16px;
 }
+
+/* ============================================
+   QR SCANNER BUTTON
+   ============================================ */
+
+.qr-scan-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
+}
+
+.qr-scan-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--primary-alpha-50);
+}
+
+.qr-scan-btn:active {
+  transform: translateY(0);
+}
+
+.qr-scan-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile: Nur Icon anzeigen */
+@media (max-width: 768px) {
+  .qr-scan-btn .btn-text-desktop {
+    display: none;
+  }
+
+  .qr-scan-btn {
+    padding: 0.6rem;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    justify-content: center;
+  }
+}
+
+/* Desktop: Icon + Text */
+@media (min-width: 769px) {
+  .qr-scan-btn .btn-text-desktop {
+    display: inline;
+  }
+}

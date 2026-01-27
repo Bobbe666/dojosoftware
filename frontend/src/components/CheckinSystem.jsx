@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText
+  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText, QrCode
 } from 'lucide-react';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import VerkaufKasse from './VerkaufKasse';
+import QRScanner from './QRScanner';
 import config from '../config/config.js';
 import "../styles/themes.css";       // Centralized theme system
 import "../styles/components.css";   // Universal component styles
@@ -88,6 +89,9 @@ const CheckinSystem = () => {
   // Verkauf State
   const [showVerkauf, setShowVerkauf] = useState(false);
   const [verkaufKunde, setVerkaufKunde] = useState(null);
+
+  // QR Scanner State
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState({
@@ -268,13 +272,48 @@ const CheckinSystem = () => {
   const closeVerkauf = () => {
     setShowVerkauf(false);
     setVerkaufKunde(null);
-    
+
     // Fokussiere das Suchfeld nach dem Schließen des Verkaufs
     setTimeout(() => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
       }
     }, 100);
+  };
+
+  // QR-Code gescannt
+  const handleQRScan = async (qrData, parsedData) => {
+    console.log('QR-Code gescannt:', parsedData);
+
+    if (!parsedData || !parsedData.mitglied_id) {
+      setError('Ungueltiger QR-Code');
+      return;
+    }
+
+    // Finde Mitglied in der Liste
+    const member = members.find(m => m.mitglied_id === parsedData.mitglied_id);
+
+    if (!member) {
+      setError(`Mitglied mit ID ${parsedData.mitglied_id} nicht gefunden`);
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    // Schliesse Scanner
+    setShowQRScanner(false);
+
+    // Pruefe ob bereits eingecheckt
+    const checkedIn = isCheckedIn(member.mitglied_id);
+
+    if (checkedIn) {
+      // Bereits eingecheckt -> Verkauf oeffnen
+      setSuccess(`${member.vorname} ${member.nachname} ist bereits eingecheckt`);
+      setTimeout(() => setSuccess(''), 2000);
+      startVerkauf(member);
+    } else {
+      // Nicht eingecheckt -> Check-in Prozess starten
+      selectMemberFromSearch(member);
+    }
   };
 
   // Course selection toggle
@@ -626,6 +665,16 @@ const CheckinSystem = () => {
 
           {/* Header Actions rechts */}
           <div className="header-actions">
+            {/* QR Scanner Button */}
+            <button
+              onClick={() => setShowQRScanner(true)}
+              className="btn btn-primary qr-scan-btn"
+              title="QR-Code scannen"
+            >
+              <QrCode size={20} />
+              <span className="btn-text-desktop">QR-Scan</span>
+            </button>
+
             {/* Reset Button */}
             {step > 1 && (
               <button onClick={resetWorkflow} className="btn btn-secondary">
@@ -960,6 +1009,13 @@ const CheckinSystem = () => {
           onClose={closeVerkauf}
         />
       )}
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScan={handleQRScan}
+      />
 
       {/* Context Menu */}
       {contextMenu.visible && contextMenu.member && (
