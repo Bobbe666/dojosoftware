@@ -21,6 +21,7 @@ import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import TrialBanner from './TrialBanner';
+import AgbStatusWidget from './AgbStatusWidget';
 
 function Dashboard() {
   const location = useLocation();
@@ -783,6 +784,9 @@ function Dashboard() {
 
               {/* 🔔 Trial/Subscription Banner */}
               <TrialBanner stats={stats} />
+
+              {/* 📋 AGB/DSGVO Status Widget - Zeigt fehlende Akzeptanzen */}
+              {role === 'admin' && <AgbStatusWidget />}
 
               {/* Navigation basierend auf Rolle */}
               {role === 'admin' && (
