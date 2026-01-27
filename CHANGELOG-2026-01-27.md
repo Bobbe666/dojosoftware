@@ -97,6 +97,52 @@ Globale CSS-Selektoren wie `.card-header`, `.form-group`, `.btn-primary` übersc
 
 ---
 
+## 4. Light/Dark Mode Konsistenz-Fixes
+
+### Problem:
+Hardcodierte Farben (`white`, `#fff`, `#ffffff`) verursachten "weiß auf weiß"-Probleme im Light Mode.
+
+### Lösung:
+CSS-Variablen statt hardcodierter Farben, Dark-Mode-Support via `[data-theme="dark"]` Selektoren.
+
+### Geänderte Dateien:
+| Datei | Änderung |
+|-------|----------|
+| `AnwesenheitDashboard.css` | `.kalender-tag` → `var(--bg-card)` |
+| `AnwesenheitGrid.css` | `.kurs-kachel` → `var(--bg-card)` |
+| `AnwesenheitKalender.css` | `.react-calendar` → `var(--bg-card)` |
+| `AuditLog.css` | Alle `white` → `var(--bg-card)`, Dark-Mode-Selektoren hinzugefügt |
+| `ArtikelVerwaltung.css` | `.search-filters select` → `var(--bg-card)` |
+| `StandortSwitcher.css` | Dark-Mode-Overrides für Dropdown hinzugefügt |
+| `RaumVerwaltung.css` | Dark-Mode-Overrides für Cards/Forms hinzugefügt |
+
+### Wichtige CSS-Variablen für Theming:
+```css
+/* Hintergründe */
+var(--bg-card)        /* Karten-Hintergrund */
+var(--bg-card-hover)  /* Karten-Hover */
+var(--bg-secondary)   /* Sekundärer Hintergrund */
+var(--bg-surface)     /* Oberflächen */
+
+/* Text */
+var(--text-primary)   /* Haupttext */
+var(--text-secondary) /* Nebentext */
+
+/* Borders */
+var(--border-default) /* Standard-Rahmen */
+```
+
+### Dark-Mode-Selektoren (für neue Komponenten):
+```css
+/* Standard-Selector für Dark Mode */
+[data-theme="dark"] .my-component {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+```
+
+---
+
 ## Deployment-Befehl
 
 ```bash
@@ -129,3 +175,9 @@ ssh dojo.tda-intl.org "cd /var/www/dojosoftware && git pull origin main && cd fr
 1. **Immer `formatNumber()` verwenden** für Anzeige
 2. **Null/undefined prüfen** mit `value ?? 0`
 3. **EmptyState Komponente** für leere Datensätze
+
+### Light/Dark Mode Styling:
+1. **Keine hardcodierten Farben** wie `white`, `#fff`, `#ffffff`
+2. **CSS-Variablen verwenden**: `var(--bg-card)`, `var(--text-primary)`
+3. **Dark-Mode-Overrides** mit `[data-theme="dark"]` Selektor
+4. **Fallback-Werte** angeben: `var(--bg-card, rgba(255,255,255,0.05))`

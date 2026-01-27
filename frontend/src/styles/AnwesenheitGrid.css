@@ -38,8 +38,8 @@
 }
 
 .kurs-kachel {
-  background-color: #fff;
-  border-left: 8px solid #800000;
+  background-color: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border-left: 8px solid var(--primary, #800000);
   border-radius: 10px;
   padding: 1rem;
   width: 280px;
@@ -63,7 +63,7 @@
 .kurs-kachel p {
   margin: 0;
   font-size: 0.95rem;
-  color: #555;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
 }
 
 .teilnehmer-liste {

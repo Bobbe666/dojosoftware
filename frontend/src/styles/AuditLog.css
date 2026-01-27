@@ -84,7 +84,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 12px;
   padding: 15px 20px;
@@ -125,7 +125,7 @@
 
 /* Filter Panel */
 .filter-panel {
-  background: white;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 12px;
   padding: 20px;
@@ -169,7 +169,7 @@
   padding: 8px 12px;
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 6px;
-  background: white;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
 }
 
 .search-input input {
@@ -194,7 +194,7 @@
 
 /* Table */
 .audit-table-container {
-  background: white;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 12px;
   overflow: hidden;
@@ -341,7 +341,7 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border-radius: 16px;
   max-width: 700px;
   width: 100%;
@@ -427,7 +427,62 @@
   font-family: 'Monaco', 'Menlo', monospace;
 }
 
-/* Dark mode */
+/* Dark mode - App Theme System */
+[data-theme="dark"] .audit-log-container,
+.dark .audit-log-container {
+  color: var(--text-primary, #e5e7eb);
+}
+
+[data-theme="dark"] .header-title h2,
+.dark .header-title h2 {
+  color: var(--text-primary, #f9fafb);
+}
+
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .filter-panel,
+[data-theme="dark"] .audit-table-container,
+[data-theme="dark"] .modal-content,
+.dark .stat-card,
+.dark .filter-panel,
+.dark .audit-table-container,
+.dark .modal-content {
+  background: var(--bg-card, #1f2937);
+  border-color: var(--border-default, #374151);
+}
+
+[data-theme="dark"] .audit-table th,
+.dark .audit-table th {
+  background: var(--bg-secondary, #111827);
+}
+
+[data-theme="dark"] .audit-table td,
+.dark .audit-table td {
+  border-color: var(--border-default, #374151);
+}
+
+[data-theme="dark"] .audit-table tbody tr:hover,
+.dark .audit-table tbody tr:hover {
+  background: var(--bg-card-hover, #374151);
+}
+
+[data-theme="dark"] .filter-group input,
+[data-theme="dark"] .filter-group select,
+[data-theme="dark"] .search-input,
+.dark .filter-group input,
+.dark .filter-group select,
+.dark .search-input {
+  background: var(--bg-card, #374151);
+  border-color: var(--border-default, #4b5563);
+  color: var(--text-primary, #e5e7eb);
+}
+
+[data-theme="dark"] .json-display,
+.dark .json-display {
+  background: var(--bg-secondary, #111827);
+  color: var(--text-secondary, #d1d5db);
+}
+
+/* OS-level dark mode fallback */
 @media (prefers-color-scheme: dark) {
   .audit-log-container {
     color: #e5e7eb;

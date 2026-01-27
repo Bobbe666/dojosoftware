@@ -224,6 +224,67 @@
   }
 }
 
+/* Dark Mode Support */
+[data-theme="dark"] .standort-switcher-trigger,
+.dark .standort-switcher-trigger {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border-color: var(--border-default, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .standort-switcher-label,
+.dark .standort-switcher-label {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+[data-theme="dark"] .standort-switcher-name,
+.dark .standort-switcher-name {
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .standort-switcher-dropdown,
+.dark .standort-switcher-dropdown {
+  background: var(--bg-card, #1f2937);
+  border-color: var(--border-default, #374151);
+}
+
+[data-theme="dark"] .dropdown-header,
+.dark .dropdown-header {
+  background: var(--bg-secondary, #111827);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  border-color: var(--border-default, #374151);
+}
+
+[data-theme="dark"] .standort-option,
+.dark .standort-option {
+  background: transparent;
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .standort-option:hover,
+.dark .standort-option:hover {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.05));
+}
+
+[data-theme="dark"] .standort-option.active,
+.dark .standort-option.active {
+  background: var(--primary-alpha-10, rgba(255, 215, 0, 0.1));
+}
+
+[data-theme="dark"] .standort-option-name,
+.dark .standort-option-name {
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .standort-option-stats,
+.dark .standort-option-stats {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+[data-theme="dark"] .chevron,
+.dark .chevron {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .standort-switcher-trigger {

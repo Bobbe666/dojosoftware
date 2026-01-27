@@ -401,6 +401,83 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Dark Mode Support */
+[data-theme="dark"] .section-header,
+[data-theme="dark"] .room-form-card,
+[data-theme="dark"] .room-card,
+[data-theme="dark"] .empty-state,
+.dark .section-header,
+.dark .room-form-card,
+.dark .room-card,
+.dark .empty-state {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border-color: var(--border-default, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .header-content h2,
+[data-theme="dark"] .form-header h3,
+[data-theme="dark"] .room-name,
+[data-theme="dark"] .empty-state h3,
+.dark .header-content h2,
+.dark .form-header h3,
+.dark .room-name,
+.dark .empty-state h3 {
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .header-content p,
+[data-theme="dark"] .room-description,
+[data-theme="dark"] .room-info-item,
+[data-theme="dark"] .color-value,
+[data-theme="dark"] .empty-state p,
+.dark .header-content p,
+.dark .room-description,
+.dark .room-info-item,
+.dark .color-value,
+.dark .empty-state p {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+[data-theme="dark"] .form-group label,
+.dark .form-group label {
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .room-name-input,
+.dark .form-input,
+.dark .room-name-input {
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.3));
+  border-color: var(--border-default, rgba(255, 255, 255, 0.2));
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .form-header,
+[data-theme="dark"] .form-actions,
+[data-theme="dark"] .room-edit-form,
+.dark .form-header,
+.dark .form-actions,
+.dark .room-edit-form {
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.2));
+  border-color: var(--border-default, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .btn-secondary,
+[data-theme="dark"] .btn-icon,
+.dark .btn-secondary,
+.dark .btn-icon {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border-color: var(--border-default, rgba(255, 255, 255, 0.2));
+  color: var(--text-primary, #ffffff);
+}
+
+[data-theme="dark"] .btn-secondary:hover,
+[data-theme="dark"] .btn-icon:hover,
+.dark .btn-secondary:hover,
+.dark .btn-icon:hover {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.1));
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .section-header {

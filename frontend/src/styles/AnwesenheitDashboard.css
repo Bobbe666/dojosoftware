@@ -18,7 +18,7 @@
 }
 
 .kalender-tag {
-  background-color: white;
+  background-color: var(--bg-card, rgba(255, 255, 255, 0.05));
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 0.8rem;
@@ -27,10 +27,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 60px;
+  color: var(--text-primary);
 }
 
 .kalender-tag:hover {
-  background-color: #f9f9f9;
+  background-color: var(--bg-card-hover, rgba(255, 255, 255, 0.08));
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
 }
@@ -70,7 +71,7 @@
   margin-bottom: 0.5rem;
   font-weight: bold;
   text-align: center;
-  color: #666;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
 }
 
 @media (max-width: 600px) {

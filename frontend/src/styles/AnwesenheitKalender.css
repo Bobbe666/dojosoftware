@@ -17,7 +17,7 @@
   width: 100%;
   border: none;
   font-family: inherit;
-  background-color: #fff;
+  background-color: var(--bg-card, rgba(255, 255, 255, 0.05));
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
   border-radius: 10px;
   overflow: hidden;
@@ -34,9 +34,10 @@
 .kalender-details {
   margin-top: 2rem;
   padding: 1rem;
-  border: 1px solid #ccc;
-  background: #f9f9f9;
+  border: 1px solid var(--border-default, #ccc);
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border-radius: 10px;
+  color: var(--text-primary);
 }
 
 .kalender-details h3 {
@@ -47,7 +48,7 @@
 .kalender-details ul {
   padding-left: 1.2rem;
   list-style: disc;
-  color: #333;
+  color: var(--text-primary, #333);
 }
 
 .kalender-details li {
