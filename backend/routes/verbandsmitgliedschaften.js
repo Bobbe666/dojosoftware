@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require("../middleware/auth");
 
 // Default-Werte (falls Einstellungen nicht geladen werden können)
 const DEFAULT_BEITRAG_DOJO = 99.00;
@@ -44,6 +45,16 @@ router.use((req, res, next) => {
   next();
 });
 
+
+// Auth-Middleware für alle nicht-öffentlichen Routes
+router.use((req, res, next) => {
+  // Public routes brauchen keine Authentifizierung
+  if (req.path.startsWith("/public")) {
+    return next();
+  }
+  // Alle anderen routes erfordern Auth
+  authenticateToken(req, res, next);
+});
 // ============================================================================
 // PUBLIC ROUTES (KEINE AUTHENTIFIZIERUNG!)
 // ============================================================================
