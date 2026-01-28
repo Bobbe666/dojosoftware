@@ -54,11 +54,6 @@ const SuperAdminDashboard = () => {
   const [editingPlan, setEditingPlan] = useState(null);
   const [plansLoading, setPlansLoading] = useState(false);
 
-  // Theme State
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('dojo-theme') || 'light';
-  });
-
   // Prüfe ob Main Super-Admin (nur für den Hauptadministrator)
   useEffect(() => {
     if (token) {
@@ -71,16 +66,6 @@ const SuperAdminDashboard = () => {
       }
     }
   }, [token]);
-
-  // Theme beim Laden anwenden
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('dojo-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
 
   // Daten laden beim Mount
   useEffect(() => {
