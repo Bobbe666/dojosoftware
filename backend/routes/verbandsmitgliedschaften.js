@@ -216,7 +216,7 @@ router.post('/public/anmeldung', async (req, res) => {
       iban || null, bic || null, kontoinhaber || null, bank_name || null,
       gueltig_ab, gueltig_bis,
       agb_accepted ? 1 : 0, dsgvo_accepted ? 1 : 0, widerrufsrecht_acknowledged ? 1 : 0,
-      unterschrift_digital || null, unterschrift_datum || null,
+      unterschrift_digital || null, unterschrift_datum ? new Date(unterschrift_datum).toISOString().slice(0, 19).replace("T", " ") : null,
       notizen || null
     ];
 
