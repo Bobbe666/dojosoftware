@@ -322,6 +322,7 @@ const VerbandMitgliedWerden = () => {
       {vorteile.length > 0 && (
         <div style={styles.vorteileSection}>
           <h3 style={styles.vorteileTitle}><Gift size={20} /> Mitglieder-Vorteile</h3>
+          {/* Vorteile temporär ausgeblendet
           <div style={styles.vorteileGrid}>
             {vorteile.slice(0, 4).map((v, i) => (
               <div key={i} style={styles.vorteilCard}>
@@ -331,6 +332,7 @@ const VerbandMitgliedWerden = () => {
               </div>
             ))}
           </div>
+          */}
         </div>
       )}
     </div>
