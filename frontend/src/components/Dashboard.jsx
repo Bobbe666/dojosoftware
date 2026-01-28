@@ -356,6 +356,22 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '📈',
+      title: 'EÜR',
+      description: 'Einnahmen-Überschuss-Rechnung',
+      path: '/dashboard/euer',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📉',
+      title: 'Ausgaben',
+      description: 'Betriebsausgaben erfassen',
+      path: '/dashboard/ausgaben',
+      badge: 'NEU',
+      featured: true
+    },
+    {
       icon: '💰',
       title: 'Beiträge',
       description: 'Mitgliedsbeiträge und Zahlungen',

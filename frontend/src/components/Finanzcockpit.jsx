@@ -31,7 +31,8 @@ import {
   Wallet,
   Users,
   Receipt,
-  CheckCircle2
+  CheckCircle2,
+  FileSpreadsheet
 } from "lucide-react";
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE: Dojo-Filter
@@ -755,6 +756,22 @@ const Finanzcockpit = () => {
       <section className="finanzcockpit__actions">
         <h3>Direkte Aktionen</h3>
         <div className="finanzcockpit__actions-grid">
+          <button
+            className="finanzcockpit__action-button"
+            onClick={() => navigate('/dashboard/euer')}
+            style={{ borderLeft: '3px solid #10b981' }}
+          >
+            <FileSpreadsheet size={20} />
+            EÜR (Einnahmen-Überschuss)
+          </button>
+          <button
+            className="finanzcockpit__action-button"
+            onClick={() => navigate('/dashboard/ausgaben')}
+            style={{ borderLeft: '3px solid #ef4444' }}
+          >
+            <TrendingDown size={20} />
+            Ausgaben erfassen
+          </button>
           <button
             className="finanzcockpit__action-button"
             onClick={() => navigate('/dashboard/beitraege')}

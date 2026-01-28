@@ -15,6 +15,35 @@ const DEFAULT_BEITRAG_DOJO = 99.00;
 const DEFAULT_BEITRAG_EINZEL = 49.00;
 
 /**
+ * Generiert eine fortlaufende Rechnungsnummer im Format YYYY/MM/DD-XXXX
+ * Zählt aus beiden Tabellen (rechnungen + verbandsmitgliedschaft_zahlungen)
+ */
+const generateFortlaufendeRechnungsnummer = () => {
+  return new Promise((resolve, reject) => {
+    const heute = new Date();
+    const jahr = heute.getFullYear();
+    const monat = String(heute.getMonth() + 1).padStart(2, '0');
+    const tag = String(heute.getDate()).padStart(2, '0');
+    const datumPrefix = `${jahr}/${monat}/${tag}`;
+
+    // Zähle alle Rechnungen aus beiden Tabellen für dieses Jahr
+    const query = `
+      SELECT
+        (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+        (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+      AS total_count
+    `;
+
+    db.query(query, [jahr, jahr], (err, results) => {
+      if (err) return reject(err);
+      const count = results[0].total_count || 0;
+      const laufnummer = 1000 + count;
+      resolve(`${datumPrefix}-${laufnummer}`);
+    });
+  });
+};
+
+/**
  * Holt eine Einstellung aus der Datenbank
  */
 const getEinstellung = (key, defaultValue = null) => {
@@ -692,7 +721,7 @@ router.post('/', async (req, res) => {
 
     // Erste Rechnung erstellen
     const betraege = calculateBrutto(jahresbeitrag);
-    const rechnungsnummer = `TDA-${new Date().getFullYear()}-${result.insertId.toString().padStart(5, '0')}`;
+    const rechnungsnummer = await generateFortlaufendeRechnungsnummer();
 
     await new Promise((resolve, reject) => {
       db.query(`
@@ -821,7 +850,7 @@ router.post('/:id/verlaengern', async (req, res) => {
 
     // Neue Rechnung erstellen
     const betraege = calculateBrutto(mitgliedschaft.jahresbeitrag);
-    const rechnungsnummer = `TDA-${new Date().getFullYear()}-${id.toString().padStart(5, '0')}-V`;
+    const rechnungsnummer = await generateFortlaufendeRechnungsnummer();
 
     await new Promise((resolve, reject) => {
       db.query(`
@@ -1275,7 +1304,24 @@ router.get('/:id/historie', (req, res) => {
 
 const puppeteer = require('puppeteer');
 const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 const generateVerbandRechnungHTML = require('../utils/verbandRechnungPdfTemplate');
+
+// Logo als Base64 laden (einmalig beim Start)
+let logoBase64 = null;
+const logoPath = path.join(__dirname, '..', '..', 'frontend', 'src', 'assets', 'dojo-logo.png');
+try {
+  if (fs.existsSync(logoPath)) {
+    const logoBuffer = fs.readFileSync(logoPath);
+    logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    console.log('✅ TDA Logo geladen für PDF-Generierung');
+  } else {
+    console.log('⚠️ Logo nicht gefunden:', logoPath);
+  }
+} catch (err) {
+  console.log('⚠️ Logo konnte nicht geladen werden:', err.message);
+}
 
 /**
  * Generiere EPC QR-Code String für SEPA-Überweisung
@@ -1392,8 +1438,8 @@ router.get('/zahlungen/:zahlungs_id/pdf', async (req, res) => {
       }
     }
 
-    // 5. HTML generieren
-    const html = generateVerbandRechnungHTML(zahlung, mitgliedschaft, config, qrCodeDataURI);
+    // 5. HTML generieren (mit Logo)
+    const html = generateVerbandRechnungHTML(zahlung, mitgliedschaft, config, qrCodeDataURI, logoBase64);
 
     // 6. PDF mit Puppeteer generieren
     const browser = await puppeteer.launch({

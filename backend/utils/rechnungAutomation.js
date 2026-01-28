@@ -18,13 +18,24 @@ const queryAsync = (sql, params = []) => {
   });
 };
 
-// Generiere Rechnungsnummer
+// Generiere Rechnungsnummer (fortlaufend über beide Tabellen)
 const generateRechnungsnummer = async () => {
-  const jahr = new Date().getFullYear();
-  const query = `SELECT COUNT(*) as count FROM rechnungen WHERE YEAR(datum) = ?`;
-  const results = await queryAsync(query, [jahr]);
-  const count = results[0].count + 1;
-  return `RE-${jahr}-${String(count).padStart(5, '0')}`;
+  const heute = new Date();
+  const jahr = heute.getFullYear();
+  const monat = String(heute.getMonth() + 1).padStart(2, '0');
+  const tag = String(heute.getDate()).padStart(2, '0');
+  const datumPrefix = `${jahr}/${monat}/${tag}`;
+
+  const query = `
+    SELECT
+      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+    AS count
+  `;
+  const results = await queryAsync(query, [jahr, jahr]);
+  const count = results[0].count;
+  const laufnummer = 1000 + count;
+  return `${datumPrefix}-${laufnummer}`;
 };
 
 // =====================================================================================

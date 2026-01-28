@@ -98,12 +98,12 @@ async function createRechnungForMitglied(mitgliedData) {
       ORDER BY zahlungsdatum ASC
     `;
 
-    db.query(beitraegeQuery, [mitgliedData.mitglied_id], (err, beitraege) => {
+    db.query(beitraegeQuery, [mitgliedData.mitglied_id], async (err, beitraege) => {
       if (err) return reject(err);
 
-      // Schritt 2: Generiere Rechnungsnummer
+      // Schritt 2: Generiere Rechnungsnummer (async)
       const heute = new Date();
-      const rechnungsnummer = generateRechnungsnummer(heute);
+      const rechnungsnummer = await generateRechnungsnummer(heute);
 
       // Schritt 3: Erstelle Rechnung
       const rechnungQuery = `
@@ -223,13 +223,31 @@ function extractBezeichnungFromDescription(description) {
 }
 
 /**
- * Generiert eine Rechnungsnummer im Format RG-YYYY-NNNN
+ * Generiert eine fortlaufende Rechnungsnummer im Format YYYY/MM/DD-XXXX
+ * Zählt aus beiden Tabellen (rechnungen + verbandsmitgliedschaft_zahlungen)
  * @private
  */
-function generateRechnungsnummer(datum) {
-  const jahr = datum.getFullYear();
-  const timestamp = Date.now().toString().slice(-4);
-  return `RG-${jahr}-${timestamp}`;
+async function generateRechnungsnummer(datum) {
+  return new Promise((resolve, reject) => {
+    const jahr = datum.getFullYear();
+    const monat = String(datum.getMonth() + 1).padStart(2, '0');
+    const tag = String(datum.getDate()).padStart(2, '0');
+    const datumPrefix = `${jahr}/${monat}/${tag}`;
+
+    const query = `
+      SELECT
+        (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+        (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+      AS count
+    `;
+
+    db.query(query, [jahr, jahr], (err, results) => {
+      if (err) return reject(err);
+      const count = results[0].count;
+      const laufnummer = 1000 + count;
+      resolve(`${datumPrefix}-${laufnummer}`);
+    });
+  });
 }
 
 /**

@@ -405,9 +405,15 @@ router.get('/naechste-nummer', (req, res) => {
   const tag = String(datumObj.getDate()).padStart(2, '0');
   const datumPrefix = `${jahr}/${monat}/${tag}`;
 
-  const checkQuery = `SELECT COUNT(*) as count FROM rechnungen WHERE DATE(datum) = ?`;
+  // Zähle ALLE Rechnungen aus beiden Tabellen für dieses Jahr (fortlaufend)
+  const checkQuery = `
+    SELECT
+      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+    AS count
+  `;
 
-  db.query(checkQuery, [datum], (err, results) => {
+  db.query(checkQuery, [jahr, jahr], (err, results) => {
     if (err) {
       console.error('Fehler beim Ermitteln der nächsten Nummer:', err);
       return res.status(500).json({ success: false, error: err.message });
@@ -539,10 +545,15 @@ router.post('/', (req, res) => {
   const tag = String(datumObj.getDate()).padStart(2, '0');
   const datumPrefix = `${jahr}/${monat}/${tag}`;
 
-  // Zähle Rechnungen für diesen Tag
-  const checkQuery = `SELECT COUNT(*) as count FROM rechnungen WHERE DATE(datum) = ?`;
+  // Zähle ALLE Rechnungen aus beiden Tabellen für dieses Jahr (fortlaufend)
+  const checkQuery = `
+    SELECT
+      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+    AS count
+  `;
 
-  db.query(checkQuery, [datum], (checkErr, checkResults) => {
+  db.query(checkQuery, [jahr, jahr], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Fehler beim Prüfen der Rechnungsnummer:', checkErr);
       return res.status(500).json({ success: false, error: checkErr.message });

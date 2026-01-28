@@ -3,7 +3,7 @@
  * TDA International - Design identisch mit Dojo-Rechnungen
  */
 
-module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, config, qrCodeDataURI) {
+module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, config, qrCodeDataURI, logoBase64) {
   const formatDate = (date) => {
     if (!date) return '-';
     const d = new Date(date);
@@ -86,8 +86,9 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
       font-size: 9pt;
       line-height: 1.3;
       color: #000;
-      padding: 12mm 15mm;
+      padding: 15mm 20mm;
       position: relative;
+      min-height: 297mm;
     }
 
     /* Header */
@@ -112,6 +113,19 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
     .invoice-meta {
       text-align: right;
     }
+    .logo-container {
+      width: 70px;
+      height: 70px;
+      margin: 0 0 0.5rem auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
     .logo-placeholder {
       width: 60px;
       height: 60px;
@@ -122,7 +136,6 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
       justify-content: center;
       font-weight: bold;
       font-size: 10pt;
-      margin: 0 0 0.5rem auto;
     }
     .invoice-numbers {
       font-size: 8pt;
@@ -260,17 +273,17 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
     /* Footer */
     .rechnung-footer {
       position: absolute;
-      bottom: 10mm;
-      left: 15mm;
-      right: 15mm;
-      padding-top: 0.3rem;
+      bottom: 15mm;
+      left: 20mm;
+      right: 20mm;
+      padding-top: 0.5rem;
       border-top: 1px solid rgba(0, 0, 0, 0.2);
-      font-size: 6.5pt;
+      font-size: 7pt;
       text-align: center;
-      line-height: 1.4;
+      line-height: 1.5;
     }
     .rechnung-footer > div {
-      margin-bottom: 0.1rem;
+      margin-bottom: 0.2rem;
     }
 
     @page {
@@ -294,7 +307,12 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
       </div>
     </div>
     <div class="invoice-meta">
-      <div class="logo-placeholder">LOGO</div>
+      <div class="logo-container">
+        ${logoBase64
+          ? `<img src="${logoBase64}" alt="TDA Logo" />`
+          : `<div class="logo-placeholder">TDA</div>`
+        }
+      </div>
       <div class="invoice-numbers">
         <div>Rechnungs-Nr.: ${zahlung.rechnungsnummer || ''}</div>
         <div>Mitgliedsnummer: ${mitgliedsnummer}</div>

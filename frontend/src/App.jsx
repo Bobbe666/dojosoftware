@@ -61,6 +61,8 @@ const PublicTimetableDisplay = lazy(() => import(/* webpackChunkName: "public" *
 // LAZY LOADED - Finanzen & Beiträge
 // ============================================================================
 const Finanzcockpit = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Finanzcockpit"));
+const EuerUebersicht = lazy(() => import(/* webpackChunkName: "finance" */ "./components/EuerUebersicht"));
+const AusgabenVerwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/AusgabenVerwaltung"));
 const Beitraege = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Beitraege"));
 const Mahnwesen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Mahnwesen"));
 const MahnstufenEinstellungen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/MahnstufenEinstellungen"));
@@ -505,6 +507,9 @@ const App = () => {
 
               {/* Finanzen & Beitrags-Management */}
               <Route path="finanzcockpit" element={<Suspense fallback={<LazyLoadFallback />}><Finanzcockpit /></Suspense>} />
+              <Route path="euer" element={<Suspense fallback={<LazyLoadFallback />}><EuerUebersicht /></Suspense>} />
+              <Route path="euer-tda" element={<Suspense fallback={<LazyLoadFallback />}><EuerUebersicht isTDA={true} /></Suspense>} />
+              <Route path="ausgaben" element={<Suspense fallback={<LazyLoadFallback />}><AusgabenVerwaltung /></Suspense>} />
               <Route path="mitglieder-filter/:filterType" element={<Suspense fallback={<LazyLoadFallback />}><MitgliederFilter /></Suspense>} />
               <Route path="beitraege" element={<Suspense fallback={<LazyLoadFallback />}><Beitraege /></Suspense>} />
               <Route path="mahnwesen" element={<Suspense fallback={<LazyLoadFallback />}><Mahnwesen /></Suspense>} />
