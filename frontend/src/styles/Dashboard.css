@@ -55,7 +55,7 @@
   align-items: center !important;
   margin-bottom: var(--spacing-4) !important;
   padding: var(--spacing-3) var(--spacing-4) !important;
-  background: var(--glass-bg) !important;
+  background: var(--glass-bg);
   backdrop-filter: var(--glass-blur) !important;
   border-radius: var(--radius-lg) !important;
   border: 1px solid var(--border-accent) !important;
@@ -247,7 +247,7 @@
   align-items: center !important;
   gap: var(--spacing-2) !important;
   padding: var(--spacing-2-5) var(--spacing-5) !important;
-  background: var(--glass-bg) !important;
+  background: var(--glass-bg);
   backdrop-filter: blur(10px) !important;
   border-radius: var(--radius-lg) !important;
   border: 1px solid var(--border-accent) !important;
@@ -1412,4 +1412,44 @@
   background: rgba(245, 240, 230, 0.95) !important;
   color: #6B4423 !important;
   border: 1px solid rgba(139, 90, 43, 0.3) !important;
+}
+
+/* =============================================
+   UNIFIED HEADER STYLING - Alle Dashboards gleich
+   ============================================= */
+
+/* Dark Theme Header (midnight, blue-ocean, etc.) */
+[data-theme="midnight"] .dashboard-header,
+[data-theme="blue-ocean"] .dashboard-header,
+[data-theme="green-forest"] .dashboard-header,
+[data-theme="red-fire"] .dashboard-header {
+  background: rgba(15, 15, 35, 0.85) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+[data-theme="midnight"] .dashboard-header h2,
+[data-theme="blue-ocean"] .dashboard-header h2,
+[data-theme="green-forest"] .dashboard-header h2,
+[data-theme="red-fire"] .dashboard-header h2 {
+  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Light Theme Header (tda-vib) */
+[data-theme="tda-vib"] .dashboard-header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(139, 90, 43, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+[data-theme="tda-vib"] .dashboard-header h2 {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #1a1a1a !important;
+  color: #1a1a1a !important;
 }

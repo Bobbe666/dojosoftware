@@ -680,8 +680,12 @@ function Dashboard() {
   if (role === 'admin' && selectedDojo === 'super-admin') {
     console.log('✅ Zeige Super-Admin Dashboard für TDA Int\'l Org');
     return (
-      <div className="dashboard-container">
-        <header className="dashboard-header">
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+        <header className="dashboard-header" style={{
+          background: isDarkMode ? 'rgba(15, 15, 35, 0.85)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}>
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🏆 TDA Int'l Org - Super-Admin</h2>
@@ -779,7 +783,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
       <header className="dashboard-header">
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />

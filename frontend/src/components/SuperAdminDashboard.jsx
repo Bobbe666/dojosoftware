@@ -322,30 +322,30 @@ const SuperAdminDashboard = () => {
     );
   }
 
-  // Tab Definitions
+  // Tab Definitions - wie im normalen Dashboard
   const tabs = [
-    { id: 'overview', label: 'Übersicht', icon: <LayoutDashboard size={18} /> },
-    { id: 'verbandsmitglieder', label: 'Verbandsmitglieder', icon: <Award size={18} /> },
-    { id: 'statistics', label: 'Statistiken', icon: <PieChart size={18} /> },
-    { id: 'finance', label: 'Finanzen', icon: <DollarSign size={18} /> },
-    { id: 'contracts', label: 'Verträge', icon: <FileText size={18} /> },
-    { id: 'users', label: 'Benutzer', icon: <UserCog size={18} /> },
-    { id: 'plans', label: 'Pläne & Preise', icon: <CreditCard size={18} /> },
-    { id: 'sepa', label: 'SEPA Lastschrift', icon: <Euro size={18} /> }
+    { id: 'overview', label: 'Übersicht', icon: '📊' },
+    { id: 'verbandsmitglieder', label: 'Verbandsmitglieder', icon: '🏆' },
+    { id: 'statistics', label: 'Statistiken', icon: '📈' },
+    { id: 'finance', label: 'Finanzen', icon: '💰' },
+    { id: 'contracts', label: 'Verträge', icon: '📄' },
+    { id: 'users', label: 'Benutzer', icon: '👤' },
+    { id: 'plans', label: 'Pläne & Preise', icon: '💳' },
+    { id: 'sepa', label: 'SEPA Lastschrift', icon: '€' }
   ];
 
   return (
     <div className="super-admin-dashboard">
-      {/* Tab Navigation */}
-      <div className="tab-navigation">
+      {/* Tab Navigation - wie im normalen Dashboard */}
+      <div className="dashboard-tabs">
         {tabs.map(tab => (
           <button
             key={tab.id}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            className={`dashboard-tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
-            {tab.icon}
-            <span>{tab.label}</span>
+            <span className="tab-icon">{tab.icon}</span>
+            <span className="tab-label">{tab.label}</span>
           </button>
         ))}
       </div>

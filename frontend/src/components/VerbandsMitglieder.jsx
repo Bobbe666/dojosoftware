@@ -66,6 +66,16 @@ const VerbandsMitglieder = () => {
   const [formData, setFormData] = useState({
     typ: 'dojo',
     dojo_id: '',
+    // Neues Dojo anlegen
+    neues_dojo: false,
+    neues_dojo_name: '',
+    neues_dojo_inhaber: '',
+    neues_dojo_email: '',
+    neues_dojo_strasse: '',
+    neues_dojo_plz: '',
+    neues_dojo_ort: '',
+    neues_dojo_land: 'Deutschland',
+    // Einzelperson
     person_vorname: '',
     person_nachname: '',
     person_email: '',
@@ -205,7 +215,27 @@ const VerbandsMitglieder = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/verbandsmitgliedschaften', formData);
+      let submitData = { ...formData };
+
+      // Wenn neues Dojo angelegt werden soll
+      if (formData.typ === 'dojo' && formData.neues_dojo) {
+        // Erst neues Dojo anlegen
+        const neuesDojo = await api.post('/admin/dojos', {
+          dojoname: formData.neues_dojo_name,
+          inhaber: formData.neues_dojo_inhaber,
+          email: formData.neues_dojo_email,
+          strasse: formData.neues_dojo_strasse,
+          plz: formData.neues_dojo_plz,
+          ort: formData.neues_dojo_ort,
+          land: formData.neues_dojo_land
+        });
+
+        // Dojo-ID für Mitgliedschaft verwenden
+        submitData.dojo_id = neuesDojo.data.id || neuesDojo.data.dojo?.id;
+        submitData.neues_dojo = false;
+      }
+
+      await api.post('/verbandsmitgliedschaften', submitData);
       setShowNewModal(false);
       resetForm();
       loadData();
@@ -236,6 +266,20 @@ const VerbandsMitglieder = () => {
     }
   };
 
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await api.put(`/verbandsmitgliedschaften/${id}/status`, { status: newStatus });
+      loadData();
+      // Detail neu laden
+      if (selectedMitgliedschaft) {
+        const res = await api.get(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}`);
+        setSelectedMitgliedschaft(res.data);
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Status ändern');
+    }
+  };
+
   const handleZahlungBezahlt = async (zahlungsId) => {
     try {
       await api.post(`/verbandsmitgliedschaften/zahlungen/${zahlungsId}/bezahlt`);
@@ -250,10 +294,37 @@ const VerbandsMitglieder = () => {
     }
   };
 
+  const handleZahlungStornieren = async (zahlungsId) => {
+    if (!window.confirm('Möchten Sie diese Zahlung wirklich stornieren?')) {
+      return;
+    }
+    try {
+      await api.post(`/verbandsmitgliedschaften/zahlungen/${zahlungsId}/stornieren`, {
+        grund: 'Manuelle Stornierung'
+      });
+      loadData();
+      // Detail neu laden
+      if (selectedMitgliedschaft) {
+        const res = await api.get(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}`);
+        setSelectedMitgliedschaft(res.data);
+      }
+    } catch (err) {
+      alert('Fehler beim Stornieren der Zahlung');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       typ: 'dojo',
       dojo_id: '',
+      neues_dojo: false,
+      neues_dojo_name: '',
+      neues_dojo_inhaber: '',
+      neues_dojo_email: '',
+      neues_dojo_strasse: '',
+      neues_dojo_plz: '',
+      neues_dojo_ort: '',
+      neues_dojo_land: 'Deutschland',
       person_vorname: '',
       person_nachname: '',
       person_email: '',
@@ -868,27 +939,118 @@ const VerbandsMitglieder = () => {
                 </button>
               </div>
 
-              {/* Dojo-Auswahl */}
+              {/* Dojo-Auswahl oder Neues Dojo */}
               {formData.typ === 'dojo' && (
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Dojo auswählen *</label>
-                  <select
-                    value={formData.dojo_id}
-                    onChange={(e) => setFormData({ ...formData, dojo_id: e.target.value })}
-                    style={styles.input}
-                    required
-                  >
-                    <option value="">-- Dojo wählen --</option>
-                    {dojosOhneMitgliedschaft.map(d => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.ort})
+                <>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Dojo *</label>
+                    <select
+                      value={formData.neues_dojo ? 'neu' : formData.dojo_id}
+                      onChange={(e) => {
+                        if (e.target.value === 'neu') {
+                          setFormData({ ...formData, neues_dojo: true, dojo_id: '' });
+                        } else {
+                          setFormData({ ...formData, neues_dojo: false, dojo_id: e.target.value });
+                        }
+                      }}
+                      style={styles.input}
+                      required
+                    >
+                      <option value="">-- Dojo wählen --</option>
+                      {dojosOhneMitgliedschaft.map(d => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} {d.ort ? `(${d.ort})` : ''}
+                        </option>
+                      ))}
+                      <option value="neu" style={{ fontWeight: 'bold', borderTop: '1px solid #ccc' }}>
+                        ➕ Neues Dojo anlegen...
                       </option>
-                    ))}
-                  </select>
-                  {dojosOhneMitgliedschaft.length === 0 && (
-                    <p style={styles.hint}>Alle Dojos haben bereits eine Mitgliedschaft</p>
+                    </select>
+                  </div>
+
+                  {/* Neues Dojo Formular */}
+                  {formData.neues_dojo && (
+                    <div style={{ ...styles.card, background: 'rgba(255, 215, 0, 0.1)', marginBottom: '1rem' }}>
+                      <h4 style={{ margin: '0 0 1rem 0', color: '#ffd700' }}>Neues Dojo anlegen</h4>
+                      <div style={styles.formRow}>
+                        <div style={styles.formGroup}>
+                          <label style={styles.label}>Dojo-Name *</label>
+                          <input
+                            type="text"
+                            value={formData.neues_dojo_name}
+                            onChange={(e) => setFormData({ ...formData, neues_dojo_name: e.target.value })}
+                            style={styles.input}
+                            placeholder="z.B. Kampfsportschule Muster"
+                            required
+                          />
+                        </div>
+                        <div style={styles.formGroup}>
+                          <label style={styles.label}>Inhaber *</label>
+                          <input
+                            type="text"
+                            value={formData.neues_dojo_inhaber}
+                            onChange={(e) => setFormData({ ...formData, neues_dojo_inhaber: e.target.value })}
+                            style={styles.input}
+                            placeholder="Vor- und Nachname"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div style={styles.formGroup}>
+                        <label style={styles.label}>E-Mail *</label>
+                        <input
+                          type="email"
+                          value={formData.neues_dojo_email}
+                          onChange={(e) => setFormData({ ...formData, neues_dojo_email: e.target.value })}
+                          style={styles.input}
+                          placeholder="info@dojo.de"
+                          required
+                        />
+                      </div>
+                      <div style={styles.formGroup}>
+                        <label style={styles.label}>Straße</label>
+                        <input
+                          type="text"
+                          value={formData.neues_dojo_strasse}
+                          onChange={(e) => setFormData({ ...formData, neues_dojo_strasse: e.target.value })}
+                          style={styles.input}
+                          placeholder="Musterstraße 123"
+                        />
+                      </div>
+                      <div style={styles.formRow}>
+                        <div style={styles.formGroup}>
+                          <label style={styles.label}>PLZ</label>
+                          <input
+                            type="text"
+                            value={formData.neues_dojo_plz}
+                            onChange={(e) => setFormData({ ...formData, neues_dojo_plz: e.target.value })}
+                            style={styles.input}
+                            placeholder="12345"
+                          />
+                        </div>
+                        <div style={styles.formGroup}>
+                          <label style={styles.label}>Ort</label>
+                          <input
+                            type="text"
+                            value={formData.neues_dojo_ort}
+                            onChange={(e) => setFormData({ ...formData, neues_dojo_ort: e.target.value })}
+                            style={styles.input}
+                            placeholder="Musterstadt"
+                          />
+                        </div>
+                        <div style={styles.formGroup}>
+                          <label style={styles.label}>Land</label>
+                          <input
+                            type="text"
+                            value={formData.neues_dojo_land}
+                            onChange={(e) => setFormData({ ...formData, neues_dojo_land: e.target.value })}
+                            style={styles.input}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
               {/* Personen-Daten */}
@@ -1074,7 +1236,27 @@ const VerbandsMitglieder = () => {
                     </div>
                     <div style={styles.detailItem}>
                       <span style={styles.detailLabel}>Status</span>
-                      {getStatusBadge(selectedMitgliedschaft.status)}
+                      <select
+                        value={selectedMitgliedschaft.status}
+                        onChange={(e) => handleStatusChange(selectedMitgliedschaft.id, e.target.value)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          background: selectedMitgliedschaft.status === 'aktiv' ? 'rgba(16, 185, 129, 0.2)' :
+                                     selectedMitgliedschaft.status === 'ausstehend' ? 'rgba(245, 158, 11, 0.2)' :
+                                     'rgba(239, 68, 68, 0.2)',
+                          color: selectedMitgliedschaft.status === 'aktiv' ? '#10b981' :
+                                 selectedMitgliedschaft.status === 'ausstehend' ? '#f59e0b' : '#ef4444',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="ausstehend">Ausstehend</option>
+                        <option value="aktiv">Aktiv</option>
+                        <option value="gekuendigt">Gekündigt</option>
+                        <option value="abgelaufen">Abgelaufen</option>
+                      </select>
                     </div>
                     <div style={styles.detailItem}>
                       <span style={styles.detailLabel}>Vertrag</span>
@@ -1154,14 +1336,24 @@ const VerbandsMitglieder = () => {
                               <span>Fällig: {formatDate(z.faellig_am)}</span>
                               {z.bezahlt_am && <span>Bezahlt: {formatDate(z.bezahlt_am)}</span>}
                             </div>
-                            {z.status === 'offen' && (
-                              <button
-                                style={styles.smallButton}
-                                onClick={() => handleZahlungBezahlt(z.id)}
-                              >
-                                <Check size={14} /> Als bezahlt markieren
-                              </button>
-                            )}
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                              {z.status === 'offen' && (
+                                <button
+                                  style={styles.smallButton}
+                                  onClick={() => handleZahlungBezahlt(z.id)}
+                                >
+                                  <Check size={14} /> Als bezahlt markieren
+                                </button>
+                              )}
+                              {(z.status === 'offen' || z.status === 'bezahlt') && (
+                                <button
+                                  style={{ ...styles.smallButton, backgroundColor: '#ef4444', color: '#fff' }}
+                                  onClick={() => handleZahlungStornieren(z.id)}
+                                >
+                                  <X size={14} /> Stornieren
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

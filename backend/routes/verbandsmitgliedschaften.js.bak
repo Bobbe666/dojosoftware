@@ -899,7 +899,6 @@ router.get('/:id/zahlungen', (req, res) => {
 });
 
 /**
-/**
  * POST /api/verbandsmitgliedschaften/zahlungen/:zahlungs_id/bezahlt
  * Zahlung als bezahlt markieren
  */
@@ -907,88 +906,29 @@ router.post('/zahlungen/:zahlungs_id/bezahlt', (req, res) => {
   const { zahlungs_id } = req.params;
   const { zahlungsart, transaktions_id } = req.body;
 
-  // Erst Zahlungsdaten holen für Historie
-  db.query('SELECT * FROM verbandsmitgliedschaft_zahlungen WHERE id = ?', [zahlungs_id], (err, rows) => {
-    if (err || rows.length === 0) {
-      return res.status(404).json({ error: 'Zahlung nicht gefunden' });
+  db.query(`
+    UPDATE verbandsmitgliedschaft_zahlungen
+    SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = ?, transaktions_id = ?
+    WHERE id = ?
+  `, [zahlungsart || 'ueberweisung', transaktions_id || null, zahlungs_id], (err, result) => {
+    if (err) {
+      console.error('Fehler:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
     }
-    
-    const zahlung = rows[0];
-    
+
+    // Mitgliedschaft auf aktiv setzen wenn erste Zahlung
     db.query(`
-      UPDATE verbandsmitgliedschaft_zahlungen
-      SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = ?, transaktions_id = ?
-      WHERE id = ?
-    `, [zahlungsart || 'ueberweisung', transaktions_id || null, zahlungs_id], (err, result) => {
-      if (err) {
-        console.error('Fehler:', err);
-        return res.status(500).json({ error: 'Datenbankfehler' });
-      }
+      UPDATE verbandsmitgliedschaften vm
+      SET status = 'aktiv'
+      WHERE id = (SELECT verbandsmitgliedschaft_id FROM verbandsmitgliedschaft_zahlungen WHERE id = ?)
+      AND status = 'ausstehend'
+    `, [zahlungs_id]);
 
-      // Historie-Eintrag
-      db.query(`
-        INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, ip_adresse)
-        VALUES (?, 'zahlung', ?, ?)
-      `, [
-        zahlung.verbandsmitgliedschaft_id,
-        'Zahlung ' + zahlung.rechnungsnummer + ' (' + zahlung.betrag_brutto + ' EUR) als bezahlt markiert',
-        req.ip
-      ]);
-
-      // Mitgliedschaft auf aktiv setzen wenn erste Zahlung
-      db.query(`
-        UPDATE verbandsmitgliedschaften vm
-        SET status = 'aktiv'
-        WHERE id = ?
-        AND status = 'ausstehend'
-      `, [zahlung.verbandsmitgliedschaft_id]);
-
-      res.json({ success: true, message: 'Zahlung als bezahlt markiert' });
-    });
+    res.json({ success: true, message: 'Zahlung als bezahlt markiert' });
   });
 });
 
-/**
- * POST /api/verbandsmitgliedschaften/zahlungen/:zahlungs_id/stornieren
- * Zahlung stornieren
- */
-router.post('/zahlungen/:zahlungs_id/stornieren', (req, res) => {
-  const { zahlungs_id } = req.params;
-  const { grund } = req.body;
-
-  // Erst Zahlungsdaten holen für Historie
-  db.query('SELECT * FROM verbandsmitgliedschaft_zahlungen WHERE id = ?', [zahlungs_id], (err, rows) => {
-    if (err || rows.length === 0) {
-      return res.status(404).json({ error: 'Zahlung nicht gefunden' });
-    }
-    
-    const zahlung = rows[0];
-    
-    db.query(`
-      UPDATE verbandsmitgliedschaft_zahlungen
-      SET status = 'storniert'
-      WHERE id = ?
-    `, [zahlungs_id], (err, result) => {
-      if (err) {
-        console.error('Fehler:', err);
-        return res.status(500).json({ error: 'Datenbankfehler' });
-      }
-
-      // Historie-Eintrag
-      db.query(`
-        INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, ip_adresse)
-        VALUES (?, 'zahlung', ?, ?)
-      `, [
-        zahlung.verbandsmitgliedschaft_id,
-        'Zahlung ' + zahlung.rechnungsnummer + ' (' + zahlung.betrag_brutto + ' EUR) storniert' + (grund ? ': ' + grund : ''),
-        req.ip
-      ]);
-
-      res.json({ success: true, message: 'Zahlung storniert' });
-    });
-  });
-});
-
+// ============================================================================
 // VORTEILE
 // ============================================================================
 

@@ -37,7 +37,8 @@
   color: #1a1a1a !important;
 }
 
-[data-theme="tda-vib"] .tab-button.active {
+[data-theme="tda-vib"] /* Original: gradient gold */
+.tab-button.active {
   background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%) !important;
   color: #1a1a1a !important;
 }
@@ -323,11 +324,12 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* Original: gradient gold */
 .tab-button.active {
-  background: var(--gradient-gold);
-  color: var(--bg-secondary);
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
   font-weight: 600;
-  box-shadow: 0 4px 12px var(--primary-alpha-30);
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 .tab-button.active:hover {
@@ -2125,4 +2127,114 @@
     flex-direction: column;
     gap: 0.25rem;
   }
+}
+
+/* =============================================
+   NAVIGATION CARDS - Wie im normalen Dashboard
+   ============================================= */
+
+.super-admin-dashboard .nav-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.super-admin-dashboard .nav-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+}
+
+.super-admin-dashboard .nav-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.super-admin-dashboard .nav-card.active {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.super-admin-dashboard .nav-content {
+  flex: 1;
+}
+
+.super-admin-dashboard .nav-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.super-admin-dashboard .nav-icon {
+  color: #ffd700;
+  display: flex;
+  align-items: center;
+}
+
+.super-admin-dashboard .nav-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.super-admin-dashboard .nav-card p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.super-admin-dashboard .nav-arrow {
+  color: rgba(255, 215, 0, 0.6);
+  font-size: 1.2rem;
+  align-self: flex-end;
+  transition: transform 0.3s ease;
+}
+
+.super-admin-dashboard .nav-card:hover .nav-arrow {
+  transform: translateX(4px);
+  color: #ffd700;
+}
+
+/* Light Theme Anpassungen */
+[data-theme="tda-vib"] .super-admin-dashboard .nav-card {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .nav-card:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(139, 90, 43, 0.4);
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .nav-card.active {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #c9a227;
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .nav-icon {
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .nav-card h3 {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .nav-card p {
+  color: rgba(26, 26, 26, 0.6);
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .nav-arrow {
+  color: rgba(107, 68, 35, 0.6);
 }
