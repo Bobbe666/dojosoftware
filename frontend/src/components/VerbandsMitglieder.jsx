@@ -348,18 +348,20 @@ const VerbandsMitglieder = () => {
 
   const handleDownloadRechnungPdf = async (zahlungsId, rechnungsnummer) => {
     try {
-      const response = await api.get(`/verbandsmitgliedschaften/zahlungen/${zahlungsId}/pdf`, {
+      const response = await axios.get(`/verbandsmitgliedschaften/zahlungen/${zahlungsId}/pdf`, {
         responseType: 'blob'
       });
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Rechnung_${rechnungsnummer || zahlungsId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rechnung_${rechnungsnummer || zahlungsId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
+      console.error('PDF Download Fehler:', err);
       alert('Fehler beim Download der Rechnung');
     }
   };

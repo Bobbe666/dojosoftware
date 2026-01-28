@@ -1,9 +1,9 @@
 /**
  * Verbandsmitgliedschaft Rechnung PDF Template
- * TDA International
+ * TDA International - Design identisch mit Dojo-Rechnungen
  */
 
-module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, config) {
+module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, config, qrCodeDataURI) {
   const formatDate = (date) => {
     if (!date) return '-';
     const d = new Date(date);
@@ -11,24 +11,45 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
   };
 
   const formatCurrency = (amount) => {
-    return Number(amount || 0).toFixed(2).replace('.', ',') + ' €';
+    return Number(amount || 0).toFixed(2).replace('.', ',');
   };
 
+  // Verband-Daten aus Config
+  const verbandName = config.verband_name || 'Tiger & Dragon Association International';
+  const verbandKurzname = config.verband_kurzname || 'TDA Int\'l';
+  const verbandStrasse = config.verband_strasse || '';
+  const verbandPlz = config.verband_plz || '';
+  const verbandOrt = config.verband_ort || '';
+  const verbandEmail = config.verband_email || '';
+  const verbandTelefon = config.verband_telefon || '';
+  const verbandWebsite = config.verband_website || '';
+  const verbandSteuernummer = config.verband_steuernummer || '';
+  const verbandUstId = config.verband_ustid || '';
+
+  // Bank-Daten
+  const bankName = config.sepa_bankname || '';
+  const iban = config.sepa_iban || '';
+  const bic = config.sepa_bic || '';
+  const kontoinhaber = config.sepa_kontoinhaber || verbandName;
+
+  // Absenderzeile
+  const absenderzeile = [verbandName, verbandStrasse, `${verbandPlz} ${verbandOrt}`].filter(Boolean).join(' | ');
+
   // Empfänger-Adresse
-  let empfaenger = '';
+  let empfaengerAnrede = 'Herrn/Frau';
+  let empfaengerName = '';
+  let empfaengerStrasse = '';
+  let empfaengerOrt = '';
+
   if (mitgliedschaft.typ === 'dojo') {
-    empfaenger = `
-      <div>${mitgliedschaft.dojo_name || ''}</div>
-      <div>${mitgliedschaft.dojo_inhaber || ''}</div>
-      <div>${mitgliedschaft.dojo_strasse || ''}</div>
-      <div>${mitgliedschaft.dojo_plz || ''} ${mitgliedschaft.dojo_ort || ''}</div>
-    `;
+    empfaengerAnrede = '';
+    empfaengerName = mitgliedschaft.dojo_name || '';
+    empfaengerStrasse = mitgliedschaft.dojo_strasse || '';
+    empfaengerOrt = `${mitgliedschaft.dojo_plz || ''} ${mitgliedschaft.dojo_ort || ''}`.trim();
   } else {
-    empfaenger = `
-      <div>${mitgliedschaft.person_vorname || ''} ${mitgliedschaft.person_nachname || ''}</div>
-      <div>${mitgliedschaft.person_strasse || ''}</div>
-      <div>${mitgliedschaft.person_plz || ''} ${mitgliedschaft.person_ort || ''}</div>
-    `;
+    empfaengerName = `${mitgliedschaft.person_vorname || ''} ${mitgliedschaft.person_nachname || ''}`.trim();
+    empfaengerStrasse = mitgliedschaft.person_strasse || '';
+    empfaengerOrt = `${mitgliedschaft.person_plz || ''} ${mitgliedschaft.person_ort || ''}`.trim();
   }
 
   // Leistungsbeschreibung
@@ -37,6 +58,20 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
     : 'TDA Verbandsmitgliedschaft - Einzelperson';
 
   const zeitraum = `${formatDate(zahlung.zeitraum_von)} - ${formatDate(zahlung.zeitraum_bis)}`;
+
+  // Mitgliedsnummer formatieren
+  const mitgliedsnummer = mitgliedschaft.typ === 'dojo'
+    ? `TDA-D-${String(mitgliedschaft.id).padStart(4, '0')}`
+    : `TDA-E-${String(mitgliedschaft.id).padStart(4, '0')}`;
+
+  // Zahlungsfrist Datum
+  const zahlungsfristDatum = formatDate(zahlung.faellig_am);
+
+  // Betrag berechnen
+  const nettoPreis = Number(zahlung.betrag_netto || 0);
+  const mwstSatz = Number(zahlung.mwst_satz || 19);
+  const mwstBetrag = Number(zahlung.mwst_betrag || (nettoPreis * mwstSatz / 100));
+  const bruttoBetrag = Number(zahlung.betrag_brutto || (nettoPreis + mwstBetrag));
 
   return `
 <!DOCTYPE html>
@@ -47,316 +82,340 @@ module.exports = function generateVerbandRechnungHTML(zahlung, mitgliedschaft, c
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 11pt;
-      line-height: 1.5;
-      color: #1a1a1a;
-      padding: 15mm 20mm;
-      min-height: 297mm;
+      font-family: Arial, sans-serif;
+      font-size: 9pt;
+      line-height: 1.3;
+      color: #000;
+      padding: 12mm 15mm;
       position: relative;
     }
 
-    .header {
+    /* Header */
+    .invoice-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 15mm;
-      padding-bottom: 5mm;
-      border-bottom: 3px solid #ffd700;
+      margin-bottom: 0.8rem;
     }
-
-    .logo-section {
+    .company-small {
+      font-size: 7pt;
+      color: #666;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #000;
+      max-width: 350px;
+    }
+    .recipient-address {
+      margin-top: 0.3rem;
+      line-height: 1.4;
+      font-size: 9pt;
+    }
+    .invoice-meta {
       text-align: right;
     }
-
-    .logo {
-      font-size: 28pt;
+    .logo-placeholder {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: bold;
-      color: #1a1a1a;
-      letter-spacing: 2px;
-    }
-
-    .logo-subtitle {
       font-size: 10pt;
-      color: #666;
-      margin-top: 2mm;
+      margin: 0 0 0.5rem auto;
+    }
+    .invoice-numbers {
+      font-size: 8pt;
+      line-height: 1.5;
     }
 
-    .sender-line {
+    /* Title */
+    .invoice-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 0.8rem 0 0.5rem 0;
+      border-bottom: 2px solid #000;
+      padding-bottom: 0.3rem;
+    }
+    .invoice-title h1 {
+      font-size: 14pt;
+      font-weight: bold;
+    }
+    .page-number {
       font-size: 8pt;
       color: #666;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 2mm;
-      margin-bottom: 3mm;
     }
 
-    .recipient {
-      font-size: 11pt;
-      line-height: 1.6;
-      min-height: 25mm;
-    }
-
-    .invoice-meta {
-      margin-top: 10mm;
-      margin-bottom: 10mm;
-    }
-
-    .invoice-title {
-      font-size: 22pt;
-      font-weight: bold;
-      color: #1a1a1a;
-      margin-bottom: 5mm;
-    }
-
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 120px auto;
-      gap: 2mm 5mm;
-      font-size: 10pt;
-    }
-
-    .meta-label {
-      color: #666;
-    }
-
-    .meta-value {
-      font-weight: 500;
-    }
-
-    .invoice-table {
+    /* Table */
+    table.invoice-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 10mm 0;
+      margin: 0.5rem 0;
+      font-size: 8pt;
     }
-
-    .invoice-table th {
-      background: #f5f5f5;
-      border-top: 2px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-      padding: 3mm 2mm;
+    table.invoice-table thead {
+      background: #f3f4f6;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+    }
+    table.invoice-table th {
+      padding: 0.3rem 0.15rem;
       text-align: left;
-      font-size: 9pt;
-      font-weight: 600;
+      font-weight: bold;
+      font-size: 7pt;
     }
-
-    .invoice-table th:last-child {
+    table.invoice-table th:nth-child(3),
+    table.invoice-table th:nth-child(4),
+    table.invoice-table th:nth-child(5),
+    table.invoice-table th:nth-child(6),
+    table.invoice-table th:nth-child(7),
+    table.invoice-table th:nth-child(8),
+    table.invoice-table th:nth-child(9) {
+      text-align: right;
+    }
+    table.invoice-table td {
+      padding: 0.3rem 0.15rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 7.5pt;
+    }
+    table.invoice-table td:nth-child(3),
+    table.invoice-table td:nth-child(4),
+    table.invoice-table td:nth-child(5),
+    table.invoice-table td:nth-child(6),
+    table.invoice-table td:nth-child(7),
+    table.invoice-table td:nth-child(8),
+    table.invoice-table td:nth-child(9) {
       text-align: right;
     }
 
-    .invoice-table td {
-      padding: 4mm 2mm;
-      border-bottom: 1px solid #e0e0e0;
-      font-size: 10pt;
-    }
-
-    .invoice-table td:last-child {
-      text-align: right;
-    }
-
-    .totals {
+    /* Totals */
+    .invoice-totals {
       margin-left: auto;
-      width: 250px;
-      margin-top: 5mm;
+      width: 55%;
+      font-size: 8pt;
+      margin-top: 0.5rem;
     }
-
     .totals-row {
       display: flex;
       justify-content: space-between;
-      padding: 2mm 0;
-      font-size: 10pt;
+      padding: 0.2rem 0;
+      border-bottom: 1px solid #e5e7eb;
     }
-
-    .totals-row.total {
-      border-top: 2px solid #1a1a1a;
-      font-size: 12pt;
+    .totals-row.total-final {
       font-weight: bold;
-      padding-top: 3mm;
-      margin-top: 2mm;
+      font-size: 9pt;
+      border-top: 2px solid #000;
+      border-bottom: 2px solid #000;
+      margin-top: 0.2rem;
+      padding-top: 0.3rem;
     }
 
-    .payment-info {
-      margin-top: 15mm;
-      padding: 5mm;
-      background: #f9f9f9;
-      border-left: 4px solid #ffd700;
+    /* Payment section */
+    .payment-section {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      align-items: flex-start;
+    }
+    .payment-terms {
+      flex: 1;
+      font-size: 7.5pt;
+      line-height: 1.4;
+    }
+    .payment-terms p {
+      margin-bottom: 0.2rem;
+    }
+    .qr-codes-section {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .qr-code-container {
+      text-align: center;
+      max-width: 120px;
+    }
+    .qr-code-title {
+      font-size: 6pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+    }
+    .qr-code-image {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 0.1rem;
+      border-radius: 3px;
+    }
+    .qr-code-info {
+      font-size: 6pt;
+      font-weight: 600;
+      margin-top: 0.15rem;
+      line-height: 1.2;
     }
 
-    .payment-info h3 {
-      font-size: 11pt;
-      margin-bottom: 3mm;
-    }
-
-    .payment-info p {
-      font-size: 10pt;
-      margin-bottom: 2mm;
-    }
-
-    .bank-details {
-      margin-top: 10mm;
-      font-size: 10pt;
-    }
-
-    .bank-details table {
-      border-collapse: collapse;
-    }
-
-    .bank-details td {
-      padding: 1mm 3mm 1mm 0;
-    }
-
-    .bank-details td:first-child {
-      color: #666;
-      width: 100px;
-    }
-
-    .footer {
+    /* Footer */
+    .rechnung-footer {
       position: absolute;
       bottom: 10mm;
-      left: 20mm;
-      right: 20mm;
+      left: 15mm;
+      right: 15mm;
+      padding-top: 0.3rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.2);
+      font-size: 6.5pt;
       text-align: center;
-      font-size: 8pt;
-      color: #666;
-      border-top: 1px solid #e0e0e0;
-      padding-top: 3mm;
+      line-height: 1.4;
     }
-
-    .footer-line {
-      margin-bottom: 1mm;
-    }
-
-    .status-badge {
-      display: inline-block;
-      padding: 2mm 4mm;
-      border-radius: 3px;
-      font-size: 9pt;
-      font-weight: bold;
-    }
-
-    .status-offen {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .status-bezahlt {
-      background: #d4edda;
-      color: #155724;
+    .rechnung-footer > div {
+      margin-bottom: 0.1rem;
     }
 
     @page {
       margin: 0;
       size: A4;
     }
-
-    @media print {
-      body { padding: 15mm 20mm; }
-    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="address-section">
-      <div class="sender-line">
-        Tiger Dragon Association International | Musterstraße 1 | 12345 Musterstadt
+  <!-- Header -->
+  <div class="invoice-header">
+    <div class="company-info">
+      <div class="company-small">
+        ${absenderzeile}
       </div>
-      <div class="recipient">
-        ${empfaenger}
+      <div class="recipient-address">
+        ${empfaengerAnrede ? `<div>${empfaengerAnrede}</div>` : ''}
+        <div>${empfaengerName}</div>
+        <div>${empfaengerStrasse}</div>
+        <div>${empfaengerOrt}</div>
       </div>
     </div>
-    <div class="logo-section">
-      <div class="logo">TDA</div>
-      <div class="logo-subtitle">Tiger Dragon Association<br/>International</div>
+    <div class="invoice-meta">
+      <div class="logo-placeholder">LOGO</div>
+      <div class="invoice-numbers">
+        <div>Rechnungs-Nr.: ${zahlung.rechnungsnummer || ''}</div>
+        <div>Mitgliedsnummer: ${mitgliedsnummer}</div>
+        <div>Belegdatum: ${formatDate(zahlung.rechnungsdatum)}</div>
+        <div>Leistungszeitraum: ${zeitraum}</div>
+      </div>
     </div>
   </div>
 
-  <div class="invoice-meta">
-    <div class="invoice-title">RECHNUNG</div>
-    <div class="meta-grid">
-      <span class="meta-label">Rechnungsnummer:</span>
-      <span class="meta-value">${zahlung.rechnungsnummer}</span>
-
-      <span class="meta-label">Rechnungsdatum:</span>
-      <span class="meta-value">${formatDate(zahlung.rechnungsdatum)}</span>
-
-      <span class="meta-label">Leistungszeitraum:</span>
-      <span class="meta-value">${zeitraum}</span>
-
-      <span class="meta-label">Mitgliedsnummer:</span>
-      <span class="meta-value">TDA-${String(mitgliedschaft.id).padStart(5, '0')}</span>
-
-      <span class="meta-label">Status:</span>
-      <span class="meta-value">
-        <span class="status-badge status-${zahlung.status}">${zahlung.status === 'bezahlt' ? 'BEZAHLT' : 'OFFEN'}</span>
-      </span>
-    </div>
+  <!-- Title -->
+  <div class="invoice-title">
+    <h1>RECHNUNG</h1>
+    <div class="page-number">Seite 1 von 1</div>
   </div>
 
+  <!-- Positions Table -->
   <table class="invoice-table">
     <thead>
       <tr>
-        <th style="width: 40px;">Pos.</th>
-        <th>Beschreibung</th>
-        <th style="width: 100px;">Betrag</th>
+        <th>Pos.</th>
+        <th>Bezeichnung</th>
+        <th>Artikelnummer</th>
+        <th>Menge</th>
+        <th>Einheit</th>
+        <th>Preis</th>
+        <th>Rabatt %</th>
+        <th>USt %</th>
+        <th>Betrag EUR</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>1</td>
-        <td>
-          <strong>${leistung}</strong><br/>
-          <span style="font-size: 9pt; color: #666;">Zeitraum: ${zeitraum}</span>
-        </td>
-        <td>${formatCurrency(zahlung.betrag_netto)}</td>
+        <td>${leistung}<br/><span style="font-size: 6.5pt; color: #666;">Zeitraum: ${zeitraum}</span></td>
+        <td>TDA-VM-${mitgliedschaft.typ === 'dojo' ? 'DOJO' : 'EINZEL'}</td>
+        <td>1</td>
+        <td>Jahr</td>
+        <td>${formatCurrency(nettoPreis)}</td>
+        <td>-</td>
+        <td>${mwstSatz.toFixed(2).replace('.', ',')} %</td>
+        <td>${formatCurrency(nettoPreis)}</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="totals">
+  <!-- Totals -->
+  <div class="invoice-totals">
     <div class="totals-row">
-      <span>Nettobetrag:</span>
-      <span>${formatCurrency(zahlung.betrag_netto)}</span>
+      <span>Zwischensumme:</span>
+      <span>${formatCurrency(nettoPreis)}</span>
     </div>
     <div class="totals-row">
-      <span>USt. ${zahlung.mwst_satz}%:</span>
-      <span>${formatCurrency(zahlung.mwst_betrag)}</span>
+      <span>Summe:</span>
+      <span>${formatCurrency(nettoPreis)}</span>
     </div>
-    <div class="totals-row total">
-      <span>Gesamtbetrag:</span>
-      <span>${formatCurrency(zahlung.betrag_brutto)}</span>
+    <div class="totals-row">
+      <span>${mwstSatz.toFixed(2).replace('.', ',')} % USt. auf EUR ${formatCurrency(nettoPreis)}:</span>
+      <span>${formatCurrency(mwstBetrag)}</span>
+    </div>
+    <div class="totals-row total-final">
+      <span>Endbetrag:</span>
+      <span>${formatCurrency(bruttoBetrag)}</span>
     </div>
   </div>
 
-  <div class="payment-info">
-    <h3>Zahlungsinformationen</h3>
-    <p><strong>Fällig bis:</strong> ${formatDate(zahlung.faellig_am)}</p>
-    <p>Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer auf folgendes Konto:</p>
-
-    <div class="bank-details">
-      <table>
-        <tr>
-          <td>Empfänger:</td>
-          <td><strong>Tiger Dragon Association International</strong></td>
-        </tr>
-        <tr>
-          <td>IBAN:</td>
-          <td><strong>DE89 3704 0044 0532 0130 00</strong></td>
-        </tr>
-        <tr>
-          <td>BIC:</td>
-          <td>COBADEFFXXX</td>
-        </tr>
-        <tr>
-          <td>Verwendungszweck:</td>
-          <td><strong>${zahlung.rechnungsnummer}</strong></td>
-        </tr>
-      </table>
+  <!-- Payment Terms and QR Codes -->
+  <div class="payment-section">
+    <div class="payment-terms">
+      <p><strong>Bitte beachten Sie unsere Zahlungsbedingung:</strong></p>
+      <p>Ohne Abzug bis zum ${zahlungsfristDatum}.</p>
+      ${iban ? `
+      <p style="margin-top: 0.5rem;"><strong>Bankverbindung:</strong></p>
+      <p>Empfänger: ${kontoinhaber}</p>
+      ${bankName ? `<p>Bank: ${bankName}</p>` : ''}
+      <p>IBAN: ${iban}</p>
+      ${bic ? `<p>BIC: ${bic}</p>` : ''}
+      <p>Verwendungszweck: ${zahlung.rechnungsnummer}</p>
+      ` : ''}
     </div>
+
+    ${qrCodeDataURI ? `
+      <div class="qr-codes-section">
+        <div class="qr-code-container">
+          <div class="qr-code-title">QR-Code für Überweisung</div>
+          <img src="${qrCodeDataURI}" class="qr-code-image" alt="QR-Code" />
+          <div class="qr-code-info">
+            <div>Betrag: ${formatCurrency(bruttoBetrag)} EUR</div>
+            <div>bis zum ${zahlungsfristDatum} zu zahlen</div>
+          </div>
+        </div>
+      </div>
+    ` : ''}
   </div>
 
-  <div class="footer">
-    <div class="footer-line">Tiger Dragon Association International | Musterstraße 1 | 12345 Musterstadt</div>
-    <div class="footer-line">E-Mail: info@tda-intl.org | Web: www.tda-intl.org</div>
-    <div class="footer-line">Steuernummer: 123/456/78901 | USt-IdNr.: DE123456789</div>
+  <!-- Footer -->
+  <div class="rechnung-footer">
+    <div>
+      ${[
+        verbandName,
+        verbandStrasse,
+        `${verbandPlz} ${verbandOrt}`,
+        verbandEmail,
+        verbandTelefon
+      ].filter(Boolean).join(' | ')}
+    </div>
+    ${iban && kontoinhaber ? `
+      <div>
+        ${[
+          bankName,
+          kontoinhaber,
+          iban,
+          bic
+        ].filter(Boolean).join(' | ')}
+      </div>
+    ` : ''}
+    ${verbandWebsite ? `<div>Web: ${verbandWebsite}</div>` : ''}
+    ${verbandSteuernummer || verbandUstId ? `
+      <div>
+        ${[verbandSteuernummer ? `Steuernummer: ${verbandSteuernummer}` : '', verbandUstId ? `USt-IdNr.: ${verbandUstId}` : ''].filter(Boolean).join(' | ')}
+      </div>
+    ` : ''}
   </div>
 </body>
 </html>
