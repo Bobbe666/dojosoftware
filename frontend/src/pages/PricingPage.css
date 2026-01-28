@@ -30,7 +30,7 @@
 }
 
 .pricing-nav .nav-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
@@ -65,7 +65,7 @@
 .pricing-nav .nav-logo:hover .nav-logo-image {
   border-color: rgba(255, 215, 0, 0.6);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .pricing-nav .logo-text {
@@ -82,7 +82,7 @@
 }
 
 .pricing-nav .nav-logo:hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .pricing-nav .nav-links {
@@ -210,18 +210,19 @@
 
 /* Pricing Cards */
 .pricing-cards {
+  overflow-x: hidden;
   padding: 4rem 0;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
 }
 
@@ -247,11 +248,11 @@
 .pricing-card.featured {
   border-color: #ffd700;
   box-shadow: 0 20px 40px rgba(255, 215, 0, 0.3);
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .pricing-card.featured:hover {
-  transform: scale(1.08) translateY(-5px);
+  transform: scale(1.04) translateY(-5px);
 }
 
 .pricing-card .popular-badge {
@@ -573,7 +574,6 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .cards-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .pricing-card.featured {

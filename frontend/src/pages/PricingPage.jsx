@@ -78,7 +78,8 @@ function PricingPage() {
       'DATEV-Export',
       'Dokumentenspeicher (20 GB)',
       'Premium Support (12h)',
-      'Kostenlose Schulung'
+      'Kostenlose Schulung',
+      '⭐ Gratis TDA-Verbandsmitgliedschaft'
     ],
     enterprise: [
       'Alles aus Premium +',
