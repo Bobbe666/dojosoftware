@@ -799,6 +799,19 @@ try {
     });
 }
 
+// 10.5 VERBANDSMITGLIEDSCHAFTEN - TDA International Dojo & Einzelmitgliedschaften
+try {
+  const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften.js"));
+  app.use("/api/verbandsmitgliedschaften", authenticateToken, verbandsmitgliedschaftenRouter);
+  logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'verbandsmitgliedschaften',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 11. DOKUMENTE (PDF Management & Reports) - NEU
 try {
   const dokumenteRouter = require(path.join(__dirname, "routes", "dokumente.js"));

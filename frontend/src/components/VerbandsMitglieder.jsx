@@ -1,0 +1,2076 @@
+// ============================================================================
+// VERBANDSMITGLIEDER - TDA International
+// Dojo-Mitgliedschaften (99€/Jahr) & Einzelmitgliedschaften (49€/Jahr)
+// ============================================================================
+
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import {
+  Building2, User, Plus, Search, Filter, RefreshCw, Check, X, Clock,
+  AlertTriangle, Euro, Calendar, Mail, Phone, MapPin, CreditCard,
+  ChevronDown, ChevronUp, FileText, Award, Percent, Gift, Edit, Trash2,
+  Download, PenTool, Shield, ScrollText, History, Banknote
+} from 'lucide-react';
+
+// Beiträge
+const BEITRAG_DOJO = 99;
+const BEITRAG_EINZEL = 49;
+
+const VerbandsMitglieder = () => {
+  const { token } = useAuth();
+  const [activeTab, setActiveTab] = useState('dojos'); // 'dojos' | 'einzelpersonen' | 'vorteile'
+  const [mitgliedschaften, setMitgliedschaften] = useState([]);
+  const [vorteile, setVorteile] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  // Modal States
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showSepaModal, setShowSepaModal] = useState(false);
+  const [showAgbModal, setShowAgbModal] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [selectedMitgliedschaft, setSelectedMitgliedschaft] = useState(null);
+  const [dojosOhneMitgliedschaft, setDojosOhneMitgliedschaft] = useState([]);
+  const [detailTab, setDetailTab] = useState('info'); // 'info' | 'vertrag' | 'sepa' | 'historie'
+
+  // SEPA State
+  const [sepaData, setSepaData] = useState({ iban: '', bic: '', kontoinhaber: '' });
+  const [sepaMandate, setSepaMandate] = useState([]);
+
+  // AGB State
+  const [dokumente, setDokumente] = useState([]);
+  const [selectedDokument, setSelectedDokument] = useState(null);
+
+  // Signature Canvas
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [signatureData, setSignatureData] = useState(null);
+
+  // Akzeptanz State
+  const [akzeptanz, setAkzeptanz] = useState({
+    agb: false,
+    dsgvo: false,
+    widerruf: false
+  });
+
+  // Form State
+  const [formData, setFormData] = useState({
+    typ: 'dojo',
+    dojo_id: '',
+    person_vorname: '',
+    person_nachname: '',
+    person_email: '',
+    person_telefon: '',
+    person_strasse: '',
+    person_plz: '',
+    person_ort: '',
+    person_land: 'Deutschland',
+    person_geburtsdatum: '',
+    zahlungsart: 'rechnung',
+    notizen: ''
+  });
+
+  // Axios Config
+  const api = axios.create({
+    baseURL: '/api',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  // ============================================================================
+  // DATA LOADING
+  // ============================================================================
+
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [mitgliederRes, statsRes, vorteileRes] = await Promise.all([
+        api.get('/verbandsmitgliedschaften'),
+        api.get('/verbandsmitgliedschaften/stats'),
+        api.get('/verbandsmitgliedschaften/vorteile/liste')
+      ]);
+
+      setMitgliedschaften(mitgliederRes.data);
+      setStats(statsRes.data);
+      setVorteile(vorteileRes.data);
+    } catch (err) {
+      console.error('Fehler beim Laden:', err);
+      setError('Fehler beim Laden der Daten');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadDojosOhneMitgliedschaft = async () => {
+    try {
+      const res = await api.get('/verbandsmitgliedschaften/dojos-ohne-mitgliedschaft');
+      setDojosOhneMitgliedschaft(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Dojos:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (showNewModal && formData.typ === 'dojo') {
+      loadDojosOhneMitgliedschaft();
+    }
+  }, [showNewModal, formData.typ]);
+
+  // Initialize signature canvas when modals open
+  useEffect(() => {
+    if (showSepaModal || showSignatureModal) {
+      setTimeout(() => initCanvas(), 100);
+    }
+  }, [showSepaModal, showSignatureModal]);
+
+  // ============================================================================
+  // ACTIONS
+  // ============================================================================
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/verbandsmitgliedschaften', formData);
+      setShowNewModal(false);
+      resetForm();
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Anlegen');
+    }
+  };
+
+  const handleVerlaengern = async (id) => {
+    if (!confirm('Mitgliedschaft um ein Jahr verlängern?')) return;
+    try {
+      await api.post(`/verbandsmitgliedschaften/${id}/verlaengern`);
+      loadData();
+      setShowDetailModal(false);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler bei Verlängerung');
+    }
+  };
+
+  const handleKuendigen = async (id) => {
+    if (!confirm('Mitgliedschaft wirklich kündigen?')) return;
+    try {
+      await api.delete(`/verbandsmitgliedschaften/${id}`);
+      loadData();
+      setShowDetailModal(false);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Kündigen');
+    }
+  };
+
+  const handleZahlungBezahlt = async (zahlungsId) => {
+    try {
+      await api.post(`/verbandsmitgliedschaften/zahlungen/${zahlungsId}/bezahlt`);
+      loadData();
+      // Detail neu laden
+      if (selectedMitgliedschaft) {
+        const res = await api.get(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}`);
+        setSelectedMitgliedschaft(res.data);
+      }
+    } catch (err) {
+      alert('Fehler beim Markieren als bezahlt');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      typ: 'dojo',
+      dojo_id: '',
+      person_vorname: '',
+      person_nachname: '',
+      person_email: '',
+      person_telefon: '',
+      person_strasse: '',
+      person_plz: '',
+      person_ort: '',
+      person_land: 'Deutschland',
+      person_geburtsdatum: '',
+      zahlungsart: 'rechnung',
+      notizen: ''
+    });
+  };
+
+  // PDF Download
+  const handleDownloadPdf = async (id) => {
+    try {
+      window.open(`/api/verbandsmitgliedschaften/${id}/pdf`, '_blank');
+    } catch (err) {
+      alert('Fehler beim Download');
+    }
+  };
+
+  // SEPA Mandat laden
+  const loadSepaMandate = async (id) => {
+    try {
+      const res = await api.get(`/verbandsmitgliedschaften/${id}/sepa`);
+      setSepaMandate(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der SEPA-Mandate:', err);
+    }
+  };
+
+  // SEPA Mandat anlegen
+  const handleCreateSepa = async () => {
+    if (!sepaData.iban || !sepaData.kontoinhaber) {
+      alert('IBAN und Kontoinhaber sind erforderlich');
+      return;
+    }
+    try {
+      await api.post(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}/sepa`, {
+        ...sepaData,
+        unterschrift_digital: signatureData
+      });
+      setShowSepaModal(false);
+      setSepaData({ iban: '', bic: '', kontoinhaber: '' });
+      setSignatureData(null);
+      loadSepaMandate(selectedMitgliedschaft.id);
+      loadData();
+      alert('SEPA-Mandat erfolgreich angelegt');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Anlegen');
+    }
+  };
+
+  // Dokumente laden
+  const loadDokumente = async () => {
+    try {
+      const res = await api.get('/verbandsmitgliedschaften/dokumente/liste');
+      setDokumente(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Dokumente:', err);
+    }
+  };
+
+  // Dokument anzeigen
+  const showDokument = async (typ) => {
+    try {
+      const res = await api.get(`/verbandsmitgliedschaften/dokumente/${typ}`);
+      setSelectedDokument(res.data);
+      setShowAgbModal(true);
+    } catch (err) {
+      alert('Dokument nicht gefunden');
+    }
+  };
+
+  // Vertrag unterschreiben
+  const handleUnterschreiben = async () => {
+    if (!signatureData) {
+      alert('Bitte unterschreiben Sie im Unterschriftsfeld');
+      return;
+    }
+    if (!akzeptanz.agb || !akzeptanz.dsgvo || !akzeptanz.widerruf) {
+      alert('Bitte akzeptieren Sie alle Bedingungen');
+      return;
+    }
+
+    try {
+      await api.post(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}/unterschreiben`, {
+        unterschrift_digital: signatureData,
+        agb_akzeptiert: akzeptanz.agb,
+        dsgvo_akzeptiert: akzeptanz.dsgvo,
+        widerrufsrecht_akzeptiert: akzeptanz.widerruf
+      });
+      setShowSignatureModal(false);
+      setSignatureData(null);
+      setAkzeptanz({ agb: false, dsgvo: false, widerruf: false });
+      loadData();
+      alert('Vertrag erfolgreich unterschrieben');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Unterschreiben');
+    }
+  };
+
+  // Signature Canvas Handlers
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+  };
+
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      const canvas = canvasRef.current;
+      setSignatureData(canvas.toDataURL('image/png'));
+    }
+  };
+
+  const clearSignature = () => {
+    initCanvas();
+    setSignatureData(null);
+  };
+
+  const openDetail = async (mitgliedschaft) => {
+    try {
+      const [detailRes, zahlungenRes] = await Promise.all([
+        api.get(`/verbandsmitgliedschaften/${mitgliedschaft.id}`),
+        api.get(`/verbandsmitgliedschaften/${mitgliedschaft.id}/zahlungen`)
+      ]);
+      setSelectedMitgliedschaft({ ...detailRes.data, zahlungen: zahlungenRes.data });
+      setDetailTab('info');
+      loadSepaMandate(mitgliedschaft.id);
+      loadDokumente();
+      setShowDetailModal(true);
+    } catch (err) {
+      alert('Fehler beim Laden der Details');
+    }
+  };
+
+  // ============================================================================
+  // FILTERING
+  // ============================================================================
+
+  const filteredMitgliedschaften = mitgliedschaften.filter(m => {
+    // Tab-Filter
+    if (activeTab === 'dojos' && m.typ !== 'dojo') return false;
+    if (activeTab === 'einzelpersonen' && m.typ !== 'einzelperson') return false;
+
+    // Status-Filter
+    if (statusFilter && m.status !== statusFilter) return false;
+
+    // Suchbegriff
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const name = m.typ === 'dojo'
+        ? (m.dojo_name || '')
+        : `${m.person_vorname || ''} ${m.person_nachname || ''}`;
+      if (!name.toLowerCase().includes(search) &&
+          !m.mitgliedsnummer?.toLowerCase().includes(search)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // ============================================================================
+  // HELPERS
+  // ============================================================================
+
+  const getStatusBadge = (status) => {
+    const config = {
+      aktiv: { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: Check, label: 'Aktiv' },
+      ausstehend: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock, label: 'Ausstehend' },
+      abgelaufen: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: AlertTriangle, label: 'Abgelaufen' },
+      gekuendigt: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)', icon: X, label: 'Gekündigt' }
+    };
+    const c = config[status] || config.ausstehend;
+    const Icon = c.icon;
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        padding: '4px 10px', borderRadius: '6px',
+        background: c.bg, color: c.color, fontSize: '0.8rem', fontWeight: '600'
+      }}>
+        <Icon size={14} />
+        {c.label}
+      </span>
+    );
+  };
+
+  const formatDate = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('de-DE');
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+  };
+
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.loading}>
+          <RefreshCw size={32} className="spin" />
+          <span>Lade Verbandsmitglieder...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <div>
+          <h1 style={styles.title}>
+            <Award size={28} color="#ffd700" />
+            TDA Verbandsmitglieder
+          </h1>
+          <p style={styles.subtitle}>Dojo- und Einzelmitgliedschaften verwalten</p>
+        </div>
+        <button style={styles.primaryButton} onClick={() => setShowNewModal(true)}>
+          <Plus size={18} />
+          Neue Mitgliedschaft
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div style={styles.statsGrid}>
+        <div style={styles.statCard}>
+          <Building2 size={24} color="#3b82f6" />
+          <div>
+            <div style={styles.statValue}>{stats.dojos || 0}</div>
+            <div style={styles.statLabel}>Dojo-Mitglieder</div>
+          </div>
+        </div>
+        <div style={styles.statCard}>
+          <User size={24} color="#10b981" />
+          <div>
+            <div style={styles.statValue}>{stats.einzelpersonen || 0}</div>
+            <div style={styles.statLabel}>Einzelmitglieder</div>
+          </div>
+        </div>
+        <div style={styles.statCard}>
+          <Euro size={24} color="#ffd700" />
+          <div>
+            <div style={styles.statValue}>{formatCurrency(stats.jahresumsatz || 0)}</div>
+            <div style={styles.statLabel}>Jahresumsatz</div>
+          </div>
+        </div>
+        <div style={styles.statCard}>
+          <AlertTriangle size={24} color="#f59e0b" />
+          <div>
+            <div style={styles.statValue}>{stats.auslaufend || 0}</div>
+            <div style={styles.statLabel}>Laufen aus (30 Tage)</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={styles.tabs}>
+        <button
+          style={{ ...styles.tab, ...(activeTab === 'dojos' ? styles.tabActive : {}) }}
+          onClick={() => setActiveTab('dojos')}
+        >
+          <Building2 size={16} />
+          Dojos ({mitgliedschaften.filter(m => m.typ === 'dojo').length})
+        </button>
+        <button
+          style={{ ...styles.tab, ...(activeTab === 'einzelpersonen' ? styles.tabActive : {}) }}
+          onClick={() => setActiveTab('einzelpersonen')}
+        >
+          <User size={16} />
+          Einzelpersonen ({mitgliedschaften.filter(m => m.typ === 'einzelperson').length})
+        </button>
+        <button
+          style={{ ...styles.tab, ...(activeTab === 'vorteile' ? styles.tabActive : {}) }}
+          onClick={() => setActiveTab('vorteile')}
+        >
+          <Gift size={16} />
+          Vorteile & Rabatte
+        </button>
+      </div>
+
+      {/* Vorteile Tab */}
+      {activeTab === 'vorteile' && (
+        <div style={styles.vorteileContainer}>
+          <h3 style={styles.sectionTitle}>Mitgliedschaftsvorteile</h3>
+          <div style={styles.vorteileGrid}>
+            {vorteile.map(v => (
+              <div key={v.id} style={styles.vorteilCard}>
+                <div style={styles.vorteilHeader}>
+                  <Percent size={20} color="#ffd700" />
+                  <span style={styles.vorteilTitel}>{v.titel}</span>
+                </div>
+                <p style={styles.vorteilBeschreibung}>{v.beschreibung}</p>
+                <div style={styles.vorteilMeta}>
+                  <span style={styles.vorteilRabatt}>
+                    {v.rabatt_typ === 'prozent' ? `${v.rabatt_wert}%` : formatCurrency(v.rabatt_wert)} Rabatt
+                  </span>
+                  <span style={styles.vorteilKategorie}>{v.kategorie}</span>
+                  <span style={{
+                    ...styles.vorteilGilt,
+                    background: v.gilt_fuer === 'dojo' ? 'rgba(59, 130, 246, 0.2)' :
+                               v.gilt_fuer === 'einzelperson' ? 'rgba(16, 185, 129, 0.2)' :
+                               'rgba(255, 215, 0, 0.2)'
+                  }}>
+                    {v.gilt_fuer === 'beide' ? 'Alle' : v.gilt_fuer === 'dojo' ? 'Dojos' : 'Einzelpersonen'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mitgliederliste */}
+      {activeTab !== 'vorteile' && (
+        <>
+          {/* Filter Bar */}
+          <div style={styles.filterBar}>
+            <div style={styles.searchBox}>
+              <Search size={18} color="#888" />
+              <input
+                type="text"
+                placeholder="Suchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={styles.searchInput}
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={styles.select}
+            >
+              <option value="">Alle Status</option>
+              <option value="aktiv">Aktiv</option>
+              <option value="ausstehend">Ausstehend</option>
+              <option value="abgelaufen">Abgelaufen</option>
+              <option value="gekuendigt">Gekündigt</option>
+            </select>
+            <button style={styles.iconButton} onClick={loadData}>
+              <RefreshCw size={18} />
+            </button>
+          </div>
+
+          {/* Liste */}
+          <div style={styles.list}>
+            {filteredMitgliedschaften.length === 0 ? (
+              <div style={styles.emptyState}>
+                <Building2 size={48} color="#666" />
+                <p>Keine Mitgliedschaften gefunden</p>
+              </div>
+            ) : (
+              filteredMitgliedschaften.map(m => (
+                <div
+                  key={m.id}
+                  style={styles.listItem}
+                  onClick={() => openDetail(m)}
+                >
+                  <div style={styles.listItemIcon}>
+                    {m.typ === 'dojo' ? (
+                      <Building2 size={24} color="#3b82f6" />
+                    ) : (
+                      <User size={24} color="#10b981" />
+                    )}
+                  </div>
+                  <div style={styles.listItemContent}>
+                    <div style={styles.listItemHeader}>
+                      <span style={styles.listItemName}>
+                        {m.typ === 'dojo' ? m.dojo_name : `${m.person_vorname} ${m.person_nachname}`}
+                      </span>
+                      {getStatusBadge(m.status)}
+                    </div>
+                    <div style={styles.listItemMeta}>
+                      <span><FileText size={12} /> {m.mitgliedsnummer}</span>
+                      <span><Calendar size={12} /> Bis: {formatDate(m.gueltig_bis)}</span>
+                      <span><Euro size={12} /> {formatCurrency(m.jahresbeitrag)}/Jahr</span>
+                    </div>
+                  </div>
+                  <ChevronDown size={20} color="#888" />
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* New Modal */}
+      {showNewModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowNewModal(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>Neue Mitgliedschaft</h2>
+              <button style={styles.closeButton} onClick={() => setShowNewModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              {/* Typ-Auswahl */}
+              <div style={styles.typSelector}>
+                <button
+                  type="button"
+                  style={{
+                    ...styles.typButton,
+                    ...(formData.typ === 'dojo' ? styles.typButtonActive : {})
+                  }}
+                  onClick={() => setFormData({ ...formData, typ: 'dojo' })}
+                >
+                  <Building2 size={24} />
+                  <span>Dojo</span>
+                  <span style={styles.typPrice}>{formatCurrency(BEITRAG_DOJO)}/Jahr</span>
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    ...styles.typButton,
+                    ...(formData.typ === 'einzelperson' ? styles.typButtonActiveGreen : {})
+                  }}
+                  onClick={() => setFormData({ ...formData, typ: 'einzelperson' })}
+                >
+                  <User size={24} />
+                  <span>Einzelperson</span>
+                  <span style={styles.typPrice}>{formatCurrency(BEITRAG_EINZEL)}/Jahr</span>
+                </button>
+              </div>
+
+              {/* Dojo-Auswahl */}
+              {formData.typ === 'dojo' && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Dojo auswählen *</label>
+                  <select
+                    value={formData.dojo_id}
+                    onChange={(e) => setFormData({ ...formData, dojo_id: e.target.value })}
+                    style={styles.input}
+                    required
+                  >
+                    <option value="">-- Dojo wählen --</option>
+                    {dojosOhneMitgliedschaft.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.ort})
+                      </option>
+                    ))}
+                  </select>
+                  {dojosOhneMitgliedschaft.length === 0 && (
+                    <p style={styles.hint}>Alle Dojos haben bereits eine Mitgliedschaft</p>
+                  )}
+                </div>
+              )}
+
+              {/* Personen-Daten */}
+              {formData.typ === 'einzelperson' && (
+                <>
+                  <div style={styles.formRow}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Vorname *</label>
+                      <input
+                        type="text"
+                        value={formData.person_vorname}
+                        onChange={(e) => setFormData({ ...formData, person_vorname: e.target.value })}
+                        style={styles.input}
+                        required
+                      />
+                    </div>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Nachname *</label>
+                      <input
+                        type="text"
+                        value={formData.person_nachname}
+                        onChange={(e) => setFormData({ ...formData, person_nachname: e.target.value })}
+                        style={styles.input}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>E-Mail *</label>
+                    <input
+                      type="email"
+                      value={formData.person_email}
+                      onChange={(e) => setFormData({ ...formData, person_email: e.target.value })}
+                      style={styles.input}
+                      required
+                    />
+                  </div>
+                  <div style={styles.formRow}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Telefon</label>
+                      <input
+                        type="tel"
+                        value={formData.person_telefon}
+                        onChange={(e) => setFormData({ ...formData, person_telefon: e.target.value })}
+                        style={styles.input}
+                      />
+                    </div>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Geburtsdatum</label>
+                      <input
+                        type="date"
+                        value={formData.person_geburtsdatum}
+                        onChange={(e) => setFormData({ ...formData, person_geburtsdatum: e.target.value })}
+                        style={styles.input}
+                      />
+                    </div>
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Straße</label>
+                    <input
+                      type="text"
+                      value={formData.person_strasse}
+                      onChange={(e) => setFormData({ ...formData, person_strasse: e.target.value })}
+                      style={styles.input}
+                    />
+                  </div>
+                  <div style={styles.formRow}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>PLZ</label>
+                      <input
+                        type="text"
+                        value={formData.person_plz}
+                        onChange={(e) => setFormData({ ...formData, person_plz: e.target.value })}
+                        style={styles.input}
+                      />
+                    </div>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Ort</label>
+                      <input
+                        type="text"
+                        value={formData.person_ort}
+                        onChange={(e) => setFormData({ ...formData, person_ort: e.target.value })}
+                        style={styles.input}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Zahlungsart */}
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Zahlungsart</label>
+                <select
+                  value={formData.zahlungsart}
+                  onChange={(e) => setFormData({ ...formData, zahlungsart: e.target.value })}
+                  style={styles.input}
+                >
+                  <option value="rechnung">Rechnung</option>
+                  <option value="lastschrift">SEPA-Lastschrift</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="ueberweisung">Überweisung</option>
+                </select>
+              </div>
+
+              {/* Notizen */}
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Notizen</label>
+                <textarea
+                  value={formData.notizen}
+                  onChange={(e) => setFormData({ ...formData, notizen: e.target.value })}
+                  style={{ ...styles.input, minHeight: '80px' }}
+                />
+              </div>
+
+              <div style={styles.modalFooter}>
+                <button type="button" style={styles.cancelButton} onClick={() => setShowNewModal(false)}>
+                  Abbrechen
+                </button>
+                <button type="submit" style={styles.submitButton}>
+                  <Check size={18} />
+                  Mitgliedschaft anlegen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {showDetailModal && selectedMitgliedschaft && (
+        <div style={styles.modalOverlay} onClick={() => setShowDetailModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                {selectedMitgliedschaft.typ === 'dojo' ? (
+                  <><Building2 size={24} color="#3b82f6" /> {selectedMitgliedschaft.dojo_name}</>
+                ) : (
+                  <><User size={24} color="#10b981" /> {selectedMitgliedschaft.person_vorname} {selectedMitgliedschaft.person_nachname}</>
+                )}
+              </h2>
+              <button style={styles.closeButton} onClick={() => setShowDetailModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Detail Tabs */}
+            <div style={styles.detailTabs}>
+              <button
+                style={{ ...styles.detailTab, ...(detailTab === 'info' ? styles.detailTabActive : {}) }}
+                onClick={() => setDetailTab('info')}
+              >
+                <User size={16} /> Info
+              </button>
+              <button
+                style={{ ...styles.detailTab, ...(detailTab === 'vertrag' ? styles.detailTabActive : {}) }}
+                onClick={() => setDetailTab('vertrag')}
+              >
+                <FileText size={16} /> Vertrag
+              </button>
+              <button
+                style={{ ...styles.detailTab, ...(detailTab === 'sepa' ? styles.detailTabActive : {}) }}
+                onClick={() => setDetailTab('sepa')}
+              >
+                <Banknote size={16} /> SEPA
+              </button>
+              <button
+                style={{ ...styles.detailTab, ...(detailTab === 'historie' ? styles.detailTabActive : {}) }}
+                onClick={() => setDetailTab('historie')}
+              >
+                <History size={16} /> Historie
+              </button>
+            </div>
+
+            <div style={styles.detailContent}>
+              {/* INFO TAB */}
+              {detailTab === 'info' && (
+                <>
+                  {/* Status & Mitgliedsnummer */}
+                  <div style={styles.detailRow}>
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Mitgliedsnummer</span>
+                      <span style={styles.detailValue}>{selectedMitgliedschaft.mitgliedsnummer}</span>
+                    </div>
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Status</span>
+                      {getStatusBadge(selectedMitgliedschaft.status)}
+                    </div>
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Vertrag</span>
+                      {selectedMitgliedschaft.unterschrift_digital ? (
+                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Check size={14} /> Unterschrieben
+                        </span>
+                      ) : (
+                        <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <AlertTriangle size={14} /> Ausstehend
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Laufzeit */}
+                  <div style={styles.detailRow}>
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Gültig von</span>
+                      <span style={styles.detailValue}>{formatDate(selectedMitgliedschaft.gueltig_von)}</span>
+                    </div>
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Gültig bis</span>
+                      <span style={styles.detailValue}>{formatDate(selectedMitgliedschaft.gueltig_bis)}</span>
+                    </div>
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Jahresbeitrag</span>
+                      <span style={styles.detailValue}>{formatCurrency(selectedMitgliedschaft.jahresbeitrag)}</span>
+                    </div>
+                  </div>
+
+                  {/* Kontakt (bei Einzelperson) */}
+                  {selectedMitgliedschaft.typ === 'einzelperson' && (
+                    <div style={styles.detailSection}>
+                      <h4 style={styles.detailSectionTitle}>Kontaktdaten</h4>
+                      <div style={styles.detailRow}>
+                        <div style={styles.detailItem}>
+                          <Mail size={14} />
+                          <span>{selectedMitgliedschaft.person_email || '-'}</span>
+                        </div>
+                        <div style={styles.detailItem}>
+                          <Phone size={14} />
+                          <span>{selectedMitgliedschaft.person_telefon || '-'}</span>
+                        </div>
+                      </div>
+                      {selectedMitgliedschaft.person_strasse && (
+                        <div style={styles.detailItem}>
+                          <MapPin size={14} />
+                          <span>
+                            {selectedMitgliedschaft.person_strasse}, {selectedMitgliedschaft.person_plz} {selectedMitgliedschaft.person_ort}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Zahlungen */}
+                  <div style={styles.detailSection}>
+                    <h4 style={styles.detailSectionTitle}>Zahlungen</h4>
+                    {selectedMitgliedschaft.zahlungen?.length === 0 ? (
+                      <p style={styles.hint}>Keine Zahlungen vorhanden</p>
+                    ) : (
+                      <div style={styles.zahlungenList}>
+                        {selectedMitgliedschaft.zahlungen?.map(z => (
+                          <div key={z.id} style={styles.zahlungItem}>
+                            <div style={styles.zahlungMain}>
+                              <span style={styles.zahlungNummer}>{z.rechnungsnummer}</span>
+                              <span style={styles.zahlungBetrag}>{formatCurrency(z.betrag_brutto)}</span>
+                              <span style={{
+                                ...styles.zahlungStatus,
+                                color: z.status === 'bezahlt' ? '#10b981' : z.status === 'offen' ? '#f59e0b' : '#ef4444'
+                              }}>
+                                {z.status === 'bezahlt' ? 'Bezahlt' : z.status === 'offen' ? 'Offen' : z.status}
+                              </span>
+                            </div>
+                            <div style={styles.zahlungMeta}>
+                              <span>Fällig: {formatDate(z.faellig_am)}</span>
+                              {z.bezahlt_am && <span>Bezahlt: {formatDate(z.bezahlt_am)}</span>}
+                            </div>
+                            {z.status === 'offen' && (
+                              <button
+                                style={styles.smallButton}
+                                onClick={() => handleZahlungBezahlt(z.id)}
+                              >
+                                <Check size={14} /> Als bezahlt markieren
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notizen */}
+                  {selectedMitgliedschaft.notizen && (
+                    <div style={styles.detailSection}>
+                      <h4 style={styles.detailSectionTitle}>Notizen</h4>
+                      <p style={styles.notizen}>{selectedMitgliedschaft.notizen}</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* VERTRAG TAB */}
+              {detailTab === 'vertrag' && (
+                <>
+                  <div style={styles.vertragActions}>
+                    <button
+                      style={styles.actionButton}
+                      onClick={() => handleDownloadPdf(selectedMitgliedschaft.id)}
+                    >
+                      <Download size={18} />
+                      Vertrag als PDF
+                    </button>
+                    {!selectedMitgliedschaft.unterschrift_digital && (
+                      <button
+                        style={{ ...styles.actionButton, ...styles.actionButtonPrimary }}
+                        onClick={() => setShowSignatureModal(true)}
+                      >
+                        <PenTool size={18} />
+                        Jetzt unterschreiben
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={styles.vertragInfo}>
+                    <h4 style={styles.detailSectionTitle}>Vertragsstatus</h4>
+                    <div style={styles.vertragStatusGrid}>
+                      <div style={styles.vertragStatusItem}>
+                        <Shield size={20} color={selectedMitgliedschaft.agb_akzeptiert ? '#10b981' : '#666'} />
+                        <span>AGB akzeptiert</span>
+                        {selectedMitgliedschaft.agb_akzeptiert ? (
+                          <Check size={16} color="#10b981" />
+                        ) : (
+                          <X size={16} color="#666" />
+                        )}
+                      </div>
+                      <div style={styles.vertragStatusItem}>
+                        <ScrollText size={20} color={selectedMitgliedschaft.dsgvo_akzeptiert ? '#10b981' : '#666'} />
+                        <span>DSGVO akzeptiert</span>
+                        {selectedMitgliedschaft.dsgvo_akzeptiert ? (
+                          <Check size={16} color="#10b981" />
+                        ) : (
+                          <X size={16} color="#666" />
+                        )}
+                      </div>
+                      <div style={styles.vertragStatusItem}>
+                        <FileText size={20} color={selectedMitgliedschaft.widerrufsrecht_akzeptiert ? '#10b981' : '#666'} />
+                        <span>Widerrufsbelehrung</span>
+                        {selectedMitgliedschaft.widerrufsrecht_akzeptiert ? (
+                          <Check size={16} color="#10b981" />
+                        ) : (
+                          <X size={16} color="#666" />
+                        )}
+                      </div>
+                      <div style={styles.vertragStatusItem}>
+                        <PenTool size={20} color={selectedMitgliedschaft.unterschrift_digital ? '#10b981' : '#666'} />
+                        <span>Unterschrieben</span>
+                        {selectedMitgliedschaft.unterschrift_digital ? (
+                          <Check size={16} color="#10b981" />
+                        ) : (
+                          <X size={16} color="#666" />
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedMitgliedschaft.unterschrift_datum && (
+                      <p style={styles.hint}>
+                        Unterschrieben am: {formatDate(selectedMitgliedschaft.unterschrift_datum)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div style={styles.detailSection}>
+                    <h4 style={styles.detailSectionTitle}>Rechtliche Dokumente</h4>
+                    <div style={styles.dokumenteListe}>
+                      <button style={styles.dokumentButton} onClick={() => showDokument('agb')}>
+                        <Shield size={16} /> AGB ansehen
+                      </button>
+                      <button style={styles.dokumentButton} onClick={() => showDokument('dsgvo')}>
+                        <ScrollText size={16} /> DSGVO ansehen
+                      </button>
+                      <button style={styles.dokumentButton} onClick={() => showDokument('widerrufsbelehrung')}>
+                        <FileText size={16} /> Widerrufsbelehrung
+                      </button>
+                      <button style={styles.dokumentButton} onClick={() => showDokument('beitragsordnung')}>
+                        <Euro size={16} /> Beitragsordnung
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* SEPA TAB */}
+              {detailTab === 'sepa' && (
+                <>
+                  <div style={styles.vertragActions}>
+                    <button
+                      style={{ ...styles.actionButton, ...styles.actionButtonPrimary }}
+                      onClick={() => setShowSepaModal(true)}
+                    >
+                      <Plus size={18} />
+                      Neues SEPA-Mandat
+                    </button>
+                  </div>
+
+                  {sepaMandate.length === 0 ? (
+                    <div style={styles.emptyState}>
+                      <Banknote size={48} color="#666" />
+                      <p>Kein SEPA-Mandat vorhanden</p>
+                      <p style={styles.hint}>Mit einem SEPA-Mandat können Beiträge automatisch eingezogen werden.</p>
+                    </div>
+                  ) : (
+                    <div style={styles.sepaListe}>
+                      {sepaMandate.map(m => (
+                        <div key={m.id} style={styles.sepaItem}>
+                          <div style={styles.sepaHeader}>
+                            <span style={styles.sepaMandatsref}>{m.mandatsreferenz}</span>
+                            <span style={{
+                              ...styles.sepaStatus,
+                              background: m.status === 'aktiv' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                              color: m.status === 'aktiv' ? '#10b981' : '#ef4444'
+                            }}>
+                              {m.status === 'aktiv' ? 'Aktiv' : 'Inaktiv'}
+                            </span>
+                          </div>
+                          <div style={styles.sepaDetails}>
+                            <div><strong>IBAN:</strong> {m.iban}</div>
+                            {m.bic && <div><strong>BIC:</strong> {m.bic}</div>}
+                            <div><strong>Kontoinhaber:</strong> {m.kontoinhaber}</div>
+                            <div><strong>Erstellt:</strong> {formatDate(m.erstellt_am)}</div>
+                          </div>
+                          {m.unterschrift_digital && (
+                            <div style={styles.sepaSignedBadge}>
+                              <Check size={14} /> Digital unterschrieben
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* HISTORIE TAB */}
+              {detailTab === 'historie' && (
+                <>
+                  <div style={styles.detailSection}>
+                    <h4 style={styles.detailSectionTitle}>Vertragshistorie</h4>
+                    <p style={styles.hint}>
+                      Die Vertragshistorie zeigt alle wichtigen Ereignisse dieser Mitgliedschaft.
+                    </p>
+                    <div style={styles.historieListe}>
+                      <div style={styles.historieItem}>
+                        <div style={styles.historieDatum}>{formatDate(selectedMitgliedschaft.erstellt_am)}</div>
+                        <div style={styles.historieText}>Mitgliedschaft angelegt</div>
+                      </div>
+                      {selectedMitgliedschaft.unterschrift_datum && (
+                        <div style={styles.historieItem}>
+                          <div style={styles.historieDatum}>{formatDate(selectedMitgliedschaft.unterschrift_datum)}</div>
+                          <div style={styles.historieText}>Vertrag digital unterschrieben</div>
+                        </div>
+                      )}
+                      {selectedMitgliedschaft.zahlungen?.filter(z => z.status === 'bezahlt').map(z => (
+                        <div key={z.id} style={styles.historieItem}>
+                          <div style={styles.historieDatum}>{formatDate(z.bezahlt_am)}</div>
+                          <div style={styles.historieText}>Zahlung eingegangen: {formatCurrency(z.betrag_brutto)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={styles.modalFooter}>
+              {selectedMitgliedschaft.status !== 'gekuendigt' && (
+                <>
+                  <button style={styles.dangerButton} onClick={() => handleKuendigen(selectedMitgliedschaft.id)}>
+                    <Trash2 size={16} /> Kündigen
+                  </button>
+                  <button style={styles.submitButton} onClick={() => handleVerlaengern(selectedMitgliedschaft.id)}>
+                    <RefreshCw size={16} /> Verlängern
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SEPA Modal */}
+      {showSepaModal && selectedMitgliedschaft && (
+        <div style={styles.modalOverlay} onClick={() => setShowSepaModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '550px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <Banknote size={24} color="#ffd700" /> SEPA-Mandat erstellen
+              </h2>
+              <button style={styles.closeButton} onClick={() => setShowSepaModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>IBAN *</label>
+                <input
+                  type="text"
+                  value={sepaData.iban}
+                  onChange={(e) => setSepaData({ ...sepaData, iban: e.target.value.toUpperCase() })}
+                  style={styles.input}
+                  placeholder="DE89 3704 0044 0532 0130 00"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>BIC (optional)</label>
+                <input
+                  type="text"
+                  value={sepaData.bic}
+                  onChange={(e) => setSepaData({ ...sepaData, bic: e.target.value.toUpperCase() })}
+                  style={styles.input}
+                  placeholder="COBADEFFXXX"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Kontoinhaber *</label>
+                <input
+                  type="text"
+                  value={sepaData.kontoinhaber}
+                  onChange={(e) => setSepaData({ ...sepaData, kontoinhaber: e.target.value })}
+                  style={styles.input}
+                  placeholder="Max Mustermann"
+                />
+              </div>
+
+              <div style={styles.signatureSection}>
+                <label style={styles.label}>Digitale Unterschrift</label>
+                <canvas
+                  ref={canvasRef}
+                  width={460}
+                  height={120}
+                  style={styles.signatureCanvas}
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
+                <button type="button" style={styles.clearSignatureButton} onClick={clearSignature}>
+                  Unterschrift löschen
+                </button>
+              </div>
+
+              <div style={styles.sepaHinweis}>
+                <Shield size={16} color="#ffd700" />
+                <p>Mit dem SEPA-Lastschriftmandat ermächtigen Sie uns, den Jahresbeitrag von Ihrem Konto einzuziehen.</p>
+              </div>
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelButton} onClick={() => setShowSepaModal(false)}>
+                Abbrechen
+              </button>
+              <button style={styles.submitButton} onClick={handleCreateSepa}>
+                <Check size={18} /> Mandat erstellen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AGB/Dokument Modal */}
+      {showAgbModal && selectedDokument && (
+        <div style={styles.modalOverlay} onClick={() => setShowAgbModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <ScrollText size={24} color="#ffd700" /> {selectedDokument.titel}
+              </h2>
+              <button style={styles.closeButton} onClick={() => setShowAgbModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={styles.dokumentContent}>
+              <div style={styles.dokumentMeta}>
+                <span>Version: {selectedDokument.version}</span>
+                <span>Gültig ab: {formatDate(selectedDokument.gueltig_ab)}</span>
+              </div>
+              <div
+                style={styles.dokumentText}
+                dangerouslySetInnerHTML={{ __html: selectedDokument.inhalt?.replace(/\n/g, '<br/>') }}
+              />
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button style={styles.submitButton} onClick={() => setShowAgbModal(false)}>
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signature Modal */}
+      {showSignatureModal && selectedMitgliedschaft && (
+        <div style={styles.modalOverlay} onClick={() => setShowSignatureModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <PenTool size={24} color="#ffd700" /> Vertrag unterschreiben
+              </h2>
+              <button style={styles.closeButton} onClick={() => setShowSignatureModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              <p style={styles.signatureIntro}>
+                Mit Ihrer Unterschrift bestätigen Sie den Mitgliedsvertrag für die TDA Verbandsmitgliedschaft
+                zum Jahresbeitrag von {formatCurrency(selectedMitgliedschaft.jahresbeitrag)}.
+              </p>
+
+              {/* Akzeptanz Checkboxen */}
+              <div style={styles.akzeptanzSection}>
+                <label style={styles.checkbox}>
+                  <input
+                    type="checkbox"
+                    checked={akzeptanz.agb}
+                    onChange={(e) => setAkzeptanz({ ...akzeptanz, agb: e.target.checked })}
+                  />
+                  <span>Ich akzeptiere die <a href="#" onClick={(e) => { e.preventDefault(); showDokument('agb'); }}>AGB</a> *</span>
+                </label>
+                <label style={styles.checkbox}>
+                  <input
+                    type="checkbox"
+                    checked={akzeptanz.dsgvo}
+                    onChange={(e) => setAkzeptanz({ ...akzeptanz, dsgvo: e.target.checked })}
+                  />
+                  <span>Ich akzeptiere die <a href="#" onClick={(e) => { e.preventDefault(); showDokument('dsgvo'); }}>Datenschutzerklärung</a> *</span>
+                </label>
+                <label style={styles.checkbox}>
+                  <input
+                    type="checkbox"
+                    checked={akzeptanz.widerruf}
+                    onChange={(e) => setAkzeptanz({ ...akzeptanz, widerruf: e.target.checked })}
+                  />
+                  <span>Ich habe die <a href="#" onClick={(e) => { e.preventDefault(); showDokument('widerrufsbelehrung'); }}>Widerrufsbelehrung</a> zur Kenntnis genommen *</span>
+                </label>
+              </div>
+
+              {/* Unterschrift Canvas */}
+              <div style={styles.signatureSection}>
+                <label style={styles.label}>Ihre Unterschrift *</label>
+                <canvas
+                  ref={canvasRef}
+                  width={520}
+                  height={150}
+                  style={styles.signatureCanvas}
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
+                <button type="button" style={styles.clearSignatureButton} onClick={clearSignature}>
+                  Unterschrift löschen
+                </button>
+              </div>
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelButton} onClick={() => setShowSignatureModal(false)}>
+                Abbrechen
+              </button>
+              <button style={styles.submitButton} onClick={handleUnterschreiben}>
+                <PenTool size={18} /> Verbindlich unterschreiben
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================================
+// STYLES
+// ============================================================================
+
+const styles = {
+  container: {
+    padding: '2rem',
+    maxWidth: '1400px',
+    margin: '0 auto'
+  },
+  loading: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1rem',
+    padding: '4rem',
+    color: '#888'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem',
+    flexWrap: 'wrap',
+    gap: '1rem'
+  },
+  title: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    color: '#fff',
+    margin: 0,
+    fontSize: '1.8rem'
+  },
+  subtitle: {
+    color: '#888',
+    margin: '4px 0 0 40px',
+    fontSize: '0.9rem'
+  },
+  primaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    background: 'linear-gradient(135deg, #ffd700, #ffaa00)',
+    border: 'none',
+    borderRadius: '10px',
+    color: '#000',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'transform 0.2s'
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '1rem',
+    marginBottom: '2rem'
+  },
+  statCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '1.5rem',
+    background: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  statValue: {
+    fontSize: '1.5rem',
+    fontWeight: '700',
+    color: '#fff'
+  },
+  statLabel: {
+    fontSize: '0.85rem',
+    color: '#888'
+  },
+  tabs: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '1.5rem',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    paddingBottom: '8px'
+  },
+  tab: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '8px',
+    color: '#888',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  tabActive: {
+    background: 'rgba(255, 215, 0, 0.15)',
+    color: '#ffd700'
+  },
+  filterBar: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap'
+  },
+  searchBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 14px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '8px',
+    flex: '1',
+    minWidth: '200px'
+  },
+  searchInput: {
+    background: 'transparent',
+    border: 'none',
+    outline: 'none',
+    color: '#fff',
+    width: '100%',
+    fontSize: '0.9rem'
+  },
+  select: {
+    padding: '10px 14px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '0.9rem',
+    cursor: 'pointer'
+  },
+  iconButton: {
+    padding: '10px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '8px',
+    color: '#888',
+    cursor: 'pointer'
+  },
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  listItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '16px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  listItemIcon: {
+    width: '48px',
+    height: '48px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: '10px'
+  },
+  listItemContent: {
+    flex: 1
+  },
+  listItemHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '6px'
+  },
+  listItemName: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: '1rem'
+  },
+  listItemMeta: {
+    display: 'flex',
+    gap: '16px',
+    color: '#888',
+    fontSize: '0.8rem'
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '4rem',
+    color: '#666'
+  },
+  vorteileContainer: {
+    marginTop: '1rem'
+  },
+  sectionTitle: {
+    color: '#ffd700',
+    marginBottom: '1rem',
+    fontSize: '1.1rem'
+  },
+  vorteileGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '1rem'
+  },
+  vorteilCard: {
+    padding: '1.5rem',
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 215, 0, 0.2)',
+    borderRadius: '12px'
+  },
+  vorteilHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '10px'
+  },
+  vorteilTitel: {
+    color: '#fff',
+    fontWeight: '600'
+  },
+  vorteilBeschreibung: {
+    color: '#aaa',
+    fontSize: '0.85rem',
+    marginBottom: '12px'
+  },
+  vorteilMeta: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  vorteilRabatt: {
+    padding: '4px 10px',
+    background: 'rgba(255, 215, 0, 0.2)',
+    color: '#ffd700',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
+    fontWeight: '600'
+  },
+  vorteilKategorie: {
+    padding: '4px 10px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    color: '#888',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
+    textTransform: 'capitalize'
+  },
+  vorteilGilt: {
+    padding: '4px 10px',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
+    color: '#fff'
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px'
+  },
+  modal: {
+    background: '#1a1a2e',
+    borderRadius: '16px',
+    width: '100%',
+    maxWidth: '550px',
+    maxHeight: '90vh',
+    overflow: 'auto',
+    border: '1px solid rgba(255, 215, 0, 0.2)'
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1.5rem',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  modalTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: '#fff',
+    margin: 0,
+    fontSize: '1.2rem'
+  },
+  closeButton: {
+    background: 'transparent',
+    border: 'none',
+    color: '#888',
+    cursor: 'pointer',
+    padding: '8px'
+  },
+  typSelector: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    padding: '1.5rem'
+  },
+  typButton: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '20px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '2px solid transparent',
+    borderRadius: '12px',
+    color: '#888',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  typButtonActive: {
+    borderColor: '#3b82f6',
+    background: 'rgba(59, 130, 246, 0.15)',
+    color: '#3b82f6'
+  },
+  typButtonActiveGreen: {
+    borderColor: '#10b981',
+    background: 'rgba(16, 185, 129, 0.15)',
+    color: '#10b981'
+  },
+  typPrice: {
+    fontSize: '0.85rem',
+    opacity: 0.7
+  },
+  formGroup: {
+    padding: '0 1.5rem',
+    marginBottom: '1rem'
+  },
+  formRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    padding: '0 1.5rem',
+    marginBottom: '1rem'
+  },
+  label: {
+    display: 'block',
+    color: '#888',
+    fontSize: '0.85rem',
+    marginBottom: '6px'
+  },
+  input: {
+    width: '100%',
+    padding: '10px 12px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '0.9rem',
+    outline: 'none'
+  },
+  hint: {
+    color: '#666',
+    fontSize: '0.8rem',
+    marginTop: '6px'
+  },
+  modalFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    padding: '1.5rem',
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  cancelButton: {
+    padding: '10px 20px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    border: 'none',
+    borderRadius: '8px',
+    color: '#888',
+    cursor: 'pointer'
+  },
+  submitButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 20px',
+    background: 'linear-gradient(135deg, #ffd700, #ffaa00)',
+    border: 'none',
+    borderRadius: '8px',
+    color: '#000',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  dangerButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 20px',
+    background: 'rgba(239, 68, 68, 0.2)',
+    border: '1px solid rgba(239, 68, 68, 0.3)',
+    borderRadius: '8px',
+    color: '#ef4444',
+    cursor: 'pointer'
+  },
+
+  // Detail Modal
+  detailContent: {
+    padding: '1.5rem'
+  },
+  detailRow: {
+    display: 'flex',
+    gap: '24px',
+    marginBottom: '16px',
+    flexWrap: 'wrap'
+  },
+  detailItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px'
+  },
+  detailLabel: {
+    color: '#666',
+    fontSize: '0.75rem',
+    textTransform: 'uppercase'
+  },
+  detailValue: {
+    color: '#fff',
+    fontSize: '0.95rem'
+  },
+  detailSection: {
+    marginTop: '20px',
+    paddingTop: '16px',
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  detailSectionTitle: {
+    color: '#ffd700',
+    fontSize: '0.9rem',
+    marginBottom: '12px'
+  },
+  zahlungenList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  zahlungItem: {
+    padding: '12px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '8px'
+  },
+  zahlungMain: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '6px'
+  },
+  zahlungNummer: {
+    color: '#fff',
+    fontWeight: '500'
+  },
+  zahlungBetrag: {
+    color: '#ffd700',
+    fontWeight: '600'
+  },
+  zahlungStatus: {
+    fontWeight: '600',
+    fontSize: '0.85rem'
+  },
+  zahlungMeta: {
+    display: 'flex',
+    gap: '16px',
+    color: '#666',
+    fontSize: '0.8rem'
+  },
+  smallButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginTop: '8px',
+    padding: '6px 12px',
+    background: 'rgba(16, 185, 129, 0.2)',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
+    borderRadius: '6px',
+    color: '#10b981',
+    fontSize: '0.8rem',
+    cursor: 'pointer'
+  },
+  notizen: {
+    color: '#aaa',
+    fontSize: '0.9rem',
+    whiteSpace: 'pre-wrap'
+  },
+
+  // Detail Tabs
+  detailTabs: {
+    display: 'flex',
+    gap: '4px',
+    padding: '0 1.5rem',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+  },
+  detailTab: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '12px 16px',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    color: '#888',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  detailTabActive: {
+    color: '#ffd700',
+    borderBottomColor: '#ffd700'
+  },
+
+  // Vertrag Tab
+  vertragActions: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap'
+  },
+  actionButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '10px',
+    color: '#fff',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  actionButtonPrimary: {
+    background: 'linear-gradient(135deg, #ffd700, #ffaa00)',
+    border: 'none',
+    color: '#000',
+    fontWeight: '600'
+  },
+  vertragInfo: {
+    marginBottom: '1.5rem'
+  },
+  vertragStatusGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '12px',
+    marginTop: '12px'
+  },
+  vertragStatusItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '0.9rem'
+  },
+  dokumenteListe: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px',
+    marginTop: '12px'
+  },
+  dokumentButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
+    color: '#aaa',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+
+  // SEPA Tab
+  sepaListe: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px'
+  },
+  sepaItem: {
+    padding: '16px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '12px'
+  },
+  sepaHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px'
+  },
+  sepaMandatsref: {
+    color: '#fff',
+    fontWeight: '600',
+    fontFamily: 'monospace'
+  },
+  sepaStatus: {
+    padding: '4px 10px',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
+    fontWeight: '600'
+  },
+  sepaDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    color: '#aaa',
+    fontSize: '0.9rem'
+  },
+  sepaSignedBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginTop: '12px',
+    padding: '6px 12px',
+    background: 'rgba(16, 185, 129, 0.15)',
+    color: '#10b981',
+    borderRadius: '6px',
+    fontSize: '0.85rem'
+  },
+  sepaHinweis: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    padding: '16px',
+    background: 'rgba(255, 215, 0, 0.1)',
+    border: '1px solid rgba(255, 215, 0, 0.3)',
+    borderRadius: '10px',
+    marginTop: '1.5rem'
+  },
+
+  // Historie Tab
+  historieListe: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginTop: '16px'
+  },
+  historieItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '12px',
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '8px',
+    borderLeft: '3px solid #ffd700'
+  },
+  historieDatum: {
+    color: '#888',
+    fontSize: '0.8rem',
+    minWidth: '100px'
+  },
+  historieText: {
+    color: '#fff',
+    fontSize: '0.9rem'
+  },
+
+  // Signature
+  signatureSection: {
+    marginTop: '1.5rem'
+  },
+  signatureCanvas: {
+    width: '100%',
+    background: '#fff',
+    borderRadius: '8px',
+    cursor: 'crosshair',
+    touchAction: 'none'
+  },
+  clearSignatureButton: {
+    marginTop: '8px',
+    padding: '8px 16px',
+    background: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '6px',
+    color: '#888',
+    cursor: 'pointer',
+    fontSize: '0.85rem'
+  },
+  signatureIntro: {
+    color: '#aaa',
+    fontSize: '0.95rem',
+    lineHeight: 1.6,
+    marginBottom: '1.5rem'
+  },
+  akzeptanzSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginBottom: '1.5rem'
+  },
+  checkbox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: '#fff',
+    cursor: 'pointer'
+  },
+
+  // Dokument Modal
+  dokumentContent: {
+    padding: '1.5rem',
+    maxHeight: '60vh',
+    overflow: 'auto'
+  },
+  dokumentMeta: {
+    display: 'flex',
+    gap: '20px',
+    marginBottom: '1rem',
+    color: '#888',
+    fontSize: '0.85rem'
+  },
+  dokumentText: {
+    color: '#ccc',
+    fontSize: '0.9rem',
+    lineHeight: 1.7,
+    whiteSpace: 'pre-wrap'
+  }
+};
+
+export default VerbandsMitglieder;

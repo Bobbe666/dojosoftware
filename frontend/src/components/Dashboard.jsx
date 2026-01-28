@@ -22,6 +22,7 @@ import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import TrialBanner from './TrialBanner';
 import AgbStatusWidget from './AgbStatusWidget';
+import SystemChangelog from './SystemChangelog';
 
 function Dashboard() {
   const location = useLocation();
@@ -1561,6 +1562,11 @@ function Dashboard() {
                                   <span>AGB & Datenschutz bearbeiten</span>
                                 </button>
                               </div>
+                            </div>
+
+                            {/* System Changelog - Neuigkeiten & Updates */}
+                            <div style={{ gridColumn: '1 / -1' }}>
+                              <SystemChangelog maxItems={3} />
                             </div>
 
                           </div>

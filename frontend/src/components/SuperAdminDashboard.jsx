@@ -17,6 +17,7 @@ import FinanceTab from './FinanceTab';
 import ContractsTab from './ContractsTab';
 import UsersTab from './UsersTab';
 import SepaTab from './SepaTab';
+import VerbandsMitglieder from './VerbandsMitglieder';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -339,6 +340,7 @@ const SuperAdminDashboard = () => {
   // Tab Definitions
   const tabs = [
     { id: 'overview', label: 'Übersicht', icon: <LayoutDashboard size={18} /> },
+    { id: 'verbandsmitglieder', label: 'Verbandsmitglieder', icon: <Award size={18} /> },
     { id: 'statistics', label: 'Statistiken', icon: <PieChart size={18} /> },
     { id: 'finance', label: 'Finanzen', icon: <DollarSign size={18} /> },
     { id: 'contracts', label: 'Verträge', icon: <FileText size={18} /> },
@@ -739,6 +741,11 @@ const SuperAdminDashboard = () => {
         </section>
       )}
           </>
+        )}
+
+        {/* Verbandsmitglieder Tab */}
+        {activeTab === 'verbandsmitglieder' && (
+          <VerbandsMitglieder />
         )}
 
         {/* Statistiken Tab */}

@@ -2,6 +2,9 @@
 // 🔧 DOJOSOFTWARE - FRONTEND CONFIGURATION
 // ===================================================================
 
+// Version automatisch aus Changelog holen
+import { CURRENT_VERSION, CURRENT_BUILD_DATE } from '../components/SystemChangelog.jsx';
+
 // Umgebung bestimmen
 const isDevelopment = import.meta.env.MODE === 'development';
 const isProduction = import.meta.env.MODE === 'production';
@@ -29,13 +32,13 @@ const config = {
     refreshThreshold: 5 * 60 * 1000, // 5 Minuten vor Ablauf erneuern
   },
   
-  // App-Einstellungen
+  // App-Einstellungen (Version wird automatisch aus SystemChangelog.jsx geholt!)
   app: {
     name: 'DojoSoftware',
-    version: '2.1.0',
+    version: CURRENT_VERSION,  // Automatisch aus Changelog
     description: 'Kampfkunstschule Verwaltungssystem',
     author: 'Sascha Schreiner',
-    buildDate: '2026-01-15',
+    buildDate: CURRENT_BUILD_DATE,  // Automatisch aus Changelog
     contactEmail: 'support@tda-intl.org',
   },
   
