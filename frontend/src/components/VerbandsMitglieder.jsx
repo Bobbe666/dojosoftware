@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 
 const VerbandsMitglieder = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isAdmin = user?.rolle === 'admin' || user?.role === 'admin';
   const [activeTab, setActiveTab] = useState('dojos'); // 'dojos' | 'einzelpersonen' | 'vorteile' | 'einstellungen'
   const [mitgliedschaften, setMitgliedschaften] = useState([]);
   const [vorteile, setVorteile] = useState([]);
@@ -214,12 +215,31 @@ const VerbandsMitglieder = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validierung
+    if (formData.typ === 'dojo') {
+      if (!formData.neues_dojo && !formData.dojo_id) {
+        alert('Bitte wähle ein Dojo aus oder lege ein neues an.');
+        return;
+      }
+      if (formData.neues_dojo && (!formData.neues_dojo_name || !formData.neues_dojo_email)) {
+        alert('Bitte Dojo-Name und E-Mail ausfüllen.');
+        return;
+      }
+    }
+    if (formData.typ === 'einzelperson') {
+      if (!formData.person_vorname || !formData.person_nachname || !formData.person_email) {
+        alert('Bitte Vorname, Nachname und E-Mail ausfüllen.');
+        return;
+      }
+    }
+
     try {
       let submitData = { ...formData };
 
       // Wenn neues Dojo angelegt werden soll
       if (formData.typ === 'dojo' && formData.neues_dojo) {
-        // Erst neues Dojo anlegen
+        // Neues Dojo anlegen
         const neuesDojo = await api.post('/admin/dojos', {
           dojoname: formData.neues_dojo_name,
           inhaber: formData.neues_dojo_inhaber,
@@ -263,6 +283,19 @@ const VerbandsMitglieder = () => {
       setShowDetailModal(false);
     } catch (err) {
       alert(err.response?.data?.error || 'Fehler beim Kündigen');
+    }
+  };
+
+  const handleVertragsfrei = async (id) => {
+    if (!confirm('Mitgliedschaft auf "vertragsfrei" setzen?')) return;
+    try {
+      await api.delete(`/verbandsmitgliedschaften/${id}/vertragsfrei`);
+      loadData();
+      // Detail neu laden
+      const res = await api.get(`/verbandsmitgliedschaften/${id}`);
+      setSelectedMitgliedschaft(res.data);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Löschen');
     }
   };
 
@@ -310,6 +343,24 @@ const VerbandsMitglieder = () => {
       }
     } catch (err) {
       alert('Fehler beim Stornieren der Zahlung');
+    }
+  };
+
+  const handleDownloadRechnungPdf = async (zahlungsId, rechnungsnummer) => {
+    try {
+      const response = await api.get(`/verbandsmitgliedschaften/zahlungen/${zahlungsId}/pdf`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Rechnung_${rechnungsnummer || zahlungsId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Fehler beim Download der Rechnung');
     }
   };
 
@@ -528,7 +579,8 @@ const VerbandsMitglieder = () => {
       aktiv: { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: Check, label: 'Aktiv' },
       ausstehend: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock, label: 'Ausstehend' },
       abgelaufen: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: AlertTriangle, label: 'Abgelaufen' },
-      gekuendigt: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)', icon: X, label: 'Gekündigt' }
+      gekuendigt: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)', icon: X, label: 'Gekündigt' },
+      vertragsfrei: { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: Shield, label: 'Vertragsfrei' }
     };
     const c = config[status] || config.ausstehend;
     const Icon = c.icon;
@@ -954,7 +1006,7 @@ const VerbandsMitglieder = () => {
                         }
                       }}
                       style={styles.input}
-                      required
+                      
                     >
                       <option value="">-- Dojo wählen --</option>
                       {dojosOhneMitgliedschaft.map(d => (
@@ -981,7 +1033,7 @@ const VerbandsMitglieder = () => {
                             onChange={(e) => setFormData({ ...formData, neues_dojo_name: e.target.value })}
                             style={styles.input}
                             placeholder="z.B. Kampfsportschule Muster"
-                            required
+                            
                           />
                         </div>
                         <div style={styles.formGroup}>
@@ -992,7 +1044,7 @@ const VerbandsMitglieder = () => {
                             onChange={(e) => setFormData({ ...formData, neues_dojo_inhaber: e.target.value })}
                             style={styles.input}
                             placeholder="Vor- und Nachname"
-                            required
+                            
                           />
                         </div>
                       </div>
@@ -1004,7 +1056,7 @@ const VerbandsMitglieder = () => {
                           onChange={(e) => setFormData({ ...formData, neues_dojo_email: e.target.value })}
                           style={styles.input}
                           placeholder="info@dojo.de"
-                          required
+                          
                         />
                       </div>
                       <div style={styles.formGroup}>
@@ -1064,7 +1116,7 @@ const VerbandsMitglieder = () => {
                         value={formData.person_vorname}
                         onChange={(e) => setFormData({ ...formData, person_vorname: e.target.value })}
                         style={styles.input}
-                        required
+                        
                       />
                     </div>
                     <div style={styles.formGroup}>
@@ -1074,7 +1126,7 @@ const VerbandsMitglieder = () => {
                         value={formData.person_nachname}
                         onChange={(e) => setFormData({ ...formData, person_nachname: e.target.value })}
                         style={styles.input}
-                        required
+                        
                       />
                     </div>
                   </div>
@@ -1085,7 +1137,7 @@ const VerbandsMitglieder = () => {
                       value={formData.person_email}
                       onChange={(e) => setFormData({ ...formData, person_email: e.target.value })}
                       style={styles.input}
-                      required
+                      
                     />
                   </div>
                   <div style={styles.formRow}>
@@ -1245,9 +1297,11 @@ const VerbandsMitglieder = () => {
                           border: '1px solid rgba(255,255,255,0.2)',
                           background: selectedMitgliedschaft.status === 'aktiv' ? 'rgba(16, 185, 129, 0.2)' :
                                      selectedMitgliedschaft.status === 'ausstehend' ? 'rgba(245, 158, 11, 0.2)' :
+                                     selectedMitgliedschaft.status === 'vertragsfrei' ? 'rgba(107, 114, 128, 0.2)' :
                                      'rgba(239, 68, 68, 0.2)',
                           color: selectedMitgliedschaft.status === 'aktiv' ? '#10b981' :
-                                 selectedMitgliedschaft.status === 'ausstehend' ? '#f59e0b' : '#ef4444',
+                                 selectedMitgliedschaft.status === 'ausstehend' ? '#f59e0b' :
+                                 selectedMitgliedschaft.status === 'vertragsfrei' ? '#6b7280' : '#ef4444',
                           fontWeight: '600',
                           cursor: 'pointer'
                         }}
@@ -1256,6 +1310,7 @@ const VerbandsMitglieder = () => {
                         <option value="aktiv">Aktiv</option>
                         <option value="gekuendigt">Gekündigt</option>
                         <option value="abgelaufen">Abgelaufen</option>
+                        <option value="vertragsfrei">Vertragsfrei</option>
                       </select>
                     </div>
                     <div style={styles.detailItem}>
@@ -1313,7 +1368,8 @@ const VerbandsMitglieder = () => {
                     </div>
                   )}
 
-                  {/* Zahlungen */}
+                  {/* Zahlungen - nicht anzeigen bei vertragsfrei */}
+                  {selectedMitgliedschaft.status !== 'vertragsfrei' && (
                   <div style={styles.detailSection}>
                     <h4 style={styles.detailSectionTitle}>Zahlungen</h4>
                     {selectedMitgliedschaft.zahlungen?.length === 0 ? (
@@ -1353,12 +1409,19 @@ const VerbandsMitglieder = () => {
                                   <X size={14} /> Stornieren
                                 </button>
                               )}
+                              <button
+                                style={{ ...styles.smallButton, backgroundColor: '#3b82f6', color: '#fff' }}
+                                onClick={() => handleDownloadRechnungPdf(z.id, z.rechnungsnummer)}
+                              >
+                                <Download size={14} /> Rechnung PDF
+                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
+                  )}
 
                   {/* Notizen */}
                   {selectedMitgliedschaft.notizen && (
@@ -1516,26 +1579,22 @@ const VerbandsMitglieder = () => {
                 <>
                   <div style={styles.detailSection}>
                     <h4 style={styles.detailSectionTitle}>Vertragshistorie</h4>
-                    <p style={styles.hint}>
-                      Die Vertragshistorie zeigt alle wichtigen Ereignisse dieser Mitgliedschaft.
-                    </p>
                     <div style={styles.historieListe}>
-                      <div style={styles.historieItem}>
-                        <div style={styles.historieDatum}>{formatDate(selectedMitgliedschaft.erstellt_am)}</div>
-                        <div style={styles.historieText}>Mitgliedschaft angelegt</div>
-                      </div>
-                      {selectedMitgliedschaft.unterschrift_datum && (
-                        <div style={styles.historieItem}>
-                          <div style={styles.historieDatum}>{formatDate(selectedMitgliedschaft.unterschrift_datum)}</div>
-                          <div style={styles.historieText}>Vertrag digital unterschrieben</div>
-                        </div>
+                      {selectedMitgliedschaft.historie?.length > 0 ? (
+                        selectedMitgliedschaft.historie.map((h, idx) => (
+                          <div key={h.id || idx} style={styles.historieItem}>
+                            <div style={styles.historieDatum}>
+                              {new Date(h.created_at).toLocaleString('de-DE', {
+                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                              })}
+                            </div>
+                            <div style={styles.historieText}>{h.beschreibung}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <p style={styles.hint}>Noch keine Historie-Einträge vorhanden.</p>
                       )}
-                      {selectedMitgliedschaft.zahlungen?.filter(z => z.status === 'bezahlt').map(z => (
-                        <div key={z.id} style={styles.historieItem}>
-                          <div style={styles.historieDatum}>{formatDate(z.bezahlt_am)}</div>
-                          <div style={styles.historieText}>Zahlung eingegangen: {formatCurrency(z.betrag_brutto)}</div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </>
@@ -1543,7 +1602,15 @@ const VerbandsMitglieder = () => {
             </div>
 
             <div style={styles.modalFooter}>
-              {selectedMitgliedschaft.status !== 'gekuendigt' && (
+              {isAdmin && selectedMitgliedschaft.status !== 'vertragsfrei' && (
+                <button
+                  style={{ ...styles.dangerButton, backgroundColor: '#7f1d1d' }}
+                  onClick={() => handleVertragsfrei(selectedMitgliedschaft.id)}
+                >
+                  <Trash2 size={16} /> Vertragsfrei
+                </button>
+              )}
+              {selectedMitgliedschaft.status !== 'gekuendigt' && selectedMitgliedschaft.status !== 'vertragsfrei' && (
                 <>
                   <button style={styles.dangerButton} onClick={() => handleKuendigen(selectedMitgliedschaft.id)}>
                     <Trash2 size={16} /> Kündigen

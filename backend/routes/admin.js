@@ -224,24 +224,26 @@ router.post('/dojos', requireSuperAdmin, async (req, res) => {
     } = req.body;
 
     // Validierung
-    if (!dojoname || !subdomain || !inhaber) {
+    if (!dojoname || !inhaber) {
       return res.status(400).json({
         error: 'Pflichtfelder fehlen',
-        required: ['dojoname', 'subdomain', 'inhaber']
+        required: ['dojoname', 'inhaber']
       });
     }
 
-    // Prüfe ob Subdomain bereits existiert
-    const [existing] = await db.promise().query(
-      'SELECT id FROM dojo WHERE subdomain = ?',
-      [subdomain]
-    );
+    // Prüfe ob Subdomain bereits existiert (nur wenn angegeben)
+    if (subdomain) {
+      const [existing] = await db.promise().query(
+        'SELECT id FROM dojo WHERE subdomain = ?',
+        [subdomain]
+      );
 
-    if (existing.length > 0) {
-      return res.status(400).json({
-        error: 'Subdomain bereits vergeben',
-        subdomain
-      });
+      if (existing.length > 0) {
+        return res.status(400).json({
+          error: 'Subdomain bereits vergeben',
+          subdomain
+        });
+      }
     }
 
     // Dojo erstellen

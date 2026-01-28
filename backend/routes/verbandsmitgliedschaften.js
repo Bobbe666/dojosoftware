@@ -563,6 +563,30 @@ router.put('/einstellungen/:key', (req, res) => {
 // ============================================================================
 
 /**
+ * GET /api/verbandsmitgliedschaften/dojos-ohne-mitgliedschaft
+ * Dojos die noch keine Verbandsmitgliedschaft haben
+ */
+router.get('/dojos-ohne-mitgliedschaft', (req, res) => {
+  const query = `
+    SELECT d.id, d.dojoname AS name, d.ort, d.email
+    FROM dojo d
+    WHERE d.id NOT IN (
+      SELECT dojo_id FROM verbandsmitgliedschaften
+      WHERE dojo_id IS NOT NULL AND status IN ('aktiv', 'ausstehend')
+    )
+    ORDER BY d.dojoname
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Fehler:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    res.json(results);
+  });
+});
+
+/**
  * GET /api/verbandsmitgliedschaften/:id
  * Einzelne Mitgliedschaft abrufen
  */
@@ -592,7 +616,29 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
     }
 
-    res.json(results[0]);
+    const mitgliedschaft = results[0];
+
+    // Zahlungen laden
+    db.query('SELECT * FROM verbandsmitgliedschaft_zahlungen WHERE verbandsmitgliedschaft_id = ? ORDER BY rechnungsdatum DESC', [id], (err, zahlungen) => {
+      if (err) {
+        console.error('Fehler beim Laden der Zahlungen:', err);
+        mitgliedschaft.zahlungen = [];
+      } else {
+        mitgliedschaft.zahlungen = zahlungen;
+      }
+
+      // Historie laden
+      db.query('SELECT * FROM verband_vertragshistorie WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC', [id], (err, historie) => {
+        if (err) {
+          console.error('Fehler beim Laden der Historie:', err);
+          mitgliedschaft.historie = [];
+        } else {
+          mitgliedschaft.historie = historie;
+        }
+
+        res.json(mitgliedschaft);
+      });
+    });
   });
 });
 
@@ -874,6 +920,37 @@ router.delete('/:id', (req, res) => {
   );
 });
 
+/**
+ * DELETE /api/verbandsmitgliedschaften/:id/vertragsfrei
+ * Mitgliedschaft auf vertragsfrei setzen (nur Admin)
+ */
+router.delete('/:id/vertragsfrei', (req, res) => {
+  const { id } = req.params;
+
+  db.query(
+    "UPDATE verbandsmitgliedschaften SET status = 'vertragsfrei' WHERE id = ?",
+    [id],
+    (err, result) => {
+      if (err) {
+        console.error('Fehler:', err);
+        return res.status(500).json({ error: 'Datenbankfehler' });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+      }
+
+      // Historie-Eintrag
+      db.query(
+        "INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, ip_adresse) VALUES (?, 'geaendert', 'Status auf vertragsfrei gesetzt', ?)",
+        [id, req.ip]
+      );
+
+      res.json({ success: true, message: 'Mitgliedschaft auf vertragsfrei gesetzt' });
+    }
+  );
+});
+
 // ============================================================================
 // ZAHLUNGEN
 // ============================================================================
@@ -956,17 +1033,17 @@ router.post('/zahlungen/:zahlungs_id/stornieren', (req, res) => {
   const { zahlungs_id } = req.params;
   const { grund } = req.body;
 
-  // Erst Zahlungsdaten holen für Historie
   db.query('SELECT * FROM verbandsmitgliedschaft_zahlungen WHERE id = ?', [zahlungs_id], (err, rows) => {
     if (err || rows.length === 0) {
       return res.status(404).json({ error: 'Zahlung nicht gefunden' });
     }
     
     const zahlung = rows[0];
+    const alterStatus = zahlung.status;
     
     db.query(`
       UPDATE verbandsmitgliedschaft_zahlungen
-      SET status = 'storniert'
+      SET status = 'offen', bezahlt_am = NULL
       WHERE id = ?
     `, [zahlungs_id], (err, result) => {
       if (err) {
@@ -974,19 +1051,80 @@ router.post('/zahlungen/:zahlungs_id/stornieren', (req, res) => {
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
-      // Historie-Eintrag
+      const beschreibung = 'Zahlung ' + zahlung.rechnungsnummer + ' storniert (vorher: ' + alterStatus + ')' + (grund ? ' - ' + grund : '');
       db.query(`
         INSERT INTO verband_vertragshistorie (verbandsmitgliedschaft_id, aktion, beschreibung, ip_adresse)
         VALUES (?, 'zahlung', ?, ?)
-      `, [
-        zahlung.verbandsmitgliedschaft_id,
-        'Zahlung ' + zahlung.rechnungsnummer + ' (' + zahlung.betrag_brutto + ' EUR) storniert' + (grund ? ': ' + grund : ''),
-        req.ip
-      ]);
-
-      res.json({ success: true, message: 'Zahlung storniert' });
+      `, [zahlung.verbandsmitgliedschaft_id, beschreibung, req.ip], (histErr, histResult) => {
+        if (histErr) {
+          console.error('Historie-Fehler:', histErr);
+        }
+        res.json({ success: true, message: 'Zahlung storniert' });
+      });
     });
   });
+});
+
+/**
+ * GET /api/verbandsmitgliedschaften/zahlungen/:zahlungs_id/pdf
+ * Rechnung als PDF herunterladen
+ */
+router.get('/zahlungen/:zahlungs_id/pdf', async (req, res) => {
+  const { zahlungs_id } = req.params;
+
+  try {
+    // Zahlung laden
+    const [zahlungen] = await db.promise().query(
+      'SELECT * FROM verbandsmitgliedschaft_zahlungen WHERE id = ?',
+      [zahlungs_id]
+    );
+
+    if (zahlungen.length === 0) {
+      return res.status(404).json({ error: 'Zahlung nicht gefunden' });
+    }
+
+    const zahlung = zahlungen[0];
+
+    // Mitgliedschaft laden
+    const [mitgliedschaften] = await db.promise().query(`SELECT vm.*, d.dojoname as dojo_name, d.inhaber as dojo_inhaber, d.strasse as dojo_strasse, d.plz as dojo_plz, d.ort as dojo_ort FROM verbandsmitgliedschaften vm LEFT JOIN dojo d ON vm.dojo_id = d.id WHERE vm.id = ?`, [zahlung.verbandsmitgliedschaft_id]);
+
+    if (mitgliedschaften.length === 0) {
+      return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    }
+
+    const mitgliedschaft = mitgliedschaften[0];
+
+    // HTML generieren
+    const generateHTML = require('../utils/verbandRechnungPdfTemplate');
+    const html = generateHTML(zahlung, mitgliedschaft, {});
+
+    // PDF generieren mit Puppeteer
+    const puppeteer = require('puppeteer');
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
+    });
+
+    await browser.close();
+
+    // PDF senden
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', );
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error('PDF-Generierung fehlgeschlagen:', error);
+    res.status(500).json({ error: 'PDF konnte nicht generiert werden' });
+  }
 });
 
 // VORTEILE
@@ -1049,30 +1187,6 @@ router.get('/check-rabatt', (req, res) => {
 // ============================================================================
 // DOJOS OHNE MITGLIEDSCHAFT
 // ============================================================================
-
-/**
- * GET /api/verbandsmitgliedschaften/dojos-ohne-mitgliedschaft
- * Dojos die noch keine Verbandsmitgliedschaft haben
- */
-router.get('/dojos-ohne-mitgliedschaft', (req, res) => {
-  const query = `
-    SELECT d.id, d.dojoname AS name, d.ort, d.email
-    FROM dojo d
-    WHERE d.id NOT IN (
-      SELECT dojo_id FROM verbandsmitgliedschaften
-      WHERE dojo_id IS NOT NULL AND status IN ('aktiv', 'ausstehend')
-    )
-    ORDER BY d.dojoname
-  `;
-
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Fehler:', err);
-      return res.status(500).json({ error: 'Datenbankfehler' });
-    }
-    res.json(results);
-  });
-});
 
 // ============================================================================
 // PDF GENERIERUNG
