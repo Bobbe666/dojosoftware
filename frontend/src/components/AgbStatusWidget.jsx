@@ -22,10 +22,10 @@ const AgbStatusWidget = () => {
 
   const loadAgbStatus = async () => {
     // Dojo-ID aus Context oder localStorage
-    const dojoId = selectedDojo?.id || localStorage.getItem('activeDojoId');
+    const dojoId = selectedDojo?.id === null ? "all" : (selectedDojo?.id || localStorage.getItem("activeDojoId"));
 
     // Kein Dojo ausgewählt = Widget nicht laden
-    if (!dojoId || dojoId === 'null' || dojoId === 'undefined') {
+    if (!dojoId || (dojoId !== 'all' && (dojoId === 'null' || dojoId === 'undefined'))) {
       setData({ count: 0, members: [], noDojoSelected: true });
       setLoading(false);
       return;

@@ -179,10 +179,37 @@ router.put('/:dojoId/update', async (req, res) => {
 // =====================================================
 // GET /api/agb/:dojoId/members-need-acceptance - Mitglieder ohne Akzeptanz
 // =====================================================
-router.get('/:dojoId/members-need-acceptance', (req, res) => {
+router.get("/:dojoId/members-need-acceptance", (req, res) => {
   const { dojoId } = req.params;
 
-  const query = `
+  // Bei "all" oder "null" alle Dojos prüfen
+  const isAllDojos = dojoId === "all" || dojoId === "null" || dojoId === "undefined";
+
+  const query = isAllDojos ? `
+    SELECT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      m.email,
+      m.dojo_id,
+      d.dojoname,
+      m.agb_akzeptiert_version,
+      m.dsgvo_akzeptiert_version,
+      m.dojo_regeln_akzeptiert_version,
+      m.hausordnung_akzeptiert_version,
+      d.agb_version,
+      d.dsgvo_version,
+      d.dojo_regeln_version,
+      d.hausordnung_version,
+      CASE WHEN m.agb_akzeptiert_version IS NULL OR m.agb_akzeptiert_version != d.agb_version THEN 1 ELSE 0 END as agb_akzeptanz_fehlt,
+      CASE WHEN m.dsgvo_akzeptiert_version IS NULL OR m.dsgvo_akzeptiert_version != d.dsgvo_version THEN 1 ELSE 0 END as dsgvo_akzeptanz_fehlt,
+      CASE WHEN m.dojo_regeln_akzeptiert_version IS NULL OR m.dojo_regeln_akzeptiert_version != d.dojo_regeln_version THEN 1 ELSE 0 END as dojo_regeln_akzeptanz_fehlt,
+      CASE WHEN m.hausordnung_akzeptiert_version IS NULL OR m.hausordnung_akzeptiert_version != d.hausordnung_version THEN 1 ELSE 0 END as hausordnung_akzeptanz_fehlt
+    FROM mitglieder m
+    JOIN dojo d ON m.dojo_id = d.id
+    WHERE m.aktiv = 1
+    HAVING agb_akzeptanz_fehlt = 1 OR dsgvo_akzeptanz_fehlt = 1 OR dojo_regeln_akzeptanz_fehlt = 1 OR hausordnung_akzeptanz_fehlt = 1
+  ` : `
     SELECT
       m.mitglied_id,
       m.vorname,
@@ -206,10 +233,12 @@ router.get('/:dojoId/members-need-acceptance', (req, res) => {
     HAVING agb_akzeptanz_fehlt = 1 OR dsgvo_akzeptanz_fehlt = 1 OR dojo_regeln_akzeptanz_fehlt = 1 OR hausordnung_akzeptanz_fehlt = 1
   `;
 
-  req.db.query(query, [dojoId, dojoId], (err, results) => {
+  const params = isAllDojos ? [] : [dojoId, dojoId];
+
+  req.db.query(query, params, (err, results) => {
     if (err) {
-      console.error('Fehler:', err);
-      return res.status(500).json({ error: 'Fehler beim Laden' });
+      console.error("Fehler:", err);
+      return res.status(500).json({ error: "Fehler beim Laden" });
     }
     res.json({ count: results.length, members: results });
   });
