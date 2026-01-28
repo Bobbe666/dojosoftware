@@ -579,7 +579,7 @@ router.get('/:id', (req, res) => {
     FROM verbandsmitgliedschaften vm
     LEFT JOIN dojo d ON vm.dojo_id = d.id
     LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id
-    WHERE vm.mitglied_id = ?
+    WHERE vm.id = ?
   `;
 
   db.query(query, [id], (err, results) => {
