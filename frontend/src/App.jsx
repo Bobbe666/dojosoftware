@@ -121,6 +121,14 @@ const PruefungDurchfuehren = lazy(() => import(/* webpackChunkName: "exams" */ "
 const BadgeAdminOverview = lazy(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
 
 // ============================================================================
+// LAZY LOADED - Integrations (Webhooks, PayPal, LexOffice, DATEV)
+// ============================================================================
+const WebhookVerwaltung = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/WebhookVerwaltung"));
+const IntegrationsEinstellungen = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/IntegrationsEinstellungen"));
+const DatevExport = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/DatevExport"));
+const KalenderAbo = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/KalenderAbo"));
+
+// ============================================================================
 // LAZY LOADED - Events & News
 // ============================================================================
 const Events = lazy(() => import(/* webpackChunkName: "events" */ "./components/Events"));
@@ -380,6 +388,14 @@ const App = () => {
                 </MemberOnlyRoute>
               }
             />
+            <Route
+              path="/member/kalender"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}><KalenderAbo /></Suspense>
+                </MemberOnlyRoute>
+              }
+            />
 
             {/* Standard-Weiterleitung basierend auf Authentifizierung */}
             <Route path="/" element={<RootRedirect />} />
@@ -538,6 +554,12 @@ const App = () => {
 
               {/* Audit-Log (Änderungsprotokoll) */}
               <Route path="audit-log" element={<Suspense fallback={<LazyLoadFallback />}><AuditLog /></Suspense>} />
+
+              {/* Integrations (Webhooks, PayPal, LexOffice, DATEV, Kalender) */}
+              <Route path="webhooks" element={<Suspense fallback={<LazyLoadFallback />}><WebhookVerwaltung /></Suspense>} />
+              <Route path="integrationen" element={<Suspense fallback={<LazyLoadFallback />}><IntegrationsEinstellungen /></Suspense>} />
+              <Route path="datev-export" element={<Suspense fallback={<LazyLoadFallback />}><DatevExport /></Suspense>} />
+              <Route path="kalender-sync" element={<Suspense fallback={<LazyLoadFallback />}><KalenderAbo /></Suspense>} />
 
               {/* Fehlerseite f�r ung�ltige Dashboard-Unterrouten */}
               <Route 

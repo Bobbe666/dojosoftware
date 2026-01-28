@@ -464,14 +464,6 @@ function Dashboard() {
       path: '/dashboard/integrationen',
       badge: 'NEU',
       featured: true
-    },
-    {
-      icon: '📅',
-      title: 'Kalender-Synchronisation',
-      description: 'iCal-Links für Google, Outlook, Apple',
-      path: '/dashboard/kalender-sync',
-      badge: 'NEU',
-      featured: true
     }
   ];
 

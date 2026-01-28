@@ -423,19 +423,60 @@ const { authenticateToken } = require('../middleware/auth');
  */
 router.get('/my-token', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
+    // Mitglied-ID direkt aus JWT-Token
+    let mitglied_id = req.user.mitglied_id;
+    let dojo_id = req.user.dojo_id;
 
-    // Mitglied-ID zum User finden
-    const [rows] = await db.promise().query(
-      'SELECT mitglied_id, dojo_id FROM mitglieder WHERE user_id = ?',
-      [userId]
-    );
+    // Wenn kein mitglied_id im Token, versuche über E-Mail zu finden
+    if (!mitglied_id && req.user.email) {
+      const [rows] = await db.promise().query(
+        'SELECT mitglied_id, dojo_id FROM mitglieder WHERE email = ?',
+        [req.user.email]
+      );
+      if (rows.length > 0) {
+        mitglied_id = rows[0].mitglied_id;
+        dojo_id = rows[0].dojo_id;
+      }
+    }
 
-    if (rows.length === 0) {
+    // Für Admins: Hole das erste Dojo falls keine mitglied_id
+    if (!mitglied_id && req.user.role === 'admin') {
+      // Admin bekommt URLs für sein Dojo
+      if (!dojo_id) {
+        const [dojos] = await db.promise().query('SELECT id FROM dojo LIMIT 1');
+        if (dojos.length > 0) {
+          dojo_id = dojos[0].id;
+        }
+      }
+
+      // Generiere einen Admin-Token basierend auf user_id/admin_id
+      const adminId = req.user.id || req.user.admin_id || req.user.user_id;
+      const token = generateCalendarToken(adminId, dojo_id);
+
+      const baseUrl = process.env.API_BASE_URL || 'https://dojo.tda-intl.org/api';
+
+      return res.json({
+        success: true,
+        token,
+        admin: true,
+        dojo_id,
+        urls: {
+          personal: null, // Admins haben keinen persönlichen Kalender
+          dojoSchedule: `${baseUrl}/ical/dojo/${dojo_id}/schedule`,
+          dojoEvents: `${baseUrl}/ical/dojo/${dojo_id}/events`
+        },
+        instructions: {
+          google: 'Google Kalender: Einstellungen → Kalender hinzufügen → Per URL',
+          outlook: 'Outlook: Kalender → Kalender hinzufügen → Aus dem Internet abonnieren',
+          apple: 'Apple Kalender: Ablage → Neues Kalenderabonnement'
+        }
+      });
+    }
+
+    if (!mitglied_id) {
       return res.status(404).json({ error: 'Kein Mitglied zu diesem User gefunden' });
     }
 
-    const { mitglied_id, dojo_id } = rows[0];
     const token = generateCalendarToken(mitglied_id, dojo_id);
 
     // Basis-URL
