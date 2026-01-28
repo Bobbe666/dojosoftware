@@ -685,9 +685,43 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🏆 TDA Int'l Org - Super-Admin</h2>
+            <span className="version-badge">v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
+            {/* Zurück-Button - nutzt Browser History */}
+            {!isMainDashboard && window.history.length > 1 && (
+              <button
+                onClick={() => navigate(-1)}
+                className="back-button"
+                title="Zur vorherigen Seite"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <ArrowLeft size={16} />
+                <span>Zurück</span>
+              </button>
+            )}
+            {!isMainDashboard && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="logout-button"
+              >
+                ← Dashboard
+              </button>
+            )}
             {/* 🎨 Theme Toggle */}
             <button
               className="theme-toggle-button"
@@ -717,8 +751,22 @@ function Dashboard() {
                 <span className="user-name">{userDisplayName}</span>
               </div>
             )}
-            <button onClick={logout} className="logout-button">
-              Abmelden
+            <button className="logout-button" onClick={handleLogout}>
+              <svg
+                className="logout-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span className="logout-text">Logout</span>
             </button>
           </div>
         </header>
