@@ -473,20 +473,33 @@ router.get('/global-stats', requireSuperAdmin, async (req, res) => {
     `);
     stats.top_dojos = topDojos;
 
-    // 8. Speicherplatz-Statistiken (alle Dojos)
-    const [allDojos] = await db.promise().query('SELECT id FROM dojo');
-    let totalStorageMB = 0;
+    // 8. Server-Speicherplatz (echte Festplattennutzung)
+    try {
+      const { execSync } = require('child_process');
+      // df -B1 gibt Bytes aus, / ist das Root-Filesystem
+      const dfOutput = execSync('df -B1 /').toString();
+      const lines = dfOutput.trim().split('\n');
+      if (lines.length >= 2) {
+        const parts = lines[1].split(/\s+/);
+        // Format: Filesystem 1B-blocks Used Available Use% Mounted
+        const totalBytes = parseInt(parts[1]) || 0;
+        const usedBytes = parseInt(parts[2]) || 0;
+        const availableBytes = parseInt(parts[3]) || 0;
+        const percentUsed = parts[4] ? parseInt(parts[4].replace('%', '')) : 0;
 
-    for (const dojo of allDojos) {
-      const storageMB = await calculateDojoStorageUsage(dojo.id);
-      totalStorageMB += storageMB;
+        stats.storage = {
+          total_gb: (totalBytes / (1024 * 1024 * 1024)).toFixed(1),
+          used_gb: (usedBytes / (1024 * 1024 * 1024)).toFixed(1),
+          available_gb: (availableBytes / (1024 * 1024 * 1024)).toFixed(1),
+          percent_used: percentUsed
+        };
+      } else {
+        stats.storage = { total_gb: '0', used_gb: '0', available_gb: '0', percent_used: 0 };
+      }
+    } catch (diskError) {
+      console.error('❌ Fehler beim Abrufen des Speicherplatzes:', diskError);
+      stats.storage = { total_gb: '0', used_gb: '0', available_gb: '0', percent_used: 0 };
     }
-
-    stats.storage = {
-      total_storage_mb: totalStorageMB.toFixed(2),
-      total_storage_gb: (totalStorageMB / 1024).toFixed(2),
-      dojos_count: allDojos.length
-    };
 
     console.log('✅ Admin: Globale Statistiken abgerufen (mit Speicherplatz)');
     res.json({

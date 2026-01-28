@@ -142,6 +142,7 @@ const NewsFormular = lazy(() => import(/* webpackChunkName: "news" */ "./compone
 const Homepage = lazy(() => import(/* webpackChunkName: "public" */ "./components/Homepage"));
 const PublicRegistration = lazy(() => import(/* webpackChunkName: "public" */ "./components/PublicRegistration"));
 const BuddyInviteRegistration = lazy(() => import(/* webpackChunkName: "public" */ "./components/BuddyInviteRegistration"));
+const VerbandMitgliedWerden = lazy(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
 const MagicLineImport = lazy(() => import(/* webpackChunkName: "import" */ "./pages/MagicLineImport"));
 
 // ============================================================================
@@ -299,6 +300,9 @@ const App = () => {
 
             {/* Buddy Invite Registration - No authentication required */}
             <Route path="/registration/buddy-invite/:token" element={<Suspense fallback={<LazyLoadFallback />}><BuddyInviteRegistration /></Suspense>} />
+
+            {/* Verbandsmitgliedschaft - Öffentliche Anmeldung */}
+            <Route path="/verband/mitglied-werden" element={<Suspense fallback={<LazyLoadFallback />}><VerbandMitgliedWerden /></Suspense>} />
 
             {/* ======== MITGLIEDER-ROUTEN (Lazy Loaded) ======== */}
             <Route

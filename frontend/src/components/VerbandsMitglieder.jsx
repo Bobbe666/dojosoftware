@@ -10,16 +10,12 @@ import {
   Building2, User, Plus, Search, Filter, RefreshCw, Check, X, Clock,
   AlertTriangle, Euro, Calendar, Mail, Phone, MapPin, CreditCard,
   ChevronDown, ChevronUp, FileText, Award, Percent, Gift, Edit, Trash2,
-  Download, PenTool, Shield, ScrollText, History, Banknote
+  Download, PenTool, Shield, ScrollText, History, Banknote, Settings, Save
 } from 'lucide-react';
-
-// Beiträge
-const BEITRAG_DOJO = 99;
-const BEITRAG_EINZEL = 49;
 
 const VerbandsMitglieder = () => {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState('dojos'); // 'dojos' | 'einzelpersonen' | 'vorteile'
+  const [activeTab, setActiveTab] = useState('dojos'); // 'dojos' | 'einzelpersonen' | 'vorteile' | 'einstellungen'
   const [mitgliedschaften, setMitgliedschaften] = useState([]);
   const [vorteile, setVorteile] = useState([]);
   const [stats, setStats] = useState({});
@@ -27,6 +23,14 @@ const VerbandsMitglieder = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Einstellungen State
+  const [einstellungen, setEinstellungen] = useState([]);
+  const [einstellungenLoading, setEinstellungenLoading] = useState(false);
+  const [einstellungenKategorie, setEinstellungenKategorie] = useState('preise');
+  const [einstellungenChanged, setEinstellungenChanged] = useState({});
+  const [savingEinstellungen, setSavingEinstellungen] = useState(false);
+  const [config, setConfig] = useState({});
 
   // Modal States
   const [showNewModal, setShowNewModal] = useState(false);
@@ -115,8 +119,63 @@ const VerbandsMitglieder = () => {
     }
   };
 
+  const loadEinstellungen = async () => {
+    setEinstellungenLoading(true);
+    try {
+      const res = await api.get('/verbandsmitgliedschaften/einstellungen/alle');
+      setEinstellungen(res.data);
+      setEinstellungenChanged({});
+    } catch (err) {
+      console.error('Fehler beim Laden der Einstellungen:', err);
+    } finally {
+      setEinstellungenLoading(false);
+    }
+  };
+
+  const loadConfig = async () => {
+    try {
+      const res = await api.get('/verbandsmitgliedschaften/einstellungen-config');
+      setConfig(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Konfiguration:', err);
+    }
+  };
+
+  const handleEinstellungChange = (key, value) => {
+    setEinstellungenChanged(prev => ({ ...prev, [key]: value }));
+  };
+
+  const saveEinstellungen = async () => {
+    setSavingEinstellungen(true);
+    try {
+      const toSave = Object.entries(einstellungenChanged).map(([key, value]) => ({ key, value }));
+      if (toSave.length === 0) {
+        alert('Keine Änderungen vorhanden');
+        return;
+      }
+      await api.put('/verbandsmitgliedschaften/einstellungen', { einstellungen: toSave });
+      alert('Einstellungen gespeichert!');
+      setEinstellungenChanged({});
+      loadEinstellungen();
+      loadConfig();
+    } catch (err) {
+      alert('Fehler beim Speichern');
+    } finally {
+      setSavingEinstellungen(false);
+    }
+  };
+
+  const getEinstellungValue = (key) => {
+    if (einstellungenChanged.hasOwnProperty(key)) {
+      return einstellungenChanged[key];
+    }
+    const einst = einstellungen.find(e => e.einstellung_key === key);
+    return einst?.einstellung_value ?? '';
+  };
+
   useEffect(() => {
     loadData();
+    loadConfig();
   }, []);
 
   useEffect(() => {
@@ -131,6 +190,13 @@ const VerbandsMitglieder = () => {
       setTimeout(() => initCanvas(), 100);
     }
   }, [showSepaModal, showSignatureModal]);
+
+  // Load einstellungen when tab changes
+  useEffect(() => {
+    if (activeTab === 'einstellungen') {
+      loadEinstellungen();
+    }
+  }, [activeTab]);
 
   // ============================================================================
   // ACTIONS
@@ -503,6 +569,13 @@ const VerbandsMitglieder = () => {
           <Gift size={16} />
           Vorteile & Rabatte
         </button>
+        <button
+          style={{ ...styles.tab, ...(activeTab === 'einstellungen' ? styles.tabActive : {}) }}
+          onClick={() => setActiveTab('einstellungen')}
+        >
+          <Settings size={16} />
+          Einstellungen
+        </button>
       </div>
 
       {/* Vorteile Tab */}
@@ -537,8 +610,153 @@ const VerbandsMitglieder = () => {
         </div>
       )}
 
+      {/* Einstellungen Tab */}
+      {activeTab === 'einstellungen' && (
+        <div style={styles.einstellungenContainer}>
+          {/* Kategorie-Tabs */}
+          <div style={styles.einstellungenTabs}>
+            {[
+              { key: 'preise', label: 'Preise', icon: Euro },
+              { key: 'laufzeiten', label: 'Laufzeiten', icon: Calendar },
+              { key: 'zahlungen', label: 'Zahlungen', icon: CreditCard },
+              { key: 'nummern', label: 'Nummern', icon: FileText },
+              { key: 'verband', label: 'Verband', icon: Building2 }
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                style={{
+                  ...styles.einstellungenTab,
+                  ...(einstellungenKategorie === key ? styles.einstellungenTabActive : {})
+                }}
+                onClick={() => setEinstellungenKategorie(key)}
+              >
+                <Icon size={16} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {einstellungenLoading ? (
+            <div style={styles.loading}>
+              <RefreshCw size={24} className="spin" />
+              <span>Lade Einstellungen...</span>
+            </div>
+          ) : (
+            <>
+              <div style={styles.einstellungenGrid}>
+                {einstellungen
+                  .filter(e => e.kategorie === einstellungenKategorie)
+                  .map(e => (
+                    <div key={e.einstellung_key} style={styles.einstellungItem}>
+                      <label style={styles.einstellungLabel}>
+                        {e.label}
+                        {e.beschreibung && (
+                          <span style={styles.einstellungHint}>{e.beschreibung}</span>
+                        )}
+                      </label>
+                      {e.einstellung_typ === 'boolean' ? (
+                        <label style={styles.toggleLabel}>
+                          <input
+                            type="checkbox"
+                            checked={getEinstellungValue(e.einstellung_key) === true}
+                            onChange={(ev) => handleEinstellungChange(e.einstellung_key, ev.target.checked)}
+                            style={styles.toggleInput}
+                          />
+                          <span style={{
+                            ...styles.toggleSwitch,
+                            background: getEinstellungValue(e.einstellung_key) ? '#10b981' : '#ef4444'
+                          }}>
+                            <span style={{
+                              position: 'absolute',
+                              top: '2px',
+                              left: '2px',
+                              width: '20px',
+                              height: '20px',
+                              background: '#fff',
+                              borderRadius: '50%',
+                              transition: 'transform 0.2s',
+                              transform: getEinstellungValue(e.einstellung_key) ? 'translateX(24px)' : 'translateX(0)'
+                            }}></span>
+                          </span>
+                          <span style={{
+                            ...styles.toggleText,
+                            color: getEinstellungValue(e.einstellung_key) ? '#10b981' : '#ef4444',
+                            fontWeight: '600'
+                          }}>
+                            {getEinstellungValue(e.einstellung_key) ? 'Aktiv' : 'Inaktiv'}
+                          </span>
+                        </label>
+                      ) : e.einstellung_typ === 'number' ? (
+                        <input
+                          type="number"
+                          value={getEinstellungValue(e.einstellung_key)}
+                          onChange={(ev) => handleEinstellungChange(e.einstellung_key, parseFloat(ev.target.value) || 0)}
+                          style={styles.einstellungInput}
+                          step={e.einstellung_key.includes('preis') || e.einstellung_key.includes('mwst') ? '0.01' : '1'}
+                        />
+                      ) : e.einstellung_typ === 'json' ? (
+                        <textarea
+                          value={typeof getEinstellungValue(e.einstellung_key) === 'object'
+                            ? JSON.stringify(getEinstellungValue(e.einstellung_key), null, 2)
+                            : getEinstellungValue(e.einstellung_key)}
+                          onChange={(ev) => {
+                            try {
+                              handleEinstellungChange(e.einstellung_key, JSON.parse(ev.target.value));
+                            } catch {
+                              // Ignorieren wenn kein gültiges JSON
+                            }
+                          }}
+                          style={{ ...styles.einstellungInput, minHeight: '80px', fontFamily: 'monospace' }}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={getEinstellungValue(e.einstellung_key)}
+                          onChange={(ev) => handleEinstellungChange(e.einstellung_key, ev.target.value)}
+                          style={styles.einstellungInput}
+                        />
+                      )}
+                      {einstellungenChanged.hasOwnProperty(e.einstellung_key) && (
+                        <span style={styles.changedBadge}>Geändert</span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+
+              {Object.keys(einstellungenChanged).length > 0 && (
+                <div style={styles.einstellungenFooter}>
+                  <span style={styles.changesCount}>
+                    {Object.keys(einstellungenChanged).length} Änderung(en)
+                  </span>
+                  <button
+                    style={styles.cancelButton}
+                    onClick={() => {
+                      setEinstellungenChanged({});
+                      loadEinstellungen();
+                    }}
+                  >
+                    Verwerfen
+                  </button>
+                  <button
+                    style={styles.submitButton}
+                    onClick={saveEinstellungen}
+                    disabled={savingEinstellungen}
+                  >
+                    {savingEinstellungen ? (
+                      <><RefreshCw size={16} className="spin" /> Speichern...</>
+                    ) : (
+                      <><Save size={16} /> Speichern</>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Mitgliederliste */}
-      {activeTab !== 'vorteile' && (
+      {activeTab !== 'vorteile' && activeTab !== 'einstellungen' && (
         <>
           {/* Filter Bar */}
           <div style={styles.filterBar}>
@@ -634,7 +852,7 @@ const VerbandsMitglieder = () => {
                 >
                   <Building2 size={24} />
                   <span>Dojo</span>
-                  <span style={styles.typPrice}>{formatCurrency(BEITRAG_DOJO)}/Jahr</span>
+                  <span style={styles.typPrice}>{formatCurrency(config.preis_dojo_mitgliedschaft || 99)}/Jahr</span>
                 </button>
                 <button
                   type="button"
@@ -646,7 +864,7 @@ const VerbandsMitglieder = () => {
                 >
                   <User size={24} />
                   <span>Einzelperson</span>
-                  <span style={styles.typPrice}>{formatCurrency(BEITRAG_EINZEL)}/Jahr</span>
+                  <span style={styles.typPrice}>{formatCurrency(config.preis_einzel_mitgliedschaft || 49)}/Jahr</span>
                 </button>
               </div>
 
@@ -2070,6 +2288,117 @@ const styles = {
     fontSize: '0.9rem',
     lineHeight: 1.7,
     whiteSpace: 'pre-wrap'
+  },
+
+  // Einstellungen Tab
+  einstellungenContainer: {
+    marginTop: '1rem'
+  },
+  einstellungenTabs: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap'
+  },
+  einstellungenTab: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '8px',
+    color: '#888',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  einstellungenTabActive: {
+    background: 'rgba(255, 215, 0, 0.15)',
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    color: '#ffd700'
+  },
+  einstellungenGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '1.5rem'
+  },
+  einstellungItem: {
+    position: 'relative',
+    padding: '1rem',
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.08)'
+  },
+  einstellungLabel: {
+    display: 'block',
+    color: '#fff',
+    fontWeight: '500',
+    marginBottom: '8px',
+    fontSize: '0.95rem'
+  },
+  einstellungHint: {
+    display: 'block',
+    color: '#666',
+    fontSize: '0.8rem',
+    fontWeight: '400',
+    marginTop: '4px'
+  },
+  einstellungInput: {
+    width: '100%',
+    padding: '10px 14px',
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '0.95rem',
+    outline: 'none'
+  },
+  toggleLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    cursor: 'pointer'
+  },
+  toggleInput: {
+    display: 'none'
+  },
+  toggleSwitch: {
+    position: 'relative',
+    width: '48px',
+    height: '24px',
+    background: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: '12px',
+    transition: 'background 0.2s'
+  },
+  toggleText: {
+    color: '#888',
+    fontSize: '0.9rem'
+  },
+  changedBadge: {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    padding: '2px 8px',
+    background: 'rgba(255, 215, 0, 0.2)',
+    color: '#ffd700',
+    borderRadius: '4px',
+    fontSize: '0.7rem',
+    fontWeight: '600'
+  },
+  einstellungenFooter: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginTop: '2rem',
+    padding: '1rem',
+    background: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 215, 0, 0.2)'
+  },
+  changesCount: {
+    flex: 1,
+    color: '#ffd700',
+    fontWeight: '500'
   }
 };
 

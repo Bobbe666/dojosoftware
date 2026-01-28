@@ -670,13 +670,15 @@
 .super-admin-dashboard .stat-label {
   font-size: 0.9rem !important;
   font-weight: 600;
-  color: #555;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .super-admin-dashboard .stat-sublabel {
   font-size: 0.85rem !important;
-  color: #888;
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
 }
 

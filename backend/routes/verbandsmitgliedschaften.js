@@ -2,22 +2,234 @@
  * VERBANDSMITGLIEDSCHAFTEN ROUTES
  * ================================
  * TDA International - Dojo & Einzelmitgliedschaften
- * Dojo-Mitgliedschaft: 99€/Jahr
- * Einzelmitgliedschaft: 49€/Jahr
+ * Preise werden aus Einstellungen geladen
  */
 
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// Beiträge
-const BEITRAG_DOJO = 99.00;
-const BEITRAG_EINZEL = 49.00;
+// Default-Werte (falls Einstellungen nicht geladen werden können)
+const DEFAULT_BEITRAG_DOJO = 99.00;
+const DEFAULT_BEITRAG_EINZEL = 49.00;
+
+/**
+ * Holt eine Einstellung aus der Datenbank
+ */
+const getEinstellung = (key, defaultValue = null) => {
+  return new Promise((resolve) => {
+    db.query(
+      'SELECT einstellung_value, einstellung_typ FROM verband_einstellungen WHERE einstellung_key = ?',
+      [key],
+      (err, results) => {
+        if (err || results.length === 0) {
+          return resolve(defaultValue);
+        }
+        const { einstellung_value, einstellung_typ } = results[0];
+        if (einstellung_typ === 'number') {
+          resolve(parseFloat(einstellung_value) || defaultValue);
+        } else if (einstellung_typ === 'boolean') {
+          resolve(einstellung_value === 'true' || einstellung_value === '1');
+        } else {
+          resolve(einstellung_value);
+        }
+      }
+    );
+  });
+};
 
 // Debug-Logging
 router.use((req, res, next) => {
   console.log('🏛️ Verbandsmitgliedschaften Route:', req.method, req.path);
   next();
+});
+
+// ============================================================================
+// PUBLIC ROUTES (KEINE AUTHENTIFIZIERUNG!)
+// ============================================================================
+
+/**
+ * GET /api/verbandsmitgliedschaften/public/config
+ * Öffentliche Konfiguration für Anmeldeseite
+ */
+router.get('/public/config', async (req, res) => {
+  try {
+    const config = {
+      preis_dojo: await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO),
+      preis_einzel: await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL),
+      mwst_satz: await getEinstellung('mwst_satz', 19),
+      verband_name: await getEinstellung('verband_name', 'Tiger & Dragon Association International'),
+      verband_kurzname: await getEinstellung('verband_kurzname', 'TDA Int\'l'),
+      laufzeit_monate: await getEinstellung('laufzeit_monate', 12)
+    };
+    res.json(config);
+  } catch (err) {
+    console.error('Fehler beim Laden der öffentlichen Config:', err);
+    res.json({
+      preis_dojo: DEFAULT_BEITRAG_DOJO,
+      preis_einzel: DEFAULT_BEITRAG_EINZEL,
+      verband_name: 'Tiger & Dragon Association International'
+    });
+  }
+});
+
+/**
+ * GET /api/verbandsmitgliedschaften/public/vorteile
+ * Öffentliche Vorteile-Liste
+ */
+router.get('/public/vorteile', (req, res) => {
+  db.query(
+    'SELECT id, titel, beschreibung, rabatt_prozent, kategorie FROM verbandsmitgliedschaft_vorteile WHERE ist_aktiv = 1 ORDER BY sortierung',
+    (err, results) => {
+      if (err) {
+        console.error('Fehler beim Laden der Vorteile:', err);
+        return res.json([]);
+      }
+      res.json(results);
+    }
+  );
+});
+
+/**
+ * POST /api/verbandsmitgliedschaften/public/anmeldung
+ * Öffentliche Anmeldung als Verbandsmitglied
+ */
+router.post('/public/anmeldung', async (req, res) => {
+  const {
+    typ,
+    // Dojo-Daten
+    dojo_name, dojo_inhaber, dojo_strasse, dojo_plz, dojo_ort, dojo_land,
+    dojo_email, dojo_telefon, dojo_website, dojo_mitglieder_anzahl,
+    // Einzelperson-Daten
+    vorname, nachname, geburtsdatum, strasse, plz, ort, land, email, telefon,
+    // SEPA
+    zahlungsart, iban, bic, kontoinhaber, bank_name,
+    // Akzeptanz
+    agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged,
+    unterschrift_digital, unterschrift_datum,
+    notizen
+  } = req.body;
+
+  console.log('📝 Neue Verbandsmitgliedschaft-Anmeldung:', typ);
+
+  // Validierung
+  if (!typ || !['dojo', 'einzel'].includes(typ)) {
+    return res.status(400).json({ success: false, error: 'Ungültiger Mitgliedschaftstyp' });
+  }
+
+  if (typ === 'dojo' && (!dojo_name || !dojo_email)) {
+    return res.status(400).json({ success: false, error: 'Dojo-Name und E-Mail sind erforderlich' });
+  }
+
+  if (typ === 'einzel' && (!vorname || !nachname || !email)) {
+    return res.status(400).json({ success: false, error: 'Vorname, Nachname und E-Mail sind erforderlich' });
+  }
+
+  if (!agb_accepted || !dsgvo_accepted) {
+    return res.status(400).json({ success: false, error: 'AGB und Datenschutz müssen akzeptiert werden' });
+  }
+
+  try {
+    // Preise laden
+    const preis_dojo = await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO);
+    const preis_einzel = await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL);
+    const mwst_satz = await getEinstellung('mwst_satz', 19);
+    const laufzeit = await getEinstellung('laufzeit_monate', 12);
+
+    const jahresbeitrag = typ === 'dojo' ? preis_dojo : preis_einzel;
+    const gueltig_ab = new Date();
+    const gueltig_bis = new Date();
+    gueltig_bis.setMonth(gueltig_bis.getMonth() + laufzeit);
+
+    // Mitgliedsnummer generieren
+    const prefix = typ === 'dojo' ? 'TDA-D-' : 'TDA-E-';
+    const key = typ === 'dojo' ? 'naechste_dojo_nummer' : 'naechste_einzel_nummer';
+    const nummerValue = await getEinstellung(key, 1);
+    const mitgliedsnummer = prefix + String(nummerValue).padStart(5, '0');
+
+    // Nummer erhöhen
+    db.query(
+      'UPDATE verband_einstellungen SET einstellung_value = ? WHERE einstellung_key = ?',
+      [nummerValue + 1, key]
+    );
+
+    // Mitgliedschaft anlegen
+    const insertQuery = `
+      INSERT INTO verbandsmitgliedschaften (
+        typ, mitgliedsnummer, status,
+        person_vorname, person_nachname, person_email, person_telefon,
+        person_strasse, person_plz, person_ort, person_land, person_geburtsdatum,
+        dojo_name, dojo_inhaber, dojo_strasse, dojo_plz, dojo_ort, dojo_land,
+        dojo_email, dojo_telefon, dojo_website, dojo_mitglieder_anzahl,
+        jahresbeitrag, zahlungsart,
+        iban, bic, kontoinhaber, bank_name,
+        gueltig_ab, gueltig_bis,
+        agb_akzeptiert, dsgvo_akzeptiert, widerruf_akzeptiert,
+        unterschrift_digital, unterschrift_datum,
+        notizen, created_at
+      ) VALUES (?, ?, 'ausstehend',
+        ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?,
+        ?, ?, ?, ?,
+        ?, ?,
+        ?, ?, ?,
+        ?, ?,
+        ?, NOW())
+    `;
+
+    const params = [
+      typ === 'dojo' ? 'dojo' : 'einzelperson', mitgliedsnummer,
+      typ === 'einzel' ? vorname : dojo_inhaber?.split(' ')[0] || '',
+      typ === 'einzel' ? nachname : dojo_inhaber?.split(' ').slice(1).join(' ') || '',
+      typ === 'einzel' ? email : dojo_email,
+      typ === 'einzel' ? telefon : dojo_telefon,
+      typ === 'einzel' ? strasse : dojo_strasse,
+      typ === 'einzel' ? plz : dojo_plz,
+      typ === 'einzel' ? ort : dojo_ort,
+      typ === 'einzel' ? (land || 'Deutschland') : (dojo_land || 'Deutschland'),
+      typ === 'einzel' ? geburtsdatum || null : null,
+      typ === 'dojo' ? dojo_name : null,
+      typ === 'dojo' ? dojo_inhaber : null,
+      typ === 'dojo' ? dojo_strasse : null,
+      typ === 'dojo' ? dojo_plz : null,
+      typ === 'dojo' ? dojo_ort : null,
+      typ === 'dojo' ? (dojo_land || 'Deutschland') : null,
+      typ === 'dojo' ? dojo_email : null,
+      typ === 'dojo' ? dojo_telefon : null,
+      typ === 'dojo' ? dojo_website : null,
+      typ === 'dojo' ? parseInt(dojo_mitglieder_anzahl) || null : null,
+      jahresbeitrag, zahlungsart || 'rechnung',
+      iban || null, bic || null, kontoinhaber || null, bank_name || null,
+      gueltig_ab, gueltig_bis,
+      agb_accepted ? 1 : 0, dsgvo_accepted ? 1 : 0, widerrufsrecht_acknowledged ? 1 : 0,
+      unterschrift_digital || null, unterschrift_datum || null,
+      notizen || null
+    ];
+
+    db.query(insertQuery, params, (err, result) => {
+      if (err) {
+        console.error('❌ Fehler beim Anlegen der Verbandsmitgliedschaft:', err);
+        return res.status(500).json({ success: false, error: 'Datenbankfehler bei der Anmeldung' });
+      }
+
+      console.log('✅ Verbandsmitgliedschaft angelegt:', mitgliedsnummer);
+
+      // TODO: E-Mail-Benachrichtigung senden
+
+      res.json({
+        success: true,
+        mitgliedsnummer,
+        message: 'Anmeldung erfolgreich! Sie erhalten in Kürze eine Bestätigungs-E-Mail.'
+      });
+    });
+
+  } catch (err) {
+    console.error('❌ Fehler bei der Anmeldung:', err);
+    res.status(500).json({ success: false, error: 'Interner Serverfehler' });
+  }
 });
 
 // ============================================================================
@@ -79,7 +291,7 @@ router.get('/', (req, res) => {
   let query = `
     SELECT
       vm.*,
-      d.name as dojo_name,
+      d.dojoname as dojo_name,
       d.ort as dojo_ort,
       CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
     FROM verbandsmitgliedschaften vm
@@ -149,6 +361,196 @@ router.get('/stats', (req, res) => {
   });
 });
 
+// ============================================================================
+// EINSTELLUNGEN (MUSS VOR /:id STEHEN!)
+// ============================================================================
+
+/**
+ * GET /api/verbandsmitgliedschaften/einstellungen/alle
+ * Alle Einstellungen abrufen
+ */
+router.get('/einstellungen/alle', (req, res) => {
+  const { kategorie } = req.query;
+
+  let query = 'SELECT * FROM verband_einstellungen';
+  const params = [];
+
+  if (kategorie) {
+    query += ' WHERE kategorie = ?';
+    params.push(kategorie);
+  }
+
+  query += ' ORDER BY kategorie, sortierung';
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Fehler beim Laden der Einstellungen:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
+    // Werte nach Typ konvertieren
+    const einstellungen = results.map(e => {
+      let value = e.einstellung_value;
+      if (e.einstellung_typ === 'number') {
+        value = parseFloat(value) || 0;
+      } else if (e.einstellung_typ === 'boolean') {
+        value = value === 'true' || value === '1';
+      } else if (e.einstellung_typ === 'json') {
+        try {
+          value = JSON.parse(value);
+        } catch (err) {
+          value = [];
+        }
+      }
+      return { ...e, einstellung_value: value };
+    });
+
+    res.json(einstellungen);
+  });
+});
+
+/**
+ * GET /api/verbandsmitgliedschaften/einstellungen-config
+ * Komplette Konfiguration als Key-Value Object
+ */
+router.get('/einstellungen-config', (req, res) => {
+  db.query('SELECT * FROM verband_einstellungen', (err, results) => {
+    if (err) return res.status(500).json({ error: 'Datenbankfehler' });
+
+    const config = {};
+    results.forEach(e => {
+      let value = e.einstellung_value;
+      if (e.einstellung_typ === 'number') {
+        value = parseFloat(value) || 0;
+      } else if (e.einstellung_typ === 'boolean') {
+        value = value === 'true' || value === '1';
+      } else if (e.einstellung_typ === 'json') {
+        try { value = JSON.parse(value); } catch (err) { value = []; }
+      }
+      config[e.einstellung_key] = value;
+    });
+
+    res.json(config);
+  });
+});
+
+/**
+ * GET /api/verbandsmitgliedschaften/einstellungen/kategorien
+ * Alle Kategorien abrufen
+ */
+router.get('/einstellungen/kategorien', (req, res) => {
+  db.query(
+    'SELECT DISTINCT kategorie FROM verband_einstellungen ORDER BY kategorie',
+    (err, results) => {
+      if (err) return res.status(500).json({ error: 'Datenbankfehler' });
+      res.json(results.map(r => r.kategorie));
+    }
+  );
+});
+
+/**
+ * PUT /api/verbandsmitgliedschaften/einstellungen
+ * Mehrere Einstellungen auf einmal aktualisieren
+ */
+router.put('/einstellungen', async (req, res) => {
+  const { einstellungen } = req.body;
+
+  if (!einstellungen || !Array.isArray(einstellungen)) {
+    return res.status(400).json({ error: 'Einstellungen-Array erforderlich' });
+  }
+
+  try {
+    for (const { key, value } of einstellungen) {
+      let valueStr = value;
+      if (typeof value === 'object') {
+        valueStr = JSON.stringify(value);
+      } else if (typeof value === 'boolean') {
+        valueStr = value ? 'true' : 'false';
+      } else {
+        valueStr = String(value);
+      }
+
+      await new Promise((resolve, reject) => {
+        db.query(
+          'UPDATE verband_einstellungen SET einstellung_value = ? WHERE einstellung_key = ?',
+          [valueStr, key],
+          (err) => err ? reject(err) : resolve()
+        );
+      });
+    }
+
+    res.json({ success: true, message: `${einstellungen.length} Einstellungen gespeichert` });
+  } catch (err) {
+    console.error('Fehler beim Speichern:', err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+/**
+ * GET /api/verbandsmitgliedschaften/einstellungen/:key
+ * Einzelne Einstellung abrufen
+ */
+router.get('/einstellungen/:key', (req, res) => {
+  db.query(
+    'SELECT * FROM verband_einstellungen WHERE einstellung_key = ?',
+    [req.params.key],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: 'Datenbankfehler' });
+      if (results.length === 0) return res.status(404).json({ error: 'Einstellung nicht gefunden' });
+
+      const e = results[0];
+      let value = e.einstellung_value;
+      if (e.einstellung_typ === 'number') {
+        value = parseFloat(value) || 0;
+      } else if (e.einstellung_typ === 'boolean') {
+        value = value === 'true' || value === '1';
+      } else if (e.einstellung_typ === 'json') {
+        try { value = JSON.parse(value); } catch (err) { value = []; }
+      }
+
+      res.json({ ...e, einstellung_value: value });
+    }
+  );
+});
+
+/**
+ * PUT /api/verbandsmitgliedschaften/einstellungen/:key
+ * Einstellung aktualisieren
+ */
+router.put('/einstellungen/:key', (req, res) => {
+  const { value } = req.body;
+  const key = req.params.key;
+
+  // Wert als String speichern
+  let valueStr = value;
+  if (typeof value === 'object') {
+    valueStr = JSON.stringify(value);
+  } else if (typeof value === 'boolean') {
+    valueStr = value ? 'true' : 'false';
+  } else {
+    valueStr = String(value);
+  }
+
+  db.query(
+    'UPDATE verband_einstellungen SET einstellung_value = ? WHERE einstellung_key = ?',
+    [valueStr, key],
+    (err, result) => {
+      if (err) {
+        console.error('Fehler beim Speichern:', err);
+        return res.status(500).json({ error: 'Datenbankfehler' });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Einstellung nicht gefunden' });
+      }
+      res.json({ success: true, message: 'Einstellung gespeichert' });
+    }
+  );
+});
+
+// ============================================================================
+// MITGLIEDSCHAFTEN - EINZELN
+// ============================================================================
+
 /**
  * GET /api/verbandsmitgliedschaften/:id
  * Einzelne Mitgliedschaft abrufen
@@ -159,7 +561,7 @@ router.get('/:id', (req, res) => {
   const query = `
     SELECT
       vm.*,
-      d.name as dojo_name,
+      d.dojoname as dojo_name,
       d.ort as dojo_ort,
       d.email as dojo_email,
       CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
@@ -241,13 +643,18 @@ router.post('/', async (req, res) => {
     // Mitgliedsnummer generieren
     const mitgliedsnummer = await getNextMitgliedsnummer(typ);
 
-    // Beitrag festlegen
-    const jahresbeitrag = typ === 'dojo' ? BEITRAG_DOJO : BEITRAG_EINZEL;
+    // Beitrag aus Einstellungen laden
+    const beitragDojo = await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO);
+    const beitragEinzel = await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL);
+    const jahresbeitrag = typ === 'dojo' ? beitragDojo : beitragEinzel;
 
-    // Gültigkeit berechnen
+    // Laufzeit aus Einstellungen
+    const laufzeitMonate = await getEinstellung('laufzeit_monate', 12);
+
+    // Gültigkeit berechnen (basierend auf laufzeit_monate)
     const startDatum = gueltig_von || new Date().toISOString().split('T')[0];
     const endDatum = new Date(startDatum);
-    endDatum.setFullYear(endDatum.getFullYear() + 1);
+    endDatum.setMonth(endDatum.getMonth() + laufzeitMonate);
     const gueltigBis = endDatum.toISOString().split('T')[0];
 
     // Mitgliedschaft anlegen

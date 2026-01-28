@@ -389,35 +389,6 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card success">
-            <div className="stat-icon">
-              <Activity size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{tdaStats?.courses?.total_courses || 0}</div>
-              <div className="stat-label">Kurse</div>
-            </div>
-          </div>
-
-          <div className="stat-card info">
-            <div className="stat-icon">
-              <Award size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{tdaStats?.trainers?.total_trainers || 0}</div>
-              <div className="stat-label">Trainer</div>
-            </div>
-          </div>
-
-          <div className="stat-card warning">
-            <div className="stat-icon">
-              <CheckCircle size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{tdaStats?.checkins?.active_checkins_today || 0}</div>
-              <div className="stat-label">Check-ins Heute</div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -454,35 +425,15 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card global-info">
-            <div className="stat-icon">
-              <Activity size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{globalStats?.courses?.total_courses || 0}</div>
-              <div className="stat-label">Kurse (Verband)</div>
-            </div>
-          </div>
-
           <div className="stat-card global-warning">
-            <div className="stat-icon">
-              <Award size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{globalStats?.trainers?.total_trainers || 0}</div>
-              <div className="stat-label">Trainer (Verband)</div>
-            </div>
-          </div>
-
-          <div className="stat-card global-info">
             <div className="stat-icon">
               <HardDrive size={32} />
             </div>
             <div className="stat-content">
-              <div className="stat-value">{globalStats?.storage?.total_storage_gb || '0.00'} GB</div>
-              <div className="stat-label">Speicherplatz</div>
+              <div className="stat-value">{globalStats?.storage?.used_gb || '0'} / {globalStats?.storage?.total_gb || '0'} GB</div>
+              <div className="stat-label">Server-Speicher</div>
               <div className="stat-sublabel">
-                {globalStats?.storage?.dojos_count || 0} Dojos
+                {globalStats?.storage?.percent_used || 0}% belegt
               </div>
             </div>
           </div>
@@ -516,7 +467,6 @@ const SuperAdminDashboard = () => {
                 <th>Ort</th>
                 <th className="text-center">Mitglieder</th>
                 <th className="text-center">Kurse</th>
-                <th className="text-center">Trainer</th>
                 <th className="text-center">Speicher</th>
                 <th className="text-center">Abo-Status</th>
                 <th className="text-center">Trial/Abo Ende</th>
@@ -562,7 +512,6 @@ const SuperAdminDashboard = () => {
                       <td>{dojo.ort || '-'}</td>
                       <td className="text-center">{dojo.mitglieder_count || 0}</td>
                       <td className="text-center">{dojo.kurse_count || 0}</td>
-                      <td className="text-center">{dojo.trainer_count || 0}</td>
                       <td className="text-center">
                         {dojo.storage_mb >= 1024
                           ? `${dojo.storage_gb} GB`
@@ -577,7 +526,7 @@ const SuperAdminDashboard = () => {
                     </tr>
                     {isExpanded && (
                       <tr className="expandable-row">
-                        <td colSpan={12} className="expandable-cell">
+                        <td colSpan={11} className="expandable-cell">
                           <div className="expandable-content">
                             <div className="expandable-section">
                               <h4>Kontaktdaten</h4>
@@ -732,7 +681,6 @@ const SuperAdminDashboard = () => {
                   <div className="dojo-stats">
                     <span><Users size={14} /> {dojo.member_count} Mitglieder</span>
                     <span><Activity size={14} /> {dojo.course_count} Kurse</span>
-                    <span><Award size={14} /> {dojo.trainer_count} Trainer</span>
                   </div>
                 </div>
               </div>
