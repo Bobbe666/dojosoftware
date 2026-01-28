@@ -296,7 +296,7 @@ router.get('/', (req, res) => {
       CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
     FROM verbandsmitgliedschaften vm
     LEFT JOIN dojo d ON vm.dojo_id = d.id
-    LEFT JOIN mitglieder m ON vm.mitglied_id = m.id
+    LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id
     WHERE 1=1
   `;
   const params = [];
@@ -567,8 +567,8 @@ router.get('/:id', (req, res) => {
       CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
     FROM verbandsmitgliedschaften vm
     LEFT JOIN dojo d ON vm.dojo_id = d.id
-    LEFT JOIN mitglieder m ON vm.mitglied_id = m.id
-    WHERE vm.id = ?
+    LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id
+    WHERE vm.mitglied_id = ?
   `;
 
   db.query(query, [id], (err, results) => {
@@ -1007,7 +1007,7 @@ router.get('/dojos-ohne-mitgliedschaft', (req, res) => {
 // PDF GENERIERUNG
 // ============================================================================
 
-const { generateVerbandVertragPdf } = require('./verbandVertragPdfGenerator');
+const { generateVerbandVertragPdf } = require('../utils/verbandVertragPdfGenerator');
 const crypto = require('crypto');
 
 /**
