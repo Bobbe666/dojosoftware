@@ -16,20 +16,6 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
-    version: '2.6.0',
-    date: '2026-01-28',
-    type: 'feature',
-    title: 'TDA Verbandsmitgliedschaften',
-    highlights: [
-      'Dojo-Mitgliedschaft im Verband (99€/Jahr)',
-      'Einzelmitgliedschaft im Verband (49€/Jahr)',
-      'Automatische Rechnungsstellung & Verlängerung',
-      'Vorteile & Rabatte für Mitglieder'
-    ],
-    details: 'Neuer Tab "Verbandsmitglieder" im Super-Admin Dashboard (TDA Int\'l Org). Dojos und Einzelpersonen können Verbandsmitglied werden und erhalten Rabatte auf Turniere, Seminare und Shop.',
-    files: ['VerbandsMitglieder.jsx', 'verbandsmitgliedschaften.js']
-  },
-  {
     version: '2.5.0',
     date: '2026-01-28',
     type: 'feature',

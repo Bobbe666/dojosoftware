@@ -4849,6 +4849,39 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               )}
                             </>
                           )}
+
+                          {/* MEMBER-ONLY: Ruhepause Button */}
+                          {!isAdmin && vertrag.status === 'aktiv' && (
+                            <button
+                              onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 193, 7, 0.3)';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 193, 7, 0.3)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 193, 7, 0.15)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                              }}
+                              style={{
+                                background: 'rgba(255, 193, 7, 0.15)',
+                                color: '#ffc107',
+                                border: '1px solid rgba(255, 193, 7, 0.4)',
+                                borderRadius: '8px',
+                                padding: '0.6rem 1rem',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem'
+                              }}
+                            >
+                              ⏸️ Ruhepause beantragen
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
