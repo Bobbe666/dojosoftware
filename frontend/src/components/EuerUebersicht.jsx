@@ -32,7 +32,8 @@ import {
   Laptop,
   ChevronLeft,
   ChevronRight,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileText
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import config from '../config/config';
@@ -105,7 +106,7 @@ const EuerUebersicht = ({ isTDA = false }) => {
     return new Date(2024, monat - 1, 1).toLocaleString('de-DE', { month: 'short' });
   };
 
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     try {
       const endpoint = isTDA
         ? `${config.apiBaseUrl}/euer/export/tda?jahr=${jahr}`
@@ -124,6 +125,33 @@ const EuerUebersicht = ({ isTDA = false }) => {
     } catch (err) {
       console.error('Export Fehler:', err);
       alert('Fehler beim Export');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const endpoint = isTDA
+        ? `${config.apiBaseUrl}/euer/pdf/tda?jahr=${jahr}`
+        : `${config.apiBaseUrl}/euer/pdf/dojo/${activeDojo?.dojo_id || activeDojo?.id}?jahr=${jahr}`;
+
+      const response = await fetchWithAuth(endpoint);
+
+      if (!response.ok) {
+        throw new Error('PDF-Generierung fehlgeschlagen');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `EUER_${isTDA ? 'TDA_International' : activeDojo?.dojoname || 'Dojo'}_${jahr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF Export Fehler:', err);
+      alert('Fehler beim PDF-Export: ' + err.message);
     }
   };
 
@@ -245,11 +273,17 @@ const EuerUebersicht = ({ isTDA = false }) => {
             </button>
           </div>
 
-          {/* Export Button */}
-          <button onClick={handleExport} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Download size={16} />
-            Export CSV
-          </button>
+          {/* Export Buttons */}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={handleExportCSV} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Download size={16} />
+              CSV
+            </button>
+            <button onClick={handleExportPDF} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileText size={16} />
+              PDF für Finanzamt
+            </button>
+          </div>
         </div>
       </div>
 

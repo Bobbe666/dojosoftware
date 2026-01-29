@@ -499,4 +499,263 @@ const formatCSVNumber = (num) => {
   return num.toFixed(2).replace('.', ',');
 };
 
+/**
+ * GET /api/euer/pdf/dojo/:dojo_id
+ * Generiert EÜR als PDF für ein Dojo
+ */
+router.get('/pdf/dojo/:dojo_id', async (req, res) => {
+  const { dojo_id } = req.params;
+  const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+
+  try {
+    // Dojo-Daten laden
+    const [dojoInfo] = await queryAsync(`
+      SELECT d.*, d.dojoname as name
+      FROM dojo d
+      WHERE d.id = ?
+    `, [dojo_id]);
+
+    // EÜR-Daten berechnen (gleiche Logik wie GET /dojo/:dojo_id)
+    const beitraege = await queryAsync(`
+      SELECT MONTH(zahlungsdatum) as monat, SUM(betrag) as summe
+      FROM beitraege WHERE dojo_id = ? AND YEAR(zahlungsdatum) = ? AND bezahlt = 1
+      GROUP BY MONTH(zahlungsdatum)
+    `, [dojo_id, jahr]);
+
+    const rechnungen = await queryAsync(`
+      SELECT MONTH(bezahlt_am) as monat, SUM(betrag) as summe
+      FROM rechnungen WHERE dojo_id = ? AND YEAR(bezahlt_am) = ? AND status = 'bezahlt'
+      GROUP BY MONTH(bezahlt_am)
+    `, [dojo_id, jahr]);
+
+    const verkaeufe = await queryAsync(`
+      SELECT MONTH(verkauf_datum) as monat, SUM(brutto_gesamt_cent) as summe_cent
+      FROM verkaeufe WHERE dojo_id = ? AND YEAR(verkauf_datum) = ? AND (storniert IS NULL OR storniert = 0)
+      GROUP BY MONTH(verkauf_datum)
+    `, [dojo_id, jahr]);
+
+    const ausgaben = await queryAsync(`
+      SELECT MONTH(geschaeft_datum) as monat, SUM(betrag_cent) as summe_cent
+      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+      GROUP BY MONTH(geschaeft_datum)
+    `, [dojo_id, jahr]);
+
+    // Monatliche Zusammenfassung
+    const monate = [];
+    for (let m = 1; m <= 12; m++) {
+      const beitragMonat = beitraege.find(b => b.monat === m);
+      const rechnungMonat = rechnungen.find(r => r.monat === m);
+      const verkaufMonat = verkaeufe.find(v => v.monat === m);
+      const ausgabeMonat = ausgaben.find(a => a.monat === m);
+
+      const einnahmen_beitraege = parseFloat(beitragMonat?.summe || 0);
+      const einnahmen_rechnungen = parseFloat(rechnungMonat?.summe || 0);
+      const einnahmen_verkaeufe = centToEuro(verkaufMonat?.summe_cent || 0);
+      const einnahmen_gesamt = einnahmen_beitraege + einnahmen_rechnungen + einnahmen_verkaeufe;
+      const ausgaben_gesamt = centToEuro(ausgabeMonat?.summe_cent || 0);
+
+      monate.push({
+        monat: m,
+        einnahmen: {
+          beitraege: einnahmen_beitraege,
+          rechnungen: einnahmen_rechnungen,
+          verkaeufe: einnahmen_verkaeufe,
+          gesamt: einnahmen_gesamt
+        },
+        ausgaben: { gesamt: ausgaben_gesamt },
+        ueberschuss: einnahmen_gesamt - ausgaben_gesamt
+      });
+    }
+
+    const jahresSumme = monate.reduce((acc, m) => ({
+      einnahmen_beitraege: acc.einnahmen_beitraege + m.einnahmen.beitraege,
+      einnahmen_rechnungen: acc.einnahmen_rechnungen + m.einnahmen.rechnungen,
+      einnahmen_verkaeufe: acc.einnahmen_verkaeufe + m.einnahmen.verkaeufe,
+      einnahmen_gesamt: acc.einnahmen_gesamt + m.einnahmen.gesamt,
+      ausgaben_gesamt: acc.ausgaben_gesamt + m.ausgaben.gesamt,
+      ueberschuss: acc.ueberschuss + m.ueberschuss
+    }), {
+      einnahmen_beitraege: 0, einnahmen_rechnungen: 0, einnahmen_verkaeufe: 0,
+      einnahmen_gesamt: 0, ausgaben_gesamt: 0, ueberschuss: 0
+    });
+
+    // PDF generieren
+    const generateEuerPdfHTML = require('../utils/euerPdfTemplate');
+    const puppeteer = require('puppeteer');
+
+    const html = generateEuerPdfHTML(
+      { jahr, monate, jahresSumme, isTDA: false },
+      dojoInfo
+    );
+
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+    });
+
+    await browser.close();
+
+    const filename = `EUER_${dojoInfo?.dojoname?.replace(/[^a-zA-Z0-9]/g, '_') || 'Dojo'}_${jahr}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error('EÜR PDF Fehler:', err);
+    res.status(500).json({ error: 'Fehler bei der PDF-Generierung', details: err.message });
+  }
+});
+
+/**
+ * GET /api/euer/pdf/tda
+ * Generiert EÜR als PDF für TDA International
+ */
+router.get('/pdf/tda', async (req, res) => {
+  const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+  const TDA_DOJO_ID = 2;
+
+  try {
+    // TDA-Daten laden
+    const [dojoInfo] = await queryAsync(`
+      SELECT d.*, d.dojoname as name
+      FROM dojo d
+      WHERE d.id = ?
+    `, [TDA_DOJO_ID]);
+
+    // TDA-spezifische Daten
+    const beitraege = await queryAsync(`
+      SELECT MONTH(zahlungsdatum) as monat, SUM(betrag) as summe
+      FROM beitraege WHERE dojo_id = ? AND YEAR(zahlungsdatum) = ? AND bezahlt = 1
+      GROUP BY MONTH(zahlungsdatum)
+    `, [TDA_DOJO_ID, jahr]);
+
+    const rechnungen = await queryAsync(`
+      SELECT MONTH(bezahlt_am) as monat, SUM(betrag) as summe
+      FROM rechnungen WHERE dojo_id = ? AND YEAR(bezahlt_am) = ? AND status = 'bezahlt'
+      GROUP BY MONTH(bezahlt_am)
+    `, [TDA_DOJO_ID, jahr]);
+
+    const verkaeufe = await queryAsync(`
+      SELECT MONTH(verkauf_datum) as monat, SUM(brutto_gesamt_cent) as summe_cent
+      FROM verkaeufe WHERE dojo_id = ? AND YEAR(verkauf_datum) = ? AND (storniert IS NULL OR storniert = 0)
+      GROUP BY MONTH(verkauf_datum)
+    `, [TDA_DOJO_ID, jahr]);
+
+    const verbandZahlungen = await queryAsync(`
+      SELECT MONTH(bezahlt_am) as monat, SUM(betrag_brutto) as summe
+      FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(bezahlt_am) = ? AND status = 'bezahlt'
+      GROUP BY MONTH(bezahlt_am)
+    `, [jahr]);
+
+    let softwareEinnahmen = [];
+    try {
+      softwareEinnahmen = await queryAsync(`
+        SELECT MONTH(bezahlt_am) as monat, SUM(betrag) as summe
+        FROM software_lizenzen WHERE YEAR(bezahlt_am) = ? AND status = 'bezahlt'
+        GROUP BY MONTH(bezahlt_am)
+      `, [jahr]);
+    } catch (e) {
+      // Tabelle existiert evtl. nicht
+    }
+
+    const ausgaben = await queryAsync(`
+      SELECT MONTH(geschaeft_datum) as monat, SUM(betrag_cent) as summe_cent
+      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+      GROUP BY MONTH(geschaeft_datum)
+    `, [TDA_DOJO_ID, jahr]);
+
+    // Monatliche Zusammenfassung
+    const monate = [];
+    for (let m = 1; m <= 12; m++) {
+      const beitragMonat = beitraege.find(b => b.monat === m);
+      const rechnungMonat = rechnungen.find(r => r.monat === m);
+      const verkaufMonat = verkaeufe.find(v => v.monat === m);
+      const verbandMonat = verbandZahlungen.find(v => v.monat === m);
+      const softwareMonat = softwareEinnahmen.find(s => s.monat === m);
+      const ausgabeMonat = ausgaben.find(a => a.monat === m);
+
+      const einnahmen_mitglieder = parseFloat(beitragMonat?.summe || 0);
+      const einnahmen_rechnungen = parseFloat(rechnungMonat?.summe || 0);
+      const einnahmen_verkaeufe = centToEuro(verkaufMonat?.summe_cent || 0);
+      const einnahmen_verband = parseFloat(verbandMonat?.summe || 0);
+      const einnahmen_software = parseFloat(softwareMonat?.summe || 0);
+      const einnahmen_gesamt = einnahmen_mitglieder + einnahmen_rechnungen +
+                               einnahmen_verkaeufe + einnahmen_verband + einnahmen_software;
+      const ausgaben_gesamt = centToEuro(ausgabeMonat?.summe_cent || 0);
+
+      monate.push({
+        monat: m,
+        einnahmen: {
+          mitglieder: einnahmen_mitglieder,
+          rechnungen: einnahmen_rechnungen,
+          verkaeufe: einnahmen_verkaeufe,
+          verbandsmitgliedschaften: einnahmen_verband,
+          software_lizenzen: einnahmen_software,
+          gesamt: einnahmen_gesamt
+        },
+        ausgaben: { gesamt: ausgaben_gesamt },
+        ueberschuss: einnahmen_gesamt - ausgaben_gesamt
+      });
+    }
+
+    const jahresSumme = monate.reduce((acc, m) => ({
+      einnahmen_mitglieder: acc.einnahmen_mitglieder + m.einnahmen.mitglieder,
+      einnahmen_rechnungen: acc.einnahmen_rechnungen + m.einnahmen.rechnungen,
+      einnahmen_verkaeufe: acc.einnahmen_verkaeufe + m.einnahmen.verkaeufe,
+      einnahmen_verband: acc.einnahmen_verband + m.einnahmen.verbandsmitgliedschaften,
+      einnahmen_software: acc.einnahmen_software + m.einnahmen.software_lizenzen,
+      einnahmen_gesamt: acc.einnahmen_gesamt + m.einnahmen.gesamt,
+      ausgaben_gesamt: acc.ausgaben_gesamt + m.ausgaben.gesamt,
+      ueberschuss: acc.ueberschuss + m.ueberschuss
+    }), {
+      einnahmen_mitglieder: 0, einnahmen_rechnungen: 0, einnahmen_verkaeufe: 0,
+      einnahmen_verband: 0, einnahmen_software: 0, einnahmen_gesamt: 0,
+      ausgaben_gesamt: 0, ueberschuss: 0
+    });
+
+    // PDF generieren
+    const generateEuerPdfHTML = require('../utils/euerPdfTemplate');
+    const puppeteer = require('puppeteer');
+
+    const html = generateEuerPdfHTML(
+      { jahr, monate, jahresSumme, isTDA: true },
+      { ...dojoInfo, dojoname: 'Tiger & Dragon Association International' }
+    );
+
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+    });
+
+    await browser.close();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="EUER_TDA_International_${jahr}.pdf"`);
+    res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error('TDA EÜR PDF Fehler:', err);
+    res.status(500).json({ error: 'Fehler bei der PDF-Generierung', details: err.message });
+  }
+});
+
 module.exports = router;
