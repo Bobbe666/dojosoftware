@@ -56,9 +56,12 @@ const authLimiter = rateLimit({
 // Statische Dateien für Uploads servieren - MUSS VOR Content-Type Middleware kommen!
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// UTF-8 Encoding für alle Responses - ERWEITERT
+// UTF-8 Encoding für JSON Responses (nicht für PDFs/Binärdaten)
 app.use((req, res, next) => {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  // Überspringe PDF und andere Binär-Routen
+  if (!req.path.includes('/pdf') && !req.path.includes('/export')) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  }
   next();
 });
 

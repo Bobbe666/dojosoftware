@@ -614,8 +614,9 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache');
     console.log('[EÜR PDF] Sende PDF:', filename);
-    res.send(pdfBuffer);
+    res.end(Buffer.from(pdfBuffer));
 
   } catch (err) {
     console.error('[EÜR PDF] Fehler:', err);
@@ -757,7 +758,9 @@ router.get('/pdf/tda', async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="EUER_TDA_International_${jahr}.pdf"`);
-    res.send(pdfBuffer);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache');
+    res.end(Buffer.from(pdfBuffer));
 
   } catch (err) {
     console.error('TDA EÜR PDF Fehler:', err);
