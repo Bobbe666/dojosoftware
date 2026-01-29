@@ -580,6 +580,7 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
     });
 
     // PDF generieren
+    console.log('[EÜR PDF] Starte PDF-Generierung für Dojo', dojo_id, 'Jahr', jahr);
     const generateEuerPdfHTML = require('../utils/euerPdfTemplate');
     const puppeteer = require('puppeteer');
 
@@ -587,20 +588,24 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
       { jahr, monate, jahresSumme, isTDA: false },
       dojoInfo
     );
+    console.log('[EÜR PDF] HTML generiert, Länge:', html.length);
 
     const browser = await puppeteer.launch({
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
+    console.log('[EÜR PDF] Browser gestartet');
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    console.log('[EÜR PDF] HTML geladen');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
     });
+    console.log('[EÜR PDF] PDF generiert, Größe:', pdfBuffer.length);
 
     await browser.close();
 
@@ -608,10 +613,12 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    console.log('[EÜR PDF] Sende PDF:', filename);
     res.send(pdfBuffer);
 
   } catch (err) {
-    console.error('EÜR PDF Fehler:', err);
+    console.error('[EÜR PDF] Fehler:', err);
     res.status(500).json({ error: 'Fehler bei der PDF-Generierung', details: err.message });
   }
 });

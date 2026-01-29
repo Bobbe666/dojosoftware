@@ -136,8 +136,17 @@ const EuerUebersicht = ({ isTDA = false }) => {
 
       const response = await fetchWithAuth(endpoint);
 
+      // Prüfe ob Antwort erfolgreich und PDF ist
+      const contentType = response.headers.get('content-type');
+
       if (!response.ok) {
-        throw new Error('PDF-Generierung fehlgeschlagen');
+        // Versuche Fehlermeldung aus JSON zu lesen
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.details || 'PDF-Generierung fehlgeschlagen');
+      }
+
+      if (!contentType || !contentType.includes('application/pdf')) {
+        throw new Error('Server hat kein PDF zurückgegeben');
       }
 
       const blob = await response.blob();
