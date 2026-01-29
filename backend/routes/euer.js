@@ -80,7 +80,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
     `;
     const verkaeufe = await queryAsync(verkaufeQuery, [dojo_id, jahr]);
 
-    // 4. Kassenbuch Ausgaben
+    // 4. Kassenbuch Ausgaben (gesamt pro Monat)
     const ausgabenQuery = `
       SELECT
         MONTH(geschaeft_datum) as monat,
@@ -92,6 +92,37 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       GROUP BY MONTH(geschaeft_datum)
     `;
     const ausgaben = await queryAsync(ausgabenQuery, [dojo_id, jahr]);
+
+    // 5. Kassenbuch Ausgaben nach Kategorien
+    const ausgabenKategorienQuery = `
+      SELECT
+        MONTH(geschaeft_datum) as monat,
+        COALESCE(kategorie, 'sonstiges') as kategorie,
+        SUM(betrag_cent) as summe_cent
+      FROM kassenbuch
+      WHERE dojo_id = ?
+        AND YEAR(geschaeft_datum) = ?
+        AND bewegungsart = 'Ausgabe'
+      GROUP BY MONTH(geschaeft_datum), kategorie
+    `;
+    const ausgabenKategorien = await queryAsync(ausgabenKategorienQuery, [dojo_id, jahr]);
+
+    // Ausgaben-Kategorien Definition
+    const ausgabenKatDef = [
+      { key: 'miete', label: 'Miete & Nebenkosten' },
+      { key: 'personal', label: 'Personalkosten' },
+      { key: 'material', label: 'Material & Ausstattung' },
+      { key: 'marketing', label: 'Marketing & Werbung' },
+      { key: 'versicherung', label: 'Versicherungen' },
+      { key: 'gebuehren', label: 'Gebühren & Beiträge' },
+      { key: 'fahrtkosten', label: 'Fahrtkosten' },
+      { key: 'telefon', label: 'Telefon & Internet' },
+      { key: 'software', label: 'Software & Lizenzen' },
+      { key: 'fortbildung', label: 'Fortbildung & Seminare' },
+      { key: 'reparatur', label: 'Reparaturen & Wartung' },
+      { key: 'buero', label: 'Büromaterial' },
+      { key: 'sonstiges', label: 'Sonstige Ausgaben' }
+    ];
 
     // Monatliche Zusammenfassung erstellen
     const monate = [];
@@ -109,6 +140,13 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       const ausgaben_gesamt = centToEuro(ausgabeMonat?.summe_cent || 0);
       const ueberschuss = einnahmen_gesamt - ausgaben_gesamt;
 
+      // Ausgaben nach Kategorien für diesen Monat
+      const ausgabenDetails = {};
+      ausgabenKatDef.forEach(kat => {
+        const found = ausgabenKategorien.find(a => a.monat === m && a.kategorie === kat.key);
+        ausgabenDetails[kat.key] = centToEuro(found?.summe_cent || 0);
+      });
+
       monate.push({
         monat: m,
         monat_name: new Date(jahr, m - 1, 1).toLocaleString('de-DE', { month: 'long' }),
@@ -119,28 +157,42 @@ router.get('/dojo/:dojo_id', async (req, res) => {
           gesamt: einnahmen_gesamt
         },
         ausgaben: {
+          ...ausgabenDetails,
           gesamt: ausgaben_gesamt
         },
         ueberschuss
       });
     }
 
-    // Jahressummen
-    const jahresSumme = monate.reduce((acc, m) => ({
-      einnahmen_beitraege: acc.einnahmen_beitraege + m.einnahmen.beitraege,
-      einnahmen_rechnungen: acc.einnahmen_rechnungen + m.einnahmen.rechnungen,
-      einnahmen_verkaeufe: acc.einnahmen_verkaeufe + m.einnahmen.verkaeufe,
-      einnahmen_gesamt: acc.einnahmen_gesamt + m.einnahmen.gesamt,
-      ausgaben_gesamt: acc.ausgaben_gesamt + m.ausgaben.gesamt,
-      ueberschuss: acc.ueberschuss + m.ueberschuss
-    }), {
+    // Jahressummen (inkl. Ausgaben-Kategorien)
+    const jahresSummeInit = {
       einnahmen_beitraege: 0,
       einnahmen_rechnungen: 0,
       einnahmen_verkaeufe: 0,
       einnahmen_gesamt: 0,
       ausgaben_gesamt: 0,
       ueberschuss: 0
+    };
+    // Ausgaben-Kategorien initialisieren
+    ausgabenKatDef.forEach(kat => {
+      jahresSummeInit[`ausgaben_${kat.key}`] = 0;
     });
+
+    const jahresSumme = monate.reduce((acc, m) => {
+      const result = {
+        einnahmen_beitraege: acc.einnahmen_beitraege + m.einnahmen.beitraege,
+        einnahmen_rechnungen: acc.einnahmen_rechnungen + m.einnahmen.rechnungen,
+        einnahmen_verkaeufe: acc.einnahmen_verkaeufe + m.einnahmen.verkaeufe,
+        einnahmen_gesamt: acc.einnahmen_gesamt + m.einnahmen.gesamt,
+        ausgaben_gesamt: acc.ausgaben_gesamt + m.ausgaben.gesamt,
+        ueberschuss: acc.ueberschuss + m.ueberschuss
+      };
+      // Ausgaben-Kategorien summieren
+      ausgabenKatDef.forEach(kat => {
+        result[`ausgaben_${kat.key}`] = (acc[`ausgaben_${kat.key}`] || 0) + (m.ausgaben[kat.key] || 0);
+      });
+      return result;
+    }, jahresSummeInit);
 
     res.json({
       success: true,
@@ -540,6 +592,29 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
       GROUP BY MONTH(geschaeft_datum)
     `, [dojo_id, jahr]);
 
+    // Ausgaben nach Kategorien
+    const ausgabenKategorien = await queryAsync(`
+      SELECT MONTH(geschaeft_datum) as monat, COALESCE(kategorie, 'sonstiges') as kategorie, SUM(betrag_cent) as summe_cent
+      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+      GROUP BY MONTH(geschaeft_datum), kategorie
+    `, [dojo_id, jahr]);
+
+    const ausgabenKatDef = [
+      { key: 'miete', label: 'Miete & Nebenkosten' },
+      { key: 'personal', label: 'Personalkosten' },
+      { key: 'material', label: 'Material & Ausstattung' },
+      { key: 'marketing', label: 'Marketing & Werbung' },
+      { key: 'versicherung', label: 'Versicherungen' },
+      { key: 'gebuehren', label: 'Gebühren & Beiträge' },
+      { key: 'fahrtkosten', label: 'Fahrtkosten' },
+      { key: 'telefon', label: 'Telefon & Internet' },
+      { key: 'software', label: 'Software & Lizenzen' },
+      { key: 'fortbildung', label: 'Fortbildung & Seminare' },
+      { key: 'reparatur', label: 'Reparaturen & Wartung' },
+      { key: 'buero', label: 'Büromaterial' },
+      { key: 'sonstiges', label: 'Sonstige Ausgaben' }
+    ];
+
     // Monatliche Zusammenfassung
     const monate = [];
     for (let m = 1; m <= 12; m++) {
@@ -554,6 +629,13 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
       const einnahmen_gesamt = einnahmen_beitraege + einnahmen_rechnungen + einnahmen_verkaeufe;
       const ausgaben_gesamt = centToEuro(ausgabeMonat?.summe_cent || 0);
 
+      // Ausgaben nach Kategorien für diesen Monat
+      const ausgabenDetails = {};
+      ausgabenKatDef.forEach(kat => {
+        const found = ausgabenKategorien.find(a => a.monat === m && a.kategorie === kat.key);
+        ausgabenDetails[kat.key] = centToEuro(found?.summe_cent || 0);
+      });
+
       monate.push({
         monat: m,
         einnahmen: {
@@ -562,7 +644,7 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
           verkaeufe: einnahmen_verkaeufe,
           gesamt: einnahmen_gesamt
         },
-        ausgaben: { gesamt: ausgaben_gesamt },
+        ausgaben: { ...ausgabenDetails, gesamt: ausgaben_gesamt },
         ueberschuss: einnahmen_gesamt - ausgaben_gesamt
       });
     }
