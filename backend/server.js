@@ -807,6 +807,11 @@ try {
   const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften.js"));
   app.use("/api/verbandsmitgliedschaften", verbandsmitgliedschaftenRouter);
   logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften' });
+
+  // Shop Routes
+  const shopRouter = require(path.join(__dirname, "routes", "shop.js"));
+  app.use("/api/shop", shopRouter);
+  logger.success("Route gemountet", { path: "/api/shop" });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'verbandsmitgliedschaften',
