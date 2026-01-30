@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/create-css-placeholders.cjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -23,12 +23,15 @@
     "grapesjs": "^0.22.13",
     "grapesjs-preset-webpage": "^1.0.3",
     "html5-qrcode": "^2.3.8",
+    "i18next": "^25.8.0",
+    "i18next-browser-languagedetector": "^8.2.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.484.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-calendar": "^5.1.0",
     "react-dom": "^18.2.0",
+    "react-i18next": "^16.5.4",
     "react-router": "^7.4.0",
     "react-router-dom": "^7.4.0",
     "react-signature-canvas": "^1.1.0-alpha.2",
