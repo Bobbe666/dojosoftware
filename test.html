@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .container {
+            background: #1a1a2e;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #ffd700;
+            margin-top: 0;
+        }
+        .info {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #0f0f23;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test erfolgreich!</h1>
+        <div class="info">
+            <p><strong>Diese Seite lädt korrekt.</strong></p>
+            <p>Datum/Zeit: <span id="datetime"></span></p>
+            <p>User-Agent: <span id="useragent"></span></p>
+            <p>Bildschirmgröße: <span id="screensize"></span></p>
+        </div>
+        <a href="/login" class="btn">Zur Login-Seite</a>
+        <a href="/" class="btn" style="margin-left: 1rem;">Zur Hauptseite</a>
+    </div>
+
+    <script>
+        document.getElementById('datetime').textContent = new Date().toLocaleString('de-DE');
+        document.getElementById('useragent').textContent = navigator.userAgent;
+        document.getElementById('screensize').textContent = window.innerWidth + ' x ' + window.innerHeight;
+
+        console.log('Test-Seite erfolgreich geladen');
+        console.log('Zeit:', new Date().toISOString());
+    </script>
+</body>
+</html>

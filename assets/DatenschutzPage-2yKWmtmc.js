@@ -1,0 +1,1 @@
+import{j as i}from"./animation-1wuIdCBS.js";import"./vendor-router-BhMXg4Z-.js";import"./vendor-react-DtuzQOD1.js";const t=()=>i.jsxs("div",{style:{padding:"2rem",maxWidth:"800px",margin:"0 auto"},children:[i.jsx("h1",{children:"Datenschutz"}),i.jsx("p",{children:"Diese Seite ist in Entwicklung."})]});export{t as default};
