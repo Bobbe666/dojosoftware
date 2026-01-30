@@ -12,8 +12,9 @@ import '../styles/themes.css';
 import '../styles/Dashboard-TdaVib.css';  // ✨ TDA-VIB STYLE!
 import '../styles/components.css';
 import '../styles/BuddyVerwaltung.css';
-import logo from '../assets/dojo-logo.png';
 import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown } from 'lucide-react';
+
+const logo = '/dojo-logo.png';
 import DojoSwitcher from './DojoSwitcher';
 import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';

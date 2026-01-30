@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import axios from 'axios';
-import logo from '../assets/dojo-logo.png';
 import '../styles/Dashboard.css';
+
+const logo = '/dojo-logo.png';
 
 const MemberHeader = () => {
   const navigate = useNavigate();

@@ -7,8 +7,9 @@ import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
-import dojoLogo from '../assets/dojo-logo.png';
 import '../styles/Buttons.css';
+
+const dojoLogo = '/dojo-logo.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({

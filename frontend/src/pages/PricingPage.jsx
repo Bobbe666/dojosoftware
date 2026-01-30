@@ -4,8 +4,9 @@ import axios from 'axios';
 import config from '../config';
 import '../styles/themes.css';
 import './PricingPage.css';
-import dojoLogo from '../assets/dojo-logo.png';
 import PublicFooter from '../components/PublicFooter';
+
+const dojoLogo = '/dojo-logo.png';
 
 function PricingPage() {
   const navigate = useNavigate();

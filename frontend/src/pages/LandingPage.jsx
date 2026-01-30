@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/themes.css';
 import './LandingPage.css';
-import dojoLogo from '../assets/dojo-logo.png';
+const dojoLogo = '/dojo-logo.png';
 
 function LandingPage() {
   const navigate = useNavigate();

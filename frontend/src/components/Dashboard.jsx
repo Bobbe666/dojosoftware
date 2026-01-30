@@ -13,8 +13,9 @@ import '../styles/themes.css';         // Centralized theme system
 import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR components.css stehen!)
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
-import logo from '../assets/dojo-logo.png';
 import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, ArrowLeft } from 'lucide-react';
+
+const logo = '/dojo-logo.png';
 import DojoSwitcher from './DojoSwitcher';
 import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';

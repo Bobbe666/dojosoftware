@@ -3,8 +3,9 @@ import { useAuth } from "../context/AuthContext.jsx";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/DashboardStart.css"; // Relativer Pfad
-import dojoLogo from "../assets/dojo-logo.png";
 import { Users, CalendarClock, BookOpenCheck, UserCog } from "lucide-react";
+
+const dojoLogo = '/dojo-logo.png';
 import MemberDashboard from "./MemberDashboard";
 import AgbStatusWidget from "./AgbStatusWidget";
 

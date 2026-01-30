@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Clock, Mail, Phone, CheckCircle } from 'lucide-react';
 import '../styles/TrialExpired.css';
-import logo from '../assets/dojo-logo.png';
+
+const logo = '/dojo-logo.png';
 
 const TrialExpired = ({ trialInfo }) => {
   const [daysExpired, setDaysExpired] = useState(0);
