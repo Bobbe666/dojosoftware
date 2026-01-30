@@ -77,7 +77,7 @@ const getNextTicketNummer = async () => {
 // Prüfen ob User Zugriff auf Ticket hat
 const hatZugriff = (ticket, user) => {
   // SuperAdmin hat immer Zugriff
-  if (user.role === 'super_admin' || user.username === 'admin') {
+  if (user.rolle === 'super_admin' || user.username === 'admin') {
     return true;
   }
 
@@ -87,7 +87,7 @@ const hatZugriff = (ticket, user) => {
   }
 
   // Admin im gleichen Dojo
-  if (user.role === 'admin' && ticket.dojo_id === user.dojo_id) {
+  if (user.rolle === 'admin' && ticket.dojo_id === user.dojo_id) {
     return true;
   }
 
@@ -101,7 +101,8 @@ const hatZugriff = (ticket, user) => {
 
 // Ist Admin/Bearbeiter?
 const istBearbeiter = (user) => {
-  return user.role === 'admin' || user.role === 'super_admin' || user.username === 'admin';
+  if (!user) return false;
+  return user.rolle === 'admin' || user.rolle === 'super_admin' || user.username === 'admin';
 };
 
 // ============================================================================
@@ -126,9 +127,9 @@ router.get('/', async (req, res) => {
     const params = [];
 
     // Berechtigungs-Filter
-    if (user.role === 'super_admin' || user.username === 'admin') {
+    if (user.rolle === 'super_admin' || user.username === 'admin') {
       // SuperAdmin sieht alle Tickets
-    } else if (user.role === 'admin') {
+    } else if (user.rolle === 'admin') {
       // Admin sieht Tickets des eigenen Dojos + eigene
       query += ' AND (t.dojo_id = ? OR t.ersteller_id = ? OR t.zugewiesen_an = ?)';
       params.push(user.dojo_id, user.user_id || user.id, user.user_id || user.id);
@@ -175,9 +176,9 @@ router.get('/', async (req, res) => {
       let countQuery = 'SELECT COUNT(*) as total FROM support_tickets t WHERE 1=1';
       const countParams = [];
 
-      if (user.role === 'super_admin' || user.username === 'admin') {
+      if (user.rolle === 'super_admin' || user.username === 'admin') {
         // Alle
-      } else if (user.role === 'admin') {
+      } else if (user.rolle === 'admin') {
         countQuery += ' AND (t.dojo_id = ? OR t.ersteller_id = ? OR t.zugewiesen_an = ?)';
         countParams.push(user.dojo_id, user.user_id || user.id, user.user_id || user.id);
       } else {
@@ -328,7 +329,7 @@ router.post('/', async (req, res) => {
     const ticketNummer = await getNextTicketNummer();
 
     // Ersteller-Info ermitteln
-    const erstellerTyp = user.role === 'admin' || user.role === 'super_admin' ? 'admin' :
+    const erstellerTyp = user.rolle === 'admin' || user.rolle === 'super_admin' ? 'admin' :
                          user.mitglied_id ? 'mitglied' : 'user';
     const erstellerName = user.vorname && user.nachname ?
                           `${user.vorname} ${user.nachname}` :

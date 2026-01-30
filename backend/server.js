@@ -68,7 +68,8 @@ app.use((req, res, next) => {
 // CORS mit Sicherheitskonfiguration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:5001'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:5001',
+     'https://tda-intl.com', 'https://www.tda-intl.com', 'http://tda-intl.com', 'http://www.tda-intl.com'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -182,6 +183,19 @@ try {
   });
 }
 
+// 1.0.1 ÖFFENTLICHE PROBETRAINING-BUCHUNG (vor Authentifizierung)
+try {
+  const publicProbetrainingRoutes = require('./routes/public-probetraining');
+  app.use('/api/public/probetraining', publicProbetrainingRoutes);
+  logger.success('Route geladen', { path: '/api/public/probetraining' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'public probetraining',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // 1.1 DOJO ONBOARDING (SaaS Multi-Tenant Registration)
 try {
   const dojoOnboardingRoutes = require('./routes/dojo-onboarding');
@@ -273,6 +287,19 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'audit-log routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// EMAIL-SETTINGS ROUTES (globale und Dojo-spezifische E-Mail-Konfiguration)
+try {
+  const emailSettingsRoutes = require('./routes/email-settings');
+  app.use('/api/email-settings', authenticateToken, emailSettingsRoutes);
+  logger.success('Route gemountet', { path: '/api/email-settings' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'email-settings routes',
       error: error.message,
       stack: error.stack
     });
@@ -806,43 +833,23 @@ try {
 try {
   const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften.js"));
   app.use("/api/verbandsmitgliedschaften", verbandsmitgliedschaftenRouter);
-  logger.success("Route gemountet", { path: "/api/verbandsmitgliedschaften" });
+  logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften' });
 } catch (error) {
-  logger.error("Fehler beim Laden der Route", {
-      route: "verbandsmitgliedschaften",
+  logger.error('Fehler beim Laden der Route', {
+      route: 'verbandsmitgliedschaften',
       error: error.message,
       stack: error.stack
     });
 }
 
-// 10.6 SHOP - TDA Verband Shop
+// 10.6 VERBAND-AUTH - Login/Register für Verbandsmitglieder-Portal
 try {
-
-
-  const shopRouter = require(path.join(__dirname, "routes", "shop.js"));
-  app.use("/api/shop", shopRouter);
-  logger.success("Route gemountet", { path: "/api/shop" });
-
-// 10.7 ENTWICKLUNGSZIELE
-try {
-  const entwicklungszieleRouter = require(path.join(__dirname, "routes", "entwicklungsziele.js"));
-  app.use("/api/entwicklungsziele", entwicklungszieleRouter);
-  logger.success("Route gemountet", { path: "/api/entwicklungsziele" });
-} catch (error) {
-  logger.error("Fehler beim Laden der Route", { route: "entwicklungsziele", error: error.message });
-
-// 10.8 SUPPORT-TICKETS
-try {
-  const supportTicketsRouter = require(path.join(__dirname, "routes", "support-tickets.js"));
-  app.use("/api/support-tickets", authenticateToken, supportTicketsRouter);
-  logger.success("Route gemountet", { path: "/api/support-tickets" });
-} catch (error) {
-  logger.error("Fehler beim Laden der Route", { route: "support-tickets", error: error.message });
-}
-}
+  const verbandAuthRouter = require(path.join(__dirname, "routes", "verband-auth.js"));
+  app.use("/api/verband-auth", verbandAuthRouter);
+  logger.success('Route gemountet', { path: '/api/verband-auth' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
-      route: 'verbandsmitgliedschaften',
+      route: 'verband-auth',
       error: error.message,
       stack: error.stack
     });
