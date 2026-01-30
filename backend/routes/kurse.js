@@ -74,7 +74,9 @@ router.get("/", (req, res) => {
                 if (kurs.trainer_ids && typeof kurs.trainer_ids === 'string') {
                     try {
                         trainerIds = JSON.parse(kurs.trainer_ids);
-                    } catch (e) {}
+                    } catch (e) {
+                        // Ungültiges JSON in trainer_ids - verwende leeres Array
+                    }
                 } else if (Array.isArray(kurs.trainer_ids)) {
                     trainerIds = kurs.trainer_ids;
                 } else if (kurs.trainer_id) {
@@ -113,7 +115,9 @@ router.get("/", (req, res) => {
                     if (kurs.trainer_ids && typeof kurs.trainer_ids === 'string') {
                         try {
                             trainerIds = JSON.parse(kurs.trainer_ids);
-                        } catch (e) {}
+                        } catch (e) {
+                            // Ungültiges JSON in trainer_ids - verwende leeres Array
+                        }
                     } else if (Array.isArray(kurs.trainer_ids)) {
                         trainerIds = kurs.trainer_ids;
                     } else if (kurs.trainer_id) {

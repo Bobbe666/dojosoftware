@@ -294,7 +294,9 @@ router.post('/', async (req, res) => {
             newAdmin.berechtigungen = typeof newAdmin.berechtigungen === 'string'
               ? JSON.parse(newAdmin.berechtigungen)
               : newAdmin.berechtigungen;
-          } catch (e) {}
+          } catch (e) {
+            // Ungültiges JSON in berechtigungen - behalte String
+          }
 
           res.status(201).json(newAdmin);
         });
@@ -424,7 +426,9 @@ router.put('/:id', async (req, res) => {
             updatedAdmin.berechtigungen = typeof updatedAdmin.berechtigungen === 'string'
               ? JSON.parse(updatedAdmin.berechtigungen)
               : updatedAdmin.berechtigungen;
-          } catch (e) {}
+          } catch (e) {
+            // Ungültiges JSON in berechtigungen - behalte String
+          }
 
           res.json(updatedAdmin);
         });
