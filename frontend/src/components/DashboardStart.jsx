@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/DashboardStart.css"; // Relativer Pfad
-import dojoLogo from "../assets/dojo-logo.png";
+const dojoLogo = "/dojo-logo.png";
 import { Users, CalendarClock, BookOpenCheck, UserCog, Ticket } from "lucide-react";
 import MemberDashboard from "./MemberDashboard";
 import AgbStatusWidget from "./AgbStatusWidget";

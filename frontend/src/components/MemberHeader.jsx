@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import axios from 'axios';
-import logo from '../assets/dojo-logo.png';
+const logo = '/dojo-logo.png';
 import '../styles/Dashboard.css';
 import LanguageSwitcher from './LanguageSwitcher';
 
