@@ -1,0 +1,99 @@
+{
+  "header": {
+    "title": "My Dojo Dashboard",
+    "dashboard": "Dashboard",
+    "support": "Support",
+    "wishlist": "Wishlist",
+    "logout": "Logout"
+  },
+  "welcome": {
+    "title": "Welcome back",
+    "subtitle": "Your personal training overview"
+  },
+  "stats": {
+    "trainingHours": "Training Hours",
+    "attendance": "Attendance",
+    "belt": "Belt",
+    "openFees": "Open Fees"
+  },
+  "navigation": {
+    "myData": "My Data",
+    "mySchedule": "My Schedule",
+    "myPayments": "My Payments",
+    "myStats": "My Statistics",
+    "styleAndBelt": "Style & Belt",
+    "equipment": "Equipment",
+    "calendarSync": "Calendar Sync"
+  },
+  "quickActions": {
+    "checkin": "Check-in",
+    "myQrCode": "My QR Code",
+    "installApp": "Install App",
+    "events": "Events",
+    "notifications": "Notifications"
+  },
+  "info": {
+    "title": "Your Information",
+    "trainerRecommendation": "Trainer Recommendation",
+    "medicalNotes": "Medical Notes",
+    "nextExam": "Next Exam",
+    "daysRemaining": "days remaining",
+    "trainingProgress": "Training Progress",
+    "hoursRemaining": "Still",
+    "ready": "Ready",
+    "clickForDetails": "Click \"Style & Belt\" for details",
+    "myMartialArtsStyles": "My Martial Arts Styles",
+    "lastExam": "Last exam",
+    "familyDiscount": "Family Discount",
+    "discountText": "You receive {{percent}}% discount ({{reason}})"
+  },
+  "exams": {
+    "approvedExams": "Approved Exams",
+    "examTo": "Exam for",
+    "dateWillBeAnnounced": "Date will be announced",
+    "inDays": "In {{days}} days",
+    "registerNow": "Register Now",
+    "participationConfirmed": "Participation confirmed",
+    "examResults": "Exam Results",
+    "moreExams": "+{{count}} more exams",
+    "score": "Score"
+  },
+  "examRegistration": {
+    "title": "Exam Registration",
+    "subtitle": "Confirm your participation",
+    "martialArtsStyle": "Martial Arts Style",
+    "examTo": "Exam for",
+    "dateAndTime": "Date & Time",
+    "time": "Time",
+    "location": "Location",
+    "examFee": "Exam Fee",
+    "deadline": "Registration Deadline",
+    "recommendedBeltLength": "Recommended Belt Length",
+    "remarks": "Remarks",
+    "conditions": "Participation Conditions",
+    "confirmParticipation": "I hereby confirm my participation in the exam and accept the participation conditions. I am aware that the exam fee is due.",
+    "cancel": "Cancel",
+    "confirmButton": "Confirm Participation",
+    "acceptConditions": "Please accept the participation conditions.",
+    "successMessage": "Your participation has been successfully confirmed!",
+    "errorMessage": "Error during registration"
+  },
+  "notifications": {
+    "title": "Push Notifications",
+    "confirm": "Confirm",
+    "confirmedAt": "Confirmed on",
+    "justNow": "Just now",
+    "noNotifications": "No new notifications",
+    "moreNotifications": "+{{count}} more notifications",
+    "confirmSuccess": "Notification confirmed!",
+    "confirmError": "Error confirming notification"
+  },
+  "birthday": {
+    "title": "Happy Birthday!",
+    "message": "Happy {{age}}th birthday! We wish you a wonderful day!"
+  },
+  "errors": {
+    "noMemberProfile": "No member profile found. Please contact the administrator.",
+    "loadingError": "Error loading member data"
+  }
+}

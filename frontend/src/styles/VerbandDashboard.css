@@ -1,0 +1,676 @@
+/* VerbandDashboard.css */
+/* Styling für das TDA Verband Dashboard */
+
+.verband-dashboard {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.verband-dashboard.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+
+.loading-spinner .spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Kompakter Subheader */
+.verband-subheader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.subheader-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.subheader-icon {
+  color: #3B82F6;
+}
+
+.btn-refresh-small {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-small:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  color: #ef4444;
+  margin-bottom: 1.5rem;
+}
+
+/* Tab Navigation */
+.verband-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-card);
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.verband-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.verband-tab:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.verband-tab.active {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Stats Grid */
+.verband-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.verband-stat-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.verband-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.verband-stat-card .stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.verband-stat-card.primary .stat-icon {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+}
+
+.verband-stat-card.secondary .stat-icon {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8B5CF6;
+}
+
+.verband-stat-card.success .stat-icon {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.verband-stat-card.warning .stat-icon {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.verband-stat-card.gold .stat-icon {
+  background: rgba(218, 165, 32, 0.15);
+  color: #DAA520;
+}
+
+.verband-stat-card.info .stat-icon {
+  background: rgba(14, 165, 233, 0.15);
+  color: #0ea5e9;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stat-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.stat-badge .badge-text {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  color: var(--text-secondary);
+}
+
+/* Content Grid */
+.verband-content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Panel */
+.verband-panel {
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.panel-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: #3B82F6;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-secondary);
+}
+
+.panel-content {
+  padding: 1rem 1.5rem;
+}
+
+/* Mitgliedschaft List */
+.mitgliedschaft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mitgliedschaft-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.mitgliedschaft-item:hover {
+  background: var(--bg-elevated);
+}
+
+.mitgliedschaft-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 10px;
+  color: #3B82F6;
+  flex-shrink: 0;
+}
+
+.mitgliedschaft-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mitgliedschaft-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.mitgliedschaft-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Event List */
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+.event-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  border-radius: 8px;
+  min-width: 50px;
+}
+
+.event-date .date-day {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+
+.event-date .date-month {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.event-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.event-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.event-location {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-state svg {
+  opacity: 0.4;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.empty-state.large {
+  padding: 4rem 2rem;
+}
+
+.empty-state.large h4 {
+  margin: 0.5rem 0;
+  color: var(--text-primary);
+}
+
+/* Quick Actions */
+.verband-quick-actions {
+  margin-top: 1.5rem;
+}
+
+.verband-quick-actions h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+}
+
+.quick-action-btn:hover {
+  background: var(--bg-elevated);
+  border-color: #3B82F6;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+}
+
+.quick-action-btn svg {
+  color: #3B82F6;
+}
+
+.quick-action-btn span {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Info Banner */
+.info-banner {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.1) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 14px;
+}
+
+.info-banner > svg {
+  flex-shrink: 0;
+  color: #3B82F6;
+}
+
+.info-banner h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.info-banner p {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Events List Full */
+.events-list-full {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.event-card {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.event-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.event-card-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  border-radius: 12px;
+  min-width: 80px;
+}
+
+.event-card-date .date-day {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.event-card-date .date-month {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+}
+
+.event-card-date .date-year {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.event-card-content {
+  flex: 1;
+}
+
+.event-card-content h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.event-card-content p {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.event-meta {
+  display: flex;
+  gap: 1rem;
+}
+
+.event-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .verband-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .verband-dashboard {
+    padding: 1rem;
+  }
+
+  .verband-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+  }
+
+  .verband-tabs {
+    flex-wrap: wrap;
+  }
+
+  .verband-tab {
+    flex: 1;
+    justify-content: center;
+    min-width: 100px;
+  }
+
+  .verband-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .quick-action-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .info-banner {
+    flex-direction: column;
+  }
+
+  .event-card {
+    flex-direction: column;
+  }
+
+  .event-card-date {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .verband-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verband-tab span {
+    display: none;
+  }
+
+  .verband-tab {
+    padding: 0.75rem;
+  }
+}

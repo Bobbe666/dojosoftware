@@ -411,6 +411,7 @@ const SuperAdminDashboard = () => {
   // Verbandsmitglieder wurden ins separate Verband-Dashboard verschoben
   const tabs = [
     { id: 'overview', label: 'Übersicht', icon: '📊' },
+    { id: 'verbandsmitglieder', label: 'Verbandsmitglieder', icon: '🏆' },
     { id: 'entwicklung', label: 'Entwicklung', icon: '🎯' },
     { id: 'support', label: 'Support', icon: '🎫' },
     { id: 'statistics', label: 'Statistiken', icon: '📈' },
