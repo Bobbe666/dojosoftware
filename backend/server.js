@@ -806,9 +806,19 @@ try {
 try {
   const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften.js"));
   app.use("/api/verbandsmitgliedschaften", verbandsmitgliedschaftenRouter);
-  logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften' });
+  logger.success("Route gemountet", { path: "/api/verbandsmitgliedschaften" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", {
+      route: "verbandsmitgliedschaften",
+      error: error.message,
+      stack: error.stack
+    });
+}
 
-  // Shop Routes
+// 10.6 SHOP - TDA Verband Shop
+try {
+
+
   const shopRouter = require(path.join(__dirname, "routes", "shop.js"));
   app.use("/api/shop", shopRouter);
   logger.success("Route gemountet", { path: "/api/shop" });
