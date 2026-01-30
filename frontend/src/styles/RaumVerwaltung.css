@@ -1,4 +1,4 @@
-/* RaumVerwaltung.css - Styles für die Raumverwaltung */
+/* RaumVerwaltung.css - Styles für die Raumverwaltung (Dark Theme) */
 
 .raum-verwaltung {
   padding: 0;
@@ -14,246 +14,270 @@
   gap: 1rem;
 }
 
-.section-header {
+.raum-verwaltung .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: white;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-.header-content {
+.raum-verwaltung .header-content {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.header-icon {
-  color: var(--primary);
+.raum-verwaltung .header-icon {
+  color: var(--primary, #ffd700) !important;
   width: 24px;
   height: 24px;
 }
 
-.header-content h2 {
+.raum-verwaltung .header-content h2 {
   margin: 0;
-  color: #1F2937;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: #ffd700 !important;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  text-transform: none !important;
+  font-style: normal !important;
+  letter-spacing: normal !important;
 }
 
-.header-content p {
+.raum-verwaltung .header-content p {
   margin: 0;
-  color: #6B7280;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-size: 0.9rem;
 }
 
 /* Formular für neuen Raum */
-.room-form-card {
-  background: white;
+.raum-verwaltung .room-form-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
-.form-header {
+.raum-verwaltung .form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #E5E7EB;
-  background: #F9FAFB;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2) !important;
 }
 
-.form-header h3 {
+.raum-verwaltung .form-header h3 {
   margin: 0;
-  color: #1F2937;
+  color: #ffd700 !important;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
-.form-grid {
+.raum-verwaltung .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1rem;
   padding: 1.5rem;
 }
 
-.form-group {
+.raum-verwaltung .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-group label {
+.raum-verwaltung .form-group label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.form-input {
+.raum-verwaltung .form-input {
   padding: 0.75rem;
-  border: 1px solid #D1D5DB;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 8px;
   font-size: 0.9rem;
-  transition: border-color 0.2s;
+  color: #ffffff !important;
+  transition: all 0.2s;
 }
 
-.form-input:focus {
+.raum-verwaltung .form-input:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  border-color: #ffd700 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
-.color-input-group {
+.raum-verwaltung .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.raum-verwaltung .color-input-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.color-input {
+.raum-verwaltung .color-input {
   width: 40px;
   height: 40px;
-  border: 1px solid #D1D5DB;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
   border-radius: 8px;
   cursor: pointer;
+  background: transparent !important;
 }
 
-.color-value {
+.raum-verwaltung .color-value {
   font-family: monospace;
   font-size: 0.9rem;
-  color: #6B7280;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
-.checkbox-label {
+.raum-verwaltung .checkbox-label {
   display: flex !important;
   flex-direction: row !important;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
-.checkbox-label input[type="checkbox"] {
+.raum-verwaltung .checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
+  accent-color: #ffd700;
 }
 
-.form-row {
+.raum-verwaltung .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 
-.form-actions {
+.raum-verwaltung .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem;
-  border-top: 1px solid #E5E7EB;
-  background: #F9FAFB;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Räume-Grid */
-.rooms-grid {
+.raum-verwaltung .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.room-card {
-  background: white;
+.raum-verwaltung .room-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
-.room-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.raum-verwaltung .room-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.room-card.inactive {
+.raum-verwaltung .room-card.inactive {
   opacity: 0.6;
 }
 
-.room-card.editing {
-  border: 2px solid #4F46E5;
+.raum-verwaltung .room-card.editing {
+  border: 2px solid #ffd700 !important;
 }
 
-.room-header {
+.raum-verwaltung .room-header {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent !important;
 }
 
-.room-color {
+.raum-verwaltung .room-color {
   width: 20px;
   height: 20px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.room-name {
+.raum-verwaltung .room-name {
   flex-grow: 1;
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1F2937;
+  color: #ffffff !important;
 }
 
-.room-name-input {
+.raum-verwaltung .room-name-input {
   flex-grow: 1;
   padding: 0.5rem;
-  border: 1px solid #D1D5DB;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
   border-radius: 6px;
   font-size: 1.1rem;
   font-weight: 600;
+  color: #ffffff !important;
 }
 
-.room-actions {
+.raum-verwaltung .room-actions {
   display: flex;
   gap: 0.5rem;
 }
 
-.room-details {
+.raum-verwaltung .room-details {
   padding: 1.5rem;
+  background: transparent !important;
 }
 
-.room-description {
+.raum-verwaltung .room-description {
   margin: 0 0 1rem 0;
-  color: #6B7280;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
-.room-info {
+.raum-verwaltung .room-info {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
-.room-info-item {
+.raum-verwaltung .room-info-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #6B7280;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-size: 0.9rem;
 }
 
-.room-info-item svg {
+.raum-verwaltung .room-info-item svg {
   width: 14px;
   height: 14px;
+  color: #ffd700 !important;
 }
 
-.room-status {
+.raum-verwaltung .room-status {
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -261,18 +285,19 @@
   font-weight: 500;
 }
 
-.room-status.inactive {
-  background: #FEE2E2;
-  color: #DC2626;
+.raum-verwaltung .room-status.inactive {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
 
-.room-edit-form {
+.raum-verwaltung .room-edit-form {
   padding: 1.5rem;
-  background: #F9FAFB;
+  background: rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Empty State */
-.empty-state {
+.raum-verwaltung .empty-state {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
@@ -280,62 +305,64 @@
   justify-content: center;
   padding: 3rem;
   text-align: center;
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-.empty-state svg {
-  color: #9CA3AF;
+.raum-verwaltung .empty-state svg {
+  color: rgba(255, 215, 0, 0.4);
   margin-bottom: 1rem;
 }
 
-.empty-state h3 {
+.raum-verwaltung .empty-state h3 {
   margin: 0 0 0.5rem 0;
-  color: #1F2937;
+  color: #ffffff;
   font-size: 1.2rem;
   font-weight: 600;
 }
 
-.empty-state p {
+.raum-verwaltung .empty-state p {
   margin: 0 0 2rem 0;
-  color: #6B7280;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 
 /* Buttons */
-.btn-primary {
+.raum-verwaltung .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #4F46E5;
-  color: white;
+  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
+  color: var(--bg-secondary, #1a1a2e);
   border: none;
   border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: #4338CA;
+.raum-verwaltung .btn-primary:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
 }
 
-.btn-primary:disabled {
+.raum-verwaltung .btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-secondary {
+.raum-verwaltung .btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: white;
-  color: #374151;
-  border: 1px solid #D1D5DB;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 500;
@@ -343,55 +370,55 @@
   transition: all 0.2s;
 }
 
-.btn-secondary:hover {
-  background: #F9FAFB;
-  border-color: #9CA3AF;
+.raum-verwaltung .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 215, 0, 0.3);
 }
 
-.btn-icon {
+.raum-verwaltung .btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid #D1D5DB;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 6px;
-  background: white;
-  color: #6B7280;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.btn-icon:hover {
-  background: #F9FAFB;
-  border-color: #9CA3AF;
-  color: #374151;
+.raum-verwaltung .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  color: #ffffff !important;
 }
 
-.btn-icon.success {
-  border-color: #10B981;
-  color: #10B981;
+.raum-verwaltung .btn-icon.success {
+  border-color: #10B981 !important;
+  color: #10B981 !important;
 }
 
-.btn-icon.success:hover {
-  background: #D1FAE5;
+.raum-verwaltung .btn-icon.success:hover {
+  background: rgba(16, 185, 129, 0.2) !important;
 }
 
-.btn-icon.danger {
-  border-color: #EF4444;
-  color: #EF4444;
+.raum-verwaltung .btn-icon.danger {
+  border-color: #EF4444 !important;
+  color: #EF4444 !important;
 }
 
-.btn-icon.danger:hover {
-  background: #FEE2E2;
+.raum-verwaltung .btn-icon.danger:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
 }
 
 /* Loading Spinner */
-.loading-spinner {
+.raum-verwaltung .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #E5E7EB;
-  border-top: 3px solid #4F46E5;
+  border: 3px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 3px solid #ffd700 !important;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -401,104 +428,140 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Dark Mode Support */
-[data-theme="dark"] .section-header,
-[data-theme="dark"] .room-form-card,
-[data-theme="dark"] .room-card,
-[data-theme="dark"] .empty-state,
-.dark .section-header,
-.dark .room-form-card,
-.dark .room-card,
-.dark .empty-state {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
-  border-color: var(--border-default, rgba(255, 255, 255, 0.1));
+/* Force Dark Theme Override für DojoEdit Kontext */
+.dojo-edit-page .raum-verwaltung,
+[data-theme] .raum-verwaltung,
+.form-section .raum-verwaltung {
+  background: transparent !important;
 }
 
-[data-theme="dark"] .header-content h2,
-[data-theme="dark"] .form-header h3,
-[data-theme="dark"] .room-name,
-[data-theme="dark"] .empty-state h3,
-.dark .header-content h2,
-.dark .form-header h3,
-.dark .room-name,
-.dark .empty-state h3 {
-  color: var(--text-primary, #ffffff);
+.dojo-edit-page .raum-verwaltung .section-header,
+[data-theme] .raum-verwaltung .section-header,
+.form-section .raum-verwaltung .section-header {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
 }
 
-[data-theme="dark"] .header-content p,
-[data-theme="dark"] .room-description,
-[data-theme="dark"] .room-info-item,
-[data-theme="dark"] .color-value,
-[data-theme="dark"] .empty-state p,
-.dark .header-content p,
-.dark .room-description,
-.dark .room-info-item,
-.dark .color-value,
-.dark .empty-state p {
-  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+.dojo-edit-page .raum-verwaltung .section-header h2,
+.dojo-edit-page .raum-verwaltung .header-content h2,
+[data-theme] .raum-verwaltung .section-header h2,
+[data-theme] .raum-verwaltung .header-content h2,
+.form-section .raum-verwaltung .header-content h2 {
+  color: #ffd700 !important;
+  text-transform: none !important;
+  font-size: 1.5rem !important;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-style: normal !important;
+  letter-spacing: normal !important;
 }
 
-[data-theme="dark"] .form-group label,
-.dark .form-group label {
-  color: var(--text-primary, #ffffff);
+.dojo-edit-page .raum-verwaltung .header-content p,
+[data-theme] .raum-verwaltung .header-content p,
+.form-section .raum-verwaltung .header-content p {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
-[data-theme="dark"] .form-input,
-[data-theme="dark"] .room-name-input,
-.dark .form-input,
-.dark .room-name-input {
-  background: var(--bg-secondary, rgba(0, 0, 0, 0.3));
-  border-color: var(--border-default, rgba(255, 255, 255, 0.2));
-  color: var(--text-primary, #ffffff);
+.dojo-edit-page .raum-verwaltung .room-card,
+[data-theme] .raum-verwaltung .room-card,
+.form-section .raum-verwaltung .room-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
 }
 
-[data-theme="dark"] .form-header,
-[data-theme="dark"] .form-actions,
-[data-theme="dark"] .room-edit-form,
-.dark .form-header,
-.dark .form-actions,
-.dark .room-edit-form {
-  background: var(--bg-secondary, rgba(0, 0, 0, 0.2));
-  border-color: var(--border-default, rgba(255, 255, 255, 0.1));
+.dojo-edit-page .raum-verwaltung .room-name,
+.dojo-edit-page .raum-verwaltung .room-card h3,
+[data-theme] .raum-verwaltung .room-name,
+[data-theme] .raum-verwaltung .room-card h3,
+.form-section .raum-verwaltung .room-name {
+  color: #ffffff !important;
 }
 
-[data-theme="dark"] .btn-secondary,
-[data-theme="dark"] .btn-icon,
-.dark .btn-secondary,
-.dark .btn-icon {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
-  border-color: var(--border-default, rgba(255, 255, 255, 0.2));
-  color: var(--text-primary, #ffffff);
+.dojo-edit-page .raum-verwaltung .room-header,
+.dojo-edit-page .raum-verwaltung .room-details,
+[data-theme] .raum-verwaltung .room-header,
+[data-theme] .raum-verwaltung .room-details,
+.form-section .raum-verwaltung .room-header,
+.form-section .raum-verwaltung .room-details {
+  background: transparent !important;
 }
 
-[data-theme="dark"] .btn-secondary:hover,
-[data-theme="dark"] .btn-icon:hover,
-.dark .btn-secondary:hover,
-.dark .btn-icon:hover {
-  background: var(--bg-card-hover, rgba(255, 255, 255, 0.1));
+.dojo-edit-page .raum-verwaltung .btn-icon,
+[data-theme] .raum-verwaltung .btn-icon,
+.form-section .raum-verwaltung .btn-icon {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dojo-edit-page .raum-verwaltung .btn-icon.danger,
+[data-theme] .raum-verwaltung .btn-icon.danger,
+.form-section .raum-verwaltung .btn-icon.danger {
+  border-color: #EF4444 !important;
+  color: #EF4444 !important;
+}
+
+/* TDA-VIB Theme Override - Force Dark */
+[data-theme="tda-vib"] .raum-verwaltung .section-header,
+[data-theme="tda-vib"] .raum-verwaltung .room-card,
+[data-theme="tda-vib"] .raum-verwaltung .room-form-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 215, 0, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .raum-verwaltung .header-content h2,
+[data-theme="tda-vib"] .raum-verwaltung .form-header h3 {
+  color: #ffd700 !important;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-style: normal !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+[data-theme="tda-vib"] .raum-verwaltung .room-name,
+[data-theme="tda-vib"] .raum-verwaltung .form-group label {
+  color: #ffffff !important;
+}
+
+[data-theme="tda-vib"] .raum-verwaltung .header-content p,
+[data-theme="tda-vib"] .raum-verwaltung .room-description {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* CRITICAL: Override global typography for all headings in RaumVerwaltung */
+.raum-verwaltung h2,
+.raum-verwaltung h3,
+.raum-verwaltung .header-content h2,
+.raum-verwaltung .form-header h3,
+.raum-verwaltung .empty-state h3,
+div.raum-verwaltung h2,
+div.raum-verwaltung h3 {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-style: normal !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .section-header {
+  .raum-verwaltung .section-header {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
   }
 
-  .form-grid {
+  .raum-verwaltung .form-grid {
     grid-template-columns: 1fr;
   }
 
-  .form-row {
+  .raum-verwaltung .form-row {
     grid-template-columns: 1fr;
   }
 
-  .rooms-grid {
+  .raum-verwaltung .rooms-grid {
     grid-template-columns: 1fr;
   }
 
-  .form-actions {
+  .raum-verwaltung .form-actions {
     flex-direction: column;
   }
 }

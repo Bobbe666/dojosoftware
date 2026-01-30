@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, ChevronDown, Check, AlertTriangle, TrendingUp, Award } from 'lucide-react';
+import { Building2, ChevronDown, Check, AlertTriangle, TrendingUp, Award, Globe, Ticket } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
 import '../styles/DojoSwitcher.css';
@@ -91,6 +91,22 @@ const DojoSwitcher = () => {
     navigate('/dashboard', { replace: true });
   };
 
+  const handleSwitchToVerband = () => {
+    switchDojo('verband');
+    setFilter('current');
+    setIsOpen(false);
+    // Navigiere zum Dashboard (Verband-Modus wird dort erkannt)
+    navigate('/dashboard', { replace: true });
+  };
+
+  const handleSwitchToSupport = () => {
+    switchDojo('support');
+    setFilter('current');
+    setIsOpen(false);
+    // Navigiere zum Dashboard (Support-Modus wird dort erkannt)
+    navigate('/dashboard', { replace: true });
+  };
+
   const handleShowAll = () => {
     // Setze activeDojo auf das erste verfügbare Dojo (nicht super-admin)
     // damit das normale Dashboard angezeigt wird
@@ -107,6 +123,8 @@ const DojoSwitcher = () => {
   // Prüfe ob User Super-Admin ist (Admin mit dojo_id=null)
   const isSuperAdmin = (user?.rolle === 'admin' || user?.role === 'admin') && user?.dojo_id === null;
   const isInSuperAdminMode = activeDojo === 'super-admin';
+  const isInVerbandMode = activeDojo === 'verband';
+  const isInSupportMode = activeDojo === 'support';
 
   console.log('🔍 DojoSwitcher Super-Admin Check:', {
     role: user?.role,
@@ -142,7 +160,27 @@ const DojoSwitcher = () => {
         title="Zwischen Dojos wechseln"
         type="button"
       >
-        {isInSuperAdminMode ? (
+        {isInSupportMode ? (
+          <>
+            <div className="dojo-color-indicator" style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+            }} />
+            <div className="dojo-switcher-content">
+              <div className="dojo-switcher-label">Support:</div>
+              <div className="dojo-switcher-name">🎫 Support Center</div>
+            </div>
+          </>
+        ) : isInVerbandMode ? (
+          <>
+            <div className="dojo-color-indicator" style={{
+              background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
+            }} />
+            <div className="dojo-switcher-content">
+              <div className="dojo-switcher-label">Verband:</div>
+              <div className="dojo-switcher-name">🌐 TDA Verband</div>
+            </div>
+          </>
+        ) : isInSuperAdminMode ? (
           <>
             <div className="dojo-color-indicator" style={{
               background: 'linear-gradient(135deg, #DAA520 0%, #B8860B 100%)'
@@ -200,6 +238,38 @@ const DojoSwitcher = () => {
             </div>
 
             <div className="dropdown-list">
+              {/* TDA Verband Option (nur für Super-Admin) */}
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  className={`dropdown-item verband ${isInVerbandMode ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSwitchToVerband();
+                  }}
+                >
+                  <div className="dojo-color-indicator" style={{
+                    background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
+                  }} />
+                  <div className="dropdown-item-content">
+                    <div className="dropdown-item-header">
+                      <span className="dropdown-item-name">🌐 TDA Verband</span>
+                      <span className="badge badge-blue">Verband</span>
+                      {isInVerbandMode && (
+                        <Check size={12} className="check-icon" />
+                      )}
+                    </div>
+                    <div className="dropdown-item-info">
+                      <span className="dropdown-item-inhaber">Verbandsverwaltung & Mitgliedsschulen</span>
+                    </div>
+                    <div className="dropdown-item-umsatz">
+                      Mitglieder, Turniere, Events & Verbands-Finanzen
+                    </div>
+                  </div>
+                </button>
+              )}
+
               {/* TDA Int'l Org Option (nur für Super-Admin) */}
               {isSuperAdmin && (
                 <button
@@ -226,7 +296,39 @@ const DojoSwitcher = () => {
                       <span className="dropdown-item-inhaber">Verwaltung aller Dojos & Subdomains</span>
                     </div>
                     <div className="dropdown-item-umsatz">
-                      Globale Statistiken, Dojo-Management & Verbandsübersicht
+                      Globale Statistiken, Dojo-Management & Software-Verwaltung
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Support Center Option (nur für Super-Admin) */}
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  className={`dropdown-item support ${isInSupportMode ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSwitchToSupport();
+                  }}
+                >
+                  <div className="dojo-color-indicator" style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  }} />
+                  <div className="dropdown-item-content">
+                    <div className="dropdown-item-header">
+                      <span className="dropdown-item-name">🎫 Support Center</span>
+                      <span className="badge badge-green">Support</span>
+                      {isInSupportMode && (
+                        <Check size={12} className="check-icon" />
+                      )}
+                    </div>
+                    <div className="dropdown-item-info">
+                      <span className="dropdown-item-inhaber">Ticket-System & Kundenservice</span>
+                    </div>
+                    <div className="dropdown-item-umsatz">
+                      Alle Support-Tickets, Statistiken & Bearbeitung
                     </div>
                   </div>
                 </button>

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import axios from 'axios';
 import '../styles/Dashboard.css';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const logo = '/dojo-logo.png';
 
 const MemberHeader = () => {
+  const { t } = useTranslation('member');
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -47,7 +50,7 @@ const MemberHeader = () => {
     <header className="dashboard-header">
       <div className="dashboard-header-left">
         <img src={logo} alt="Dojo Logo" className="dashboard-logo" />
-        <h2>Mein Dojo Dashboard</h2>
+        <h2>{t('header.title')}</h2>
       </div>
       <div className="dashboard-header-right">
         {!isMainDashboard && (
@@ -56,15 +59,34 @@ const MemberHeader = () => {
             className="logout-button"
             style={{ marginRight: '0.5rem' }}
           >
-            ← Dashboard
+            ← {t('header.dashboard')}
           </button>
         )}
+        <button
+          onClick={() => navigate('/member/support')}
+          className="logout-button"
+          style={{ marginRight: '0.5rem' }}
+          title={t('header.support')}
+        >
+          <span style={{ marginRight: '0.25rem' }}>🎫</span>
+          <span className="logout-text">{t('header.support')}</span>
+        </button>
+        <button
+          onClick={() => navigate('/member/wunschliste')}
+          className="logout-button"
+          style={{ marginRight: '0.5rem' }}
+          title={t('header.wishlist')}
+        >
+          <span style={{ marginRight: '0.25rem' }}>💡</span>
+          <span className="logout-text">{t('header.wishlist')}</span>
+        </button>
         {userDisplayName && (
           <div className="user-display">
             <span className="user-icon">👤</span>
             <span className="user-name">{userDisplayName}</span>
           </div>
         )}
+        <LanguageSwitcher compact={true} showLabel={false} />
         <button className="logout-button" onClick={handleLogout}>
           <svg
             className="logout-icon"
@@ -80,7 +102,7 @@ const MemberHeader = () => {
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
             />
           </svg>
-          <span className="logout-text">Logout</span>
+          <span className="logout-text">{t('header.logout')}</span>
         </button>
       </div>
     </header>

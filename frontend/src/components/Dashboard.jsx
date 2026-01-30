@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useStandortContext } from '../context/StandortContext.jsx';
@@ -21,11 +22,17 @@ import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
 import SuperAdminDashboard from './SuperAdminDashboard';
+import VerbandDashboard from './VerbandDashboard';
+import SupportDashboard from './SupportDashboard';
+import SupportTickets from './SupportTickets';
+import FeatureBoard from './FeatureBoard';
 import TrialBanner from './TrialBanner';
+import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
 import SystemChangelog from './SystemChangelog';
 
 function Dashboard() {
+  const { t } = useTranslation('dashboard');
   const location = useLocation();
   const navigate = useNavigate();
   const { token, logout } = useAuth();
@@ -202,18 +209,20 @@ function Dashboard() {
 
   // Tab-Definitionen
   const baseTabs = [
-    { id: 'checkin', label: 'Check-in Systeme', icon: '📱' },
-    { id: 'mitglieder', label: 'Mitgliederverwaltung', icon: '👥' },
-    { id: 'pruefungswesen', label: 'Prüfungswesen', icon: '🏆' },
-    { id: 'events', label: 'Events', icon: '📅' },
-    { id: 'finanzen', label: 'Finanzen', icon: '💰' },
-    { id: 'artikelverwaltung', label: 'Artikelverwaltung', icon: '📦' },
-    { id: 'verwaltung', label: 'Dojo-Verwaltung', icon: '🔧' },
-    { id: 'personal', label: 'Personal', icon: '👨‍🏫' },
-    { id: 'berichte', label: 'Berichte', icon: '📊' },
-    { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' },
-    { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' },
-    { id: 'info', label: 'Info', icon: 'ℹ️' }
+    { id: 'checkin', label: t('tabs.checkin'), icon: '📱' },
+    { id: 'mitglieder', label: t('tabs.mitglieder'), icon: '👥' },
+    { id: 'pruefungswesen', label: t('tabs.pruefungswesen'), icon: '🏆' },
+    { id: 'events', label: t('tabs.events'), icon: '📅' },
+    { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
+    { id: 'artikelverwaltung', label: t('tabs.artikelverwaltung'), icon: '📦' },
+    { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🔧' },
+    { id: 'personal', label: t('tabs.personal'), icon: '👨‍🏫' },
+    { id: 'berichte', label: t('tabs.berichte'), icon: '📊' },
+    { id: 'einstellungen', label: t('tabs.einstellungen'), icon: '⚙️' },
+    { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
+    { id: 'support', label: t('tabs.support'), icon: '🎫' },
+    { id: 'wunschliste', label: t('tabs.wunschliste'), icon: '💡' },
+    { id: 'info', label: t('tabs.info'), icon: 'ℹ️' }
   ];
 
   const tabs = baseTabs;
@@ -240,7 +249,7 @@ function Dashboard() {
 
   // Prüfe ob wir auf der Dashboard-Hauptseite sind
   const isMainDashboard = location.pathname === '/dashboard';
-  const headerTitle = role === 'admin' ? 'Dojo Admin Dashboard' : 'Mitglieder Dashboard';
+  const headerTitle = role === 'admin' ? t('header.title') : t('header.memberTitle');
 
   // ✨ Mitgliederverwaltung - Fokus auf Member-Management ✨
   const mitgliederCards = [
@@ -732,7 +741,7 @@ function Dashboard() {
                 }}
               >
                 <ArrowLeft size={16} />
-                <span>Zurück</span>
+                <span>{t('header.back')}</span>
               </button>
             )}
             {!isMainDashboard && (
@@ -740,7 +749,7 @@ function Dashboard() {
                 onClick={() => navigate('/dashboard')}
                 className="logout-button"
               >
-                ← Dashboard
+                ← {t('header.dashboard')}
               </button>
             )}
             {/* 🎨 Theme Toggle */}
@@ -764,11 +773,11 @@ function Dashboard() {
               }}
             >
               {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-              <span>{isDarkMode ? 'Hell' : 'Dunkel'}</span>
+              <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
             </button>
             {userDisplayName && (
               <div className="user-display">
-                <span className="user-greeting">Willkommen</span>
+                <span className="user-greeting">{t('header.welcome')}</span>
                 <span className="user-name">{userDisplayName}</span>
               </div>
             )}
@@ -787,13 +796,159 @@ function Dashboard() {
                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
-              <span className="logout-text">Logout</span>
+              <span className="logout-text">{t('header.logout')}</span>
             </button>
           </div>
         </header>
 
         <main className="dashboard-main">
           <SuperAdminDashboard />
+        </main>
+      </div>
+    );
+  }
+
+  // 🌐 Verband Dashboard: Zeige Verbandsverwaltung
+  if (role === 'admin' && selectedDojo === 'verband') {
+    console.log('✅ Zeige Verband Dashboard für TDA Verband');
+    return (
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+        <header className="dashboard-header" style={{
+          background: isDarkMode ? 'rgba(15, 15, 35, 0.85)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}>
+          <div className="dashboard-header-left">
+            <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
+            <h2>🌐 TDA Verband</h2>
+            <span className="version-badge">v{config.app.version}</span>
+          </div>
+          <div className="dashboard-header-right">
+            <DojoSwitcher />
+            {/* 🎨 Theme Toggle */}
+            <button
+              className="theme-toggle-button"
+              onClick={toggleDarkMode}
+              title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
+                borderRadius: '8px',
+                color: isDarkMode ? '#ffd700' : '#333',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}
+            >
+              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+              <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
+            </button>
+            {userDisplayName && (
+              <div className="user-display">
+                <span className="user-greeting">{t('header.welcome')}</span>
+                <span className="user-name">{userDisplayName}</span>
+              </div>
+            )}
+            <button className="logout-button" onClick={handleLogout}>
+              <svg
+                className="logout-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span className="logout-text">{t('header.logout')}</span>
+            </button>
+          </div>
+        </header>
+
+        <main className="dashboard-main">
+          <VerbandDashboard />
+        </main>
+      </div>
+    );
+  }
+
+  // 🎫 Support Dashboard: Zeige Support-Ticketsystem
+  if (role === 'admin' && selectedDojo === 'support') {
+    console.log('✅ Zeige Support Dashboard für Support Center');
+    return (
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+        <header className="dashboard-header" style={{
+          background: isDarkMode ? 'rgba(15, 15, 35, 0.85)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}>
+          <div className="dashboard-header-left">
+            <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
+            <h2>🎫 Support Center</h2>
+            <span className="version-badge">v{config.app.version}</span>
+          </div>
+          <div className="dashboard-header-right">
+            <DojoSwitcher />
+            {/* 🎨 Theme Toggle */}
+            <button
+              className="theme-toggle-button"
+              onClick={toggleDarkMode}
+              title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 12px',
+                background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
+                borderRadius: '8px',
+                color: isDarkMode ? '#ffd700' : '#333',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}
+            >
+              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+              <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
+            </button>
+            {userDisplayName && (
+              <div className="user-display">
+                <span className="user-greeting">{t('header.welcome')}</span>
+                <span className="user-name">{userDisplayName}</span>
+              </div>
+            )}
+            <button className="logout-button" onClick={handleLogout}>
+              <svg
+                className="logout-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+              <span className="logout-text">{t('header.logout')}</span>
+            </button>
+          </div>
+        </header>
+
+        <main className="dashboard-main">
+          <SupportDashboard />
         </main>
       </div>
     );
@@ -864,11 +1019,12 @@ function Dashboard() {
             }}
           >
             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            <span>{isDarkMode ? 'Hell' : 'Dunkel'}</span>
+            <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
           </button>
+          <LanguageSwitcher compact={true} showLabel={false} />
           {userDisplayName && (
             <div className="user-display">
-              <span className="user-greeting">Willkommen</span>
+              <span className="user-greeting">{t('header.welcome')}</span>
               <span className="user-name">{userDisplayName}</span>
             </div>
           )}
@@ -887,7 +1043,7 @@ function Dashboard() {
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
-            <span className="logout-text">Logout</span>
+            <span className="logout-text">{t('header.logout')}</span>
           </button>
         </div>
       </header>
@@ -1359,7 +1515,7 @@ function Dashboard() {
                               display: 'inline-block',
                               flexShrink: 0
                             }}>⚡</span>
-                            <span style={{ 
+                            <span style={{
                               WebkitFontSmoothing: 'antialiased',
                               MozOsxFontSmoothing: 'grayscale',
                               color: '#FFD700 !important',
@@ -1367,7 +1523,7 @@ function Dashboard() {
                               backgroundImage: 'none !important',
                               WebkitBackgroundClip: 'unset !important',
                               backgroundClip: 'unset !important'
-                            }}>Schnellaktionen</span>
+                            }}>{t('quickActions.title')}</span>
                           </h2>
                           {role === 'admin' ? (
                             <div className="quick-actions">
@@ -1401,16 +1557,30 @@ function Dashboard() {
                               className="quick-action-btn info"
                               disabled={loading}
                             >
-                              🔄 {loading ? 'Lädt...' : 'Statistiken aktualisieren'}
+                              🔄 {loading ? t('quickActions.loading') : t('quickActions.refreshStats')}
                             </button>
                           </div>
+                        </div>
+                      )}
+
+                      {/* 🎫 Support Tab 🎫 */}
+                      {activeTab === 'support' && (
+                        <div className="nav-section">
+                          <SupportTickets bereich="dojo" />
+                        </div>
+                      )}
+
+                      {/* 💡 Wunschliste Tab 💡 */}
+                      {activeTab === 'wunschliste' && (
+                        <div className="nav-section">
+                          <FeatureBoard />
                         </div>
                       )}
 
                       {/* ℹ️ Info Tab ℹ️ */}
                       {activeTab === 'info' && (
                         <div className="nav-section">
-                          <h2 className="section-header">ℹ️ System & Status</h2>
+                          <h2 className="section-header">ℹ️ {t('info.title')}</h2>
 
                           {/* Grid Layout für Info-Karten */}
                           <div style={{
@@ -1447,7 +1617,7 @@ function Dashboard() {
                                 alignItems: 'center',
                                 gap: '0.5rem'
                               }}>
-                                📊 Dojo Statistiken
+                                📊 {t('info.dojoStats')}
                               </h3>
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 <div style={{
@@ -1459,7 +1629,7 @@ function Dashboard() {
                                   <div style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)' }}>
                                     {formatNumber(stats.mitglieder)}
                                   </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Mitglieder</div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.members')}</div>
                                 </div>
                                 <div style={{
                                   background: 'rgba(96,165,250,0.1)',
@@ -1470,7 +1640,7 @@ function Dashboard() {
                                   <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#60A5FA' }}>
                                     {formatNumber(stats.kurse)}
                                   </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Kurse</div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.courses')}</div>
                                 </div>
                                 <div style={{
                                   background: 'rgba(52,211,153,0.1)',
@@ -1481,7 +1651,7 @@ function Dashboard() {
                                   <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#34D399' }}>
                                     {formatNumber(stats.trainer)}
                                   </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Trainer</div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.trainers')}</div>
                                 </div>
                                 <div style={{
                                   background: 'rgba(244,114,182,0.1)',
@@ -1492,7 +1662,7 @@ function Dashboard() {
                                   <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#F472B6' }}>
                                     {formatNumber(stats.checkins_heute)}
                                   </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Check-ins heute</div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.checkinsToday')}</div>
                                 </div>
                               </div>
                             </div>
@@ -1512,7 +1682,7 @@ function Dashboard() {
                                 alignItems: 'center',
                                 gap: '0.5rem'
                               }}>
-                                ⚙️ System
+                                ⚙️ {t('info.system')}
                               </h3>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 <div style={{
@@ -1521,7 +1691,7 @@ function Dashboard() {
                                   padding: '0.5rem 0',
                                   borderBottom: '1px solid var(--border-accent)'
                                 }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>Version</span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.version')}</span>
                                   <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>v{config.app.version}</span>
                                 </div>
                                 <div style={{
@@ -1530,7 +1700,7 @@ function Dashboard() {
                                   padding: '0.5rem 0',
                                   borderBottom: '1px solid var(--border-accent)'
                                 }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>Build</span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.build')}</span>
                                   <span style={{ color: 'var(--text-primary)' }}>{config.app.buildDate}</span>
                                 </div>
                                 <div style={{
@@ -1539,7 +1709,7 @@ function Dashboard() {
                                   padding: '0.5rem 0',
                                   borderBottom: '1px solid var(--border-accent)'
                                 }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>Entwickler</span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.developer')}</span>
                                   <span style={{ color: 'var(--text-primary)' }}>{config.app.author}</span>
                                 </div>
                                 <div style={{
@@ -1547,7 +1717,7 @@ function Dashboard() {
                                   justifyContent: 'space-between',
                                   padding: '0.5rem 0'
                                 }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>Support</span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.support')}</span>
                                   <a href={`mailto:${config.app.contactEmail}`} style={{ color: 'var(--primary)' }}>
                                     {config.app.contactEmail}
                                   </a>
@@ -1570,7 +1740,7 @@ function Dashboard() {
                                 alignItems: 'center',
                                 gap: '0.5rem'
                               }}>
-                                🔗 Schnellzugriff
+                                🔗 {t('info.quickAccess')}
                               </h3>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 <button
@@ -1590,7 +1760,7 @@ function Dashboard() {
                                   }}
                                 >
                                   <span>🏯</span>
-                                  <span>Dojo-Einstellungen</span>
+                                  <span>{t('info.dojoSettings')}</span>
                                 </button>
                                 <button
                                   onClick={() => handleNavigation('/dashboard/audit-log')}
@@ -1609,7 +1779,7 @@ function Dashboard() {
                                   }}
                                 >
                                   <span>📋</span>
-                                  <span>Audit-Log</span>
+                                  <span>{t('einstellungen.auditLog')}</span>
                                 </button>
                                 <button
                                   onClick={() => handleNavigation('/dashboard/vertragsdokumente')}
@@ -1628,7 +1798,7 @@ function Dashboard() {
                                   }}
                                 >
                                   <span>📄</span>
-                                  <span>AGB & Datenschutz bearbeiten</span>
+                                  <span>{t('info.editAgb')}</span>
                                 </button>
                               </div>
                             </div>

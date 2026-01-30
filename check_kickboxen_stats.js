@@ -3,10 +3,10 @@ require('./backend/node_modules/dotenv').config({ path: './backend/.env' });
 
 async function checkKickboxenStats() {
   const connection = mysql.createPool({
-    host: 'localhost',
-    user: 'dojoUser',
-    password: 'DojoServer2025!',
-    database: 'dojo'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'dojoUser',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'dojo'
   }).promise();
 
   try {

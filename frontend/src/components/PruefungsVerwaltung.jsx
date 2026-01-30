@@ -23,7 +23,8 @@ const PruefungsVerwaltung = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState('termine'); // termine, zugelassen, abgeschlossen, statistiken
+  const [activeTab, setActiveTab] = useState('termine'); // termine, kandidaten, zugelassen, abgeschlossen, statistiken
+  const [selectedKandidaten, setSelectedKandidaten] = useState([]);
   const [datumFilter, setDatumFilter] = useState('alle'); // alle, zukuenftig, vergangen
 
   // Prüfungstermin Modal
@@ -93,6 +94,7 @@ const PruefungsVerwaltung = () => {
 
   // Filter für Kandidaten
   const [berechtigungsFilter, setBerechtigungsFilter] = useState('all'); // 'all', 'berechtigt', 'nicht_berechtigt'
+  const [kandidatenStilFilter, setKandidatenStilFilter] = useState('all');
 
   // Filter für Zugelassene und Abgeschlossene Prüfungen
   const [zugelasseneStilFilter, setZugelasseneStilFilter] = useState('all');
@@ -110,6 +112,8 @@ const PruefungsVerwaltung = () => {
   useEffect(() => {
     if (activeTab === 'termine') {
       fetchPruefungstermine();
+    } else if (activeTab === 'kandidaten') {
+      fetchKandidaten();
     } else if (activeTab === 'zugelassen') {
       fetchZugelassenePruefungen();
     } else if (activeTab === 'abgeschlossen') {
@@ -127,7 +131,7 @@ const PruefungsVerwaltung = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stile?aktiv=true`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
       const data = await response.json();
@@ -148,7 +152,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen/kandidaten?${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -176,14 +180,18 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen?status=geplant&${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
 
       const data = await response.json();
+      console.log('🔍 Zugelassene Prüfungen API Response:', data);
+      console.log('🔍 Prüfungen Array:', data.pruefungen);
+      console.log('🔍 Beispiel-Prüfung:', data.pruefungen?.[0]);
       setZugelassenePruefungen(data.pruefungen || []);
     } catch (error) {
+      console.error('❌ Fehler beim Laden zugelassener Prüfungen:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -200,7 +208,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen?status=bestanden&${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -223,7 +231,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen/stats/statistiken?${dojoParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -248,7 +256,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen?status=geplant&${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -259,7 +267,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen/termine?${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -341,6 +349,142 @@ const PruefungsVerwaltung = () => {
     }
   };
 
+  // Kandidat zur Prüfung zulassen
+  const handleKandidatZulassen = async (kandidat, customPruefungsDaten = null) => {
+    try {
+      if (!activeDojo || !activeDojo.id) {
+        setError('Kein Dojo ausgewählt. Bitte wählen Sie ein Dojo aus.');
+        return;
+      }
+
+      const dojoId = activeDojo.id;
+      let datenZuVerwenden = customPruefungsDaten || pruefungsDaten;
+
+      // Wenn kein Prüfungsdatum angegeben wurde, suche automatisch den nächsten Termin für den Stil
+      if (!datenZuVerwenden.pruefungsdatum && kandidat.stil_id) {
+        try {
+          // Lade die nächsten Prüfungstermine für diesen Stil
+          const termineResponse = await fetch(
+            `${API_BASE_URL}/pruefungen/termine?stil_id=${kandidat.stil_id}&dojo_id=${dojoId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+              }
+            }
+          );
+
+          if (termineResponse.ok) {
+            const termineResult = await termineResponse.json();
+            const termineData = termineResult.termine || [];
+
+            console.log('📅 Prüfungstermine geladen:', termineData);
+
+            // Finde den nächsten zukünftigen Termin
+            const heute = new Date();
+            heute.setHours(0, 0, 0, 0);
+
+            const naechsterTermin = termineData
+              .filter(termin => {
+                const terminDatum = new Date(termin.pruefungsdatum);
+                terminDatum.setHours(0, 0, 0, 0);
+                return terminDatum >= heute;
+              })
+              .sort((a, b) => new Date(a.pruefungsdatum) - new Date(b.pruefungsdatum))[0];
+
+            if (naechsterTermin) {
+              datenZuVerwenden = {
+                pruefungsdatum: naechsterTermin.pruefungsdatum,
+                pruefungszeit: naechsterTermin.pruefungszeit || '10:00',
+                pruefungsort: naechsterTermin.pruefungsort,
+                pruefungsgebuehr: naechsterTermin.pruefungsgebuehr,
+                anmeldefrist: naechsterTermin.anmeldefrist,
+                gurtlaenge: naechsterTermin.gurtlaenge,
+                bemerkungen: naechsterTermin.bemerkungen,
+                teilnahmebedingungen: naechsterTermin.teilnahmebedingungen
+              };
+              console.log('✅ Nächster Prüfungstermin gefunden:', naechsterTermin);
+            } else {
+              setError(`Kein zukünftiger Prüfungstermin für ${kandidat.stil_name} gefunden. Bitte legen Sie zuerst einen Termin an.`);
+              return;
+            }
+          }
+        } catch (termineError) {
+          console.error('Fehler beim Laden der Termine:', termineError);
+          setError('Fehler beim Laden der Prüfungstermine.');
+          return;
+        }
+      }
+
+      // Prüfe erneut ob ein Datum vorhanden ist
+      if (!datenZuVerwenden.pruefungsdatum) {
+        setError('Kein Prüfungsdatum verfügbar. Bitte legen Sie zuerst einen Prüfungstermin an.');
+        return;
+      }
+
+      // Kombiniere Datum und Uhrzeit
+      let pruefungsdatumZeit = null;
+      if (datenZuVerwenden.pruefungsdatum && datenZuVerwenden.pruefungszeit) {
+        const datumStr = datenZuVerwenden.pruefungsdatum.split('T')[0];
+        const zeitStr = datenZuVerwenden.pruefungszeit.includes(':')
+          ? (datenZuVerwenden.pruefungszeit.split(':').length === 2
+              ? `${datenZuVerwenden.pruefungszeit}:00`
+              : datenZuVerwenden.pruefungszeit)
+          : `${datenZuVerwenden.pruefungszeit}:00:00`;
+        pruefungsdatumZeit = `${datumStr} ${zeitStr}`;
+      } else if (datenZuVerwenden.pruefungsdatum) {
+        const datumStr = datenZuVerwenden.pruefungsdatum.split('T')[0];
+        pruefungsdatumZeit = datumStr;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/pruefungen/kandidaten/${kandidat.mitglied_id}/zulassen`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({
+            stil_id: kandidat.stil_id,
+            graduierung_nachher_id: kandidat.naechste_graduierung_id,
+            pruefungsdatum: pruefungsdatumZeit,
+            pruefungsort: datenZuVerwenden.pruefungsort || null,
+            pruefungsgebuehr: datenZuVerwenden.pruefungsgebuehr ? parseFloat(datenZuVerwenden.pruefungsgebuehr) : null,
+            anmeldefrist: datenZuVerwenden.anmeldefrist || null,
+            gurtlaenge: datenZuVerwenden.gurtlaenge || null,
+            bemerkungen: datenZuVerwenden.bemerkungen || null,
+            teilnahmebedingungen: datenZuVerwenden.teilnahmebedingungen || null,
+            dojo_id: parseInt(dojoId),
+            pruefungszeit: datenZuVerwenden.pruefungszeit || '10:00'
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error('Fehler beim Zulassen');
+
+      const formattedDate = new Date(datenZuVerwenden.pruefungsdatum).toLocaleDateString('de-DE');
+      setSuccess(`${kandidat.vorname} ${kandidat.nachname} wurde zur Prüfung am ${formattedDate} zugelassen!`);
+      fetchKandidaten();
+      fetchZugelassenePruefungen();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  // Ausnahme-Zulassung (für Kandidaten ohne Voraussetzungen)
+  const handleAusnahmeZulassen = async (kandidat) => {
+    if (!window.confirm(
+      `${kandidat.vorname} ${kandidat.nachname} erfüllt die zeitlichen Voraussetzungen noch nicht.\n\n` +
+      `Möchten Sie eine Ausnahme-Zulassung erteilen?`
+    )) {
+      return;
+    }
+
+    await handleKandidatZulassen(kandidat, null);
+  };
+
   // Funktion zum Entfernen der Zulassung
   const handleZulassungEntfernen = async (pruefung) => {
     if (!window.confirm(`Möchten Sie die Zulassung von ${pruefung.vorname} ${pruefung.nachname} wirklich entfernen?`)) {
@@ -353,7 +497,7 @@ const PruefungsVerwaltung = () => {
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -393,7 +537,7 @@ const PruefungsVerwaltung = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           },
           body: JSON.stringify({
             bestanden: neuerStatus,
@@ -439,7 +583,7 @@ const PruefungsVerwaltung = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           },
           body: JSON.stringify(updateData)
         }
@@ -525,7 +669,7 @@ const PruefungsVerwaltung = () => {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
               },
               body: JSON.stringify(updateData)
             }
@@ -588,7 +732,7 @@ const PruefungsVerwaltung = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           },
           body: JSON.stringify({
             current_graduierung_id: graduierung_id,
@@ -645,7 +789,7 @@ const PruefungsVerwaltung = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify(terminData)
       });
@@ -800,7 +944,7 @@ const PruefungsVerwaltung = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
           datum: editTermin.pruefungsdatum,
@@ -854,7 +998,7 @@ const PruefungsVerwaltung = () => {
       const response = await fetch(`${API_BASE_URL}/pruefungen/termine/${termin.vorlageData.termin_id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
 
@@ -891,7 +1035,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/stile/${stil_id}/graduierungen`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
         }
       );
@@ -1060,6 +1204,42 @@ const PruefungsVerwaltung = () => {
         >
           <Calendar size={18} />
           Prüfungstermine
+        </button>
+        <button
+          onClick={() => setActiveTab('kandidaten')}
+          style={{
+            background: activeTab === 'kandidaten'
+              ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)'
+              : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)',
+            border: 'none',
+            color: 'rgba(255, 255, 255, 0.95)',
+            padding: '0.5rem 0.75rem',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.95rem',
+            fontWeight: '600',
+            boxShadow: activeTab === 'kandidaten'
+              ? '0 4px 12px rgba(255, 215, 0, 0.3)'
+              : '0 2px 8px rgba(255, 215, 0, 0.15)',
+            whiteSpace: 'nowrap'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'kandidaten') {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.15)';
+            }
+          }}
+        >
+          <Users size={18} />
+          Prüfungskandidaten
         </button>
         <button
           onClick={() => setActiveTab('zugelassen')}
@@ -2127,6 +2307,625 @@ const PruefungsVerwaltung = () => {
           )}
         </div>
       )}
+
+      {/* Kandidaten Tab */}
+      {activeTab === 'kandidaten' && (() => {
+        // Filtere Kandidaten basierend auf Berechtigungs- und Stil-Filter
+        let filteredKandidaten = kandidaten;
+
+        // Berechtigungsfilter anwenden
+        if (berechtigungsFilter === 'berechtigt') {
+          filteredKandidaten = filteredKandidaten.filter(k => k.berechtigt);
+        } else if (berechtigungsFilter === 'nicht_berechtigt') {
+          filteredKandidaten = filteredKandidaten.filter(k => !k.berechtigt);
+        }
+
+        // Stilfilter anwenden
+        if (kandidatenStilFilter !== 'all') {
+          filteredKandidaten = filteredKandidaten.filter(k => k.stil_id === parseInt(kandidatenStilFilter));
+        }
+
+        // Sortierung anwenden
+        if (sortConfig.key) {
+          filteredKandidaten = applySorting(filteredKandidaten, sortConfig.key, sortConfig.direction);
+        }
+
+        return (
+        <div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.5rem',
+            padding: '1rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '0.5rem',
+            border: '1px solid rgba(255, 215, 0, 0.2)'
+          }}>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ margin: 0, fontSize: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                Prüfungskandidaten
+                <span style={{
+                  marginLeft: '0.5rem',
+                  color: '#ffd700',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem'
+                }}>
+                  ({filteredKandidaten.filter(k => k.berechtigt).length} berechtigt / {filteredKandidaten.length} angezeigt
+                  {(berechtigungsFilter !== 'all' || kandidatenStilFilter !== 'all') && ` von ${kandidaten.length} gesamt`})
+                </span>
+              </h2>
+              <p style={{ margin: '0.125rem 0 0 0', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                {selectedKandidaten.length > 0
+                  ? `${selectedKandidaten.length} Kandidat${selectedKandidaten.length > 1 ? 'en' : ''} ausgewählt`
+                  : 'Wählen Sie Kandidaten aus, um sie zur Prüfung zuzulassen'}
+              </p>
+
+              {/* Filter Controls */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '0.75rem',
+                alignItems: 'center',
+                flexWrap: 'wrap'
+              }}>
+                {/* Berechtigungsfilter */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>
+                    Berechtigung:
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: '0.375rem', padding: '0.125rem' }}>
+                    <button
+                      onClick={() => setBerechtigungsFilter('all')}
+                      style={{
+                        padding: '0.375rem 0.75rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: berechtigungsFilter === 'all' ? '#EAB308' : 'transparent',
+                        color: berechtigungsFilter === 'all' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer',
+                        fontWeight: berechtigungsFilter === 'all' ? '600' : '400',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Alle
+                    </button>
+                    <button
+                      onClick={() => setBerechtigungsFilter('berechtigt')}
+                      style={{
+                        padding: '0.375rem 0.75rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: berechtigungsFilter === 'berechtigt' ? '#EAB308' : 'transparent',
+                        color: berechtigungsFilter === 'berechtigt' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer',
+                        fontWeight: berechtigungsFilter === 'berechtigt' ? '600' : '400',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Berechtigt
+                    </button>
+                    <button
+                      onClick={() => setBerechtigungsFilter('nicht_berechtigt')}
+                      style={{
+                        padding: '0.375rem 0.75rem',
+                        fontSize: '0.875rem',
+                        backgroundColor: berechtigungsFilter === 'nicht_berechtigt' ? '#EAB308' : 'transparent',
+                        color: berechtigungsFilter === 'nicht_berechtigt' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer',
+                        fontWeight: berechtigungsFilter === 'nicht_berechtigt' ? '600' : '400',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      Nicht berechtigt
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stilfilter */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>
+                    Stil:
+                  </span>
+                  <select
+                    value={kandidatenStilFilter}
+                    onChange={(e) => setKandidatenStilFilter(e.target.value)}
+                    style={{
+                      padding: '0.375rem 0.75rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: '#1a1a1a',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      border: '1px solid rgba(234, 179, 8, 0.3)',
+                      borderRadius: '0.375rem',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}>
+                      Alle Stile
+                    </option>
+                    {stile.map(stil => (
+                      <option
+                        key={stil.stil_id}
+                        value={stil.stil_id}
+                        style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}
+                      >
+                        {stil.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            {selectedKandidaten.length > 0 && (
+              <button
+                onClick={() => {
+                  // Batch-Zulassung für ausgewählte Kandidaten
+                  selectedKandidaten.forEach(kandidat => handleKandidatZulassen(kandidat));
+                  setSelectedKandidaten([]);
+                }}
+                className="btn btn-primary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '600'
+                }}
+              >
+                <Check size={20} />
+                {selectedKandidaten.length} Kandidat{selectedKandidaten.length > 1 ? 'en' : ''} zulassen
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
+              <div className="loading-spinner-large"></div>
+              <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Kandidaten werden geladen...</p>
+            </div>
+          ) : kandidaten.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '3rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '0.5rem',
+              border: '2px dashed rgba(255, 215, 0, 0.2)'
+            }}>
+              <Users size={48} style={{ color: 'rgba(255, 255, 255, 0.3)', marginBottom: '1rem' }} />
+              <h3 style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>Keine Kandidaten gefunden</h3>
+              <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem' }}>
+                Aktuell gibt es keine Mitglieder, die die Voraussetzungen für eine Prüfung erfüllen.
+              </p>
+            </div>
+          ) : filteredKandidaten.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '3rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '0.5rem',
+              border: '2px dashed rgba(255, 215, 0, 0.2)'
+            }}>
+              <Users size={48} style={{ color: 'rgba(255, 255, 255, 0.3)', marginBottom: '1rem' }} />
+              <h3 style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>Keine Kandidaten mit den aktuellen Filtern</h3>
+              <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem' }}>
+                Passen Sie die Filter an, um andere Kandidaten anzuzeigen.
+              </p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px', textAlign: 'center', color: '#EAB308' }}>
+                      <input
+                        type="checkbox"
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          cursor: 'pointer',
+                          accentColor: '#ffd700'
+                        }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedKandidaten(filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen));
+                          } else {
+                            setSelectedKandidaten([]);
+                          }
+                        }}
+                        checked={
+                          filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen).length > 0 &&
+                          selectedKandidaten.length === filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen).length
+                        }
+                      />
+                    </th>
+                    <th
+                      style={{ minWidth: '140px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      onClick={() => handleSort('name')}
+                    >
+                      Name <SortIcon columnKey="name" />
+                    </th>
+                    <th
+                      style={{ minWidth: '90px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      onClick={() => handleSort('geburtsdatum')}
+                    >
+                      Geb.datum <SortIcon columnKey="geburtsdatum" />
+                    </th>
+                    <th
+                      style={{ minWidth: '80px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      onClick={() => handleSort('stil_name')}
+                    >
+                      Stil <SortIcon columnKey="stil_name" />
+                    </th>
+                    <th
+                      style={{ minWidth: '120px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      onClick={() => handleSort('graduierung_vorher_name')}
+                    >
+                      Aktuell <SortIcon columnKey="graduierung_vorher_name" />
+                    </th>
+                    <th
+                      style={{ minWidth: '120px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      onClick={() => handleSort('graduierung_nachher_name')}
+                    >
+                      Ziel <SortIcon columnKey="graduierung_nachher_name" />
+                    </th>
+                    <th style={{ minWidth: '110px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Stunden</th>
+                    <th style={{ minWidth: '80px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Monate</th>
+                    <th style={{ minWidth: '100px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Status</th>
+                    <th style={{ minWidth: '100px', textAlign: 'center', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredKandidaten.map((kandidat, index) => (
+                    <tr
+                      key={`${kandidat.mitglied_id}-${kandidat.stil_id}-${index}`}
+                      style={{
+                        backgroundColor: kandidat.bereits_zugelassen
+                          ? 'rgba(255, 215, 0, 0.05)'
+                          : kandidat.berechtigt
+                            ? 'rgba(34, 197, 94, 0.05)'
+                            : 'transparent',
+                        opacity: kandidat.bereits_zugelassen ? 0.7 : 1,
+                        transition: 'all 0.2s ease',
+                        borderLeft: kandidat.berechtigt && !kandidat.bereits_zugelassen
+                          ? '3px solid rgba(34, 197, 94, 0.5)'
+                          : kandidat.bereits_zugelassen
+                            ? '3px solid rgba(255, 215, 0, 0.5)'
+                            : '3px solid transparent'
+                      }}
+                      className="hover-row"
+                    >
+                      <td style={{ textAlign: 'center' }}>
+                        {kandidat.berechtigt && !kandidat.bereits_zugelassen ? (
+                          <input
+                            type="checkbox"
+                            style={{
+                              width: '18px',
+                              height: '18px',
+                              cursor: 'pointer',
+                              accentColor: '#ffd700'
+                            }}
+                            checked={selectedKandidaten.some(k =>
+                              k.mitglied_id === kandidat.mitglied_id && k.stil_id === kandidat.stil_id
+                            )}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedKandidaten([...selectedKandidaten, kandidat]);
+                              } else {
+                                setSelectedKandidaten(selectedKandidaten.filter(k =>
+                                  !(k.mitglied_id === kandidat.mitglied_id && k.stil_id === kandidat.stil_id)
+                                ));
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span style={{ color: '#d1d5db' }}>—</span>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                          <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                            {kandidat.vorname} {kandidat.nachname}
+                          </strong>
+                          <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                            ID: {kandidat.mitglied_id}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                        {new Date(kandidat.geburtsdatum).toLocaleDateString('de-DE')}
+                      </td>
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          padding: '0.4rem 0.6rem',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          color: 'rgba(255, 255, 255, 0.8)',
+                          border: '1px solid rgba(255, 215, 0, 0.2)'
+                        }}>
+                          {kandidat.stil_name}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <div
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: kandidat.aktuelle_farbe || 'rgba(255, 255, 255, 0.1)',
+                              border: '2px solid rgba(255, 255, 255, 0.3)',
+                              flexShrink: 0
+                            }}
+                            title={kandidat.aktuelle_graduierung || 'Keine'}
+                          />
+                          <span style={{
+                            fontSize: '0.875rem',
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            fontWeight: '500'
+                          }}>
+                            {kandidat.aktuelle_graduierung || 'Keine'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <div
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: kandidat.naechste_farbe || 'rgba(255, 255, 255, 0.1)',
+                              border: '2px solid rgba(34, 197, 94, 0.5)',
+                              flexShrink: 0
+                            }}
+                            title={kandidat.naechste_graduierung}
+                          />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                            <span style={{
+                              fontSize: '0.875rem',
+                              color: 'rgba(255, 255, 255, 0.9)',
+                              fontWeight: '600'
+                            }}>
+                              {kandidat.naechste_graduierung}
+                            </span>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: 'rgba(255, 255, 255, 0.5)',
+                              fontWeight: '400'
+                            }}>
+                              Ziel-Gurt
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{
+                              fontSize: '0.8125rem',
+                              fontWeight: '600',
+                              color: kandidat.absolvierte_stunden >= kandidat.benoetigte_stunden ? '#10b981' : '#ef4444'
+                            }}>
+                              {kandidat.absolvierte_stunden}
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                              / {kandidat.benoetigte_stunden}
+                            </span>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '6px',
+                            backgroundColor: '#e5e7eb',
+                            borderRadius: '3px',
+                            overflow: 'hidden'
+                          }}>
+                            <div
+                              style={{
+                                width: `${Math.min(kandidat.fortschritt_prozent, 100)}%`,
+                                height: '100%',
+                                backgroundColor: kandidat.fortschritt_prozent >= 100 ? '#10b981' : '#f59e0b',
+                                transition: 'width 0.3s ease'
+                              }}
+                            />
+                          </div>
+                          <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                            {kandidat.fortschritt_prozent}% erreicht
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{
+                          fontSize: '0.8125rem',
+                          fontWeight: '600',
+                          color: kandidat.monate_seit_letzter_pruefung >= kandidat.benoetigte_monate ? '#10b981' : '#ef4444'
+                        }}>
+                          {kandidat.monate_seit_letzter_pruefung} Mon.
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                          von {kandidat.benoetigte_monate}
+                        </div>
+                      </td>
+                      <td>
+                        {kandidat.bereits_zugelassen ? (
+                          <span className="badge badge-warning" style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.75rem'
+                          }}>
+                            <Check size={14} />
+                            Zugelassen
+                          </span>
+                        ) : kandidat.berechtigt ? (
+                          <span className="badge badge-success" style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.75rem'
+                          }}>
+                            <Check size={14} />
+                            Berechtigt
+                          </span>
+                        ) : (
+                          <span className="badge badge-neutral" style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.75rem'
+                          }}>
+                            <X size={14} />
+                            Noch nicht
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {!kandidat.bereits_zugelassen ? (
+                          kandidat.berechtigt ? (
+                            <button
+                              onClick={() => handleKandidatZulassen(kandidat)}
+                              className="btn btn-sm btn-success"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.375rem',
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.8125rem',
+                                fontWeight: '600'
+                              }}
+                            >
+                              <Check size={16} />
+                              Zulassen
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleAusnahmeZulassen(kandidat)}
+                              className="btn btn-sm btn-warning"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.375rem',
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.8125rem',
+                                fontWeight: '600'
+                              }}
+                              title="Ausnahme-Zulassung für Kandidaten ohne zeitliche Voraussetzungen"
+                            >
+                              <Check size={16} />
+                              Ausnahme
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (kandidat.pruefung_id) {
+                                handleZulassungEntfernen({
+                                  pruefung_id: kandidat.pruefung_id,
+                                  mitglied_id: kandidat.mitglied_id,
+                                  vorname: kandidat.vorname,
+                                  nachname: kandidat.nachname
+                                });
+                              } else {
+                                setError('Keine Prüfung-ID gefunden. Bitte aktualisieren Sie die Seite.');
+                              }
+                            }}
+                            className="btn btn-sm btn-danger"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              padding: '0.5rem 1rem',
+                              fontSize: '0.8125rem',
+                              fontWeight: '600'
+                            }}
+                            title="Zulassung widerrufen"
+                          >
+                            <X size={16} />
+                            Entfernen
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Legende */}
+          {kandidaten.length > 0 && (
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(255, 215, 0, 0.15)'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '2rem',
+                flexWrap: 'wrap',
+                fontSize: '0.875rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{
+                    width: '20px',
+                    height: '4px',
+                    backgroundColor: 'rgba(34, 197, 94, 0.5)',
+                    borderRadius: '2px'
+                  }} />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Berechtigt zur Prüfung</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{
+                    width: '20px',
+                    height: '4px',
+                    backgroundColor: 'rgba(255, 215, 0, 0.5)',
+                    borderRadius: '2px'
+                  }} />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Bereits zugelassen</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{
+                    width: '20px',
+                    height: '4px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '2px'
+                  }} />
+                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Noch nicht berechtigt</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        );
+      })()}
 
       {/* Zugelassene Prüfungen Tab */}
       {activeTab === 'zugelassen' && (

@@ -10,14 +10,15 @@ import config from '../config/config';
 import {
   Building2, Users, TrendingUp, Globe, Plus, Edit, Trash2,
   CheckCircle, XCircle, BarChart3, Activity, Award, Calendar, HardDrive, Clock, AlertTriangle,
-  ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro
+  ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro, Ticket
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
 import FinanceTab from './FinanceTab';
 import ContractsTab from './ContractsTab';
 import UsersTab from './UsersTab';
 import SepaTab from './SepaTab';
-import VerbandsMitglieder from './VerbandsMitglieder';
+import ZieleEntwicklung from './ZieleEntwicklung';
+import SupportTickets from './SupportTickets';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -53,6 +54,21 @@ const SuperAdminDashboard = () => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [editingPlan, setEditingPlan] = useState(null);
   const [plansLoading, setPlansLoading] = useState(false);
+
+  // State für E-Mail-Einstellungen
+  const [emailSettings, setEmailSettings] = useState({
+    smtp_host: '',
+    smtp_port: 587,
+    smtp_secure: true,
+    smtp_user: '',
+    smtp_password: '',
+    default_from_email: 'noreply@tda-intl.com',
+    default_from_name: 'DojoSoftware',
+    aktiv: true
+  });
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailMessage, setEmailMessage] = useState('');
+  const [testEmail, setTestEmail] = useState('');
 
   // Prüfe ob Main Super-Admin (nur für den Hauptadministrator)
   useEffect(() => {
@@ -120,6 +136,75 @@ const SuperAdminDashboard = () => {
       setPlansLoading(false);
     }
   };
+
+  // E-Mail-Einstellungen laden
+  const loadEmailSettings = async () => {
+    try {
+      setEmailLoading(true);
+      const response = await axios.get(`${config.apiBaseUrl}/email-settings/global`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setEmailSettings(response.data.data);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der E-Mail-Einstellungen:', error);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // E-Mail-Einstellungen speichern
+  const saveEmailSettings = async () => {
+    try {
+      setEmailLoading(true);
+      setEmailMessage('');
+      const response = await axios.put(`${config.apiBaseUrl}/email-settings/global`, emailSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setEmailMessage('✅ E-Mail-Einstellungen erfolgreich gespeichert');
+      }
+    } catch (error) {
+      console.error('Fehler beim Speichern:', error);
+      setEmailMessage('❌ Fehler beim Speichern: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // Test-E-Mail senden
+  const sendTestEmail = async () => {
+    if (!testEmail) {
+      setEmailMessage('⚠️ Bitte geben Sie eine Test-E-Mail-Adresse ein');
+      return;
+    }
+    try {
+      setEmailLoading(true);
+      setEmailMessage('');
+      const response = await axios.post(`${config.apiBaseUrl}/email-settings/test`, {
+        test_email: testEmail,
+        use_global: true
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setEmailMessage(`✅ ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Test-E-Mail fehlgeschlagen:', error);
+      setEmailMessage('❌ ' + (error.response?.data?.error || error.message));
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // Lade E-Mail-Einstellungen wenn Tab aktiv
+  useEffect(() => {
+    if (activeTab === 'email') {
+      loadEmailSettings();
+    }
+  }, [activeTab]);
 
   // Plan aktualisieren
   const updatePlan = async (planId, updates) => {
@@ -323,15 +408,18 @@ const SuperAdminDashboard = () => {
   }
 
   // Tab Definitions - wie im normalen Dashboard
+  // Verbandsmitglieder wurden ins separate Verband-Dashboard verschoben
   const tabs = [
     { id: 'overview', label: 'Übersicht', icon: '📊' },
-    { id: 'verbandsmitglieder', label: 'Verbandsmitglieder', icon: '🏆' },
+    { id: 'entwicklung', label: 'Entwicklung', icon: '🎯' },
+    { id: 'support', label: 'Support', icon: '🎫' },
     { id: 'statistics', label: 'Statistiken', icon: '📈' },
     { id: 'finance', label: 'Finanzen', icon: '💰' },
     { id: 'contracts', label: 'Verträge', icon: '📄' },
     { id: 'users', label: 'Benutzer', icon: '👤' },
     { id: 'plans', label: 'Pläne & Preise', icon: '💳' },
-    { id: 'sepa', label: 'SEPA Lastschrift', icon: '€' }
+    { id: 'sepa', label: 'SEPA Lastschrift', icon: '€' },
+    { id: 'email', label: 'E-Mail', icon: '✉️' }
   ];
 
   return (
@@ -676,9 +764,14 @@ const SuperAdminDashboard = () => {
           </>
         )}
 
-        {/* Verbandsmitglieder Tab */}
-        {activeTab === 'verbandsmitglieder' && (
-          <VerbandsMitglieder />
+        {/* Entwicklung Tab - Org-Gesamtübersicht */}
+        {activeTab === 'entwicklung' && (
+          <ZieleEntwicklung bereich="org" />
+        )}
+
+        {/* Support Tab - Alle Tickets aus allen Bereichen */}
+        {activeTab === 'support' && (
+          <SupportTickets bereich="org" showAllBereiche={true} />
         )}
 
         {/* Statistiken Tab */}
@@ -864,6 +957,162 @@ const SuperAdminDashboard = () => {
 
         {activeTab === 'users' && (
           <UsersTab token={token} />
+        )}
+
+        {/* E-Mail-Einstellungen Tab */}
+        {activeTab === 'email' && (
+          <div className="tab-content">
+            <div className="section-card">
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                ✉️ Globale E-Mail-Einstellungen
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                Diese Einstellungen werden als Fallback für alle Dojos verwendet, die keine eigenen SMTP-Daten hinterlegt haben.
+              </p>
+
+              {emailMessage && (
+                <div style={{
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  marginBottom: '1.5rem',
+                  background: emailMessage.includes('✅') ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                  border: `1px solid ${emailMessage.includes('✅') ? '#10b981' : '#ef4444'}`,
+                  color: emailMessage.includes('✅') ? '#10b981' : '#ef4444'
+                }}>
+                  {emailMessage}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="form-group">
+                  <label>SMTP-Server</label>
+                  <input
+                    type="text"
+                    value={emailSettings.smtp_host}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtp_host: e.target.value })}
+                    placeholder="z.B. smtp.tda-intl.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>SMTP-Port</label>
+                  <input
+                    type="number"
+                    value={emailSettings.smtp_port}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtp_port: parseInt(e.target.value) || 587 })}
+                    placeholder="587"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>SMTP-Benutzer</label>
+                  <input
+                    type="text"
+                    value={emailSettings.smtp_user}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtp_user: e.target.value })}
+                    placeholder="E-Mail-Adresse für Login"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>SMTP-Passwort</label>
+                  <input
+                    type="password"
+                    value={emailSettings.smtp_password}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtp_password: e.target.value })}
+                    placeholder={emailSettings.has_password ? '********' : 'Passwort eingeben'}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Absender-E-Mail</label>
+                  <input
+                    type="email"
+                    value={emailSettings.default_from_email}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, default_from_email: e.target.value })}
+                    placeholder="noreply@tda-intl.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Absender-Name</label>
+                  <input
+                    type="text"
+                    value={emailSettings.default_from_name}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, default_from_name: e.target.value })}
+                    placeholder="DojoSoftware"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={emailSettings.smtp_secure}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, smtp_secure: e.target.checked })}
+                  />
+                  TLS/SSL verwenden
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={emailSettings.aktiv}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, aktiv: e.target.checked })}
+                  />
+                  E-Mail-Versand aktiviert
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                <button
+                  className="btn-primary"
+                  onClick={saveEmailSettings}
+                  disabled={emailLoading}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Save size={18} />
+                  {emailLoading ? 'Speichern...' : 'Einstellungen speichern'}
+                </button>
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '2rem 0' }} />
+
+              <h4 style={{ marginBottom: '1rem' }}>🧪 Test-E-Mail senden</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                Senden Sie eine Test-E-Mail, um die Konfiguration zu prüfen.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                  <label>Test-E-Mail-Adresse</label>
+                  <input
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="ihre-email@beispiel.de"
+                  />
+                </div>
+                <button
+                  className="btn-secondary"
+                  onClick={sendTestEmail}
+                  disabled={emailLoading || !testEmail}
+                  style={{ marginBottom: '0.5rem' }}
+                >
+                  {emailLoading ? 'Sende...' : 'Test senden'}
+                </button>
+              </div>
+
+              <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                background: 'rgba(59,130,246,0.1)',
+                borderRadius: '8px',
+                border: '1px solid rgba(59,130,246,0.2)'
+              }}>
+                <h4 style={{ color: '#3b82f6', marginBottom: '0.5rem' }}>ℹ️ So funktioniert das 3-Stufen-System</h4>
+                <ol style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, paddingLeft: '1.5rem' }}>
+                  <li style={{ marginBottom: '0.5rem' }}><strong>Eigene SMTP-Daten:</strong> Dojos können eigene Mailserver-Daten hinterlegen</li>
+                  <li style={{ marginBottom: '0.5rem' }}><strong>TDA-E-Mail:</strong> Sie können Dojos eine @tda-intl.com Adresse zuweisen</li>
+                  <li><strong>Zentraler Versand (Fallback):</strong> Diese globalen Einstellungen werden verwendet, wenn nichts anderes konfiguriert ist</li>
+                </ol>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   User,
@@ -34,8 +35,9 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 
 const MemberDashboard = () => {
+  const { t } = useTranslation('member');
   const { user } = useAuth();
-  
+
   // Cache-Breaking für bessere Debugging
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -525,8 +527,8 @@ const MemberDashboard = () => {
       <div className="dashboard-content">
         <div className="dashboard-start">
           {/* Header - wie beim Admin Dashboard */}
-          <h1 style={{ marginBottom: '0.5rem' }}>Willkommen zurück, {memberData ? `${memberData.vorname} ${memberData.nachname}` : user?.username || 'Mitglied'}! <span style={{ marginLeft: '0.5rem' }}>👋</span></h1>
-          <p className="slogan" style={{ marginBottom: '1.5rem' }}>Deine persönliche Trainingsübersicht</p>
+          <h1 style={{ marginBottom: '0.5rem' }}>{t('welcome.title')}, {memberData ? `${memberData.vorname} ${memberData.nachname}` : user?.username || 'Mitglied'}! <span style={{ marginLeft: '0.5rem' }}>👋</span></h1>
+          <p className="slogan" style={{ marginBottom: '1.5rem' }}>{t('welcome.subtitle')}</p>
 
       {/* Statistiken-Bereich */}
       {memberData && (
@@ -544,10 +546,10 @@ const MemberDashboard = () => {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>🏃‍♂️</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Trainingsstunden</h3>
+            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.trainingHours')}</h3>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ffd700' }}>{stats.trainingsstunden}</div>
           </div>
-          
+
           <div style={{
             background: 'rgba(255, 255, 255, 0.08)',
             border: '1px solid rgba(255, 215, 0, 0.2)',
@@ -556,10 +558,10 @@ const MemberDashboard = () => {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>📊</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Anwesenheit</h3>
+            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.attendance')}</h3>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ffd700' }}>{stats.anwesenheit}%</div>
           </div>
-          
+
           <div style={{
             background: 'rgba(255, 255, 255, 0.08)',
             border: '1px solid rgba(255, 215, 0, 0.2)',
@@ -568,10 +570,10 @@ const MemberDashboard = () => {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>🎓</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Gürtel</h3>
+            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.belt')}</h3>
             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffd700' }}>{currentBelts}</div>
           </div>
-          
+
           <div style={{
             background: 'rgba(255, 255, 255, 0.08)',
             border: '1px solid rgba(255, 215, 0, 0.2)',
@@ -580,7 +582,7 @@ const MemberDashboard = () => {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>💳</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Offene Beiträge</h3>
+            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.openFees')}</h3>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: stats.offeneBeitraege > 0 ? '#ef4444' : '#10b981' }}>
               {stats.offeneBeitraege}
             </div>
@@ -596,31 +598,31 @@ const MemberDashboard = () => {
       }}>
         <div className="cta-tile" onClick={() => handleNavigation('/member/profile')} style={{ padding: '1rem', minHeight: '80px' }}>
           <User size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Meine Daten</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.myData')}</span>
         </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/schedule')} style={{ padding: '1rem', minHeight: '80px' }}>
           <Calendar size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Meine Termine</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.mySchedule')}</span>
         </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/payments')} style={{ padding: '1rem', minHeight: '80px' }}>
           <CreditCard size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Meine Beiträge</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.myPayments')}</span>
         </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/stats')} style={{ padding: '1rem', minHeight: '80px' }}>
           <BarChart3 size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Meine Statistiken</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.myStats')}</span>
         </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/styles')} style={{ padding: '1rem', minHeight: '80px' }}>
           <Trophy size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Stil & Gurt</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.styleAndBelt')}</span>
         </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/equipment')} style={{ padding: '1rem', minHeight: '80px' }}>
           <Package size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Equipment</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.equipment')}</span>
         </div>
         <div className="cta-tile" onClick={() => handleNavigation('/member/kalender')} style={{ padding: '1rem', minHeight: '80px' }}>
           <CalendarSync size={24} />
-          <span style={{ fontSize: '0.9rem' }}>Kalender-Sync</span>
+          <span style={{ fontSize: '0.9rem' }}>{t('navigation.calendarSync')}</span>
         </div>
       </div>
 
@@ -629,23 +631,23 @@ const MemberDashboard = () => {
         <div className="cta-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.8rem' }}>
           <div className="cta-tile" onClick={() => handleQuickAction('checkin')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Clock size={20} />
-            <span style={{ fontSize: '0.85rem' }}>Check-in</span>
+            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.checkin')}</span>
           </div>
           <div className="cta-tile" onClick={() => setShowQRCode(true)} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 53, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
             <QrCode size={20} />
-            <span style={{ fontSize: '0.85rem' }}>Mein QR-Code</span>
+            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.myQrCode')}</span>
           </div>
           <div className="cta-tile" onClick={() => navigate('/app-install')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
             <Download size={20} />
-            <span style={{ fontSize: '0.85rem' }}>App installieren</span>
+            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.installApp')}</span>
           </div>
           <div className="cta-tile" onClick={() => navigate('/member/events')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Calendar size={20} />
-            <span style={{ fontSize: '0.85rem' }}>Events</span>
+            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.events')}</span>
           </div>
           <div className="cta-tile" onClick={() => handleQuickAction('notifications')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
             <Bell size={20} />
-            <span style={{ fontSize: '0.85rem' }}>Benachrichtigungen</span>
+            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.notifications')}</span>
             {unreadCount > 0 && (
               <span style={{
                 position: 'absolute',
@@ -668,7 +670,7 @@ const MemberDashboard = () => {
       {/* Persönliche Informationen - kompakter */}
       {memberData && (
         <div style={{ marginTop: '1.5rem' }}>
-          <h2 style={{ marginBottom: '0.8rem', color: '#ffd700', fontSize: '1.2rem' }}>Deine Informationen</h2>
+          <h2 style={{ marginBottom: '0.8rem', color: '#ffd700', fontSize: '1.2rem' }}>{t('info.title')}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             
             {/* Trainer-Empfehlung */}
@@ -1183,7 +1185,7 @@ const MemberDashboard = () => {
                 <div style={{ fontSize: '1.5rem' }}>📢</div>
                 <div style={{ flex: 1 }}>
                   <h4 style={{ color: '#ffd700', marginBottom: '0.2rem', fontSize: '0.9rem' }}>
-                    Push-Benachrichtigungen
+                    {t('notifications.title')}
                     {unreadCount > 0 && (
                       <span style={{
                         marginLeft: '0.5rem',
@@ -1298,7 +1300,7 @@ const MemberDashboard = () => {
                   fontStyle: 'italic',
                   margin: 0
                 }}>
-                  📭 Keine neuen Benachrichtigungen
+                  📭 {t('notifications.noNotifications')}
                 </p>
               )}
             </div>

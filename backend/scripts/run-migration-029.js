@@ -2,12 +2,13 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs').promises;
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const config = {
-  host: 'localhost',
-  user: 'dojoUser',
-  password: 'DojoServer2025!',
-  database: 'dojo',
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'dojoUser',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'dojo',
   multipleStatements: true
 };
 

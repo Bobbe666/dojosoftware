@@ -1386,6 +1386,7 @@ router.post('/:id/status-aendern', (req, res) => {
  * Alle Prüfungen abrufen mit optionalen Filtern
  */
 router.get('/', (req, res) => {
+  console.log('🔥 GET /api/pruefungen aufgerufen mit:', req.query);
   const {
     dojo_id,
     mitglied_id,
@@ -1485,6 +1486,11 @@ router.get('/', (req, res) => {
         error: 'Fehler beim Laden der Prüfungen',
         details: err.message
       });
+    }
+
+    console.log('📋 Prüfungen geladen:', results.length, 'Einträge');
+    if (results.length > 0) {
+      console.log('📋 Beispiel:', JSON.stringify(results[0], null, 2));
     }
 
     // Formatiere DATE-Felder um Zeitzonen-Probleme zu vermeiden

@@ -76,9 +76,17 @@ const CheckinSystem = () => {
   const navigate = useNavigate();
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
 
+  // 🔍 BARCODE SCANNER SUPPORT
+  const lastInputTimeRef = useRef(0);
+  const inputBufferRef = useRef('');
+  const scannerTimeoutRef = useRef(null);
+  const SCANNER_THRESHOLD_MS = 50; // Scanner tippt schneller als 50ms pro Zeichen
+  const SCANNER_COMPLETE_DELAY = 100; // Warte 100ms nach letzter Eingabe um Scan als komplett zu erkennen
+
   // State Management
   const [members, setMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [scannerMode, setScannerMode] = useState(false); // Zeigt an ob Scanner-Eingabe erkannt wurde
   const [coursesToday, setCoursesToday] = useState([]);
   const [todayCheckins, setTodayCheckins] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -147,6 +155,141 @@ const CheckinSystem = () => {
       }, 100);
     }
   }, [step, showCheckinModal]);
+
+  // 🔍 BARCODE SCANNER: Verarbeite gescannten Code
+  const processScannerInput = async (scannedValue) => {
+    console.log('🔍 Scanner erkannt:', scannedValue);
+    setScannerMode(false);
+
+    // Versuche Mitglied zu finden
+    // 1. Nach Mitgliedsnummer suchen
+    let member = members.find(m =>
+      m.mitgliedsnummer && m.mitgliedsnummer.toLowerCase() === scannedValue.toLowerCase()
+    );
+
+    // 2. Nach ID suchen (falls numerisch)
+    if (!member && /^\d+$/.test(scannedValue)) {
+      member = members.find(m => m.mitglied_id === parseInt(scannedValue));
+    }
+
+    // 3. Nach QR-Code Format suchen (z.B. JSON oder spezielle Formate)
+    if (!member && scannedValue.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(scannedValue);
+        if (parsed.mitglied_id) {
+          member = members.find(m => m.mitglied_id === parsed.mitglied_id);
+        }
+      } catch (e) {
+        console.log('Kein gültiges JSON');
+      }
+    }
+
+    // 4. Nach Name suchen (Vorname Nachname oder Nachname, Vorname)
+    if (!member) {
+      const nameParts = scannedValue.split(/[\s,]+/);
+      if (nameParts.length >= 2) {
+        member = members.find(m =>
+          (m.vorname.toLowerCase() === nameParts[0].toLowerCase() &&
+           m.nachname.toLowerCase() === nameParts[1].toLowerCase()) ||
+          (m.nachname.toLowerCase() === nameParts[0].toLowerCase() &&
+           m.vorname.toLowerCase() === nameParts[1].toLowerCase())
+        );
+      }
+    }
+
+    if (member) {
+      // Mitglied gefunden - Check-in starten
+      setSuccess(`✅ Scanner: ${member.vorname} ${member.nachname} erkannt`);
+      setSearchTerm('');
+
+      // Kurze Verzögerung für visuelles Feedback
+      setTimeout(() => {
+        selectMemberFromSearch(member);
+      }, 300);
+    } else {
+      // Nicht gefunden - zeige Fehlermeldung
+      setError(`❌ Kein Mitglied gefunden für: "${scannedValue}"`);
+      setSearchTerm('');
+      setTimeout(() => setError(''), 3000);
+    }
+
+    // Fokus zurück aufs Suchfeld
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 100);
+  };
+
+  // 🔍 BARCODE SCANNER: Input-Handler mit Scanner-Erkennung
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+    const currentTime = Date.now();
+    const timeDiff = currentTime - lastInputTimeRef.current;
+
+    // Wenn Eingabe sehr schnell kommt (< 50ms), ist es wahrscheinlich ein Scanner
+    if (timeDiff < SCANNER_THRESHOLD_MS && value.length > 1) {
+      setScannerMode(true);
+      inputBufferRef.current = value;
+
+      // Lösche vorherigen Timeout
+      if (scannerTimeoutRef.current) {
+        clearTimeout(scannerTimeoutRef.current);
+      }
+
+      // Warte kurz ob noch mehr kommt
+      scannerTimeoutRef.current = setTimeout(() => {
+        if (inputBufferRef.current.length >= 3) {
+          processScannerInput(inputBufferRef.current.trim());
+          inputBufferRef.current = '';
+        }
+      }, SCANNER_COMPLETE_DELAY);
+    } else {
+      // Normale Tastatureingabe
+      setScannerMode(false);
+    }
+
+    lastInputTimeRef.current = currentTime;
+    setSearchTerm(value);
+  };
+
+  // 🔍 BARCODE SCANNER: Enter-Taste verarbeiten (viele Scanner senden Enter am Ende)
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+
+      const value = searchTerm.trim();
+
+      // Wenn Scanner-Modus oder schnelle Eingabe
+      if (scannerMode || value.length >= 3) {
+        // Lösche pending Timeout
+        if (scannerTimeoutRef.current) {
+          clearTimeout(scannerTimeoutRef.current);
+        }
+
+        // Prüfe ob es eine Scanner-Eingabe sein könnte
+        const timeSinceLastInput = Date.now() - lastInputTimeRef.current;
+        if (timeSinceLastInput < 500 && value.length >= 3) {
+          processScannerInput(value);
+          return;
+        }
+      }
+
+      // Normale Enter-Taste: Erstes Suchergebnis auswählen
+      if (filteredMembers.length > 0) {
+        selectMemberFromSearch(filteredMembers[0]);
+      }
+    }
+  };
+
+  // Cleanup für Scanner-Timeout
+  useEffect(() => {
+    return () => {
+      if (scannerTimeoutRef.current) {
+        clearTimeout(scannerTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadInitialData = async () => {
     try {
@@ -812,10 +955,15 @@ const CheckinSystem = () => {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Mitglied suchen..."
+              placeholder={scannerMode ? "🔍 Scanner erkannt..." : "Mitglied suchen oder scannen..."}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="header-search-input"
+              onChange={handleSearchInput}
+              onKeyDown={handleSearchKeyDown}
+              className={`header-search-input ${scannerMode ? 'scanner-mode' : ''}`}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             {searchTerm && (
               <X

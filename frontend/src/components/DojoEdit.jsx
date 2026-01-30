@@ -33,6 +33,24 @@ const DojoEdit = () => {
   const [agbSendNotification, setAgbSendNotification] = useState(false);
   const [agbMessage, setAgbMessage] = useState('');
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [subdomain, setSubdomain] = useState('');
+  const [probetrainingCopied, setProbetrainingCopied] = useState(false);
+
+  // E-Mail-Einstellungen State
+  const [emailSettings, setEmailSettings] = useState({
+    email_mode: 'zentral',
+    smtp_host: '',
+    smtp_port: 587,
+    smtp_secure: true,
+    smtp_user: '',
+    smtp_password: '',
+    tda_email: '',
+    tda_email_password: ''
+  });
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailMessage, setEmailMessage] = useState('');
+  const [testEmail, setTestEmail] = useState('');
+
   const isNewDojo = id === 'new';
 
   // Theme-Liste aus Context
@@ -56,7 +74,9 @@ const DojoEdit = () => {
     { key: 'admins', label: 'Admin-Accounts', icon: '🔐' },
     { key: 'api', label: 'API-Zugang', icon: '🔗', adminOnly: true },
     { key: 'system', label: 'System', icon: '⚙️' },
-    { key: 'design', label: 'Design', icon: '🎨' }
+    { key: 'design', label: 'Design', icon: '🎨' },
+    { key: 'probetraining', label: 'Probetraining', icon: '🥋' },
+    { key: 'email', label: 'E-Mail', icon: '✉️' }
   ];
 
   // Filter tabs based on user role - API tab only visible to admins
@@ -237,6 +257,9 @@ const DojoEdit = () => {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/dojos/${id}`);
       if (!response.ok) throw new Error('Fehler beim Laden des Dojos');
       const dojo = await response.json();
+
+      // Subdomain speichern für Probetraining-Link
+      setSubdomain(dojo.subdomain || '');
 
       // Setze alle Felder vom Dojo-Objekt
       setFormData({
@@ -545,10 +568,110 @@ const DojoEdit = () => {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  // E-Mail-Einstellungen laden
+  const loadEmailSettings = async () => {
+    try {
+      setEmailLoading(true);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-settings/dojo/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setEmailSettings({
+            email_mode: data.data.email_mode || 'zentral',
+            smtp_host: data.data.smtp_host || '',
+            smtp_port: data.data.smtp_port || 587,
+            smtp_secure: data.data.smtp_secure ?? true,
+            smtp_user: data.data.smtp_user || '',
+            smtp_password: '',
+            tda_email: data.data.tda_email || '',
+            tda_email_password: '',
+            has_smtp_password: data.data.has_smtp_password,
+            has_tda_password: data.data.has_tda_password
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der E-Mail-Einstellungen:', error);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // E-Mail-Einstellungen speichern
+  const saveEmailSettings = async () => {
+    try {
+      setEmailLoading(true);
+      setEmailMessage('');
+
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-settings/dojo/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email_mode: emailSettings.email_mode,
+          smtp_host: emailSettings.smtp_host,
+          smtp_port: emailSettings.smtp_port,
+          smtp_secure: emailSettings.smtp_secure,
+          smtp_user: emailSettings.smtp_user,
+          smtp_password: emailSettings.smtp_password || (emailSettings.has_smtp_password ? '********' : ''),
+          tda_email: emailSettings.tda_email,
+          tda_email_password: emailSettings.tda_email_password || (emailSettings.has_tda_password ? '********' : '')
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setEmailMessage('✅ E-Mail-Einstellungen erfolgreich gespeichert');
+        setTimeout(() => setEmailMessage(''), 5000);
+      } else {
+        throw new Error(data.error || 'Speichern fehlgeschlagen');
+      }
+    } catch (error) {
+      setEmailMessage('❌ Fehler: ' + error.message);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  // Test-E-Mail senden
+  const sendTestEmailForDojo = async () => {
+    if (!testEmail) {
+      setEmailMessage('⚠️ Bitte geben Sie eine Test-E-Mail-Adresse ein');
+      return;
+    }
+    try {
+      setEmailLoading(true);
+      setEmailMessage('');
+
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/email-settings/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          test_email: testEmail,
+          dojo_id: id,
+          use_global: false
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setEmailMessage(`✅ ${data.message}`);
+      } else {
+        throw new Error(data.error || 'Test fehlgeschlagen');
+      }
+    } catch (error) {
+      setEmailMessage('❌ ' + error.message);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
   // Load API token when component mounts or id changes
   useEffect(() => {
     if (!isNewDojo && activeTab === 'api') {
       loadApiToken();
+    }
+    if (!isNewDojo && activeTab === 'email') {
+      loadEmailSettings();
     }
   }, [id, isNewDojo, activeTab]);
 
@@ -578,10 +701,22 @@ const DojoEdit = () => {
         throw new Error(error.error || 'Fehler beim Speichern');
       }
 
-      setMessage(`Dojo erfolgreich ${isNewDojo ? 'erstellt' : 'aktualisiert'}!`);
-      setTimeout(() => {
-        navigate('/dashboard/dojos');
-      }, 1500);
+      setMessage(`Dojo erfolgreich ${isNewDojo ? 'erstellt' : 'gespeichert'}!`);
+
+      // Bei neuem Dojo: Zur Bearbeitungsseite navigieren
+      if (isNewDojo) {
+        const result = await response.json();
+        if (result.id) {
+          setTimeout(() => {
+            navigate(`/dashboard/dojos/edit/${result.id}`);
+          }, 1000);
+        }
+      } else {
+        // Bei bestehendem Dojo: Auf der Seite bleiben, Nachricht nach 3 Sekunden ausblenden
+        setTimeout(() => {
+          setMessage('');
+        }, 3000);
+      }
     } catch (error) {
       setMessage(`Fehler: ${error.message}`);
     } finally {
@@ -2323,6 +2458,454 @@ const DojoEdit = () => {
                       title={color}
                     />
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Probetraining Tab */}
+          {activeTab === 'probetraining' && (
+            <div className="form-section">
+              <h3>Probetraining-Buchung</h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem' }}>
+                Hier finden Sie den Link zu Ihrem Probetraining-Buchungsformular.
+                Teilen Sie diesen Link auf Ihrer Website oder Social Media, damit Interessenten
+                direkt ein Probetraining bei Ihnen buchen können.
+              </p>
+
+              {subdomain ? (
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  border: '1px solid rgba(255,215,0,0.2)'
+                }}>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    color: '#ffd700',
+                    fontWeight: '600'
+                  }}>
+                    Ihr Probetraining-Link:
+                  </label>
+
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`https://${subdomain}.dojo.tda-intl.org/probetraining`}
+                      style={{
+                        flex: 1,
+                        padding: '0.75rem 1rem',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '0.95rem'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://${subdomain}.dojo.tda-intl.org/probetraining`);
+                        setProbetrainingCopied(true);
+                        setTimeout(() => setProbetrainingCopied(false), 2000);
+                      }}
+                      style={{
+                        padding: '0.75rem 1.25rem',
+                        background: probetrainingCopied ? '#10b981' : '#ffd700',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#000',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {probetrainingCopied ? '✓ Kopiert!' : '📋 Kopieren'}
+                    </button>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '1rem',
+                    marginTop: '1.5rem'
+                  }}>
+                    <a
+                      href={`https://${subdomain}.dojo.tda-intl.org/probetraining`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        padding: '0.75rem 1rem',
+                        background: 'rgba(59, 130, 246, 0.2)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        borderRadius: '8px',
+                        color: '#60a5fa',
+                        textDecoration: 'none',
+                        fontWeight: '500'
+                      }}
+                    >
+                      🔗 Link öffnen
+                    </a>
+                  </div>
+
+                  <div style={{
+                    marginTop: '2rem',
+                    padding: '1rem',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <h4 style={{ color: '#10b981', marginBottom: '0.5rem' }}>💡 Tipp</h4>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: 0 }}>
+                      Alle Probetraining-Anfragen werden automatisch in Ihrer Interessenten-Liste gespeichert.
+                      Sie finden diese unter <strong>Mitglieder → Interessenten</strong>.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  color: 'rgba(255,255,255,0.6)'
+                }}>
+                  <p>Keine Subdomain konfiguriert.</p>
+                  <p style={{ fontSize: '0.9rem' }}>
+                    Bitte kontaktieren Sie den Support, um eine Subdomain für Ihr Dojo einzurichten.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* E-Mail Tab */}
+          {activeTab === 'email' && (
+            <div className="form-section">
+              <h3>E-Mail-Konfiguration</h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem' }}>
+                Wählen Sie, wie E-Mails von Ihrem Dojo versendet werden sollen.
+              </p>
+
+              {emailMessage && (
+                <div style={{
+                  padding: '1rem',
+                  marginBottom: '1.5rem',
+                  borderRadius: '8px',
+                  background: emailMessage.includes('❌') ? 'rgba(239, 68, 68, 0.1)' :
+                              emailMessage.includes('⚠️') ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  border: emailMessage.includes('❌') ? '1px solid rgba(239, 68, 68, 0.3)' :
+                          emailMessage.includes('⚠️') ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+                  color: emailMessage.includes('❌') ? '#f87171' :
+                         emailMessage.includes('⚠️') ? '#fbbf24' : '#34d399'
+                }}>
+                  {emailMessage}
+                </div>
+              )}
+
+              {/* E-Mail-Modus Auswahl */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '1rem',
+                marginBottom: '2rem'
+              }}>
+                {/* Option 1: Zentral */}
+                <label style={{
+                  display: 'block',
+                  padding: '1.5rem',
+                  background: emailSettings.email_mode === 'zentral' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: emailSettings.email_mode === 'zentral' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <input
+                      type="radio"
+                      name="email_mode"
+                      value="zentral"
+                      checked={emailSettings.email_mode === 'zentral'}
+                      onChange={(e) => setEmailSettings({ ...emailSettings, email_mode: e.target.value })}
+                      style={{ marginTop: '0.25rem' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                        Zentraler Versand (Standard)
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                        E-Mails werden über den zentralen DojoSoftware-Server versendet.
+                        Keine Konfiguration nötig.
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 2: Eigener SMTP */}
+                <label style={{
+                  display: 'block',
+                  padding: '1.5rem',
+                  background: emailSettings.email_mode === 'eigener_smtp' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: emailSettings.email_mode === 'eigener_smtp' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <input
+                      type="radio"
+                      name="email_mode"
+                      value="eigener_smtp"
+                      checked={emailSettings.email_mode === 'eigener_smtp'}
+                      onChange={(e) => setEmailSettings({ ...emailSettings, email_mode: e.target.value })}
+                      style={{ marginTop: '0.25rem' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                        Eigener SMTP-Server
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                        Verwenden Sie Ihren eigenen Mailserver (z.B. Gmail, Outlook).
+                        Erfordert SMTP-Zugangsdaten.
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 3: TDA E-Mail */}
+                <label style={{
+                  display: 'block',
+                  padding: '1.5rem',
+                  background: emailSettings.email_mode === 'tda_email' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)',
+                  border: emailSettings.email_mode === 'tda_email' ? '2px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <input
+                      type="radio"
+                      name="email_mode"
+                      value="tda_email"
+                      checked={emailSettings.email_mode === 'tda_email'}
+                      onChange={(e) => setEmailSettings({ ...emailSettings, email_mode: e.target.value })}
+                      style={{ marginTop: '0.25rem' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                        @tda-intl.com E-Mail
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                        Nutzen Sie eine professionelle E-Mail-Adresse wie dojo@tda-intl.com
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* SMTP-Einstellungen (nur bei eigener SMTP) */}
+              {emailSettings.email_mode === 'eigener_smtp' && (
+                <div style={{
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <h4 style={{ color: '#60a5fa', marginBottom: '1rem' }}>SMTP-Server Einstellungen</h4>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>SMTP Host *</label>
+                      <input
+                        type="text"
+                        value={emailSettings.smtp_host}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, smtp_host: e.target.value })}
+                        placeholder="z.B. smtp.gmail.com"
+                      />
+                    </div>
+                    <div className="form-group" style={{ maxWidth: '150px' }}>
+                      <label>Port *</label>
+                      <input
+                        type="number"
+                        value={emailSettings.smtp_port}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, smtp_port: parseInt(e.target.value) || 587 })}
+                        placeholder="587"
+                      />
+                    </div>
+                    <div className="form-group" style={{ maxWidth: '100px' }}>
+                      <label>SSL/TLS</label>
+                      <select
+                        value={emailSettings.smtp_secure ? '1' : '0'}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, smtp_secure: e.target.value === '1' })}
+                      >
+                        <option value="1">Ja</option>
+                        <option value="0">Nein</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>SMTP Benutzername *</label>
+                      <input
+                        type="text"
+                        value={emailSettings.smtp_user}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, smtp_user: e.target.value })}
+                        placeholder="user@example.com"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>SMTP Passwort *</label>
+                      <input
+                        type="password"
+                        value={emailSettings.smtp_password}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, smtp_password: e.target.value })}
+                        placeholder={emailSettings.has_smtp_password ? '••••••••' : 'Passwort eingeben'}
+                      />
+                      {emailSettings.has_smtp_password && (
+                        <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem', display: 'block' }}>
+                          Passwort ist hinterlegt. Leer lassen, um es beizubehalten.
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TDA E-Mail Einstellungen */}
+              {emailSettings.email_mode === 'tda_email' && (
+                <div style={{
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem'
+                }}>
+                  <h4 style={{ color: '#a78bfa', marginBottom: '1rem' }}>TDA E-Mail Zugangsdaten</h4>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>TDA E-Mail-Adresse *</label>
+                      <input
+                        type="email"
+                        value={emailSettings.tda_email}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, tda_email: e.target.value })}
+                        placeholder="ihrdojo@tda-intl.com"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>TDA E-Mail Passwort *</label>
+                      <input
+                        type="password"
+                        value={emailSettings.tda_email_password}
+                        onChange={(e) => setEmailSettings({ ...emailSettings, tda_email_password: e.target.value })}
+                        placeholder={emailSettings.has_tda_password ? '••••••••' : 'Passwort eingeben'}
+                      />
+                      {emailSettings.has_tda_password && (
+                        <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem', display: 'block' }}>
+                          Passwort ist hinterlegt. Leer lassen, um es beizubehalten.
+                        </small>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '1rem',
+                    background: 'rgba(139, 92, 246, 0.1)',
+                    borderRadius: '8px'
+                  }}>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: 0 }}>
+                      💡 <strong>Hinweis:</strong> Eine @tda-intl.com E-Mail-Adresse muss zunächst vom
+                      TDA Intl Support eingerichtet werden. Kontaktieren Sie uns, falls Sie noch keine haben.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Speichern Button */}
+              <div style={{ marginBottom: '2rem' }}>
+                <button
+                  type="button"
+                  onClick={saveEmailSettings}
+                  disabled={emailLoading}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#ffd700',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#000',
+                    fontWeight: '600',
+                    cursor: emailLoading ? 'not-allowed' : 'pointer',
+                    opacity: emailLoading ? 0.7 : 1
+                  }}
+                >
+                  {emailLoading ? 'Wird gespeichert...' : 'E-Mail-Einstellungen speichern'}
+                </button>
+              </div>
+
+              {/* Test-E-Mail Bereich */}
+              <div style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                padding: '1.5rem'
+              }}>
+                <h4 style={{ color: '#ffd700', marginBottom: '1rem' }}>Test-E-Mail senden</h4>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  Senden Sie eine Test-E-Mail, um Ihre Konfiguration zu überprüfen.
+                </p>
+
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                      Test-E-Mail-Adresse
+                    </label>
+                    <input
+                      type="email"
+                      value={testEmail}
+                      onChange={(e) => setTestEmail(e.target.value)}
+                      placeholder="ihre@email.de"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={sendTestEmailForDojo}
+                    disabled={emailLoading || !testEmail}
+                    style={{
+                      padding: '0.75rem 1.25rem',
+                      background: emailLoading ? 'rgba(59, 130, 246, 0.5)' : '#3b82f6',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
+                      fontWeight: '600',
+                      cursor: emailLoading || !testEmail ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {emailLoading ? 'Wird gesendet...' : '📤 Test senden'}
+                  </button>
                 </div>
               </div>
             </div>

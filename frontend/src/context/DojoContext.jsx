@@ -36,6 +36,13 @@ export const DojoProvider = ({ children }) => {
           return;
         }
 
+        // Prüfe ob 'verband' gespeichert ist
+        if (savedDojoId === 'verband') {
+          console.log('✅ DojoContext: Verband Modus aus LocalStorage');
+          setActiveDojo('verband');
+          return;
+        }
+
         // Ansonsten suche normales Dojo
         const saved = dojos.find(d => d.id === parseInt(savedDojoId));
         if (saved) {
@@ -100,10 +107,13 @@ export const DojoProvider = ({ children }) => {
 
   const switchDojo = useCallback((dojo) => {
     setActiveDojo(dojo);
-    // Speichere entweder dojo.id oder 'super-admin' für TDA Int'l Org
+    // Speichere entweder dojo.id, 'super-admin' oder 'verband'
     if (dojo === 'super-admin') {
       localStorage.setItem('activeDojoId', 'super-admin');
       console.log('✅ Gewechselt zu: TDA Int\'l Org (Super-Admin)');
+    } else if (dojo === 'verband') {
+      localStorage.setItem('activeDojoId', 'verband');
+      console.log('✅ Gewechselt zu: TDA Verband');
     } else {
       localStorage.setItem('activeDojoId', dojo.id);
       console.log('✅ Gewechselt zu Dojo:', dojo.dojoname);
@@ -132,6 +142,11 @@ export const DojoProvider = ({ children }) => {
   const getDojoFilterParam = useCallback(() => {
     // Super-Admin Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
     if (activeDojo === 'super-admin') {
+      return '';
+    }
+
+    // Verband Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
+    if (activeDojo === 'verband') {
       return '';
     }
 

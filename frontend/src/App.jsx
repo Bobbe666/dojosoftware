@@ -123,6 +123,17 @@ const PruefungDurchfuehren = lazy(() => import(/* webpackChunkName: "exams" */ "
 const BadgeAdminOverview = lazy(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
 
 // ============================================================================
+// LAZY LOADED - Support-Ticketsystem & Feature Board
+// ============================================================================
+const SupportTickets = lazy(() => import(/* webpackChunkName: "support" */ "./components/SupportTickets"));
+const FeatureBoard = lazy(() => import(/* webpackChunkName: "support" */ "./components/FeatureBoard"));
+
+// ============================================================================
+// LAZY LOADED - Verband Dashboard
+// ============================================================================
+const VerbandDashboard = lazy(() => import(/* webpackChunkName: "verband" */ "./components/VerbandDashboard"));
+
+// ============================================================================
 // LAZY LOADED - Integrations (Webhooks, PayPal, LexOffice, DATEV)
 // ============================================================================
 const WebhookVerwaltung = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/WebhookVerwaltung"));
@@ -145,6 +156,7 @@ const Homepage = lazy(() => import(/* webpackChunkName: "public" */ "./component
 const PublicRegistration = lazy(() => import(/* webpackChunkName: "public" */ "./components/PublicRegistration"));
 const BuddyInviteRegistration = lazy(() => import(/* webpackChunkName: "public" */ "./components/BuddyInviteRegistration"));
 const VerbandMitgliedWerden = lazy(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
+const ProbetrainingBuchung = lazy(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
 const MagicLineImport = lazy(() => import(/* webpackChunkName: "import" */ "./pages/MagicLineImport"));
 
 // ============================================================================
@@ -306,6 +318,9 @@ const App = () => {
             {/* Verbandsmitgliedschaft - Öffentliche Anmeldung */}
             <Route path="/verband/mitglied-werden" element={<Suspense fallback={<LazyLoadFallback />}><VerbandMitgliedWerden /></Suspense>} />
 
+            {/* Probetraining-Buchung - Öffentlich zugänglich */}
+            <Route path="/probetraining" element={<Suspense fallback={<LazyLoadFallback />}><ProbetrainingBuchung /></Suspense>} />
+
             {/* ======== MITGLIEDER-ROUTEN (Lazy Loaded) ======== */}
             <Route
               path="/app-install"
@@ -402,6 +417,36 @@ const App = () => {
                 </MemberOnlyRoute>
               }
             />
+            <Route
+              path="/member/support"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}>
+                    <div className="member-support-wrapper">
+                      <MemberHeader />
+                      <div style={{ padding: '1rem' }}>
+                        <SupportTickets />
+                      </div>
+                    </div>
+                  </Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/wunschliste"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}>
+                    <div className="member-support-wrapper">
+                      <MemberHeader />
+                      <div style={{ padding: '1rem' }}>
+                        <FeatureBoard />
+                      </div>
+                    </div>
+                  </Suspense>
+                </MemberOnlyRoute>
+              }
+            />
 
             {/* Standard-Weiterleitung basierend auf Authentifizierung */}
             <Route path="/" element={<RootRedirect />} />
@@ -412,6 +457,16 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Suspense fallback={<LazyLoadFallback />}><DashboardTdaVib /></Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ======== VERBAND DASHBOARD ======== */}
+            <Route
+              path="/verband"
+              element={
+                <ProtectedRoute>
+                  <Suspense fallback={<LazyLoadFallback />}><VerbandDashboard /></Suspense>
                 </ProtectedRoute>
               }
             />
@@ -504,6 +559,9 @@ const App = () => {
               <Route path="news" element={<Suspense fallback={<LazyLoadFallback />}><NewsVerwaltung /></Suspense>} />
               <Route path="news/neu" element={<Suspense fallback={<LazyLoadFallback />}><NewsFormular mode="create" /></Suspense>} />
               <Route path="news/bearbeiten/:id" element={<Suspense fallback={<LazyLoadFallback />}><NewsFormular mode="edit" /></Suspense>} />
+
+              {/* Support-Ticketsystem */}
+              <Route path="support" element={<Suspense fallback={<LazyLoadFallback />}><SupportTickets /></Suspense>} />
 
               {/* Finanzen & Beitrags-Management */}
               <Route path="finanzcockpit" element={<Suspense fallback={<LazyLoadFallback />}><Finanzcockpit /></Suspense>} />

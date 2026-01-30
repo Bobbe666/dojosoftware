@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.jsx';
 
+// i18n - Internationalisierung
+import './locales/i18n';
+
 // Design System - Neue zentrale Styles
 import './design-system/index.css';
 

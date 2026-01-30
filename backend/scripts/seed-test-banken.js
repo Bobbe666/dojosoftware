@@ -94,8 +94,9 @@ async function seedTestBanken() {
         ist_aktiv: true,
         ist_standard: false,
         paypal_email: 'business@tigerdragondojo.de',
-        paypal_client_id: 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQq123456789',
-        paypal_client_secret: 'ZzYyXxWwVvUuTtSsRrQqPpOoNnMmLlKkJj987654321',
+        // ACHTUNG: Dies sind FAKE Test-Credentials - NICHT für Production verwenden!
+        paypal_client_id: 'TEST_CLIENT_ID_NICHT_VERWENDEN',
+        paypal_client_secret: 'TEST_SECRET_NICHT_VERWENDEN',
         notizen: 'Alternative Online-Zahlungsmethode für internationale Mitglieder',
         sortierung: 3
       },

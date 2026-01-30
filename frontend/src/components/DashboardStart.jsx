@@ -3,11 +3,13 @@ import { useAuth } from "../context/AuthContext.jsx";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/DashboardStart.css"; // Relativer Pfad
-import { Users, CalendarClock, BookOpenCheck, UserCog } from "lucide-react";
+import { Users, CalendarClock, BookOpenCheck, UserCog, Ticket } from "lucide-react";
 
 const dojoLogo = '/dojo-logo.png';
 import MemberDashboard from "./MemberDashboard";
 import AgbStatusWidget from "./AgbStatusWidget";
+import ZieleEntwicklung from "./ZieleEntwicklung";
+import SupportTickets from "./SupportTickets";
 
 const DashboardStart = () => {
   const { user } = useAuth();
@@ -43,7 +45,16 @@ const DashboardStart = () => {
         <a href="/dashboard/trainer" className="cta-tile">
           <UserCog size={32} /> <span>Trainer</span>
         </a>
+        <a href="/dashboard/support" className="cta-tile support-tile">
+          <Ticket size={32} /> <span>Support</span>
+        </a>
       </div>
+
+      {/* Support-Tickets Widget */}
+      <SupportTickets bereich="dojo" compact={true} />
+
+      {/* Ziele & Entwicklung Widget */}
+      <ZieleEntwicklung bereich="dojo" />
 
       {/* AGB/DSGVO Status Widget */}
       <AgbStatusWidget />

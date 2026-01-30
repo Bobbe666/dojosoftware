@@ -127,46 +127,6 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = async () => {
       debugLog('AuthContext wird initialisiert');
 
-      // 🔧 DEVELOPMENT MODE: Fake Admin Session - TEMPORÄR DEAKTIVIERT für Multi-Tenant Testing
-      // const isDevelopment = import.meta.env.MODE === 'development';
-      // if (isDevelopment) {
-      //   debugLog('Development Mode: Fake Admin-Session wird erstellt');
-      //   const fakeUser = {
-      //     id: 1,
-      //     username: 'dev-admin',
-      //     email: 'dev@admin.local',
-      //     role: 'admin',
-      //     vorname: 'Dev',
-      //     nachname: 'Admin'
-      //   };
-
-      //   // Erstelle ein fake JWT-Token mit admin role
-      //   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-      //   const payload = btoa(JSON.stringify({
-      //     id: 1,
-      //     username: 'dev-admin',
-      //     role: 'admin',
-      //     email: 'dev@admin.local',
-      //     exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 Stunden gültig
-      //   }));
-      //   const signature = 'fake-signature';
-      //   const fakeToken = `${header}.${payload}.${signature}`;
-
-      //   setUser(fakeUser);
-      //   setToken(fakeToken);
-      //   setLoading(false);
-
-      //   debugLog('AuthContext State Update', {
-      //     hasUser: true,
-      //     hasToken: true,
-      //     isAuthenticated: true,
-      //     loading: false,
-      //     error: false,
-      //     role: 'admin'
-      //   });
-      //   return;
-      // }
-
       try {
         const savedToken = localStorage.getItem(TOKEN_KEY);
         const savedUser = localStorage.getItem(USER_KEY);

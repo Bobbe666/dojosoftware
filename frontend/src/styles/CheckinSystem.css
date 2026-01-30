@@ -344,6 +344,26 @@
   font-weight: 500;
 }
 
+/* 🔍 BARCODE SCANNER MODE */
+.header-search-input.scanner-mode {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.2);
+  animation: scanner-pulse 0.5s ease-in-out infinite;
+}
+
+.header-search-input.scanner-mode::placeholder {
+  color: #10b981;
+}
+
+@keyframes scanner-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.1);
+  }
+}
+
 .header-search-container .search-icon {
   position: absolute;
   left: 1rem;

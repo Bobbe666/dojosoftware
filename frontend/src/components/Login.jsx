@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus, LogIn } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus, LogIn, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
+import LanguageSwitcher from './LanguageSwitcher';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
@@ -12,6 +14,7 @@ import '../styles/Buttons.css';
 const dojoLogo = '/dojo-logo.png';
 
 const Login = () => {
+  const { t } = useTranslation('auth');
   const [formData, setFormData] = useState({
     loginField: '',  // Kann Email oder Username sein
     password: ''
@@ -76,13 +79,13 @@ const Login = () => {
 
     // Eingabe-Validierung
     if (!formData.loginField.trim()) {
-      setError('Bitte geben Sie Ihren Benutzernamen oder Ihre E-Mail-Adresse ein');
+      setError(t('errors.requiredField'));
       setLoading(false);
       return;
     }
 
     if (!formData.password.trim()) {
-      setError('Bitte geben Sie Ihr Passwort ein');
+      setError(t('errors.requiredField'));
       setLoading(false);
       return;
     }
@@ -134,15 +137,15 @@ const Login = () => {
       console.error('? Login-Fehler:', err);
 
       if (err.response?.status === 401) {
-        setError('Ungültige Anmeldedaten. Bitte prüfen Sie Username/Email und Passwort.');
+        setError(t('errors.invalidCredentials'));
       } else if (err.response?.status === 400) {
-        setError('Bitte füllen Sie alle Felder korrekt aus.');
+        setError(t('errors.requiredField'));
       } else if (err.response?.status === 500) {
-        setError('Server-Fehler. Bitte versuchen Sie es später erneut.');
+        setError(t('errors.serverError'));
       } else if (err.code === 'ERR_NETWORK') {
-        setError('Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Internetverbindung.');
+        setError(t('errors.networkError'));
       } else {
-        setError(err.response?.data?.message || 'Ein unbekannter Fehler ist aufgetreten.');
+        setError(err.response?.data?.message || t('errors.serverError'));
       }
     } finally {
       setLoading(false);
@@ -154,7 +157,7 @@ const Login = () => {
       <div className="login-container">
         <div className="login-loading">
           <div className="loading-spinner"></div>
-          <p>Lade Anmeldung...</p>
+          <p>{t('login.loading')}</p>
         </div>
       </div>
     );
@@ -175,6 +178,8 @@ const Login = () => {
             <a href="/galerie">Galerie</a>
             <a href="/pricing">Preise</a>
             <a href="/#testimonials">Referenzen</a>
+            <a href="/probetraining" onClick={(e) => { e.preventDefault(); navigate('/probetraining'); }} className="nav-link-highlight">Probetraining</a>
+            <LanguageSwitcher compact={true} />
           </div>
         </div>
       </nav>
@@ -219,7 +224,7 @@ const Login = () => {
             <div className="login-card">
               <div className="login-card-title">
                 <LogIn size={16} />
-                <span>Anmelden</span>
+                <span>{t('login.title')}</span>
               </div>
 
               <form onSubmit={handleSubmit} className="login-form">
@@ -233,7 +238,7 @@ const Login = () => {
                         <User size={16} className="label-icon" />
                       )}
                       <span>
-                        {loginType === 'email' ? 'E-Mail' : 'Benutzername'}
+                        {loginType === 'email' ? t('login.email') : t('login.email')}
                       </span>
                     </div>
                   </label>
@@ -255,7 +260,7 @@ const Login = () => {
                   <label className="form-label">
                     <div className="label-content">
                       <Lock size={16} className="label-icon" />
-                      <span>Passwort</span>
+                      <span>{t('login.password')}</span>
                     </div>
                   </label>
                   <div className="password-wrapper">
@@ -265,7 +270,7 @@ const Login = () => {
                       value={formData.password}
                       onChange={handleInputChange}
                       className="form-input password-input"
-                      placeholder="Ihr Passwort"
+                      placeholder={t('login.passwordPlaceholder')}
                       required
                       autoComplete="current-password"
                       disabled={loading}
@@ -308,12 +313,12 @@ const Login = () => {
                   {loading ? (
                     <>
                       <div className="button-spinner"></div>
-                      <span>Anmelden...</span>
+                      <span>{t('login.loading')}</span>
                     </>
                   ) : (
                     <>
                       <LogIn size={18} />
-                      <span>Anmelden</span>
+                      <span>{t('login.button')}</span>
                     </>
                   )}
                 </button>
@@ -325,7 +330,7 @@ const Login = () => {
                   onClick={() => navigate('/password-reset')}
                   disabled={loading}
                 >
-                  Passwort vergessen?
+                  {t('login.forgotPassword')}
                 </button>
               </form>
             </div>
@@ -334,7 +339,7 @@ const Login = () => {
             <div className="register-card">
               <div className="login-card-title">
                 <UserPlus size={16} />
-                <span>Registrieren</span>
+                <span>{t('register.title')}</span>
               </div>
 
               <div className="register-content">
@@ -372,7 +377,7 @@ const Login = () => {
                   disabled={loading}
                 >
                   <UserPlus size={18} />
-                  <span>Jetzt registrieren</span>
+                  <span>{t('login.register')}</span>
                 </button>
 
                 <p className="register-note">

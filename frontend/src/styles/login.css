@@ -91,6 +91,20 @@
   color: #ffd700;
 }
 
+.login-nav .nav-links a.nav-link-highlight {
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  color: #1a1a2e !important;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.login-nav .nav-links a.nav-link-highlight:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
 /* ===== SPLIT LAYOUT ===== */
 .login-split-layout {
   flex: 1;

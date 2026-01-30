@@ -232,6 +232,48 @@
   box-shadow: 0 2px 4px rgba(218, 165, 32, 0.3);
 }
 
+.badge-blue {
+  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.badge-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+/* Verband Item Styling */
+.dropdown-item.verband {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.dropdown-item.verband:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.dropdown-item.verband.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Support Item Styling */
+.dropdown-item.support {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.dropdown-item.support:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.dropdown-item.support.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
 .check-icon {
   color: #22c55e;
   margin-left: auto;
