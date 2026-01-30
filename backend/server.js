@@ -822,6 +822,24 @@ try {
   const shopRouter = require(path.join(__dirname, "routes", "shop.js"));
   app.use("/api/shop", shopRouter);
   logger.success("Route gemountet", { path: "/api/shop" });
+
+// 10.7 ENTWICKLUNGSZIELE
+try {
+  const entwicklungszieleRouter = require(path.join(__dirname, "routes", "entwicklungsziele.js"));
+  app.use("/api/entwicklungsziele", entwicklungszieleRouter);
+  logger.success("Route gemountet", { path: "/api/entwicklungsziele" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "entwicklungsziele", error: error.message });
+
+// 10.8 SUPPORT-TICKETS
+try {
+  const supportTicketsRouter = require(path.join(__dirname, "routes", "support-tickets.js"));
+  app.use("/api/support-tickets", authenticateToken, supportTicketsRouter);
+  logger.success("Route gemountet", { path: "/api/support-tickets" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "support-tickets", error: error.message });
+}
+}
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'verbandsmitgliedschaften',
