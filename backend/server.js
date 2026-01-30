@@ -305,6 +305,32 @@ try {
     });
 }
 
+// SUPPORT-TICKETS ROUTES
+try {
+  const supportTicketsRoutes = require('./routes/support-tickets');
+  app.use('/api/support-tickets', authenticateToken, supportTicketsRoutes);
+  logger.success('Route gemountet', { path: '/api/support-tickets' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'support-tickets routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// FEATURE-REQUESTS ROUTES (Wunschliste/Feedback)
+try {
+  const featureRequestsRoutes = require('./routes/feature-requests');
+  app.use('/api/feature-requests', authenticateToken, featureRequestsRoutes);
+  logger.success('Route gemountet', { path: '/api/feature-requests' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'feature-requests routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // TDA EXPORT API ROUTES (für TDA Software Integration)
 try {
   const tdaExportRoutes = require('./routes/tda-export');

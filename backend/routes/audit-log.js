@@ -13,7 +13,7 @@ const requireAdmin = (req, res, next) => {
     return res.status(401).json({ success: false, error: 'Nicht authentifiziert' });
   }
   // SuperAdmin oder Dojo-Admin erlaubt
-  if (req.user.rolle !== 'SuperAdmin' && req.user.rolle !== 'Admin') {
+  if (req.user.rolle !== 'super_admin' && req.user.role !== 'super_admin' && req.user.rolle !== 'admin' && req.user.role !== 'admin') {
     return res.status(403).json({ success: false, error: 'Keine Berechtigung' });
   }
   next();
@@ -38,7 +38,7 @@ router.get('/', requireAdmin, async (req, res) => {
     } = req.query;
 
     // Dojo-Filter: Admins sehen nur ihr Dojo, SuperAdmins alles
-    const dojoId = req.user.rolle === 'SuperAdmin' ? req.query.dojo_id : req.user.dojo_id;
+    const dojoId = (req.user.rolle === 'super_admin' || req.user.role === 'super_admin') ? req.query.dojo_id : req.user.dojo_id;
 
     const logs = await auditLog.getLogs({
       dojoId,
@@ -75,7 +75,7 @@ router.get('/', requireAdmin, async (req, res) => {
 router.get('/stats', requireAdmin, async (req, res) => {
   try {
     const { tage = 30 } = req.query;
-    const dojoId = req.user.rolle === 'SuperAdmin' ? req.query.dojo_id : req.user.dojo_id;
+    const dojoId = (req.user.rolle === 'super_admin' || req.user.role === 'super_admin') ? req.query.dojo_id : req.user.dojo_id;
 
     const stats = await auditLog.getStats(dojoId, parseInt(tage));
 
@@ -127,7 +127,7 @@ router.get('/entity/:type/:id', requireAdmin, async (req, res) => {
     const { type, id } = req.params;
     const { limit = 50 } = req.query;
 
-    const dojoId = req.user.rolle === 'SuperAdmin' ? null : req.user.dojo_id;
+    const dojoId = (req.user.rolle === 'super_admin' || req.user.role === 'super_admin') ? null : req.user.dojo_id;
 
     const logs = await auditLog.getLogs({
       dojoId,

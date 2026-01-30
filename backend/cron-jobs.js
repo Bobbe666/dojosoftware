@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const db = require('./db');
 const logger = require('./utils/logger');
 const { pruefeDokumentenAufbewahrung } = require('./services/documentRetentionService');
+const { checkBirthdays } = require('./services/birthdayService');
 
 /**
  * Auto-Checkout Cron-Job
@@ -94,6 +95,41 @@ function initCronJobs() {
     }
   });
 
+  /**
+   * Geburtstags-Check Cron-Job
+   * Läuft täglich um 08:00 Uhr
+   * Sendet Geburtstagswünsche an Mitglieder und benachrichtigt Admins
+   */
+  cron.schedule('0 8 * * *', async () => {
+    try {
+      logger.info('🎂 Geburtstags-Check Cron-Job gestartet');
+
+      const result = await checkBirthdays();
+
+      if (result.success) {
+        if (result.notifications > 0) {
+          logger.success(`✅ Geburtstags-Check erfolgreich: ${result.notifications} Benachrichtigung(en) gesendet`, {
+            birthdays: result.birthdays,
+            notifications: result.notifications
+          });
+        } else {
+          logger.info('ℹ️ Geburtstags-Check: Keine Geburtstage heute oder bereits benachrichtigt', {
+            birthdays: result.birthdays
+          });
+        }
+      } else {
+        logger.error('❌ Geburtstags-Check fehlgeschlagen', {
+          error: result.error
+        });
+      }
+    } catch (error) {
+      logger.error('❌ Geburtstags-Check Cron-Job Fehler', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  });
+
   logger.info('✅ Cron-Jobs initialisiert', {
     jobs: [
       {
@@ -105,6 +141,11 @@ function initCronJobs() {
         name: 'Aufbewahrungsfristen-Prüfung',
         schedule: '02:00:00 täglich',
         description: 'Löscht Dokumente/Rechnungen nach 10 Jahren (§ 147 AO)'
+      },
+      {
+        name: 'Geburtstags-Check',
+        schedule: '08:00:00 täglich',
+        description: 'Sendet Geburtstagswünsche an Mitglieder und benachrichtigt Admins'
       }
     ]
   });
