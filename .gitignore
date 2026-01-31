@@ -3,11 +3,14 @@ node_modules/
 backend/node_modules/
 frontend/node_modules/
 
-# Build Output
+# Build Output - NIEMALS COMMITTEN!
 dist/
 build/
 frontend/dist/
 backend/dist/
+frontend/assets/
+*.chunk.js
+*.chunk.css
 
 # Environment Variables
 .env
