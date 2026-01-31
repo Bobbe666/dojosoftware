@@ -1,1 +1,0 @@
-import{j as i}from"./animation-1wuIdCBS.js";import"./vendor-router-BhMXg4Z-.js";import r from"./MitgliedDetailShared-BFuUS8V0.js";import"./vendor-react-DtuzQOD1.js";import"./index-BJCk5MxH.js";import"./query-Bs1dTGah.js";import"./icons-C6KFH58b.js";import"./sanitizer-DJNv4htu.js";const o=()=>i.jsx(r,{isAdmin:!0});export{o as default};

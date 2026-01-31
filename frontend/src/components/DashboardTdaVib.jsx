@@ -192,7 +192,10 @@ function DashboardTdaVib() {
     { id: 'personal', label: 'Personal', icon: '👨‍🏫' },
     { id: 'berichte', label: 'Berichte', icon: '📊' },
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' },
-    { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' }
+    { id: 'schnellaktionen', label: 'Schnellaktionen', icon: '⚡' },
+    { id: 'support', label: 'Support', icon: '🎫' },
+    { id: 'wunschliste', label: 'Wunschliste', icon: '💡' },
+    { id: 'info', label: 'Info', icon: 'ℹ️' }
   ];
 
   const formatNumber = (num) => {
