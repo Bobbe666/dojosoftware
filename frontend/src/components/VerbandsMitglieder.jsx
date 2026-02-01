@@ -435,8 +435,8 @@ const VerbandsMitglieder = () => {
           land: formData.neues_dojo_land
         });
 
-        // Dojo-ID für Mitgliedschaft verwenden
-        submitData.dojo_id = neuesDojo.data.id || neuesDojo.data.dojo?.id;
+        // Dojo-ID für Mitgliedschaft verwenden (Backend gibt dojo_id zurück)
+        submitData.dojo_id = neuesDojo.data.dojo_id || neuesDojo.data.id || neuesDojo.data.dojo?.id;
         submitData.neues_dojo = false;
       }
 
