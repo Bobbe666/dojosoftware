@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Building2, ChevronDown, Check, AlertTriangle, TrendingUp, Award, Globe, Ticket } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
@@ -215,7 +216,7 @@ const DojoSwitcher = () => {
         <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <>
           <div
             className="dojo-switcher-overlay"
@@ -411,7 +412,8 @@ const DojoSwitcher = () => {
               </a>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
