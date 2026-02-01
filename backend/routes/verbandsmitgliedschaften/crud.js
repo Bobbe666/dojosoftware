@@ -225,7 +225,7 @@ router.post('/:id(\\d+)/beitragsfrei', async (req, res) => {
 
       // Offene Zahlungen stornieren
       await queryAsync(
-        "UPDATE verbandsmitgliedschaft_zahlungen SET status = 'storniert', notizen = 'Automatisch storniert - Mitgliedschaft auf beitragsfrei umgestellt' WHERE verbandsmitgliedschaft_id = ? AND status = 'offen'",
+        "UPDATE verbandsmitgliedschaft_zahlungen SET status = 'storniert' WHERE verbandsmitgliedschaft_id = ? AND status = 'offen'",
         [id]
       );
 
