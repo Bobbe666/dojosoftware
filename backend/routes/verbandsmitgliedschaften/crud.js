@@ -104,8 +104,11 @@ router.get('/dojos-ohne-mitgliedschaft', (req, res) => {
 
 // GET /dokumente/liste
 router.get('/dokumente/liste', (req, res) => {
-  db.query('SELECT * FROM verband_dokumente WHERE aktiv = TRUE ORDER BY kategorie, sortierung', (err, results) => {
-    if (err) return res.status(500).json({ error: 'Datenbankfehler' });
+  db.query('SELECT * FROM verband_dokumente WHERE aktiv = TRUE ORDER BY typ, titel', (err, results) => {
+    if (err) {
+      console.error('Fehler bei dokumente/liste:', err);
+      return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
     res.json(results);
   });
 });
@@ -184,6 +187,21 @@ router.post('/', async (req, res) => {
     logger.error('Fehler beim Anlegen der Mitgliedschaft:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler: ' + err.message });
   }
+});
+
+// PUT /:id/status - Status ändern
+router.put('/:id(\\d+)/status', (req, res) => {
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ error: 'Status fehlt' });
+
+  db.query('UPDATE verbandsmitgliedschaften SET status = ?, updated_at = NOW() WHERE id = ?', [status, req.params.id], (err, result) => {
+    if (err) {
+      console.error('Fehler bei Status-Update:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    res.json({ success: true, message: 'Status aktualisiert' });
+  });
 });
 
 // PUT /:id - Mitgliedschaft aktualisieren
