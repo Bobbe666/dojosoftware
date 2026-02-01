@@ -1713,6 +1713,63 @@ const VerbandsMitglieder = () => {
                     </div>
                   </div>
 
+                  {/* Beitragsfrei Toggle (nur für Admin) */}
+                  {isAdmin && (
+                    <div style={{
+                      padding: '12px 16px',
+                      background: selectedMitgliedschaft.beitragsfrei ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                      borderRadius: '8px',
+                      border: selectedMitgliedschaft.beitragsfrei ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Gift size={18} color={selectedMitgliedschaft.beitragsfrei ? '#22c55e' : '#6b7280'} />
+                          <span style={{ color: selectedMitgliedschaft.beitragsfrei ? '#22c55e' : 'rgba(255, 255, 255, 0.8)' }}>
+                            {selectedMitgliedschaft.beitragsfrei ? 'Beitragsfrei' : 'Regulärer Beitrag'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const newValue = !selectedMitgliedschaft.beitragsfrei;
+                            const confirmMsg = newValue
+                              ? 'Mitgliedschaft auf beitragsfrei setzen? Offene Zahlungen werden storniert.'
+                              : 'Beitragsfrei aufheben? Der normale Jahresbeitrag wird wieder berechnet.';
+                            if (!confirm(confirmMsg)) return;
+                            try {
+                              const res = await api.post(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}/beitragsfrei`, { beitragsfrei: newValue });
+                              alert(res.data.message);
+                              // Daten neu laden
+                              loadData();
+                              const detail = await api.get(`/verbandsmitgliedschaften/${selectedMitgliedschaft.id}`);
+                              setSelectedMitgliedschaft(detail.data);
+                            } catch (err) {
+                              alert(err.response?.data?.error || 'Fehler beim Umstellen');
+                            }
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            background: selectedMitgliedschaft.beitragsfrei ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                            border: selectedMitgliedschaft.beitragsfrei ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+                            borderRadius: '6px',
+                            color: selectedMitgliedschaft.beitragsfrei ? '#ef4444' : '#22c55e',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {selectedMitgliedschaft.beitragsfrei ? 'Beitragsfrei aufheben' : 'Beitragsfrei stellen'}
+                        </button>
+                      </div>
+                      {selectedMitgliedschaft.beitragsfrei && (
+                        <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                          Diese Mitgliedschaft ist von Beiträgen befreit. Bei Verlängerung werden keine Zahlungen erstellt.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Kontakt (bei Einzelperson) */}
                   {selectedMitgliedschaft.typ === 'einzelperson' && (
                     <div style={styles.detailSection}>

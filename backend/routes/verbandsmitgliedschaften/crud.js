@@ -204,6 +204,51 @@ router.put('/:id(\\d+)/status', (req, res) => {
   });
 });
 
+// POST /:id/beitragsfrei - Beitragsfrei-Status umschalten (nur Admin)
+router.post('/:id(\\d+)/beitragsfrei', async (req, res) => {
+  try {
+    const { beitragsfrei } = req.body;
+    const id = req.params.id;
+
+    // Mitgliedschaft laden
+    const mitgliedschaft = await queryAsync('SELECT * FROM verbandsmitgliedschaften WHERE id = ?', [id]);
+    if (mitgliedschaft.length === 0) {
+      return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    }
+
+    if (beitragsfrei) {
+      // Auf beitragsfrei setzen
+      await queryAsync(
+        'UPDATE verbandsmitgliedschaften SET beitragsfrei = 1, jahresbeitrag = 0, status = ?, updated_at = NOW() WHERE id = ?',
+        [mitgliedschaft[0].status === 'ausstehend' ? 'aktiv' : mitgliedschaft[0].status, id]
+      );
+
+      // Offene Zahlungen stornieren
+      await queryAsync(
+        "UPDATE verbandsmitgliedschaft_zahlungen SET status = 'storniert', notizen = 'Automatisch storniert - Mitgliedschaft auf beitragsfrei umgestellt' WHERE verbandsmitgliedschaft_id = ? AND status = 'offen'",
+        [id]
+      );
+
+      res.json({ success: true, message: 'Mitgliedschaft auf beitragsfrei umgestellt. Offene Zahlungen wurden storniert.' });
+    } else {
+      // Beitragsfrei aufheben - normalen Beitrag wiederherstellen
+      const beitragDojo = await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO);
+      const beitragEinzel = await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL);
+      const neuerBeitrag = mitgliedschaft[0].typ === 'dojo' ? beitragDojo : beitragEinzel;
+
+      await queryAsync(
+        'UPDATE verbandsmitgliedschaften SET beitragsfrei = 0, jahresbeitrag = ?, updated_at = NOW() WHERE id = ?',
+        [neuerBeitrag, id]
+      );
+
+      res.json({ success: true, message: 'Beitragsfrei aufgehoben. Neuer Jahresbeitrag: ' + neuerBeitrag + '€' });
+    }
+  } catch (err) {
+    console.error('Fehler bei beitragsfrei-Toggle:', err);
+    res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+  }
+});
+
 // PUT /:id - Mitgliedschaft aktualisieren
 router.put('/:id(\\d+)', (req, res) => {
   const { person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, status } = req.body;
