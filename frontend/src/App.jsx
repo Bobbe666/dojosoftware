@@ -142,6 +142,11 @@ const DatevExport = lazy(() => import(/* webpackChunkName: "integrations" */ "./
 const KalenderAbo = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/KalenderAbo"));
 
 // ============================================================================
+// LAZY LOADED - Payment Checkout
+// ============================================================================
+const PaymentCheckout = lazy(() => import(/* webpackChunkName: "payment" */ "./components/PaymentCheckout"));
+
+// ============================================================================
 // LAZY LOADED - Events & News
 // ============================================================================
 const Events = lazy(() => import(/* webpackChunkName: "events" */ "./components/Events"));
@@ -575,6 +580,7 @@ const App = () => {
               <Route path="rechnungen" element={<Suspense fallback={<LazyLoadFallback />}><Rechnungsverwaltung /></Suspense>} />
               <Route path="rechnungen/:id" element={<Suspense fallback={<LazyLoadFallback />}><Rechnungsverwaltung /></Suspense>} />
               <Route path="rechnung-erstellen" element={<Suspense fallback={<LazyLoadFallback />}><RechnungErstellen /></Suspense>} />
+              <Route path="zahlung/:rechnungId" element={<Suspense fallback={<LazyLoadFallback />}><PaymentCheckout /></Suspense>} />
               <Route path="lastschriftlauf" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftManagement /></Suspense>} />
               <Route path="sepa-mandate" element={<Suspense fallback={<LazyLoadFallback />}><SepaMandateVerwaltung /></Suspense>} />
               <Route path="zahllaeufe" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftManagement /></Suspense>} />

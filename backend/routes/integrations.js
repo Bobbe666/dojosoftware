@@ -25,6 +25,8 @@ async function getDojoConfig(dojoId) {
         const query = `
             SELECT
                 d.*,
+                d.stripe_publishable_key,
+                d.stripe_secret_key,
                 di.paypal_client_id,
                 di.paypal_client_secret,
                 di.paypal_webhook_id,
@@ -58,8 +60,22 @@ router.get('/status', async (req, res) => {
         const lexoffice = new LexOfficeProvider(config);
         const datev = new DatevExportService(config);
 
+        // PayPal Status mit Client-ID für Frontend
+        const paypalStatus = await paypal.getStatus();
+        if (paypalStatus.configured && config.paypal_client_id) {
+            paypalStatus.client_id = config.paypal_client_id;
+            paypalStatus.sandbox = config.paypal_sandbox === 1 || config.paypal_sandbox === true;
+        }
+
+        // Stripe Status aus Dojo-Config
+        const stripeConfigured = !!(config.stripe_publishable_key && config.stripe_secret_key);
+
         const status = {
-            paypal: await paypal.getStatus(),
+            paypal: paypalStatus,
+            stripe: {
+                configured: stripeConfigured,
+                publishable_key: stripeConfigured ? config.stripe_publishable_key : null
+            },
             lexoffice: await lexoffice.getStatus(),
             datev: datev.getStatus(),
             ical: { configured: true, message: 'iCal Export ist verfügbar' },

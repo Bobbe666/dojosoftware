@@ -172,7 +172,12 @@ class PaymentProviderFactory {
                 provider_name: provider.getProviderName(),
                 is_configured: await provider.isConfigured(),
                 configuration_status: await provider.getConfigurationStatus(),
-                last_updated: config.updated_at
+                last_updated: config.updated_at,
+                // Stripe-spezifische Daten für Frontend
+                stripe: {
+                    configured: config.payment_provider === 'stripe_datev' && !!config.stripe_publishable_key,
+                    publishable_key: config.stripe_publishable_key || null
+                }
             };
         } catch (error) {
             logger.error('❌ PaymentProviderFactory: Error getting status:', { error: error.message, stack: error.stack });
@@ -180,7 +185,8 @@ class PaymentProviderFactory {
                 current_provider: 'manual_sepa',
                 provider_name: 'Manual SEPA (Fallback)',
                 is_configured: false,
-                error: error.message
+                error: error.message,
+                stripe: { configured: false, publishable_key: null }
             };
         }
     }
