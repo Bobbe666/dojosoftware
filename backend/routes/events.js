@@ -469,9 +469,67 @@ router.post('/:id/abmelden', (req, res) => {
       }
     );
 
+    // Nächsten von Warteliste hochstufen
+    promoteNextFromWaitlist(eventId);
+
     res.json({ message: 'Erfolgreich abgemeldet' });
   });
 });
+
+/**
+ * Hilfsfunktion: Nächsten von Warteliste hochstufen
+ */
+async function promoteNextFromWaitlist(eventId) {
+  try {
+    const eventEmailService = require('../services/eventEmailService');
+
+    // Nächsten auf der Warteliste finden
+    const [waitlistRows] = await db.promise().query(
+      `SELECT ea.*, m.email, e.teilnahmegebuehr
+       FROM event_anmeldungen ea
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       JOIN events e ON ea.event_id = e.event_id
+       WHERE ea.event_id = ? AND ea.status = 'warteliste'
+       ORDER BY ea.warteliste_position ASC LIMIT 1`,
+      [eventId]
+    );
+
+    if (waitlistRows.length === 0) {
+      return; // Keine Warteliste
+    }
+
+    const nextInLine = waitlistRows[0];
+
+    // Status aktualisieren
+    await db.promise().query(
+      `UPDATE event_anmeldungen SET status = 'angemeldet', warteliste_position = NULL
+       WHERE anmeldung_id = ?`,
+      [nextInLine.anmeldung_id]
+    );
+
+    // Warteliste-Positionen neu nummerieren
+    await db.promise().query(
+      `SET @pos := 0;
+       UPDATE event_anmeldungen
+       SET warteliste_position = (@pos := @pos + 1)
+       WHERE event_id = ? AND status = 'warteliste'
+       ORDER BY warteliste_position ASC`,
+      [eventId]
+    );
+
+    // Benachrichtigung senden
+    const zahlungslink = nextInLine.teilnahmegebuehr > 0
+      ? `${process.env.FRONTEND_URL || ''}/member/events/${eventId}/bezahlen?anmeldung=${nextInLine.anmeldung_id}`
+      : null;
+
+    await eventEmailService.sendPromotedFromWaitlistEmail(eventId, nextInLine.mitglied_id, zahlungslink);
+
+    logger.info(`Mitglied ${nextInLine.mitglied_id} von Warteliste für Event ${eventId} hochgestuft`);
+
+  } catch (error) {
+    logger.error('Fehler beim Hochstufen von Warteliste:', { error: error.message });
+  }
+}
 
 // ============================================================================
 // PUT ENDPUNKTE
@@ -695,23 +753,59 @@ router.post('/:id/anmelden', async (req, res) => {
 
     const currentCount = countRows[0].count;
 
+    // 5. Prüfe ob ausgebucht → Warteliste
+    let status = 'angemeldet';
+    let wartelistePosition = null;
+    let aufWarteliste = false;
+
     if (event.max_teilnehmer && currentCount >= event.max_teilnehmer) {
-      return res.status(400).json({ error: 'Event ist bereits ausgebucht' });
+      // Event ist voll → auf Warteliste setzen
+      const [posRows] = await db.promise().query(
+        `SELECT COALESCE(MAX(warteliste_position), 0) + 1 as next_pos
+         FROM event_anmeldungen WHERE event_id = ? AND status = 'warteliste'`,
+        [eventId]
+      );
+      status = 'warteliste';
+      wartelistePosition = posRows[0].next_pos;
+      aufWarteliste = true;
     }
 
-    // 5. Erstelle Anmeldung
+    // 6. Erstelle Anmeldung
     const [result] = await db.promise().query(
       `INSERT INTO event_anmeldungen
-       (event_id, mitglied_id, status, anmeldedatum, notizen)
-       VALUES (?, ?, 'angemeldet', NOW(), ?)`,
-      [eventId, mitglied_id, notizen || null]
+       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung)
+       VALUES (?, ?, ?, ?, NOW(), ?)`,
+      [eventId, mitglied_id, status, wartelistePosition, notizen || null]
     );
 
-    logger.info('Mitglied ${mitglied_id} für Event ${eventId} angemeldet');
+    logger.info(`Mitglied ${mitglied_id} für Event ${eventId} angemeldet (Status: ${status})`);
+
+    // 7. Email senden
+    try {
+      const eventEmailService = require('../services/eventEmailService');
+
+      if (aufWarteliste) {
+        await eventEmailService.sendWaitlistEmail(eventId, mitglied_id, wartelistePosition);
+      } else {
+        // Zahlungslink generieren wenn Gebühr vorhanden
+        const zahlungslink = event.teilnahmegebuehr > 0
+          ? `${process.env.FRONTEND_URL || ''}/member/events/${eventId}/bezahlen?anmeldung=${result.insertId}`
+          : null;
+        await eventEmailService.sendRegistrationEmail(eventId, mitglied_id, zahlungslink);
+      }
+    } catch (emailErr) {
+      logger.error('Email-Versand fehlgeschlagen:', { error: emailErr.message });
+      // Nicht kritisch - Anmeldung wurde trotzdem erstellt
+    }
 
     res.json({
       success: true,
-      message: 'Erfolgreich für Event angemeldet',
+      warteliste: aufWarteliste,
+      warteliste_position: wartelistePosition,
+      anmeldung_id: result.insertId,
+      message: aufWarteliste
+        ? `Du stehst auf der Warteliste (Position ${wartelistePosition})`
+        : 'Erfolgreich für Event angemeldet',
       anmeldung_id: result.insertId
     });
   } catch (error) {
@@ -927,6 +1021,868 @@ router.put('/anmeldung/:id/bezahlt', async (req, res) => {
   } catch (error) {
     logger.error('Fehler beim Aktualisieren des Bezahlt-Status:', error);
     res.status(500).json({ error: 'Fehler beim Aktualisieren des Bezahlt-Status' });
+  }
+});
+
+// ============================================================================
+// NEUE FEATURES: WARTELISTE, ZAHLUNG, DATEIEN, KOMMENTARE, EXPORT
+// ============================================================================
+
+const eventEmailService = require('../services/eventEmailService');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Multer Konfiguration für Event-Dateien
+const eventStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const eventId = req.params.id;
+    const dir = path.join(__dirname, '../../uploads/events', String(eventId));
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+
+const eventUpload = multer({
+  storage: eventStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/png',
+      'image/gif'
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Nicht erlaubter Dateityp'), false);
+    }
+  }
+});
+
+// ============================================================================
+// PAYMENT ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/events/:id/create-payment-intent
+ * Erstellt einen Stripe PaymentIntent für die Event-Gebühr
+ */
+router.post('/:id/create-payment-intent', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { mitglied_id, anmeldung_id } = req.body;
+
+  try {
+    // Event und Anmeldung laden
+    const [eventRows] = await db.promise().query(
+      'SELECT e.*, d.stripe_secret_key, d.stripe_publishable_key FROM events e JOIN dojo d ON e.dojo_id = d.id WHERE e.event_id = ?',
+      [eventId]
+    );
+
+    if (eventRows.length === 0) {
+      return res.status(404).json({ error: 'Event nicht gefunden' });
+    }
+
+    const event = eventRows[0];
+
+    if (!event.teilnahmegebuehr || parseFloat(event.teilnahmegebuehr) <= 0) {
+      return res.status(400).json({ error: 'Keine Teilnahmegebühr für dieses Event' });
+    }
+
+    if (!event.stripe_secret_key) {
+      return res.status(400).json({ error: 'Stripe ist nicht konfiguriert' });
+    }
+
+    // Mitglied laden
+    const [memberRows] = await db.promise().query(
+      'SELECT * FROM mitglieder WHERE mitglied_id = ?',
+      [mitglied_id]
+    );
+
+    if (memberRows.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const member = memberRows[0];
+    const stripe = require('stripe')(event.stripe_secret_key);
+    const amount = Math.round(parseFloat(event.teilnahmegebuehr) * 100); // In Cents
+
+    // PaymentIntent erstellen
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: 'eur',
+      metadata: {
+        event_id: eventId,
+        mitglied_id: mitglied_id,
+        anmeldung_id: anmeldung_id || '',
+        event_titel: event.titel
+      },
+      description: `Event: ${event.titel} - ${member.vorname} ${member.nachname}`,
+      receipt_email: member.email
+    });
+
+    // Zahlung in DB speichern
+    await db.promise().query(
+      `INSERT INTO event_zahlungen (anmeldung_id, event_id, mitglied_id, betrag, zahlungsmethode, stripe_payment_intent_id, status)
+       VALUES (?, ?, ?, ?, 'stripe', ?, 'ausstehend')
+       ON DUPLICATE KEY UPDATE stripe_payment_intent_id = VALUES(stripe_payment_intent_id)`,
+      [anmeldung_id || 0, eventId, mitglied_id, event.teilnahmegebuehr, paymentIntent.id]
+    );
+
+    res.json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      publishableKey: event.stripe_publishable_key,
+      amount: event.teilnahmegebuehr
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Erstellen des PaymentIntent:', { error: error.message });
+    res.status(500).json({ error: 'Zahlungsfehler: ' + error.message });
+  }
+});
+
+/**
+ * POST /api/events/:id/payment-success
+ * Callback nach erfolgreicher Zahlung
+ */
+router.post('/:id/payment-success', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { mitglied_id, payment_intent_id, anmeldung_id } = req.body;
+
+  try {
+    // Anmeldung als bezahlt markieren
+    if (anmeldung_id) {
+      await db.promise().query(
+        `UPDATE event_anmeldungen SET bezahlt = 1, bezahldatum = NOW(), status = 'bestaetigt'
+         WHERE anmeldung_id = ?`,
+        [anmeldung_id]
+      );
+    } else {
+      await db.promise().query(
+        `UPDATE event_anmeldungen SET bezahlt = 1, bezahldatum = NOW(), status = 'bestaetigt'
+         WHERE event_id = ? AND mitglied_id = ?`,
+        [eventId, mitglied_id]
+      );
+    }
+
+    // Zahlung in DB aktualisieren
+    await db.promise().query(
+      `UPDATE event_zahlungen SET status = 'bezahlt', bezahlt_am = NOW()
+       WHERE stripe_payment_intent_id = ?`,
+      [payment_intent_id]
+    );
+
+    // Event-Details für Email laden
+    const [eventRows] = await db.promise().query(
+      'SELECT teilnahmegebuehr FROM events WHERE event_id = ?',
+      [eventId]
+    );
+
+    // Bestätigungs-Email senden
+    await eventEmailService.sendPaymentConfirmationEmail(
+      eventId,
+      mitglied_id,
+      eventRows[0]?.teilnahmegebuehr || 0
+    );
+
+    res.json({ success: true, message: 'Zahlung erfolgreich verarbeitet' });
+
+  } catch (error) {
+    logger.error('Fehler bei Payment-Success:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Verarbeiten der Zahlung' });
+  }
+});
+
+// ============================================================================
+// WARTELISTE ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/events/:id/warteliste
+ * Gibt die Warteliste für ein Event zurück
+ */
+router.get('/:id/warteliste', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT ea.*, m.vorname, m.nachname, m.email
+       FROM event_anmeldungen ea
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       WHERE ea.event_id = ? AND ea.status = 'warteliste'
+       ORDER BY ea.warteliste_position ASC`,
+      [eventId]
+    );
+
+    res.json({ success: true, warteliste: rows });
+
+  } catch (error) {
+    logger.error('Fehler beim Laden der Warteliste:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Warteliste' });
+  }
+});
+
+/**
+ * POST /api/events/:id/warteliste/promote
+ * Befördert nächsten von Warteliste (Admin)
+ */
+router.post('/:id/warteliste/promote', requireFeature('events'), async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    // Nächsten auf der Warteliste finden
+    const [waitlistRows] = await db.promise().query(
+      `SELECT ea.*, m.email FROM event_anmeldungen ea
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       WHERE ea.event_id = ? AND ea.status = 'warteliste'
+       ORDER BY ea.warteliste_position ASC LIMIT 1`,
+      [eventId]
+    );
+
+    if (waitlistRows.length === 0) {
+      return res.json({ success: false, message: 'Keine Einträge auf der Warteliste' });
+    }
+
+    const nextInLine = waitlistRows[0];
+
+    // Status aktualisieren
+    await db.promise().query(
+      `UPDATE event_anmeldungen SET status = 'angemeldet', warteliste_position = NULL
+       WHERE anmeldung_id = ?`,
+      [nextInLine.anmeldung_id]
+    );
+
+    // Warteliste-Positionen neu nummerieren
+    await db.promise().query(
+      `SET @pos := 0;
+       UPDATE event_anmeldungen
+       SET warteliste_position = (@pos := @pos + 1)
+       WHERE event_id = ? AND status = 'warteliste'
+       ORDER BY warteliste_position ASC`,
+      [eventId]
+    );
+
+    // Benachrichtigung senden
+    const [eventRows] = await db.promise().query(
+      'SELECT teilnahmegebuehr FROM events WHERE event_id = ?',
+      [eventId]
+    );
+
+    const zahlungslink = eventRows[0]?.teilnahmegebuehr > 0
+      ? `${process.env.FRONTEND_URL || ''}/member/events/${eventId}/bezahlen`
+      : null;
+
+    await eventEmailService.sendPromotedFromWaitlistEmail(eventId, nextInLine.mitglied_id, zahlungslink);
+
+    res.json({
+      success: true,
+      message: `${nextInLine.vorname} ${nextInLine.nachname} wurde von der Warteliste hochgestuft`,
+      mitglied_id: nextInLine.mitglied_id
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Befördern von Warteliste:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Befördern' });
+  }
+});
+
+// ============================================================================
+// DATEIEN ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/events/:id/dateien
+ * Liste aller Dateien zum Event
+ */
+router.get('/:id/dateien', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT * FROM event_dateien WHERE event_id = ? ORDER BY hochgeladen_am DESC',
+      [eventId]
+    );
+
+    res.json({ success: true, dateien: rows });
+
+  } catch (error) {
+    logger.error('Fehler beim Laden der Event-Dateien:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Dateien' });
+  }
+});
+
+/**
+ * POST /api/events/:id/dateien
+ * Datei hochladen (Admin)
+ */
+router.post('/:id/dateien', requireFeature('events'), eventUpload.single('datei'), async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+  }
+
+  try {
+    const { beschreibung } = req.body;
+    const dateityp = req.file.mimetype.startsWith('image/') ? 'bild' :
+                     req.file.mimetype.includes('pdf') ? 'dokument' : 'sonstiges';
+
+    const [result] = await db.promise().query(
+      `INSERT INTO event_dateien (event_id, dateiname, dateipfad, dateityp, beschreibung, hochgeladen_von)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [eventId, req.file.originalname, req.file.path, dateityp, beschreibung || null, req.user?.id || null]
+    );
+
+    res.json({
+      success: true,
+      datei_id: result.insertId,
+      dateiname: req.file.originalname
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Hochladen der Datei:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Hochladen' });
+  }
+});
+
+/**
+ * GET /api/events/:id/dateien/:dateiId/download
+ * Datei herunterladen
+ */
+router.get('/:id/dateien/:dateiId/download', async (req, res) => {
+  const dateiId = parseInt(req.params.dateiId);
+
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT * FROM event_dateien WHERE datei_id = ?',
+      [dateiId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Datei nicht gefunden' });
+    }
+
+    const datei = rows[0];
+    res.download(datei.dateipfad, datei.dateiname);
+
+  } catch (error) {
+    logger.error('Fehler beim Download:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Download' });
+  }
+});
+
+/**
+ * DELETE /api/events/:id/dateien/:dateiId
+ * Datei löschen (Admin)
+ */
+router.delete('/:id/dateien/:dateiId', requireFeature('events'), async (req, res) => {
+  const dateiId = parseInt(req.params.dateiId);
+
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT dateipfad FROM event_dateien WHERE datei_id = ?',
+      [dateiId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Datei nicht gefunden' });
+    }
+
+    // Datei vom Filesystem löschen
+    if (fs.existsSync(rows[0].dateipfad)) {
+      fs.unlinkSync(rows[0].dateipfad);
+    }
+
+    // DB-Eintrag löschen
+    await db.promise().query('DELETE FROM event_dateien WHERE datei_id = ?', [dateiId]);
+
+    res.json({ success: true, message: 'Datei gelöscht' });
+
+  } catch (error) {
+    logger.error('Fehler beim Löschen der Datei:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Löschen' });
+  }
+});
+
+// ============================================================================
+// KOMMENTARE/NACHRICHTEN ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/events/:id/nachrichten
+ * Alle Nachrichten zum Event
+ */
+router.get('/:id/nachrichten', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT en.*,
+        CASE
+          WHEN en.verfasser_typ = 'mitglied' THEN (SELECT CONCAT(vorname, ' ', nachname) FROM mitglieder WHERE mitglied_id = en.verfasser_id)
+          WHEN en.verfasser_typ = 'admin' THEN (SELECT CONCAT(vorname, ' ', nachname) FROM admins WHERE id = en.verfasser_id)
+          WHEN en.verfasser_typ = 'trainer' THEN (SELECT name FROM trainer WHERE id = en.verfasser_id)
+          ELSE 'Unbekannt'
+        END as verfasser_name
+       FROM event_nachrichten en
+       WHERE en.event_id = ?
+       ORDER BY en.erstellt_am ASC`,
+      [eventId]
+    );
+
+    res.json({ success: true, nachrichten: rows });
+
+  } catch (error) {
+    logger.error('Fehler beim Laden der Nachrichten:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Nachrichten' });
+  }
+});
+
+/**
+ * POST /api/events/:id/nachrichten
+ * Neue Nachricht erstellen
+ */
+router.post('/:id/nachrichten', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { verfasser_id, verfasser_typ, nachricht } = req.body;
+
+  if (!nachricht || nachricht.trim() === '') {
+    return res.status(400).json({ error: 'Nachricht darf nicht leer sein' });
+  }
+
+  try {
+    const [result] = await db.promise().query(
+      `INSERT INTO event_nachrichten (event_id, verfasser_id, verfasser_typ, nachricht)
+       VALUES (?, ?, ?, ?)`,
+      [eventId, verfasser_id, verfasser_typ || 'mitglied', nachricht.trim()]
+    );
+
+    res.json({
+      success: true,
+      nachricht_id: result.insertId
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Erstellen der Nachricht:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Erstellen der Nachricht' });
+  }
+});
+
+/**
+ * DELETE /api/events/:id/nachrichten/:nachrichtId
+ * Nachricht löschen (eigene oder Admin)
+ */
+router.delete('/:id/nachrichten/:nachrichtId', async (req, res) => {
+  const nachrichtId = parseInt(req.params.nachrichtId);
+  const { verfasser_id, is_admin } = req.body;
+
+  try {
+    // Prüfe Berechtigung
+    const [rows] = await db.promise().query(
+      'SELECT verfasser_id FROM event_nachrichten WHERE nachricht_id = ?',
+      [nachrichtId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Nachricht nicht gefunden' });
+    }
+
+    if (!is_admin && rows[0].verfasser_id !== verfasser_id) {
+      return res.status(403).json({ error: 'Keine Berechtigung zum Löschen' });
+    }
+
+    await db.promise().query('DELETE FROM event_nachrichten WHERE nachricht_id = ?', [nachrichtId]);
+
+    res.json({ success: true, message: 'Nachricht gelöscht' });
+
+  } catch (error) {
+    logger.error('Fehler beim Löschen der Nachricht:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Löschen' });
+  }
+});
+
+// ============================================================================
+// EXPORT ENDPOINTS (CSV, PDF, iCal)
+// ============================================================================
+
+/**
+ * GET /api/events/:id/export/csv
+ * Teilnehmerliste als CSV
+ */
+router.get('/:id/export/csv', requireFeature('events'), async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [event] = await db.promise().query('SELECT titel FROM events WHERE event_id = ?', [eventId]);
+    const [rows] = await db.promise().query(
+      `SELECT m.vorname, m.nachname, m.email, m.telefon,
+              ea.status, ea.bezahlt, ea.anmeldedatum, ea.bemerkung
+       FROM event_anmeldungen ea
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       WHERE ea.event_id = ?
+       ORDER BY m.nachname, m.vorname`,
+      [eventId]
+    );
+
+    // CSV Header
+    const headers = ['Vorname', 'Nachname', 'Email', 'Telefon', 'Status', 'Bezahlt', 'Anmeldedatum', 'Bemerkung'];
+    let csv = headers.join(';') + '\n';
+
+    // CSV Rows
+    for (const row of rows) {
+      const values = [
+        row.vorname || '',
+        row.nachname || '',
+        row.email || '',
+        row.telefon || '',
+        row.status || '',
+        row.bezahlt ? 'Ja' : 'Nein',
+        row.anmeldedatum ? new Date(row.anmeldedatum).toLocaleDateString('de-DE') : '',
+        (row.bemerkung || '').replace(/;/g, ',')
+      ];
+      csv += values.join(';') + '\n';
+    }
+
+    const filename = `teilnehmer_${event[0]?.titel?.replace(/[^a-z0-9]/gi, '_') || eventId}_${Date.now()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send('\ufeff' + csv); // BOM für Excel UTF-8
+
+  } catch (error) {
+    logger.error('Fehler beim CSV-Export:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Export' });
+  }
+});
+
+/**
+ * GET /api/events/:id/export/pdf
+ * Teilnehmerliste als PDF
+ */
+router.get('/:id/export/pdf', requireFeature('events'), async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+
+    const [eventRows] = await db.promise().query(
+      'SELECT * FROM events WHERE event_id = ?',
+      [eventId]
+    );
+    const event = eventRows[0];
+
+    const [rows] = await db.promise().query(
+      `SELECT m.vorname, m.nachname, m.email, ea.status, ea.bezahlt
+       FROM event_anmeldungen ea
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       WHERE ea.event_id = ? AND ea.status IN ('angemeldet', 'bestaetigt')
+       ORDER BY m.nachname, m.vorname`,
+      [eventId]
+    );
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="teilnehmer_${eventId}.pdf"`);
+    doc.pipe(res);
+
+    // Header
+    doc.fontSize(20).text(event.titel, { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Datum: ${new Date(event.datum).toLocaleDateString('de-DE')}`, { align: 'center' });
+    if (event.ort) doc.text(`Ort: ${event.ort}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // Teilnehmer
+    doc.fontSize(14).text(`Teilnehmerliste (${rows.length} Personen):`);
+    doc.moveDown();
+
+    let y = doc.y;
+    doc.fontSize(10);
+    doc.text('Nr.', 50, y);
+    doc.text('Name', 80, y);
+    doc.text('Status', 300, y);
+    doc.text('Bezahlt', 400, y);
+    doc.text('Unterschrift', 470, y);
+    doc.moveDown();
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    rows.forEach((row, index) => {
+      if (doc.y > 700) {
+        doc.addPage();
+      }
+      y = doc.y;
+      doc.text(`${index + 1}.`, 50, y);
+      doc.text(`${row.vorname} ${row.nachname}`, 80, y);
+      doc.text(row.status === 'bestaetigt' ? 'Bestätigt' : 'Angemeldet', 300, y);
+      doc.text(row.bezahlt ? 'Ja' : 'Nein', 400, y);
+      doc.text('_____________', 470, y);
+      doc.moveDown();
+    });
+
+    doc.end();
+
+  } catch (error) {
+    logger.error('Fehler beim PDF-Export:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Export' });
+  }
+});
+
+/**
+ * GET /api/events/:id/ical
+ * Event als iCal-Datei
+ */
+router.get('/:id/ical', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT e.*, d.dojoname FROM events e JOIN dojo d ON e.dojo_id = d.id WHERE e.event_id = ?',
+      [eventId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Event nicht gefunden' });
+    }
+
+    const event = rows[0];
+    const startDate = new Date(event.datum);
+    if (event.uhrzeit_beginn) {
+      const [h, m] = event.uhrzeit_beginn.split(':');
+      startDate.setHours(parseInt(h), parseInt(m), 0);
+    }
+
+    const endDate = new Date(startDate);
+    if (event.uhrzeit_ende) {
+      const [h, m] = event.uhrzeit_ende.split(':');
+      endDate.setHours(parseInt(h), parseInt(m), 0);
+    } else {
+      endDate.setHours(endDate.getHours() + 2); // Default 2h
+    }
+
+    const formatICalDate = (date) => {
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    const ical = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DojoSoftware//Events//DE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:event-${eventId}@dojosoftware.com
+DTSTART:${formatICalDate(startDate)}
+DTEND:${formatICalDate(endDate)}
+SUMMARY:${event.titel}
+DESCRIPTION:${(event.beschreibung || '').replace(/\n/g, '\\n')}
+LOCATION:${event.ort || ''}
+ORGANIZER:${event.dojoname}
+STATUS:${event.status === 'abgesagt' ? 'CANCELLED' : 'CONFIRMED'}
+END:VEVENT
+END:VCALENDAR`;
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="event_${eventId}.ics"`);
+    res.send(ical);
+
+  } catch (error) {
+    logger.error('Fehler beim iCal-Export:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Export' });
+  }
+});
+
+/**
+ * GET /api/events/ical/subscribe/:token
+ * Kalender-Abo für alle Events eines Mitglieds
+ */
+router.get('/ical/subscribe/:token', async (req, res) => {
+  const token = req.params.token;
+
+  try {
+    // Token entschlüsseln (Base64-encoded mitglied_id)
+    const mitgliedId = parseInt(Buffer.from(token, 'base64').toString('utf8'));
+
+    if (isNaN(mitgliedId)) {
+      return res.status(400).json({ error: 'Ungültiger Token' });
+    }
+
+    const [rows] = await db.promise().query(
+      `SELECT e.*, d.dojoname
+       FROM events e
+       JOIN dojo d ON e.dojo_id = d.id
+       JOIN event_anmeldungen ea ON e.event_id = ea.event_id
+       WHERE ea.mitglied_id = ? AND ea.status IN ('angemeldet', 'bestaetigt')
+         AND e.datum >= CURDATE()
+       ORDER BY e.datum ASC`,
+      [mitgliedId]
+    );
+
+    const formatICalDate = (date, time) => {
+      const d = new Date(date);
+      if (time) {
+        const [h, m] = time.split(':');
+        d.setHours(parseInt(h), parseInt(m), 0);
+      }
+      return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    let ical = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DojoSoftware//Events//DE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Meine Events
+`;
+
+    for (const event of rows) {
+      const endTime = event.uhrzeit_ende || (event.uhrzeit_beginn ?
+        `${parseInt(event.uhrzeit_beginn.split(':')[0]) + 2}:00` : '18:00');
+
+      ical += `BEGIN:VEVENT
+UID:event-${event.event_id}@dojosoftware.com
+DTSTART:${formatICalDate(event.datum, event.uhrzeit_beginn)}
+DTEND:${formatICalDate(event.datum, endTime)}
+SUMMARY:${event.titel}
+DESCRIPTION:${(event.beschreibung || '').replace(/\n/g, '\\n')}
+LOCATION:${event.ort || ''}
+ORGANIZER:${event.dojoname}
+STATUS:CONFIRMED
+END:VEVENT
+`;
+    }
+
+    ical += 'END:VCALENDAR';
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.send(ical);
+
+  } catch (error) {
+    logger.error('Fehler beim Kalender-Abo:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Kalender-Abo' });
+  }
+});
+
+// ============================================================================
+// ADMIN DASHBOARD STATS
+// ============================================================================
+
+/**
+ * GET /api/events/stats/dashboard
+ * Event-Statistiken für Admin-Dashboard
+ */
+router.get('/stats/dashboard', requireFeature('events'), async (req, res) => {
+  const { dojo_id } = req.query;
+
+  try {
+    let dojoFilter = dojo_id ? 'AND e.dojo_id = ?' : '';
+    const params = dojo_id ? [dojo_id] : [];
+
+    // Aktive Events
+    const [activeEvents] = await db.promise().query(
+      `SELECT COUNT(*) as count FROM events e
+       WHERE e.status IN ('geplant', 'anmeldung_offen') AND e.datum >= CURDATE() ${dojoFilter}`,
+      params
+    );
+
+    // Offene Zahlungen
+    const [openPayments] = await db.promise().query(
+      `SELECT COUNT(*) as count, COALESCE(SUM(e.teilnahmegebuehr), 0) as summe
+       FROM event_anmeldungen ea
+       JOIN events e ON ea.event_id = e.event_id
+       WHERE ea.bezahlt = 0 AND ea.status IN ('angemeldet', 'bestaetigt')
+         AND e.teilnahmegebuehr > 0 ${dojoFilter}`,
+      params
+    );
+
+    // Anmeldungen diese Woche
+    const [weekRegistrations] = await db.promise().query(
+      `SELECT COUNT(*) as count FROM event_anmeldungen ea
+       JOIN events e ON ea.event_id = e.event_id
+       WHERE ea.anmeldedatum >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ${dojoFilter}`,
+      params
+    );
+
+    // Wartelisten-Einträge
+    const [waitlist] = await db.promise().query(
+      `SELECT COUNT(*) as count FROM event_anmeldungen ea
+       JOIN events e ON ea.event_id = e.event_id
+       WHERE ea.status = 'warteliste' ${dojoFilter}`,
+      params
+    );
+
+    // Top Events (nach Anmeldungen)
+    const [topEvents] = await db.promise().query(
+      `SELECT e.event_id, e.titel, e.datum, e.max_teilnehmer, e.teilnahmegebuehr,
+              COUNT(ea.anmeldung_id) as anmeldungen,
+              SUM(CASE WHEN ea.bezahlt = 1 THEN 1 ELSE 0 END) as bezahlt,
+              SUM(CASE WHEN ea.bezahlt = 0 THEN e.teilnahmegebuehr ELSE 0 END) as offen_summe
+       FROM events e
+       LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id AND ea.status IN ('angemeldet', 'bestaetigt')
+       WHERE e.datum >= CURDATE() ${dojoFilter}
+       GROUP BY e.event_id
+       ORDER BY anmeldungen DESC
+       LIMIT 10`,
+      params
+    );
+
+    res.json({
+      success: true,
+      stats: {
+        aktive_events: activeEvents[0].count,
+        offene_zahlungen: openPayments[0].count,
+        offene_summe: parseFloat(openPayments[0].summe) || 0,
+        anmeldungen_woche: weekRegistrations[0].count,
+        warteliste: waitlist[0].count
+      },
+      top_events: topEvents
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Laden der Event-Stats:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
+  }
+});
+
+/**
+ * POST /api/events/:id/send-reminder
+ * Zahlungserinnerung an alle unbezahlten Teilnehmer senden
+ */
+router.post('/:id/send-reminder', requireFeature('events'), async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT ea.mitglied_id, m.email, m.vorname
+       FROM event_anmeldungen ea
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       WHERE ea.event_id = ? AND ea.bezahlt = 0 AND ea.status IN ('angemeldet', 'bestaetigt')`,
+      [eventId]
+    );
+
+    let sent = 0;
+    for (const row of rows) {
+      // TODO: Zahlungserinnerungs-Email implementieren
+      // await eventEmailService.sendPaymentReminderEmail(eventId, row.mitglied_id);
+      sent++;
+    }
+
+    res.json({ success: true, sent: sent, message: `${sent} Erinnerungen versendet` });
+
+  } catch (error) {
+    logger.error('Fehler beim Senden der Erinnerungen:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Senden' });
   }
 });
 

@@ -81,11 +81,17 @@ app.use(cors({
     // Erlaube Requests ohne Origin (z.B. mobile apps, Postman)
     if (!origin) return callback(null, true);
 
+    // Prüfe ob Origin in erlaubten Origins ist
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS nicht erlaubt für Origin: ' + origin));
+      return callback(null, true);
     }
+
+    // Erlaube alle Subdomains von dojo.tda-intl.org (Multi-Tenant)
+    if (origin.match(/^https:\/\/[a-z0-9-]+\.dojo\.tda-intl\.org$/)) {
+      return callback(null, true);
+    }
+
+    callback(new Error('CORS nicht erlaubt für Origin: ' + origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
