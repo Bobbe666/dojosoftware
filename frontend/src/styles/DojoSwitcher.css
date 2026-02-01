@@ -3,6 +3,7 @@
 .dojo-switcher {
   position: relative;
   display: inline-block;
+  z-index: 10000;
 }
 
 .dojo-switcher.loading {
@@ -109,7 +110,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 99998;
+  z-index: 999998 !important;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(2px);
 }
@@ -120,7 +121,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  z-index: 99999 !important;
+  z-index: 999999 !important;
   min-width: 350px;
   max-width: 500px;
   animation: dropdownSlide 0.2s ease-out;
