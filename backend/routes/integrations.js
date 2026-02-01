@@ -1,7 +1,7 @@
 // ============================================================================
 // INTEGRATIONS API
 // Backend/routes/integrations.js
-// Zentrale Route für alle Integrationen (PayPal, LexOffice, DATEV)
+// Zentrale Route für alle Integrationen (PayPal, SumUp, LexOffice, DATEV)
 // ============================================================================
 
 const express = require('express');
@@ -9,6 +9,7 @@ const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const PayPalProvider = require('../services/PayPalProvider');
+const SumUpProvider = require('../services/SumUpProvider');
 const LexOfficeProvider = require('../services/LexOfficeProvider');
 const DatevExportService = require('../services/DatevExportService');
 const logger = require('../utils/logger');
@@ -27,6 +28,11 @@ async function getDojoConfig(dojoId) {
                 d.*,
                 d.stripe_publishable_key,
                 d.stripe_secret_key,
+                d.sumup_api_key,
+                d.sumup_merchant_code,
+                d.sumup_client_id,
+                d.sumup_client_secret,
+                d.sumup_aktiv,
                 di.paypal_client_id,
                 di.paypal_client_secret,
                 di.paypal_webhook_id,
@@ -70,12 +76,31 @@ router.get('/status', async (req, res) => {
         // Stripe Status aus Dojo-Config
         const stripeConfigured = !!(config.stripe_publishable_key && config.stripe_secret_key);
 
+        // SumUp Status
+        const sumupConfigured = !!(config.sumup_api_key || (config.sumup_client_id && config.sumup_client_secret));
+        const sumupStatus = {
+            configured: sumupConfigured,
+            active: config.sumup_aktiv === 1 || config.sumup_aktiv === true,
+            connected: false
+        };
+        if (sumupConfigured && config.sumup_aktiv) {
+            try {
+                const sumup = new SumUpProvider(config);
+                const sumupFullStatus = await sumup.getStatus();
+                sumupStatus.connected = sumupFullStatus.connected;
+                sumupStatus.merchantCode = sumupFullStatus.merchantCode;
+            } catch (e) {
+                sumupStatus.error = e.message;
+            }
+        }
+
         const status = {
             paypal: paypalStatus,
             stripe: {
                 configured: stripeConfigured,
                 publishable_key: stripeConfigured ? config.stripe_publishable_key : null
             },
+            sumup: sumupStatus,
             lexoffice: await lexoffice.getStatus(),
             datev: datev.getStatus(),
             ical: { configured: true, message: 'iCal Export ist verfügbar' },
@@ -202,6 +227,64 @@ router.post('/paypal/webhook', express.raw({ type: 'application/json' }), async 
     } catch (error) {
         logger.error('PayPal Webhook Error:', error);
         res.status(500).send('Webhook Error');
+    }
+});
+
+/**
+ * POST /api/integrations/paypal/test
+ * PayPal Verbindungstest
+ */
+router.post('/paypal/test', async (req, res) => {
+    try {
+        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        const config = await getDojoConfig(dojoId);
+        const paypal = new PayPalProvider(config);
+
+        const status = await paypal.getStatus();
+        res.json({
+            success: status.connected,
+            message: status.connected ? 'PayPal-Verbindung erfolgreich' : 'Verbindung fehlgeschlagen'
+        });
+
+    } catch (error) {
+        logger.error('PayPal Test Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================================================
+// SUMUP ROUTES
+// ============================================================================
+
+/**
+ * POST /api/integrations/sumup/test
+ * SumUp Verbindungstest
+ */
+router.post('/sumup/test', async (req, res) => {
+    try {
+        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        const config = await getDojoConfig(dojoId);
+
+        if (!config.sumup_api_key && (!config.sumup_client_id || !config.sumup_client_secret)) {
+            return res.json({
+                success: false,
+                message: 'SumUp ist nicht konfiguriert'
+            });
+        }
+
+        const sumup = new SumUpProvider(config);
+        const status = await sumup.testConnection();
+
+        res.json({
+            success: status.connected,
+            message: status.connected ? 'SumUp-Verbindung erfolgreich' : 'Verbindung fehlgeschlagen',
+            merchantCode: status.merchantCode,
+            businessName: status.businessName
+        });
+
+    } catch (error) {
+        logger.error('SumUp Test Error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -488,6 +571,12 @@ router.get('/config', async (req, res) => {
             paypal_client_id: config.paypal_client_id || '',
             paypal_client_secret: config.paypal_client_secret ? '••••••••' + config.paypal_client_secret.slice(-4) : '',
             paypal_sandbox: config.paypal_sandbox === 1 || config.paypal_sandbox === true,
+            // SumUp
+            sumup_api_key: config.sumup_api_key ? '••••••••' + config.sumup_api_key.slice(-4) : '',
+            sumup_merchant_code: config.sumup_merchant_code || '',
+            sumup_client_id: config.sumup_client_id || '',
+            sumup_client_secret: config.sumup_client_secret ? '••••••••' + config.sumup_client_secret.slice(-4) : '',
+            sumup_aktiv: config.sumup_aktiv === 1 || config.sumup_aktiv === true,
             // LexOffice
             lexoffice_api_key: config.lexoffice_api_key ? '••••••••' + config.lexoffice_api_key.slice(-4) : '',
             // DATEV
@@ -523,41 +612,68 @@ router.put('/config', async (req, res) => {
             paypal_client_secret,
             paypal_sandbox,
             paypal_webhook_id,
+            sumup_api_key,
+            sumup_merchant_code,
+            sumup_client_id,
+            sumup_client_secret,
+            sumup_aktiv,
             lexoffice_api_key,
             datev_consultant_number,
             datev_client_number
         } = req.body;
 
-        // Stripe-Keys in dojo Tabelle speichern (nur wenn nicht maskiert)
-        const isStripeKeyMasked = (key) => key && key.startsWith('••••');
+        // Helper function to check if a key is masked
+        const isMasked = (key) => key && key.startsWith('••••');
 
-        if ((stripe_publishable_key !== undefined && !isStripeKeyMasked(stripe_publishable_key)) ||
-            (stripe_secret_key !== undefined && !isStripeKeyMasked(stripe_secret_key))) {
+        // Update dojo Tabelle für Stripe und SumUp
+        const dojoUpdates = [];
+        const dojoParams = [];
 
-            const stripeUpdates = [];
-            const stripeParams = [];
+        // Stripe Keys
+        if (stripe_publishable_key !== undefined && !isMasked(stripe_publishable_key)) {
+            dojoUpdates.push('stripe_publishable_key = ?');
+            dojoParams.push(stripe_publishable_key || null);
+        }
+        if (stripe_secret_key !== undefined && !isMasked(stripe_secret_key)) {
+            dojoUpdates.push('stripe_secret_key = ?');
+            dojoParams.push(stripe_secret_key || null);
+        }
 
-            if (stripe_publishable_key !== undefined && !isStripeKeyMasked(stripe_publishable_key)) {
-                stripeUpdates.push('stripe_publishable_key = ?');
-                stripeParams.push(stripe_publishable_key || null);
-            }
-            if (stripe_secret_key !== undefined && !isStripeKeyMasked(stripe_secret_key)) {
-                stripeUpdates.push('stripe_secret_key = ?');
-                stripeParams.push(stripe_secret_key || null);
-            }
+        // SumUp Keys
+        if (sumup_api_key !== undefined && !isMasked(sumup_api_key)) {
+            dojoUpdates.push('sumup_api_key = ?');
+            dojoParams.push(sumup_api_key || null);
+        }
+        if (sumup_merchant_code !== undefined) {
+            dojoUpdates.push('sumup_merchant_code = ?');
+            dojoParams.push(sumup_merchant_code || null);
+        }
+        if (sumup_client_id !== undefined) {
+            dojoUpdates.push('sumup_client_id = ?');
+            dojoParams.push(sumup_client_id || null);
+        }
+        if (sumup_client_secret !== undefined && !isMasked(sumup_client_secret)) {
+            dojoUpdates.push('sumup_client_secret = ?');
+            dojoParams.push(sumup_client_secret || null);
+        }
+        if (sumup_aktiv !== undefined) {
+            dojoUpdates.push('sumup_aktiv = ?');
+            dojoParams.push(sumup_aktiv ? 1 : 0);
+        }
 
-            if (stripeUpdates.length > 0) {
-                // Prüfe ob Stripe jetzt konfiguriert ist
-                const hasStripe = (stripe_publishable_key && !isStripeKeyMasked(stripe_publishable_key)) &&
-                                  (stripe_secret_key && !isStripeKeyMasked(stripe_secret_key));
-                stripeUpdates.push('payment_provider = ?');
-                stripeParams.push(hasStripe ? 'stripe_datev' : 'manual_sepa');
-                stripeParams.push(dojoId);
+        // Update payment_provider basierend auf Stripe
+        if (stripe_publishable_key !== undefined || stripe_secret_key !== undefined) {
+            const hasStripe = (stripe_publishable_key && !isMasked(stripe_publishable_key)) &&
+                              (stripe_secret_key && !isMasked(stripe_secret_key));
+            dojoUpdates.push('payment_provider = ?');
+            dojoParams.push(hasStripe ? 'stripe_datev' : 'manual_sepa');
+        }
 
-                await db.promise().query(`
-                    UPDATE dojo SET ${stripeUpdates.join(', ')}, updated_at = NOW() WHERE id = ?
-                `, stripeParams);
-            }
+        if (dojoUpdates.length > 0) {
+            dojoParams.push(dojoId);
+            await db.promise().query(`
+                UPDATE dojo SET ${dojoUpdates.join(', ')}, updated_at = NOW() WHERE id = ?
+            `, dojoParams);
         }
 
         // Upsert in dojo_integrations Tabelle (PayPal, LexOffice, DATEV)

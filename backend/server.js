@@ -726,6 +726,19 @@ try {
     });
 }
 
+// 8.1 SUMUP (Kartenterminal-Zahlungen) - NEU
+try {
+  const sumupRouter = require(path.join(__dirname, "routes", "sumup.js"));
+  app.use("/api/sumup", sumupRouter);
+  logger.success('Route gemountet', { path: '/api/sumup' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'sumup',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 9. AUSWERTUNGEN (Analytics & Reports) - NEU
 try {
   const auswertungenRouter = require(path.join(__dirname, "routes", "auswertungen.js"));
