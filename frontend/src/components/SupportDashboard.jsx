@@ -72,10 +72,10 @@ const SupportDashboard = () => {
     try {
       // Lade Support-Tickets und Feature-Requests Statistiken parallel
       const [ticketResponse, featureResponse] = await Promise.all([
-        axios.get(`${config.apiBaseUrl}/support-tickets/statistiken`, {
+        axios.get('/support-tickets/statistiken', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`${config.apiBaseUrl}/feature-requests`, {
+        axios.get('/feature-requests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

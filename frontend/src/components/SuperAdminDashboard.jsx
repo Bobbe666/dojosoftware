@@ -141,7 +141,7 @@ const SuperAdminDashboard = () => {
   const loadEmailSettings = async () => {
     try {
       setEmailLoading(true);
-      const response = await axios.get(`${config.apiBaseUrl}/email-settings/global`, {
+      const response = await axios.get('/email-settings/global', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -159,7 +159,7 @@ const SuperAdminDashboard = () => {
     try {
       setEmailLoading(true);
       setEmailMessage('');
-      const response = await axios.put(`${config.apiBaseUrl}/email-settings/global`, emailSettings, {
+      const response = await axios.put('/email-settings/global', emailSettings, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -182,7 +182,7 @@ const SuperAdminDashboard = () => {
     try {
       setEmailLoading(true);
       setEmailMessage('');
-      const response = await axios.post(`${config.apiBaseUrl}/email-settings/test`, {
+      const response = await axios.post('/email-settings/test', {
         test_email: testEmail,
         use_global: true
       }, {

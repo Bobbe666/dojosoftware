@@ -60,13 +60,13 @@ const VerbandDashboard = () => {
     try {
       // Lade Verbands-Statistiken
       const [statsRes, mitgliedschaftenRes, eventsRes] = await Promise.all([
-        axios.get(`${config.apiBaseUrl}/verbandsmitgliedschaften/stats`, {
+        axios.get('/verbandsmitgliedschaften/stats', {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: { success: false } })),
-        axios.get(`${config.apiBaseUrl}/verbandsmitgliedschaften?limit=10`, {
+        axios.get('/verbandsmitgliedschaften?limit=10', {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: { success: false, mitgliedschaften: [] } })),
-        axios.get(`${config.apiBaseUrl}/events?public=true&limit=5`, {
+        axios.get('/events?public=true&limit=5', {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: { success: false, events: [] } }))
       ]);
