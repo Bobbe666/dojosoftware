@@ -93,8 +93,11 @@ router.get('/check-rabatt', (req, res) => {
 
 // GET /dojos-ohne-mitgliedschaft
 router.get('/dojos-ohne-mitgliedschaft', (req, res) => {
-  db.query(`SELECT d.id, d.name, d.ort, d.email FROM dojo d WHERE d.id NOT IN (SELECT dojo_id FROM verbandsmitgliedschaften WHERE dojo_id IS NOT NULL AND status IN ('aktiv', 'ausstehend')) ORDER BY d.name`, (err, results) => {
-    if (err) return res.status(500).json({ error: 'Datenbankfehler' });
+  db.query(`SELECT d.id, d.dojoname as name, d.ort, d.email FROM dojo d WHERE d.id NOT IN (SELECT dojo_id FROM verbandsmitgliedschaften WHERE dojo_id IS NOT NULL AND status IN ('aktiv', 'ausstehend')) ORDER BY d.dojoname`, (err, results) => {
+    if (err) {
+      console.error('Fehler bei dojos-ohne-mitgliedschaft:', err);
+      return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
     res.json(results);
   });
 });
