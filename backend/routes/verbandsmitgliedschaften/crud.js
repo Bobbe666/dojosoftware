@@ -53,7 +53,10 @@ router.get('/stats', (req, res) => {
   const queries = {
     total: 'SELECT COUNT(*) as count FROM verbandsmitgliedschaften',
     aktiv: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE status = 'aktiv'",
-    dojos: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE typ = 'dojo' AND status = 'aktiv'",
+    dojos: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE typ = 'dojo' AND status IN ('aktiv', 'vertragsfrei')",
+    dojosGesamt: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE typ = 'dojo'",
+    dojosMitBeitrag: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE typ = 'dojo' AND status = 'aktiv' AND beitragsfrei = 0",
+    dojosVertragsfrei: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE typ = 'dojo' AND (status = 'vertragsfrei' OR beitragsfrei = 1)",
     einzelpersonen: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE typ = 'einzelperson' AND status = 'aktiv'",
     auslaufend: "SELECT COUNT(*) as count FROM verbandsmitgliedschaften WHERE status = 'aktiv' AND gueltig_bis <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)",
     offeneZahlungen: "SELECT COUNT(*) as count FROM verbandsmitgliedschaft_zahlungen WHERE status = 'offen'",
