@@ -117,7 +117,7 @@ router.get('/dokumente/:typ', (req, res) => {
 });
 
 // GET /:id - Einzelne Mitgliedschaft
-router.get('/:id', (req, res) => {
+router.get('/:id(\\d+)', (req, res) => {
   const query = `SELECT vm.*, d.dojoname as dojo_name, d.ort as dojo_ort, d.email as dojo_email, CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
     FROM verbandsmitgliedschaften vm LEFT JOIN dojo d ON vm.dojo_id = d.id LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id WHERE vm.id = ?`;
   db.query(query, [req.params.id], (err, results) => {
@@ -169,7 +169,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /:id - Mitgliedschaft aktualisieren
-router.put('/:id', (req, res) => {
+router.put('/:id(\\d+)', (req, res) => {
   const { person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, status } = req.body;
   const query = `UPDATE verbandsmitgliedschaften SET person_vorname = COALESCE(?, person_vorname), person_nachname = COALESCE(?, person_nachname), person_email = COALESCE(?, person_email), person_telefon = COALESCE(?, person_telefon), person_strasse = COALESCE(?, person_strasse), person_plz = COALESCE(?, person_plz), person_ort = COALESCE(?, person_ort), person_land = COALESCE(?, person_land), person_geburtsdatum = COALESCE(?, person_geburtsdatum), zahlungsart = COALESCE(?, zahlungsart), sepa_iban = COALESCE(?, sepa_iban), sepa_bic = COALESCE(?, sepa_bic), sepa_kontoinhaber = COALESCE(?, sepa_kontoinhaber), notizen = COALESCE(?, notizen), status = COALESCE(?, status), updated_at = NOW() WHERE id = ?`;
   db.query(query, [person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, status, req.params.id], (err, result) => {
@@ -180,7 +180,7 @@ router.put('/:id', (req, res) => {
 });
 
 // POST /:id/verlaengern - Verlängern
-router.post('/:id/verlaengern', async (req, res) => {
+router.post('/:id(\\d+)/verlaengern', async (req, res) => {
   try {
     const mitgliedschaft = await queryAsync('SELECT * FROM verbandsmitgliedschaften WHERE id = ?', [req.params.id]);
     if (mitgliedschaft.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
@@ -204,8 +204,8 @@ router.post('/:id/verlaengern', async (req, res) => {
   }
 });
 
-// DELETE /:id - Kündigen
-router.delete('/:id', (req, res) => {
+// DELETE /:id - Kündigen (nur numerische IDs)
+router.delete('/:id(\\d+)', (req, res) => {
   db.query("UPDATE verbandsmitgliedschaften SET status = 'gekuendigt' WHERE id = ?", [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
@@ -214,7 +214,7 @@ router.delete('/:id', (req, res) => {
 });
 
 // GET /:id/zahlungen
-router.get('/:id/zahlungen', (req, res) => {
+router.get('/:id(\\d+)/zahlungen', (req, res) => {
   db.query('SELECT * FROM verbandsmitgliedschaft_zahlungen WHERE verbandsmitgliedschaft_id = ? ORDER BY rechnungsdatum DESC', [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     res.json(results);
@@ -232,7 +232,7 @@ router.post('/zahlungen/:zahlungs_id/bezahlt', (req, res) => {
 });
 
 // GET /:id/sepa
-router.get('/:id/sepa', (req, res) => {
+router.get('/:id(\\d+)/sepa', (req, res) => {
   db.query('SELECT * FROM verband_sepa_mandate WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC', [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     res.json(results);
@@ -240,7 +240,7 @@ router.get('/:id/sepa', (req, res) => {
 });
 
 // POST /:id/sepa
-router.post('/:id/sepa', async (req, res) => {
+router.post('/:id(\\d+)/sepa', async (req, res) => {
   const { iban, bic, kontoinhaber, bank_name, unterschrift_digital, unterschrift_datum, ip_adresse } = req.body;
   if (!iban || !kontoinhaber) return res.status(400).json({ error: 'IBAN und Kontoinhaber sind erforderlich' });
 
@@ -267,7 +267,7 @@ router.delete('/sepa/:sepa_id', (req, res) => {
 });
 
 // POST /:id/unterschreiben
-router.post('/:id/unterschreiben', async (req, res) => {
+router.post('/:id(\\d+)/unterschreiben', async (req, res) => {
   const { unterschrift_digital, unterschrift_datum, ip_adresse, agb_akzeptiert, dsgvo_akzeptiert, widerruf_akzeptiert } = req.body;
 
   try {
@@ -282,7 +282,7 @@ router.post('/:id/unterschreiben', async (req, res) => {
 });
 
 // GET /:id/historie
-router.get('/:id/historie', (req, res) => {
+router.get('/:id(\\d+)/historie', (req, res) => {
   db.query(`SELECT * FROM verbandsmitgliedschaft_historie WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC`, [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     res.json(results);
@@ -290,7 +290,7 @@ router.get('/:id/historie', (req, res) => {
 });
 
 // GET /:id/pdf
-router.get('/:id/pdf', async (req, res) => {
+router.get('/:id(\\d+)/pdf', async (req, res) => {
   try {
     const { generateVerbandVertragPdf } = require('../../utils/verbandVertragPdfGenerator');
     await generateVerbandVertragPdf(req.params.id, res);
