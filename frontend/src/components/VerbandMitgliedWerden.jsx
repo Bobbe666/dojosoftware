@@ -322,17 +322,20 @@ const VerbandMitgliedWerden = () => {
       {vorteile.length > 0 && (
         <div style={styles.vorteileSection}>
           <h3 style={styles.vorteileTitle}><Gift size={20} /> Mitglieder-Vorteile</h3>
-          {/* Vorteile temporär ausgeblendet
           <div style={styles.vorteileGrid}>
             {vorteile.slice(0, 4).map((v, i) => (
               <div key={i} style={styles.vorteilCard}>
                 <Percent size={24} color="#ffd700" />
                 <span>{v.titel}</span>
-                {v.rabatt_prozent && <strong>-{v.rabatt_prozent}%</strong>}
+                {v.rabatt_wert > 0 && (
+                  <strong style={{ color: '#ffd700' }}>
+                    {v.rabatt_typ === 'prozent' ? `-${v.rabatt_wert}%` : `-${v.rabatt_wert}€`}
+                  </strong>
+                )}
               </div>
             ))}
           </div>
-          */}
+          <p style={styles.undVielesMehr}>...und vieles mehr!</p>
         </div>
       )}
     </div>
@@ -1230,6 +1233,13 @@ const styles = {
     padding: '1rem',
     background: 'rgba(0,0,0,0.2)',
     borderRadius: '8px'
+  },
+  undVielesMehr: {
+    textAlign: 'center',
+    marginTop: '1rem',
+    color: 'rgba(255, 215, 0, 0.8)',
+    fontStyle: 'italic',
+    fontSize: '1.1rem'
   },
   footer: {
     textAlign: 'center',
