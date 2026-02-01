@@ -135,7 +135,7 @@ router.get('/mitgliedschaftstypen', (req, res) => {
 });
 
 // GET /mitgliedschaftstypen/:id - Einzelnen Typ abrufen
-router.get('/mitgliedschaftstypen/:id', (req, res) => {
+router.get('/mitgliedschaftstypen/:id(\\d+)', (req, res) => {
   db.query('SELECT * FROM verband_mitgliedschaftstypen WHERE id = ?', [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     if (results.length === 0) return res.status(404).json({ error: 'Mitgliedschaftstyp nicht gefunden' });
@@ -194,7 +194,7 @@ router.post('/mitgliedschaftstypen', (req, res) => {
 });
 
 // PUT /mitgliedschaftstypen/:id - Typ aktualisieren
-router.put('/mitgliedschaftstypen/:id', (req, res) => {
+router.put('/mitgliedschaftstypen/:id(\\d+)', (req, res) => {
   const { id } = req.params;
   const {
     code, name, beschreibung, kategorie,
@@ -245,7 +245,7 @@ router.put('/mitgliedschaftstypen/:id', (req, res) => {
 });
 
 // DELETE /mitgliedschaftstypen/:id - Typ löschen
-router.delete('/mitgliedschaftstypen/:id', async (req, res) => {
+router.delete('/mitgliedschaftstypen/:id(\\d+)', async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -281,7 +281,7 @@ router.delete('/mitgliedschaftstypen/:id', async (req, res) => {
 });
 
 // POST /mitgliedschaftstypen/:id/toggle-aktiv - Aktiv-Status umschalten
-router.post('/mitgliedschaftstypen/:id/toggle-aktiv', (req, res) => {
+router.post('/mitgliedschaftstypen/:id(\\d+)/toggle-aktiv', (req, res) => {
   const { id } = req.params;
 
   db.query(
@@ -337,7 +337,7 @@ router.get('/vorteile/kategorien', (req, res) => {
 });
 
 // GET /vorteile/:id - Einzelnen Vorteil abrufen
-router.get('/vorteile/:id', (req, res) => {
+router.get('/vorteile/:id(\\d+)', (req, res) => {
   db.query('SELECT * FROM verband_vorteile WHERE id = ?', [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     if (results.length === 0) return res.status(404).json({ error: 'Vorteil nicht gefunden' });
@@ -378,7 +378,7 @@ router.post('/vorteile', (req, res) => {
 });
 
 // PUT /vorteile/:id - Vorteil aktualisieren
-router.put('/vorteile/:id', (req, res) => {
+router.put('/vorteile/:id(\\d+)', (req, res) => {
   const { id } = req.params;
   const { titel, beschreibung, gilt_fuer, rabatt_typ, rabatt_wert, kategorie, aktiv } = req.body;
 
@@ -413,7 +413,7 @@ router.put('/vorteile/:id', (req, res) => {
 });
 
 // DELETE /vorteile/:id - Vorteil löschen
-router.delete('/vorteile/:id', (req, res) => {
+router.delete('/vorteile/:id(\\d+)', (req, res) => {
   db.query('DELETE FROM verband_vorteile WHERE id = ?', [req.params.id], (err, result) => {
     if (err) {
       logger.error('Fehler beim Löschen des Vorteils:', err);
@@ -427,7 +427,7 @@ router.delete('/vorteile/:id', (req, res) => {
 });
 
 // POST /vorteile/:id/toggle-aktiv - Aktiv-Status umschalten
-router.post('/vorteile/:id/toggle-aktiv', (req, res) => {
+router.post('/vorteile/:id(\\d+)/toggle-aktiv', (req, res) => {
   db.query(
     'UPDATE verband_vorteile SET aktiv = NOT aktiv WHERE id = ?',
     [req.params.id],
