@@ -109,7 +109,9 @@ const VerbandsMitglieder = () => {
     person_land: 'Deutschland',
     person_geburtsdatum: '',
     zahlungsart: 'rechnung',
-    notizen: ''
+    notizen: '',
+    // Beitragsfrei (nur für Admin)
+    beitragsfrei: false
   });
 
   // Axios Config
@@ -571,7 +573,8 @@ const VerbandsMitglieder = () => {
       person_land: 'Deutschland',
       person_geburtsdatum: '',
       zahlungsart: 'rechnung',
-      notizen: ''
+      notizen: '',
+      beitragsfrei: false
     });
   };
 
@@ -1306,30 +1309,86 @@ const VerbandsMitglieder = () => {
               {formData.typ === 'dojo' && (
                 <>
                   <div style={styles.formGroup}>
-                    <label style={styles.label}>Dojo *</label>
-                    <select
-                      value={formData.neues_dojo ? 'neu' : formData.dojo_id}
-                      onChange={(e) => {
-                        if (e.target.value === 'neu') {
-                          setFormData({ ...formData, neues_dojo: true, dojo_id: '' });
-                        } else {
-                          setFormData({ ...formData, neues_dojo: false, dojo_id: e.target.value });
-                        }
-                      }}
-                      style={styles.input}
-                      
-                    >
-                      <option value="">-- Dojo wählen --</option>
-                      {dojosOhneMitgliedschaft.map(d => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} {d.ort ? `(${d.ort})` : ''}
+                    <label style={styles.label}>
+                      {formData.neues_dojo ? 'Modus: Neues Dojo anlegen' : 'Dojo *'}
+                    </label>
+                    {formData.neues_dojo ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          padding: '10px 15px',
+                          background: 'rgba(255, 215, 0, 0.2)',
+                          borderRadius: '8px',
+                          color: '#ffd700',
+                          fontWeight: '600',
+                          flex: 1
+                        }}>
+                          ➕ Neues Dojo wird angelegt
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, neues_dojo: false, dojo_id: '' })}
+                          style={{
+                            padding: '10px 15px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.dojo_id}
+                        onChange={(e) => {
+                          if (e.target.value === 'neu') {
+                            setFormData({ ...formData, neues_dojo: true, dojo_id: '' });
+                          } else {
+                            setFormData({ ...formData, neues_dojo: false, dojo_id: e.target.value });
+                          }
+                        }}
+                        style={styles.input}
+                      >
+                        <option value="">-- Dojo wählen --</option>
+                        {dojosOhneMitgliedschaft.map(d => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} {d.ort ? `(${d.ort})` : ''}
+                          </option>
+                        ))}
+                        <option value="neu" style={{ fontWeight: 'bold', borderTop: '1px solid #ccc' }}>
+                          ➕ Neues Dojo anlegen...
                         </option>
-                      ))}
-                      <option value="neu" style={{ fontWeight: 'bold', borderTop: '1px solid #ccc' }}>
-                        ➕ Neues Dojo anlegen...
-                      </option>
-                    </select>
+                      </select>
+                    )}
                   </div>
+
+                  {/* Beitragsfrei Option (nur für Admin) */}
+                  {isAdmin && (
+                    <div style={{ ...styles.formGroup, marginTop: '0.5rem' }}>
+                      <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        cursor: 'pointer',
+                        padding: '10px 15px',
+                        background: formData.beitragsfrei ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '8px',
+                        border: formData.beitragsfrei ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.beitragsfrei}
+                          onChange={(e) => setFormData({ ...formData, beitragsfrei: e.target.checked })}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <span style={{ color: formData.beitragsfrei ? '#22c55e' : 'rgba(255, 255, 255, 0.8)' }}>
+                          🎁 Beitragsfrei stellen (keine Gebühren)
+                        </span>
+                      </label>
+                    </div>
+                  )}
 
                   {/* Neues Dojo Formular */}
                   {formData.neues_dojo && (

@@ -130,7 +130,7 @@ router.get('/:id(\\d+)', (req, res) => {
 // POST / - Neue Mitgliedschaft anlegen
 router.post('/', async (req, res) => {
   try {
-    const { typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, gueltig_von, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen } = req.body;
+    const { typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, gueltig_von, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, beitragsfrei } = req.body;
 
     if (!typ || !['dojo', 'einzelperson'].includes(typ)) return res.status(400).json({ error: 'Ungültiger Mitgliedschaftstyp' });
     if (typ === 'dojo' && !dojo_id) return res.status(400).json({ error: 'Dojo muss ausgewählt werden' });
@@ -144,7 +144,9 @@ router.post('/', async (req, res) => {
     const mitgliedsnummer = await getNextMitgliedsnummer(typ);
     const beitragDojo = await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO);
     const beitragEinzel = await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL);
-    const jahresbeitrag = typ === 'dojo' ? beitragDojo : beitragEinzel;
+
+    // Wenn beitragsfrei, dann 0€ - ansonsten normaler Beitrag
+    const jahresbeitrag = beitragsfrei ? 0 : (typ === 'dojo' ? beitragDojo : beitragEinzel);
     const laufzeitMonate = await getEinstellung('laufzeit_monate', 12);
 
     const startDatum = gueltig_von || new Date().toISOString().split('T')[0];
@@ -152,16 +154,28 @@ router.post('/', async (req, res) => {
     endDatum.setMonth(endDatum.getMonth() + laufzeitMonate);
     const gueltigBis = endDatum.toISOString().split('T')[0];
 
-    const result = await queryAsync(`INSERT INTO verbandsmitgliedschaften (typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, mitgliedsnummer, jahresbeitrag, gueltig_von, gueltig_bis, status, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ausstehend', ?, ?, ?, ?, ?)`,
-      [typ, dojo_id || null, person_vorname || null, person_nachname || null, person_email || null, person_telefon || null, person_strasse || null, person_plz || null, person_ort || null, person_land || 'Deutschland', person_geburtsdatum || null, mitglied_id || null, mitgliedsnummer, jahresbeitrag, startDatum, gueltigBis, zahlungsart || 'rechnung', sepa_iban || null, sepa_bic || null, sepa_kontoinhaber || null, notizen || null]);
+    // Bei beitragsfrei sofort 'aktiv', ansonsten 'ausstehend'
+    const initialStatus = beitragsfrei ? 'aktiv' : 'ausstehend';
 
-    const betraege = calculateBrutto(jahresbeitrag);
-    const rechnungsnummer = await generateFortlaufendeRechnungsnummer();
+    const result = await queryAsync(`INSERT INTO verbandsmitgliedschaften (typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, mitgliedsnummer, jahresbeitrag, gueltig_von, gueltig_bis, status, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, beitragsfrei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [typ, dojo_id || null, person_vorname || null, person_nachname || null, person_email || null, person_telefon || null, person_strasse || null, person_plz || null, person_ort || null, person_land || 'Deutschland', person_geburtsdatum || null, mitglied_id || null, mitgliedsnummer, jahresbeitrag, startDatum, gueltigBis, initialStatus, zahlungsart || 'rechnung', sepa_iban || null, sepa_bic || null, sepa_kontoinhaber || null, notizen || null, beitragsfrei ? 1 : 0]);
 
-    await queryAsync(`INSERT INTO verbandsmitgliedschaft_zahlungen (verbandsmitgliedschaft_id, rechnungsnummer, rechnungsdatum, faellig_am, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto, zeitraum_von, zeitraum_bis, status) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), ?, ?, ?, ?, ?, ?, 'offen')`,
-      [result.insertId, rechnungsnummer, betraege.netto, betraege.mwst_satz, betraege.mwst_betrag, betraege.brutto, startDatum, gueltigBis]);
+    let rechnungsnummer = null;
 
-    res.status(201).json({ success: true, id: result.insertId, mitgliedsnummer, rechnungsnummer, message: `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft erfolgreich angelegt` });
+    // Nur Zahlung anlegen wenn nicht beitragsfrei
+    if (!beitragsfrei) {
+      const betraege = calculateBrutto(jahresbeitrag);
+      rechnungsnummer = await generateFortlaufendeRechnungsnummer();
+
+      await queryAsync(`INSERT INTO verbandsmitgliedschaft_zahlungen (verbandsmitgliedschaft_id, rechnungsnummer, rechnungsdatum, faellig_am, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto, zeitraum_von, zeitraum_bis, status) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), ?, ?, ?, ?, ?, ?, 'offen')`,
+        [result.insertId, rechnungsnummer, betraege.netto, betraege.mwst_satz, betraege.mwst_betrag, betraege.brutto, startDatum, gueltigBis]);
+    }
+
+    const message = beitragsfrei
+      ? `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft beitragsfrei angelegt`
+      : `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft erfolgreich angelegt`;
+
+    res.status(201).json({ success: true, id: result.insertId, mitgliedsnummer, rechnungsnummer, beitragsfrei: !!beitragsfrei, message });
   } catch (err) {
     logger.error('Fehler beim Anlegen der Mitgliedschaft:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler: ' + err.message });
@@ -191,13 +205,22 @@ router.post('/:id(\\d+)/verlaengern', async (req, res) => {
 
     await queryAsync("UPDATE verbandsmitgliedschaften SET gueltig_bis = ?, status = 'aktiv' WHERE id = ?", [endDatum.toISOString().split('T')[0], req.params.id]);
 
-    const betraege = calculateBrutto(mitgliedschaft[0].jahresbeitrag);
-    const rechnungsnummer = await generateFortlaufendeRechnungsnummer();
+    let rechnungsnummer = null;
 
-    await queryAsync(`INSERT INTO verbandsmitgliedschaft_zahlungen (verbandsmitgliedschaft_id, rechnungsnummer, rechnungsdatum, faellig_am, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto, zeitraum_von, zeitraum_bis, status) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), ?, ?, ?, ?, ?, ?, 'offen')`,
-      [req.params.id, rechnungsnummer, betraege.netto, betraege.mwst_satz, betraege.mwst_betrag, betraege.brutto, startDatum, endDatum.toISOString().split('T')[0]]);
+    // Nur Zahlung anlegen wenn nicht beitragsfrei
+    if (!mitgliedschaft[0].beitragsfrei) {
+      const betraege = calculateBrutto(mitgliedschaft[0].jahresbeitrag);
+      rechnungsnummer = await generateFortlaufendeRechnungsnummer();
 
-    res.json({ success: true, message: 'Mitgliedschaft verlängert', neues_ende: endDatum.toISOString().split('T')[0], rechnungsnummer });
+      await queryAsync(`INSERT INTO verbandsmitgliedschaft_zahlungen (verbandsmitgliedschaft_id, rechnungsnummer, rechnungsdatum, faellig_am, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto, zeitraum_von, zeitraum_bis, status) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), ?, ?, ?, ?, ?, ?, 'offen')`,
+        [req.params.id, rechnungsnummer, betraege.netto, betraege.mwst_satz, betraege.mwst_betrag, betraege.brutto, startDatum, endDatum.toISOString().split('T')[0]]);
+    }
+
+    const message = mitgliedschaft[0].beitragsfrei
+      ? 'Beitragsfreie Mitgliedschaft verlängert'
+      : 'Mitgliedschaft verlängert';
+
+    res.json({ success: true, message, neues_ende: endDatum.toISOString().split('T')[0], rechnungsnummer, beitragsfrei: !!mitgliedschaft[0].beitragsfrei });
   } catch (err) {
     logger.error('Fehler bei Verlängerung:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler' });
