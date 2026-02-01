@@ -209,7 +209,7 @@ router.post('/:id/dokumente/generate', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler bei Dokumentgenerierung:', error);
+    logger.error('Fehler bei Dokumentgenerierung:', { error: error });
     res.status(500).json({
       error: 'Fehler bei Dokumentgenerierung',
       details: error.message
@@ -259,13 +259,13 @@ router.get('/:id/dokumente', async (req, res) => {
     // Beide Queries parallel ausführen
     db.query(dokumenteQuery, [mitgliedId], (err1, dokumente) => {
       if (err1) {
-        console.error('Fehler beim Laden der Dokumente:', err1);
+        logger.error('Fehler beim Laden der Dokumente:', { error: err1 });
         return res.status(500).json({ error: 'Fehler beim Laden der Dokumente' });
       }
 
       db.query(rechnungenQuery, [mitgliedId], (err2, rechnungen) => {
         if (err2) {
-          console.error('Fehler beim Laden der Rechnungen:', err2);
+          logger.error('Fehler beim Laden der Rechnungen:', { error: err2 });
           return res.status(500).json({ error: 'Fehler beim Laden der Rechnungen' });
         }
 
@@ -278,7 +278,7 @@ router.get('/:id/dokumente', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -296,7 +296,7 @@ router.get('/:id/dokumente/:dokumentId/download', async (req, res) => {
 
     db.query(query, [dokumentId, mitgliedId], async (err, results) => {
       if (err) {
-        console.error('Fehler beim Laden des Dokuments:', err);
+        logger.error('Fehler beim Laden des Dokuments:', { error: err });
         return res.status(500).json({ error: 'Fehler beim Laden des Dokuments' });
       }
 
@@ -314,7 +314,7 @@ router.get('/:id/dokumente/:dokumentId/download', async (req, res) => {
         // Send file
         res.download(filepath, `${dokument.dokumentname}.pdf`, (err) => {
           if (err) {
-            console.error('Fehler beim Download:', err);
+            logger.error('Fehler beim Download:', { error: err });
             if (!res.headersSent) {
               res.status(500).json({ error: 'Fehler beim Download' });
             }
@@ -323,13 +323,13 @@ router.get('/:id/dokumente/:dokumentId/download', async (req, res) => {
         });
 
       } catch (fileErr) {
-        console.error('Datei nicht gefunden:', filepath);
+        logger.error('Datei nicht gefunden:', { error: filepath });
         res.status(404).json({ error: 'Datei nicht gefunden' });
       }
     });
 
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -347,7 +347,7 @@ router.delete('/:id/dokumente/:dokumentId', async (req, res) => {
 
     db.query(selectQuery, [dokumentId, mitgliedId], async (err, results) => {
       if (err) {
-        console.error('Fehler beim Laden des Dokuments:', err);
+        logger.error('Fehler beim Laden des Dokuments:', { error: err });
         return res.status(500).json({ error: 'Fehler beim Laden des Dokuments' });
       }
 
@@ -368,7 +368,7 @@ router.delete('/:id/dokumente/:dokumentId', async (req, res) => {
       const deleteQuery = 'DELETE FROM mitglied_dokumente WHERE id = ?';
       db.query(deleteQuery, [dokumentId], (err, result) => {
         if (err) {
-          console.error('Fehler beim Löschen aus Datenbank:', err);
+          logger.error('Fehler beim Löschen aus Datenbank:', { error: err });
           return res.status(500).json({ error: 'Fehler beim Löschen' });
         }
         res.json({ success: true, message: 'Dokument erfolgreich gelöscht' });
@@ -376,7 +376,7 @@ router.delete('/:id/dokumente/:dokumentId', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });

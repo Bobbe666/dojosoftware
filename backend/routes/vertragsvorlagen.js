@@ -1,5 +1,6 @@
 // Backend/routes/vertragsvorlagen.js - Verwaltung von Vertragsvorlagen (GrapesJS)
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const fs = require('fs');
@@ -37,7 +38,7 @@ const loadDojoLogo = async (dojoId) => {
 
     return null;
   } catch (error) {
-    console.error('Fehler beim Laden des Logos:', error);
+    logger.error('Fehler beim Laden des Logos:', { error: error });
     return null;
   }
 };
@@ -87,7 +88,7 @@ router.get('/', async (req, res) => {
     `, queryParams);
     res.json({ success: true, data: vorlagen });
   } catch (err) {
-    console.error('Fehler beim Abrufen der Vorlagen:', err);
+    logger.error('Fehler beim Abrufen der Vorlagen:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });
@@ -108,7 +109,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json({ success: true, data: vorlagen[0] });
   } catch (err) {
-    console.error('Fehler beim Abrufen der Vorlage:', err);
+    logger.error('Fehler beim Abrufen der Vorlage:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });
@@ -175,7 +176,7 @@ router.post('/', async (req, res) => {
       data: { id: result.insertId }
     });
   } catch (err) {
-    console.error('Fehler beim Erstellen der Vorlage:', err);
+    logger.error('Fehler beim Erstellen der Vorlage:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });
@@ -250,7 +251,7 @@ router.put('/:id', async (req, res) => {
       data: { version: newVersion }
     });
   } catch (err) {
-    console.error('Fehler beim Aktualisieren der Vorlage:', err);
+    logger.error('Fehler beim Aktualisieren der Vorlage:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });
@@ -267,7 +268,7 @@ router.delete('/:id', async (req, res) => {
     }
     res.json({ success: true, message: 'Vorlage gelöscht' });
   } catch (err) {
-    console.error('Fehler beim Löschen der Vorlage:', err);
+    logger.error('Fehler beim Löschen der Vorlage:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });
@@ -353,7 +354,7 @@ router.get('/:id/preview', async (req, res) => {
       }
     } catch (dbErr) {
       // Fallback auf Beispieldaten, wenn keine echten Daten verfügbar sind
-      console.log('⚠️ Verwende Beispieldaten für Vorschau:', dbErr.message);
+      logger.warn('⚠️ Verwende Beispieldaten für Vorschau:', dbErr.message);
       sampleData = {
         mitglied: {
           vorname: 'Max',
@@ -524,7 +525,7 @@ router.get('/:id/preview', async (req, res) => {
 
     res.send(fullHtml);
   } catch (err) {
-    console.error('Fehler beim Erstellen der Vorschau:', err);
+    logger.error('Fehler beim Erstellen der Vorschau:', { error: err });
     res.status(500).json({ error: 'Fehler bei der Vorschau', details: err.message });
   }
 });
@@ -729,7 +730,7 @@ router.get('/:id/generate-pdf', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${template.name}_${mitglied.nachname}_${mitglied.vorname}.pdf"`);
     res.send(pdfBuffer);
   } catch (err) {
-    console.error('Fehler beim Generieren des PDFs:', err);
+    logger.error('Fehler beim Generieren des PDFs:', { error: err });
     res.status(500).json({ error: 'Fehler beim Generieren des PDFs', details: err.message });
   }
 });
@@ -796,7 +797,7 @@ router.get('/:id/download', async (req, res) => {
     res.send(pdfBuffer);
     
   } catch (error) {
-    console.error('Fehler beim Download der Vorlage:', error);
+    logger.error('Fehler beim Download der Vorlage:', { error: error });
     res.status(500).json({ error: 'Fehler beim Download der Vorlage' });
   }
 });
@@ -865,7 +866,7 @@ router.post('/:id/copy', async (req, res) => {
       data: { id: result.insertId }
     });
   } catch (err) {
-    console.error('Fehler beim Kopieren der Vorlage:', err);
+    logger.error('Fehler beim Kopieren der Vorlage:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });

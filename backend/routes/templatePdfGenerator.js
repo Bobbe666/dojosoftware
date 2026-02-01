@@ -35,7 +35,7 @@ const loadDojoLogo = async (dojoId) => {
 
     return null;
   } catch (error) {
-    console.error('Fehler beim Laden des Logos:', error);
+    logger.error('Fehler beim Laden des Logos:', { error: error });
     return null;
   }
 };
@@ -182,7 +182,7 @@ async function generatePDFFromTemplate(templateId, mitglied, vertrag, dojo) {
     return pdfBuffer;
 
   } catch (error) {
-    console.error('❌ Fehler bei PDF-Generierung:', error);
+    logger.error('Fehler bei PDF-Generierung:', error);
     throw error;
   } finally {
     if (browser) {
@@ -219,7 +219,7 @@ async function generatePDFWithDefaultTemplate(dojoId, templateType, mitglied, ve
 
     return await generatePDFFromTemplate(templateId, mitglied, vertrag, dojo);
   } catch (error) {
-    console.error('❌ Fehler bei Standard-Template:', error);
+    logger.error('Fehler bei Standard-Template:', error);
     throw error;
   }
 }

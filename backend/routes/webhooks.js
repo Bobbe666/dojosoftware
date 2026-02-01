@@ -4,6 +4,7 @@
 // ============================================================================
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const crypto = require('crypto');
@@ -117,7 +118,7 @@ async function logWebhookDelivery(webhookId, eventType, status, httpStatus, erro
       VALUES (?, ?, ?, ?, ?, NOW())
     `, [webhookId, eventType, status, httpStatus, errorMessage ? JSON.stringify(errorMessage) : null]);
   } catch (err) {
-    console.error('Fehler beim Loggen der Webhook-Zustellung:', err);
+    logger.error('Fehler beim Loggen der Webhook-Zustellung:', { error: err });
   }
 }
 
@@ -145,7 +146,7 @@ async function triggerWebhooks(eventType, dojoId, payload) {
     return { triggered: webhooks.length, results };
 
   } catch (error) {
-    console.error('Fehler beim Triggern der Webhooks:', error);
+    logger.error('Fehler beim Triggern der Webhooks:', { error: error });
     return { triggered: 0, error: error.message };
   }
 }
@@ -201,7 +202,7 @@ router.get('/', async (req, res) => {
     res.json(sanitizedWebhooks);
 
   } catch (error) {
-    console.error('Fehler beim Laden der Webhooks:', error);
+    logger.error('Fehler beim Laden der Webhooks:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Webhooks' });
   }
 });
@@ -255,7 +256,7 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Erstellen des Webhooks:', error);
+    logger.error('Fehler beim Erstellen des Webhooks:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen des Webhooks' });
   }
 });
@@ -310,7 +311,7 @@ router.put('/:id', async (req, res) => {
     res.json({ success: true, message: 'Webhook aktualisiert' });
 
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des Webhooks:', error);
+    logger.error('Fehler beim Aktualisieren des Webhooks:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren des Webhooks' });
   }
 });
@@ -339,7 +340,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true, message: 'Webhook gelöscht' });
 
   } catch (error) {
-    console.error('Fehler beim Löschen des Webhooks:', error);
+    logger.error('Fehler beim Löschen des Webhooks:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen des Webhooks' });
   }
 });
@@ -371,7 +372,7 @@ router.post('/:id/regenerate-secret', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Fehler beim Generieren des Secrets' });
   }
 });
@@ -412,7 +413,7 @@ router.post('/:id/test', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Testen des Webhooks:', error);
+    logger.error('Fehler beim Testen des Webhooks:', { error: error });
     res.status(500).json({ error: 'Fehler beim Testen des Webhooks' });
   }
 });
@@ -457,7 +458,7 @@ router.get('/:id/deliveries', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Laden der Zustellungen:', error);
+    logger.error('Fehler beim Laden der Zustellungen:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Zustellungen' });
   }
 });
@@ -493,7 +494,7 @@ router.post('/zapier/subscribe', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Zapier subscribe error:', error);
+    logger.error('Zapier subscribe error:', { error: error });
     res.status(500).json({ error: 'Subscription failed' });
   }
 });
@@ -515,7 +516,7 @@ router.delete('/zapier/subscribe/:id', async (req, res) => {
     res.json({ message: 'Zapier webhook unsubscribed' });
 
   } catch (error) {
-    console.error('Zapier unsubscribe error:', error);
+    logger.error('Zapier unsubscribe error:', { error: error });
     res.status(500).json({ error: 'Unsubscription failed' });
   }
 });

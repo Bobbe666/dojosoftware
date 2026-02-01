@@ -1,34 +1,61 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { promisify } = require('util');
 
 const queryAsync = promisify(db.query).bind(db);
 
-// GET /api/ehemalige - Alle ehemaligen Mitglieder abrufen
+// GET /api/ehemalige - Alle ehemaligen Mitglieder abrufen (mit Pagination)
 router.get('/', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
+    const { dojo_id, page = 1, limit = 50, search } = req.query;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 50;
+    const offset = (pageNum - 1) * limitNum;
 
-    let query = `
-      SELECT e.*
-      FROM ehemalige e
-      WHERE e.archiviert = FALSE
-    `;
-
+    let baseWhere = `WHERE e.archiviert = FALSE`;
     const params = [];
 
     if (dojo_id && dojo_id !== 'all') {
-      query += ` AND e.dojo_id = ?`;
+      baseWhere += ` AND e.dojo_id = ?`;
       params.push(dojo_id);
     }
 
-    query += ` ORDER BY e.austrittsdatum DESC, e.nachname ASC, e.vorname ASC`;
+    // Suchfunktion
+    if (search && search.trim()) {
+      baseWhere += ` AND (e.vorname LIKE ? OR e.nachname LIKE ? OR e.email LIKE ? OR CONCAT(e.vorname, ' ', e.nachname) LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
 
-    const ehemalige = await queryAsync(query, params);
-    res.json(ehemalige);
+    // Zähle Gesamtanzahl
+    const countQuery = `SELECT COUNT(*) as total FROM ehemalige e ${baseWhere}`;
+    const countResult = await queryAsync(countQuery, params);
+    const total = countResult[0].total;
+
+    // Hole paginierte Daten
+    const dataQuery = `
+      SELECT e.*
+      FROM ehemalige e
+      ${baseWhere}
+      ORDER BY e.austrittsdatum DESC, e.nachname ASC, e.vorname ASC
+      LIMIT ? OFFSET ?
+    `;
+
+    const ehemalige = await queryAsync(dataQuery, [...params, limitNum, offset]);
+
+    res.json({
+      data: ehemalige,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
-    console.error('Fehler beim Abrufen der ehemaligen Mitglieder:', error);
+    logger.error('Fehler beim Abrufen der ehemaligen Mitglieder:', { error: error });
     res.status(500).json({ error: 'Fehler beim Abrufen der ehemaligen Mitglieder' });
   }
 });
@@ -49,7 +76,7 @@ router.get('/count', async (req, res) => {
     const result = await queryAsync(query, params);
     res.json({ count: result[0].count });
   } catch (error) {
-    console.error('Fehler beim Zählen der ehemaligen Mitglieder:', error);
+    logger.error('Fehler beim Zählen der ehemaligen Mitglieder:', { error: error });
     res.status(500).json({ error: 'Fehler beim Zählen' });
   }
 });
@@ -73,7 +100,7 @@ router.get('/:id', async (req, res) => {
 
     res.json(result[0]);
   } catch (error) {
-    console.error('Fehler beim Abrufen des ehemaligen Mitglieds:', error);
+    logger.error('Fehler beim Abrufen des ehemaligen Mitglieds:', { error: error });
     res.status(500).json({ error: 'Fehler beim Abrufen' });
   }
 });
@@ -120,7 +147,7 @@ router.post('/', async (req, res) => {
     const result = await queryAsync(query, values);
     res.status(201).json({ id: result.insertId, message: 'Ehemaliges Mitglied erfolgreich erstellt' });
   } catch (error) {
-    console.error('Fehler beim Erstellen des ehemaligen Mitglieds:', error);
+    logger.error('Fehler beim Erstellen des ehemaligen Mitglieds:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen' });
   }
 });
@@ -167,7 +194,7 @@ router.put('/:id', async (req, res) => {
     await queryAsync(query, values);
     res.json({ message: 'Ehemaliges Mitglied erfolgreich aktualisiert' });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des ehemaligen Mitglieds:', error);
+    logger.error('Fehler beim Aktualisieren des ehemaligen Mitglieds:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren' });
   }
 });
@@ -182,7 +209,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ message: 'Ehemaliges Mitglied erfolgreich archiviert' });
   } catch (error) {
-    console.error('Fehler beim Archivieren des ehemaligen Mitglieds:', error);
+    logger.error('Fehler beim Archivieren des ehemaligen Mitglieds:', { error: error });
     res.status(500).json({ error: 'Fehler beim Archivieren' });
   }
 });

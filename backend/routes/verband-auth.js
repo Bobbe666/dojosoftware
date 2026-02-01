@@ -5,17 +5,24 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../db');
+const {
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  MEMBERSHIP_TYPE_VALUES,
+  LIMITS
+} = require('../utils/constants');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dojo-secret-key-2024';
 
 // Debug-Logging
 router.use((req, res, next) => {
-  console.log('🔐 Verband-Auth Route:', req.method, req.path);
+  logger.debug('🔐 Verband-Auth Route:', req.method, req.path);
   next();
 });
 
@@ -85,20 +92,20 @@ router.post('/register', async (req, res) => {
     } = req.body;
 
     // Validierung
-    if (!typ || !['dojo', 'einzelperson'].includes(typ)) {
-      return res.status(400).json({ error: 'Ungültiger Mitgliedschaftstyp' });
+    if (!typ || !MEMBERSHIP_TYPE_VALUES.includes(typ)) {
+      return res.status(400).json({ error: ERROR_MESSAGES.REGISTRATION.INVALID_TYPE });
     }
 
     if (!email || !passwort) {
-      return res.status(400).json({ error: 'E-Mail und Passwort sind erforderlich' });
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.EMAIL_PASSWORD_REQUIRED });
     }
 
-    if (passwort.length < 8) {
-      return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen lang sein' });
+    if (passwort.length < LIMITS.PASSWORD_MIN_LENGTH) {
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.PASSWORD_MIN_LENGTH });
     }
 
     if (!agb_akzeptiert || !dsgvo_akzeptiert) {
-      return res.status(400).json({ error: 'AGB und Datenschutz müssen akzeptiert werden' });
+      return res.status(400).json({ error: ERROR_MESSAGES.REGISTRATION.AGB_REQUIRED });
     }
 
     // Prüfen ob E-Mail schon existiert
@@ -110,7 +117,7 @@ router.post('/register', async (req, res) => {
     );
 
     if (existing.length > 0) {
-      return res.status(400).json({ error: 'Diese E-Mail ist bereits registriert' });
+      return res.status(400).json({ error: ERROR_MESSAGES.REGISTRATION.EMAIL_EXISTS });
     }
 
     // Passwort hashen
@@ -192,18 +199,18 @@ router.post('/register', async (req, res) => {
     );
 
     // TODO: Verification-E-Mail senden
-    console.log(`📧 Verification-Token für ${email}: ${verification_token}`);
+    logger.debug('📧 Verification-Token für ${email}: ${verification_token}');
 
     res.json({
       success: true,
-      message: 'Registrierung erfolgreich! Bitte prüfe deine E-Mails.',
+      message: SUCCESS_MESSAGES.REGISTRATION.SUCCESS,
       mitgliedsnummer,
       id: result.insertId
     });
 
   } catch (error) {
-    console.error('❌ Register-Fehler:', error);
-    res.status(500).json({ error: 'Registrierung fehlgeschlagen', details: error.message });
+    logger.error('Register-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.REGISTRATION.FAILED, details: error.message });
   }
 });
 
@@ -216,7 +223,7 @@ router.post('/login', async (req, res) => {
     const { email, passwort } = req.body;
 
     if (!email || !passwort) {
-      return res.status(400).json({ error: 'E-Mail und Passwort sind erforderlich' });
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.EMAIL_PASSWORD_REQUIRED });
     }
 
     // Mitglied suchen
@@ -227,19 +234,19 @@ router.post('/login', async (req, res) => {
     );
 
     if (members.length === 0) {
-      return res.status(401).json({ error: 'Ungültige E-Mail oder Passwort' });
+      return res.status(401).json({ error: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS });
     }
 
     const member = members[0];
 
     // Passwort prüfen
     if (!member.passwort_hash) {
-      return res.status(401).json({ error: 'Bitte setze zuerst ein Passwort über "Passwort vergessen"' });
+      return res.status(401).json({ error: ERROR_MESSAGES.AUTH.SET_PASSWORD_FIRST });
     }
 
     const isValid = await bcrypt.compare(passwort, member.passwort_hash);
     if (!isValid) {
-      return res.status(401).json({ error: 'Ungültige E-Mail oder Passwort' });
+      return res.status(401).json({ error: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS });
     }
 
     // Last login aktualisieren
@@ -278,7 +285,7 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Login-Fehler:', error);
+    logger.error('Login-Fehler:', error);
     res.status(500).json({ error: 'Login fehlgeschlagen', details: error.message });
   }
 });
@@ -292,7 +299,7 @@ router.post('/verify-email', async (req, res) => {
     const { token } = req.body;
 
     if (!token) {
-      return res.status(400).json({ error: 'Token fehlt' });
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.TOKEN_MISSING });
     }
 
     const result = await queryAsync(
@@ -303,14 +310,14 @@ router.post('/verify-email', async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ error: 'Ungültiger oder abgelaufener Token' });
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.TOKEN_INVALID });
     }
 
-    res.json({ success: true, message: 'E-Mail erfolgreich verifiziert!' });
+    res.json({ success: true, message: SUCCESS_MESSAGES.AUTH.EMAIL_VERIFIED });
 
   } catch (error) {
-    console.error('❌ Verify-Email-Fehler:', error);
-    res.status(500).json({ error: 'Verifizierung fehlgeschlagen' });
+    logger.error('Verify-Email-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.GENERAL.OPERATION_FAILED });
   }
 });
 
@@ -349,12 +356,12 @@ router.post('/forgot-password', async (req, res) => {
     );
 
     // TODO: Reset-E-Mail senden
-    console.log(`📧 Reset-Token für ${email}: ${reset_token}`);
+    logger.debug('📧 Reset-Token für ${email}: ${reset_token}');
 
     res.json({ success: true, message: 'Falls die E-Mail existiert, wurde ein Reset-Link gesendet.' });
 
   } catch (error) {
-    console.error('❌ Forgot-Password-Fehler:', error);
+    logger.error('Forgot-Password-Fehler:', error);
     res.status(500).json({ error: 'Anfrage fehlgeschlagen' });
   }
 });
@@ -368,11 +375,11 @@ router.post('/reset-password', async (req, res) => {
     const { token, passwort } = req.body;
 
     if (!token || !passwort) {
-      return res.status(400).json({ error: 'Token und Passwort sind erforderlich' });
+      return res.status(400).json({ error: ERROR_MESSAGES.VALIDATION.REQUIRED_FIELDS_MISSING });
     }
 
-    if (passwort.length < 8) {
-      return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen lang sein' });
+    if (passwort.length < LIMITS.PASSWORD_MIN_LENGTH) {
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.PASSWORD_MIN_LENGTH });
     }
 
     const members = await queryAsync(
@@ -382,7 +389,7 @@ router.post('/reset-password', async (req, res) => {
     );
 
     if (members.length === 0) {
-      return res.status(400).json({ error: 'Ungültiger oder abgelaufener Token' });
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.TOKEN_INVALID });
     }
 
     const passwort_hash = await bcrypt.hash(passwort, 10);
@@ -394,11 +401,11 @@ router.post('/reset-password', async (req, res) => {
       [passwort_hash, members[0].id]
     );
 
-    res.json({ success: true, message: 'Passwort erfolgreich geändert!' });
+    res.json({ success: true, message: SUCCESS_MESSAGES.AUTH.PASSWORD_CHANGED });
 
   } catch (error) {
-    console.error('❌ Reset-Password-Fehler:', error);
-    res.status(500).json({ error: 'Passwort-Reset fehlgeschlagen' });
+    logger.error('Reset-Password-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.GENERAL.OPERATION_FAILED });
   }
 });
 
@@ -414,12 +421,12 @@ const verifyVerbandToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Nicht authentifiziert' });
+    return res.status(401).json({ error: ERROR_MESSAGES.AUTH.NOT_AUTHENTICATED });
   }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({ error: 'Token ungültig oder abgelaufen' });
+      return res.status(403).json({ error: ERROR_MESSAGES.AUTH.TOKEN_INVALID });
     }
     req.verbandUser = decoded;
     next();
@@ -438,7 +445,7 @@ router.get('/me', verifyVerbandToken, async (req, res) => {
     );
 
     if (members.length === 0) {
-      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+      return res.status(404).json({ error: ERROR_MESSAGES.RESOURCE.MITGLIED_NOT_FOUND });
     }
 
     const member = members[0];
@@ -452,8 +459,8 @@ router.get('/me', verifyVerbandToken, async (req, res) => {
     res.json({ success: true, member });
 
   } catch (error) {
-    console.error('❌ Me-Fehler:', error);
-    res.status(500).json({ error: 'Fehler beim Laden der Daten' });
+    logger.error('Me-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.GENERAL.LOADING_ERROR });
   }
 });
 
@@ -481,7 +488,7 @@ router.put('/me', verifyVerbandToken, async (req, res) => {
     }
 
     if (updates.length === 0) {
-      return res.status(400).json({ error: 'Keine Änderungen' });
+      return res.status(400).json({ error: ERROR_MESSAGES.VALIDATION.NO_CHANGES });
     }
 
     values.push(req.verbandUser.id);
@@ -491,11 +498,11 @@ router.put('/me', verifyVerbandToken, async (req, res) => {
       values
     );
 
-    res.json({ success: true, message: 'Daten aktualisiert' });
+    res.json({ success: true, message: SUCCESS_MESSAGES.CRUD.UPDATED });
 
   } catch (error) {
-    console.error('❌ Update-Fehler:', error);
-    res.status(500).json({ error: 'Aktualisierung fehlgeschlagen' });
+    logger.error('Update-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.GENERAL.UPDATE_ERROR });
   }
 });
 
@@ -508,11 +515,11 @@ router.put('/change-password', verifyVerbandToken, async (req, res) => {
     const { altes_passwort, neues_passwort } = req.body;
 
     if (!altes_passwort || !neues_passwort) {
-      return res.status(400).json({ error: 'Altes und neues Passwort sind erforderlich' });
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.PASSWORDS_REQUIRED });
     }
 
-    if (neues_passwort.length < 8) {
-      return res.status(400).json({ error: 'Neues Passwort muss mindestens 8 Zeichen lang sein' });
+    if (neues_passwort.length < LIMITS.PASSWORD_MIN_LENGTH) {
+      return res.status(400).json({ error: ERROR_MESSAGES.AUTH.PASSWORD_MIN_LENGTH });
     }
 
     const members = await queryAsync(
@@ -521,12 +528,12 @@ router.put('/change-password', verifyVerbandToken, async (req, res) => {
     );
 
     if (members.length === 0) {
-      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+      return res.status(404).json({ error: ERROR_MESSAGES.RESOURCE.MITGLIED_NOT_FOUND });
     }
 
     const isValid = await bcrypt.compare(altes_passwort, members[0].passwort_hash);
     if (!isValid) {
-      return res.status(401).json({ error: 'Altes Passwort ist falsch' });
+      return res.status(401).json({ error: ERROR_MESSAGES.AUTH.OLD_PASSWORD_WRONG });
     }
 
     const passwort_hash = await bcrypt.hash(neues_passwort, 10);
@@ -536,11 +543,11 @@ router.put('/change-password', verifyVerbandToken, async (req, res) => {
       [passwort_hash, req.verbandUser.id]
     );
 
-    res.json({ success: true, message: 'Passwort erfolgreich geändert' });
+    res.json({ success: true, message: SUCCESS_MESSAGES.AUTH.PASSWORD_CHANGED });
 
   } catch (error) {
-    console.error('❌ Change-Password-Fehler:', error);
-    res.status(500).json({ error: 'Passwort-Änderung fehlgeschlagen' });
+    logger.error('Change-Password-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.GENERAL.OPERATION_FAILED });
   }
 });
 
@@ -560,8 +567,8 @@ router.get('/invoices', verifyVerbandToken, async (req, res) => {
     res.json({ success: true, invoices });
 
   } catch (error) {
-    console.error('❌ Invoices-Fehler:', error);
-    res.status(500).json({ error: 'Fehler beim Laden der Rechnungen' });
+    logger.error('Invoices-Fehler:', error);
+    res.status(500).json({ error: ERROR_MESSAGES.GENERAL.LOADING_ERROR });
   }
 });
 

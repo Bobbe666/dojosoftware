@@ -39,7 +39,7 @@ router.get("/", (req, res) => {
                 });
             }
 
-            console.error('❌ Fehler beim Abrufen der Zahlläufe:', err);
+            logger.error('Fehler beim Abrufen der Zahlläufe:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -72,7 +72,7 @@ router.get("/:id", (req, res) => {
 
     db.query(query, [id], (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen des Zahllaufs:', err);
+            logger.error('Fehler beim Abrufen des Zahllaufs:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -147,7 +147,7 @@ router.post("/", (req, res) => {
 
     db.query(insertQuery, params, (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Erstellen des Zahllaufs:', err);
+            logger.error('Fehler beim Erstellen des Zahllaufs:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -197,7 +197,7 @@ router.put("/:id", (req, res) => {
 
     db.query(updateQuery, params, (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Aktualisieren des Zahllaufs:', err);
+            logger.error('Fehler beim Aktualisieren des Zahllaufs:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -228,7 +228,7 @@ router.delete("/:id", (req, res) => {
 
     db.query(deleteQuery, [id], (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Löschen des Zahllaufs:', err);
+            logger.error('Fehler beim Löschen des Zahllaufs:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -265,7 +265,7 @@ router.get("/stats/overview", (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen der Statistiken:', err);
+            logger.error('Fehler beim Abrufen der Statistiken:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message

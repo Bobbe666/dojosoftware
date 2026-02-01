@@ -4,6 +4,7 @@
 // ============================================================================
 
 const PDFDocument = require('pdfkit');
+const logger = require('./logger');
 const db = require('../db');
 const fs = require('fs');
 const path = require('path');
@@ -159,7 +160,7 @@ const generateVerbandVertragPdf = async (mitgliedschaftId, res) => {
     doc.end();
 
   } catch (error) {
-    console.error('PDF-Generierung fehlgeschlagen:', error);
+    logger.error('PDF-Generierung fehlgeschlagen:', { error: error });
     throw error;
   }
 };
@@ -394,7 +395,7 @@ const generatePage2_Sepa = (doc, m, sepa) => {
       const signatureBuffer = Buffer.from(sepa.unterschrift_digital.split(',')[1], 'base64');
       doc.image(signatureBuffer, margin + 5, y + 5, { width: 240, height: 50 });
     } catch (e) {
-      console.error('Fehler beim Einfügen der Unterschrift:', e);
+      logger.error('Fehler beim Einfügen der Unterschrift:', { error: e });
     }
   }
 
@@ -548,7 +549,7 @@ const generateUnterschriftSeite = (doc, m) => {
       const signatureBuffer = Buffer.from(m.unterschrift_digital.split(',')[1], 'base64');
       doc.image(signatureBuffer, margin + 5, y + 5, { width: 240, height: 70 });
     } catch (e) {
-      console.error('Fehler beim Einfügen der Unterschrift:', e);
+      logger.error('Fehler beim Einfügen der Unterschrift:', { error: e });
     }
   }
 

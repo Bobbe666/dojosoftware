@@ -1,18 +1,19 @@
 // routes/einstellungendojo.js
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db'); // MySQL-Verbindung
 
 // GET /api/dojo
 router.get('/', (req, res) => {
-  console.log('🔵 GET /api/dojo aufgerufen (einstellungendojo.js)');
+  logger.debug('🔵 GET /api/dojo aufgerufen (einstellungendojo.js)');
   
   // Erst Migration ausführen, dann Daten laden
   ensureTableStructure(() => {
     const sqlSelect = `SELECT * FROM dojo LIMIT 1`;
     db.query(sqlSelect, (err, results) => {
       if (err) {
-        console.error('Fehler beim Laden der Dojo-Daten:', err);
+        logger.error('Fehler beim Laden der Dojo-Daten:', { error: err });
         return res.status(500).json({ error: 'Serverfehler beim Laden der Dojo-Daten' });
       }
       
@@ -50,13 +51,13 @@ router.get('/', (req, res) => {
         const sqlInsert = `INSERT INTO dojo SET ?`;
         db.query(sqlInsert, defaultData, (errInsert, insertResult) => {
           if (errInsert) {
-            console.error('Fehler beim Anlegen des Standard-Datensatzes:', errInsert);
+            logger.error('Fehler beim Anlegen des Standard-Datensatzes:', { error: errInsert });
             return res.status(500).json({ error: 'Serverfehler beim Anlegen des Datensatzes' });
           }
 
           db.query(sqlSelect, (err2, rows2) => {
             if (err2) {
-              console.error('Fehler nach dem Anlegen des Datensatzes:', err2);
+              logger.error('Fehler nach dem Anlegen des Datensatzes:', { error: err2 });
               return res.status(500).json({ error: 'Serverfehler nach Einfügen' });
             }
 
@@ -83,7 +84,7 @@ function addColumnIfNotExists(tableName, columnName, columnDefinition, callback)
 
   db.query(checkSql, [tableName, columnName], (err, results) => {
     if (err) {
-      console.error(`Fehler beim Prüfen der Spalte ${columnName}:`, err.message);
+      logger.error('Fehler beim Prüfen der Spalte ${columnName}:', { error: err.message });
       return callback(err);
     }
 
@@ -92,7 +93,7 @@ function addColumnIfNotExists(tableName, columnName, columnDefinition, callback)
       const alterSql = `ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`;
       db.query(alterSql, (errAlter) => {
         if (errAlter) {
-          console.error(`Fehler beim Hinzufügen der Spalte ${columnName}:`, errAlter.message);
+          logger.error('Fehler beim Hinzufügen der Spalte ${columnName}:', { error: errAlter.message });
           return callback(errAlter);
         }
 
@@ -202,7 +203,7 @@ function ensureTableStructure(callback) {
     addColumnIfNotExists('dojo', column.name, column.definition, (err) => {
       if (err) {
         // Fehler loggen, aber weitermachen
-        console.error(`Konnte Spalte ${column.name} nicht hinzufügen:`, err.message);
+        logger.error('Konnte Spalte ${column.name} nicht hinzufügen:', { error: err.message });
       }
 
       completedColumns++;
@@ -218,8 +219,8 @@ function ensureTableStructure(callback) {
 
 // PUT /api/dojo
 router.put('/', (req, res) => {
-  console.log('🟡 PUT /api/dojo aufgerufen (einstellungendojo.js)');
-  console.log('Request Body Keys:', Object.keys(req.body));
+  logger.debug('🟡 PUT /api/dojo aufgerufen (einstellungendojo.js)');
+  logger.debug('Request Body Keys:', Object.keys(req.body));
 
   try {
     // Zuerst sicherstellen, dass die Tabelle alle notwendigen Spalten hat
@@ -227,7 +228,7 @@ router.put('/', (req, res) => {
       // Dann die aktuellen Spalten prüfen
       db.query('SHOW COLUMNS FROM dojo', (errCols, columns) => {
         if (errCols) {
-          console.error('Fehler beim Abrufen der Spalten:', errCols);
+          logger.error('Fehler beim Abrufen der Spalten:', { error: errCols });
           return res.status(500).json({ error: 'Serverfehler beim Prüfen der Tabelle' });
         }
 
@@ -271,15 +272,15 @@ router.put('/', (req, res) => {
         });
 
         if (skippedFields.length > 0) {
-          console.log(`Übersprungene Felder:`, skippedFields.join(', '));
+          logger.debug(`Übersprungene Felder:`, skippedFields.join(', '));
         }
 
-        console.log('Gefilterte Daten:', Object.keys(filteredData).length, 'Felder');
+        logger.debug('Gefilterte Daten:', Object.keys(filteredData).length, 'Felder');
 
         // Prüfen ob Eintrag existiert
         db.query('SELECT id FROM dojo LIMIT 1', (err, existing) => {
           if (err) {
-            console.error('Fehler bei ID-Prüfung:', err);
+            logger.error('Fehler bei ID-Prüfung:', { error: err });
             return res.status(500).json({ error: 'Serverfehler bei ID-Prüfung' });
           }
 
@@ -287,15 +288,15 @@ router.put('/', (req, res) => {
 
             db.query('INSERT INTO dojo SET ?', filteredData, (errInsert) => {
               if (errInsert) {
-                console.error('INSERT Fehler:', errInsert);
-                console.error('INSERT Fehler Details:', errInsert.sqlMessage);
+                logger.error('INSERT Fehler:', { error: errInsert });
+                logger.error('INSERT Fehler Details:', { error: errInsert.sqlMessage });
                 return res.status(500).json({ error: 'Serverfehler beim Einfügen: ' + errInsert.sqlMessage });
               }
 
               // Nach INSERT neu laden
               db.query('SELECT * FROM dojo LIMIT 1', (err2, current) => {
                 if (err2) {
-                  console.error('Fehler nach INSERT:', err2);
+                  logger.error('Fehler nach INSERT:', { error: err2 });
                   return res.status(500).json({ error: 'Serverfehler nach Einfügen' });
                 }
 
@@ -310,15 +311,15 @@ router.put('/', (req, res) => {
 
             db.query('UPDATE dojo SET ? WHERE id = ?', [filteredData, existing[0].id], (errUpdate) => {
               if (errUpdate) {
-                console.error('UPDATE Fehler:', errUpdate);
-                console.error('UPDATE Fehler Details:', errUpdate.sqlMessage);
+                logger.error('UPDATE Fehler:', { error: errUpdate });
+                logger.error('UPDATE Fehler Details:', { error: errUpdate.sqlMessage });
                 return res.status(500).json({ error: 'Serverfehler beim Aktualisieren: ' + errUpdate.sqlMessage });
               }
 
               // Nach UPDATE neu laden
               db.query('SELECT * FROM dojo LIMIT 1', (err3, current) => {
                 if (err3) {
-                  console.error('Fehler nach UPDATE:', err3);
+                  logger.error('Fehler nach UPDATE:', { error: err3 });
                   return res.status(500).json({ error: 'Serverfehler nach Update' });
                 }
 
@@ -335,7 +336,7 @@ router.put('/', (req, res) => {
     });
 
   } catch (error) {
-    console.error('PUT Fehler:', error.message);
+    logger.error('PUT Fehler:', { error: error.message });
     res.status(500).json({
       error: error.message
     });
@@ -344,7 +345,7 @@ router.put('/', (req, res) => {
 
 // GET /api/dojo/dokumente - Lade nur die rechtlichen Dokumente
 router.get('/dokumente', (req, res) => {
-  console.log('🔵 GET /api/dojo/dokumente aufgerufen');
+  logger.debug('🔵 GET /api/dojo/dokumente aufgerufen');
 
   const sqlSelect = `
     SELECT
@@ -362,7 +363,7 @@ router.get('/dokumente', (req, res) => {
 
   db.query(sqlSelect, (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Dokumente:', err);
+      logger.error('Fehler beim Laden der Dokumente:', { error: err });
       return res.status(500).json({ error: 'Serverfehler beim Laden der Dokumente' });
     }
 

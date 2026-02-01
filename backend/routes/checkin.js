@@ -1,5 +1,6 @@
 // Backend/routes/checkin.js - Fixed: Nur aktive Check-ins anzeigen + Re-Check-in möglich + Tresen-Route
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const QRCode = require('qrcode');
@@ -245,7 +246,7 @@ router.post('/', async (req, res) => {
     }
     
   } catch (error) {
-    console.error('Fehler beim Check-in:', error);
+    logger.error('Fehler beim Check-in:', { error: error });
     res.status(500).json({
       success: false,
       error: error.message
@@ -265,7 +266,7 @@ router.get('/courses-today', async (req, res) => {
     const { dojo_id } = req.query;
     const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND s.dojo_id = ${parseInt(dojo_id)}` : '';
 
-    console.log(`🔍 Lade Kurse für: ${todayName} (dojo_id=${dojo_id || 'all'})`);
+    logger.debug('Lade Kurse', { tag: todayName, dojo_id: dojo_id || 'all' });
 
     // Datenbank verwenden
     const query = `
@@ -293,7 +294,7 @@ router.get('/courses-today', async (req, res) => {
     `;
 
     const courses = await queryAsync(query, [todayName, todayName]);
-    console.log(`✅ ${courses.length} Kurse gefunden für ${todayName}`);
+    logger.info('${courses.length} Kurse gefunden für ${todayName}');
 
     res.json({
       success: true,
@@ -475,7 +476,7 @@ router.post('/guest', async (req, res) => {
       'sonstiges': 'Sonstiges'
     };
 
-    console.log(`✅ Gast Check-in: ${gast_vorname} ${gast_nachname} (${grundLabels[grund]})`);
+    logger.info('Gast Check-in: ${gast_vorname} ${gast_nachname} (${grundLabels[grund]})');
 
     res.status(201).json({
       success: true,
@@ -496,7 +497,7 @@ router.post('/guest', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Gast Check-in:', error);
+    logger.error('Fehler beim Gast Check-in:', { error: error });
     res.status(500).json({
       success: false,
       error: error.message
@@ -615,15 +616,15 @@ router.get('/tresen/:datum', async (req, res) => {
         const datum = req.params.datum;
         const heute = new Date(datum);
         const wochentag = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][heute.getDay()];
-        console.log(`📢 Tresen-Query für Datum: ${datum} (${wochentag})`);
+        logger.debug('📢 Tresen-Query für Datum: ${datum} (${wochentag})');
         
         // Sehr einfache Query: Finde ALLE aktiven Check-ins für heute
-        console.log(`🔍 Suche Check-ins für Datum: ${datum}`);
+        logger.debug('Suche Check-ins für Datum: ${datum}');
         
         // Zuerst: Prüfe ob überhaupt Check-ins existieren
         const testQuery = `SELECT COUNT(*) as count FROM checkins WHERE DATE(checkin_time) = ? AND status = 'active'`;
         const testResult = await queryAsync(testQuery, [datum]);
-        console.log(`📊 Anzahl aktive Check-ins in DB: ${testResult[0]?.count || 0}`);
+        logger.debug('📊 Anzahl aktive Check-ins in DB: ${testResult[0]?.count || 0}');
         
         // Dann: Hole alle Check-ins mit Mitglied-Daten (inkl. Gäste)
         const checkinsQuery = `
@@ -660,26 +661,26 @@ router.get('/tresen/:datum', async (req, res) => {
             ORDER BY c.checkin_time DESC
         `;
         
-        console.log(`🔍 Führe Query aus mit Datum: ${datum}`);
+        logger.debug('Führe Query aus mit Datum: ${datum}');
         let checkins;
         try {
             checkins = await queryAsync(checkinsQuery, [datum]);
-            console.log(`✅ Query erfolgreich ausgeführt. Gefundene Check-ins nach JOIN: ${checkins.length}`);
+            logger.info('Query erfolgreich ausgeführt. Gefundene Check-ins nach JOIN: ${checkins.length}');
         } catch (queryError) {
-            console.error(`❌ Query-Fehler:`, queryError);
+            logger.error('Query-Fehler:', queryError);
             throw queryError;
         }
         
         if (checkins.length === 0) {
-            console.log(`⚠️ Keine Check-ins gefunden! Prüfe ob Check-ins für ${datum} existieren...`);
+            logger.debug('⚠️ Keine Check-ins gefunden! Prüfe ob Check-ins für ${datum} existieren...');
             // Debug: Prüfe alle Check-ins heute
             const allCheckins = await queryAsync(
                 `SELECT checkin_id, mitglied_id, checkin_time, status FROM checkins WHERE DATE(checkin_time) = ?`,
                 [datum]
             );
-            console.log(`📋 Alle Check-ins für ${datum} (alle Status): ${allCheckins.length}`);
+            logger.debug('📋 Alle Check-ins für ${datum} (alle Status): ${allCheckins.length}');
             if (allCheckins.length > 0) {
-                console.log(`📋 Check-ins Details:`, allCheckins);
+                logger.debug(`📋 Check-ins Details:`, allCheckins);
                 // Prüfe warum sie nicht gefunden werden
                 const mitgliedIds = allCheckins.map(c => c.mitglied_id);
                 const placeholders = mitgliedIds.map(() => '?').join(',');
@@ -687,10 +688,10 @@ router.get('/tresen/:datum', async (req, res) => {
                     `SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id IN (${placeholders})`,
                     mitgliedIds
                 );
-                console.log(`👥 Mitglieder-Daten:`, members);
+                logger.debug(`👥 Mitglieder-Daten:`, members);
             }
         } else {
-            console.log(`📋 Erste 3 Check-ins:`, checkins.slice(0, 3).map(c => ({
+            logger.debug(`📋 Erste 3 Check-ins:`, checkins.slice(0, 3).map(c => ({
                 mitglied_id: c.mitglied_id,
                 name: c.full_name,
                 checkin_time: c.checkin_time,
@@ -731,9 +732,9 @@ router.get('/tresen/:datum', async (req, res) => {
             gast_grund: c.gast_grund
         }));
         
-        console.log(`📊 Gruppierte Ergebnisse: ${results.length} Mitglieder`);
+        logger.debug('📊 Gruppierte Ergebnisse: ${results.length} Mitglieder');
         if (results.length > 0) {
-            console.log(`📋 Mitglieder:`, results.map(r => `${r.full_name} (ID: ${r.mitglied_id})`));
+            logger.debug(`📋 Mitglieder:`, results.map(r => `${r.full_name} (ID: ${r.mitglied_id})`));
         }
 
         // Statistiken berechnen
@@ -756,7 +757,7 @@ router.get('/tresen/:datum', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Abrufen der Tresen-Übersicht:', error);
+        logger.error('Fehler beim Abrufen der Tresen-Übersicht:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Abrufen der Tresen-Übersicht',
@@ -809,7 +810,7 @@ router.post('/tresen/batch-checkin', async (req, res) => {
                 });
 
             } catch (memberError) {
-                console.error(`Fehler beim Check-in für Mitglied ${mitglied_id}:`, memberError);
+                logger.error('Fehler beim Check-in für Mitglied ${mitglied_id}:', { error: memberError });
                 errors.push({ mitglied_id, error: memberError.message });
             }
         }
@@ -822,7 +823,7 @@ router.post('/tresen/batch-checkin', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Batch Check-in:', error);
+        logger.error('Fehler beim Batch Check-in:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Batch Check-in',
@@ -931,7 +932,7 @@ router.post('/checkout', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Checkout error:', error);
+    logger.error('Checkout error:', { error: error });
     res.status(500).json({
       success: false,
       error: 'Checkout fehlgeschlagen: ' + error.message

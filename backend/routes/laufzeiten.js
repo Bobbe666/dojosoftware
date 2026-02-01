@@ -38,7 +38,7 @@ const initializeDefaultLaufzeiten = async () => {
       }
     }
   } catch (error) {
-    console.error('Fehler beim Initialisieren der Laufzeiten:', error);
+    logger.error('Fehler beim Initialisieren der Laufzeiten:', { error: error });
   }
 };
 
@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
         `);
         res.json({ success: true, data: laufzeiten });
     } catch (err) {
-        console.error('Fehler beim Abrufen der Laufzeiten:', err);
+        logger.error('Fehler beim Abrufen der Laufzeiten:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -78,7 +78,7 @@ router.post('/', async (req, res) => {
             } 
         });
     } catch (err) {
-        console.error('Fehler beim Erstellen der Laufzeit:', err);
+        logger.error('Fehler beim Erstellen der Laufzeit:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -95,7 +95,7 @@ router.put('/:id', async (req, res) => {
         `, [name, monate, beschreibung || '', aktiv, id]);
         res.json({ success: true, message: 'Laufzeit erfolgreich aktualisiert' });
     } catch (err) {
-        console.error('Fehler beim Aktualisieren der Laufzeit:', err);
+        logger.error('Fehler beim Aktualisieren der Laufzeit:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -119,7 +119,7 @@ router.delete('/:id', async (req, res) => {
         await queryAsync('DELETE FROM laufzeiten WHERE laufzeit_id = ?', [id]);
         res.json({ success: true, message: 'Laufzeit erfolgreich gelöscht' });
     } catch (err) {
-        console.error('Fehler beim Löschen der Laufzeit:', err);
+        logger.error('Fehler beim Löschen der Laufzeit:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });

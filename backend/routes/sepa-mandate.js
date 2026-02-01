@@ -1,4 +1,5 @@
 const express = require("express");
+const logger = require('../utils/logger');
 const crypto = require("crypto");
 const db = require("../db");
 const router = express.Router();
@@ -10,7 +11,7 @@ router.get("/", (req, res) => {
 
     db.query(checkTableQuery, (err, tables) => {
         if (err) {
-            console.error('❌ Fehler beim Prüfen der Tabelle:', err);
+            logger.error('Fehler beim Prüfen der Tabelle:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -51,7 +52,7 @@ router.get("/", (req, res) => {
 
         db.query(query, (err, results) => {
             if (err) {
-                console.error('❌ Fehler beim Abrufen aller SEPA-Mandate:', err);
+                logger.error('Fehler beim Abrufen aller SEPA-Mandate:', err);
                 return res.status(500).json({
                     error: 'Datenbankfehler',
                     details: err.message
@@ -97,7 +98,7 @@ router.get("/:mitglied_id/sepa-mandate", (req, res) => {
                 return res.json([]);
             }
             
-            console.error('❌ Fehler beim Abrufen der SEPA-Mandate:', err);
+            logger.error('Fehler beim Abrufen der SEPA-Mandate:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -159,12 +160,12 @@ router.post("/:mitglied_id/sepa-mandate", (req, res) => {
 
     db.query(insertQuery, params, (err, result) => {
         if (err) {
-            console.error('Fehler beim Erstellen des SEPA-Mandats:', err);
+            logger.error('Fehler beim Erstellen des SEPA-Mandats:', { error: err });
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
         // Log fuer Audit-Trail
-        console.log(`SEPA-Mandat erstellt: ID=${result.insertId}, Mitglied=${mitglied_id}, ` +
+        logger.debug(`SEPA-Mandat erstellt: ID=${result.insertId}, Mitglied=${mitglied_id}, ` +
             `Ref=${finalMandatsreferenz}, Signiert=${!!unterschrift_digital}`);
 
         res.json({
@@ -200,7 +201,7 @@ router.put("/:mitglied_id/sepa-mandate/:mandat_id", (req, res) => {
 
     db.query(query, params, (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Aktualisieren des SEPA-Mandats:', err);
+            logger.error('Fehler beim Aktualisieren des SEPA-Mandats:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -223,7 +224,7 @@ router.delete("/:mitglied_id/sepa-mandate/:mandat_id", (req, res) => {
 
     db.query(query, [mandat_id, mitglied_id], (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Löschen des SEPA-Mandats:', err);
+            logger.error('Fehler beim Löschen des SEPA-Mandats:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -246,7 +247,7 @@ router.delete("/:mandat_id", (req, res) => {
 
     db.query(query, [mandat_id], (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Löschen des SEPA-Mandats:', err);
+            logger.error('Fehler beim Löschen des SEPA-Mandats:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 

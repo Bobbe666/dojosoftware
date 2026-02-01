@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const db = require('../db');
 const router = express.Router();
 
@@ -24,7 +25,7 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
 
   db.query(query, [mitglied_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden des Fortschritts:', err);
+      logger.error('Fehler beim Laden des Fortschritts:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden des Fortschritts' });
     }
     res.json(results);
@@ -56,7 +57,7 @@ router.post('/mitglied/:mitglied_id', (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      console.error('Fehler beim Erstellen des Fortschritts:', err);
+      logger.error('Fehler beim Erstellen des Fortschritts:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Erstellen des Fortschritts' });
     }
 
@@ -115,7 +116,7 @@ router.put('/:fortschritt_id', (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      console.error('Fehler beim Aktualisieren des Fortschritts:', err);
+      logger.error('Fehler beim Aktualisieren des Fortschritts:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Aktualisieren' });
     }
 
@@ -148,7 +149,7 @@ router.put('/:fortschritt_id', (req, res) => {
 
       db.query(historyQuery, historyValues, (historyErr) => {
         if (historyErr) {
-          console.error('Fehler beim Speichern der Historie:', historyErr);
+          logger.error('Fehler beim Speichern der Historie:', { error: historyErr });
         }
       });
     }
@@ -167,7 +168,7 @@ router.delete('/:fortschritt_id', (req, res) => {
 
   db.query('DELETE FROM mitglieder_fortschritt WHERE fortschritt_id = ?', [fortschritt_id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Löschen des Fortschritts:', err);
+      logger.error('Fehler beim Löschen des Fortschritts:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Löschen' });
     }
     res.json({ success: true, message: 'Fortschritt gelöscht' });
@@ -193,7 +194,7 @@ router.get('/:fortschritt_id/history', (req, res) => {
 
   db.query(query, [fortschritt_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Historie:', err);
+      logger.error('Fehler beim Laden der Historie:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Historie' });
     }
     res.json(results);
@@ -221,7 +222,7 @@ router.get('/mitglied/:mitglied_id/ziele', (req, res) => {
 
   db.query(query, params, (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Ziele:', err);
+      logger.error('Fehler beim Laden der Ziele:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Ziele' });
     }
     res.json(results);
@@ -253,7 +254,7 @@ router.post('/mitglied/:mitglied_id/ziele', (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      console.error('Fehler beim Erstellen des Ziels:', err);
+      logger.error('Fehler beim Erstellen des Ziels:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Erstellen des Ziels' });
     }
 
@@ -285,7 +286,7 @@ router.put('/ziele/:ziel_id', (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      console.error('Fehler beim Aktualisieren des Ziels:', err);
+      logger.error('Fehler beim Aktualisieren des Ziels:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Aktualisieren' });
     }
 
@@ -302,7 +303,7 @@ router.delete('/ziele/:ziel_id', (req, res) => {
 
   db.query('DELETE FROM mitglieder_ziele WHERE ziel_id = ?', [ziel_id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Löschen des Ziels:', err);
+      logger.error('Fehler beim Löschen des Ziels:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Löschen' });
     }
     res.json({ success: true, message: 'Ziel gelöscht' });
@@ -325,7 +326,7 @@ router.get('/mitglied/:mitglied_id/meilensteine', (req, res) => {
 
   db.query(query, [mitglied_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Meilensteine:', err);
+      logger.error('Fehler beim Laden der Meilensteine:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Meilensteine' });
     }
     res.json(results);
@@ -355,7 +356,7 @@ router.post('/mitglied/:mitglied_id/meilensteine', (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      console.error('Fehler beim Erstellen des Meilensteins:', err);
+      logger.error('Fehler beim Erstellen des Meilensteins:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Erstellen' });
     }
 
@@ -380,7 +381,7 @@ router.put('/meilensteine/:meilenstein_id/erreicht', (req, res) => {
 
   db.query(query, [erreicht, meilenstein_id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Aktualisieren des Meilensteins:', err);
+      logger.error('Fehler beim Aktualisieren des Meilensteins:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Aktualisieren' });
     }
 
@@ -397,7 +398,7 @@ router.delete('/meilensteine/:meilenstein_id', (req, res) => {
 
   db.query('DELETE FROM mitglieder_meilensteine WHERE meilenstein_id = ?', [meilenstein_id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Löschen des Meilensteins:', err);
+      logger.error('Fehler beim Löschen des Meilensteins:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Löschen' });
     }
     res.json({ success: true, message: 'Meilenstein gelöscht' });
@@ -421,7 +422,7 @@ router.get('/mitglied/:mitglied_id/notizen', (req, res) => {
 
   db.query(query, [mitglied_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Notizen:', err);
+      logger.error('Fehler beim Laden der Notizen:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Notizen' });
     }
     res.json(results);
@@ -451,7 +452,7 @@ router.post('/mitglied/:mitglied_id/notizen', (req, res) => {
 
   db.query(query, values, (err, result) => {
     if (err) {
-      console.error('Fehler beim Erstellen der Notiz:', err);
+      logger.error('Fehler beim Erstellen der Notiz:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Erstellen' });
     }
 
@@ -468,7 +469,7 @@ router.delete('/notizen/:notiz_id', (req, res) => {
 
   db.query('DELETE FROM trainings_notizen WHERE notiz_id = ?', [notiz_id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Löschen der Notiz:', err);
+      logger.error('Fehler beim Löschen der Notiz:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Löschen' });
     }
     res.json({ success: true, message: 'Notiz gelöscht' });
@@ -489,7 +490,7 @@ router.get('/kategorien', (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Kategorien:', err);
+      logger.error('Fehler beim Laden der Kategorien:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden' });
     }
     res.json(results);
@@ -511,7 +512,7 @@ router.get('/mitglied/:mitglied_id/overview', (req, res) => {
 
   db.query(query, [mitglied_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Übersicht:', err);
+      logger.error('Fehler beim Laden der Übersicht:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden' });
     }
     res.json(results[0] || {});

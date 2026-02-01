@@ -40,7 +40,7 @@ const upload = multer({
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = file.mimetype && file.mimetype.startsWith('image/');
     
-    console.log('📸 Foto-Upload:', { originalname: file.originalname, mimetype: file.mimetype, extname, mimetypeOK: mimetype });
+    logger.debug('📸 Foto-Upload:', { originalname: file.originalname, mimetype: file.mimetype, extname, mimetypeOK: mimetype });
     
     if (mimetype && extname) {
       return cb(null, true);
@@ -165,7 +165,7 @@ router.put("/:id", authenticateToken, (req, res) => {
     if (allowedFields.includes(key)) {
       filteredData[key] = data[key];
     } else {
-      console.warn(`⚠️ Feld "${key}" wird ignoriert (nicht in erlaubten Feldern)`);
+      logger.warn('Feld wird ignoriert (nicht erlaubt)', { field: key });
     }
   });
 
@@ -278,10 +278,10 @@ router.post("/:id/foto", upload.single('foto'), (req, res) => {
 
   db.query(updateQuery, [fotoPfad, id], (err, result) => {
     if (err) {
-      console.error(`Fehler beim Speichern des Foto-Pfads für Mitglied ${id}:`, err);
+      logger.error('Fehler beim Speichern des Foto-Pfads für Mitglied ${id}:', { error: err });
       // Lösche die hochgeladene Datei bei DB-Fehler
       fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) console.error('Fehler beim Löschen der Datei:', unlinkErr);
+        if (unlinkErr) logger.error('Fehler beim Löschen der Datei:', { error: unlinkErr });
       });
       return res.status(500).json({ error: "Fehler beim Speichern des Fotos" });
     }
@@ -290,7 +290,7 @@ router.post("/:id/foto", upload.single('foto'), (req, res) => {
 
       // Lösche die hochgeladene Datei wenn Mitglied nicht gefunden
       fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) console.error('Fehler beim Löschen der Datei:', unlinkErr);
+        if (unlinkErr) logger.error('Fehler beim Löschen der Datei:', { error: unlinkErr });
       });
       return res.status(404).json({ error: "Mitglied nicht gefunden" });
     }
@@ -311,7 +311,7 @@ router.delete("/:id/foto", (req, res) => {
   const selectQuery = "SELECT foto_pfad FROM mitglieder WHERE mitglied_id = ?";
   db.query(selectQuery, [id], (err, results) => {
     if (err) {
-      console.error(`Fehler beim Abrufen des Foto-Pfads für Mitglied ${id}:`, err);
+      logger.error('Fehler beim Abrufen des Foto-Pfads für Mitglied ${id}:', { error: err });
       return res.status(500).json({ error: "Fehler beim Abrufen des Fotos" });
     }
     
@@ -329,7 +329,7 @@ router.delete("/:id/foto", (req, res) => {
     const fullPath = path.join(__dirname, '..', fotoPfad);
     fs.unlink(fullPath, (unlinkErr) => {
       if (unlinkErr && unlinkErr.code !== 'ENOENT') {
-        console.error('Fehler beim Löschen der Datei:', unlinkErr);
+        logger.error('Fehler beim Löschen der Datei:', { error: unlinkErr });
         // Fortfahren auch wenn Datei nicht gelöscht werden konnte
       }
     });
@@ -338,7 +338,7 @@ router.delete("/:id/foto", (req, res) => {
     const updateQuery = "UPDATE mitglieder SET foto_pfad = NULL WHERE mitglied_id = ?";
     db.query(updateQuery, [id], (err, result) => {
       if (err) {
-        console.error(`Fehler beim Entfernen des Foto-Pfads für Mitglied ${id}:`, err);
+        logger.error('Fehler beim Entfernen des Foto-Pfads für Mitglied ${id}:', { error: err });
         return res.status(500).json({ error: "Fehler beim Entfernen des Fotos" });
       }
 
@@ -356,7 +356,7 @@ router.post("/:id/pdf", async (req, res) => {
   const { save_to_db = false } = req.body;
 
   try {
-    console.log(`📄 Starte PDF-Generierung für Mitglied ${id}...`);
+    logger.debug('📄 Starte PDF-Generierung für Mitglied ${id}...');
 
     // PDF generieren
     const pdfBuffer = await generateMitgliedDetailPDF(id, { save_to_db });
@@ -369,10 +369,10 @@ router.post("/:id/pdf", async (req, res) => {
     // PDF als Buffer zurücksenden
     res.send(pdfBuffer);
 
-    console.log(`✅ PDF erfolgreich gesendet für Mitglied ${id} (${pdfBuffer.length} bytes)`);
+    logger.info('PDF erfolgreich gesendet für Mitglied ${id} (${pdfBuffer.length} bytes)');
 
   } catch (error) {
-    console.error(`❌ Fehler bei PDF-Generierung für Mitglied ${id}:`, error);
+    logger.error('Fehler bei PDF-Generierung für Mitglied ${id}:', error);
     res.status(500).json({
       error: "PDF-Generierung fehlgeschlagen",
       details: error.message,
@@ -386,10 +386,10 @@ router.put("/:id/archive-allergie", (req, res) => {
   const { id } = req.params;
   const { allergieId } = req.body;
 
-  console.log('🔍 Archive-Allergie Request:', { id, allergieId, body: req.body });
+  logger.debug('Archive-Allergie Request:', { id, allergieId, body: req.body });
 
   if (!allergieId && allergieId !== 0) {
-    console.error('❌ Allergie-ID fehlt oder ist undefined');
+    logger.error('Allergie-ID fehlt oder ist undefined');
     return res.status(400).json({ error: "Allergie-ID fehlt" });
   }
 
@@ -398,7 +398,7 @@ router.put("/:id/archive-allergie", (req, res) => {
 
   db.query(selectQuery, [id], (err, results) => {
     if (err) {
-      console.error(`Fehler beim Abrufen des Mitglieds ${id}:`, err);
+      logger.error('Fehler beim Abrufen des Mitglieds ${id}:', { error: err });
       return res.status(500).json({ error: "Fehler beim Abrufen des Mitglieds" });
     }
 
@@ -437,7 +437,7 @@ router.put("/:id/archive-allergie", (req, res) => {
     try {
       archiv = mitglied.allergien_archiv ? JSON.parse(mitglied.allergien_archiv) : [];
     } catch (e) {
-      console.error("Fehler beim Parsen von allergien_archiv:", e);
+      logger.error('Fehler beim Parsen von allergien_archiv:', { error: e });
       archiv = [];
     }
 
@@ -458,11 +458,11 @@ router.put("/:id/archive-allergie", (req, res) => {
 
     db.query(updateQuery, [allergienString, JSON.stringify(archiv), id], (err, result) => {
       if (err) {
-        console.error(`Fehler beim Archivieren der Allergie für Mitglied ${id}:`, err);
+        logger.error('Fehler beim Archivieren der Allergie für Mitglied ${id}:', { error: err });
         return res.status(500).json({ error: "Fehler beim Archivieren der Allergie" });
       }
 
-      console.log(`✅ Allergie "${allergieToArchive.value}" für Mitglied ${id} archiviert`);
+      logger.info('Allergie archiviert', { allergie: allergieToArchive.value, mitglied_id: id });
 
       res.json({
         success: true,

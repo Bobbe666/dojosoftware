@@ -5,6 +5,7 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -93,7 +94,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Ausgaben laden Fehler:', err);
+    logger.error('Ausgaben laden Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Laden der Ausgaben' });
   }
 });
@@ -196,7 +197,7 @@ router.post('/', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Ausgabe erfassen Fehler:', err);
+    logger.error('Ausgabe erfassen Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Erfassen der Ausgabe' });
   }
 });
@@ -262,7 +263,7 @@ router.put('/:id', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Ausgabe aktualisieren Fehler:', err);
+    logger.error('Ausgabe aktualisieren Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Aktualisieren der Ausgabe' });
   }
 });
@@ -292,7 +293,7 @@ router.delete('/:id', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Ausgabe löschen Fehler:', err);
+    logger.error('Ausgabe löschen Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Löschen der Ausgabe' });
   }
 });
@@ -347,7 +348,7 @@ router.get('/summen', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Ausgaben-Summen Fehler:', err);
+    logger.error('Ausgaben-Summen Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Laden der Summen' });
   }
 });

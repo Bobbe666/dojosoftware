@@ -1,10 +1,18 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db'); // Verwenden Sie Ihr bestehendes DB-System
+const db = require('../db');
 const logger = require('../utils/logger');
 const { JWT_SECRET } = require('../middleware/auth');
 const auditLog = require('../services/auditLogService');
+const { requireFields, sanitizeStrings } = require('../middleware/validation');
+const { ApiError } = require('../middleware/errorHandler');
+const {
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES,
+  LIMITS,
+  HTTP_STATUS
+} = require('../utils/constants');
 const router = express.Router();
 
 // ===================================================================
@@ -41,17 +49,32 @@ router.get('/test', (req, res) => {
 // LOGIN-ROUTE
 // ===================================================================
 
-router.post('/login', async (req, res) => {
+router.post('/login',
+  sanitizeStrings(['email', 'username']),
+  async (req, res) => {
 
   const { email, password, username } = req.body;
   const loginField = email || username;
-  
-  if (!loginField || !password) {
 
-    return res.status(400).json({ 
-      login: false, 
-      message: "Email/Username und Passwort sind erforderlich",
-      received: { loginField: !!loginField, password: !!password }
+  // Validierung
+  if (!loginField || !password) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      error: {
+        message: ERROR_MESSAGES.AUTH.EMAIL_PASSWORD_REQUIRED,
+        code: HTTP_STATUS.BAD_REQUEST
+      }
+    });
+  }
+
+  // Passwort-Länge prüfen (Brute-Force Schutz)
+  if (password.length > 128) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      error: {
+        message: "Passwort zu lang",
+        code: HTTP_STATUS.BAD_REQUEST
+      }
     });
   }
 
@@ -96,9 +119,9 @@ router.post('/login', async (req, res) => {
           }
 
           if (adminResults.length === 0) {
-            return res.status(401).json({
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
               login: false,
-              message: "Benutzer nicht gefunden"
+              message: ERROR_MESSAGES.RESOURCE.USER_NOT_FOUND
             });
           }
 
@@ -132,9 +155,9 @@ router.post('/login', async (req, res) => {
             beschreibung: `Login fehlgeschlagen (falsches Passwort): ${user.username}`
           });
 
-          return res.status(401).json({
+          return res.status(HTTP_STATUS.UNAUTHORIZED).json({
             login: false,
-            message: "Ungültiges Passwort"
+            message: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS
           });
         }
 
@@ -335,7 +358,7 @@ router.post('/refresh', authenticateToken, async (req, res) => {
     // Neuen Token erstellen (2 Stunden Gültigkeit)
     const newToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '2h' });
 
-    console.log(`✅ [Auth] Token verlängert für User: ${user.username} (${user.email})`);
+    logger.info('[Auth] Token verlängert für User: ${user.username} (${user.email})');
 
     res.json({
       success: true,

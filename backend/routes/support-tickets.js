@@ -3,6 +3,7 @@
 // ============================================================================
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const multer = require('multer');
@@ -168,7 +169,7 @@ router.get('/', async (req, res) => {
 
     db.query(query, params, (err, tickets) => {
       if (err) {
-        console.error('Fehler beim Laden der Tickets:', err);
+        logger.error('Fehler beim Laden der Tickets:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -209,7 +210,7 @@ router.get('/', async (req, res) => {
       });
     });
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -248,7 +249,7 @@ router.get('/statistiken', (req, res) => {
 
   db.query(query, params, (err, results) => {
     if (err) {
-      console.error('Fehler bei Statistiken:', err);
+      logger.error('Fehler bei Statistiken:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
     res.json(results[0]);
@@ -262,7 +263,7 @@ router.get('/:id', (req, res) => {
 
   db.query('SELECT * FROM support_tickets WHERE id = ?', [id], (err, tickets) => {
     if (err) {
-      console.error('Fehler:', err);
+      logger.error('Fehler:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -291,7 +292,7 @@ router.get('/:id', (req, res) => {
 
     db.query(nachrichtenQuery, [id], (err, nachrichten) => {
       if (err) {
-        console.error('Fehler bei Nachrichten:', err);
+        logger.error('Fehler bei Nachrichten:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -301,7 +302,7 @@ router.get('/:id', (req, res) => {
         [id],
         (err, anhaenge) => {
           if (err) {
-            console.error('Fehler bei Anhängen:', err);
+            logger.error('Fehler bei Anhängen:', { error: err });
             return res.status(500).json({ error: 'Datenbankfehler' });
           }
 
@@ -357,7 +358,7 @@ router.post('/', async (req, res) => {
 
     db.query(insertQuery, params, (err, result) => {
       if (err) {
-        console.error('Fehler beim Erstellen:', err);
+        logger.error('Fehler beim Erstellen:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -371,7 +372,7 @@ router.post('/', async (req, res) => {
         [ticketId, user.user_id || user.id, erstellerName, nachricht],
         (err) => {
           if (err) {
-            console.error('Fehler bei erster Nachricht:', err);
+            logger.error('Fehler bei erster Nachricht:', { error: err });
           }
 
           res.status(201).json({
@@ -384,7 +385,7 @@ router.post('/', async (req, res) => {
       );
     });
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -427,7 +428,7 @@ router.post('/:id/nachrichten', (req, res) => {
       [id, absenderTyp, user.user_id || user.id, absenderName, nachricht, internFlag],
       (err, result) => {
         if (err) {
-          console.error('Fehler:', err);
+          logger.error('Fehler:', { error: err });
           return res.status(500).json({ error: 'Datenbankfehler' });
         }
 
@@ -483,7 +484,7 @@ router.put('/:id/status', (req, res) => {
 
   db.query(updateQuery, params, (err, result) => {
     if (err) {
-      console.error('Fehler:', err);
+      logger.error('Fehler:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -526,7 +527,7 @@ router.put('/:id/zuweisen', (req, res) => {
     [user_id || null, id],
     (err, result) => {
       if (err) {
-        console.error('Fehler:', err);
+        logger.error('Fehler:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -567,7 +568,7 @@ router.put('/:id/prioritaet', (req, res) => {
     [prioritaet, id],
     (err, result) => {
       if (err) {
-        console.error('Fehler:', err);
+        logger.error('Fehler:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -615,7 +616,7 @@ router.post('/:id/anhaenge', upload.single('datei'), (req, res) => {
       ],
       (err, result) => {
         if (err) {
-          console.error('Fehler:', err);
+          logger.error('Fehler:', { error: err });
           fs.unlink(req.file.path, () => {});
           return res.status(500).json({ error: 'Datenbankfehler' });
         }
@@ -674,7 +675,7 @@ router.get('/bearbeiter/liste', (req, res) => {
      ORDER BY username`,
     (err, results) => {
       if (err) {
-        console.error('Fehler:', err);
+        logger.error('Fehler:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
       res.json(results);

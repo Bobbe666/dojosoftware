@@ -66,7 +66,7 @@ class StripeDataevProvider {
             };
 
         } catch (error) {
-            console.error('❌ Stripe: Error creating payment intent:', error);
+            logger.error('Stripe: Error creating payment intent:', error);
             await this.logError(mitgliedData.mitglied_id, 'create_payment_intent', error.message);
             throw error;
         }
@@ -94,7 +94,7 @@ class StripeDataevProvider {
 
             db.query(query, params, (err, result) => {
                 if (err) {
-                    console.error('❌ Database: Error saving payment intent:', err);
+                    logger.error('Database: Error saving payment intent:', err);
                     return reject(err);
                 }
                 resolve(result);
@@ -126,7 +126,7 @@ class StripeDataevProvider {
             return { received: true };
 
         } catch (error) {
-            console.error('❌ Stripe Webhook: Error processing:', error);
+            logger.error('Stripe Webhook: Error processing:', error);
             throw error;
         }
     }
@@ -142,7 +142,7 @@ class StripeDataevProvider {
                 await this.exportToDatev(dbPaymentIntent);
             }
         } catch (error) {
-            console.error('❌ Error handling payment success:', error);
+            logger.error('Error handling payment success:', error);
             throw error;
         }
     }
@@ -153,7 +153,7 @@ class StripeDataevProvider {
             // Could send notification to admin here
 
         } catch (error) {
-            console.error('❌ Error handling payment failure:', error);
+            logger.error('Error handling payment failure:', error);
         }
     }
 
@@ -171,7 +171,7 @@ class StripeDataevProvider {
             return datevResult;
 
         } catch (error) {
-            console.error('❌ DATEV: Export failed:', error);
+            logger.error('DATEV: Export failed:', error);
             await this.updateDatevExportStatus(exportId, 'failed', null, error.message);
             throw error;
         }
@@ -293,7 +293,7 @@ class StripeDataevProvider {
 
         db.query(query, [this.dojoConfig.id, mitgliedId, action, message], (err) => {
             if (err) {
-                console.error('❌ Failed to log error:', err);
+                logger.error('Failed to log error:', err);
             }
         });
     }

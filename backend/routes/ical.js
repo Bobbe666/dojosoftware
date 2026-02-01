@@ -4,6 +4,7 @@
 // ============================================================================
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const crypto = require('crypto');
@@ -299,7 +300,7 @@ router.get('/member/:mitgliedId/:token', async (req, res) => {
     res.send(ical);
 
   } catch (error) {
-    console.error('Fehler beim Generieren des iCal:', error);
+    logger.error('Fehler beim Generieren des iCal:', { error: error });
     res.status(500).send('Fehler beim Generieren des Kalenders');
   }
 });
@@ -360,7 +361,7 @@ router.get('/dojo/:dojoId/schedule', async (req, res) => {
     res.send(ical);
 
   } catch (error) {
-    console.error('Fehler beim Generieren des Stundenplan-iCal:', error);
+    logger.error('Fehler beim Generieren des Stundenplan-iCal:', { error: error });
     res.status(500).send('Fehler beim Generieren des Kalenders');
   }
 });
@@ -406,7 +407,7 @@ router.get('/dojo/:dojoId/events', async (req, res) => {
     res.send(ical);
 
   } catch (error) {
-    console.error('Fehler beim Generieren des Event-iCal:', error);
+    logger.error('Fehler beim Generieren des Event-iCal:', { error: error });
     res.status(500).send('Fehler beim Generieren des Kalenders');
   }
 });
@@ -499,7 +500,7 @@ router.get('/my-token', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Generieren des Kalender-Tokens:', error);
+    logger.error('Fehler beim Generieren des Kalender-Tokens:', { error: error });
     res.status(500).json({ error: 'Fehler beim Generieren des Tokens' });
   }
 });
@@ -538,7 +539,7 @@ router.get('/admin/member/:mitgliedId/token', authenticateToken, async (req, res
     });
 
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Fehler beim Generieren des Tokens' });
   }
 });

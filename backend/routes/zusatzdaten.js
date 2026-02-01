@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -39,7 +40,7 @@ router.get('/mitglied/:mitglied_id', async (req, res) => {
     const [results] = await db.query(query, params);
     res.json({ success: true, data: results });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Zusatzdaten:', error);
+    logger.error('Fehler beim Abrufen der Zusatzdaten:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });
@@ -63,7 +64,7 @@ router.get('/:id', async (req, res) => {
     
     res.json({ success: true, data: results[0] });
   } catch (error) {
-    console.error('Fehler beim Abrufen:', error);
+    logger.error('Fehler beim Abrufen:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });
@@ -107,7 +108,7 @@ router.post('/', async (req, res) => {
       id: result.insertId
     });
   } catch (error) {
-    console.error('Fehler beim Erstellen:', error);
+    logger.error('Fehler beim Erstellen:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });
@@ -142,7 +143,7 @@ router.put('/:id', async (req, res) => {
     
     res.json({ success: true, message: 'Zusatzdaten aktualisiert' });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren:', error);
+    logger.error('Fehler beim Aktualisieren:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });
@@ -166,7 +167,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ success: true, message: 'Zusatzdaten gelöscht' });
   } catch (error) {
-    console.error('Fehler beim Löschen:', error);
+    logger.error('Fehler beim Löschen:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });

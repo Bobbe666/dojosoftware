@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FileText, Shield, Home, CheckCircle, AlertTriangle, Loader, Scroll } from "lucide-react";
 import config from "../config";
 import { fetchWithAuth } from "../utils/fetchWithAuth";
+import { createSafeHtml } from "../utils/sanitizer";
 import "./FirstLoginConfirmation.css";
 
 /**
@@ -201,7 +202,7 @@ Fuer Wertsachen wird keine Haftung uebernommen.`;
             <div className="first-login-content">
               {activeTab === "agb" && (
                 <div className="document-section">
-                  <div className="document-text" dangerouslySetInnerHTML={{ __html: agbText.replace(/\n/g, "<br>") }} />
+                  <div className="document-text" dangerouslySetInnerHTML={createSafeHtml(agbText.replace(/\n/g, "<br>"))} />
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
@@ -215,7 +216,7 @@ Fuer Wertsachen wird keine Haftung uebernommen.`;
 
               {activeTab === "datenschutz" && (
                 <div className="document-section">
-                  <div className="document-text" dangerouslySetInnerHTML={{ __html: datenschutzText.replace(/\n/g, "<br>") }} />
+                  <div className="document-text" dangerouslySetInnerHTML={createSafeHtml(datenschutzText.replace(/\n/g, "<br>"))} />
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
@@ -229,7 +230,7 @@ Fuer Wertsachen wird keine Haftung uebernommen.`;
 
               {activeTab === "dojoregeln" && (
                 <div className="document-section">
-                  <div className="document-text" dangerouslySetInnerHTML={{ __html: dojoRegelnText.replace(/\n/g, "<br>") }} />
+                  <div className="document-text" dangerouslySetInnerHTML={createSafeHtml(dojoRegelnText.replace(/\n/g, "<br>"))} />
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
@@ -243,7 +244,7 @@ Fuer Wertsachen wird keine Haftung uebernommen.`;
 
               {activeTab === "hausordnung" && (
                 <div className="document-section">
-                  <div className="document-text" dangerouslySetInnerHTML={{ __html: hausordnungText.replace(/\n/g, "<br>") }} />
+                  <div className="document-text" dangerouslySetInnerHTML={createSafeHtml(hausordnungText.replace(/\n/g, "<br>"))} />
                   <label className="checkbox-label">
                     <input
                       type="checkbox"

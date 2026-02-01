@@ -5,13 +5,14 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { sendBadgeEmail } = require('../services/emailService');
 
 // Debug: Log alle Badges-Requests
 router.use((req, res, next) => {
-  console.log('🏅 Badges Route:', req.method, req.path, { user: req.user?.id, role: req.user?.role });
+  logger.debug('🏅 Badges Route:', req.method, req.path, { user: req.user?.id, role: req.user?.role });
   next();
 });
 
@@ -36,7 +37,7 @@ router.get('/training/:mitglied_id', (req, res) => {
 
   db.query(query, [mitglied_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der manuellen Trainingsstunden:', err);
+      logger.error('Fehler beim Laden der manuellen Trainingsstunden:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
     res.json(results);
@@ -63,7 +64,7 @@ router.post('/training/:mitglied_id', (req, res) => {
 
   db.query(query, [mitglied_id, stunden, datum, grund, stil_id || null, erstellt_von_id || null, erstellt_von_name || null], (err, result) => {
     if (err) {
-      console.error('Fehler beim Hinzufuegen der manuellen Trainingsstunden:', err);
+      logger.error('Fehler beim Hinzufuegen der manuellen Trainingsstunden:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -87,7 +88,7 @@ router.delete('/training/:id', (req, res) => {
 
   db.query('DELETE FROM manuelle_trainingsstunden WHERE id = ?', [id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Loeschen der manuellen Trainingsstunden:', err);
+      logger.error('Fehler beim Loeschen der manuellen Trainingsstunden:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -117,7 +118,7 @@ router.get('/', (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Badges:', err);
+      logger.error('Fehler beim Laden der Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
     res.json(results);
@@ -151,7 +152,7 @@ router.post('/', (req, res) => {
     aktiv !== false ? 1 : 0
   ], (err, result) => {
     if (err) {
-      console.error('Fehler beim Erstellen des Badges:', err);
+      logger.error('Fehler beim Erstellen des Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
     res.status(201).json({
@@ -199,7 +200,7 @@ router.put('/:badge_id', (req, res) => {
     badge_id
   ], (err, result) => {
     if (err) {
-      console.error('Fehler beim Aktualisieren des Badges:', err);
+      logger.error('Fehler beim Aktualisieren des Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -223,13 +224,13 @@ router.delete('/:badge_id', (req, res) => {
     // Permanentes Loeschen (vorsicht: loescht auch alle Zuweisungen)
     db.query('DELETE FROM mitglieder_badges WHERE badge_id = ?', [badge_id], (err) => {
       if (err) {
-        console.error('Fehler beim Loeschen der Badge-Zuweisungen:', err);
+        logger.error('Fehler beim Loeschen der Badge-Zuweisungen:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
       db.query('DELETE FROM badges WHERE badge_id = ?', [badge_id], (err2, result) => {
         if (err2) {
-          console.error('Fehler beim Loeschen des Badges:', err2);
+          logger.error('Fehler beim Loeschen des Badges:', { error: err2 });
           return res.status(500).json({ error: 'Datenbankfehler' });
         }
 
@@ -244,7 +245,7 @@ router.delete('/:badge_id', (req, res) => {
     // Soft-Delete: nur deaktivieren
     db.query('UPDATE badges SET aktiv = FALSE WHERE badge_id = ?', [badge_id], (err, result) => {
       if (err) {
-        console.error('Fehler beim Deaktivieren des Badges:', err);
+        logger.error('Fehler beim Deaktivieren des Badges:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -274,7 +275,7 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
 
   db.query(query, [mitglied_id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Mitglieder-Badges:', err);
+      logger.error('Fehler beim Laden der Mitglieder-Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
     res.json(results);
@@ -300,7 +301,7 @@ router.post('/mitglied/:mitglied_id/:badge_id', (req, res) => {
 
   db.query(query, [mitglied_id, badge_id, verliehen_von_id || null, verliehen_von_name || null, kommentar || null], async (err, result) => {
     if (err) {
-      console.error('Fehler beim Verleihen des Badges:', err);
+      logger.error('Fehler beim Verleihen des Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -309,7 +310,7 @@ router.post('/mitglied/:mitglied_id/:badge_id', (req, res) => {
       try {
         await sendBadgeNotification(mitglied_id, badge_id);
       } catch (emailErr) {
-        console.error('Fehler beim Senden der Badge-Benachrichtigung:', emailErr);
+        logger.error('Fehler beim Senden der Badge-Benachrichtigung:', { error: emailErr });
         // Fehler beim E-Mail-Versand soll den Badge-Vorgang nicht abbrechen
       }
     }
@@ -333,7 +334,7 @@ router.delete('/mitglied/:mitglied_id/:badge_id', (req, res) => {
     [mitglied_id, badge_id],
     (err, result) => {
       if (err) {
-        console.error('Fehler beim Entfernen des Badges:', err);
+        logger.error('Fehler beim Entfernen des Badges:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -355,12 +356,12 @@ router.delete('/mitglied/:mitglied_id/:badge_id', (req, res) => {
  * Uebersicht fuer Admins: Wer verdient welche Badges?
  */
 router.get('/admin/overview', (req, res) => {
-  console.log('📊 Badge Admin Overview aufgerufen', { user: req.user, query: req.query });
+  logger.debug('📊 Badge Admin Overview aufgerufen', { user: req.user, query: req.query });
   const { dojo_id } = req.query;
 
   // Debug: Prüfe ob dojo_id gültig ist
   const validDojoId = dojo_id && dojo_id !== 'all' && dojo_id !== 'undefined' && !isNaN(parseInt(dojo_id));
-  console.log('📊 dojo_id Filter:', { dojo_id, validDojoId });
+  logger.debug('📊 dojo_id Filter:', { dojo_id, validDojoId });
 
   // Hole alle Mitglieder mit ihren Statistiken
   let memberQuery = `
@@ -406,26 +407,26 @@ router.get('/admin/overview', (req, res) => {
 
   memberQuery += ` ORDER BY total_trainings DESC`;
 
-  console.log('📊 Member Query (Dojo-Filter):', validDojoId ? `dojo_id=${dojo_id}` : 'ALLE DOJOS');
+  logger.debug('📊 Member Query (Dojo-Filter):', validDojoId ? `dojo_id=${dojo_id}` : 'ALLE DOJOS');
 
   db.query(memberQuery, (err, members) => {
-    console.log('📊 Members gefunden:', members?.length || 0);
+    logger.debug('📊 Members gefunden:', members?.length || 0);
     if (err) {
-      console.error('Fehler beim Laden der Uebersicht:', err);
+      logger.error('Fehler beim Laden der Uebersicht:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
     // Hole alle Badges und deren Kriterien
     db.query('SELECT * FROM badges WHERE aktiv = TRUE ORDER BY kategorie, kriterium_wert', (err2, badges) => {
       if (err2) {
-        console.error('Fehler beim Laden der Badges:', err2);
+        logger.error('Fehler beim Laden der Badges:', { error: err2 });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
       // Hole alle verliehenen Badges
       db.query('SELECT mitglied_id, badge_id FROM mitglieder_badges', (err3, awarded) => {
         if (err3) {
-          console.error('Fehler beim Laden der verliehenen Badges:', err3);
+          logger.error('Fehler beim Laden der verliehenen Badges:', { error: err3 });
           return res.status(500).json({ error: 'Datenbankfehler' });
         }
 
@@ -519,7 +520,7 @@ router.post('/admin/award-pending', async (req, res) => {
 
   db.query(query, [values], async (err, result) => {
     if (err) {
-      console.error('Fehler beim Verleihen der Badges:', err);
+      logger.error('Fehler beim Verleihen der Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -531,7 +532,7 @@ router.post('/admin/award-pending', async (req, res) => {
           await sendBadgeNotification(award.mitglied_id, award.badge_id);
           emailsSent++;
         } catch (emailErr) {
-          console.error('Fehler beim Senden der Badge-Benachrichtigung:', emailErr);
+          logger.error('Fehler beim Senden der Badge-Benachrichtigung:', { error: emailErr });
         }
       }
     }
@@ -564,7 +565,7 @@ router.post('/admin/send-notifications', async (req, res) => {
 
   db.query(query, async (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der nicht benachrichtigten Badges:', err);
+      logger.error('Fehler beim Laden der nicht benachrichtigten Badges:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -576,7 +577,7 @@ router.post('/admin/send-notifications', async (req, res) => {
         const result = await sendBadgeNotification(badge.mitglied_id, badge.badge_id);
         if (result.success) emailsSent++;
       } catch (emailErr) {
-        console.error('Fehler beim Senden der Badge-Benachrichtigung:', emailErr);
+        logger.error('Fehler beim Senden der Badge-Benachrichtigung:', { error: emailErr });
         errors++;
       }
     }
@@ -615,12 +616,12 @@ async function sendBadgeNotification(mitglied_id, badge_id) {
 
     db.query(query, [badge_id, mitglied_id], async (err, results) => {
       if (err) {
-        console.error('Fehler beim Laden der Badge-Benachrichtigungsdaten:', err);
+        logger.error('Fehler beim Laden der Badge-Benachrichtigungsdaten:', { error: err });
         return reject(err);
       }
 
       if (!results || results.length === 0 || !results[0].email) {
-        console.log('Keine E-Mail-Adresse fuer Badge-Benachrichtigung gefunden');
+        logger.debug('Keine E-Mail-Adresse fuer Badge-Benachrichtigung gefunden');
         return resolve({ success: false, reason: 'Keine E-Mail-Adresse' });
       }
 
@@ -648,7 +649,7 @@ async function sendBadgeNotification(mitglied_id, badge_id) {
 
         resolve(result);
       } catch (emailErr) {
-        console.error('Fehler beim Senden der Badge-E-Mail:', emailErr);
+        logger.error('Fehler beim Senden der Badge-E-Mail:', { error: emailErr });
         reject(emailErr);
       }
     });
@@ -726,7 +727,7 @@ function checkAndAwardBadges(mitglied_id, trigger_type) {
                 // Sende E-Mail-Benachrichtigung nur wenn Badge neu verliehen wurde
                 if (!insertErr && insertResult.affectedRows > 0) {
                   sendBadgeNotification(mitglied_id, badge.badge_id).catch(err => {
-                    console.error('Fehler beim Senden der automatischen Badge-Benachrichtigung:', err);
+                    logger.error('Fehler beim Senden der automatischen Badge-Benachrichtigung:', { error: err });
                   });
                 }
               }

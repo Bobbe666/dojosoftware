@@ -5,6 +5,7 @@
 // ============================================================================
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -32,7 +33,7 @@ function toMySQLDate(dateValue) {
 
     return `${year}-${month}-${day}`;
   } catch (error) {
-    console.warn('Datumskonvertierung fehlgeschlagen:', dateValue, error.message);
+    logger.warn('Datumskonvertierung fehlgeschlagen', { dateValue, error: error.message });
     return null;
   }
 }
@@ -49,12 +50,12 @@ const validateWebhookKey = (req, res, next) => {
   const expectedKey = process.env.TDA_WEBHOOK_KEY;
 
   if (!expectedKey) {
-    console.error('❌ TDA_WEBHOOK_KEY nicht in .env konfiguriert!');
+    logger.error('TDA_WEBHOOK_KEY nicht in .env konfiguriert!');
     return res.status(500).json({ error: 'Webhook nicht konfiguriert' });
   }
 
   if (!webhookKey || webhookKey !== expectedKey) {
-    console.warn('⚠️ Ungültiger Webhook-Key:', webhookKey);
+    logger.warn('Ungültiger Webhook-Key:', webhookKey);
     return res.status(401).json({ error: 'Ungültiger API-Key' });
   }
 
@@ -74,7 +75,7 @@ router.post('/webhook', validateWebhookKey, async (req, res) => {
   try {
     const { action, turnier } = req.body;
 
-    console.log(`📨 TDA Webhook empfangen: action=${action}`, turnier);
+    logger.debug(`📨 TDA Webhook empfangen: action=${action}`, turnier);
 
     if (!action || !turnier) {
       return res.status(400).json({ error: 'action und turnier sind erforderlich' });
@@ -95,13 +96,13 @@ router.post('/webhook', validateWebhookKey, async (req, res) => {
         await handleTurnierDeleted(turnier.tda_turnier_id);
         break;
       default:
-        console.warn(`⚠️ Unbekannte Webhook-Action: ${action}`);
+        logger.warn('Unbekannte Webhook-Action: ${action}');
         return res.status(400).json({ error: `Unbekannte Action: ${action}` });
     }
 
     res.json({ success: true, message: `Action ${action} erfolgreich verarbeitet` });
   } catch (error) {
-    console.error('❌ Webhook-Fehler:', error);
+    logger.error('Webhook-Fehler:', error);
     res.status(500).json({ error: 'Interner Fehler beim Verarbeiten des Webhooks' });
   }
 });
@@ -116,7 +117,7 @@ async function handleTurnierCreated(turnier) {
   const anmeldeschluss = toMySQLDate(turnier.anmeldeschluss);
 
   if (!datum) {
-    console.error('❌ Ungültiges Datum für Turnier:', turnier.name, turnier.datum);
+    logger.error('Ungültiges Datum für Turnier:', turnier.name, turnier.datum);
     throw new Error('Ungültiges Turnierdatum');
   }
 
@@ -170,7 +171,7 @@ async function handleTurnierCreated(turnier) {
     turnier.bild_url || null
   ]);
 
-  console.log(`✅ Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) gespeichert`);
+  logger.info('Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) gespeichert');
 
   // 2. Push-Benachrichtigung an alle Mitglieder senden (deaktiviert für Bulk-Sync)
   // await sendTurnierNotificationToAll(turnier);
@@ -229,7 +230,7 @@ async function handleTurnierUpdated(turnier) {
     turnier.tda_turnier_id
   ]);
 
-  console.log(`✅ Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) aktualisiert`);
+  logger.info('Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) aktualisiert');
 }
 
 /**
@@ -253,12 +254,12 @@ async function handleTurnierDeleted(tdaTurnierId) {
   );
 
   if (result.affectedRows > 0) {
-    console.log(`✅ Turnier "${turnierName}" (TDA-ID: ${tdaTurnierId}) gelöscht`);
+    logger.info('Turnier gelöscht', { name: turnierName, tdaTurnierId });
 
     // 3. Benachrichtigung an alle Mitglieder senden
     await sendTurnierDeletedNotification(turnierName, turnierDatum, turnierOrt);
   } else {
-    console.log(`⚠️ Turnier mit TDA-ID ${tdaTurnierId} war nicht in der Datenbank`);
+    logger.debug('⚠️ Turnier mit TDA-ID ${tdaTurnierId} war nicht in der Datenbank');
   }
 }
 
@@ -275,11 +276,11 @@ async function sendTurnierDeletedNotification(turnierName, turnierDatum, turnier
     `);
 
     if (mitglieder.length === 0) {
-      console.log('ℹ️ Keine aktiven Mitglieder für Benachrichtigung gefunden');
+      logger.debug('ℹ️ Keine aktiven Mitglieder für Benachrichtigung gefunden');
       return;
     }
 
-    console.log(`📧 Sende Turnier-Absage-Benachrichtigung an ${mitglieder.length} Mitglieder...`);
+    logger.debug('📧 Sende Turnier-Absage-Benachrichtigung an ${mitglieder.length} Mitglieder...');
 
     // Formatiere Datum falls vorhanden
     let datumText = '';
@@ -319,9 +320,9 @@ async function sendTurnierDeletedNotification(turnierName, turnierDatum, turnier
       }
     }
 
-    console.log(`✅ ${mitglieder.length} Absage-Benachrichtigungen erstellt`);
+    logger.info('${mitglieder.length} Absage-Benachrichtigungen erstellt');
   } catch (error) {
-    console.error('❌ Fehler beim Senden der Absage-Benachrichtigungen:', error);
+    logger.error('Fehler beim Senden der Absage-Benachrichtigungen:', error);
     // Fehler bei Benachrichtigungen sollte nicht den Löschvorgang verhindern
   }
 }
@@ -338,7 +339,7 @@ async function sendTurnierNotificationToAll(turnier) {
       WHERE aktiv = 1
     `);
 
-    console.log(`📧 Sende Turnier-Benachrichtigung an ${mitglieder.length} Mitglieder...`);
+    logger.debug('📧 Sende Turnier-Benachrichtigung an ${mitglieder.length} Mitglieder...');
 
     // Formatiere Datum für deutsche Anzeige
     const datumFormatiert = new Date(turnier.datum).toLocaleDateString('de-DE', {
@@ -374,9 +375,9 @@ async function sendTurnierNotificationToAll(turnier) {
       }
     }
 
-    console.log(`✅ ${mitglieder.length} Turnier-Benachrichtigungen erstellt`);
+    logger.info('${mitglieder.length} Turnier-Benachrichtigungen erstellt');
   } catch (error) {
-    console.error('❌ Fehler beim Senden der Turnier-Benachrichtigungen:', error);
+    logger.error('Fehler beim Senden der Turnier-Benachrichtigungen:', error);
     // Fehler bei Benachrichtigungen sollte nicht den Webhook-Erfolg verhindern
   }
 }
@@ -462,7 +463,7 @@ router.get('/', authenticateToken, async (req, res) => {
       total: turniereWithStatus.length
     });
   } catch (error) {
-    console.error('❌ Fehler beim Abrufen der TDA-Turniere:', error);
+    logger.error('Fehler beim Abrufen der TDA-Turniere:', error);
     res.status(500).json({
       error: 'Fehler beim Abrufen der Turniere',
       details: error.message
@@ -497,7 +498,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       turnier
     });
   } catch (error) {
-    console.error('❌ Fehler beim Abrufen des Turniers:', error);
+    logger.error('Fehler beim Abrufen des Turniers:', error);
     res.status(500).json({
       error: 'Fehler beim Abrufen des Turniers',
       details: error.message
@@ -525,7 +526,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       stats: stats[0]
     });
   } catch (error) {
-    console.error('❌ Fehler beim Abrufen der Turnier-Statistiken:', error);
+    logger.error('Fehler beim Abrufen der Turnier-Statistiken:', error);
     res.status(500).json({
       error: 'Fehler beim Abrufen der Statistiken',
       details: error.message
@@ -559,7 +560,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
       message: 'Sync-Zeitstempel aktualisiert'
     });
   } catch (error) {
-    console.error('❌ Fehler beim Sync:', error);
+    logger.error('Fehler beim Sync:', error);
     res.status(500).json({ error: 'Fehler beim Synchronisieren' });
   }
 });
@@ -592,7 +593,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       message: 'Turnier erfolgreich gelöscht'
     });
   } catch (error) {
-    console.error('❌ Fehler beim Löschen des Turniers:', error);
+    logger.error('Fehler beim Löschen des Turniers:', error);
     res.status(500).json({ error: 'Fehler beim Löschen' });
   }
 });

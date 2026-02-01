@@ -327,9 +327,9 @@ router.post('/', async (req, res) => {
         };
 
         rechnungInfo = await createRechnungForVerkauf(verkauf_id, verkaufData);
-        console.log(`✅ Rechnung ${rechnungInfo.rechnungsnummer} für Verkauf #${verkauf_id} erstellt`);
+        logger.info('Rechnung ${rechnungInfo.rechnungsnummer} für Verkauf #${verkauf_id} erstellt');
       } catch (rechnungError) {
-        console.error('⚠️  Fehler bei automatischer Rechnungserstellung:', rechnungError);
+        logger.error('⚠️  Fehler bei automatischer Rechnungserstellung:', { error: rechnungError });
         // Verkauf wird trotzdem durchgeführt, Rechnung kann manuell nachträglich erstellt werden
       }
 
@@ -357,7 +357,7 @@ router.post('/', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Fehler beim Verkauf:', error);
+    logger.error('Fehler beim Verkauf:', { error: error });
     // Release connection if it was acquired but not released
     if (connection) {
       try {
@@ -433,7 +433,7 @@ router.get('/', (req, res) => {
   
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen der Verkäufe:', error);
+      logger.error('Fehler beim Abrufen der Verkäufe:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen der Verkäufe' });
     }
     
@@ -516,7 +516,7 @@ router.get('/:id', (req, res) => {
     res.json({ success: true, data: result });
     
   }).catch(error => {
-    console.error('Fehler beim Abrufen des Verkaufs:', error);
+    logger.error('Fehler beim Abrufen des Verkaufs:', { error: error });
     res.status(500).json({ error: 'Fehler beim Abrufen des Verkaufs' });
   });
 });
@@ -536,7 +536,7 @@ router.post('/:id/storno', (req, res) => {
   // Transaction für Stornierung
   db.beginTransaction((transError) => {
     if (transError) {
-      console.error('Transaction-Fehler:', transError);
+      logger.error('Transaction-Fehler:', { error: transError });
       return res.status(500).json({ error: 'Transaction-Fehler' });
     }
     
@@ -550,7 +550,7 @@ router.post('/:id/storno', (req, res) => {
     db.query(stornoQuery, [storno_grund, req.params.id], (error, results) => {
       if (error) {
         db.rollback();
-        console.error('Fehler beim Stornieren:', error);
+        logger.error('Fehler beim Stornieren:', { error: error });
         return res.status(500).json({ error: 'Fehler beim Stornieren' });
       }
       
@@ -569,7 +569,7 @@ router.post('/:id/storno', (req, res) => {
       db.query(detailQuery, [req.params.id], (detailError, detailResults) => {
         if (detailError) {
           db.rollback();
-          console.error('Fehler beim Abrufen der Verkaufsdetails:', detailError);
+          logger.error('Fehler beim Abrufen der Verkaufsdetails:', { error: detailError });
           return res.status(500).json({ error: 'Fehler beim Abrufen der Verkaufsdetails' });
         }
         
@@ -586,7 +586,7 @@ router.post('/:id/storno', (req, res) => {
             db.commit((commitError) => {
               if (commitError) {
                 db.rollback();
-                console.error('Commit-Fehler:', commitError);
+                logger.error('Commit-Fehler:', { error: commitError });
                 return res.status(500).json({ error: 'Commit-Fehler' });
               }
               res.json({ 
@@ -597,7 +597,7 @@ router.post('/:id/storno', (req, res) => {
             });
           }).catch(kassenbuchError => {
             db.rollback();
-            console.error('Kassenbuch-Fehler bei Stornierung:', kassenbuchError);
+            logger.error('Kassenbuch-Fehler bei Stornierung:', { error: kassenbuchError });
             res.status(500).json({ error: 'Kassenbuch-Fehler bei Stornierung' });
           });
         } else {
@@ -605,7 +605,7 @@ router.post('/:id/storno', (req, res) => {
           db.commit((commitError) => {
             if (commitError) {
               db.rollback();
-              console.error('Commit-Fehler:', commitError);
+              logger.error('Commit-Fehler:', { error: commitError });
               return res.status(500).json({ error: 'Commit-Fehler' });
             }
             res.json({ 
@@ -651,7 +651,7 @@ router.get('/stats/tagesumsatz', (req, res) => {
 
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler bei Tagesumsatz-Statistiken:', error);
+      logger.error('Fehler bei Tagesumsatz-Statistiken:', { error: error });
       return res.status(500).json({ error: 'Fehler bei Tagesumsatz-Statistiken' });
     }
     
@@ -692,7 +692,7 @@ router.get('/stats/kassenstand', (req, res) => {
 
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen des Kassenstands:', error);
+      logger.error('Fehler beim Abrufen des Kassenstands:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen des Kassenstands' });
     }
 
@@ -790,7 +790,7 @@ router.get('/:id/kassenbon', (req, res) => {
     });
     
   }).catch(error => {
-    console.error('Fehler beim Generieren des Kassenbons:', error);
+    logger.error('Fehler beim Generieren des Kassenbons:', { error: error });
     res.status(500).json({ error: 'Fehler beim Generieren des Kassenbons' });
   });
 });

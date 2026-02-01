@@ -5,6 +5,7 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -203,7 +204,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('EÜR Fehler:', err);
+    logger.error('EÜR Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler bei der EÜR-Berechnung', details: err.message });
   }
 });
@@ -289,7 +290,7 @@ router.get('/tda', async (req, res) => {
       softwareEinnahmen = await queryAsync(softwareQuery, [jahr]);
     } catch (e) {
       // Tabelle existiert noch nicht - wird später erstellt
-      console.log('Software-Lizenzen Tabelle existiert noch nicht');
+      logger.debug('Software-Lizenzen Tabelle existiert noch nicht');
     }
 
     // 6. Kassenbuch Ausgaben (TDA)
@@ -393,7 +394,7 @@ router.get('/tda', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('TDA EÜR Fehler:', err);
+    logger.error('TDA EÜR Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler bei der TDA EÜR-Berechnung', details: err.message });
   }
 });
@@ -539,7 +540,7 @@ router.get('/export/:dojo_id', async (req, res) => {
     res.send(csv);
 
   } catch (err) {
-    console.error('EÜR Export Fehler:', err);
+    logger.error('EÜR Export Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler beim Export' });
   }
 });
@@ -662,7 +663,7 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
     });
 
     // PDF generieren
-    console.log('[EÜR PDF] Starte PDF-Generierung für Dojo', dojo_id, 'Jahr', jahr);
+    logger.debug('[EÜR PDF] Starte PDF-Generierung für Dojo', dojo_id, 'Jahr', jahr);
     const generateEuerPdfHTML = require('../utils/euerPdfTemplate');
     const puppeteer = require('puppeteer');
 
@@ -670,24 +671,24 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
       { jahr, monate, jahresSumme, isTDA: false },
       dojoInfo
     );
-    console.log('[EÜR PDF] HTML generiert, Länge:', html.length);
+    logger.debug('[EÜR PDF] HTML generiert, Länge:', html.length);
 
     const browser = await puppeteer.launch({
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-    console.log('[EÜR PDF] Browser gestartet');
+    logger.debug('[EÜR PDF] Browser gestartet');
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
-    console.log('[EÜR PDF] HTML geladen');
+    logger.debug('[EÜR PDF] HTML geladen');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
     });
-    console.log('[EÜR PDF] PDF generiert, Größe:', pdfBuffer.length);
+    logger.debug('[EÜR PDF] PDF generiert, Größe:', pdfBuffer.length);
 
     await browser.close();
 
@@ -697,11 +698,11 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
     res.setHeader('Cache-Control', 'no-cache');
-    console.log('[EÜR PDF] Sende PDF:', filename);
+    logger.debug('[EÜR PDF] Sende PDF:', filename);
     res.end(Buffer.from(pdfBuffer));
 
   } catch (err) {
-    console.error('[EÜR PDF] Fehler:', err);
+    logger.error('[EÜR PDF] Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler bei der PDF-Generierung', details: err.message });
   }
 });
@@ -845,7 +846,7 @@ router.get('/pdf/tda', async (req, res) => {
     res.end(Buffer.from(pdfBuffer));
 
   } catch (err) {
-    console.error('TDA EÜR PDF Fehler:', err);
+    logger.error('TDA EÜR PDF Fehler:', { error: err });
     res.status(500).json({ error: 'Fehler bei der PDF-Generierung', details: err.message });
   }
 });

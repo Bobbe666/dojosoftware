@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Feature-Toggle Middleware
@@ -17,7 +18,7 @@ function requireFeature(featureName) {
       const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
 
       // Debug logging
-      console.log('🔍 Feature Check Debug:', {
+      logger.debug('Feature Check Debug:', {
         feature: featureName,
         userId,
         username: req.user?.username,
@@ -26,7 +27,7 @@ function requireFeature(featureName) {
       });
 
       if (isSuperAdmin) {
-        console.log('✅ Super-Admin Bypass für Feature:', featureName);
+        logger.info('Super-Admin Bypass für Feature:', { details: featureName });
         return next();
       }
 
@@ -123,7 +124,7 @@ function requireFeature(featureName) {
       next();
 
     } catch (error) {
-      console.error('Fehler bei Feature-Check:', error);
+      logger.error('Fehler bei Feature-Check:', { error: error });
       res.status(500).json({
         error: 'Serverfehler bei Feature-Pr\u00fcfung'
       });
@@ -176,7 +177,7 @@ async function checkMemberLimit(req, res, next) {
     next();
 
   } catch (error) {
-    console.error('Fehler bei Member-Limit-Check:', error);
+    logger.error('Fehler bei Member-Limit-Check:', { error: error });
     next(); // Bei Fehler durchlassen (fail-open)
   }
 }
@@ -220,7 +221,7 @@ async function checkStorageLimit(req, res, next) {
     next();
 
   } catch (error) {
-    console.error('Fehler bei Storage-Limit-Check:', error);
+    logger.error('Fehler bei Storage-Limit-Check:', { error: error });
     next();
   }
 }

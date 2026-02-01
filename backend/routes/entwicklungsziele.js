@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -42,7 +43,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const [ziele] = await db.promise().query(query, params);
     res.json(ziele);
   } catch (error) {
-    console.error('Fehler beim Laden der Ziele:', error);
+    logger.error('Fehler beim Laden der Ziele:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Ziele' });
   }
 });
@@ -62,7 +63,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 
     res.json({ success: true, id: result.insertId });
   } catch (error) {
-    console.error('Fehler beim Speichern des Ziels:', error);
+    logger.error('Fehler beim Speichern des Ziels:', { error: error });
     res.status(500).json({ error: 'Fehler beim Speichern des Ziels' });
   }
 });
@@ -90,7 +91,7 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
     res.json({ success: true, count: ziele.length });
   } catch (error) {
     await connection.rollback();
-    console.error('Fehler beim Batch-Speichern:', error);
+    logger.error('Fehler beim Batch-Speichern:', { error: error });
     res.status(500).json({ error: 'Fehler beim Speichern der Ziele' });
   } finally {
     connection.release();
@@ -103,7 +104,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     await db.promise().query('DELETE FROM entwicklungsziele WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
-    console.error('Fehler beim Löschen:', error);
+    logger.error('Fehler beim Löschen:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen des Ziels' });
   }
 });
@@ -132,7 +133,7 @@ router.get('/beitraege', authenticateToken, async (req, res) => {
     const [beitraege] = await db.promise().query(query, params);
     res.json(beitraege);
   } catch (error) {
-    console.error('Fehler beim Laden der Beiträge:', error);
+    logger.error('Fehler beim Laden der Beiträge:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Beitragsstrukturen' });
   }
 });
@@ -157,7 +158,7 @@ router.post('/beitraege', authenticateToken, requireAdmin, async (req, res) => {
 
     res.json({ success: true, id: result.insertId });
   } catch (error) {
-    console.error('Fehler beim Speichern:', error);
+    logger.error('Fehler beim Speichern:', { error: error });
     res.status(500).json({ error: 'Fehler beim Speichern der Beitragsstruktur' });
   }
 });
@@ -168,7 +169,7 @@ router.delete('/beitraege/:id', authenticateToken, requireAdmin, async (req, res
     await db.promise().query('UPDATE beitragsstrukturen SET aktiv = 0 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
-    console.error('Fehler beim Löschen:', error);
+    logger.error('Fehler beim Löschen:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen' });
   }
 });
@@ -208,13 +209,13 @@ router.get('/statistiken', authenticateToken, async (req, res) => {
 
     // Software-Nutzer (User) zählen
     const [userResult] = await db.promise().query(`
-      SELECT COUNT(*) as count FROM users WHERE aktiv = 1
+      SELECT COUNT(*) as count FROM users
     `);
     stats.software_nutzer = userResult[0]?.count || 0;
 
     // Dojos zählen
     const [dojoCountResult] = await db.promise().query(`
-      SELECT COUNT(*) as count FROM dojos WHERE aktiv = 1
+      SELECT COUNT(*) as count FROM dojo WHERE ist_aktiv = 1
     `);
     stats.dojos = dojoCountResult[0]?.count || 0;
 
@@ -232,7 +233,7 @@ router.get('/statistiken', authenticateToken, async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    console.error('Fehler beim Laden der Statistiken:', error);
+    logger.error('Fehler beim Laden der Statistiken:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
   }
 });
@@ -252,8 +253,8 @@ router.get('/vergleiche', authenticateToken, async (req, res) => {
     `);
 
     const [dojoResult] = await db.promise().query('SELECT COUNT(*) as count FROM mitglieder');
-    const [userResult] = await db.promise().query('SELECT COUNT(*) as count FROM users WHERE aktiv = 1');
-    const [dojosResult] = await db.promise().query('SELECT COUNT(*) as count FROM dojos WHERE aktiv = 1');
+    const [userResult] = await db.promise().query('SELECT COUNT(*) as count FROM users');
+    const [dojosResult] = await db.promise().query('SELECT COUNT(*) as count FROM dojo WHERE ist_aktiv = 1');
 
     // Durchschnittsbeitrag für Umsatzberechnung
     const [tarifResult] = await db.promise().query(`
@@ -313,7 +314,7 @@ router.get('/vergleiche', authenticateToken, async (req, res) => {
       vergleiche
     });
   } catch (error) {
-    console.error('Fehler beim Laden der Vergleiche:', error);
+    logger.error('Fehler beim Laden der Vergleiche:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Vergleiche' });
   }
 });

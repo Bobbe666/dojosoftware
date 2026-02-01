@@ -1,0 +1,22 @@
+# Server
+PORT=5001
+NODE_ENV=development
+
+# Database
+DB_HOST=localhost
+DB_USER=dojoUser
+DB_PASSWORD=DojoLocal2025!
+DB_NAME=dojo
+
+# JWT
+JWT_SECRET=dojo_local_dev_secret_key_2025
+
+# Session
+SESSION_SECRET=dojo_session_secret_local_2025
+
+# CORS
+FRONTEND_URL=http://localhost:5173
+
+# File Upload
+UPLOAD_PATH=./uploads
+MAX_FILE_SIZE=10485760

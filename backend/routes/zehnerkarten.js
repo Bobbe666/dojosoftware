@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -59,7 +60,7 @@ router.get('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
 
     res.json({ success: true, data: zehnerkarten });
   } catch (error) {
-    console.error('Fehler beim Abrufen der 10er-Karten:', error);
+    logger.error('Fehler beim Abrufen der 10er-Karten:', { error: error });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -122,7 +123,7 @@ router.post('/mitglieder/:mitgliedId/zehnerkarten', async (req, res) => {
 
     res.json({ success: true, data: neueKarte[0] });
   } catch (error) {
-    console.error('Fehler beim Erstellen der 10er-Karte:', error);
+    logger.error('Fehler beim Erstellen der 10er-Karte:', { error: error });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -156,7 +157,7 @@ router.get('/zehnerkarten/:id', async (req, res) => {
 
     res.json({ success: true, data: zehnerkarten[0] });
   } catch (error) {
-    console.error('Fehler beim Abrufen der 10er-Karte:', error);
+    logger.error('Fehler beim Abrufen der 10er-Karte:', { error: error });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -256,7 +257,7 @@ router.post('/zehnerkarten/:id/checkin', async (req, res) => {
       isLastUnit: neueEinheiten === 0
     });
   } catch (error) {
-    console.error('Fehler beim Check-in:', error);
+    logger.error('Fehler beim Check-in:', { error: error });
 
     // Spezielle Behandlung für Unique Constraint Error
     if (error.code === 'ER_DUP_ENTRY') {
@@ -293,7 +294,7 @@ router.get('/zehnerkarten/:id/buchungen', async (req, res) => {
 
     res.json({ success: true, data: buchungen });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Buchungen:', error);
+    logger.error('Fehler beim Abrufen der Buchungen:', { error: error });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -491,7 +492,7 @@ router.post('/zehnerkarten/nachkauf', async (req, res) => {
       message: `10er-Karte erfolgreich erstellt (${zahlungsart})`
     });
   } catch (error) {
-    console.error('Fehler beim Nachkauf:', error);
+    logger.error('Fehler beim Nachkauf:', { error: error });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -551,7 +552,7 @@ router.delete('/zehnerkarten/:id', async (req, res) => {
 
     res.json({ success: true, message: '10er-Karte erfolgreich gelöscht' });
   } catch (error) {
-    console.error('Fehler beim Löschen der 10er-Karte:', error);
+    logger.error('Fehler beim Löschen der 10er-Karte:', { error: error });
     res.status(500).json({ success: false, error: error.message });
   }
 });

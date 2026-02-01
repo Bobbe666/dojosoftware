@@ -59,7 +59,7 @@ router.get("/", (req, res) => {
 
         db.query(query, queryParams, (err, kurseResults) => {
             if (err) {
-                console.error("SQL-Fehler:", err);
+                logger.error('SQL-Fehler:', { error: err });
                 return res.status(500).json({ error: err.message });
             }
 
@@ -99,7 +99,7 @@ router.get("/", (req, res) => {
             const trainerQuery = `SELECT trainer_id, vorname, nachname FROM trainer WHERE trainer_id IN (?)`;
             db.query(trainerQuery, [Array.from(allTrainerIds)], (err, trainerResults) => {
                 if (err) {
-                    console.error("Fehler beim Laden der Trainer:", err);
+                    logger.error('Fehler beim Laden der Trainer:', { error: err });
                     return res.status(500).json({ error: "Fehler beim Laden der Trainer" });
                 }
 
@@ -178,7 +178,7 @@ router.get("/", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error("SQL-Fehler:", err);
+            logger.error('SQL-Fehler:', { error: err });
             return res.status(500).json({ error: err.message });
         }
 
@@ -225,7 +225,7 @@ router.post("/", (req, res) => {
         const query = "INSERT INTO kurse (gruppenname, stil, trainer_ids, raum_id, dojo_id, standort_id) VALUES (?, ?, ?, ?, ?, ?)";
         db.query(query, [gruppenname, stil, JSON.stringify(trainers), raum_id || null, req.tenant.dojo_id, finalStandortId], (err, result) => {
             if (err) {
-                console.error("Fehler beim Hinzufügen des Kurses:", err);
+                logger.error('Fehler beim Hinzufügen des Kurses:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Speichern des Kurses" });
             }
             res.status(201).json({
@@ -277,7 +277,7 @@ router.delete("/:id", (req, res) => {
 
     db.query(query, queryParams, (err, result) => {
         if (err) {
-            console.error("Fehler beim Löschen des Kurses:", err);
+            logger.error('Fehler beim Löschen des Kurses:', { error: err });
             return res.status(500).json({ error: "Fehler beim Löschen des Kurses" });
         }
 
@@ -314,7 +314,7 @@ router.put("/:id", (req, res) => {
 
     db.query(checkQuery, checkParams, (err, results) => {
         if (err) {
-            console.error("Fehler bei der ID-Überprüfung:", err);
+            logger.error('Fehler bei der ID-Überprüfung:', { error: err });
             return res.status(500).json({ error: "Fehler bei der ID-Überprüfung" });
         }
 
@@ -328,7 +328,7 @@ router.put("/:id", (req, res) => {
 
         db.query(updateQuery, updateParams, (err, result) => {
             if (err) {
-                console.error("Fehler beim Aktualisieren des Kurses:", err);
+                logger.error('Fehler beim Aktualisieren des Kurses:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Speichern des Kurses" });
             }
 

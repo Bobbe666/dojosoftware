@@ -42,7 +42,7 @@ router.get("/", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Transaktionen:", err);
+            logger.error('Fehler beim Abrufen der Transaktionen:', { error: err });
             return res.status(500).json({ error: "Fehler beim Laden der Transaktionen" });
         }
         res.json(results);
@@ -61,7 +61,7 @@ router.post("/", (req, res) => {
     
     db.query(checkMemberQuery, [mitglied_id], (checkErr, checkResults) => {
         if (checkErr) {
-            console.error("Fehler beim Prüfen des Mitglieds:", checkErr);
+            logger.error('Fehler beim Prüfen des Mitglieds:', { error: checkErr });
             return res.status(500).json({ error: "Fehler beim Prüfen des Mitglieds" });
         }
 
@@ -73,7 +73,7 @@ router.post("/", (req, res) => {
         
         // 🔒 SICHERHEIT: Prüfe dojo_id Berechtigung
         if (dojo_id && parseInt(dojo_id) !== memberDojoId) {
-            console.error(`SICHERHEITSVERLETZUNG: Versuch Transaktion für falsches Dojo zu erstellen!`);
+            logger.error('SICHERHEITSVERLETZUNG: Versuch Transaktion für falsches Dojo zu erstellen!');
             return res.status(403).json({
                 error: "Keine Berechtigung - Mitglied gehört zu anderem Dojo",
                 member_dojo: memberDojoId,
@@ -98,7 +98,7 @@ router.post("/", (req, res) => {
 
         db.query(insertQuery, values, (err, result) => {
             if (err) {
-                console.error("Fehler beim Erstellen der Transaktion:", err);
+                logger.error('Fehler beim Erstellen der Transaktion:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Erstellen der Transaktion" });
             }
             res.status(201).json({
@@ -174,7 +174,7 @@ router.put("/:id", (req, res) => {
 
     db.query(updateQuery, allValues, (err, result) => {
         if (err) {
-            console.error("Fehler beim Aktualisieren der Transaktion:", err);
+            logger.error('Fehler beim Aktualisieren der Transaktion:', { error: err });
             return res.status(500).json({ error: "Fehler beim Aktualisieren der Transaktion" });
         }
 
@@ -212,7 +212,7 @@ router.delete("/:id", (req, res) => {
 
     db.query(deleteQuery, queryParams, (err, result) => {
         if (err) {
-            console.error("Fehler beim Löschen der Transaktion:", err);
+            logger.error('Fehler beim Löschen der Transaktion:', { error: err });
             return res.status(500).json({ error: "Fehler beim Löschen der Transaktion" });
         }
 

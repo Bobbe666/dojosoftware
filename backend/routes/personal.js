@@ -24,7 +24,7 @@ router.get("/", (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            console.error("SQL-Fehler:", err);
+            logger.error('SQL-Fehler:', { error: err });
             return res.status(500).json({ error: err.message });
         }
 
@@ -61,7 +61,7 @@ router.get("/:id", (req, res) => {
 
     db.query(query, [id], (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen des Personal-Eintrags:", err);
+            logger.error('Fehler beim Abrufen des Personal-Eintrags:', { error: err });
             return res.status(500).json({ error: "Fehler beim Laden des Personal-Eintrags" });
         }
 
@@ -108,7 +108,7 @@ router.post("/", (req, res) => {
         kampfkunst_graduierung, notizen
     ], (err, result) => {
         if (err) {
-            console.error("Fehler beim Hinzufügen des Personal-Eintrags:", err);
+            logger.error('Fehler beim Hinzufügen des Personal-Eintrags:', { error: err });
             return res.status(500).json({ error: "Fehler beim Speichern des Personal-Eintrags" });
         }
 
@@ -160,7 +160,7 @@ router.put("/:id", (req, res) => {
     // Erst prüfen, ob der Eintrag existiert
     db.query("SELECT personal_id FROM personal WHERE personal_id = ?", [id], (err, results) => {
         if (err) {
-            console.error("Fehler bei der ID-Überprüfung:", err);
+            logger.error('Fehler bei der ID-Überprüfung:', { error: err });
             return res.status(500).json({ error: "Fehler bei der ID-Überprüfung" });
         }
 
@@ -185,7 +185,7 @@ router.put("/:id", (req, res) => {
             kampfkunst_graduierung, notizen, id
         ], (err, result) => {
             if (err) {
-                console.error("Fehler beim Aktualisieren des Personal-Eintrags:", err);
+                logger.error('Fehler beim Aktualisieren des Personal-Eintrags:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Speichern des Personal-Eintrags" });
             }
             res.json({ 
@@ -215,7 +215,7 @@ router.delete("/:id", (req, res) => {
 
     db.query(query, [id], (err, result) => {
         if (err) {
-            console.error("Fehler beim Kündigen des Personal-Eintrags:", err);
+            logger.error('Fehler beim Kündigen des Personal-Eintrags:', { error: err });
             return res.status(500).json({ error: "Fehler beim Kündigen des Personal-Eintrags" });
         }
 

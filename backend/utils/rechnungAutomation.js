@@ -157,7 +157,7 @@ async function createRechnungForVerkauf(verkauf_id, verkaufData) {
       ]);
     }
 
-    console.log(`✅ Rechnung ${rechnungsnummer} für Verkauf #${verkauf_id} erstellt`);
+    logger.info('Rechnung ${rechnungsnummer} für Verkauf #${verkauf_id} erstellt');
 
     return {
       rechnung_id,
@@ -167,7 +167,7 @@ async function createRechnungForVerkauf(verkauf_id, verkaufData) {
     };
 
   } catch (error) {
-    console.error('❌ Fehler beim Erstellen der Rechnung für Verkauf:', error);
+    logger.error('Fehler beim Erstellen der Rechnung für Verkauf:', error);
     throw error;
   }
 }
@@ -219,7 +219,7 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
     const existing = await queryAsync(existingQuery, [mitglied_id, monat, jahr]);
 
     if (existing.length > 0) {
-      console.log(`⚠️  Rechnung für Mitglied #${mitglied_id} (${monat}/${jahr}) existiert bereits`);
+      logger.debug('⚠️  Rechnung für Mitglied #${mitglied_id} (${monat}/${jahr}) existiert bereits');
       return null;
     }
 
@@ -283,7 +283,7 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
       vertrag.tarif_name || 'Mitgliedschaft'
     ]);
 
-    console.log(`✅ Rechnung ${rechnungsnummer} für Beitrag ${monat}/${jahr} erstellt`);
+    logger.info('Rechnung ${rechnungsnummer} für Beitrag ${monat}/${jahr} erstellt');
 
     return {
       rechnung_id,
@@ -293,7 +293,7 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
     };
 
   } catch (error) {
-    console.error('❌ Fehler beim Erstellen der Rechnung für Beitrag:', error);
+    logger.error('Fehler beim Erstellen der Rechnung für Beitrag:', error);
     throw error;
   }
 }

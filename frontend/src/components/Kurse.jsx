@@ -1,5 +1,6 @@
 import React, { useContext, useState, useMemo, useEffect } from "react";
 import axios from "axios";
+import { useTranslation } from 'react-i18next';
 import config from '../config/config.js';
 import "../styles/themes.css";       // Centralized theme system
 import "../styles/components.css";   // Universal component styles
@@ -11,6 +12,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 
 const Kurse = () => {
+  const { t } = useTranslation(['courses', 'common']);
   const { kurse, trainer, stile, gruppen, ladeAlleDaten } = useContext(DatenContext); // <-- Fix hier
   const { getDojoFilterParam, activeDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
   const { standorte, activeStandort, switchStandort, hasMultipleLocations } = useStandortContext(); // Multi-Location
@@ -508,22 +510,22 @@ const Kurse = () => {
   return (
     <div className="kurse-container-modern">
       <div className="kurse-header" style={{ marginBottom: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>🥋 Kurs-Management</h2>
+        <h2 style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>🥋 {t('management.title')}</h2>
       </div>
 
       {/* Tab Navigation */}
       <div className="tab-navigation" style={{ marginBottom: '0.5rem' }}>
-        <button 
+        <button
           className={`tab-button ${activeTab === "kurse" ? "active" : ""}`}
           onClick={() => setActiveTab("kurse")}
         >
-          📋 Kurse verwalten
+          📋 {t('management.tabs.courses')}
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === "einstellungen" ? "active" : ""}`}
           onClick={() => setActiveTab("einstellungen")}
         >
-          ⚙️ Stammdaten-Einstellungen
+          ⚙️ {t('management.tabs.settings')}
         </button>
       </div>
 
@@ -545,7 +547,7 @@ const Kurse = () => {
           alignItems: 'center'
         }}>
           <span style={{ color: '#ffffff', fontWeight: 600, marginRight: '0.5rem' }}>
-            📊 Kurse sortieren nach:
+            📊 {t('management.sortBy')}
           </span>
           <button
             onClick={() => handleSort('gruppenname')}
@@ -561,7 +563,7 @@ const Kurse = () => {
               transition: 'all 0.2s'
             }}
           >
-            🏷️ Gruppe {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
+            🏷️ {t('management.sortGroup')} {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
           </button>
           <button
             onClick={() => handleSort('raum')}
@@ -577,7 +579,7 @@ const Kurse = () => {
               transition: 'all 0.2s'
             }}
           >
-            🏛️ Raum {sortConfig.key === 'raum' && getSortIcon('raum')}
+            🏛️ {t('management.sortRoom')} {sortConfig.key === 'raum' && getSortIcon('raum')}
           </button>
           <button
             onClick={() => handleSort('trainer')}
@@ -593,7 +595,7 @@ const Kurse = () => {
               transition: 'all 0.2s'
             }}
           >
-            👨‍🏫 Trainer {sortConfig.key === 'trainer' && getSortIcon('trainer')}
+            👨‍🏫 {t('management.sortTrainer')} {sortConfig.key === 'trainer' && getSortIcon('trainer')}
           </button>
         </div>
 
@@ -601,23 +603,23 @@ const Kurse = () => {
         <div className="kurse-controls">
           <div className="kurse-filters">
             <div className="filter-group">
-              <label>👨‍🏫 Trainer filtern:</label>
+              <label>👨‍🏫 {t('management.filterTrainer')}</label>
               <select
                 className="filter-select"
                 onChange={e => setFilterTrainer(e.target.value)}
                 value={filterTrainer}
               >
-                <option value="">Alle Trainer anzeigen</option>
-                {trainer.map(t => (
-                  <option key={t.trainer_id} value={t.trainer_id}>
-                    {t.vorname} {t.nachname}
+                <option value="">{t('management.allTrainers')}</option>
+                {trainer.map(tr => (
+                  <option key={tr.trainer_id} value={tr.trainer_id}>
+                    {tr.vorname} {tr.nachname}
                   </option>
                 ))}
               </select>
             </div>
           </div>
           <button className="export-button-modern" onClick={handleCSVExport}>
-            📊 CSV Export
+            📊 {t('management.csvExport')}
           </button>
         </div>
 
@@ -658,7 +660,7 @@ const Kurse = () => {
               </span>
             </div>
             <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              Kurse insgesamt
+              {t('stats.totalCourses')}
             </div>
           </div>
           <div 
@@ -690,7 +692,7 @@ const Kurse = () => {
               </span>
             </div>
             <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              Gefilterte Ergebnisse
+              {t('stats.filteredResults')}
             </div>
           </div>
           <div 
@@ -722,7 +724,7 @@ const Kurse = () => {
               </span>
             </div>
             <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              Aktive Trainer
+              {t('stats.activeTrainers')}
             </div>
           </div>
           <div 
@@ -754,7 +756,7 @@ const Kurse = () => {
               </span>
             </div>
             <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              Räume
+              {t('stats.rooms')}
             </div>
           </div>
           <div 
@@ -786,7 +788,7 @@ const Kurse = () => {
               </span>
             </div>
             <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              Kinder Kurse
+              {t('stats.childrenCourses')}
             </div>
           </div>
           <div 
@@ -818,7 +820,7 @@ const Kurse = () => {
               </span>
             </div>
             <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              Erwachsene Kurse
+              {t('stats.adultCourses')}
             </div>
           </div>
         </div>
@@ -1055,8 +1057,8 @@ const Kurse = () => {
             <div className="no-kurse-message">
               <div className="empty-state">
                 <div className="empty-icon">🔍</div>
-                <h3>Keine Kurse gefunden</h3>
-                <p>Mit den aktuellen Filtern wurden keine Kurse gefunden.</p>
+                <h3>{t('list.noCoursesFound')}</h3>
+                <p>{t('list.noCoursesFilter')}</p>
               </div>
             </div>
           )}
@@ -1065,18 +1067,18 @@ const Kurse = () => {
         {/* Vereinfachtes Formular für neuen Kurs */}
         <div className="neuer-kurs-card" style={{animationDelay: `${sortedKurse.length * 0.1 + 0.3}s`}}>
           <div className="card-header">
-            <h3>➕ Neuen Kurs erstellen</h3>
+            <h3>➕ {t('form.createNewCourse')}</h3>
           </div>
           <div className="kurs-form-modern">
             <div className="kurs-form-left">
               <div className="form-group">
-                <label>🥋 Kampfkunst-Stil:</label>
+                <label>🥋 {t('form.style')}:</label>
                 <select
                   className="form-select"
                   value={neuerKurs.stil}
                   onChange={(e) => setNeuerKurs({ ...neuerKurs, stil: e.target.value })}
                 >
-                  <option value="">Stil auswählen...</option>
+                  <option value="">{t('form.selectStyle')}</option>
                   {stile.filter(stil => stil.aktiv !== 0).map((stil) => (
                     <option key={stil.stil_id} value={stil.name}>{stil.name}</option>
                   ))}
@@ -1084,13 +1086,13 @@ const Kurse = () => {
               </div>
 
               <div className="form-group">
-                <label>🏷️ Gruppe:</label>
-                <select 
+                <label>🏷️ {t('groups.title', 'Gruppe')}:</label>
+                <select
                   className="form-select"
-                  value={neuerKurs.gruppenname} 
+                  value={neuerKurs.gruppenname}
                   onChange={(e) => setNeuerKurs({ ...neuerKurs, gruppenname: e.target.value })}
                 >
-                  <option value="">Gruppe auswählen...</option>
+                  <option value="">{t('form.selectGroup')}</option>
                   {gruppen.map((gruppe) => (
                     <option key={gruppe.gruppen_id} value={gruppe.name}>{gruppe.name}</option>
                   ))}
@@ -1098,13 +1100,13 @@ const Kurse = () => {
               </div>
 
               <div className="form-group">
-                <label>🏛️ Raum:</label>
+                <label>🏛️ {t('timetable.room')}:</label>
                 <select
                   className="form-select"
                   value={neuerKurs.raum_id || ""}
                   onChange={(e) => setNeuerKurs({ ...neuerKurs, raum_id: e.target.value })}
                 >
-                  <option value="">Kein Raum zuweisen</option>
+                  <option value="">{t('form.selectRoom')}</option>
                   {raeume.map((raum) => (
                     <option key={raum.id} value={raum.id}>{raum.name}</option>
                   ))}
@@ -1247,7 +1249,7 @@ const Kurse = () => {
               </div>
 
               <div className="form-group">
-                <label>👨‍🏫 Trainer:</label>
+                <label>👨‍🏫 {t('form.trainer')}:</label>
                 <div className="trainer-multiselect">
                   {trainer.map(tr => (
                     <label key={tr.trainer_id} className="trainer-checkbox-label">
@@ -1269,7 +1271,7 @@ const Kurse = () => {
 
               <button className="add-button-modern" onClick={handleHinzufuegen}>
                 <span className="btn-icon">➕</span>
-                Kurs erstellen
+                {t('form.createCourse')}
               </button>
             </div>
           </div>
@@ -1286,11 +1288,11 @@ const Kurse = () => {
           {/* Trainer verwalten */}
           <div className="einstellungen-card" style={{animationDelay: "0.1s"}}>
             <div className="card-header">
-              <h3>👨‍🏫 Trainer verwalten</h3>
+              <h3>👨‍🏫 {t('trainers.title')}</h3>
             </div>
             <div className="card-content">
               <div className="current-list">
-                <h4>Vorhandene Trainer:</h4>
+                <h4>{t('trainers.existing')}</h4>
                 <div className="items-list">
                   {trainer.map((tr, index) => (
                     <div key={tr.trainer_id} className="list-item">
@@ -1323,35 +1325,35 @@ const Kurse = () => {
               </div>
               
               <div className="new-item-form">
-                <h4>🆕 Neuen Trainer hinzufügen:</h4>
+                <h4>🆕 {t('trainers.addNew')}</h4>
                 {showNewTrainerForm ? (
                   <>
                     <div className="trainer-form-grid">
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="Vorname *"
+                        placeholder={`${t('trainers.firstName')} *`}
                         value={newTrainerData.vorname}
                         onChange={(e) => setNewTrainerData({...newTrainerData, vorname: e.target.value})}
                       />
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="Nachname *"
+                        placeholder={`${t('trainers.lastName')} *`}
                         value={newTrainerData.nachname}
                         onChange={(e) => setNewTrainerData({...newTrainerData, nachname: e.target.value})}
                       />
                       <input
                         type="email"
                         className="form-input"
-                        placeholder="E-Mail (optional)"
+                        placeholder={t('trainers.email')}
                         value={newTrainerData.email}
                         onChange={(e) => setNewTrainerData({...newTrainerData, email: e.target.value})}
                       />
                       <input
                         type="tel"
                         className="form-input"
-                        placeholder="Telefon (optional)"
+                        placeholder={t('trainers.phone')}
                         value={newTrainerData.telefon}
                         onChange={(e) => setNewTrainerData({...newTrainerData, telefon: e.target.value})}
                       />
@@ -1361,7 +1363,7 @@ const Kurse = () => {
                         className="confirm-trainer-btn"
                         onClick={handleNewTrainer}
                       >
-                        ✅ Trainer hinzufügen
+                        ✅ {t('trainers.addTrainer')}
                       </button>
                       <button
                         className="cancel-btn-small"
@@ -1390,11 +1392,11 @@ const Kurse = () => {
           {/* Gruppen verwalten */}
           <div className="einstellungen-card" style={{animationDelay: "0.2s"}}>
             <div className="card-header">
-              <h3>🏷️ Gruppen verwalten</h3>
+              <h3>🏷️ {t('groups.title')}</h3>
             </div>
             <div className="card-content">
               <div className="current-list">
-                <h4>Vorhandene Gruppen:</h4>
+                <h4>{t('groups.existing')}</h4>
                 <div className="items-list">
                   {gruppen.map((gr, index) => (
                     <div key={gr.gruppen_id} className="list-item">
@@ -1423,13 +1425,13 @@ const Kurse = () => {
               </div>
               
               <div className="new-item-form">
-                <h4>🆕 Neue Gruppe hinzufügen:</h4>
+                <h4>🆕 {t('groups.addNew')}</h4>
                 {showNewGroupInput ? (
                   <div className="simple-form">
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="Gruppenname eingeben"
+                      placeholder={t('groups.enterName')}
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleNewGroup()}
@@ -1454,11 +1456,11 @@ const Kurse = () => {
           {/* Stile verwalten */}
           <div className="einstellungen-card" style={{animationDelay: "0.3s"}}>
             <div className="card-header">
-              <h3>🥋 Stile verwalten</h3>
+              <h3>🥋 {t('styles.title')}</h3>
             </div>
             <div className="card-content">
               <div className="current-list">
-                <h4>Vorhandene Stile:</h4>
+                <h4>{t('styles.existing')}</h4>
                 <div className="items-list">
                   {stile.map((s, index) => (
                     <div key={s.stil_id} className="list-item">
@@ -1487,13 +1489,13 @@ const Kurse = () => {
               </div>
               
               <div className="new-item-form">
-                <h4>🆕 Neuen Stil hinzufügen:</h4>
+                <h4>🆕 {t('styles.addNew')}</h4>
                 {showNewStyleInput ? (
                   <div className="simple-form">
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="Stil-Name eingeben (z.B. BJJ, Karate)"
+                      placeholder={t('styles.enterName')}
                       value={newStyleName}
                       onChange={(e) => setNewStyleName(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleNewStyle()}
@@ -1514,7 +1516,7 @@ const Kurse = () => {
               </div>
               
               <div className="info-box">
-                <p>ℹ️ <strong>Hinweis:</strong> Hier können Sie Stile verwalten und beim Kurs-Erstellen aus den vorhandenen auswählen oder neue eingeben.</p>
+                <p>ℹ️ <strong>{t('common:labels.hint', 'Hinweis')}:</strong> {t('styles.hint')}</p>
               </div>
             </div>
           </div>
@@ -1522,11 +1524,11 @@ const Kurse = () => {
           {/* Räume verwalten */}
           <div className="einstellungen-card" style={{animationDelay: "0.4s"}}>
             <div className="card-header">
-              <h3>🏛️ Räume verwalten</h3>
+              <h3>🏛️ {t('rooms.title')}</h3>
             </div>
             <div className="card-content">
               <div className="current-list">
-                <h4>Vorhandene Räume:</h4>
+                <h4>{t('rooms.existing')}</h4>
                 <div className="items-list">
                   {raeume.map((raum, index) => (
                     <div key={raum.raum_id} className="list-item">
@@ -1569,7 +1571,7 @@ const Kurse = () => {
               </div>
               
               <div className="new-item-form">
-                <h4>🆕 Neuen Raum hinzufügen:</h4>
+                <h4>🆕 {t('rooms.addNew')}</h4>
                 {showNewRoomFormStammdaten ? (
                   <div className="room-form-stammdaten" style={{
                     padding: '1rem',
@@ -1582,31 +1584,31 @@ const Kurse = () => {
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="Raum-Name (z.B. Hauptraum)"
+                        placeholder={t('rooms.namePlaceholder')}
                         value={newRoomDataStammdaten.name}
                         onChange={(e) => setNewRoomDataStammdaten({ ...newRoomDataStammdaten, name: e.target.value })}
                       />
-                      
+
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="Beschreibung (optional)"
+                        placeholder={t('rooms.description')}
                         value={newRoomDataStammdaten.beschreibung}
                         onChange={(e) => setNewRoomDataStammdaten({ ...newRoomDataStammdaten, beschreibung: e.target.value })}
                       />
-                      
+
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="Größe (optional, z.B. 50m²)"
+                        placeholder={t('rooms.size')}
                         value={newRoomDataStammdaten.groesse}
                         onChange={(e) => setNewRoomDataStammdaten({ ...newRoomDataStammdaten, groesse: e.target.value })}
                       />
-                      
+
                       <input
                         type="number"
                         className="form-input"
-                        placeholder="Kapazität (optional)"
+                        placeholder={t('rooms.capacity')}
                         value={newRoomDataStammdaten.kapazitaet}
                         onChange={(e) => setNewRoomDataStammdaten({ ...newRoomDataStammdaten, kapazitaet: e.target.value })}
                       />
@@ -1641,7 +1643,7 @@ const Kurse = () => {
               </div>
               
               <div className="info-box">
-                <p>ℹ️ <strong>Hinweis:</strong> Hier können Sie Räume verwalten und beim Kurs-Erstellen aus den vorhandenen auswählen oder neue eingeben.</p>
+                <p>ℹ️ <strong>{t('common:labels.hint', 'Hinweis')}:</strong> {t('rooms.hint')}</p>
               </div>
             </div>
           </div>

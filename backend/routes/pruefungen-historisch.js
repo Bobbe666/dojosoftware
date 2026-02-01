@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -16,7 +17,7 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
     [mitglied_id],
     (err, results) => {
       if (err) {
-        console.error('Fehler beim Laden historischer Prüfungen:', err);
+        logger.error('Fehler beim Laden historischer Prüfungen:', { error: err });
         return res.status(500).json({ success: false, error: err.message });
       }
       res.json({ success: true, data: results });
@@ -40,7 +41,7 @@ router.post('/', (req, res) => {
     [mitglied_id, stil_name, graduierung_name, pruefungsdatum, bemerkung || null],
     (err, result) => {
       if (err) {
-        console.error('Fehler beim Speichern:', err);
+        logger.error('Fehler beim Speichern:', { error: err });
         return res.status(500).json({ success: false, error: err.message });
       }
       res.json({ success: true, id: result.insertId, message: 'Historische Prüfung gespeichert' });
@@ -54,7 +55,7 @@ router.delete('/:id', (req, res) => {
 
   db.query('DELETE FROM pruefungen_historisch WHERE id = ?', [id], (err) => {
     if (err) {
-      console.error('Fehler beim Löschen:', err);
+      logger.error('Fehler beim Löschen:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
     }
     res.json({ success: true, message: 'Gelöscht' });

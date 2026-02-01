@@ -14,7 +14,7 @@ import '../styles/themes.css';         // Centralized theme system
 import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR components.css stehen!)
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
-import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, ArrowLeft } from 'lucide-react';
+import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun } from 'lucide-react';
 
 const logo = '/dojo-logo.png';
 import DojoSwitcher from './DojoSwitcher';
@@ -30,6 +30,16 @@ import TrialBanner from './TrialBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
 import SystemChangelog from './SystemChangelog';
+
+// Zentrale Überschriften-Styles (Gold-Gradient wie Header)
+const headingStyle = {
+  background: 'linear-gradient(135deg, #ffd700, #ff6b35, #f7931e)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+  textShadow: 'none',
+  fontWeight: 600
+};
 
 function Dashboard() {
   const { t } = useTranslation('dashboard');
@@ -64,6 +74,10 @@ function Dashboard() {
 
   // Tab-State für Dashboard
   const [activeTab, setActiveTab] = useState('checkin');
+
+  // User-Dropdown State
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = React.useRef(null);
 
   let role = 'mitglied';
   let isMainAdmin = false; // Haupt-Admin Check für News-Feature
@@ -186,6 +200,17 @@ function Dashboard() {
 
     loadUserDisplayName();
   }, [token]);
+
+  // User-Dropdown schließen bei Klick außerhalb
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -715,7 +740,7 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🏆 TDA Int'l Org - Super-Admin</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -723,25 +748,10 @@ function Dashboard() {
             {!isMainDashboard && window.history.length > 1 && (
               <button
                 onClick={() => navigate(-1)}
-                className="back-button"
+                className="logout-button"
                 title="Zur vorherigen Seite"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontWeight: '500',
-                  transition: 'all 0.2s ease'
-                }}
               >
-                <ArrowLeft size={16} />
-                <span>{t('header.back')}</span>
+                ← {t('header.back')}
               </button>
             )}
             {!isMainDashboard && (
@@ -752,52 +762,51 @@ function Dashboard() {
                 ← {t('header.dashboard')}
               </button>
             )}
-            {/* 🎨 Theme Toggle */}
-            <button
-              className="theme-toggle-button"
-              onClick={toggleDarkMode}
-              title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
-                borderRadius: '8px',
-                color: isDarkMode ? '#ffd700' : '#333',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontSize: '0.85rem',
-                fontWeight: '500'
-              }}
-            >
-              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-              <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
-            </button>
-            {userDisplayName && (
-              <div className="user-display">
-                <span className="user-greeting">{t('header.welcome')}</span>
-                <span className="user-name">{userDisplayName}</span>
-              </div>
-            )}
-            <button className="logout-button" onClick={handleLogout}>
-              <svg
-                className="logout-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+            {/* 👤 User-Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="logout-button"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="logout-text">{t('header.logout')}</span>
-            </button>
+                <span>👤</span>
+                <span>{userDisplayName || 'User'}</span>
+                <span style={{ fontSize: '0.7rem' }}>▼</span>
+              </button>
+              {showUserMenu && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                  background: '#1f2937', border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  minWidth: '200px', zIndex: 10000, overflow: 'hidden'
+                }}>
+                  <button onClick={toggleDarkMode} style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent',
+                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
+                  }}>
+                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                  </button>
+                  <div style={{
+                    padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)'
+                  }}>
+                    <span>🌐</span>
+                    <LanguageSwitcher compact={true} showLabel={false} />
+                  </div>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent',
+                    border: 'none', color: '#ef4444', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
+                  }}>
+                    <span>🚪</span>
+                    <span>{t('header.logout')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -821,56 +830,55 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🌐 TDA Verband</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
-            {/* 🎨 Theme Toggle */}
-            <button
-              className="theme-toggle-button"
-              onClick={toggleDarkMode}
-              title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
-                borderRadius: '8px',
-                color: isDarkMode ? '#ffd700' : '#333',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontSize: '0.85rem',
-                fontWeight: '500'
-              }}
-            >
-              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-              <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
-            </button>
-            {userDisplayName && (
-              <div className="user-display">
-                <span className="user-greeting">{t('header.welcome')}</span>
-                <span className="user-name">{userDisplayName}</span>
-              </div>
-            )}
-            <button className="logout-button" onClick={handleLogout}>
-              <svg
-                className="logout-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+            {/* 👤 User-Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="logout-button"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="logout-text">{t('header.logout')}</span>
-            </button>
+                <span>👤</span>
+                <span>{userDisplayName || 'User'}</span>
+                <span style={{ fontSize: '0.7rem' }}>▼</span>
+              </button>
+              {showUserMenu && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                  background: '#1f2937', border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  minWidth: '200px', zIndex: 10000, overflow: 'hidden'
+                }}>
+                  <button onClick={toggleDarkMode} style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent',
+                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
+                  }}>
+                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                  </button>
+                  <div style={{
+                    padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)'
+                  }}>
+                    <span>🌐</span>
+                    <LanguageSwitcher compact={true} showLabel={false} />
+                  </div>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent',
+                    border: 'none', color: '#ef4444', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
+                  }}>
+                    <span>🚪</span>
+                    <span>{t('header.logout')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -894,56 +902,55 @@ function Dashboard() {
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🎫 Support Center</h2>
-            <span className="version-badge">v{config.app.version}</span>
+            <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
-            {/* 🎨 Theme Toggle */}
-            <button
-              className="theme-toggle-button"
-              onClick={toggleDarkMode}
-              title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
-                borderRadius: '8px',
-                color: isDarkMode ? '#ffd700' : '#333',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontSize: '0.85rem',
-                fontWeight: '500'
-              }}
-            >
-              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-              <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
-            </button>
-            {userDisplayName && (
-              <div className="user-display">
-                <span className="user-greeting">{t('header.welcome')}</span>
-                <span className="user-name">{userDisplayName}</span>
-              </div>
-            )}
-            <button className="logout-button" onClick={handleLogout}>
-              <svg
-                className="logout-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+            {/* 👤 User-Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="logout-button"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="logout-text">{t('header.logout')}</span>
-            </button>
+                <span>👤</span>
+                <span>{userDisplayName || 'User'}</span>
+                <span style={{ fontSize: '0.7rem' }}>▼</span>
+              </button>
+              {showUserMenu && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                  background: '#1f2937', border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  minWidth: '200px', zIndex: 10000, overflow: 'hidden'
+                }}>
+                  <button onClick={toggleDarkMode} style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent',
+                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
+                  }}>
+                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                  </button>
+                  <div style={{
+                    padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)'
+                  }}>
+                    <span>🌐</span>
+                    <LanguageSwitcher compact={true} showLabel={false} />
+                  </div>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent',
+                    border: 'none', color: '#ef4444', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
+                  }}>
+                    <span>🚪</span>
+                    <span>{t('header.logout')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -960,7 +967,7 @@ function Dashboard() {
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
           <h2>{headerTitle}</h2>
-          <span className="version-badge">v{config.app.version}</span>
+          <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
         </div>
         <div className="dashboard-header-right">
           {role === 'admin' && <DojoSwitcher />}
@@ -969,25 +976,10 @@ function Dashboard() {
           {!isMainDashboard && window.history.length > 1 && (
             <button
               onClick={() => navigate(-1)}
-              className="back-button"
+              className="logout-button"
               title="Zur vorherigen Seite"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 14px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '8px',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }}
             >
-              <ArrowLeft size={16} />
-              <span>Zurück</span>
+              ← Zurück
             </button>
           )}
           {!isMainDashboard && (
@@ -998,53 +990,103 @@ function Dashboard() {
               ← Dashboard
             </button>
           )}
-          {/* 🎨 Theme Toggle */}
-          <button
-            className="theme-toggle-button"
-            onClick={toggleDarkMode}
-            title={isDarkMode ? 'Zu hellem Theme wechseln' : 'Zu dunklem Theme wechseln'}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 12px',
-              background: isDarkMode ? 'rgba(255, 215, 0, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-              border: '1px solid ' + (isDarkMode ? 'rgba(255, 215, 0, 0.3)' : 'rgba(0, 0, 0, 0.2)'),
-              borderRadius: '8px',
-              color: isDarkMode ? '#ffd700' : '#333',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              fontSize: '0.85rem',
-              fontWeight: '500'
-            }}
-          >
-            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            <span>{isDarkMode ? t('header.lightMode') : t('header.darkMode')}</span>
-          </button>
-          <LanguageSwitcher compact={true} showLabel={false} />
-          {userDisplayName && (
-            <div className="user-display">
-              <span className="user-greeting">{t('header.welcome')}</span>
-              <span className="user-name">{userDisplayName}</span>
-            </div>
-          )}
-          <button className="logout-button" onClick={handleLogout}>
-            <svg
-              className="logout-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+          {/* 👤 User-Dropdown mit Theme, Sprache, Logout */}
+          <div ref={userMenuRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="logout-button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            <span className="logout-text">{t('header.logout')}</span>
-          </button>
+              <span>👤</span>
+              <span>{userDisplayName || 'User'}</span>
+              <span style={{ fontSize: '0.7rem' }}>▼</span>
+            </button>
+
+            {showUserMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '8px',
+                background: '#1f2937',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                minWidth: '200px',
+                zIndex: 10000
+              }}>
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => {
+                    toggleDarkMode();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontSize: '0.9rem',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                  <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                </button>
+
+                {/* Sprache */}
+                <div style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '0.9rem',
+                  color: 'rgba(255, 255, 255, 0.9)'
+                }}>
+                  <span>🌐</span>
+                  <LanguageSwitcher compact={true} showLabel={false} />
+                </div>
+
+                {/* Logout */}
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleLogout();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    fontSize: '0.9rem',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  <span>🚪</span>
+                  <span>{t('header.logout')}</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -1104,7 +1146,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">📱</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   Mitglieder Check-in
                                   <span className="nav-count">({formatNumber(stats.checkins_heute)})</span>
                                 </h3>
@@ -1121,7 +1163,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">✅</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   Anwesenheit
                                   <span className="nav-count">({formatNumber(stats.anwesenheit)})</span>
                                 </h3>
@@ -1139,7 +1181,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">👥</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   Personal Check-in
                                   <span className="nav-count">({formatNumber(stats.personal_checkins_heute || 0)})</span>
                                 </h3>
@@ -1157,7 +1199,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">🖥️</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   Check-in Anzeige
                                   <span className="nav-count">(LIVE)</span>
                                 </h3>
@@ -1175,7 +1217,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">📚</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   Stundenplan Anzeige
                                   <span className="nav-count">(AUTO)</span>
                                 </h3>
@@ -1193,7 +1235,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">💰</span>
-                                <h3>Barverkauf</h3>
+                                <h3 style={headingStyle}>Barverkauf</h3>
                               </div>
                               <p>Touch-Kasse für Verkäufe und Barzahlungen</p>
                             </div>
@@ -1208,7 +1250,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">🏪</span>
-                                <h3>Tresen-Übersicht</h3>
+                                <h3 style={headingStyle}>Tresen-Übersicht</h3>
                               </div>
                               <p>Empfang, Checkin & Tagesübersicht</p>
                             </div>
@@ -1234,7 +1276,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1266,7 +1308,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1298,7 +1340,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
+                                <h3 style={headingStyle}>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>
@@ -1325,7 +1367,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1357,7 +1399,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
+                                <h3 style={headingStyle}>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>
@@ -1384,7 +1426,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1416,7 +1458,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1448,7 +1490,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>
+                                <h3 style={headingStyle}>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1480,7 +1522,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
+                                <h3 style={headingStyle}>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>
@@ -1830,7 +1872,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
+                                <h3 style={headingStyle}>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>

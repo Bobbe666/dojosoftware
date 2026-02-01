@@ -12,6 +12,7 @@ import {
   ChevronDown, ChevronUp, FileText, Award, Percent, Gift, Edit, Trash2,
   Download, PenTool, Shield, ScrollText, History, Banknote, Settings, Save
 } from 'lucide-react';
+import { createSafeHtml } from '../utils/sanitizer';
 
 const VerbandsMitglieder = () => {
   const { token, user } = useAuth();
@@ -28,10 +29,31 @@ const VerbandsMitglieder = () => {
   // Einstellungen State
   const [einstellungen, setEinstellungen] = useState([]);
   const [einstellungenLoading, setEinstellungenLoading] = useState(false);
-  const [einstellungenKategorie, setEinstellungenKategorie] = useState('preise');
+  const [einstellungenKategorie, setEinstellungenKategorie] = useState('typen');
   const [einstellungenChanged, setEinstellungenChanged] = useState({});
   const [savingEinstellungen, setSavingEinstellungen] = useState(false);
   const [config, setConfig] = useState({});
+
+  // Mitgliedschaftstypen State
+  const [mitgliedschaftstypen, setMitgliedschaftstypen] = useState([]);
+  const [typenLoading, setTypenLoading] = useState(false);
+  const [editingTyp, setEditingTyp] = useState(null);
+  const [showTypModal, setShowTypModal] = useState(false);
+  const [typFormData, setTypFormData] = useState({
+    code: '', name: '', beschreibung: '', kategorie: 'person',
+    preis_netto: 0, steuersatz: 19, laufzeit_monate: 12,
+    kuendigungsfrist_monate: 3, auto_verlaengerung: true,
+    ist_standard: false, aktiv: true, sortierung: 0
+  });
+
+  // Vorteile State
+  const [editingVorteil, setEditingVorteil] = useState(null);
+  const [showVorteilModal, setShowVorteilModal] = useState(false);
+  const [vorteilFormData, setVorteilFormData] = useState({
+    titel: '', beschreibung: '', gilt_fuer: 'beide',
+    rabatt_typ: 'prozent', rabatt_wert: 0,
+    kategorie: 'sonstige', aktiv: true
+  });
 
   // Modal States
   const [showNewModal, setShowNewModal] = useState(false);
@@ -110,8 +132,14 @@ const VerbandsMitglieder = () => {
         api.get('/verbandsmitgliedschaften/vorteile/liste')
       ]);
 
-      setMitgliedschaften(mitgliederRes.data);
-      setStats(statsRes.data);
+      // Handle both array and { success, mitgliedschaften } format
+      const mitglieder = mitgliederRes.data.mitgliedschaften || mitgliederRes.data;
+      setMitgliedschaften(Array.isArray(mitglieder) ? mitglieder : []);
+
+      // Handle both direct stats and { success, stats } format
+      const statsData = statsRes.data.stats || statsRes.data;
+      setStats(statsData);
+
       setVorteile(vorteileRes.data);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
@@ -184,6 +212,157 @@ const VerbandsMitglieder = () => {
     return einst?.einstellung_value ?? '';
   };
 
+  // ============================================================================
+  // MITGLIEDSCHAFTSTYPEN FUNKTIONEN
+  // ============================================================================
+  const loadMitgliedschaftstypen = async () => {
+    setTypenLoading(true);
+    try {
+      const res = await api.get('/verbandsmitgliedschaften/mitgliedschaftstypen');
+      setMitgliedschaftstypen(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Mitgliedschaftstypen:', err);
+    } finally {
+      setTypenLoading(false);
+    }
+  };
+
+  const openTypModal = (typ = null) => {
+    if (typ) {
+      setEditingTyp(typ);
+      setTypFormData({
+        code: typ.code,
+        name: typ.name,
+        beschreibung: typ.beschreibung || '',
+        kategorie: typ.kategorie,
+        preis_netto: typ.preis_netto,
+        steuersatz: typ.steuersatz,
+        laufzeit_monate: typ.laufzeit_monate,
+        kuendigungsfrist_monate: typ.kuendigungsfrist_monate,
+        auto_verlaengerung: typ.auto_verlaengerung,
+        ist_standard: typ.ist_standard,
+        aktiv: typ.aktiv,
+        sortierung: typ.sortierung
+      });
+    } else {
+      setEditingTyp(null);
+      setTypFormData({
+        code: '', name: '', beschreibung: '', kategorie: 'person',
+        preis_netto: 0, steuersatz: 19, laufzeit_monate: 12,
+        kuendigungsfrist_monate: 3, auto_verlaengerung: true,
+        ist_standard: false, aktiv: true, sortierung: 0
+      });
+    }
+    setShowTypModal(true);
+  };
+
+  const saveTyp = async () => {
+    try {
+      if (editingTyp) {
+        await api.put(`/verbandsmitgliedschaften/mitgliedschaftstypen/${editingTyp.id}`, typFormData);
+        alert('Mitgliedschaftstyp aktualisiert!');
+      } else {
+        await api.post('/verbandsmitgliedschaften/mitgliedschaftstypen', typFormData);
+        alert('Mitgliedschaftstyp erstellt!');
+      }
+      setShowTypModal(false);
+      loadMitgliedschaftstypen();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Speichern');
+    }
+  };
+
+  const deleteTyp = async (id) => {
+    if (!confirm('Mitgliedschaftstyp wirklich löschen?')) return;
+    try {
+      await api.delete(`/verbandsmitgliedschaften/mitgliedschaftstypen/${id}`);
+      alert('Gelöscht!');
+      loadMitgliedschaftstypen();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Löschen');
+    }
+  };
+
+  const toggleTypAktiv = async (id) => {
+    try {
+      await api.post(`/verbandsmitgliedschaften/mitgliedschaftstypen/${id}/toggle-aktiv`);
+      loadMitgliedschaftstypen();
+    } catch (err) {
+      alert('Fehler beim Umschalten');
+    }
+  };
+
+  // ============================================================================
+  // VORTEILE FUNKTIONEN
+  // ============================================================================
+  const loadVorteile = async () => {
+    try {
+      const res = await api.get('/verbandsmitgliedschaften/vorteile');
+      setVorteile(res.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Vorteile:', err);
+    }
+  };
+
+  const openVorteilModal = (vorteil = null) => {
+    if (vorteil) {
+      setEditingVorteil(vorteil);
+      setVorteilFormData({
+        titel: vorteil.titel,
+        beschreibung: vorteil.beschreibung || '',
+        gilt_fuer: vorteil.gilt_fuer,
+        rabatt_typ: vorteil.rabatt_typ,
+        rabatt_wert: vorteil.rabatt_wert,
+        kategorie: vorteil.kategorie,
+        aktiv: vorteil.aktiv
+      });
+    } else {
+      setEditingVorteil(null);
+      setVorteilFormData({
+        titel: '', beschreibung: '', gilt_fuer: 'beide',
+        rabatt_typ: 'prozent', rabatt_wert: 0,
+        kategorie: 'sonstige', aktiv: true
+      });
+    }
+    setShowVorteilModal(true);
+  };
+
+  const saveVorteil = async () => {
+    try {
+      if (editingVorteil) {
+        await api.put(`/verbandsmitgliedschaften/vorteile/${editingVorteil.id}`, vorteilFormData);
+        alert('Vorteil aktualisiert!');
+      } else {
+        await api.post('/verbandsmitgliedschaften/vorteile', vorteilFormData);
+        alert('Vorteil erstellt!');
+      }
+      setShowVorteilModal(false);
+      loadVorteile();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Speichern');
+    }
+  };
+
+  const deleteVorteil = async (id) => {
+    if (!confirm('Vorteil wirklich löschen?')) return;
+    try {
+      await api.delete(`/verbandsmitgliedschaften/vorteile/${id}`);
+      alert('Gelöscht!');
+      loadVorteile();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Löschen');
+    }
+  };
+
+  const toggleVorteilAktiv = async (id) => {
+    try {
+      await api.post(`/verbandsmitgliedschaften/vorteile/${id}/toggle-aktiv`);
+      loadVorteile();
+    } catch (err) {
+      alert('Fehler beim Umschalten');
+    }
+  };
+
   useEffect(() => {
     loadData();
     loadConfig();
@@ -205,9 +384,13 @@ const VerbandsMitglieder = () => {
   // Load einstellungen when tab changes
   useEffect(() => {
     if (activeTab === 'einstellungen') {
-      loadEinstellungen();
+      if (einstellungenKategorie === 'typen') {
+        loadMitgliedschaftstypen();
+      } else {
+        loadEinstellungen();
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, einstellungenKategorie]);
 
   // ============================================================================
   // ACTIONS
@@ -706,18 +889,24 @@ const VerbandsMitglieder = () => {
       {/* Vorteile Tab */}
       {activeTab === 'vorteile' && (
         <div style={styles.vorteileContainer}>
-          <h3 style={styles.sectionTitle}>Mitgliedschaftsvorteile</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Mitgliedschaftsvorteile & Rabatte</h3>
+            <button onClick={() => openVorteilModal()} style={styles.submitButton}>
+              <Plus size={16} /> Neuer Vorteil
+            </button>
+          </div>
           <div style={styles.vorteileGrid}>
             {vorteile.map(v => (
-              <div key={v.id} style={styles.vorteilCard}>
+              <div key={v.id} style={{ ...styles.vorteilCard, opacity: v.aktiv ? 1 : 0.5 }}>
                 <div style={styles.vorteilHeader}>
                   <Percent size={20} color="#ffd700" />
                   <span style={styles.vorteilTitel}>{v.titel}</span>
+                  {!v.aktiv && <span style={{ background: '#ef4444', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', marginLeft: '8px' }}>INAKTIV</span>}
                 </div>
                 <p style={styles.vorteilBeschreibung}>{v.beschreibung}</p>
                 <div style={styles.vorteilMeta}>
                   <span style={styles.vorteilRabatt}>
-                    {v.rabatt_typ === 'prozent' ? `${v.rabatt_wert}%` : formatCurrency(v.rabatt_wert)} Rabatt
+                    {v.rabatt_typ === 'prozent' ? `${v.rabatt_wert}%` : `${v.rabatt_wert}€`} Rabatt
                   </span>
                   <span style={styles.vorteilKategorie}>{v.kategorie}</span>
                   <span style={{
@@ -729,8 +918,32 @@ const VerbandsMitglieder = () => {
                     {v.gilt_fuer === 'beide' ? 'Alle' : v.gilt_fuer === 'dojo' ? 'Dojos' : 'Einzelpersonen'}
                   </span>
                 </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+                  <button
+                    onClick={() => toggleVorteilAktiv(v.id)}
+                    style={{
+                      ...styles.iconButton,
+                      background: v.aktiv ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                      color: v.aktiv ? '#ef4444' : '#10b981',
+                      flex: 1
+                    }}
+                  >
+                    {v.aktiv ? <><X size={14} /> Deaktivieren</> : <><Check size={14} /> Aktivieren</>}
+                  </button>
+                  <button onClick={() => openVorteilModal(v)} style={{ ...styles.iconButton, flex: 1 }}>
+                    <Edit size={14} /> Bearbeiten
+                  </button>
+                  <button onClick={() => deleteVorteil(v.id)} style={{ ...styles.iconButton, color: '#ef4444' }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
+            {vorteile.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#888', gridColumn: '1 / -1' }}>
+                Keine Vorteile vorhanden. Erstellen Sie einen neuen Vorteil.
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -741,6 +954,7 @@ const VerbandsMitglieder = () => {
           {/* Kategorie-Tabs */}
           <div style={styles.einstellungenTabs}>
             {[
+              { key: 'typen', label: 'Mitgliedschaftstypen', icon: Settings },
               { key: 'preise', label: 'Preise', icon: Euro },
               { key: 'laufzeiten', label: 'Laufzeiten', icon: Calendar },
               { key: 'zahlungen', label: 'Zahlungen', icon: CreditCard },
@@ -761,12 +975,107 @@ const VerbandsMitglieder = () => {
             ))}
           </div>
 
-          {einstellungenLoading ? (
+          {/* Mitgliedschaftstypen Tab */}
+          {einstellungenKategorie === 'typen' && (
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, color: '#fff' }}>Mitgliedschaftstypen verwalten</h3>
+                <button onClick={() => openTypModal()} style={styles.submitButton}>
+                  <Plus size={16} /> Neuer Typ
+                </button>
+              </div>
+
+              {typenLoading ? (
+                <div style={styles.loading}>
+                  <RefreshCw size={24} className="spin" />
+                  <span>Lade Typen...</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {mitgliedschaftstypen.map(typ => (
+                    <div key={typ.id} style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto',
+                      gap: '16px',
+                      alignItems: 'center',
+                      opacity: typ.aktiv ? 1 : 0.6
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{
+                            background: typ.kategorie === 'dojo' ? 'rgba(59,130,246,0.2)' : 'rgba(16,185,129,0.2)',
+                            color: typ.kategorie === 'dojo' ? '#60a5fa' : '#34d399',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            textTransform: 'uppercase'
+                          }}>
+                            {typ.kategorie}
+                          </span>
+                          <strong style={{ color: '#fff', fontSize: '16px' }}>{typ.name}</strong>
+                          <code style={{ color: '#888', fontSize: '12px' }}>({typ.code})</code>
+                          {typ.ist_standard && (
+                            <span style={{ background: '#fbbf24', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px' }}>STANDARD</span>
+                          )}
+                          {!typ.aktiv && (
+                            <span style={{ background: '#ef4444', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '10px' }}>INAKTIV</span>
+                          )}
+                        </div>
+                        <p style={{ color: '#aaa', margin: '4px 0 8px', fontSize: '13px' }}>{typ.beschreibung || '-'}</p>
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: '#ccc' }}>
+                          <span><Euro size={14} style={{ marginRight: '4px' }} /><strong>{typ.preis_brutto?.toFixed(2)}€</strong> brutto ({typ.preis_netto}€ netto)</span>
+                          <span><Percent size={14} style={{ marginRight: '4px' }} />{typ.steuersatz}% MwSt</span>
+                          <span><Calendar size={14} style={{ marginRight: '4px' }} />{typ.laufzeit_monate} Monate Laufzeit</span>
+                          <span>{typ.auto_verlaengerung ? '🔄 Auto-Verlängerung' : '📅 Einmalig'}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => toggleTypAktiv(typ.id)}
+                          style={{
+                            ...styles.iconButton,
+                            background: typ.aktiv ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                            color: typ.aktiv ? '#ef4444' : '#10b981'
+                          }}
+                          title={typ.aktiv ? 'Deaktivieren' : 'Aktivieren'}
+                        >
+                          {typ.aktiv ? <X size={16} /> : <Check size={16} />}
+                        </button>
+                        <button onClick={() => openTypModal(typ)} style={styles.iconButton} title="Bearbeiten">
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => deleteTyp(typ.id)}
+                          style={{ ...styles.iconButton, color: '#ef4444' }}
+                          title="Löschen"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {mitgliedschaftstypen.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                      Keine Mitgliedschaftstypen vorhanden. Erstellen Sie einen neuen Typ.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Andere Einstellungen */}
+          {einstellungenKategorie !== 'typen' && einstellungenLoading ? (
             <div style={styles.loading}>
               <RefreshCw size={24} className="spin" />
               <span>Lade Einstellungen...</span>
             </div>
-          ) : (
+          ) : einstellungenKategorie !== 'typen' && (
             <>
               <div style={styles.einstellungenGrid}>
                 {einstellungen
@@ -1627,6 +1936,293 @@ const VerbandsMitglieder = () => {
         </div>
       )}
 
+      {/* Mitgliedschaftstyp Modal */}
+      {showTypModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowTypModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <Settings size={24} color="#ffd700" />
+                {editingTyp ? 'Mitgliedschaftstyp bearbeiten' : 'Neuer Mitgliedschaftstyp'}
+              </h2>
+              <button style={styles.closeButton} onClick={() => setShowTypModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Code (technisch) *</label>
+                  <input
+                    type="text"
+                    value={typFormData.code}
+                    onChange={(e) => setTypFormData({ ...typFormData, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                    style={styles.input}
+                    placeholder="z.B. premium_dojo"
+                    disabled={!!editingTyp}
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Name *</label>
+                  <input
+                    type="text"
+                    value={typFormData.name}
+                    onChange={(e) => setTypFormData({ ...typFormData, name: e.target.value })}
+                    style={styles.input}
+                    placeholder="z.B. Premium Dojo-Mitgliedschaft"
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Beschreibung</label>
+                <textarea
+                  value={typFormData.beschreibung}
+                  onChange={(e) => setTypFormData({ ...typFormData, beschreibung: e.target.value })}
+                  style={{ ...styles.input, minHeight: '80px' }}
+                  placeholder="Beschreibung für Kunden..."
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Kategorie</label>
+                  <select
+                    value={typFormData.kategorie}
+                    onChange={(e) => setTypFormData({ ...typFormData, kategorie: e.target.value })}
+                    style={styles.input}
+                  >
+                    <option value="dojo">Dojo</option>
+                    <option value="person">Person</option>
+                    <option value="sonstige">Sonstige</option>
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Preis (Netto) €</label>
+                  <input
+                    type="number"
+                    value={typFormData.preis_netto}
+                    onChange={(e) => setTypFormData({ ...typFormData, preis_netto: parseFloat(e.target.value) || 0 })}
+                    style={styles.input}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Steuersatz %</label>
+                  <input
+                    type="number"
+                    value={typFormData.steuersatz}
+                    onChange={(e) => setTypFormData({ ...typFormData, steuersatz: parseFloat(e.target.value) || 0 })}
+                    style={styles.input}
+                    step="0.01"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              </div>
+
+              {/* Bruttopreis-Anzeige */}
+              <div style={{
+                background: 'rgba(255,215,0,0.1)',
+                border: '1px solid rgba(255,215,0,0.3)',
+                borderRadius: '8px',
+                padding: '12px',
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}>
+                <span style={{ color: '#888' }}>Bruttopreis: </span>
+                <strong style={{ color: '#ffd700', fontSize: '18px' }}>
+                  {(typFormData.preis_netto * (1 + typFormData.steuersatz / 100)).toFixed(2)}€
+                </strong>
+                <span style={{ color: '#888', marginLeft: '8px' }}>
+                  (inkl. {(typFormData.preis_netto * typFormData.steuersatz / 100).toFixed(2)}€ MwSt)
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Laufzeit (Monate)</label>
+                  <input
+                    type="number"
+                    value={typFormData.laufzeit_monate}
+                    onChange={(e) => setTypFormData({ ...typFormData, laufzeit_monate: parseInt(e.target.value) || 12 })}
+                    style={styles.input}
+                    min="1"
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Kündigungsfrist (Monate)</label>
+                  <input
+                    type="number"
+                    value={typFormData.kuendigungsfrist_monate}
+                    onChange={(e) => setTypFormData({ ...typFormData, kuendigungsfrist_monate: parseInt(e.target.value) || 0 })}
+                    style={styles.input}
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={typFormData.auto_verlaengerung}
+                    onChange={(e) => setTypFormData({ ...typFormData, auto_verlaengerung: e.target.checked })}
+                  />
+                  <span style={{ color: '#ccc' }}>Auto-Verlängerung</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={typFormData.ist_standard}
+                    onChange={(e) => setTypFormData({ ...typFormData, ist_standard: e.target.checked })}
+                  />
+                  <span style={{ color: '#ccc' }}>Standard-Typ</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={typFormData.aktiv}
+                    onChange={(e) => setTypFormData({ ...typFormData, aktiv: e.target.checked })}
+                  />
+                  <span style={{ color: '#ccc' }}>Aktiv</span>
+                </label>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Sortierung</label>
+                <input
+                  type="number"
+                  value={typFormData.sortierung}
+                  onChange={(e) => setTypFormData({ ...typFormData, sortierung: parseInt(e.target.value) || 0 })}
+                  style={{ ...styles.input, maxWidth: '120px' }}
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowTypModal(false)} style={styles.cancelButton}>
+                Abbrechen
+              </button>
+              <button onClick={saveTyp} style={styles.submitButton}>
+                <Save size={16} /> {editingTyp ? 'Speichern' : 'Erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vorteil Modal */}
+      {showVorteilModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowVorteilModal(false)}>
+          <div style={{ ...styles.modal, maxWidth: '550px' }} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                <Percent size={24} color="#ffd700" />
+                {editingVorteil ? 'Vorteil bearbeiten' : 'Neuer Vorteil'}
+              </h2>
+              <button style={styles.closeButton} onClick={() => setShowVorteilModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Titel *</label>
+                <input
+                  type="text"
+                  value={vorteilFormData.titel}
+                  onChange={(e) => setVorteilFormData({ ...vorteilFormData, titel: e.target.value })}
+                  style={styles.input}
+                  placeholder="z.B. Seminar-Rabatt"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Beschreibung</label>
+                <textarea
+                  value={vorteilFormData.beschreibung}
+                  onChange={(e) => setVorteilFormData({ ...vorteilFormData, beschreibung: e.target.value })}
+                  style={{ ...styles.input, minHeight: '80px' }}
+                  placeholder="Beschreibung des Vorteils..."
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Gilt für</label>
+                  <select
+                    value={vorteilFormData.gilt_fuer}
+                    onChange={(e) => setVorteilFormData({ ...vorteilFormData, gilt_fuer: e.target.value })}
+                    style={styles.input}
+                  >
+                    <option value="beide">Alle Mitglieder</option>
+                    <option value="dojo">Nur Dojos</option>
+                    <option value="einzelperson">Nur Einzelpersonen</option>
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Kategorie</label>
+                  <input
+                    type="text"
+                    value={vorteilFormData.kategorie}
+                    onChange={(e) => setVorteilFormData({ ...vorteilFormData, kategorie: e.target.value })}
+                    style={styles.input}
+                    placeholder="z.B. seminar, turnier, shop"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Rabatt-Typ</label>
+                  <select
+                    value={vorteilFormData.rabatt_typ}
+                    onChange={(e) => setVorteilFormData({ ...vorteilFormData, rabatt_typ: e.target.value })}
+                    style={styles.input}
+                  >
+                    <option value="prozent">Prozent (%)</option>
+                    <option value="festbetrag">Festbetrag (€)</option>
+                  </select>
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Rabatt-Wert</label>
+                  <input
+                    type="number"
+                    value={vorteilFormData.rabatt_wert}
+                    onChange={(e) => setVorteilFormData({ ...vorteilFormData, rabatt_wert: parseFloat(e.target.value) || 0 })}
+                    style={styles.input}
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '16px' }}>
+                <input
+                  type="checkbox"
+                  checked={vorteilFormData.aktiv}
+                  onChange={(e) => setVorteilFormData({ ...vorteilFormData, aktiv: e.target.checked })}
+                />
+                <span style={{ color: '#ccc' }}>Aktiv</span>
+              </label>
+            </div>
+
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowVorteilModal(false)} style={styles.cancelButton}>
+                Abbrechen
+              </button>
+              <button onClick={saveVorteil} style={styles.submitButton}>
+                <Save size={16} /> {editingVorteil ? 'Speichern' : 'Erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SEPA Modal */}
       {showSepaModal && selectedMitgliedschaft && (
         <div style={styles.modalOverlay} onClick={() => setShowSepaModal(false)}>
@@ -1730,7 +2326,7 @@ const VerbandsMitglieder = () => {
               </div>
               <div
                 style={styles.dokumentText}
-                dangerouslySetInnerHTML={{ __html: selectedDokument.inhalt?.replace(/\n/g, '<br/>') }}
+                dangerouslySetInnerHTML={createSafeHtml(selectedDokument.inhalt?.replace(/\n/g, '<br/>') || '')}
               />
             </div>
 

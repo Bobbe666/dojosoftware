@@ -63,7 +63,7 @@ const VerbandDashboard = () => {
         axios.get(`${config.apiBaseUrl}/verbandsmitgliedschaften/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: { success: false } })),
-        axios.get(`${config.apiBaseUrl}/verbandsmitgliedschaften?limit=5`, {
+        axios.get(`${config.apiBaseUrl}/verbandsmitgliedschaften?limit=10`, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: { success: false, mitgliedschaften: [] } })),
         axios.get(`${config.apiBaseUrl}/events?public=true&limit=5`, {

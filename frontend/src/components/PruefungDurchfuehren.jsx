@@ -440,7 +440,13 @@ const PruefungDurchfuehren = () => {
     <div className="content-card">
       <div className="page-header">
         <div>
-          <h1>Prüfung durchführen</h1>
+          <h1 style={{
+            background: 'linear-gradient(135deg, #ffd700, #ff6b35, #f7931e)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            fontWeight: 700
+          }}>Prüfung durchführen</h1>
           <p>Live-Ansicht für den Prüfungstag - Ergebnisse direkt eintragen</p>
         </div>
       </div>

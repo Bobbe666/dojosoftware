@@ -1,39 +1,66 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { promisify } = require('util');
 
 const queryAsync = promisify(db.query).bind(db);
 
-// GET /api/interessenten - Alle Interessenten abrufen
+// GET /api/interessenten - Alle Interessenten abrufen (mit Pagination)
 router.get('/', async (req, res) => {
   try {
-    const { dojo_id, status } = req.query;
+    const { dojo_id, status, page = 1, limit = 50, search } = req.query;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 50;
+    const offset = (pageNum - 1) * limitNum;
 
-    let query = `
-      SELECT i.*
-      FROM interessenten i
-      WHERE i.archiviert = FALSE
-    `;
-
+    let baseWhere = `WHERE i.archiviert = FALSE`;
     const params = [];
 
     if (dojo_id && dojo_id !== 'all') {
-      query += ` AND i.dojo_id = ?`;
+      baseWhere += ` AND i.dojo_id = ?`;
       params.push(dojo_id);
     }
 
     if (status) {
-      query += ` AND i.status = ?`;
+      baseWhere += ` AND i.status = ?`;
       params.push(status);
     }
 
-    query += ` ORDER BY i.prioritaet DESC, i.naechster_kontakt_datum ASC, i.erstellt_am DESC`;
+    // Suchfunktion
+    if (search && search.trim()) {
+      baseWhere += ` AND (i.vorname LIKE ? OR i.nachname LIKE ? OR i.email LIKE ? OR CONCAT(i.vorname, ' ', i.nachname) LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
 
-    const interessenten = await queryAsync(query, params);
-    res.json(interessenten);
+    // Zähle Gesamtanzahl
+    const countQuery = `SELECT COUNT(*) as total FROM interessenten i ${baseWhere}`;
+    const countResult = await queryAsync(countQuery, params);
+    const total = countResult[0].total;
+
+    // Hole paginierte Daten
+    const dataQuery = `
+      SELECT i.*
+      FROM interessenten i
+      ${baseWhere}
+      ORDER BY i.prioritaet DESC, i.naechster_kontakt_datum ASC, i.erstellt_am DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const interessenten = await queryAsync(dataQuery, [...params, limitNum, offset]);
+
+    res.json({
+      data: interessenten,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Interessenten:', error);
+    logger.error('Fehler beim Abrufen der Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Abrufen der Interessenten' });
   }
 });
@@ -54,7 +81,7 @@ router.get('/count', async (req, res) => {
     const result = await queryAsync(query, params);
     res.json({ count: result[0].count });
   } catch (error) {
-    console.error('Fehler beim Zählen der Interessenten:', error);
+    logger.error('Fehler beim Zählen der Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Zählen' });
   }
 });
@@ -78,7 +105,7 @@ router.get('/:id', async (req, res) => {
 
     res.json(result[0]);
   } catch (error) {
-    console.error('Fehler beim Abrufen des Interessenten:', error);
+    logger.error('Fehler beim Abrufen des Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Abrufen' });
   }
 });
@@ -131,7 +158,7 @@ router.post('/', async (req, res) => {
     const result = await queryAsync(query, values);
     res.status(201).json({ id: result.insertId, message: 'Interessent erfolgreich erstellt' });
   } catch (error) {
-    console.error('Fehler beim Erstellen des Interessenten:', error);
+    logger.error('Fehler beim Erstellen des Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen' });
   }
 });
@@ -185,7 +212,7 @@ router.put('/:id', async (req, res) => {
     await queryAsync(query, values);
     res.json({ message: 'Interessent erfolgreich aktualisiert' });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des Interessenten:', error);
+    logger.error('Fehler beim Aktualisieren des Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren' });
   }
 });
@@ -207,7 +234,7 @@ router.patch('/:id/konvertieren', async (req, res) => {
     await queryAsync(query, [mitglied_id, id]);
     res.json({ message: 'Interessent erfolgreich zu Mitglied konvertiert' });
   } catch (error) {
-    console.error('Fehler beim Konvertieren des Interessenten:', error);
+    logger.error('Fehler beim Konvertieren des Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Konvertieren' });
   }
 });
@@ -223,7 +250,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ message: 'Interessent erfolgreich archiviert' });
   } catch (error) {
-    console.error('Fehler beim Archivieren des Interessenten:', error);
+    logger.error('Fehler beim Archivieren des Interessenten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Archivieren' });
   }
 });

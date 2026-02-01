@@ -27,7 +27,7 @@ router.post("/validate-iban", (req, res) => {
     
     db.query(query, [bankleitzahl], (err, results) => {
         if (err) {
-            console.error("Fehler bei BIC-Suche:", err);
+            logger.error('Fehler bei BIC-Suche:', { error: err });
             return res.status(500).json({ error: "Fehler bei der Bankensuche" });
         }
 
@@ -87,7 +87,7 @@ router.post("/kto-blz-to-iban", (req, res) => {
     
     db.query(query, [bankleitzahl], (err, results) => {
         if (err) {
-            console.error("Fehler bei BIC-Suche:", err);
+            logger.error('Fehler bei BIC-Suche:', { error: err });
             return res.status(500).json({ error: "Fehler bei der Bankensuche" });
         }
 
@@ -118,7 +118,7 @@ router.get("/search-bank/:blz", (req, res) => {
     
     db.query(query, [blz], (err, results) => {
         if (err) {
-            console.error("Fehler bei Bankensuche:", err);
+            logger.error('Fehler bei Bankensuche:', { error: err });
             return res.status(500).json({ error: "Fehler bei der Bankensuche" });
         }
 
@@ -138,7 +138,7 @@ router.get("/all", (req, res) => {
     
     db.query(query, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Banken:", err);
+            logger.error('Fehler beim Abrufen der Banken:', { error: err });
             return res.status(500).json({ error: "Fehler beim Abrufen der Banken" });
         }
 
@@ -166,7 +166,7 @@ router.get("/search", (req, res) => {
     
     db.query(query, [searchTerm, searchTerm], (err, results) => {
         if (err) {
-            console.error("Fehler bei der Bankensuche:", err);
+            logger.error('Fehler bei der Bankensuche:', { error: err });
             return res.status(500).json({ error: "Fehler bei der Bankensuche" });
         }
         res.json(results);
@@ -181,7 +181,7 @@ router.get("/details/:blz", (req, res) => {
     
     db.query(query, [blz], (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Bank-Details:", err);
+            logger.error('Fehler beim Abrufen der Bank-Details:', { error: err });
             return res.status(500).json({ error: "Fehler beim Abrufen der Bank-Details" });
         }
 

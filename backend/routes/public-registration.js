@@ -79,7 +79,7 @@ router.post('/register/step1', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Registrierung Schritt 1:', err);
+    logger.error('Fehler bei Registrierung Schritt 1:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler bei der Registrierung' });
   }
 });
@@ -117,7 +117,7 @@ router.get('/register/verify/:token', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Email-Verifizierung:', err);
+    logger.error('Fehler bei Email-Verifizierung:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler bei der Verifizierung' });
   }
 });
@@ -168,7 +168,7 @@ router.post('/register/step2', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Schritt 2:', err);
+    logger.error('Fehler bei Schritt 2:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler beim Speichern der persönlichen Daten' });
   }
 });
@@ -213,7 +213,7 @@ router.post('/register/step3', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Schritt 3:', err);
+    logger.error('Fehler bei Schritt 3:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler beim Speichern der Bankdaten' });
   }
 });
@@ -258,7 +258,7 @@ router.post('/register/step4', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Schritt 4:', err);
+    logger.error('Fehler bei Schritt 4:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler beim Speichern der Tarifauswahl' });
   }
 });
@@ -300,7 +300,7 @@ router.post('/register/step5', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Schritt 5:', err);
+    logger.error('Fehler bei Schritt 5:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler beim Speichern der Gesundheitsfragen' });
   }
 });
@@ -359,7 +359,7 @@ router.post('/register/step6', async (req, res) => {
           tarifDetails = `${tarif[0].name} - ${priceEuros}€ / ${tarif[0].duration_months} Monate`;
         }
       } catch (err) {
-        console.error('Fehler beim Laden der Tarif-Details:', err);
+        logger.error('Fehler beim Laden der Tarif-Details:', { error: err });
       }
     }
 
@@ -394,7 +394,7 @@ router.post('/register/step6', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei Schritt 6:', err);
+    logger.error('Fehler bei Schritt 6:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler beim Abschließen der Registrierung' });
   }
 });
@@ -421,7 +421,7 @@ router.get('/register/status/:email', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler beim Abrufen des Registrierungsstatus:', err);
+    logger.error('Fehler beim Abrufen des Registrierungsstatus:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler' });
   }
 });
@@ -569,7 +569,7 @@ router.post('/register/family/member', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler beim Hinzufügen des Familienmitglieds:', err);
+    logger.error('Fehler beim Hinzufügen des Familienmitglieds:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler beim Hinzufügen des Familienmitglieds' });
   }
 });
@@ -612,7 +612,7 @@ router.get('/register/family/:email', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler beim Abrufen der Familienmitglieder:', err);
+    logger.error('Fehler beim Abrufen der Familienmitglieder:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler' });
   }
 });
@@ -673,7 +673,7 @@ router.delete('/register/family/member/:id', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler beim Entfernen des Familienmitglieds:', err);
+    logger.error('Fehler beim Entfernen des Familienmitglieds:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler' });
   }
 });
@@ -732,7 +732,7 @@ router.post('/banken/validate-iban', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei IBAN-Validierung:', err);
+    logger.error('Fehler bei IBAN-Validierung:', { error: err });
     res.status(500).json({ error: 'Serverfehler bei IBAN-Validierung' });
   }
 });
@@ -758,7 +758,7 @@ router.get('/banken/search', async (req, res) => {
     res.json(results);
 
   } catch (err) {
-    console.error('Fehler bei Bankensuche:', err);
+    logger.error('Fehler bei Bankensuche:', { error: err });
     res.status(500).json({ error: 'Serverfehler bei Bankensuche' });
   }
 });
@@ -811,7 +811,7 @@ router.post('/banken/kto-blz-to-iban', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler bei IBAN-Konvertierung:', err);
+    logger.error('Fehler bei IBAN-Konvertierung:', { error: err });
     res.status(500).json({ error: 'Serverfehler bei IBAN-Konvertierung' });
   }
 });
@@ -854,7 +854,7 @@ router.post('/check-duplicate', async (req, res) => {
     res.json({ isDuplicate: false });
 
   } catch (err) {
-    console.error('Fehler bei Duplikatsprüfung:', err);
+    logger.error('Fehler bei Duplikatsprüfung:', { error: err });
     res.status(500).json({ error: 'Serverfehler bei Duplikatsprüfung' });
   }
 });
@@ -901,7 +901,7 @@ router.get('/tarife', async (req, res) => {
     res.json({ success: true, data: tarifeFormatted });
 
   } catch (err) {
-    console.error('Fehler beim Abrufen der öffentlichen Tarife:', err);
+    logger.error('Fehler beim Abrufen der öffentlichen Tarife:', { error: err });
     res.status(500).json({ success: false, error: 'Serverfehler' });
   }
 });
@@ -1006,7 +1006,7 @@ router.post('/family-login', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Fehler beim Familien-Login:', err);
+    logger.error('Fehler beim Familien-Login:', { error: err });
     res.status(500).json({
       success: false,
       message: 'Serverfehler beim Login'

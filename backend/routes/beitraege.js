@@ -1,4 +1,5 @@
 const express = require("express");
+const logger = require('../utils/logger');
 const db = require("../db"); // MySQL-Datenbankanbindung importieren
 const auditLog = require("../services/auditLogService");
 const router = express.Router();
@@ -42,7 +43,7 @@ router.get("/", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen der Beiträge:', err);
+            logger.error('Fehler beim Abrufen der Beiträge:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -74,7 +75,7 @@ router.post("/", (req, res) => {
 
     db.query(query, params, (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Erstellen des Beitrags:', err);
+            logger.error('Fehler beim Erstellen des Beitrags:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -118,7 +119,7 @@ router.put("/:beitrag_id", (req, res) => {
 
     db.query(query, params, (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Aktualisieren des Beitrags:', err);
+            logger.error('Fehler beim Aktualisieren des Beitrags:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -152,7 +153,7 @@ router.delete("/:beitrag_id", (req, res) => {
 
     db.query(query, [beitrag_id], (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Löschen des Beitrags:', err);
+            logger.error('Fehler beim Löschen des Beitrags:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 

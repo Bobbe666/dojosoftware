@@ -35,7 +35,7 @@ class ManualSepaProvider {
 
             db.query(query, (err, results) => {
                 if (err) {
-                    console.error('❌ ManualSepa: Error counting mandates:', err);
+                    logger.error('ManualSepa: Error counting mandates:', err);
                     return resolve(0);
                 }
                 resolve(results[0]?.count || 0);
@@ -61,7 +61,7 @@ class ManualSepaProvider {
             };
 
         } catch (error) {
-            console.error('❌ Manual SEPA: Error creating mandate:', error);
+            logger.error('Manual SEPA: Error creating mandate:', error);
             await this.logError(mitgliedData.mitglied_id, 'create_mandate', error.message);
             throw error;
         }
@@ -93,7 +93,7 @@ class ManualSepaProvider {
 
             db.query(query, params, (err, result) => {
                 if (err) {
-                    console.error('❌ Database: Error saving SEPA mandate:', err);
+                    logger.error('Database: Error saving SEPA mandate:', err);
                     return reject(err);
                 }
                 resolve(result);
@@ -119,7 +119,7 @@ class ManualSepaProvider {
 
             db.query(query, params, (err, result) => {
                 if (err) {
-                    console.error('❌ Database: Error updating member payment method:', err);
+                    logger.error('Database: Error updating member payment method:', err);
                     return reject(err);
                 }
                 resolve(result);
@@ -153,7 +153,7 @@ class ManualSepaProvider {
             };
 
         } catch (error) {
-            console.error('❌ Manual SEPA: Error revoking mandate:', error);
+            logger.error('Manual SEPA: Error revoking mandate:', error);
             await this.logError(mitgliedId, 'revoke_mandate', error.message);
             throw error;
         }
@@ -172,7 +172,7 @@ class ManualSepaProvider {
 
             db.query(query, [mitgliedId], (err, results) => {
                 if (err) {
-                    console.error('❌ Database: Error getting SEPA mandate:', err);
+                    logger.error('Database: Error getting SEPA mandate:', err);
                     return reject(err);
                 }
 
@@ -199,7 +199,7 @@ class ManualSepaProvider {
             };
 
         } catch (error) {
-            console.error('❌ Manual SEPA: Error generating PDF:', error);
+            logger.error('Manual SEPA: Error generating PDF:', error);
             await this.logError(mitgliedId, 'generate_pdf', error.message);
             throw error;
         }
@@ -223,7 +223,7 @@ class ManualSepaProvider {
 
             db.query(query, [mitgliedId], (err, results) => {
                 if (err) {
-                    console.error('❌ Database: Error getting mandate data for PDF:', err);
+                    logger.error('Database: Error getting mandate data for PDF:', err);
                     return reject(err);
                 }
 
@@ -246,7 +246,7 @@ class ManualSepaProvider {
 
             db.query(query, (err, results) => {
                 if (err) {
-                    console.error('❌ Database: Error getting all mandates:', err);
+                    logger.error('Database: Error getting all mandates:', err);
                     return reject(err);
                 }
                 resolve(results);
@@ -273,7 +273,7 @@ class ManualSepaProvider {
             };
 
         } catch (error) {
-            console.error('❌ Manual SEPA: Error generating batch file:', error);
+            logger.error('Manual SEPA: Error generating batch file:', error);
             throw error;
         }
     }
@@ -306,7 +306,7 @@ class ManualSepaProvider {
 
         db.query(query, [this.dojoConfig.id, mitgliedId, action, message], (err) => {
             if (err) {
-                console.error('❌ Failed to log error:', err);
+                logger.error('Failed to log error:', err);
             }
         });
     }
@@ -327,7 +327,7 @@ class ManualSepaProvider {
 
             db.query(query, [mitgliedId], (err, results) => {
                 if (err) {
-                    console.error('❌ Database: Error getting payment history:', err);
+                    logger.error('Database: Error getting payment history:', err);
                     return reject(err);
                 }
 

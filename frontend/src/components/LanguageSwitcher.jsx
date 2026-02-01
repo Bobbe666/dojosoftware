@@ -48,14 +48,14 @@ const LanguageSwitcher = ({ compact = false, showLabel = true }) => {
   const dropdownStyle = {
     position: 'absolute',
     top: '100%',
-    right: 0,
+    left: 0,
     marginTop: '0.5rem',
     background: '#1a1a2e',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     borderRadius: '10px',
     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
     overflow: 'hidden',
-    zIndex: 1000,
+    zIndex: 99999,
     minWidth: '140px'
   };
 

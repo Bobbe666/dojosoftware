@@ -154,13 +154,18 @@ export const DojoProvider = ({ children }) => {
       case 'current':
         return activeDojo ? `dojo_id=${activeDojo.id}` : '';
       case 'all':
+        // 🔒 Bei "Alle" die spezifischen Dojo-IDs senden statt "all"
+        if (dojos && dojos.length > 0) {
+          const dojoIds = dojos.map(d => d.id).join(',');
+          return `dojo_ids=${dojoIds}`;
+        }
         return 'dojo_id=all';
       case 'compare':
         return 'dojo_id=compare';
       default:
         return activeDojo ? `dojo_id=${activeDojo.id}` : '';
     }
-  }, [filter, activeDojo]);
+  }, [filter, activeDojo, dojos]);
 
   // Intelligente Dojo-Auswahl für neue Mitglieder
   // Priorisiert Kleinunternehmer-Dojos, die noch nicht an der Grenze sind

@@ -41,7 +41,7 @@ const initializeDefaultCycles = async () => {
       }
     }
   } catch (error) {
-    console.error('Fehler beim Initialisieren der Zahlungszyklen:', error);
+    logger.error('Fehler beim Initialisieren der Zahlungszyklen:', { error: error });
   }
 };
 
@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
         `);
         res.json({ success: true, data: zahlungszyklen });
     } catch (err) {
-        console.error('Fehler beim Abrufen der Zahlungszyklen:', err);
+        logger.error('Fehler beim Abrufen der Zahlungszyklen:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
             } 
         });
     } catch (err) {
-        console.error('Fehler beim Erstellen des Zahlungszyklus:', err);
+        logger.error('Fehler beim Erstellen des Zahlungszyklus:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -98,7 +98,7 @@ router.put('/:id', async (req, res) => {
         `, [name, intervall_tage, beschreibung || '', aktiv, id]);
         res.json({ success: true, message: 'Zahlungszyklus erfolgreich aktualisiert' });
     } catch (err) {
-        console.error('Fehler beim Aktualisieren des Zahlungszyklus:', err);
+        logger.error('Fehler beim Aktualisieren des Zahlungszyklus:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -122,7 +122,7 @@ router.delete('/:id', async (req, res) => {
         await queryAsync('DELETE FROM zahlungszyklen WHERE zyklus_id = ?', [id]);
         res.json({ success: true, message: 'Zahlungszyklus erfolgreich gelöscht' });
     } catch (err) {
-        console.error('Fehler beim Löschen des Zahlungszyklus:', err);
+        logger.error('Fehler beim Löschen des Zahlungszyklus:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });

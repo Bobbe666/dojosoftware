@@ -21,7 +21,7 @@ router.post('/rechtliche-felder', (req, res) => {
   
   db.query(migrationSQL, (err, results) => {
     if (err) {
-      console.error('Migration Fehler:', err);
+      logger.error('Migration Fehler:', { error: err });
       return res.status(500).json({ 
         error: 'Migration fehlgeschlagen', 
         details: err.message 
@@ -160,7 +160,7 @@ router.post('/alle-felder', (req, res) => {
   migrations.forEach((sql, index) => {
     db.query(sql, (err, results) => {
       if (err) {
-        console.error(`Migration ${index + 1} Fehler:`, err.message);
+        logger.error('Migration ${index + 1} Fehler:', { error: err.message });
         errors.push(`Migration ${index + 1}: ${err.message}`);
       } else {
         completedMigrations++;
@@ -194,7 +194,7 @@ router.get('/dojo-structure', (req, res) => {
   const sql = `DESCRIBE dojo`;
   db.query(sql, (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Tabellen-Struktur:', err);
+      logger.error('Fehler beim Abrufen der Tabellen-Struktur:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Abrufen der Tabellen-Struktur' });
     }
     res.json({

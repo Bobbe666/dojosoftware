@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -386,7 +387,7 @@ const initializeFinanzaemterTable = async () => {
     }
   
   } catch (error) {
-    console.error('Fehler bei der Initialisierung der finanzaemter Tabelle:', error);
+    logger.error('Fehler bei der Initialisierung der finanzaemter Tabelle:', { error: error });
   }
 };
 
@@ -418,7 +419,7 @@ router.get('/', async (req, res) => {
     const rows = await queryAsync(query, params);
     res.json(rows);
   } catch (error) {
-    console.error('Fehler beim Laden der Finanzämter:', error);
+    logger.error('Fehler beim Laden der Finanzämter:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Finanzämter' });
   }
 });
@@ -430,7 +431,7 @@ router.get('/bundeslaender', async (req, res) => {
     const bundeslaender = rows.map(row => row.bundesland);
     res.json(bundeslaender);
   } catch (error) {
-    console.error('Fehler beim Laden der Bundesländer:', error);
+    logger.error('Fehler beim Laden der Bundesländer:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Bundesländer' });
   }
 });
@@ -447,7 +448,7 @@ router.get('/:id', async (req, res) => {
     
     res.json(rows[0]);
   } catch (error) {
-    console.error('Fehler beim Laden des Finanzamts:', error);
+    logger.error('Fehler beim Laden des Finanzamts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden des Finanzamts' });
   }
 });
@@ -488,7 +489,7 @@ router.post('/', async (req, res) => {
       finanzamt: newFinanzamt[0]
     });
   } catch (error) {
-    console.error('Fehler beim Anlegen des Finanzamts:', error);
+    logger.error('Fehler beim Anlegen des Finanzamts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Anlegen des Finanzamts' });
   }
 });
@@ -527,7 +528,7 @@ router.put('/:id', async (req, res) => {
       finanzamt: updatedFinanzamt[0]
     });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des Finanzamts:', error);
+    logger.error('Fehler beim Aktualisieren des Finanzamts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren des Finanzamts' });
   }
 });
@@ -553,7 +554,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ message: 'Finanzamt erfolgreich gelöscht' });
   } catch (error) {
-    console.error('Fehler beim Löschen des Finanzamts:', error);
+    logger.error('Fehler beim Löschen des Finanzamts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen des Finanzamts' });
   }
 });

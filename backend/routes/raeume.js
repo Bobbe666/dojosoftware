@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
         const raeume = await queryAsync(query, params);
         res.json({ success: true, data: raeume });
     } catch (err) {
-        console.error('Fehler beim Abrufen der Räume:', err);
+        logger.error('Fehler beim Abrufen der Räume:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Fehler beim Erstellen des Raums:', err);
+        logger.error('Fehler beim Erstellen des Raums:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -199,7 +199,7 @@ router.put('/:id', async (req, res) => {
         await queryAsync(updateQuery, params);
         res.json({ success: true, message: 'Raum erfolgreich aktualisiert' });
     } catch (err) {
-        console.error('Fehler beim Aktualisieren des Raums:', err);
+        logger.error('Fehler beim Aktualisieren des Raums:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -221,7 +221,7 @@ router.put('/:id/reihenfolge', async (req, res) => {
         `, [neue_reihenfolge, id, req.tenant.dojo_id]);
         res.json({ success: true, message: 'Reihenfolge erfolgreich aktualisiert' });
     } catch (err) {
-        console.error('Fehler beim Aktualisieren der Reihenfolge:', err);
+        logger.error('Fehler beim Aktualisieren der Reihenfolge:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -260,7 +260,7 @@ router.delete('/:id', async (req, res) => {
         await queryAsync('DELETE FROM raeume WHERE raum_id = ? AND dojo_id = ?', [id, req.tenant.dojo_id]);
         res.json({ success: true, message: 'Raum erfolgreich gelöscht' });
     } catch (err) {
-        console.error('Fehler beim Löschen des Raums:', err);
+        logger.error('Fehler beim Löschen des Raums:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -300,7 +300,7 @@ router.get('/stats', async (req, res) => {
         };
         res.json({ success: true, data: stats });
     } catch (err) {
-        console.error('Fehler beim Berechnen der Raum-Statistiken:', err);
+        logger.error('Fehler beim Berechnen der Raum-Statistiken:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });

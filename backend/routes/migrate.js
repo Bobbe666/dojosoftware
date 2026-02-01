@@ -1,5 +1,6 @@
 // Temporärer Migrations-Endpoint - NACH AUSFÜHRUNG LÖSCHEN!
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -19,7 +20,7 @@ const queryAsync = (sql, params = []) => {
 // GET /api/migrate/add-ist-archiviert - Migration ausführen
 router.get('/add-ist-archiviert', async (req, res) => {
     try {
-        console.log('🗄️ Starte Migration: add_ist_archiviert_to_tarife');
+        logger.debug('🗄️ Starte Migration: add_ist_archiviert_to_tarife');
 
         // Prüfe ob Spalte bereits existiert
         const checkColumn = await queryAsync(`
@@ -52,7 +53,7 @@ router.get('/add-ist-archiviert', async (req, res) => {
             UPDATE tarife SET ist_archiviert = FALSE WHERE ist_archiviert IS NULL
         `);
 
-        console.log('✅ Migration erfolgreich ausgeführt!');
+        logger.info('Migration erfolgreich ausgeführt!');
 
         res.json({
             success: true,
@@ -60,7 +61,7 @@ router.get('/add-ist-archiviert', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ Fehler bei Migration:', err);
+        logger.error('Fehler bei Migration:', err);
         res.status(500).json({
             success: false,
             error: 'Fehler bei der Migration',
@@ -72,7 +73,7 @@ router.get('/add-ist-archiviert', async (req, res) => {
 // GET /api/migrate/create-ehemalige - Erstelle ehemalige Tabelle
 router.get('/create-ehemalige', async (req, res) => {
     try {
-        console.log('🗄️ Starte Migration: create_ehemalige_table');
+        logger.debug('🗄️ Starte Migration: create_ehemalige_table');
 
         // Prüfe ob Tabelle bereits existiert
         const checkTable = await queryAsync(`
@@ -127,7 +128,7 @@ router.get('/create-ehemalige', async (req, res) => {
             COMMENT='Ehemalige Mitglieder mit vollständiger Historie'
         `);
 
-        console.log('✅ Migration erfolgreich ausgeführt!');
+        logger.info('Migration erfolgreich ausgeführt!');
 
         res.json({
             success: true,
@@ -135,7 +136,7 @@ router.get('/create-ehemalige', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ Fehler bei Migration:', err);
+        logger.error('Fehler bei Migration:', err);
         res.status(500).json({
             success: false,
             error: 'Fehler bei der Migration',
@@ -147,7 +148,7 @@ router.get('/create-ehemalige', async (req, res) => {
 // GET /api/migrate/create-interessenten - Erstelle interessenten Tabelle
 router.get('/create-interessenten', async (req, res) => {
     try {
-        console.log('🗄️ Starte Migration: create_interessenten_table');
+        logger.debug('🗄️ Starte Migration: create_interessenten_table');
 
         // Prüfe ob Tabelle bereits existiert
         const checkTable = await queryAsync(`
@@ -215,7 +216,7 @@ router.get('/create-interessenten', async (req, res) => {
             COMMENT='Interessenten und potenzielle Mitglieder'
         `);
 
-        console.log('✅ Migration erfolgreich ausgeführt!');
+        logger.info('Migration erfolgreich ausgeführt!');
 
         res.json({
             success: true,
@@ -223,7 +224,7 @@ router.get('/create-interessenten', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ Fehler bei Migration:', err);
+        logger.error('Fehler bei Migration:', err);
         res.status(500).json({
             success: false,
             error: 'Fehler bei der Migration',
@@ -235,7 +236,7 @@ router.get('/create-interessenten', async (req, res) => {
 // GET /api/migrate/move-archived-to-ehemalige - Verschiebe archivierte Mitglieder zu Ehemalige
 router.get('/move-archived-to-ehemalige', async (req, res) => {
     try {
-        console.log('🔄 Starte Migration: move_archived_to_ehemalige');
+        logger.debug('🔄 Starte Migration: move_archived_to_ehemalige');
 
         // Prüfe ob ehemalige Tabelle existiert
         const checkTable = await queryAsync(`
@@ -265,7 +266,7 @@ router.get('/move-archived-to-ehemalige', async (req, res) => {
             });
         }
 
-        console.log(`📊 Gefunden: ${archivierteMitglieder.length} archivierte Mitglieder`);
+        logger.debug('📊 Gefunden: ${archivierteMitglieder.length} archivierte Mitglieder');
 
         let movedCount = 0;
         let skippedCount = 0;
@@ -280,7 +281,7 @@ router.get('/move-archived-to-ehemalige', async (req, res) => {
                 `, [mitglied.mitglied_id]);
 
                 if (existing.length > 0) {
-                    console.log(`⏭️ Überspringe Mitglied ${mitglied.mitglied_id} - bereits in ehemalige`);
+                    logger.debug('⏭️ Überspringe Mitglied ${mitglied.mitglied_id} - bereits in ehemalige');
                     skippedCount++;
                     continue;
                 }
@@ -315,7 +316,7 @@ router.get('/move-archived-to-ehemalige', async (req, res) => {
                         letzterGuertel = guertel[0].graduierung;
                     }
                 } catch (err) {
-                    console.log('ℹ️ Keine Stil/Gürtel-Info gefunden für Mitglied', mitglied.mitglied_id);
+                    logger.debug('ℹ️ Keine Stil/Gürtel-Info gefunden für Mitglied', mitglied.mitglied_id);
                 }
 
                 // Hole letzten Vertrag/Tarif
@@ -334,7 +335,7 @@ router.get('/move-archived-to-ehemalige', async (req, res) => {
                         letzterTarif = vertrag[0].name;
                     }
                 } catch (err) {
-                    console.log('ℹ️ Keine Vertrags-Info gefunden für Mitglied', mitglied.mitglied_id);
+                    logger.debug('ℹ️ Keine Vertrags-Info gefunden für Mitglied', mitglied.mitglied_id);
                 }
 
                 // Füge in ehemalige Tabelle ein
@@ -381,11 +382,11 @@ router.get('/move-archived-to-ehemalige', async (req, res) => {
                     letzterStil
                 ]);
 
-                console.log(`✅ Verschoben: ${mitglied.vorname} ${mitglied.nachname} (ID: ${mitglied.mitglied_id})`);
+                logger.info('Verschoben: ${mitglied.vorname} ${mitglied.nachname} (ID: ${mitglied.mitglied_id})');
                 movedCount++;
 
             } catch (err) {
-                console.error(`❌ Fehler bei Mitglied ${mitglied.mitglied_id}:`, err);
+                logger.error('Fehler bei Mitglied ${mitglied.mitglied_id}:', err);
                 errors.push({
                     mitglied_id: mitglied.mitglied_id,
                     name: `${mitglied.vorname} ${mitglied.nachname}`,
@@ -409,11 +410,11 @@ router.get('/move-archived-to-ehemalige', async (req, res) => {
             summary.errors = errors;
         }
 
-        console.log('✅ Migration erfolgreich abgeschlossen!');
+        logger.info('Migration erfolgreich abgeschlossen!');
         res.json(summary);
 
     } catch (err) {
-        console.error('❌ Fehler bei Migration:', err);
+        logger.error('Fehler bei Migration:', err);
         res.status(500).json({
             success: false,
             error: 'Fehler bei der Migration',

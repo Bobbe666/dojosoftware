@@ -1,4 +1,5 @@
 const express = require("express");
+const logger = require('../utils/logger');
 const db = require("../db"); // mysql2 pool
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.get("/", async (req, res) => {
 
   if (req.user && req.user.dojo_id) {
       dojo_id = req.user.dojo_id.toString();
-      console.log("🔒 Stundenplan Tenant-Filter erzwungen:", { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+      logger.debug('🔒 Stundenplan Tenant-Filter erzwungen:', { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
   }
 
   // 🔒 DOJO-FILTER: Baue WHERE-Bedingung
@@ -62,7 +63,7 @@ router.get("/", async (req, res) => {
     // Leere Liste ist OK, kein Fehler - Frontend kann damit umgehen
     res.json(rows);
   } catch (err) {
-    console.error("Fehler beim Abrufen der Stundenplan-Daten:", err);
+    logger.error('Fehler beim Abrufen der Stundenplan-Daten:', { error: err });
     res.status(500).json({ error: "Fehler beim Abrufen der Stundenplan-Daten", details: err.message });
   }
 });
@@ -125,7 +126,7 @@ router.post("/", async (req, res) => {
 
     res.status(201).json(newEntry[0]);
   } catch (err) {
-    console.error("Fehler beim Einfügen des Stundenplan-Eintrags:", err);
+    logger.error('Fehler beim Einfügen des Stundenplan-Eintrags:', { error: err });
     res.status(500).json({ error: "Fehler beim Einfügen", details: err.message });
   }
 });
@@ -182,7 +183,7 @@ router.put("/:id", async (req, res) => {
 
     res.json(updatedEntry[0]);
   } catch (err) {
-    console.error("Fehler beim Aktualisieren des Stundenplan-Eintrags:", err);
+    logger.error('Fehler beim Aktualisieren des Stundenplan-Eintrags:', { error: err });
     res.status(500).json({ error: "Fehler beim Aktualisieren", details: err.message });
   }
 });
@@ -202,7 +203,7 @@ router.delete("/:id", async (req, res) => {
 
     res.json({ success: true, message: "Stundenplan-Eintrag erfolgreich gelöscht" });
   } catch (err) {
-    console.error("Fehler beim Löschen des Stundenplan-Eintrags:", err);
+    logger.error('Fehler beim Löschen des Stundenplan-Eintrags:', { error: err });
     res.status(500).json({ error: "Fehler beim Löschen", details: err.message });
   }
 });
@@ -301,7 +302,7 @@ router.get("/member/:mitglied_id/termine", async (req, res) => {
 
     res.json(termine);
   } catch (err) {
-    console.error("Fehler beim Generieren der Termine:", err);
+    logger.error('Fehler beim Generieren der Termine:', { error: err });
     res.status(500).json({ error: "Fehler beim Generieren der Termine", details: err.message });
   }
 });

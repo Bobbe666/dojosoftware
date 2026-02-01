@@ -4,6 +4,7 @@
 // Prüft ob das Dojo noch im Trial ist oder ein aktives Abo hat
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Middleware: Prüft Trial/Subscription Status
@@ -112,12 +113,12 @@ const checkTrialStatus = async (req, res, next) => {
 
       default:
         // Unbekannter Status
-        console.error('⚠️ Unbekannter subscription_status:', dojo.subscription_status);
+        logger.error('⚠️ Unbekannter subscription_status:', { error: dojo.subscription_status });
         return next();
     }
 
   } catch (error) {
-    console.error('❌ Fehler beim Trial-Status Check:', error);
+    logger.error('Fehler beim Trial-Status Check:', error);
     // Bei Fehler durchlassen (fail open), aber loggen
     return next();
   }

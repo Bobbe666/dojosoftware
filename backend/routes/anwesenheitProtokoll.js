@@ -1,5 +1,6 @@
 // Backend/routes/anwesenheitProtokoll.js - Enhanced Protocol System
 const express = require("express");
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require("../db");
 
@@ -45,7 +46,7 @@ router.post("/", (req, res) => {
 
   db.query(sql, [werte], (err, result) => {
     if (err) {
-      console.error("Fehler beim Einfügen der Anwesenheitsprotokolle:", err);
+      logger.error('Fehler beim Einfügen der Anwesenheitsprotokolle:', { error: err });
       return res.status(500).json({ 
         error: "Fehler beim Speichern der Anwesenheitsprotokolle",
         details: err.message 
@@ -114,7 +115,7 @@ router.get("/", (req, res) => {
 
   db.query(sql, params, (err, results) => {
     if (err) {
-      console.error("Fehler beim Abrufen der Anwesenheitsprotokolle:", err);
+      logger.error('Fehler beim Abrufen der Anwesenheitsprotokolle:', { error: err });
       return res.status(500).json({ 
         error: "Fehler beim Abrufen der Anwesenheitsprotokolle",
         details: err.message 
@@ -169,7 +170,7 @@ router.get("/statistiken/:stundenplan_id/:datum", (req, res) => {
 
   db.query(sql, [stundenplan_id, datum, stundenplan_id, datum, stundenplan_id, datum], (err, results) => {
     if (err) {
-      console.error("Fehler beim Abrufen der Statistiken:", err);
+      logger.error('Fehler beim Abrufen der Statistiken:', { error: err });
       return res.status(500).json({ 
         error: "Fehler beim Abrufen der Statistiken",
         details: err.message 
@@ -311,7 +312,7 @@ router.get("/uebersicht", (req, res) => {
 
   db.query(sql, values, (err, results) => {
     if (err) {
-      console.error("Fehler beim Abrufen der Anwesenheitsübersicht:", err);
+      logger.error('Fehler beim Abrufen der Anwesenheitsübersicht:', { error: err });
       return res.status(500).json({ 
         error: "Fehler beim Abrufen der Anwesenheitsübersicht",
         details: err.message 
@@ -369,7 +370,7 @@ router.get("/trend/:mitglied_id", (req, res) => {
 
   db.query(sql, [mitglied_id, wochen], (err, results) => {
     if (err) {
-      console.error("Fehler beim Abrufen des Anwesenheitstrends:", err);
+      logger.error('Fehler beim Abrufen des Anwesenheitstrends:', { error: err });
       return res.status(500).json({ 
         error: "Fehler beim Abrufen des Anwesenheitstrends",
         details: err.message 
@@ -449,7 +450,7 @@ router.get("/pruefung/:mitglied_id", (req, res) => {
 
   db.query(sql, params, (err, results) => {
     if (err) {
-      console.error("Fehler beim Abrufen der Prüfungsvoraussetzungen:", err);
+      logger.error('Fehler beim Abrufen der Prüfungsvoraussetzungen:', { error: err });
       return res.status(500).json({ 
         error: "Fehler beim Abrufen der Prüfungsvoraussetzungen",
         details: err.message 

@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro, Ticket
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
-import FinanceTab from './FinanceTab';
+import SuperAdminFinanzen from './SuperAdminFinanzen';
 import ContractsTab from './ContractsTab';
 import UsersTab from './UsersTab';
 import SepaTab from './SepaTab';
@@ -780,9 +780,9 @@ const SuperAdminDashboard = () => {
           <StatisticsTab token={token} />
         )}
 
-        {/* Finanzen Tab */}
+        {/* Finanzen Tab - Umfassendes Finanz-Dashboard */}
         {activeTab === 'finance' && (
-          <FinanceTab token={token} />
+          <SuperAdminFinanzen />
         )}
 
         {/* Verträge Tab */}

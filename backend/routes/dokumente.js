@@ -37,7 +37,7 @@ router.get('/', authenticateToken, (req, res) => {
 
   req.db.query(query, params, (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Dokumente:', err);
+      logger.error('Fehler beim Abrufen der Dokumente:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler beim Laden der Dokumente' });
     }
 
@@ -55,7 +55,7 @@ router.get('/:id', (req, res) => {
 
   req.db.query(query, [id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen des Dokuments:', err);
+      logger.error('Fehler beim Abrufen des Dokuments:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -134,7 +134,7 @@ router.post('/generate', async (req, res) => {
       [name, typ, dateiname, dateipfad, dateigroesse, parameterJson, erstellt_von],
       (err, result) => {
         if (err) {
-          console.error('Fehler beim Speichern des Dokuments:', err);
+          logger.error('Fehler beim Speichern des Dokuments:', { error: err });
           // Lösche die Datei, wenn DB-Insert fehlschlägt
           fs.unlinkSync(dateipfad);
           return res.status(500).json({ error: 'Fehler beim Speichern des Dokuments' });
@@ -152,7 +152,7 @@ router.post('/generate', async (req, res) => {
     );
 
   } catch (error) {
-    console.error('Fehler bei der PDF-Generierung:', error);
+    logger.error('Fehler bei der PDF-Generierung:', { error: error });
     res.status(500).json({ error: 'Fehler bei der PDF-Generierung: ' + error.message });
   }
 });
@@ -242,7 +242,7 @@ router.post('/generate-all-dojos', authenticateToken, async (req, res) => {
           status: 'success'
         });
       } catch (dojoErr) {
-        console.error(`Fehler bei Dojo ${dojo.id}:`, dojoErr);
+        logger.error('Fehler bei Dojo ${dojo.id}:', { error: dojoErr });
         results.push({
           dojo_id: dojo.id,
           dojoname: dojo.dojoname,
@@ -264,7 +264,7 @@ router.post('/generate-all-dojos', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler bei Massen-PDF-Generierung:', error);
+    logger.error('Fehler bei Massen-PDF-Generierung:', { error: error });
     res.status(500).json({ error: 'Fehler bei der Massen-PDF-Generierung: ' + error.message });
   }
 });
@@ -404,7 +404,7 @@ router.get('/:id/download', authenticateToken, (req, res) => {
       [id],
       (updateErr) => {
         if (updateErr) {
-          console.error('Fehler beim Aktualisieren des Download-Counters:', updateErr);
+          logger.error('Fehler beim Aktualisieren des Download-Counters:', { error: updateErr });
         }
       }
     );
@@ -412,7 +412,7 @@ router.get('/:id/download', authenticateToken, (req, res) => {
     // Sende Datei
     res.download(dokument.dateipfad, dokument.dateiname, (downloadErr) => {
       if (downloadErr) {
-        console.error('Fehler beim Download:', downloadErr);
+        logger.error('Fehler beim Download:', { error: downloadErr });
         if (!res.headersSent) {
           res.status(500).json({ error: 'Fehler beim Download' });
         }
@@ -432,7 +432,7 @@ router.delete('/:id', (req, res) => {
 
   req.db.query(selectQuery, [id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen des Dokuments:', err);
+      logger.error('Fehler beim Abrufen des Dokuments:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -447,7 +447,7 @@ router.delete('/:id', (req, res) => {
 
     req.db.query(updateQuery, [id], (updateErr) => {
       if (updateErr) {
-        console.error('Fehler beim Löschen des Dokuments:', updateErr);
+        logger.error('Fehler beim Löschen des Dokuments:', { error: updateErr });
         return res.status(500).json({ error: 'Fehler beim Löschen' });
       }
 

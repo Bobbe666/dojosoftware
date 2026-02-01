@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const router = express.Router();
@@ -100,7 +101,7 @@ router.post('/auth/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('TDA Export Auth Error:', error);
+    logger.error('TDA Export Auth Error:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Server error during authentication'
@@ -148,7 +149,7 @@ router.get('/dojos', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('TDA Export Dojos Error:', error);
+    logger.error('TDA Export Dojos Error:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Error fetching dojos'
@@ -201,7 +202,7 @@ router.get('/dojos/:dojo_id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('TDA Export Dojo Details Error:', error);
+    logger.error('TDA Export Dojo Details Error:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Error fetching dojo details'
@@ -270,7 +271,7 @@ router.get('/dojos/:dojo_id/wettkaempfer', authenticateToken, async (req, res) =
     });
 
   } catch (error) {
-    console.error('TDA Export Wettkaempfer Error:', error);
+    logger.error('TDA Export Wettkaempfer Error:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Error fetching wettkaempfer'
@@ -360,7 +361,7 @@ router.post('/bulk-export', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('TDA Export Bulk Error:', error);
+    logger.error('TDA Export Bulk Error:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Error during bulk export'

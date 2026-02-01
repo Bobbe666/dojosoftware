@@ -1,5 +1,6 @@
 // Backend/routes/dashboard.js - Fixed für aktive Check-ins
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -11,10 +12,10 @@ router.get('/batch', async (req, res) => {
     // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
     if (req.user && req.user.dojo_id) {
         dojo_id = req.user.dojo_id.toString();
-        console.log("🔒 Tenant-Filter erzwungen:", { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+        logger.debug('🔒 Tenant-Filter erzwungen:', { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
     }
 
-    console.log(`🚀 Dashboard-Batch-Endpoint wird geladen (dojo_id=${dojo_id || 'all'})...`);
+    logger.debug(`🚀 Dashboard-Batch-Endpoint wird geladen (dojo_id=${dojo_id || 'all'})...`);
 
     const [stats, activities, tarife, zahlungszyklen] = await Promise.all([
       getDashboardStats(dojo_id),
@@ -23,7 +24,7 @@ router.get('/batch', async (req, res) => {
       getZahlungszyklen()
     ]);
 
-    console.log(`✅ Batch-Daten erfolgreich geladen (dojo_id=${dojo_id || 'all'})`);
+    logger.info('Batch-Daten erfolgreich geladen', { dojo_id: dojo_id || 'all' });
     res.json({
       stats,
       activities,
@@ -32,7 +33,7 @@ router.get('/batch', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('❌ Batch-Endpoint Fehler:', error);
+    logger.error('Batch-Endpoint Fehler:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -80,13 +81,13 @@ async function getDashboardStats(dojo_id) {
     // Debug: Log Anwesenheits-Query
     // Zähle EINDEUTIGE Personen, die heute da waren (nicht die Summe aller Anwesenheiten)
     const anwesenheitQuery = `SELECT COUNT(DISTINCT mitglied_id) as count FROM anwesenheit WHERE DATE(datum) = CURDATE() AND anwesend = 1${dojoFilter}`;
-    console.log('🔍 Anwesenheits-Query:', anwesenheitQuery);
+    logger.debug('Anwesenheits-Query:', anwesenheitQuery);
 
     const queries = await Promise.all([
       db.promise().query(`SELECT COUNT(*) as count FROM mitglieder WHERE aktiv = 1${dojoFilter}`).catch(() => [[]]),
       db.promise().query(`SELECT COUNT(*) as count FROM kurse WHERE 1=1${dojoFilter}`).catch(() => [[]]),
       db.promise().query(`SELECT COUNT(*) as count FROM trainer WHERE 1=1${dojoFilter}`).catch(() => [[]]),
-      db.promise().query(anwesenheitQuery).catch((err) => { console.error('❌ Anwesenheits-Query Fehler:', err); return [[]]; }),
+      db.promise().query(anwesenheitQuery).catch((err) => { logger.error('Anwesenheits-Query Fehler:', err); return [[]]; }),
       db.promise().query(`SELECT COUNT(*) as count FROM beitraege WHERE bezahlt = 0${dojoFilter}`).catch(() => [[]]),
       // Checkins: JOIN mit mitglieder für dojo_id
       db.promise().query(`SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE DATE(c.checkin_time) = CURDATE() AND c.status = 'active'${dojoJoinFilter}`).catch(() => [[]]),
@@ -102,7 +103,7 @@ async function getDashboardStats(dojo_id) {
     stats.kurse = queries[1][0][0]?.count || 0;
     stats.trainer = queries[2][0][0]?.count || 0;
     stats.anwesenheit = queries[3][0][0]?.count || 0;
-    console.log('✅ Anwesenheit gefunden:', stats.anwesenheit);
+    logger.info('Anwesenheit gefunden:', { details: stats.anwesenheit });
     stats.beitraege = queries[4][0][0]?.count || 0;
     stats.checkins_heute = queries[5][0][0]?.count || 0;
     stats.stile = queries[6][0][0]?.count || 0;
@@ -112,7 +113,7 @@ async function getDashboardStats(dojo_id) {
     stats.ehemalige = queries[10][0][0]?.count || 0;
     stats.interessenten = queries[11][0][0]?.count || 0;
   } catch (error) {
-    console.error('❌ Stats Query Fehler:', error);
+    logger.error('Stats Query Fehler:', error);
   }
 
   return stats;
@@ -129,7 +130,7 @@ async function getTarife() {
     const [tarife] = await db.promise().query('SELECT * FROM tarife ORDER BY name ASC');
     return tarife;
   } catch (error) {
-    console.error('❌ Tarife Query Fehler:', error);
+    logger.error('Tarife Query Fehler:', error);
     return [];
   }
 }
@@ -139,7 +140,7 @@ async function getZahlungszyklen() {
     const [zyklen] = await db.promise().query('SELECT * FROM zahlungszyklen ORDER BY name ASC');
     return zyklen;
   } catch (error) {
-    console.error('❌ Zahlungszyklen Query Fehler:', error);
+    logger.error('Zahlungszyklen Query Fehler:', error);
     return [];
   }
 }
@@ -148,7 +149,7 @@ async function getZahlungszyklen() {
 router.get('/', async (req, res) => {
   try {
     const { dojo_id } = req.query;
-    console.log(`📊 Dashboard-Statistiken werden geladen (dojo_id=${dojo_id || 'all'})...`);
+    logger.debug(`📊 Dashboard-Statistiken werden geladen (dojo_id=${dojo_id || 'all'})...`);
 
     // 🔒 KRITISCHER DOJO-FILTER: Baue WHERE-Clause
     const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND dojo_id = ${parseInt(dojo_id)}` : '';
@@ -165,123 +166,123 @@ router.get('/', async (req, res) => {
 
     // 1. MITGLIEDER - korrigiert mit aktiv = 1 + dojo_id Filter
     try {
-      console.log('🔍 Teste Mitglieder-Queries...');
+      logger.debug('Teste Mitglieder-Queries...');
 
       try {
         const [mitgliederResult1] = await db.promise().query(
           `SELECT COUNT(*) as count FROM mitglieder WHERE aktiv = 1${dojoFilter}`
         );
-        console.log(`✅ Mitglieder (aktiv = 1, dojo_id=${dojo_id || 'all'}):`, mitgliederResult1[0]?.count);
+        logger.debug('Mitglieder gezählt', { aktiv: true, dojo_id: dojo_id || 'all', count: mitgliederResult1[0]?.count });
         stats.mitglieder = mitgliederResult1[0]?.count || 0;
       } catch (e1) {
-        console.log('⚠️ Mitglieder (aktiv = 1) failed, trying all:', e1.message);
+        logger.warn('⚠️ Mitglieder (aktiv = 1) failed, trying all:', e1.message);
 
         // Fallback: Alle Mitglieder
         try {
           const [mitgliederResult2] = await db.promise().query(
             `SELECT COUNT(*) as count FROM mitglieder WHERE 1=1${dojoFilter}`
           );
-          console.log('✅ Mitglieder (alle):', mitgliederResult2[0]?.count);
+          logger.debug('Mitglieder (Fallback) gezählt', { count: mitgliederResult2[0]?.count });
           stats.mitglieder = mitgliederResult2[0]?.count || 0;
         } catch (e2) {
-          console.log('❌ Mitglieder-Tabelle existiert nicht:', e2.message);
+          logger.error('❌ Mitglieder-Tabelle existiert nicht:', e2.message);
         }
       }
     } catch (e) {
-      console.log('❌ Mitglieder Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Mitglieder Query komplett fehlgeschlagen:', e.message);
     }
 
     // 2. KURSE - korrigiert ohne status Filter + dojo_id Filter
     try {
-      console.log('🔍 Teste Kurse-Queries...');
+      logger.debug('Teste Kurse-Queries...');
 
       try {
         const [kurseResult] = await db.promise().query(
           `SELECT COUNT(*) as count FROM kurse WHERE 1=1${dojoFilter}`
         );
-        console.log(`✅ Kurse (dojo_id=${dojo_id || 'all'}):`, kurseResult[0]?.count);
+        logger.debug('Kurse gezählt', { count: kurseResult[0]?.count });
         stats.kurse = kurseResult[0]?.count || 0;
       } catch (e) {
-        console.log('❌ Kurse-Tabelle Fehler:', e.message);
+        logger.error('❌ Kurse-Tabelle Fehler:', e.message);
       }
     } catch (e) {
-      console.log('❌ Kurse Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Kurse Query komplett fehlgeschlagen:', e.message);
     }
 
     // 3. TRAINER - korrigiert ohne status Filter + dojo_id Filter
     try {
-      console.log('🔍 Teste Trainer-Queries...');
+      logger.debug('Teste Trainer-Queries...');
 
       try {
         const [trainerResult] = await db.promise().query(
           `SELECT COUNT(*) as count FROM trainer WHERE 1=1${dojoFilter}`
         );
-        console.log(`✅ Trainer (dojo_id=${dojo_id || 'all'}):`, trainerResult[0]?.count);
+        logger.debug('Trainer gezählt', { count: trainerResult[0]?.count });
         stats.trainer = trainerResult[0]?.count || 0;
       } catch (e) {
-        console.log('❌ Trainer-Tabelle Fehler:', e.message);
+        logger.error('❌ Trainer-Tabelle Fehler:', e.message);
       }
     } catch (e) {
-      console.log('❌ Trainer Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Trainer Query komplett fehlgeschlagen:', e.message);
     }
 
     // 4. ANWESENHEIT - korrigiert mit richtigen Spalten + dojo_id Filter
     try {
-      console.log('🔍 Teste Anwesenheit-Queries...');
+      logger.debug('Teste Anwesenheit-Queries...');
 
       try {
         const [anwesenheitResult] = await db.promise().query(
           `SELECT COUNT(*) as count FROM anwesenheit WHERE DATE(datum) = CURDATE() AND anwesend = 1${dojoFilter}`
         );
-        console.log(`✅ Anwesenheit (heute, anwesend, dojo_id=${dojo_id || 'all'}):`, anwesenheitResult[0]?.count);
+        logger.debug('Anwesenheit gezählt', { count: anwesenheitResult[0]?.count });
         stats.anwesenheit = anwesenheitResult[0]?.count || 0;
       } catch (e1) {
-        console.log('⚠️ Anwesenheit (heute) failed, trying all:', e1.message);
+        logger.warn('⚠️ Anwesenheit (heute) failed, trying all:', e1.message);
 
         try {
           const [anwesenheitResult2] = await db.promise().query(
             `SELECT COUNT(*) as count FROM anwesenheit WHERE 1=1${dojoFilter}`
           );
-          console.log('✅ Anwesenheit (alle):', anwesenheitResult2[0]?.count);
+          logger.debug('Anwesenheit (Fallback) gezählt', { count: anwesenheitResult2[0]?.count });
           stats.anwesenheit = anwesenheitResult2[0]?.count || 0;
         } catch (e2) {
-          console.log('❌ Anwesenheit-Tabelle existiert nicht:', e2.message);
+          logger.error('❌ Anwesenheit-Tabelle existiert nicht:', e2.message);
         }
       }
     } catch (e) {
-      console.log('❌ Anwesenheit Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Anwesenheit Query komplett fehlgeschlagen:', e.message);
     }
 
     // 5. BEITRÄGE - korrigiert ohne status Filter + dojo_id Filter
     try {
-      console.log('🔍 Teste Beiträge-Queries...');
+      logger.debug('Teste Beiträge-Queries...');
 
       try {
         const [beitraegeResult1] = await db.promise().query(
           `SELECT COUNT(*) as count FROM beitraege WHERE bezahlt = 0${dojoFilter}`
         );
-        console.log(`✅ Beiträge (unbezahlt, dojo_id=${dojo_id || 'all'}):`, beitraegeResult1[0]?.count);
+        logger.debug('Beiträge gezählt', { count: beitraegeResult1[0]?.count });
         stats.beitraege = beitraegeResult1[0]?.count || 0;
       } catch (e1) {
-        console.log('⚠️ Beiträge (unbezahlt) failed, trying all:', e1.message);
+        logger.warn('⚠️ Beiträge (unbezahlt) failed, trying all:', e1.message);
 
         try {
           const [beitraegeResult2] = await db.promise().query(
             `SELECT COUNT(*) as count FROM beitraege WHERE 1=1${dojoFilter}`
           );
-          console.log('✅ Beiträge (alle):', beitraegeResult2[0]?.count);
+          logger.debug('Beiträge (Fallback) gezählt', { count: beitraegeResult2[0]?.count });
           stats.beitraege = beitraegeResult2[0]?.count || 0;
         } catch (e2) {
-          console.log('❌ Beiträge-Tabelle existiert nicht:', e2.message);
+          logger.error('❌ Beiträge-Tabelle existiert nicht:', e2.message);
         }
       }
     } catch (e) {
-      console.log('❌ Beiträge Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Beiträge Query komplett fehlgeschlagen:', e.message);
     }
 
     // 6. CHECK-INS - GEÄNDERT: Nur aktive Check-ins von heute + JOIN mit mitglieder für dojo_id
     try {
-      console.log('🔍 Teste Check-in-Queries...');
+      logger.debug('Teste Check-in-Queries...');
 
       try {
         // ✅ GEÄNDERT: Nur aktive Check-ins von heute + JOIN mit mitglieder für dojo_id Filter
@@ -289,59 +290,59 @@ router.get('/', async (req, res) => {
         const [checkinResult1] = await db.promise().query(
           `SELECT COUNT(*) as count FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id WHERE DATE(c.checkin_time) = CURDATE() AND c.status = 'active'${dojoJoinFilter}`
         );
-        console.log(`✅ Check-ins (heute, aktiv, dojo_id=${dojo_id || 'all'}):`, checkinResult1[0]?.count);
+        logger.debug('Check-ins gezählt', { count: checkinResult1[0]?.count });
         stats.checkins_heute = checkinResult1[0]?.count || 0;
       } catch (e1) {
-        console.log('⚠️ Check-ins (aktiv) failed, trying all:', e1.message);
+        logger.warn('⚠️ Check-ins (aktiv) failed, trying all:', e1.message);
 
         // Fallback: Alle Check-ins von heute
         try {
           const [checkinResult2] = await db.promise().query(
             `SELECT COUNT(*) as count FROM checkins WHERE DATE(checkin_time) = CURDATE()`
           );
-          console.log('✅ Check-ins (heute, alle):', checkinResult2[0]?.count);
+          logger.debug('Check-ins (Fallback) gezählt', { count: checkinResult2[0]?.count });
           stats.checkins_heute = checkinResult2[0]?.count || 0;
         } catch (e2) {
-          console.log('❌ Checkins-Tabelle existiert nicht:', e2.message);
+          logger.error('❌ Checkins-Tabelle existiert nicht:', e2.message);
           stats.checkins_heute = 0;
         }
       }
     } catch (e) {
-      console.log('❌ Check-ins Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Check-ins Query komplett fehlgeschlagen:', e.message);
     }
 
     // 7. STILE - Anzahl der Kampfkunst-Stile laden
     try {
-      console.log('🔍 Teste Stile-Queries...');
+      logger.debug('Teste Stile-Queries...');
       
       try {
         const [stileResult] = await db.promise().query(
           `SELECT COUNT(*) as count FROM stile`
         );
-        console.log('✅ Stile (alle):', stileResult[0]?.count);
+        logger.debug('Stile gezählt', { count: stileResult[0]?.count });
         stats.stile = stileResult[0]?.count || 0;
       } catch (e) {
-        console.log('❌ Stile-Tabelle Fehler:', e.message);
+        logger.error('❌ Stile-Tabelle Fehler:', e.message);
         stats.stile = 0;
       }
     } catch (e) {
-      console.log('❌ Stile Query komplett fehlgeschlagen:', e.message);
+      logger.error('❌ Stile Query komplett fehlgeschlagen:', e.message);
     }
 
     // 8. TABELLEN AUFLISTEN - Debug Info (behalten)
     try {
-      console.log('🔍 Liste alle verfügbaren Tabellen...');
+      logger.debug('Liste alle verfügbaren Tabellen...');
       const [tables] = await db.promise().query(`SHOW TABLES`);
-      console.log('📋 Verfügbare Tabellen:', tables.map(t => Object.values(t)[0]));
+      logger.debug('Verfügbare Tabellen:', { tables: tables.map(t => Object.values(t)[0]) });
     } catch (e) {
-      console.log('❌ Kann Tabellen nicht auflisten:', e.message);
+      logger.error('❌ Kann Tabellen nicht auflisten:', e.message);
     }
 
-    console.log('📊 Finale Dashboard-Statistiken:', stats);
+    logger.debug('Finale Dashboard-Statistiken:', { stats });
     res.json(stats);
 
   } catch (error) {
-    console.error('Kritischer Fehler beim Laden der Dashboard-Statistiken:', error);
+    logger.error('Kritischer Fehler beim Laden der Dashboard-Statistiken:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Dashboard-Statistiken' });
   }
 });
@@ -350,7 +351,7 @@ router.get('/', async (req, res) => {
 router.get('/recent', async (req, res) => {
   try {
     const { dojo_id } = req.query;
-    console.log(`📋 Recent Activities werden geladen (dojo_id=${dojo_id || 'all'})...`);
+    logger.debug(`📋 Recent Activities werden geladen (dojo_id=${dojo_id || 'all'})...`);
 
     const activities = [];
 
@@ -391,9 +392,9 @@ router.get('/recent', async (req, res) => {
         });
       });
 
-      console.log(`✅ ${checkins.length} echte Check-ins/Checkouts geladen`);
+      logger.info('${checkins.length} echte Check-ins/Checkouts geladen');
     } catch (e) {
-      console.log('⚠️ Echte Check-ins konnten nicht geladen werden:', e.message);
+      logger.warn('⚠️ Echte Check-ins konnten nicht geladen werden:', e.message);
     }
 
     // 2. Neue Mitglieder von heute laden + dojo_id Filter
@@ -422,9 +423,9 @@ router.get('/recent', async (req, res) => {
         });
       });
 
-      console.log(`✅ ${neueMitglieder.length} neue Mitglieder geladen (dojo_id=${dojo_id || 'all'})`);
+      logger.debug('Neue Mitglieder geladen', { count: neueMitglieder.length, dojo_id: dojo_id || 'all' });
     } catch (e) {
-      console.log('⚠️ Neue Mitglieder konnten nicht geladen werden:', e.message);
+      logger.warn('⚠️ Neue Mitglieder konnten nicht geladen werden:', e.message);
     }
 
     // 3. Neueste Beiträge laden + dojo_id Filter
@@ -456,15 +457,15 @@ router.get('/recent', async (req, res) => {
         });
       });
 
-      console.log(`✅ ${beitraege.length} Beiträge geladen`);
+      logger.info('${beitraege.length} Beiträge geladen');
     } catch (e) {
-      console.log('⚠️ Beiträge konnten nicht geladen werden:', e.message);
+      logger.warn('⚠️ Beiträge konnten nicht geladen werden:', e.message);
     }
 
     // Nach Zeitstempel sortieren
     activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    console.log(`📋 ${activities.length} Recent Activities bereitgestellt`);
+    logger.debug('📋 ${activities.length} Recent Activities bereitgestellt');
     
     res.json({
       success: true,
@@ -473,7 +474,7 @@ router.get('/recent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Laden der Recent Activities:', error);
+    logger.error('Fehler beim Laden der Recent Activities:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Recent Activities' });
   }
 });
@@ -482,7 +483,7 @@ router.get('/recent', async (req, res) => {
 router.get('/checkin/today', async (req, res) => {
   try {
     const { dojo_id } = req.query;
-    console.log(`📱 Check-in Daten werden geladen (dojo_id=${dojo_id || 'all'})...`);
+    logger.debug('Check-in Daten werden geladen', { dojo_id: dojo_id || 'all' });
 
     // 🔒 KRITISCHER DOJO-FILTER
     const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
@@ -511,7 +512,7 @@ router.get('/checkin/today', async (req, res) => {
       completed_sessions: 0 // Keine completed hier
     };
 
-    console.log(`✅ ${checkins.length} aktive Check-ins für heute geladen`);
+    logger.info('${checkins.length} aktive Check-ins für heute geladen');
 
     res.json({
       success: true,
@@ -521,14 +522,14 @@ router.get('/checkin/today', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Laden der Check-in Daten:', error);
+    logger.error('Fehler beim Laden der Check-in Daten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Check-in Daten' });
   }
 });
 
 // POST /api/dashboard/checkin - Weiterleitung an echte Check-in API
 router.post('/checkin', (req, res) => {
-  console.log('📱 Dashboard Check-in - Weiterleitung an /api/checkin/multi-course');
+  logger.debug('📱 Dashboard Check-in - Weiterleitung an /api/checkin/multi-course');
   
   res.status(301).json({
     error: 'Deprecated endpoint',
@@ -539,7 +540,7 @@ router.post('/checkin', (req, res) => {
 
 // POST /api/dashboard/checkout - Weiterleitung an echte Check-in API
 router.post('/checkout', (req, res) => {
-  console.log('📱 Dashboard Check-out - Feature noch nicht implementiert');
+  logger.debug('📱 Dashboard Check-out - Feature noch nicht implementiert');
   
   res.status(501).json({
     error: 'Check-out Feature noch nicht implementiert',

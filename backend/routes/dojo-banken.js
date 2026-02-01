@@ -67,7 +67,7 @@ const initializeDojoBankenTable = async () => {
       `);
     }
   } catch (error) {
-    console.error('Fehler bei der Initialisierung der dojo_banken Tabelle:', error);
+    logger.error('Fehler bei der Initialisierung der dojo_banken Tabelle:', { error: error });
   }
 };
 
@@ -87,7 +87,7 @@ router.get('/:dojoId', async (req, res) => {
     
     res.json(banken);
   } catch (error) {
-    console.error('Fehler beim Laden der Banken:', error);
+    logger.error('Fehler beim Laden der Banken:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Banken' });
   }
 });
@@ -108,7 +108,7 @@ router.get('/:dojoId/:id', async (req, res) => {
     
     res.json(banken[0]);
   } catch (error) {
-    console.error('Fehler beim Laden der Bank:', error);
+    logger.error('Fehler beim Laden der Bank:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Bank' });
   }
 });
@@ -179,7 +179,7 @@ router.post('/:dojoId', async (req, res) => {
     
     res.status(201).json(newBank[0]);
   } catch (error) {
-    console.error('Fehler beim Anlegen der Bank:', error);
+    logger.error('Fehler beim Anlegen der Bank:', { error: error });
     res.status(500).json({ error: 'Fehler beim Anlegen der Bank' });
   }
 });
@@ -259,7 +259,7 @@ router.put('/:dojoId/:id', async (req, res) => {
     
     res.json(updated[0]);
   } catch (error) {
-    console.error('Fehler beim Aktualisieren der Bank:', error);
+    logger.error('Fehler beim Aktualisieren der Bank:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren der Bank' });
   }
 });
@@ -284,7 +284,7 @@ router.delete('/:dojoId/:id', async (req, res) => {
     
     res.json({ message: 'Bank erfolgreich gelöscht' });
   } catch (error) {
-    console.error('Fehler beim Löschen der Bank:', error);
+    logger.error('Fehler beim Löschen der Bank:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen der Bank' });
   }
 });
@@ -310,7 +310,7 @@ router.post('/:dojoId/reorder', async (req, res) => {
     
     res.json({ message: 'Reihenfolge aktualisiert' });
   } catch (error) {
-    console.error('Fehler beim Ändern der Reihenfolge:', error);
+    logger.error('Fehler beim Ändern der Reihenfolge:', { error: error });
     res.status(500).json({ error: 'Fehler beim Ändern der Reihenfolge' });
   }
 });
@@ -355,7 +355,7 @@ router.post('/:dojoId/init-defaults', async (req, res) => {
     
     res.json({ message: 'Standard-Tabs angelegt', created: true });
   } catch (error) {
-    console.error('Fehler beim Anlegen der Standard-Tabs:', error);
+    logger.error('Fehler beim Anlegen der Standard-Tabs:', { error: error });
     res.status(500).json({ error: 'Fehler beim Anlegen der Standard-Tabs' });
   }
 });
@@ -363,7 +363,7 @@ router.post('/:dojoId/init-defaults', async (req, res) => {
 // POST /api/dojo-banken/migrate - Migriere Bankdaten von dojo Tabelle zu dojo_banken
 router.post('/migrate', async (req, res) => {
   try {
-    console.log('🔄 Starte Migration der Bankdaten...');
+    logger.debug('🔄 Starte Migration der Bankdaten...');
     
     // Prüfe und migriere Bankdaten für jedes Dojo
     const insertResult = await queryAsync(`
@@ -409,7 +409,7 @@ router.post('/migrate', async (req, res) => {
         )
     `);
     
-    console.log('✅ Insert-Ergebnis:', insertResult);
+    logger.info('Insert-Ergebnis:', { details: insertResult });
     
     // Aktualisiere bestehende Einträge
     const updateResult = await queryAsync(`
@@ -435,7 +435,7 @@ router.post('/migrate', async (req, res) => {
         )
     `);
     
-    console.log('✅ Update-Ergebnis:', updateResult);
+    logger.info('Update-Ergebnis:', { details: updateResult });
     
     // Prüfe, welche Dojos Bankdaten haben
     const dojosMitBankdaten = await queryAsync(`
@@ -462,7 +462,7 @@ router.post('/migrate', async (req, res) => {
       dojosMitBankdaten: dojosMitBankdaten
     });
   } catch (error) {
-    console.error('❌ Fehler bei der Migration:', error);
+    logger.error('Fehler bei der Migration:', error);
     res.status(500).json({ 
       success: false,
       error: 'Fehler bei der Migration',

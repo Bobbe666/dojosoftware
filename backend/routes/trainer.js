@@ -1,4 +1,5 @@
 const express = require("express");
+const logger = require('../utils/logger');
 const db = require("../db");
 const router = express.Router();
 
@@ -36,7 +37,7 @@ router.get("/", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Trainer:", err);
+            logger.error('Fehler beim Abrufen der Trainer:', { error: err });
             return res.status(500).json({ error: "Fehler beim Laden der Trainer", details: err.sqlMessage });
         }
 
@@ -62,14 +63,14 @@ router.post("/", (req, res) => {
 
     db.getConnection((err, connection) => {
         if (err) {
-            console.error("Datenbankverbindungsfehler:", err);
+            logger.error('Datenbankverbindungsfehler:', { error: err });
             return res.status(500).json({ error: "Fehler bei der Datenbankverbindung", details: err.sqlMessage });
         }
 
         connection.beginTransaction((err) => {
             if (err) {
                 connection.release();
-                console.error("Fehler beim Starten der Transaktion:", err);
+                logger.error('Fehler beim Starten der Transaktion:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Hinzufügen des Trainers", details: err.sqlMessage });
             }
 
@@ -80,7 +81,7 @@ router.post("/", (req, res) => {
                 (err, result) => {
                     if (err) {
                         connection.rollback(() => connection.release());
-                        console.error("Fehler beim Speichern des Trainers:", err);
+                        logger.error('Fehler beim Speichern des Trainers:', { error: err });
                         return res.status(500).json({ error: "Fehler beim Speichern des Trainers", details: err.sqlMessage });
                     }
 
@@ -103,7 +104,7 @@ router.post("/", (req, res) => {
                                 connection.commit((err) => {
                                     if (err) {
                                         connection.rollback(() => connection.release());
-                                        console.error("Fehler beim Abschließen der Transaktion:", err);
+                                        logger.error('Fehler beim Abschließen der Transaktion:', { error: err });
                                         return res.status(500).json({ error: "Fehler beim Speichern des Trainers", details: err.sqlMessage });
                                     }
 
@@ -117,7 +118,7 @@ router.post("/", (req, res) => {
                         connection.commit((err) => {
                             if (err) {
                                 connection.rollback(() => connection.release());
-                                console.error("Fehler beim Abschließen der Transaktion:", err);
+                                logger.error('Fehler beim Abschließen der Transaktion:', { error: err });
                                 return res.status(500).json({ error: "Fehler beim Speichern des Trainers", details: err.sqlMessage });
                             }
 
@@ -137,14 +138,14 @@ router.delete("/:id", (req, res) => {
 
     db.getConnection((err, connection) => {
         if (err) {
-            console.error("Fehler bei der Datenbankverbindung:", err);
+            logger.error('Fehler bei der Datenbankverbindung:', { error: err });
             return res.status(500).json({ error: "Fehler bei der Datenbankverbindung", details: err.sqlMessage });
         }
 
         connection.beginTransaction((err) => {
             if (err) {
                 connection.release();
-                console.error("Fehler beim Starten der Transaktion:", err);
+                logger.error('Fehler beim Starten der Transaktion:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Löschen des Trainers", details: err.sqlMessage });
             }
 
@@ -152,7 +153,7 @@ router.delete("/:id", (req, res) => {
             connection.query("DELETE FROM trainer_stile WHERE trainer_id = ?", [trainerId], (err) => {
                 if (err) {
                     connection.rollback(() => connection.release());
-                    console.error("Fehler beim Löschen der Stile:", err);
+                    logger.error('Fehler beim Löschen der Stile:', { error: err });
                     return res.status(500).json({ error: "Fehler beim Löschen der Stile", details: err.sqlMessage });
                 }
 
@@ -160,14 +161,14 @@ router.delete("/:id", (req, res) => {
                 connection.query("DELETE FROM trainer WHERE trainer_id = ?", [trainerId], (err, result) => {
                     if (err) {
                         connection.rollback(() => connection.release());
-                        console.error("Fehler beim Löschen des Trainers:", err);
+                        logger.error('Fehler beim Löschen des Trainers:', { error: err });
                         return res.status(500).json({ error: "Fehler beim Löschen des Trainers", details: err.sqlMessage });
                     }
 
                     connection.commit((err) => {
                         if (err) {
                             connection.rollback(() => connection.release());
-                            console.error("Fehler beim Abschließen der Transaktion:", err);
+                            logger.error('Fehler beim Abschließen der Transaktion:', { error: err });
                             return res.status(500).json({ error: "Fehler beim Löschen des Trainers", details: err.sqlMessage });
                         }
 
@@ -289,7 +290,7 @@ router.get('/notification-recipients', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Notification recipients error:', error);
+    logger.error('Notification recipients error:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Empfänger' });
   }
 });

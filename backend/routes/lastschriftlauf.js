@@ -9,7 +9,7 @@ const router = express.Router();
  */
 router.get("/", async (req, res) => {
     try {
-        console.log('📦 Starting SEPA batch file generation...');
+        logger.debug('📦 Starting SEPA batch file generation...');
 
         // Query für alle aktiven Verträge mit SEPA-Mandat (inkl. offene Rechnungen)
         const query = `
@@ -52,7 +52,7 @@ router.get("/", async (req, res) => {
 
         db.query(query, (err, results) => {
             if (err) {
-                console.error('❌ Database error:', err);
+                logger.error('Database error:', err);
                 return res.status(500).json({
                     error: 'Datenbankfehler',
                     details: err.message
@@ -65,7 +65,7 @@ router.get("/", async (req, res) => {
                 });
             }
 
-            console.log(`✅ Found ${results.length} active contracts with SEPA mandate`);
+            logger.info('Found ${results.length} active contracts with SEPA mandate');
 
             // Ermittle häufigste Bank
             const mostCommonBank = getMostCommonBank(results);
@@ -83,11 +83,11 @@ router.get("/", async (req, res) => {
 
             res.send('\uFEFF' + csvData); // UTF-8 BOM für Excel
 
-            console.log(`📄 SEPA batch file generated: ${filename} via ${mostCommonBank}`);
+            logger.debug('📄 SEPA batch file generated: ${filename} via ${mostCommonBank}');
         });
 
     } catch (error) {
-        console.error('❌ Error generating SEPA batch file:', error);
+        logger.error('Error generating SEPA batch file:', error);
         res.status(500).json({
             error: 'Fehler bei der Lastschrift-Generierung',
             details: error.message
@@ -101,7 +101,7 @@ router.get("/", async (req, res) => {
  */
 router.get("/xml", async (req, res) => {
     try {
-        console.log('📦 Starting SEPA XML generation (PAIN.008.001.02)...');
+        logger.debug('📦 Starting SEPA XML generation (PAIN.008.001.02)...');
 
         // Hole Dojo-Daten fuer Glaeubigerr-Informationen
         const dojoQuery = `
@@ -116,7 +116,7 @@ router.get("/xml", async (req, res) => {
 
         db.query(dojoQuery, (dojoErr, dojoResults) => {
             if (dojoErr) {
-                console.error('❌ Dojo data error:', dojoErr);
+                logger.error('Dojo data error:', dojoErr);
                 return res.status(500).json({
                     error: 'Dojo-Daten konnten nicht geladen werden',
                     details: dojoErr.message
@@ -186,7 +186,7 @@ router.get("/xml", async (req, res) => {
 
             db.query(query, (err, results) => {
                 if (err) {
-                    console.error('❌ Database error:', err);
+                    logger.error('Database error:', err);
                     return res.status(500).json({
                         error: 'Datenbankfehler',
                         details: err.message
@@ -232,12 +232,12 @@ router.get("/xml", async (req, res) => {
 
                 res.send(xml);
 
-                console.log(`✅ SEPA XML generated: ${filename} with ${results.length} transactions, total: ${totalAmount} EUR`);
+                logger.info('SEPA XML generated: ${filename} with ${results.length} transactions, total: ${totalAmount} EUR');
             });
         });
 
     } catch (error) {
-        console.error('❌ Error generating SEPA XML:', error);
+        logger.error('Error generating SEPA XML:', error);
         res.status(500).json({
             error: 'Fehler bei der XML-Generierung',
             details: error.message
@@ -288,7 +288,7 @@ router.get("/diagnose", (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            console.error('❌ Database error:', err);
+            logger.error('Database error:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -334,7 +334,7 @@ router.get("/missing-mandates", (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            console.error('❌ Database error:', err);
+            logger.error('Database error:', err);
             return res.status(500).json({
                 error: 'Datenbankfehler',
                 details: err.message
@@ -355,7 +355,7 @@ router.get("/missing-mandates", (req, res) => {
  */
 router.get("/preview", (req, res) => {
     try {
-        console.log('📢 Preview-Route aufgerufen');
+        logger.debug('📢 Preview-Route aufgerufen');
         const query = `
             SELECT
                 m.mitglied_id,
@@ -394,8 +394,8 @@ router.get("/preview", (req, res) => {
 
         db.query(query, (err, results) => {
             if (err) {
-                console.error('❌ Database error in /preview:', err);
-                console.error('❌ SQL Query:', query);
+                logger.error('Database error in /preview:', err);
+                logger.error('SQL Query:', query);
                 return res.status(500).json({
                     success: false,
                     error: 'Datenbankfehler',
@@ -428,7 +428,7 @@ router.get("/preview", (req, res) => {
                     preview: preview
                 });
             } catch (processingError) {
-                console.error('❌ Error processing preview results:', processingError);
+                logger.error('Error processing preview results:', processingError);
                 return res.status(500).json({
                     success: false,
                     error: 'Fehler bei der Verarbeitung der Daten',
@@ -437,7 +437,7 @@ router.get("/preview", (req, res) => {
             }
         });
     } catch (error) {
-        console.error('❌ Error in /preview route:', error);
+        logger.error('Error in /preview route:', error);
         return res.status(500).json({
             success: false,
             error: 'Fehler in der Preview-Route',
@@ -520,7 +520,7 @@ function calculateAmount(contract) {
 
         return totalAmount;
     } catch (error) {
-        console.error('❌ Error calculating amount for contract:', contract, error);
+        logger.error('Error calculating amount for contract:', contract, error);
         return 0.00;
     }
 }

@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -81,7 +82,7 @@ router.get('/', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Abrufen der Artikelgruppen:', error);
+        logger.error('Fehler beim Abrufen der Artikelgruppen:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Abrufen der Artikelgruppen',
@@ -128,7 +129,7 @@ router.get('/hauptkategorien', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Abrufen der Hauptkategorien:', error);
+        logger.error('Fehler beim Abrufen der Hauptkategorien:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Abrufen der Hauptkategorien',
@@ -175,7 +176,7 @@ router.get('/unterkategorien/:parentId', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Abrufen der Unterkategorien:', error);
+        logger.error('Fehler beim Abrufen der Unterkategorien:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Abrufen der Unterkategorien',
@@ -230,7 +231,7 @@ router.get('/:id', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Abrufen der Artikelgruppe:', error);
+        logger.error('Fehler beim Abrufen der Artikelgruppe:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Abrufen der Artikelgruppe',
@@ -322,7 +323,7 @@ router.post('/', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Erstellen der Artikelgruppe:', error);
+        logger.error('Fehler beim Erstellen der Artikelgruppe:', { error: error });
 
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({
@@ -420,7 +421,7 @@ router.put('/:id', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Aktualisieren der Artikelgruppe:', error);
+        logger.error('Fehler beim Aktualisieren der Artikelgruppe:', { error: error });
 
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({
@@ -512,7 +513,7 @@ router.delete('/:id', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Löschen der Artikelgruppe:', error);
+        logger.error('Fehler beim Löschen der Artikelgruppe:', { error: error });
         res.status(500).json({
             success: false,
             message: 'Fehler beim Löschen der Artikelgruppe',

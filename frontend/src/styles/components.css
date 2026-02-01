@@ -172,12 +172,10 @@ Glassmorphism-Design mit Theme-Variablen.
 .standard-card-title,
 .nav-card-title {
   font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-gold);
   margin: 0;
-  text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Farben werden in theme-base.css / theme-midnight.css definiert */
 }
 
 .standard-card-description,
@@ -200,12 +198,10 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .nav-content h3 {
   font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-gold);
   margin: 0 0 0.5rem 0;
-  text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Farben in theme-midnight.css definiert */
 }
 
 .nav-content p {

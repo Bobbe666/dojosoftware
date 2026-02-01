@@ -3,6 +3,7 @@
 // AGB, Datenschutz, Dojo-Regeln, Hausordnung
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 
@@ -45,7 +46,7 @@ router.get('/:dojoId', (req, res) => {
 
   req.db.query(query, [dojoId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Dokumente:', err);
+      logger.error('Fehler beim Abrufen der Dokumente:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden' });
     }
 
@@ -171,7 +172,7 @@ router.put('/:dojoId/update', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Fehler beim Aktualisieren:', error);
+    logger.error('Fehler beim Aktualisieren:', { error: error });
     res.status(500).json({ error: error.message });
   }
 });
@@ -237,7 +238,7 @@ router.get("/:dojoId/members-need-acceptance", (req, res) => {
 
   req.db.query(query, params, (err, results) => {
     if (err) {
-      console.error("Fehler:", err);
+      logger.error('Fehler:', { error: err });
       return res.status(500).json({ error: "Fehler beim Laden" });
     }
     res.json({ count: results.length, members: results });
@@ -277,7 +278,7 @@ router.post('/member/:mitgliedId/accept', (req, res) => {
 
   req.db.query('UPDATE mitglieder SET ? WHERE mitglied_id = ?', [updateData, mitgliedId], (err) => {
     if (err) {
-      console.error('Fehler:', err);
+      logger.error('Fehler:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Speichern' });
     }
     res.json({ success: true, message: 'Akzeptanz gespeichert' });
@@ -342,7 +343,7 @@ router.post('/import-confirmation/:mitgliedId', async (req, res) => {
     res.json({ success: true, message: 'Bestaetigung gespeichert' });
 
   } catch (error) {
-    console.error('Fehler:', error);
+    logger.error('Fehler:', { error: error });
     res.status(500).json({ error: error.message });
   }
 });
@@ -375,7 +376,7 @@ router.get('/check-versions/:mitgliedId', (req, res) => {
 
   req.db.query(query, [mitgliedId], (err, results) => {
     if (err) {
-      console.error('Fehler:', err);
+      logger.error('Fehler:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden' });
     }
 

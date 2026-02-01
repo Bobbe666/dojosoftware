@@ -1,14 +1,301 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useTranslation } from 'react-i18next';
+import { Grid } from 'react-window';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import "../styles/themes.css";
 import "../styles/components.css";
 import NeuesMitgliedAnlegen from "./NeuesMitgliedAnlegen.jsx";
 
+// Konstanten für Grid-Layout
+const COLUMN_COUNT = 5;
+const CARD_WIDTH = 220;
+const CARD_HEIGHT = 150;
+const GAP = 6;
+
+// Hilfsfunktion außerhalb der Komponente (wird nicht bei jedem Render neu erstellt)
+const calculateAge = (birthdate) => {
+  if (!birthdate) return 0;
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+// Memoized Member Card - verhindert Re-Render wenn andere Karten sich ändern
+const MemberCard = React.memo(({
+  mitglied,
+  selectionMode,
+  isSelected,
+  onToggleSelection,
+  onNavigate
+}) => {
+  return (
+    <div
+      className="stat-card"
+      onClick={(e) => {
+        if (selectionMode) {
+          e.stopPropagation();
+          onToggleSelection(mitglied.mitglied_id);
+        } else {
+          onNavigate(mitglied.mitglied_id);
+        }
+      }}
+      style={{
+        padding: '0.8rem',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        minHeight: '130px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        position: 'relative',
+        border: selectionMode && isSelected
+          ? '2px solid rgba(139, 92, 246, 0.6)'
+          : '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: selectionMode && isSelected
+          ? '0 0 15px rgba(139, 92, 246, 0.3)'
+          : 'none'
+      }}
+    >
+      {/* Checkbox im Auswahlmodus */}
+      {selectionMode && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '0.5rem',
+            right: '0.5rem',
+            width: '24px',
+            height: '24px',
+            borderRadius: '4px',
+            border: isSelected ? '2px solid #8b5cf6' : '2px solid rgba(255, 255, 255, 0.4)',
+            background: isSelected ? '#8b5cf6' : 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            zIndex: 10
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelection(mitglied.mitglied_id);
+          }}
+        >
+          {isSelected && (
+            <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: 'bold' }}>✓</span>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginBottom: '0.3rem' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.3rem'
+        }}>
+          <img
+            src={mitglied.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
+            alt={`${mitglied.vorname} ${mitglied.nachname}`}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '2px solid #e5e7eb'
+            }}
+            onError={(e) => {
+              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
+            }}
+          />
+          <h3 className="member-name" style={{
+            fontSize: '1.2rem',
+            fontWeight: '600',
+            margin: '0',
+            whiteSpace: 'normal',
+            overflow: 'visible',
+            textOverflow: 'unset',
+            lineHeight: '1.3'
+          }}>
+            {mitglied.nachname || "Unbekannt"}, {mitglied.vorname || "Unbekannt"}
+          </h3>
+        </div>
+      </div>
+      <div className="member-info" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
+        <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+          <strong>Geburtsdatum:</strong>{" "}
+          {mitglied.geburtsdatum
+            ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE')
+            : "N/A"}
+        </p>
+        <p style={{
+          margin: '0',
+          whiteSpace: 'normal',
+          overflow: 'visible',
+          textOverflow: 'unset',
+          lineHeight: '1.3'
+        }}>
+          <strong>Stile:</strong>{" "}
+          {mitglied.stile ? mitglied.stile.replace(/,/g, ", ") : "Keine Stile"}
+        </p>
+      </div>
+    </div>
+  );
+});
+
+MemberCard.displayName = 'MemberCard';
+
+// Virtualisiertes Grid für große Mitgliederlisten (100+ Mitglieder)
+const VirtualizedMemberGrid = React.memo(({
+  members,
+  selectionMode,
+  selectedMembers,
+  onToggleSelection,
+  onNavigate,
+  t
+}) => {
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Container-Breite messen
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  // Berechne Spalten basierend auf Container-Breite
+  const columnCount = useMemo(() => {
+    if (containerWidth < 500) return 2;
+    if (containerWidth < 800) return 3;
+    if (containerWidth < 1100) return 4;
+    return COLUMN_COUNT;
+  }, [containerWidth]);
+
+  const rowCount = useMemo(() => Math.ceil(members.length / columnCount), [members.length, columnCount]);
+
+  // Berechne Karten-Breite basierend auf verfügbarem Platz
+  const cardWidth = useMemo(() => {
+    return Math.floor((containerWidth - (columnCount - 1) * GAP) / columnCount);
+  }, [containerWidth, columnCount]);
+
+  // Cell Renderer für das Grid
+  const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
+    const index = rowIndex * columnCount + columnIndex;
+    if (index >= members.length) return null;
+
+    const mitglied = members[index];
+    return (
+      <div style={{
+        ...style,
+        left: style.left + GAP / 2,
+        top: style.top + GAP / 2,
+        width: style.width - GAP,
+        height: style.height - GAP
+      }}>
+        <MemberCard
+          mitglied={mitglied}
+          selectionMode={selectionMode}
+          isSelected={selectedMembers.includes(mitglied.mitglied_id)}
+          onToggleSelection={onToggleSelection}
+          onNavigate={onNavigate}
+        />
+      </div>
+    );
+  }, [members, columnCount, selectionMode, selectedMembers, onToggleSelection, onNavigate]);
+
+  // Empty State
+  if (members.length === 0) {
+    return (
+      <div className="stat-card" style={{
+        padding: '2rem',
+        textAlign: 'center',
+        marginTop: '0.5rem'
+      }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.5rem 0' }}>
+          {t('list.noMembers', 'Keine Mitglieder gefunden')}
+        </h3>
+        <p style={{ margin: '0', color: 'rgba(255, 255, 255, 0.6)' }}>
+          {t('list.noMembersDescription', 'Es sind noch keine Mitglieder im System registriert.')}
+        </p>
+      </div>
+    );
+  }
+
+  // Für kleine Listen (<50) kein Virtualisierung nötig
+  if (members.length < 50) {
+    return (
+      <div
+        ref={containerRef}
+        className="stats-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+          gap: `${GAP}px`,
+          marginTop: '0.2rem',
+          marginBottom: '0.5rem'
+        }}
+      >
+        {members.map((mitglied) => (
+          <MemberCard
+            key={mitglied.mitglied_id}
+            mitglied={mitglied}
+            selectionMode={selectionMode}
+            isSelected={selectedMembers.includes(mitglied.mitglied_id)}
+            onToggleSelection={onToggleSelection}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Virtualisiertes Grid für große Listen
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        marginTop: '0.2rem',
+        marginBottom: '0.5rem',
+        width: '100%'
+      }}
+    >
+      {containerWidth > 0 && (
+        <Grid
+          columnCount={columnCount}
+          columnWidth={cardWidth + GAP}
+          height={Math.min(rowCount * (CARD_HEIGHT + GAP), 600)} // Max 600px Höhe, dann scrollen
+          rowCount={rowCount}
+          rowHeight={CARD_HEIGHT + GAP}
+          width={containerWidth}
+          style={{ overflowX: 'hidden' }}
+        >
+          {Cell}
+        </Grid>
+      )}
+    </div>
+  );
+});
+
+VirtualizedMemberGrid.displayName = 'VirtualizedMemberGrid';
+
 const MitgliederListe = () => {
+  const { t } = useTranslation(['members', 'common']);
   // CACHE BREAK - Force reload
   const cacheBreak = Date.now();
   const { getDojoFilterParam, activeDojo, filter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
@@ -40,7 +327,7 @@ const MitgliederListe = () => {
   }, []);
   
   const [mitglieder, setMitglieder] = useState([]);
-  const [filteredMitglieder, setFilteredMitglieder] = useState([]);
+  // filteredMitglieder wird jetzt durch useMemo berechnet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,7 +370,6 @@ const MitgliederListe = () => {
           throw new Error("Unerwartetes API-Format!");
         }
         setMitglieder(data);
-        setFilteredMitglieder(data);
 
         // Verfügbare Anfangsbuchstaben extrahieren
         const letters = [...new Set(
@@ -107,13 +393,13 @@ const MitgliederListe = () => {
       })
       .catch((error) => {
         console.error("Fehler beim Laden der Mitglieder:", error);
-        setError("Fehler beim Laden der Mitglieder. Bitte Backend prüfen.");
+        setError(t('errors.loadingError'));
       })
       .finally(() => setLoading(false));
   }, [activeDojo, filter, updateTrigger]); // 🔒 TAX COMPLIANCE: Reload when dojo, filter or members change!
 
-  // Filter-Funktionen
-  useEffect(() => {
+  // Filter-Logik mit useMemo (nur neu berechnet wenn sich Dependencies ändern)
+  const filteredMitglieder = useMemo(() => {
     let filtered = mitglieder;
 
     // Erweiterte Text-Suche
@@ -140,10 +426,8 @@ const MitgliederListe = () => {
     // Stil-Filter
     if (filterStil) {
       if (filterStil === '__OHNE_STIL__') {
-        // Zeige nur Mitglieder ohne Stil
         filtered = filtered.filter(m => !m.stile || m.stile.trim() === '');
       } else {
-        // Zeige nur Mitglieder mit diesem Stil
         filtered = filtered.filter(m =>
           m.stile?.split(',').map(s => s.trim()).includes(filterStil)
         );
@@ -175,21 +459,8 @@ const MitgliederListe = () => {
       );
     }
 
-    setFilteredMitglieder(filtered);
+    return filtered;
   }, [mitglieder, searchTerm, selectedLetter, filterStil, filterAlter, filterGurt]);
-
-  // Hilfsfunktion: Alter berechnen
-  const calculateAge = (birthdate) => {
-    if (!birthdate) return 0;
-    const today = new Date();
-    const birth = new Date(birthdate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
 
   // Schließe Menü beim Klicken außerhalb
   useEffect(() => {
@@ -210,35 +481,38 @@ const MitgliederListe = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMenu]);
 
-  const handleNewMember = () => {
+  const handleNewMember = useCallback(() => {
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = useCallback((e) => {
     setSearchTerm(e.target.value);
-    if (selectedLetter) setSelectedLetter(""); // Reset Alphabet-Filter bei Suche
-  };
+    setSelectedLetter(""); // Reset Alphabet-Filter bei Suche
+  }, []);
 
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setSearchTerm("");
     setSelectedLetter("");
     setFilterStil("");
     setFilterAlter("");
     setFilterGurt("");
-  };
+  }, []);
 
-  const hasActiveFilters = () => {
+  // Memoized check für aktive Filter
+  const hasActiveFilters = useMemo(() => {
     return searchTerm || selectedLetter || filterStil || filterAlter || filterGurt;
-  };
+  }, [searchTerm, selectedLetter, filterStil, filterAlter, filterGurt]);
 
-  const handleLetterFilter = (letter) => {
-    if (selectedLetter === letter) {
-      setSelectedLetter(""); // Deselektieren
-    } else {
-      setSelectedLetter(letter);
-      setSearchTerm(""); // Reset Suchfeld bei Alphabet-Filter
-    }
-  };
+  const handleLetterFilter = useCallback((letter) => {
+    setSelectedLetter(prev => {
+      if (prev === letter) {
+        return ""; // Deselektieren
+      } else {
+        setSearchTerm(""); // Reset Suchfeld bei Alphabet-Filter
+        return letter;
+      }
+    });
+  }, []);
 
   const handleToggleSelectionMode = () => {
     console.log('🎯 handleToggleSelectionMode called!');
@@ -297,13 +571,15 @@ const MitgliederListe = () => {
     console.log('✅ Menu state changed to:', !showMenu);
   };
 
-  const handleToggleMemberSelection = (mitgliedId) => {
-    if (selectedMembers.includes(mitgliedId)) {
-      setSelectedMembers(selectedMembers.filter(id => id !== mitgliedId));
-    } else {
-      setSelectedMembers([...selectedMembers, mitgliedId]);
-    }
-  };
+  const handleToggleMemberSelection = useCallback((mitgliedId) => {
+    setSelectedMembers(prev => {
+      if (prev.includes(mitgliedId)) {
+        return prev.filter(id => id !== mitgliedId);
+      } else {
+        return [...prev, mitgliedId];
+      }
+    });
+  }, []);
 
   const handleSelectAll = () => {
     if (selectedMembers.length === filteredMitglieder.length) {
@@ -359,7 +635,6 @@ const MitgliederListe = () => {
 
         const refreshResponse = await axios.get(url);
         setMitglieder(refreshResponse.data);
-        setFilteredMitglieder(refreshResponse.data);
       }
     } catch (error) {
       console.error('Fehler bei der Bulk-Archivierung:', error);
@@ -369,362 +644,355 @@ const MitgliederListe = () => {
 
   return (
     <div className="app-container">
-      <div className="page-header" style={{ 
-        display: 'flex !important', 
-        flexDirection: 'column !important', 
-        gap: '0.6rem !important',
-        textAlign: 'left !important',
-        marginBottom: '0.8rem !important'
+      <div className="page-header" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+        marginBottom: '0.5rem',
+        paddingTop: '0.3rem',
+        alignItems: 'center'
       }} data-cache-break={cacheBreak}>
-        {/* Titel */}
-        <div>
-          <h2 className="page-title">Mitgliederübersicht</h2>
-          <p className="page-subtitle">Verwalte alle Dojo-Mitglieder</p>
-        </div>
-        
 
-        {/* Alphabet-Filter mit Suchfeld */}
-        {availableLetters.length > 0 && (
-          <div style={{
-            padding: '0',
-            background: 'transparent',
-            borderRadius: '0',
-            border: 'none',
-            backdropFilter: 'none',
-            boxShadow: 'none',
-            marginTop: '0.3rem'
-          }}>
-            {/* Suchfeld und Buttons oberhalb der Buchstabenreihe */}
-            <div style={{
-              display: 'flex !important',
-              alignItems: 'center !important',
-              marginBottom: '0.4rem',
-              width: '100%',
-              textAlign: 'left !important',
-              flexDirection: 'row !important',
-              flexWrap: 'nowrap !important',
-              justifyContent: 'flex-start !important'
-            }}>
-              <input
-                type="text"
-                placeholder="Mitglieder suchen..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                style={{
-                  width: '200px',
-                  padding: '0.3rem 0.6rem',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  background: 'rgba(255, 255, 255, 0.85)',
-                  backdropFilter: 'blur(12px)',
-                  boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
-                  transition: 'all 0.3s ease',
-                  outline: 'none',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  boxSizing: 'border-box',
-                  height: '28px',
-                  marginRight: '0.5rem'
-                }}
-                className="search-input-dark"
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#F59E0B';
-                  e.target.style.boxShadow = '0 4px 20px rgba(245, 158, 11, 0.2)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.boxShadow = '0 1px 4px rgba(0, 0, 0, 0.1)';
-                }}
-              />
+        {/* Zeile 1: Nur Titel */}
+        <h2 className="page-title" style={{
+          margin: 0,
+          fontSize: '1.6rem',
+          fontWeight: '700',
+          textAlign: 'center',
+          color: '#ffd700',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>{t('list.title')}</h2>
 
+        {/* Zeile 2: Suchfeld + Neu + Filter + Aktionen */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
+          {/* Suchfeld */}
+          <input
+            type="text"
+            placeholder={t('list.searchPlaceholder')}
+            value={searchTerm}
+            onChange={handleSearchChange}
+            style={{
+              width: '160px',
+              padding: '0 0.6rem',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(12px)',
+              transition: 'all 0.3s ease',
+              outline: 'none',
+              color: 'white',
+              boxSizing: 'border-box',
+              height: '34px'
+            }}
+            className="search-input-dark"
+            onFocus={(e) => {
+              e.target.style.borderColor = '#F59E0B';
+              e.target.style.boxShadow = '0 4px 20px rgba(245, 158, 11, 0.2)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+
+          {/* Stil-Filter */}
+          <select
+            value={filterStil}
+            onChange={(e) => setFilterStil(e.target.value)}
+            className={`filter-select ${filterStil ? 'active' : ''}`}
+            style={{
+              padding: '0 0.6rem',
+              fontSize: '0.8rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              height: '34px',
+              outline: 'none',
+              paddingRight: '1.8rem'
+            }}
+          >
+            <option value="">🎯 {t('list.filters.allStyles', 'Alle Stile')}</option>
+            <option value="__OHNE_STIL__" className="option-warning">❌ {t('list.filters.noStyle', 'Ohne Stil')}</option>
+            {availableStile.map(stil => (
+              <option key={stil} value={stil}>{stil}</option>
+            ))}
+          </select>
+
+          {/* Alter-Filter */}
+          <select
+            value={filterAlter}
+            onChange={(e) => setFilterAlter(e.target.value)}
+            className={`filter-select ${filterAlter ? 'active' : ''}`}
+            style={{
+              padding: '0 0.6rem',
+              fontSize: '0.8rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              height: '34px',
+              outline: 'none',
+              paddingRight: '1.8rem'
+            }}
+          >
+            <option value="">📅 {t('list.filters.age', 'Alter')}</option>
+            <option value="0-6">0-6 J.</option>
+            <option value="7-12">7-12 J.</option>
+            <option value="13-17">13-17 J.</option>
+            <option value="18-25">18-25 J.</option>
+            <option value="26-40">26-40 J.</option>
+            <option value="41+">41+ J.</option>
+          </select>
+
+          {/* Gurt-Filter */}
+          <select
+            value={filterGurt}
+            onChange={(e) => setFilterGurt(e.target.value)}
+            className={`filter-select ${filterGurt ? 'active' : ''}`}
+            style={{
+              padding: '0 0.6rem',
+              fontSize: '0.8rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              height: '34px',
+              outline: 'none',
+              paddingRight: '1.8rem'
+            }}
+          >
+            <option value="">🥋 {t('list.filters.allBelts', 'Alle Gurte')}</option>
+            {availableGurte.map(gurt => (
+              <option key={gurt} value={gurt}>{gurt}</option>
+            ))}
+          </select>
+
+          {/* Filter zurücksetzen Button */}
+          {hasActiveFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="filter-reset-btn"
+              style={{
+                padding: '0 0.6rem',
+                fontSize: '0.8rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                height: '34px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                fontWeight: '600'
+              }}
+            >
+              ✕ Reset
+            </button>
+          )}
+
+          {/* Aktionen-Menü */}
+          <div className="menu-container" style={{ position: 'relative', display: 'inline-block', zIndex: 10000 }}>
+            <button
+              ref={menuButtonRef}
+              onClick={handleMenuToggle}
+              className="actions-btn"
+              style={{
+                padding: '0 0.6rem',
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                whiteSpace: 'nowrap',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                transition: 'all 0.3s ease',
+                boxSizing: 'border-box',
+                height: '34px'
+              }}
+            >
+              <span style={{ fontSize: '1rem', fontWeight: '900' }}>⋮</span>
+              <span>{t('common:labels.actions')}</span>
+            </button>
+          </div>
+
+          {/* Dropdown Menü als Portal direkt im Body */}
+          {showMenu && ReactDOM.createPortal(
+            <div
+              className="actions-dropdown"
+              style={{
+                position: 'fixed',
+                top: `${menuPosition.top}px`,
+                left: `${menuPosition.left}px`,
+                borderRadius: '8px',
+                zIndex: 999999,
+                minWidth: '220px',
+                overflow: 'visible',
+                display: 'block',
+                visibility: 'visible',
+                opacity: 1,
+                padding: '0.5rem'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
-                onClick={handleNewMember}
-                className="add-member-btn"
+                className="actions-dropdown-item"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  handleNewMember();
+                }}
                 style={{
-                  padding: '0.3rem 0.6rem',
-                  fontSize: '0.75rem',
-                  borderRadius: '6px',
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  textAlign: 'left',
                   cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
+                  fontSize: '0.9rem',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '0.25rem',
+                  gap: '0.75rem',
                   fontWeight: '600',
-                  transition: 'all 0.3s ease',
-                  boxSizing: 'border-box',
-                  height: '28px',
-                  marginRight: '0.5rem'
+                  borderRadius: '6px',
+                  marginBottom: '0.5rem'
                 }}
               >
-                <span style={{ fontSize: '0.8rem' }}>➕</span>
-                Mitglied anlegen
+                <span style={{ fontSize: '1.3rem' }}>➕</span>
+                <span>{t('list.addMember')}</span>
               </button>
 
-              {/* Drei-Punkte-Menü Button - RECHTS NEBEN "Mitglied anlegen" */}
-              <div className="menu-container" style={{ position: 'relative', display: 'inline-block', zIndex: 10000 }}>
-                <button
-                  ref={menuButtonRef}
-                  onClick={handleMenuToggle}
-                  className="actions-btn"
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    fontSize: '0.75rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    whiteSpace: 'nowrap',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    transition: 'all 0.3s ease',
-                    boxSizing: 'border-box',
-                    height: '28px'
-                  }}
-                >
-                  <span style={{ fontSize: '0.8rem', fontWeight: '900' }}>⋮</span>
-                  <span>Aktionen</span>
-                </button>
+              <button
+                className="actions-dropdown-item"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handlePrintMitglieder();
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>🖨️</span>
+                <span>{t('list.printList', 'Mitgliederliste drucken')}</span>
+              </button>
 
-              </div>
+              <button
+                className="actions-dropdown-item"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleToggleSelectionMode();
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  fontWeight: '600',
+                  borderRadius: '6px'
+                }}
+              >
+                <span style={{ fontSize: '1.3rem' }}>📦</span>
+                <span>{selectionMode ? t('list.endSelection', 'Auswahl beenden') : t('list.bulkArchive', 'Mehrfach archivieren')}</span>
+              </button>
+            </div>,
+            document.body
+          )}
 
-              {/* Dropdown Menü als Portal direkt im Body */}
-              {showMenu && ReactDOM.createPortal(
-                <div
-                  className="actions-dropdown"
-                  style={{
-                    position: 'fixed',
-                    top: `${menuPosition.top}px`,
-                    left: `${menuPosition.left}px`,
-                    borderRadius: '8px',
-                    zIndex: 999999,
-                    minWidth: '220px',
-                    overflow: 'visible',
-                    display: 'block',
-                    visibility: 'visible',
-                    opacity: 1,
-                    padding: '0.5rem'
-                  }}
-                  onClick={(e) => {
-                    console.log('🎯 Dropdown clicked!');
-                    e.stopPropagation();
-                  }}
-                >
-                  <button
-                    className="actions-dropdown-item"
-                    onMouseDown={(e) => {
-                      console.log('🖨️ Drucken button MOUSEDOWN!');
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handlePrintMitglieder();
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      fontWeight: '600',
-                      borderRadius: '6px',
-                      marginBottom: '0.5rem'
-                    }}
-                  >
-                    <span style={{ fontSize: '1.3rem' }}>🖨️</span>
-                    <span>Mitgliederliste drucken</span>
-                  </button>
+          {/* Anzahl Mitglieder */}
+          <span style={{
+            fontSize: '0.75rem',
+            color: 'rgba(255,255,255,0.6)',
+            whiteSpace: 'nowrap',
+            padding: '0 0.5rem'
+          }}>
+            {filteredMitglieder.length}/{mitglieder.length}
+          </span>
+        </div>
 
-                  <button
-                    className="actions-dropdown-item"
-                    onMouseDown={(e) => {
-                      console.log('📦 Archivieren button MOUSEDOWN!');
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleToggleSelectionMode();
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      fontWeight: '600',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    <span style={{ fontSize: '1.3rem' }}>📦</span>
-                    <span>{selectionMode ? 'Auswahl beenden' : 'Mehrfach archivieren'}</span>
-                  </button>
-                </div>,
-                document.body
-              )}
-            </div>
-
-            {/* Neue Filter-Leiste */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              marginBottom: '0.8rem',
-              flexWrap: 'wrap'
+        {/* Zeile 3: Nachname-Label + ABC-Buchstaben */}
+        {availableLetters.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              color: 'rgba(255,255,255,0.7)',
+              whiteSpace: 'nowrap'
             }}>
-              {/* Stil-Filter */}
-              <select
-                value={filterStil}
-                onChange={(e) => setFilterStil(e.target.value)}
-                className={`filter-select ${filterStil ? 'active' : ''}`}
+              {t('detail.fields.lastName', 'Nachname')}:
+            </span>
+
+            {availableLetters.map(letter => (
+              <button
+                key={letter}
+                onClick={() => handleLetterFilter(letter)}
+                className={`letter-filter-btn ${selectedLetter === letter ? 'active' : ''}`}
                 style={{
-                  padding: '0.5rem 0.8rem',
-                  fontSize: '0.85rem',
-                  borderRadius: '6px',
+                  padding: '0.2rem 0.45rem',
+                  borderRadius: '4px',
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  height: '38px',
-                  minHeight: '38px',
-                  outline: 'none',
-                  width: 'auto',
-                  paddingRight: '2rem',
-                  lineHeight: '1.4'
+                  fontWeight: '600',
+                  fontSize: '0.7rem',
+                  transition: 'all 0.2s ease',
+                  minWidth: '24px',
+                  height: '24px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                <option value="">🎯 Alle Stile</option>
-                <option value="__OHNE_STIL__" className="option-warning">❌ Ohne Stil</option>
-                {availableStile.map(stil => (
-                  <option key={stil} value={stil}>
-                    {stil}
-                  </option>
-                ))}
-              </select>
-
-              {/* Alter-Filter */}
-              <select
-                value={filterAlter}
-                onChange={(e) => setFilterAlter(e.target.value)}
-                className={`filter-select ${filterAlter ? 'active' : ''}`}
+                {letter}
+              </button>
+            ))}
+            {selectedLetter && (
+              <button
+                onClick={() => setSelectedLetter("")}
+                className="letter-filter-reset-btn"
                 style={{
-                  padding: '0.5rem 0.8rem',
-                  fontSize: '0.85rem',
-                  borderRadius: '6px',
+                  padding: '0.2rem 0.45rem',
+                  borderRadius: '4px',
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  height: '38px',
-                  minHeight: '38px',
-                  outline: 'none',
-                  width: 'auto',
-                  paddingRight: '2rem',
-                  lineHeight: '1.4'
+                  fontWeight: '600',
+                  fontSize: '0.7rem',
+                  transition: 'all 0.2s ease',
+                  height: '24px',
+                  display: 'inline-flex',
+                  alignItems: 'center'
                 }}
               >
-                <option value="">📅 Alle Altersgruppen</option>
-                <option value="0-6">0-6 Jahre</option>
-                <option value="7-12">7-12 Jahre</option>
-                <option value="13-17">13-17 Jahre</option>
-                <option value="18-25">18-25 Jahre</option>
-                <option value="26-40">26-40 Jahre</option>
-                <option value="41+">41+ Jahre</option>
-              </select>
-
-              {/* Gurt-Filter */}
-              <select
-                value={filterGurt}
-                onChange={(e) => setFilterGurt(e.target.value)}
-                className={`filter-select ${filterGurt ? 'active' : ''}`}
-                style={{
-                  padding: '0.5rem 0.8rem',
-                  fontSize: '0.85rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  height: '38px',
-                  minHeight: '38px',
-                  outline: 'none',
-                  width: 'auto',
-                  paddingRight: '2rem',
-                  lineHeight: '1.4'
-                }}
-              >
-                <option value="">🥋 Alle Gurte</option>
-                {availableGurte.map(gurt => (
-                  <option key={gurt} value={gurt}>
-                    {gurt}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter zurücksetzen Button */}
-              {hasActiveFilters() && (
-                <button
-                  onClick={handleResetFilters}
-                  className="filter-reset-btn"
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    fontSize: '0.75rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    height: '28px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    fontWeight: '600'
-                  }}
-                >
-                  ✕ Filter zurücksetzen
-                </button>
-              )}
-            </div>
-
-            <div className="filter-label" style={{ marginBottom: '0.3rem', fontWeight: '600', fontSize: '0.8rem' }}>
-              Filter nach Nachname:
-            </div>
-
-            <div className="letter-filter-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-              {availableLetters.map(letter => (
-                <button
-                  key={letter}
-                  onClick={() => handleLetterFilter(letter)}
-                  className={`letter-filter-btn ${selectedLetter === letter ? 'active' : ''}`}
-                  style={{
-                    padding: '0.3rem 0.5rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '0.7rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {letter}
-                </button>
-              ))}
-              {selectedLetter && (
-                <button
-                  onClick={() => setSelectedLetter("")}
-                  className="letter-filter-reset-btn"
-                  style={{
-                    padding: '0.3rem 0.5rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '0.7rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  ✖ Alle
-                </button>
-              )}
-            </div>
-            {(searchTerm || selectedLetter) && (
-              <div className="filter-result-count" style={{ marginTop: '0.3rem', fontSize: '0.7rem', fontWeight: '500' }}>
-                {filteredMitglieder.length} von {mitglieder.length} Mitgliedern angezeigt
-              </div>
+                ✖ Alle
+              </button>
             )}
           </div>
         )}
@@ -747,7 +1015,7 @@ const MitgliederListe = () => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.85rem', fontWeight: '600' }}>
-              {selectedMembers.length} Mitglied{selectedMembers.length !== 1 ? 'er' : ''} ausgewählt
+              {t('list.selectedCount', '{{count}} ausgewählt', { count: selectedMembers.length })}
             </span>
             <button
               onClick={handleSelectAll}
@@ -770,7 +1038,7 @@ const MitgliederListe = () => {
                 e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
               }}
             >
-              {selectedMembers.length === filteredMitglieder.length ? 'Alle abwählen' : 'Alle auswählen'}
+              {selectedMembers.length === filteredMitglieder.length ? t('list.deselectAll', 'Alle abwählen') : t('list.selectAll', 'Alle auswählen')}
             </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -839,152 +1107,14 @@ const MitgliederListe = () => {
       )}
 
       {!loading && (
-         <div
-           className="stats-grid"
-           style={{
-             display: 'grid',
-             gridTemplateColumns: 'repeat(5, 1fr)',
-             gap: '0.3rem',
-             marginTop: '0.2rem',
-             marginBottom: '0.5rem'
-           }}
-         >
-          {filteredMitglieder.length > 0 ? (
-            filteredMitglieder.map((mitglied) => (
-              <div
-                key={mitglied.mitglied_id}
-                className="stat-card"
-                onClick={(e) => {
-                  if (selectionMode) {
-                    e.stopPropagation();
-                    handleToggleMemberSelection(mitglied.mitglied_id);
-                  } else {
-                    navigate(`/dashboard/mitglieder/${mitglied.mitglied_id}`);
-                  }
-                }}
-                 style={{
-                   padding: '0.8rem',
-                   borderRadius: '6px',
-                   cursor: 'pointer',
-                   transition: 'all 0.2s',
-                   minHeight: '130px',
-                   display: 'flex',
-                   flexDirection: 'column',
-                   justifyContent: 'flex-start',
-                   position: 'relative',
-                   border: selectionMode && selectedMembers.includes(mitglied.mitglied_id)
-                     ? '2px solid rgba(139, 92, 246, 0.6)'
-                     : '1px solid rgba(255, 255, 255, 0.1)',
-                   boxShadow: selectionMode && selectedMembers.includes(mitglied.mitglied_id)
-                     ? '0 0 15px rgba(139, 92, 246, 0.3)'
-                     : 'none'
-                 }}
-              >
-                {/* Checkbox im Auswahlmodus */}
-                {selectionMode && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '0.5rem',
-                      right: '0.5rem',
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '4px',
-                      border: selectedMembers.includes(mitglied.mitglied_id)
-                        ? '2px solid #8b5cf6'
-                        : '2px solid rgba(255, 255, 255, 0.4)',
-                      background: selectedMembers.includes(mitglied.mitglied_id)
-                        ? '#8b5cf6'
-                        : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      zIndex: 10
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleMemberSelection(mitglied.mitglied_id);
-                    }}
-                  >
-                    {selectedMembers.includes(mitglied.mitglied_id) && (
-                      <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: 'bold' }}>✓</span>
-                    )}
-                  </div>
-                )}
-
-                <div style={{ marginBottom: '0.3rem' }}>
-                  {/* Foto-Anzeige */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.3rem'
-                  }}>
-                    <img
-                      key={mitglied.mitglied_id}
-                      src={mitglied.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
-                      alt={`${mitglied.vorname} ${mitglied.nachname}`}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '2px solid #e5e7eb'
-                      }}
-                      onError={(e) => {
-                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
-                      }}
-                    />
-                    <h3 className="member-name" style={{
-                      fontSize: '1.2rem',
-                      fontWeight: '600',
-                      margin: '0',
-                      whiteSpace: 'normal',
-                      overflow: 'visible',
-                      textOverflow: 'unset',
-                      lineHeight: '1.3'
-                    }}>
-                      {mitglied.nachname || "Unbekannt"}, {mitglied.vorname || "Unbekannt"}
-                    </h3>
-                  </div>
-                </div>
-                <div className="member-info" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-                  <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
-                    <strong>Geburtsdatum:</strong>{" "}
-                    {mitglied.geburtsdatum
-                      ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE')
-                      : "N/A"}
-                  </p>
-                  <p style={{
-                    margin: '0',
-                    whiteSpace: 'normal',
-                    overflow: 'visible',
-                    textOverflow: 'unset',
-                    lineHeight: '1.3'
-                  }}>
-                    <strong>Stile:</strong>{" "}
-                    {mitglied.stile ? mitglied.stile.replace(/,/g, ", ") : "Keine Stile"}
-                  </p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="stat-card" style={{
-              gridColumn: '1 / -1',
-              padding: '2rem',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.5rem 0' }}>
-                Keine Mitglieder gefunden
-              </h3>
-              <p style={{ margin: '0', color: 'rgba(255, 255, 255, 0.6)' }}>
-                Es sind noch keine Mitglieder im System registriert.
-              </p>
-            </div>
-          )}
-        </div>
+        <VirtualizedMemberGrid
+          members={filteredMitglieder}
+          selectionMode={selectionMode}
+          selectedMembers={selectedMembers}
+          onToggleSelection={handleToggleMemberSelection}
+          onNavigate={(id) => navigate(`/dashboard/mitglieder/${id}`)}
+          t={t}
+        />
       )}
 
       {isModalOpen && <NeuesMitgliedAnlegen onClose={() => setIsModalOpen(false)} />}

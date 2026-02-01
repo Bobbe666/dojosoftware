@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -40,6 +40,8 @@ const MemberDashboard = () => {
 
   // Cache-Breaking für bessere Debugging
   const navigate = useNavigate();
+
+  // Haupt-Daten States
   const [stats, setStats] = useState({
     trainingsstunden: 0,
     anwesenheit: 0,
@@ -49,31 +51,69 @@ const MemberDashboard = () => {
   const [memberData, setMemberData] = useState(null);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
-  const [showMemberCheckin, setShowMemberCheckin] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
-  
-  // Stil & Gurt Daten
-  const [memberStile, setMemberStile] = useState([]);
-  const [styleSpecificData, setStyleSpecificData] = useState({});
-  const [stileLoading, setStileLoading] = useState(false);
-  const [nextExam, setNextExam] = useState(null);
-  const [stile, setStile] = useState([]);
-
-  // Push-Benachrichtigungen
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Prüfungstermine
-  const [approvedExams, setApprovedExams] = useState([]);
-  const [examResults, setExamResults] = useState([]);
-
-  // Fehlerhandling
   const [error, setError] = useState(null);
 
-  // Prüfungsanmeldung Modal
-  const [showExamRegistrationModal, setShowExamRegistrationModal] = useState(false);
-  const [selectedExam, setSelectedExam] = useState(null);
-  const [acceptedConditions, setAcceptedConditions] = useState(false);
+  // Konsolidierte Modal States (vorher 3 separate useState)
+  const [modals, setModals] = useState({
+    checkin: false,
+    qrCode: false,
+    examRegistration: false
+  });
+
+  // Konsolidierte Stil & Gurt Daten (vorher 5 separate useState)
+  const [styleData, setStyleData] = useState({
+    memberStile: [],
+    styleSpecificData: {},
+    stile: [],
+    loading: false
+  });
+
+  // Konsolidierte Prüfungs-Daten (vorher 4 separate useState)
+  const [examData, setExamData] = useState({
+    nextExam: null,
+    approved: [],
+    results: [],
+    selected: null,
+    acceptedConditions: false
+  });
+
+  // Konsolidierte Benachrichtigungen (vorher 2 separate useState)
+  const [notificationData, setNotificationData] = useState({
+    list: [],
+    unreadCount: 0
+  });
+
+  // Abwärtskompatibilität: Destrukturierte Werte für bestehenden Code
+  const showMemberCheckin = modals.checkin;
+  const showQRCode = modals.qrCode;
+  const showExamRegistrationModal = modals.examRegistration;
+  const memberStile = styleData.memberStile;
+  const styleSpecificData = styleData.styleSpecificData;
+  const stile = styleData.stile;
+  const stileLoading = styleData.loading;
+  const nextExam = examData.nextExam;
+  const approvedExams = examData.approved;
+  const examResults = examData.results;
+  const selectedExam = examData.selected;
+  const acceptedConditions = examData.acceptedConditions;
+  const notifications = notificationData.list;
+  const unreadCount = notificationData.unreadCount;
+
+  // Setter-Funktionen für Abwärtskompatibilität
+  const setShowMemberCheckin = useCallback((val) => setModals(prev => ({ ...prev, checkin: val })), []);
+  const setShowQRCode = useCallback((val) => setModals(prev => ({ ...prev, qrCode: val })), []);
+  const setShowExamRegistrationModal = useCallback((val) => setModals(prev => ({ ...prev, examRegistration: val })), []);
+  const setMemberStile = useCallback((val) => setStyleData(prev => ({ ...prev, memberStile: typeof val === 'function' ? val(prev.memberStile) : val })), []);
+  const setStyleSpecificData = useCallback((val) => setStyleData(prev => ({ ...prev, styleSpecificData: typeof val === 'function' ? val(prev.styleSpecificData) : val })), []);
+  const setStile = useCallback((val) => setStyleData(prev => ({ ...prev, stile: val })), []);
+  const setStileLoading = useCallback((val) => setStyleData(prev => ({ ...prev, loading: val })), []);
+  const setNextExam = useCallback((val) => setExamData(prev => ({ ...prev, nextExam: val })), []);
+  const setApprovedExams = useCallback((val) => setExamData(prev => ({ ...prev, approved: val })), []);
+  const setExamResults = useCallback((val) => setExamData(prev => ({ ...prev, results: val })), []);
+  const setSelectedExam = useCallback((val) => setExamData(prev => ({ ...prev, selected: val })), []);
+  const setAcceptedConditions = useCallback((val) => setExamData(prev => ({ ...prev, acceptedConditions: val })), []);
+  const setNotifications = useCallback((val) => setNotificationData(prev => ({ ...prev, list: val })), []);
+  const setUnreadCount = useCallback((val) => setNotificationData(prev => ({ ...prev, unreadCount: val })), []);
 
   // Quick Action Handler
   const handleQuickAction = (action) => {

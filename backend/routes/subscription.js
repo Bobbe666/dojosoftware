@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -63,7 +64,7 @@ router.get('/current', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler beim Laden der Subscription:', error);
+    logger.error('Fehler beim Laden der Subscription:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -82,7 +83,7 @@ router.get('/plans', async (req, res) => {
     res.json({ plans });
 
   } catch (error) {
-    console.error('Fehler beim Laden der Pl\u00e4ne:', error);
+    logger.error('Fehler beim Laden der Pl\u00e4ne:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -198,7 +199,7 @@ router.post('/change-plan', async (req, res) => {
 
   } catch (error) {
     await connection.rollback();
-    console.error('Fehler beim Plan-Wechsel:', error);
+    logger.error('Fehler beim Plan-Wechsel:', { error: error });
     res.status(400).json({ error: error.message });
   } finally {
     connection.release();
@@ -249,7 +250,7 @@ router.post('/cancel', async (req, res) => {
 
   } catch (error) {
     await connection.rollback();
-    console.error('Fehler bei K\u00fcndigung:', error);
+    logger.error('Fehler bei K\u00fcndigung:', { error: error });
     res.status(500).json({ error: 'Serverfehler bei K\u00fcndigung' });
   } finally {
     connection.release();
@@ -290,7 +291,7 @@ router.post('/reactivate', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Fehler bei Reaktivierung:', error);
+    logger.error('Fehler bei Reaktivierung:', { error: error });
     res.status(500).json({ error: 'Serverfehler bei Reaktivierung' });
   }
 });
@@ -318,7 +319,7 @@ router.get('/history', async (req, res) => {
     res.json({ history });
 
   } catch (error) {
-    console.error('Fehler beim Laden der History:', error);
+    logger.error('Fehler beim Laden der History:', { error: error });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });

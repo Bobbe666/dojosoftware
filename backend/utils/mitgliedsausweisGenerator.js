@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const logger = require('./logger');
 const path = require('path');
 const fs = require('fs');
 
@@ -36,7 +37,7 @@ class MitgliedsausweisGenerator {
 
         resolve(doc);
       } catch (error) {
-        console.error('[MitgliedsausweisGenerator] Fehler bei PDF-Generierung:', error);
+        logger.error('[MitgliedsausweisGenerator] Fehler bei PDF-Generierung:', { error: error });
         reject(error);
       }
     });

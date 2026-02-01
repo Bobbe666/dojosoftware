@@ -79,7 +79,7 @@ router.get('/profile', authenticateMember, async (req, res) => {
 
     res.json(profileData);
   } catch (error) {
-    console.error('Fehler beim Laden der Profildaten:', error);
+    logger.error('Fehler beim Laden der Profildaten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Profildaten' });
   }
 });
@@ -131,7 +131,7 @@ router.put('/profile', authenticateMember, async (req, res) => {
 
     res.json({ message: 'Profil erfolgreich aktualisiert', updatedFields: Object.keys(filteredData) });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren der Profildaten:', error);
+    logger.error('Fehler beim Aktualisieren der Profildaten:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren der Profildaten' });
   }
 });
@@ -178,7 +178,7 @@ router.put('/password', authenticateMember, async (req, res) => {
 
     res.json({ message: 'Passwort erfolgreich geändert' });
   } catch (error) {
-    console.error('Fehler beim Ändern des Passworts:', error);
+    logger.error('Fehler beim Ändern des Passworts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Ändern des Passworts' });
   }
 });
@@ -239,7 +239,7 @@ router.get('/schedule', authenticateMember, async (req, res) => {
 
     res.json(schedule);
   } catch (error) {
-    console.error('Fehler beim Laden des Stundenplans:', error);
+    logger.error('Fehler beim Laden des Stundenplans:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden des Stundenplans' });
   }
 });
@@ -280,7 +280,7 @@ router.get('/payments', authenticateMember, async (req, res) => {
 
     res.json(payments);
   } catch (error) {
-    console.error('Fehler beim Laden der Zahlungen:', error);
+    logger.error('Fehler beim Laden der Zahlungen:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Zahlungen' });
   }
 });
@@ -343,7 +343,7 @@ router.get('/stats', authenticateMember, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Fehler beim Laden der Statistiken:', error);
+    logger.error('Fehler beim Laden der Statistiken:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
   }
 });

@@ -132,6 +132,35 @@
   --focus-ring: 0 0 0 2px var(--bg-body), 0 0 0 4px var(--primary);
 }
 
+/* ========================================
+   ZENTRALE ÜBERSCHRIFTEN-STYLES
+   Gold-Gradient wie "DOJO ADMIN DASHBOARD"
+   ======================================== */
+
+/* Hauptüberschrift mit Gold-Gradient */
+.heading-gold,
+.page-title,
+.section-title,
+.card-title,
+.nav-card h3,
+.nav-card-header h3,
+.nav-content h3,
+.nav-card-title {
+  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+/* Version Badge - Gold */
+.version-badge {
+  background: rgba(255, 215, 0, 0.15) !important;
+  color: #ffd700 !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+}
+
 /* ========== GLOBAL RESETS & BASE STYLES ========== */
 
 *,

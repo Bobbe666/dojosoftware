@@ -66,10 +66,15 @@ app.use((req, res, next) => {
 });
 
 // CORS mit Sicherheitskonfiguration
+// WICHTIG: In Produktion MUSS ALLOWED_ORIGINS in .env gesetzt sein!
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:5001',
-     'https://tda-intl.com', 'https://www.tda-intl.com', 'http://tda-intl.com', 'http://www.tda-intl.com'];
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5001'];
+
+// Warnung wenn in Produktion keine ALLOWED_ORIGINS gesetzt sind
+if (process.env.NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
+  logger.warn('⚠️ ALLOWED_ORIGINS nicht gesetzt! Bitte in .env konfigurieren für Produktion.');
+}
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -595,18 +600,8 @@ try {
     });
 }
 
-// 2.1 ADMIN-VERWALTUNG
-try {
-  const adminRoutes = require(path.join(__dirname, "routes", "admin.js"));
-  app.use("/api/admin", authenticateToken, adminRoutes);
-  logger.success('Route gemountet', { path: '/api/admin' });
-} catch (error) {
-  logger.error('Fehler beim Laden der Route', {
-      route: 'admins',
-      error: error.message,
-      stack: error.stack
-    });
-}
+// 2.1 ADMIN-VERWALTUNG - bereits bei Zeile 276 geladen, hier übersprungen
+// (war doppelt geladen - jetzt modularisiert in routes/admin/)
 
 // 3. TARIFE
 try {
@@ -634,24 +629,24 @@ try {
     });
 }
 
-// 4. STIL-VERWALTUNG (Gürtel & Graduierungen) - NEU
+// 4. STIL-VERWALTUNG (Gürtel & Graduierungen) - MODULAR REFACTORED
 try {
-  const stileguertelRouter = require(path.join(__dirname, "routes", "stileguertel.js"));
-  app.use("/api/stile", stileguertelRouter);
-  logger.success('Route gemountet', { path: '/api/stile', file: 'stileguertel.js' });
+  const stileRouter = require(path.join(__dirname, "routes", "stile"));
+  app.use("/api/stile", stileRouter);
+  logger.success('Route gemountet', { path: '/api/stile', file: 'stile/index.js' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
-      route: 'stileguertel',
+      route: 'stile',
       error: error.message,
       stack: error.stack
     });
 }
 
-// 5. VERTRÄGE (für Beitragsverwaltung) - NEU
+// 5. VERTRÄGE (für Beitragsverwaltung) - MODULAR REFACTORED
 try {
-  const vertraegeRouter = require(path.join(__dirname, "routes", "vertraege.js"));
+  const vertraegeRouter = require(path.join(__dirname, "routes", "vertraege"));
   app.use("/api/vertraege", vertraegeRouter);
-  logger.success('Route gemountet', { path: '/api/vertraege' });
+  logger.success('Route gemountet', { path: '/api/vertraege', file: 'vertraege/index.js' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'vertraege',
@@ -855,11 +850,11 @@ try {
     });
 }
 
-// 10.5 VERBANDSMITGLIEDSCHAFTEN - TDA International Dojo & Einzelmitgliedschaften
+// 10.5 VERBANDSMITGLIEDSCHAFTEN - TDA International Dojo & Einzelmitgliedschaften - MODULAR REFACTORED
 try {
-  const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften.js"));
+  const verbandsmitgliedschaftenRouter = require(path.join(__dirname, "routes", "verbandsmitgliedschaften"));
   app.use("/api/verbandsmitgliedschaften", verbandsmitgliedschaftenRouter);
-  logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften' });
+  logger.success('Route gemountet', { path: '/api/verbandsmitgliedschaften', file: 'verbandsmitgliedschaften/index.js' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'verbandsmitgliedschaften',
@@ -1090,9 +1085,9 @@ try {
     });
 }
 
-// 16. PRÜFUNGSVERWALTUNG (Gurtprüfungen & Exam Management) - NEU
+// 16. PRÜFUNGSVERWALTUNG (Gurtprüfungen & Exam Management) - NEU (Modular)
 try {
-  const pruefungenRouter = require(path.join(__dirname, "routes", "pruefungen.js"));
+  const pruefungenRouter = require(path.join(__dirname, "routes", "pruefungen"));
   app.use("/api/pruefungen", pruefungenRouter);
   const pruefungenHistorischRouter = require(path.join(__dirname, "routes", "pruefungen-historisch.js"));
   app.use("/api/pruefungen-historisch", pruefungenHistorischRouter);
@@ -1162,9 +1157,9 @@ try {
     });
 }
 
-// Rechnungen Route
+// Rechnungen Route (modular)
 try {
-  const rechnungenRouter = require(path.join(__dirname, "routes", "rechnungen.js"));
+  const rechnungenRouter = require(path.join(__dirname, "routes", "rechnungen"));
   app.use("/api/rechnungen", rechnungenRouter);
   logger.success('Route gemountet', { path: '/api/rechnungen' });
 } catch (error) {
@@ -1485,52 +1480,13 @@ app.get('/api/member-charset-test/:id', (req, res) => {
 // ERROR HANDLING & 404
 // =============================================
 
-// Enhanced 404 handler with debugging
-app.use((req, res) => {
-  logger.http('404 Request', { method: req.method, url: req.url });
-  logger.debug('404 Request Headers', { headers: req.headers });
-  
-  res.status(404).json({ 
-    error: "API-Endpunkt nicht gefunden",
-    path: req.url,
-    method: req.method,
-    suggestion: "Try /api/test, /api/routes or /api/stile/test to see available endpoints"
-  });
-});
+const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
-// Global error handler - ✅ SECURITY: Production-safe error responses
-app.use((error, req, res, next) => {
-  logger.error('Server Error', {
-    error: error.message,
-    stack: error.stack,
-    method: req.method,
-    url: req.url
-  });
+// 404 Handler - einheitliches Format
+app.use(notFoundHandler);
 
-  const statusCode = error.statusCode || error.status || 500;
-
-  // ✅ SECURITY: In Production keine Stack Traces oder interne Details exposen
-  if (process.env.NODE_ENV === 'production') {
-    res.status(statusCode).json({
-      error: 'Interner Serverfehler',
-      message: statusCode === 500 ? 'Ein Fehler ist aufgetreten' : error.message,
-      timestamp: new Date().toISOString()
-    });
-  } else {
-    // In Development: Vollständige Fehlerdetails für Debugging
-    res.status(statusCode).json({
-      error: 'Interner Server-Fehler',
-      message: error.message,
-      stack: error.stack,
-      details: {
-        method: req.method,
-        url: req.url,
-        statusCode
-      },
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// Globaler Error Handler - einheitliches Format
+app.use(errorHandler);
 
 // =============================================
 // CRON JOBS

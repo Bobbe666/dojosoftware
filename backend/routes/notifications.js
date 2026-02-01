@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -34,7 +35,7 @@ const initEmailTransporter = async () => {
 
     }
   } catch (error) {
-    console.error('Email Transporter Fehler:', error);
+    logger.error('Email Transporter Fehler:', { error: error });
   }
 };
 
@@ -109,7 +110,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       recentNotifications
     });
   } catch (error) {
-    console.error('Dashboard Fehler:', error);
+    logger.error('Dashboard Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Daten' });
   }
 });
@@ -123,7 +124,7 @@ router.get('/settings', authenticateToken, async (req, res) => {
     const settings = await getNotificationSettings();
     res.json({ success: true, settings });
   } catch (error) {
-    console.error('Settings Fehler:', error);
+    logger.error('Settings Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Einstellungen' });
   }
 });
@@ -181,7 +182,7 @@ router.put('/settings', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Einstellungen gespeichert' });
   } catch (error) {
-    console.error('Settings Update Fehler:', error);
+    logger.error('Settings Update Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Speichern der Einstellungen' });
   }
 });
@@ -231,7 +232,7 @@ router.post('/email/test', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Test-Email erfolgreich gesendet' });
   } catch (error) {
-    console.error('Test-Email Fehler:', error);
+    logger.error('Test-Email Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Senden der Test-Email' });
   }
 });
@@ -295,7 +296,7 @@ router.post('/email/send', authenticateToken, async (req, res) => {
       results 
     });
   } catch (error) {
-    console.error('Email Send Fehler:', error);
+    logger.error('Email Send Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Senden der Emails' });
   }
 });
@@ -338,7 +339,7 @@ router.post('/push/subscribe', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Push-Subscription erfolgreich registriert' });
   } catch (error) {
-    console.error('Push Subscribe Fehler:', error);
+    logger.error('Push Subscribe Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Registrieren der Push-Subscription' });
   }
 });
@@ -387,7 +388,7 @@ router.post('/push/send', authenticateToken, async (req, res) => {
         results.push({ recipient: recipient, status: 'sent' });
         sentCount++;
       } catch (error) {
-        console.error(`Fehler beim Senden an ${recipient}:`, error);
+        logger.error('Fehler beim Senden an ${recipient}:', { error: error });
 
         // Fehlerhafte Push-Notification loggen
         await new Promise((resolve, reject) => {
@@ -416,7 +417,7 @@ router.post('/push/send', authenticateToken, async (req, res) => {
       totalRecipients: recipients.length
     });
   } catch (error) {
-    console.error('Push Send Fehler:', error);
+    logger.error('Push Send Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Senden der Push-Nachrichten' });
   }
 });
@@ -439,7 +440,7 @@ router.get('/push/subscriptions', authenticateToken, async (req, res) => {
 
     res.json({ success: true, subscriptions });
   } catch (error) {
-    console.error('Push Subscriptions Fehler:', error);
+    logger.error('Push Subscriptions Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Push-Subscriptions' });
   }
 });
@@ -462,7 +463,7 @@ router.delete('/push/subscribe/:id', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Push-Subscription erfolgreich deaktiviert' });
   } catch (error) {
-    console.error('Push Unsubscribe Fehler:', error);
+    logger.error('Push Unsubscribe Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Deaktivieren der Push-Subscription' });
   }
 });
@@ -526,7 +527,7 @@ router.get('/history', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('History Fehler:', error);
+    logger.error('History Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden des Verlaufs' });
   }
 });
@@ -545,7 +546,7 @@ router.delete('/history/:id', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Benachrichtigung erfolgreich gelöscht' });
   } catch (error) {
-    console.error('Delete Notification Fehler:', error);
+    logger.error('Delete Notification Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Löschen der Benachrichtigung' });
   }
 });
@@ -585,7 +586,7 @@ router.delete('/history/bulk/:id', authenticateToken, async (req, res) => {
       deletedCount: result.affectedRows
     });
   } catch (error) {
-    console.error('Bulk Delete Notification Fehler:', error);
+    logger.error('Bulk Delete Notification Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Löschen der Benachrichtigungen' });
   }
 });
@@ -727,16 +728,16 @@ router.get('/recipients', authenticateToken, async (req, res) => {
           ORDER BY username
         `, (err, results) => {
           if (err) {
-            console.error('Admin query error:', err);
+            logger.error('Admin query error:', { error: err });
             resolve([]); // Leeres Array bei Fehler
           } else {
-            console.log('✅ Admin users loaded:', results.length);
+            logger.info('Admin users loaded:', { details: results.length });
             resolve(results);
           }
         });
       });
     } catch (error) {
-      console.error('Admin load error:', error);
+      logger.error('Admin load error:', { error: error });
       adminEmails = [];
     }
 
@@ -751,7 +752,7 @@ router.get('/recipients', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Recipients Fehler:', error);
+    logger.error('Recipients Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Empfänger' });
   }
 });
@@ -771,7 +772,7 @@ router.get('/templates', authenticateToken, async (req, res) => {
 
     res.json({ success: true, templates });
   } catch (error) {
-    console.error('Templates Fehler:', error);
+    logger.error('Templates Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Templates' });
   }
 });
@@ -792,7 +793,7 @@ router.post('/templates', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Template erfolgreich erstellt' });
   } catch (error) {
-    console.error('Template Create Fehler:', error);
+    logger.error('Template Create Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Erstellen des Templates' });
   }
 });
@@ -830,7 +831,7 @@ router.get('/member/:email', authenticateToken, async (req, res) => {
       unreadCount: notifications.filter(n => !n.read).length
     });
   } catch (error) {
-    console.error('Member Notifications Fehler:', error);
+    logger.error('Member Notifications Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Benachrichtigungen' });
   }
 });
@@ -857,7 +858,7 @@ router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
         ORDER BY n.confirmed_at DESC
       `, [id.toString()], (err, results) => {
         if (err) {
-          console.error('Fehler beim Laden der bestätigten Benachrichtigungen:', err);
+          logger.error('Fehler beim Laden der bestätigten Benachrichtigungen:', { error: err });
           resolve([]);
         } else {
           // Parse metadata JSON
@@ -875,7 +876,7 @@ router.get('/member/:id/confirmed', authenticateToken, async (req, res) => {
       data: notifications
     });
   } catch (error) {
-    console.error('Fehler beim Laden der bestätigten Benachrichtigungen:', error);
+    logger.error('Fehler beim Laden der bestätigten Benachrichtigungen:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der bestätigten Benachrichtigungen'
@@ -901,7 +902,7 @@ router.put('/member/:id/read', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Benachrichtigung als gelesen markiert' });
   } catch (error) {
-    console.error('Mark Read Fehler:', error);
+    logger.error('Mark Read Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Markieren als gelesen' });
   }
 });
@@ -920,7 +921,7 @@ router.get('/admin/unread', authenticateToken, async (req, res) => {
         ORDER BY created_at DESC
       `, (err, results) => {
         if (err) {
-          console.error('Fehler beim Abrufen der Admin-Benachrichtigungen:', err);
+          logger.error('Fehler beim Abrufen der Admin-Benachrichtigungen:', { error: err });
           resolve([]);
         } else {
           resolve(results);
@@ -933,7 +934,7 @@ router.get('/admin/unread', authenticateToken, async (req, res) => {
       notifications: notifications
     });
   } catch (error) {
-    console.error('Admin Notifications Fehler:', error);
+    logger.error('Admin Notifications Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Benachrichtigungen' });
   }
 });
@@ -956,7 +957,7 @@ router.put('/admin/:id/read', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Benachrichtigung als gelesen markiert' });
   } catch (error) {
-    console.error('Mark Read Fehler:', error);
+    logger.error('Mark Read Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Markieren als gelesen' });
   }
 });
@@ -978,7 +979,7 @@ router.post('/admin/test-registration', authenticateToken, async (req, res) => {
       <strong>Registrierungsdatum:</strong> ${new Date().toLocaleString('de-DE')}
     `;
 
-    console.log('🧪 Creating test notification...');
+    logger.debug('🧪 Creating test notification...');
 
     await new Promise((resolve, reject) => {
       db.query(`
@@ -986,10 +987,10 @@ router.post('/admin/test-registration', authenticateToken, async (req, res) => {
         VALUES ('admin_alert', 'admin', 'Neue Mitglieder-Registrierung', ?, 'unread', NOW())
       `, [testMessage], (err, result) => {
         if (err) {
-          console.error('❌ Error inserting notification:', err);
+          logger.error('Error inserting notification:', err);
           reject(err);
         } else {
-          console.log('✅ Notification created successfully! ID:', result.insertId);
+          logger.info('Notification created successfully! ID:', { details: result.insertId });
           resolve(result);
         }
       });
@@ -1000,7 +1001,7 @@ router.post('/admin/test-registration', authenticateToken, async (req, res) => {
       message: 'Test-Benachrichtigung erfolgreich erstellt! Das Popup sollte in max. 10 Sekunden erscheinen.'
     });
   } catch (error) {
-    console.error('❌ Test Notification Fehler:', error);
+    logger.error('Test Notification Fehler:', error);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Erstellen der Test-Benachrichtigung',
@@ -1012,7 +1013,7 @@ router.post('/admin/test-registration', authenticateToken, async (req, res) => {
 // MIGRATION-ENDPUNKT: Fixe notifications Tabelle
 router.post('/admin/migrate', authenticateToken, async (req, res) => {
   try {
-    console.log('🔧 Starting notifications table migration...');
+    logger.debug('🔧 Starting notifications table migration...');
 
     // Add 'admin_alert' to type enum
     await new Promise((resolve, reject) => {
@@ -1021,10 +1022,10 @@ router.post('/admin/migrate', authenticateToken, async (req, res) => {
         MODIFY COLUMN type ENUM('email', 'push', 'sms', 'admin_alert') NOT NULL
       `, (err, result) => {
         if (err) {
-          console.error('❌ Error updating type enum:', err);
+          logger.error('Error updating type enum:', err);
           reject(err);
         } else {
-          console.log('✅ Type enum updated successfully');
+          logger.info('Type enum updated successfully');
           resolve(result);
         }
       });
@@ -1037,23 +1038,23 @@ router.post('/admin/migrate', authenticateToken, async (req, res) => {
         MODIFY COLUMN status ENUM('pending', 'sent', 'failed', 'delivered', 'unread', 'read') DEFAULT 'pending'
       `, (err, result) => {
         if (err) {
-          console.error('❌ Error updating status enum:', err);
+          logger.error('Error updating status enum:', err);
           reject(err);
         } else {
-          console.log('✅ Status enum updated successfully');
+          logger.info('Status enum updated successfully');
           resolve(result);
         }
       });
     });
 
-    console.log('🎉 Migration completed successfully!');
+    logger.debug('🎉 Migration completed successfully!');
 
     res.json({
       success: true,
       message: 'Notifications table successfully migrated! Type and status enums updated.'
     });
   } catch (error) {
-    console.error('❌ Migration Fehler:', error);
+    logger.error('Migration Fehler:', error);
     res.status(500).json({
       success: false,
       message: 'Fehler bei der Migration',
@@ -1112,7 +1113,7 @@ router.get('/admin/debug', authenticateToken, async (req, res) => {
       totalCount: notifications.length
     });
   } catch (error) {
-    console.error('❌ Debug Fehler:', error);
+    logger.error('Debug Fehler:', error);
     res.status(500).json({
       success: false,
       message: 'Fehler beim Debuggen',

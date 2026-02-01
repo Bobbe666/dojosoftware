@@ -5,6 +5,7 @@
 // =============================================================================
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
@@ -183,7 +184,7 @@ router.get('/groups', async (req, res) => {
         const groups = await queryAsync(req.db, query);
         res.json(groups);
     } catch (error) {
-        console.error('Fehler beim Abrufen der Buddy-Gruppen:', error);
+        logger.error('Fehler beim Abrufen der Buddy-Gruppen:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Abrufen der Gruppen' });
     }
 });
@@ -234,7 +235,7 @@ router.get('/groups/:id', async (req, res) => {
 
         res.json(group);
     } catch (error) {
-        console.error('Fehler beim Abrufen der Buddy-Gruppe:', error);
+        logger.error('Fehler beim Abrufen der Buddy-Gruppe:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Abrufen der Gruppe' });
     }
 });
@@ -333,7 +334,7 @@ router.post('/send-invitations', async (req, res) => {
                 });
 
             } catch (emailError) {
-                console.error(`Fehler beim Versenden der Email an ${invitation.freund_email}:`, emailError);
+                logger.error('Fehler beim Versenden der Email an ${invitation.freund_email}:', { error: emailError });
 
                 // Fehler-Log eintragen
                 await req.db.execute(`
@@ -370,7 +371,7 @@ router.post('/send-invitations', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Versenden der Einladungen:', error);
+        logger.error('Fehler beim Versenden der Einladungen:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Versenden der Einladungen' });
     }
 });
@@ -435,7 +436,7 @@ router.get('/invitation/:token', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Abrufen der Einladung:', error);
+        logger.error('Fehler beim Abrufen der Einladung:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Abrufen der Einladung' });
     }
 });
@@ -511,7 +512,7 @@ router.post('/invitation/:token/register', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler bei Buddy-Registrierung:', error);
+        logger.error('Fehler bei Buddy-Registrierung:', { error: error });
         res.status(500).json({ error: 'Serverfehler bei der Registrierung' });
     }
 });
@@ -577,7 +578,7 @@ router.post('/groups/:id/resend-invitations', async (req, res) => {
                 sentCount++;
 
             } catch (emailError) {
-                console.error(`Fehler beim Versenden der Erinnerung an ${invitation.freund_email}:`, emailError);
+                logger.error('Fehler beim Versenden der Erinnerung an ${invitation.freund_email}:', { error: emailError });
             }
         }
 
@@ -588,7 +589,7 @@ router.post('/groups/:id/resend-invitations', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler beim Versenden der Erinnerungen:', error);
+        logger.error('Fehler beim Versenden der Erinnerungen:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Versenden der Erinnerungen' });
     }
 });
@@ -609,7 +610,7 @@ router.delete('/invitations/:id', async (req, res) => {
         res.json({ success: true });
 
     } catch (error) {
-        console.error('Fehler beim Löschen der Einladung:', error);
+        logger.error('Fehler beim Löschen der Einladung:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Löschen der Einladung' });
     }
 });
@@ -667,7 +668,7 @@ router.get('/groups/:id/aktivitaeten', async (req, res) => {
             offset: parseInt(offset)
         });
     } catch (error) {
-        console.error('Fehler beim Abrufen der Aktivitäten:', error);
+        logger.error('Fehler beim Abrufen der Aktivitäten:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Abrufen der Aktivitäten' });
     }
 });
@@ -696,7 +697,7 @@ router.get('/member/:memberId/gruppen', async (req, res) => {
 
         res.json(gruppen);
     } catch (error) {
-        console.error('Fehler beim Abrufen der Mitglieds-Gruppen:', error);
+        logger.error('Fehler beim Abrufen der Mitglieds-Gruppen:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Abrufen der Gruppen' });
     }
 });
@@ -739,7 +740,7 @@ router.post('/cleanup', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Fehler bei der automatischen Bereinigung:', error);
+        logger.error('Fehler bei der automatischen Bereinigung:', { error: error });
         res.status(500).json({ error: 'Serverfehler bei der Bereinigung' });
     }
 });
@@ -826,7 +827,7 @@ router.post('/link-member', async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error('Fehler bei /api/buddy/link-member:', error);
+        logger.error('Fehler bei /api/buddy/link-member:', { error: error });
         res.status(500).json({ error: 'Serverfehler beim Verknüpfen' });
     }
 });

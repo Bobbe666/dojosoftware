@@ -7,7 +7,7 @@ router.get("/", (req, res) => {
   const query = "SELECT gruppen_id, name, reihenfolge FROM gruppen ORDER BY reihenfolge ASC, name ASC";
   db.query(query, (err, results) => {
     if (err) {
-      console.error("Fehler beim Abrufen der Gruppen:", err);
+      logger.error('Fehler beim Abrufen der Gruppen:', { error: err });
       return res.status(500).json({ error: "Fehler beim Laden der Gruppen" });
     }
     res.json(results);
@@ -25,7 +25,7 @@ router.post("/", (req, res) => {
   const query = "INSERT INTO gruppen (name) VALUES (?)";
   db.query(query, [name.trim()], (err, result) => {
     if (err) {
-      console.error("Fehler beim Hinzufügen der Gruppe:", err);
+      logger.error('Fehler beim Hinzufügen der Gruppe:', { error: err });
       return res.status(500).json({ error: "Gruppe konnte nicht hinzugefügt werden" });
     }
     res.status(201).json({ gruppen_id: result.insertId, name });
@@ -44,7 +44,7 @@ router.put("/:id", (req, res) => {
   const query = "UPDATE gruppen SET name = ?, reihenfolge = ? WHERE gruppen_id = ?";
   db.query(query, [name.trim(), reihenfolge, id], (err, result) => {
     if (err) {
-      console.error("Fehler beim Aktualisieren der Gruppe:", err);
+      logger.error('Fehler beim Aktualisieren der Gruppe:', { error: err });
       return res.status(500).json({ error: "Fehler beim Aktualisieren der Gruppe" });
     }
     res.json({ gruppen_id: parseInt(id, 10), name });
@@ -58,7 +58,7 @@ router.delete("/:id", (req, res) => {
 
   db.query(query, [id], (err, result) => {
     if (err) {
-      console.error("Fehler beim Löschen der Gruppe:", err);
+      logger.error('Fehler beim Löschen der Gruppe:', { error: err });
       return res.status(500).json({ error: "Gruppe konnte nicht gelöscht werden" });
     }
     res.json({ message: "Gruppe gelöscht" });

@@ -4,12 +4,13 @@
 // JWT Token-basierte Authentifizierung für DojoSoftware
 
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 // JWT Secret aus Umgebungsvariablen - MUSS gesetzt sein!
 if (!process.env.JWT_SECRET) {
-    console.error("❌ KRITISCHER FEHLER: JWT_SECRET ist nicht gesetzt!");
-    console.error("Bitte setze JWT_SECRET in der .env Datei.");
-    console.error("Tipp: Generiere einen sicheren Schlüssel mit: openssl rand -base64 32");
+    logger.error('KRITISCHER FEHLER: JWT_SECRET ist nicht gesetzt!');
+    logger.error('Bitte setze JWT_SECRET in der .env Datei.');
+    logger.error('Tipp: Generiere einen sicheren Schlüssel mit: openssl rand -base64 32');
     process.exit(1);
 }
 
@@ -33,7 +34,7 @@ const authenticateToken = (req, res, next) => {
 
   // Debug logging for /kasse endpoint
   if (req.path.includes('kasse')) {
-    console.log('🔍 Auth Debug für /kasse:', {
+    logger.debug('Auth Debug für /kasse:', {
       path: req.path,
       hasAuthHeader: !!authHeader,
       authHeaderStart: authHeader ? authHeader.substring(0, 20) + '...' : 'none',

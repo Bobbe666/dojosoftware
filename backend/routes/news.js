@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -60,7 +61,7 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Fehler beim Laden der News:', error);
+    logger.error('Fehler beim Laden der News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der News' });
   }
 });
@@ -87,7 +88,7 @@ router.get('/public', authenticateToken, async (req, res) => {
 
     res.json({ news });
   } catch (error) {
-    console.error('Fehler beim Laden der öffentlichen News:', error);
+    logger.error('Fehler beim Laden der öffentlichen News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der News' });
   }
 });
@@ -105,7 +106,7 @@ router.get('/homepage', async (req, res) => {
 
     res.json({ news });
   } catch (error) {
-    console.error('Fehler beim Laden der Homepage-News:', error);
+    logger.error('Fehler beim Laden der Homepage-News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der News' });
   }
 });
@@ -126,7 +127,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     res.json(news[0]);
   } catch (error) {
-    console.error('Fehler beim Laden der News:', error);
+    logger.error('Fehler beim Laden der News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der News' });
   }
 });
@@ -154,7 +155,7 @@ router.post('/', authenticateToken, requireMainAdmin, async (req, res) => {
       id: result.insertId
     });
   } catch (error) {
-    console.error('Fehler beim Erstellen der News:', error);
+    logger.error('Fehler beim Erstellen der News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen der News' });
   }
 });
@@ -190,7 +191,7 @@ router.put('/:id', authenticateToken, requireMainAdmin, async (req, res) => {
 
     res.json({ message: 'News erfolgreich aktualisiert' });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren der News:', error);
+    logger.error('Fehler beim Aktualisieren der News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren der News' });
   }
 });
@@ -208,7 +209,7 @@ router.delete('/:id', authenticateToken, requireMainAdmin, async (req, res) => {
 
     res.json({ message: 'News erfolgreich gelöscht' });
   } catch (error) {
-    console.error('Fehler beim Löschen der News:', error);
+    logger.error('Fehler beim Löschen der News:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen der News' });
   }
 });

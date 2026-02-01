@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -39,7 +40,7 @@ router.get('/kategorien', async (req, res) => {
 
     res.json([...result, ...ohneParent]);
   } catch (error) {
-    console.error('Fehler beim Laden der Kategorien:', error);
+    logger.error('Fehler beim Laden der Kategorien:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Kategorien' });
   }
 });
@@ -86,7 +87,7 @@ router.get('/produkte', async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Fehler beim Laden der Produkte:', error);
+    logger.error('Fehler beim Laden der Produkte:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Produkte' });
   }
 });
@@ -113,7 +114,7 @@ router.get('/produkte/:id', async (req, res) => {
 
     res.json(produkt);
   } catch (error) {
-    console.error('Fehler beim Laden des Produkts:', error);
+    logger.error('Fehler beim Laden des Produkts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden des Produkts' });
   }
 });
@@ -179,7 +180,7 @@ router.post('/bestellungen', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     await connection.rollback();
-    console.error('Fehler beim Erstellen der Bestellung:', error);
+    logger.error('Fehler beim Erstellen der Bestellung:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen der Bestellung' });
   } finally {
     connection.release();
@@ -199,7 +200,7 @@ router.get('/bestellungen/meine', authenticateToken, async (req, res) => {
 
     res.json(bestellungen);
   } catch (error) {
-    console.error('Fehler beim Laden der Bestellungen:', error);
+    logger.error('Fehler beim Laden der Bestellungen:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Bestellungen' });
   }
 });
@@ -236,7 +237,7 @@ router.get('/bestellungen/:id', authenticateToken, async (req, res) => {
 
     res.json(bestellung);
   } catch (error) {
-    console.error('Fehler beim Laden der Bestellung:', error);
+    logger.error('Fehler beim Laden der Bestellung:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Bestellung' });
   }
 });
@@ -273,7 +274,7 @@ router.get('/admin/bestellungen', authenticateToken, requireAdmin, async (req, r
     const [bestellungen] = await db.promise().query(query, params);
     res.json(bestellungen);
   } catch (error) {
-    console.error('Fehler beim Laden der Bestellungen:', error);
+    logger.error('Fehler beim Laden der Bestellungen:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Bestellungen' });
   }
 });
@@ -291,7 +292,7 @@ router.patch('/admin/bestellungen/:id/status', authenticateToken, requireAdmin, 
     await db.promise().query('UPDATE shop_bestellungen SET status = ? WHERE id = ?', [status, req.params.id]);
     res.json({ success: true });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des Status:', error);
+    logger.error('Fehler beim Aktualisieren des Status:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren des Status' });
   }
 });
@@ -316,7 +317,7 @@ router.get('/admin/produkte', authenticateToken, requireAdmin, async (req, res) 
 
     res.json(result);
   } catch (error) {
-    console.error('Fehler beim Laden der Produkte:', error);
+    logger.error('Fehler beim Laden der Produkte:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Produkte' });
   }
 });
@@ -336,7 +337,7 @@ router.post('/admin/produkte', authenticateToken, requireAdmin, async (req, res)
 
     res.status(201).json({ success: true, id: result.insertId });
   } catch (error) {
-    console.error('Fehler beim Erstellen des Produkts:', error);
+    logger.error('Fehler beim Erstellen des Produkts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen des Produkts' });
   }
 });
@@ -357,7 +358,7 @@ router.put('/admin/produkte/:id', authenticateToken, requireAdmin, async (req, r
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren des Produkts:', error);
+    logger.error('Fehler beim Aktualisieren des Produkts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren des Produkts' });
   }
 });
@@ -368,7 +369,7 @@ router.delete('/admin/produkte/:id', authenticateToken, requireAdmin, async (req
     await db.promise().query('UPDATE shop_produkte SET aktiv = FALSE WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
-    console.error('Fehler beim Löschen des Produkts:', error);
+    logger.error('Fehler beim Löschen des Produkts:', { error: error });
     res.status(500).json({ error: 'Fehler beim Löschen des Produkts' });
   }
 });
@@ -385,7 +386,7 @@ router.get('/admin/kategorien', authenticateToken, requireAdmin, async (req, res
     `);
     res.json(kategorien);
   } catch (error) {
-    console.error('Fehler beim Laden der Kategorien:', error);
+    logger.error('Fehler beim Laden der Kategorien:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Kategorien' });
   }
 });
@@ -403,7 +404,7 @@ router.post('/admin/kategorien', authenticateToken, requireAdmin, async (req, re
 
     res.status(201).json({ success: true, id: result.insertId });
   } catch (error) {
-    console.error('Fehler beim Erstellen der Kategorie:', error);
+    logger.error('Fehler beim Erstellen der Kategorie:', { error: error });
     res.status(500).json({ error: 'Fehler beim Erstellen der Kategorie' });
   }
 });
@@ -422,7 +423,7 @@ router.put('/admin/kategorien/:id', authenticateToken, requireAdmin, async (req,
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Fehler beim Aktualisieren der Kategorie:', error);
+    logger.error('Fehler beim Aktualisieren der Kategorie:', { error: error });
     res.status(500).json({ error: 'Fehler beim Aktualisieren der Kategorie' });
   }
 });

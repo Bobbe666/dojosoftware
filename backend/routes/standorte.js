@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
@@ -40,7 +41,7 @@ router.get('/', (req, res) => {
 
   db.query(query, [dojoId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Standorte:', err);
+      logger.error('Fehler beim Laden der Standorte:', { error: err });
       return res.status(500).json({
         success: false,
         error: 'Fehler beim Laden der Standorte'
@@ -81,7 +82,7 @@ router.get('/:id', (req, res) => {
 
   db.query(query, [id, dojoId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden des Standorts:', err);
+      logger.error('Fehler beim Laden des Standorts:', { error: err });
       return res.status(500).json({
         success: false,
         error: 'Fehler beim Laden des Standorts'
@@ -143,7 +144,7 @@ router.post('/', (req, res) => {
     [dojoId],
     (err, countResults) => {
       if (err) {
-        console.error('Fehler beim Prüfen der Standorte:', err);
+        logger.error('Fehler beim Prüfen der Standorte:', { error: err });
         return res.status(500).json({
           success: false,
           error: 'Fehler beim Erstellen des Standorts'
@@ -170,7 +171,7 @@ router.post('/', (req, res) => {
 
       db.query(query, params, (err, result) => {
         if (err) {
-          console.error('Fehler beim Erstellen des Standorts:', err);
+          logger.error('Fehler beim Erstellen des Standorts:', { error: err });
           return res.status(500).json({
             success: false,
             error: 'Fehler beim Erstellen des Standorts'
@@ -308,7 +309,7 @@ router.put('/:id', (req, res) => {
 
       db.query(query, updateValues, (err, result) => {
         if (err) {
-          console.error('Fehler beim Aktualisieren des Standorts:', err);
+          logger.error('Fehler beim Aktualisieren des Standorts:', { error: err });
           return res.status(500).json({
             success: false,
             error: 'Fehler beim Aktualisieren des Standorts'
@@ -366,7 +367,7 @@ router.delete('/:id', (req, res) => {
 
       db.query(query, [id, dojoId], (err, result) => {
         if (err) {
-          console.error('Fehler beim Löschen des Standorts:', err);
+          logger.error('Fehler beim Löschen des Standorts:', { error: err });
           return res.status(500).json({
             success: false,
             error: 'Fehler beim Löschen des Standorts'
@@ -426,7 +427,7 @@ router.put('/reorder/batch', (req, res) => {
       });
     })
     .catch(err => {
-      console.error('Fehler beim Aktualisieren der Reihenfolge:', err);
+      logger.error('Fehler beim Aktualisieren der Reihenfolge:', { error: err });
       res.status(500).json({
         success: false,
         error: 'Fehler beim Aktualisieren der Reihenfolge'
@@ -471,7 +472,7 @@ router.get('/:id/stats', (req, res) => {
 
       db.query(statsQuery, [id, id, id, id], (err, statsResults) => {
         if (err) {
-          console.error('Fehler beim Laden der Statistiken:', err);
+          logger.error('Fehler beim Laden der Statistiken:', { error: err });
           return res.status(500).json({
             success: false,
             error: 'Fehler beim Laden der Statistiken'
@@ -494,7 +495,7 @@ router.get('/:id/stats', (req, res) => {
 
         db.query(trainerQuery, [id, dojoId], (err, trainerResults) => {
           if (err) {
-            console.error('Fehler beim Laden der Trainer:', err);
+            logger.error('Fehler beim Laden der Trainer:', { error: err });
             return res.status(500).json({
               success: false,
               error: 'Fehler beim Laden der Trainer'
@@ -546,7 +547,7 @@ router.get('/:id/trainer', (req, res) => {
 
   db.query(query, [id, dojoId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Laden der Trainer:', err);
+      logger.error('Fehler beim Laden der Trainer:', { error: err });
       return res.status(500).json({
         success: false,
         error: 'Fehler beim Laden der Trainer'
@@ -614,7 +615,7 @@ router.post('/:id/trainer', (req, res) => {
 
           db.query(query, [trainer_id, id, ist_hauptstandort], (err, result) => {
             if (err) {
-              console.error('Fehler beim Zuordnen des Trainers:', err);
+              logger.error('Fehler beim Zuordnen des Trainers:', { error: err });
               return res.status(500).json({
                 success: false,
                 error: 'Fehler beim Zuordnen des Trainers'
@@ -666,7 +667,7 @@ router.delete('/:id/trainer/:trainerId', (req, res) => {
 
       db.query(query, [id, trainerId], (err, result) => {
         if (err) {
-          console.error('Fehler beim Entfernen der Trainer-Zuordnung:', err);
+          logger.error('Fehler beim Entfernen der Trainer-Zuordnung:', { error: err });
           return res.status(500).json({
             success: false,
             error: 'Fehler beim Entfernen der Trainer-Zuordnung'

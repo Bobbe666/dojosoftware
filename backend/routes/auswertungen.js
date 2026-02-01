@@ -555,7 +555,7 @@ router.get('/complete', async (req, res) => {
         res.json({ success: true, data: auswertungsData });
 
     } catch (err) {
-        console.error('Fehler beim Laden der vollständigen Auswertungen:', err);
+        logger.error('Fehler beim Laden der vollständigen Auswertungen:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -592,7 +592,7 @@ router.get('/kostenvorlagen', async (req, res) => {
         res.json({ success: true, data: vorlagen });
 
     } catch (err) {
-        console.error('Fehler beim Laden der Kostenvorlagen:', err);
+        logger.error('Fehler beim Laden der Kostenvorlagen:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -686,7 +686,7 @@ router.post('/break-even', async (req, res) => {
         res.json({ success: true, data: analyse });
 
     } catch (err) {
-        console.error('Fehler bei Break-Even-Berechnung:', err);
+        logger.error('Fehler bei Break-Even-Berechnung:', { error: err });
         res.status(500).json({ success: false, error: err.message, details: err.stack });
     }
 });
@@ -714,7 +714,7 @@ router.get('/break-even/latest', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Fehler beim Laden der letzten Berechnung:', err);
+        logger.error('Fehler beim Laden der letzten Berechnung:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -807,7 +807,7 @@ router.get('/member-analytics', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Fehler beim Laden der Mitgliederanalysen:', err);
+        logger.error('Fehler beim Laden der Mitgliederanalysen:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -937,7 +937,7 @@ router.get('/beitragsvergleich', async (req, res) => {
         res.json({ success: true, data: beitragsvergleich });
 
     } catch (err) {
-        console.error('Fehler beim Laden des Beitragsvergleichs:', err);
+        logger.error('Fehler beim Laden des Beitragsvergleichs:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -965,7 +965,7 @@ router.get('/demographics', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Fehler beim Laden der Demografiedaten:', err);
+        logger.error('Fehler beim Laden der Demografiedaten:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -990,7 +990,7 @@ router.get('/financial', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Fehler beim Laden der Finanzdaten:', err);
+        logger.error('Fehler beim Laden der Finanzdaten:', { error: err });
         res.status(500).json({ success: false, error: err.message });
     }
 });

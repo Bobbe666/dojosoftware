@@ -9,7 +9,7 @@ router.get('/status', async (req, res) => {
         res.json(status);
 
     } catch (error) {
-        console.error('API: Error getting provider status:', error);
+        logger.error('API: Error getting provider status:', { error: error });
         res.status(500).json({
             error: 'Fehler beim Abrufen des Provider-Status',
             details: error.message
@@ -58,7 +58,7 @@ router.post('/configure', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('API: Error configuring provider:', error);
+        logger.error('API: Error configuring provider:', { error: error });
         res.status(500).json({
             error: 'Fehler beim Konfigurieren des Payment Providers',
             details: error.message
@@ -91,7 +91,7 @@ router.post('/test', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('API: Error testing provider:', error);
+        logger.error('API: Error testing provider:', { error: error });
         res.status(500).json({
             error: 'Fehler beim Testen des Payment Providers',
             details: error.message
@@ -112,7 +112,7 @@ router.get('/logs', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('API: Error getting logs:', error);
+        logger.error('API: Error getting logs:', { error: error });
         res.status(500).json({
             error: 'Fehler beim Abrufen der Logs',
             details: error.message
@@ -151,7 +151,7 @@ router.post('/payment-intent', async (req, res) => {
         res.json(result);
 
     } catch (error) {
-        console.error('API: Error creating payment intent:', error);
+        logger.error('API: Error creating payment intent:', { error: error });
         res.status(500).json({
             error: 'Fehler beim Erstellen des Payment Intent',
             details: error.message
@@ -184,7 +184,7 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
         res.json({received: true});
 
     } catch (error) {
-        console.error('API: Error processing webhook:', error);
+        logger.error('API: Error processing webhook:', { error: error });
         res.status(400).json({
             error: 'Webhook processing failed',
             details: error.message

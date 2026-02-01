@@ -1,4 +1,5 @@
 // Backend/routes/tarife.js - Erweiterte Tarif- und Rabatt-Verwaltung
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -35,7 +36,7 @@ router.get('/', async (req, res) => {
         // dojo_id aus verschiedenen Quellen extrahieren
         const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
 
-        console.log('📊 Tarife GET Request:', {
+        logger.debug('📊 Tarife GET Request:', {
             tenant_dojo_id: req.tenant?.dojo_id,
             req_dojo_id: req.dojo_id,
             query_dojo_id: req.query.dojo_id,
@@ -64,7 +65,7 @@ router.get('/', async (req, res) => {
         if (!parsedDojoId && isSuperAdmin) {
             // Super-Admin ohne spezifisches Dojo: Tarife ALLER zentral verwalteten Dojos
             // Keine WHERE-Klausel = alle Tarife
-            console.log('📊 Super-Admin Modus: Zeige alle Tarife');
+            logger.debug('📊 Super-Admin Modus: Zeige alle Tarife');
         } else if (parsedDojoId) {
             // Normaler Admin oder Super-Admin mit gewähltem Dojo: Nur dieses Dojo
             query += ' WHERE dojo_id = ?';
@@ -76,15 +77,15 @@ router.get('/', async (req, res) => {
 
         query += ' ORDER BY id ASC';
 
-        console.log('📊 Tarife Query:', { query, params, parsedDojoId });
+        logger.debug('📊 Tarife Query:', { query, params, parsedDojoId });
 
         const tarife = await queryAsync(query, params);
 
-        console.log('📊 Tarife Result:', { count: tarife.length, firstItem: tarife[0] });
+        logger.debug('📊 Tarife Result:', { count: tarife.length, firstItem: tarife[0] });
 
         res.json({ success: true, data: tarife });
     } catch (err) {
-        console.error('Fehler beim Abrufen der Tarife:', err);
+        logger.error('Fehler beim Abrufen der Tarife:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -148,7 +149,7 @@ router.post('/', async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Fehler beim Erstellen des Tarifs:', err);
+        logger.error('Fehler beim Erstellen des Tarifs:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -172,7 +173,7 @@ router.put('/:id', async (req, res) => {
         `, [name, price_cents, aufnahmegebuehr_cents || 4999, currency, duration_months, duration_months, billing_cycle, payment_method, active, id, parsedDojoId]);
         res.json({ success: true, message: 'Tarif erfolgreich aktualisiert' });
     } catch (err) {
-        console.error('Fehler beim Aktualisieren des Tarifs:', err);
+        logger.error('Fehler beim Aktualisieren des Tarifs:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -194,7 +195,7 @@ router.delete('/:id', async (req, res) => {
         await queryAsync('DELETE FROM tarife WHERE id = ? AND dojo_id = ?', [id, parsedDojoId]);
         res.json({ success: true, message: 'Tarif erfolgreich gelöscht' });
     } catch (err) {
-        console.error('Fehler beim Löschen des Tarifs:', err);
+        logger.error('Fehler beim Löschen des Tarifs:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -212,7 +213,7 @@ router.patch('/:id/archivieren', async (req, res) => {
         const { id } = req.params;
         const { ist_archiviert } = req.body;
 
-        console.log('Archiviere Tarif:', { id, ist_archiviert, type: typeof ist_archiviert });
+        logger.debug('Archiviere Tarif:', { id, ist_archiviert, type: typeof ist_archiviert });
 
         // Boolean richtig konvertieren (MySQL erwartet 0 oder 1)
         const archiviert = ist_archiviert ? 1 : 0;
@@ -223,14 +224,14 @@ router.patch('/:id/archivieren', async (req, res) => {
             WHERE id = ? AND dojo_id = ?
         `, [archiviert, id, parsedDojoId]);
 
-        console.log('Update Ergebnis:', result);
+        logger.debug('Update Ergebnis:', result);
 
         res.json({
             success: true,
             message: ist_archiviert ? 'Tarif wurde archiviert' : 'Tarif wurde reaktiviert'
         });
     } catch (err) {
-        console.error('Fehler beim Archivieren des Tarifs:', err);
+        logger.error('Fehler beim Archivieren des Tarifs:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -272,7 +273,7 @@ router.get('/rabatte', async (req, res) => {
         const rabatte = await queryAsync(query, params);
         res.json({ success: true, data: rabatte });
     } catch (err) {
-        console.error('Fehler beim Abrufen der Rabatte:', err);
+        logger.error('Fehler beim Abrufen der Rabatte:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -326,7 +327,7 @@ router.post('/rabatte', async (req, res) => {
             }
         });
     } catch (err) {
-        console.error('Fehler beim Erstellen des Rabatts:', err);
+        logger.error('Fehler beim Erstellen des Rabatts:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -367,7 +368,7 @@ router.put('/rabatte/:id', async (req, res) => {
         ]);
         res.json({ success: true, message: 'Rabatt erfolgreich aktualisiert' });
     } catch (err) {
-        console.error('Fehler beim Aktualisieren des Rabatts:', err);
+        logger.error('Fehler beim Aktualisieren des Rabatts:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -388,7 +389,7 @@ router.delete('/rabatte/:id', async (req, res) => {
         await queryAsync('DELETE FROM rabatte WHERE id = ? AND dojo_id = ?', [id, parsedDojoId]);
         res.json({ success: true, message: 'Rabatt erfolgreich gelöscht' });
     } catch (err) {
-        console.error('Fehler beim Löschen des Rabatts:', err);
+        logger.error('Fehler beim Löschen des Rabatts:', { error: err });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });

@@ -15,7 +15,7 @@ class PaymentProviderFactory {
                     return new ManualSepaProvider(dojoConfig);
             }
         } catch (error) {
-            console.error('❌ PaymentProviderFactory: Error getting provider:', error);
+            logger.error('PaymentProviderFactory: Error getting provider:', error);
             // Fallback to manual SEPA
             const fallbackConfig = { payment_provider: 'manual_sepa', id: dojoId || 1 };
             return new ManualSepaProvider(fallbackConfig);
@@ -49,7 +49,7 @@ class PaymentProviderFactory {
 
             db.query(query, params, (err, results) => {
                 if (err) {
-                    console.error('❌ PaymentProviderFactory: DB Error:', err);
+                    logger.error('PaymentProviderFactory: DB Error:', err);
                     return reject(err);
                 }
 
@@ -102,7 +102,7 @@ class PaymentProviderFactory {
 
             db.query(query, params, (err, result) => {
                 if (err) {
-                    console.error('❌ PaymentProviderFactory: Update Error:', err);
+                    logger.error('PaymentProviderFactory: Update Error:', err);
                     return reject(err);
                 }
                 // Log the configuration change
@@ -148,7 +148,7 @@ class PaymentProviderFactory {
 
         db.query(query, [dojoId, provider, action, message], (err) => {
             if (err) {
-                console.error('❌ Failed to log provider change:', err);
+                logger.error('Failed to log provider change:', err);
             }
         });
     }
@@ -166,7 +166,7 @@ class PaymentProviderFactory {
                 last_updated: config.updated_at
             };
         } catch (error) {
-            console.error('❌ PaymentProviderFactory: Error getting status:', error);
+            logger.error('PaymentProviderFactory: Error getting status:', error);
             return {
                 current_provider: 'manual_sepa',
                 provider_name: 'Manual SEPA (Fallback)',

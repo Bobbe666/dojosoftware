@@ -14,7 +14,7 @@ router.get("/", (req, res) => {
 
     db.query(query, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Anwesenheit:", err);
+            logger.error('Fehler beim Abrufen der Anwesenheit:', { error: err });
             return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheit" });
         }
 
@@ -38,7 +38,7 @@ router.get("/:datum", (req, res) => {
 
     db.query(query, [datum], (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Anwesenheit für Datum", datum, ":", err);
+            logger.error('Fehler beim Abrufen der Anwesenheit', { datum, error: err.message });
             return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheit" });
         }
 
@@ -60,7 +60,7 @@ router.post("/", (req, res) => {
 
     db.query(query, [mitglied_id, datum], (err, result) => {
         if (err) {
-            console.error("Fehler beim Speichern der Anwesenheit:", err);
+            logger.error('Fehler beim Speichern der Anwesenheit:', { error: err });
             return res.status(500).json({ error: "Fehler beim Speichern der Anwesenheit" });
         }
         res.status(201).json({ id: result.insertId, mitglied_id, datum });
@@ -78,7 +78,7 @@ router.delete("/:id", (req, res) => {
 
     db.query(query, [id], (err, result) => {
         if (err) {
-            console.error("Fehler beim Löschen des Anwesenheitseintrags:", err);
+            logger.error('Fehler beim Löschen des Anwesenheitseintrags:', { error: err });
             return res.status(500).json({ error: "Fehler beim Löschen des Anwesenheitseintrags" });
         }
 

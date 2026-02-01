@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const db = require('../db');
@@ -54,10 +55,10 @@ router.get('/check-subdomain/:subdomain', async (req, res) => {
       // Verf\u00fcgbar!
       res.json({ available: true });
     } catch (dbError) {
-      console.error('Datenbankfehler bei Subdomain-Check:', dbError);
+      logger.error('Datenbankfehler bei Subdomain-Check:', { error: dbError });
       // Falls die Tabelle nicht existiert, zurückgeben dass die Subdomain verfügbar ist (für erste Registrierungen)
       if (dbError.code === 'ER_NO_SUCH_TABLE') {
-        console.warn('⚠️ Tabelle dojo_subscriptions existiert nicht. Rücke Fallback-Verhalten.');
+        logger.warn('Tabelle dojo_subscriptions existiert nicht. Rücke Fallback-Verhalten.');
         res.json({ available: true });
       } else {
         throw dbError; // Andere DB-Fehler weiterwerfen
@@ -65,7 +66,7 @@ router.get('/check-subdomain/:subdomain', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Fehler bei Subdomain-Check:', error);
+    logger.error('Fehler bei Subdomain-Check:', { error: error });
     res.status(500).json({
       available: false,
       error: error.message || 'Serverfehler bei der Pr\u00fcfung',
@@ -156,7 +157,7 @@ router.post('/register-dojo', async (req, res) => {
     );
 
     const dojo_id = dojoResult.insertId;
-    console.log(`✅ Dojo erstellt: ${dojo_name} (ID: ${dojo_id})`);
+    logger.info('Dojo erstellt: ${dojo_name} (ID: ${dojo_id})');
 
     // ===== 2. ERSTELLE SUBSCRIPTION (Trial-Phase) =====
     const trialEndsAt = new Date();
@@ -186,7 +187,7 @@ router.post('/register-dojo', async (req, res) => {
       ]
     );
 
-    console.log(`✅ Subscription erstellt: ${planName} (Trial bis ${trialEndsAt.toISOString().split('T')[0]})`);
+    logger.info('Subscription erstellt', { plan: planName, trialEndsAt: trialEndsAt.toISOString().split('T')[0] });
 
     // ===== 3. ERSTELLE ADMIN-USER (Owner) =====
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -202,7 +203,7 @@ router.post('/register-dojo', async (req, res) => {
       [dojo_id, owner_email.toLowerCase().split('@')[0], vorname, nachname, owner_email.toLowerCase(), hashedPassword]
     );
 
-    console.log(`✅ Admin-User erstellt: ${owner_email}`);
+    logger.info('Admin-User erstellt: ${owner_email}');
 
     // ===== 4. ERSTELLE INITIALE DATEN =====
     // HINWEIS: Für lokale DB auskommentiert, da Stile/Gürtel/Tarife global sind
@@ -239,7 +240,7 @@ router.post('/register-dojo', async (req, res) => {
 
   } catch (error) {
     await connection.rollback();
-    console.error('❌ Registrierungsfehler:', error);
+    logger.error('Registrierungsfehler:', error);
 
     res.status(400).json({
       success: false,
@@ -255,7 +256,7 @@ router.post('/register-dojo', async (req, res) => {
 // 3. HILFSFUNKTION: Initiale Daten f\u00fcr neues Dojo
 // ============================================
 async function initializeDojoDefaults(connection, dojo_id) {
-  console.log(`📦 Erstelle Standard-Daten f\u00fcr Dojo ${dojo_id}...`);
+  logger.debug('📦 Erstelle Standard-Daten f\u00fcr Dojo ${dojo_id}...');
 
   // --- STANDARD-STILE ---
   const defaultStile = [
@@ -319,7 +320,7 @@ async function initializeDojoDefaults(connection, dojo_id) {
     [dojo_id, dojo_id, dojo_id, dojo_id]
   );
 
-  console.log(`✅ Standard-Daten erstellt f\u00fcr Dojo ${dojo_id}`);
+  logger.info('Standard-Daten erstellt f\u00fcr Dojo ${dojo_id}');
 }
 
 // ============================================
@@ -342,7 +343,7 @@ router.get('/plans', async (req, res) => {
     res.json({ plans });
 
   } catch (error) {
-    console.error('Fehler beim Laden der Pl\u00e4ne:', error);
+    logger.error('Fehler beim Laden der Pl\u00e4ne:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Pl\u00e4ne' });
   }
 });

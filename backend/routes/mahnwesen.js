@@ -39,7 +39,7 @@ router.get("/offene-beitraege", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen offener Beiträge:', err);
+            logger.error('Fehler beim Abrufen offener Beiträge:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -96,7 +96,7 @@ router.get("/mahnungen", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen der Mahnungen:', err);
+            logger.error('Fehler beim Abrufen der Mahnungen:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -117,7 +117,7 @@ router.post("/mahnungen", (req, res) => {
 
     db.query(checkQuery, [beitrag_id], (checkErr, checkResults) => {
         if (checkErr) {
-            console.error('❌ Fehler beim Prüfen des Beitrags:', checkErr);
+            logger.error('Fehler beim Prüfen des Beitrags:', checkErr);
             return res.status(500).json({ error: 'Datenbankfehler', details: checkErr.message });
         }
 
@@ -144,7 +144,7 @@ router.post("/mahnungen", (req, res) => {
 
         db.query(query, params, (err, result) => {
             if (err) {
-                console.error('❌ Fehler beim Erstellen der Mahnung:', err);
+                logger.error('Fehler beim Erstellen der Mahnung:', err);
                 return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
             }
 
@@ -169,7 +169,7 @@ router.put("/mahnungen/:mahnung_id/versandt", (req, res) => {
 
     db.query(query, [mahnung_id], (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Aktualisieren der Mahnung:', err);
+            logger.error('Fehler beim Aktualisieren der Mahnung:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -208,7 +208,7 @@ router.get("/statistiken", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen der Statistiken:', err);
+            logger.error('Fehler beim Abrufen der Statistiken:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -228,7 +228,7 @@ router.put("/beitraege/:beitrag_id/bezahlt", (req, res) => {
 
     db.query(query, [beitrag_id], (err, result) => {
         if (err) {
-            console.error('❌ Fehler beim Markieren als bezahlt:', err);
+            logger.error('Fehler beim Markieren als bezahlt:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -259,7 +259,7 @@ router.get("/mahnstufen-einstellungen", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error('❌ Fehler beim Abrufen der Mahnstufen-Einstellungen:', err);
+            logger.error('Fehler beim Abrufen der Mahnstufen-Einstellungen:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
         }
 
@@ -280,7 +280,7 @@ router.post("/mahnstufen-einstellungen", (req, res) => {
 
     db.query(deleteQuery, (deleteErr) => {
         if (deleteErr) {
-            console.error('❌ Fehler beim Löschen alter Einstellungen:', deleteErr);
+            logger.error('Fehler beim Löschen alter Einstellungen:', deleteErr);
             return res.status(500).json({ error: 'Datenbankfehler', details: deleteErr.message });
         }
 
@@ -304,7 +304,7 @@ router.post("/mahnstufen-einstellungen", (req, res) => {
 
         db.query(insertQuery, [insertValues], (insertErr, result) => {
             if (insertErr) {
-                console.error('❌ Fehler beim Speichern der Einstellungen:', insertErr);
+                logger.error('Fehler beim Speichern der Einstellungen:', insertErr);
                 return res.status(500).json({ error: 'Datenbankfehler', details: insertErr.message });
             }
 
@@ -350,7 +350,7 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
 
         db.query(mahnungQuery, [mahnung_id], async (err, mahnungResults) => {
             if (err) {
-                console.error('Fehler beim Laden der Mahnung:', err);
+                logger.error('Fehler beim Laden der Mahnung:', { error: err });
                 return res.status(500).json({ error: 'Datenbankfehler' });
             }
 
@@ -364,7 +364,7 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
             const dojoQuery = `SELECT * FROM dojo LIMIT 1`;
             db.query(dojoQuery, async (dojoErr, dojoResults) => {
                 if (dojoErr) {
-                    console.error('Fehler beim Laden der Dojo-Daten:', dojoErr);
+                    logger.error('Fehler beim Laden der Dojo-Daten:', { error: dojoErr });
                     return res.status(500).json({ error: 'Datenbankfehler' });
                 }
 
@@ -409,14 +409,14 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
                         res.send(pdfBuffer);
 
                     } catch (pdfError) {
-                        console.error('Fehler bei PDF-Generierung:', pdfError);
+                        logger.error('Fehler bei PDF-Generierung:', { error: pdfError });
                         res.status(500).json({ error: 'PDF-Generierung fehlgeschlagen', details: pdfError.message });
                     }
                 });
             });
         });
     } catch (error) {
-        console.error('Fehler:', error);
+        logger.error('Fehler:', { error: error });
         res.status(500).json({ error: 'Serverfehler', details: error.message });
     }
 });
@@ -497,14 +497,14 @@ router.get("/beitraege/:beitrag_id/mahnung-vorschau/:mahnstufe", async (req, res
                         res.send(pdfBuffer);
 
                     } catch (pdfError) {
-                        console.error('Fehler bei PDF-Generierung:', pdfError);
+                        logger.error('Fehler bei PDF-Generierung:', { error: pdfError });
                         res.status(500).json({ error: 'PDF-Generierung fehlgeschlagen' });
                     }
                 });
             });
         });
     } catch (error) {
-        console.error('Fehler:', error);
+        logger.error('Fehler:', { error: error });
         res.status(500).json({ error: 'Serverfehler' });
     }
 });
@@ -662,14 +662,14 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                         });
 
                     } catch (emailError) {
-                        console.error('Fehler beim E-Mail-Versand:', emailError);
+                        logger.error('Fehler beim E-Mail-Versand:', { error: emailError });
                         res.status(500).json({ error: 'E-Mail-Versand fehlgeschlagen', details: emailError.message });
                     }
                 });
             });
         });
     } catch (error) {
-        console.error('Fehler:', error);
+        logger.error('Fehler:', { error: error });
         res.status(500).json({ error: 'Serverfehler', details: error.message });
     }
 });
@@ -773,7 +773,7 @@ router.post("/mahnlauf", async (req, res) => {
 
             db.query(beitraegeQuery, queryParams, async (beitraegeErr, beitraege) => {
                 if (beitraegeErr) {
-                    console.error('Fehler beim Laden der Beitraege:', beitraegeErr);
+                    logger.error('Fehler beim Laden der Beitraege:', { error: beitraegeErr });
                     return res.status(500).json({ error: 'Datenbankfehler' });
                 }
 
@@ -887,7 +887,7 @@ router.post("/mahnlauf", async (req, res) => {
             });
         });
     } catch (error) {
-        console.error('Fehler beim Mahnlauf:', error);
+        logger.error('Fehler beim Mahnlauf:', { error: error });
         res.status(500).json({ error: 'Serverfehler', details: error.message });
     }
 });

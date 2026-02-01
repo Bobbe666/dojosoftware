@@ -2,6 +2,7 @@
 // Multi-Dojo-Verwaltung API
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 
 // =====================================================
@@ -112,7 +113,7 @@ router.get('/', async (req, res) => {
     res.json(results);
     
   } catch (err) {
-    console.error('Fehler beim Abrufen der Dojos:', err);
+    logger.error('Fehler beim Abrufen der Dojos:', { error: err });
     return res.status(500).json({ error: 'Fehler beim Laden der Dojos' });
   }
 })
@@ -127,7 +128,7 @@ router.get('/:id', (req, res) => {
 
   req.db.query(query, [id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen des Dojos:', err);
+      logger.error('Fehler beim Abrufen des Dojos:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -144,7 +145,7 @@ router.get('/:id', (req, res) => {
 // =====================================================
 router.post('/', async (req, res) => {
 
-  console.log('Request Body Keys:', Object.keys(req.body));
+  logger.debug('Request Body Keys:', Object.keys(req.body));
 
   // Validation
   if (!req.body.dojoname || !req.body.inhaber) {
@@ -172,14 +173,14 @@ router.post('/', async (req, res) => {
       }
     }
   } catch (checkErr) {
-    console.error('Fehler bei Dojo-Limit-Prüfung:', checkErr);
+    logger.error('Fehler bei Dojo-Limit-Prüfung:', { error: checkErr });
     // Fortfahren ohne Limit-Check wenn Tabelle nicht existiert
   }
 
   // Hole alle Spalten der Tabelle
   req.db.query('SHOW COLUMNS FROM dojo', (errCols, columns) => {
     if (errCols) {
-      console.error('Fehler beim Abrufen der Spalten:', errCols);
+      logger.error('Fehler beim Abrufen der Spalten:', { error: errCols });
       return res.status(500).json({ error: 'Serverfehler beim Prüfen der Tabelle' });
     }
 
@@ -204,13 +205,13 @@ router.post('/', async (req, res) => {
     });
 
     if (skippedFields.length > 0) {
-      console.log(`Übersprungene Felder:`, skippedFields.join(', '));
+      logger.debug(`Übersprungene Felder:`, skippedFields.join(', '));
     }
 
     // Hole die nächste Sortierung
     req.db.query('SELECT MAX(sortierung) as max_sort FROM dojo', (err, sortResult) => {
       if (err) {
-        console.error('Fehler beim Abrufen der Sortierung:', err);
+        logger.error('Fehler beim Abrufen der Sortierung:', { error: err });
         return res.status(500).json({ error: 'Datenbankfehler' });
       }
 
@@ -228,7 +229,7 @@ router.post('/', async (req, res) => {
       filteredData.ist_hauptdojo = false;
 
       // Konvertiere leere Strings zu NULL für Date/Timestamp/Numeric-Felder
-      console.log('🔧 Validiere und bereinige Felder (CREATE)...');
+      logger.debug('🔧 Validiere und bereinige Felder (CREATE)...');
       let convertedFields = [];
       Object.keys(filteredData).forEach(field => {
         // Prüfe ob der Wert ein leerer String ist
@@ -250,16 +251,16 @@ router.post('/', async (req, res) => {
         }
       });
       if (convertedFields.length > 0) {
-        console.log('✅ Konvertierte leere Strings zu NULL:', convertedFields.join(', '));
+        logger.info('Konvertierte leere Strings zu NULL', { fields: convertedFields.join(', ') });
       }
 
-      console.log('Gefilterte Daten:', Object.keys(filteredData).length, 'Felder');
+      logger.debug('Gefilterte Daten:', Object.keys(filteredData).length, 'Felder');
 
       // Dynamisches INSERT
       req.db.query('INSERT INTO dojo SET ?', filteredData, (insertErr, result) => {
         if (insertErr) {
-          console.error('Fehler beim Erstellen des Dojos:', insertErr);
-          console.error('INSERT Fehler Details:', insertErr.sqlMessage);
+          logger.error('Fehler beim Erstellen des Dojos:', { error: insertErr });
+          logger.error('INSERT Fehler Details:', { error: insertErr.sqlMessage });
           return res.status(500).json({ error: 'Fehler beim Erstellen: ' + insertErr.sqlMessage });
         }
 
@@ -306,7 +307,7 @@ router.put('/redistribute-members', (req, res) => {
 
   req.db.query(updateQuery, queryParams, (err, result) => {
     if (err) {
-      console.error('Fehler beim Umverteilen der Mitglieder:', err);
+      logger.error('Fehler beim Umverteilen der Mitglieder:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Umverteilen' });
     }
 
@@ -324,12 +325,12 @@ router.put('/redistribute-members', (req, res) => {
 router.put('/:id', (req, res) => {
   const { id } = req.params;
 
-  console.log('Request Body Keys:', Object.keys(req.body));
+  logger.debug('Request Body Keys:', Object.keys(req.body));
 
   // Hole alle Spalten der Tabelle
   req.db.query('SHOW COLUMNS FROM dojo', (errCols, columns) => {
     if (errCols) {
-      console.error('Fehler beim Abrufen der Spalten:', errCols);
+      logger.error('Fehler beim Abrufen der Spalten:', { error: errCols });
       return res.status(500).json({ error: 'Serverfehler beim Prüfen der Tabelle' });
     }
 
@@ -355,10 +356,10 @@ router.put('/:id', (req, res) => {
     });
 
     if (skippedFields.length > 0) {
-      console.log(`Übersprungene Felder:`, skippedFields.join(', '));
+      logger.debug(`Übersprungene Felder:`, skippedFields.join(', '));
     }
 
-    console.log('Gefilterte Daten:', Object.keys(filteredData).length, 'Felder');
+    logger.debug('Gefilterte Daten:', Object.keys(filteredData).length, 'Felder');
 
     // Konvertiere leere Strings zu NULL für Date/Timestamp/Numeric-Felder
 
@@ -383,13 +384,13 @@ router.put('/:id', (req, res) => {
       }
     });
     if (convertedFields.length > 0) {
-      console.log('✅ Konvertierte leere Strings zu NULL:', convertedFields.join(', '));
+      logger.info('Konvertierte leere Strings zu NULL', { fields: convertedFields.join(', ') });
     }
 
     // Prüfe ob Dojo existiert
     req.db.query('SELECT id FROM dojo WHERE id = ?', [id], (err, existing) => {
       if (err) {
-        console.error('Fehler bei ID-Prüfung:', err);
+        logger.error('Fehler bei ID-Prüfung:', { error: err });
         return res.status(500).json({ error: 'Serverfehler bei ID-Prüfung' });
       }
 
@@ -400,8 +401,8 @@ router.put('/:id', (req, res) => {
       // Dynamisches UPDATE mit allen gefilterten Feldern
       req.db.query('UPDATE dojo SET ? WHERE id = ?', [filteredData, id], (errUpdate) => {
         if (errUpdate) {
-          console.error('UPDATE Fehler:', errUpdate);
-          console.error('UPDATE Fehler Details:', errUpdate.sqlMessage);
+          logger.error('UPDATE Fehler:', { error: errUpdate });
+          logger.error('UPDATE Fehler Details:', { error: errUpdate.sqlMessage });
           return res.status(500).json({ error: 'Fehler beim Aktualisieren: ' + errUpdate.sqlMessage });
         }
 
@@ -423,7 +424,7 @@ router.delete('/:id', (req, res) => {
   // Prüfe ob es das Haupt-Dojo ist
   req.db.query('SELECT ist_hauptdojo FROM dojo WHERE id = ?', [id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Prüfen des Dojos:', err);
+      logger.error('Fehler beim Prüfen des Dojos:', { error: err });
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -440,7 +441,7 @@ router.delete('/:id', (req, res) => {
 
     req.db.query(deleteQuery, [id], (deleteErr) => {
       if (deleteErr) {
-        console.error('Fehler beim Deaktivieren des Dojos:', deleteErr);
+        logger.error('Fehler beim Deaktivieren des Dojos:', { error: deleteErr });
         return res.status(500).json({ error: 'Fehler beim Löschen' });
       }
 
@@ -473,7 +474,7 @@ router.get('/:id/statistics', (req, res) => {
 
   req.db.query(query, [id, id, id, id, id, jahr, id, jahr, id, id, id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Statistiken:', err);
+      logger.error('Fehler beim Abrufen der Statistiken:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
     }
 
@@ -560,7 +561,7 @@ router.get('/statistics/gesamt', (req, res) => {
 
   req.db.query(query, (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Gesamt-Statistiken:', err);
+      logger.error('Fehler beim Abrufen der Gesamt-Statistiken:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
     }
 
@@ -637,7 +638,7 @@ router.get('/:id/members', (req, res) => {
 
   req.db.query(query, [id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Dojo-Mitglieder:', err);
+      logger.error('Fehler beim Abrufen der Dojo-Mitglieder:', { error: err });
       return res.status(500).json({ error: 'Fehler beim Laden der Mitglieder' });
     }
 
@@ -679,7 +680,7 @@ router.post('/migrate/add-bank-fields', (req, res) => {
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dojo' AND COLUMN_NAME = ?
     `, [field.name], (err, columns) => {
       if (err) {
-        console.error(`Error checking ${field.name}:`, err.message);
+        logger.error('Error checking ${field.name}:', { error: err.message });
         results.push({ field: field.name, status: 'error', error: err.message });
         completed++;
         if (completed === fields.length) {
@@ -694,7 +695,7 @@ router.post('/migrate/add-bank-fields', (req, res) => {
           `ALTER TABLE dojo ADD COLUMN ${field.name} ${field.type} DEFAULT NULL AFTER ${field.after}`,
           (err2) => {
             if (err2) {
-              console.error(`Error adding ${field.name}:`, err2.message);
+              logger.error('Error adding ${field.name}:', { error: err2.message });
               results.push({ field: field.name, status: 'error', error: err2.message });
             } else {
 
@@ -738,7 +739,7 @@ router.post('/:id/generate-api-token', (req, res) => {
 
   req.db.query(query, [apiToken, now, id], (err, result) => {
     if (err) {
-      console.error('Error generating API token:', err);
+      logger.error('Error generating API token:', { error: err });
       return res.status(500).json({
         success: false,
         error: 'Fehler beim Generieren des API-Tokens'
@@ -775,7 +776,7 @@ router.get('/:id/api-token', (req, res) => {
 
   req.db.query(query, [id], (err, results) => {
     if (err) {
-      console.error('Error fetching API token:', err);
+      logger.error('Error fetching API token:', { error: err });
       return res.status(500).json({
         success: false,
         error: 'Fehler beim Abrufen des API-Tokens'

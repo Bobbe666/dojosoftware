@@ -55,7 +55,7 @@ const loadVertragsdokumente = async (dojoId, dokumentTypen = ['agb', 'datenschut
 
     return Array.from(dokumenteMap.values());
   } catch (error) {
-    console.error('❌ Fehler beim Laden der Vertragsdokumente:', error);
+    logger.error('Fehler beim Laden der Vertragsdokumente:', error);
     return [];
   }
 };
@@ -1096,7 +1096,7 @@ async function generateCompleteVertragPDF(dojoId, mitglied, vertrag, options = {
       doc.end();
 
     } catch (error) {
-      console.error('❌ Fehler bei PDF-Generierung:', error);
+      logger.error('Fehler bei PDF-Generierung:', error);
       reject(error);
     }
   });

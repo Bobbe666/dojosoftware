@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
   `;
   db.query(sql, (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Tarife:', err);
+      logger.error('Fehler beim Abrufen der Tarife:', { error: err });
       return res.status(500).json({ error: 'Serverfehler beim Abrufen der Tarife' });
     }
     res.json(results);
@@ -47,7 +47,7 @@ router.get('/:id', (req, res) => {
   `;
   db.query(sql, [req.params.id], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen des Tarifs:', err);
+      logger.error('Fehler beim Abrufen des Tarifs:', { error: err });
       return res.status(500).json({ error: 'Serverfehler beim Abrufen des Tarifs' });
     }
     if (results.length === 0) {
@@ -83,7 +83,7 @@ router.post('/', (req, res) => {
     [name, price_cents, currency, duration_months, billing_cycle, pm, active ? 1 : 0],
     (err, result) => {
       if (err) {
-        console.error('Fehler beim Anlegen des Tarifs:', err);
+        logger.error('Fehler beim Anlegen des Tarifs:', { error: err });
         return res.status(500).json({ error: 'Serverfehler beim Anlegen des Tarifs' });
       }
       // neuen Datensatz zurückliefern
@@ -93,7 +93,7 @@ router.post('/', (req, res) => {
         [newId],
         (err2, rows) => {
           if (err2) {
-            console.error('Fehler nach dem Anlegen des Tarifs:', err2);
+            logger.error('Fehler nach dem Anlegen des Tarifs:', { error: err2 });
             return res.status(500).json({ error: 'Serverfehler nach Anlegen des Tarifs' });
           }
           res.status(201).json(rows[0]);
@@ -134,7 +134,7 @@ router.put('/:id', (req, res) => {
     [name, price_cents, currency, duration_months, billing_cycle, pm, active ? 1 : 0, req.params.id],
     (err) => {
       if (err) {
-        console.error('Fehler beim Aktualisieren des Tarifs:', err);
+        logger.error('Fehler beim Aktualisieren des Tarifs:', { error: err });
         return res.status(500).json({ error: 'Serverfehler beim Aktualisieren des Tarifs' });
       }
       // aktualisierten Datensatz laden
@@ -143,7 +143,7 @@ router.put('/:id', (req, res) => {
         [req.params.id],
         (err2, rows) => {
           if (err2) {
-            console.error('Fehler nach dem Aktualisieren des Tarifs:', err2);
+            logger.error('Fehler nach dem Aktualisieren des Tarifs:', { error: err2 });
             return res.status(500).json({ error: 'Serverfehler nach Aktualisieren des Tarifs' });
           }
           res.json(rows[0]);
@@ -160,7 +160,7 @@ router.patch('/:id/active', (req, res) => {
   const sql = 'UPDATE tarife SET active = ? WHERE id = ?';
   db.query(sql, [active ? 1 : 0, req.params.id], (err) => {
     if (err) {
-      console.error('Fehler beim Setzen des Active-Flags:', err);
+      logger.error('Fehler beim Setzen des Active-Flags:', { error: err });
       return res.status(500).json({ error: 'Serverfehler beim Aktualisieren des Active-Flags' });
     }
     res.sendStatus(204);
@@ -172,7 +172,7 @@ router.patch('/:id/active', (req, res) => {
 router.delete('/:id', (req, res) => {
   db.query('DELETE FROM tarife WHERE id = ?', [req.params.id], (err) => {
     if (err) {
-      console.error('Fehler beim Löschen des Tarifs:', err);
+      logger.error('Fehler beim Löschen des Tarifs:', { error: err });
       return res.status(500).json({ error: 'Serverfehler beim Löschen des Tarifs' });
     }
     res.sendStatus(204);

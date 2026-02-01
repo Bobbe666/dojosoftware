@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const auditLog = require('../services/auditLogService');
 
@@ -63,7 +64,7 @@ router.get('/', requireAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Audit-Logs:', error);
+    logger.error('Fehler beim Abrufen der Audit-Logs:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });
@@ -81,7 +82,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
 
     res.json({ success: true, data: stats });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Statistiken:', error);
+    logger.error('Fehler beim Abrufen der Statistiken:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });
@@ -138,7 +139,7 @@ router.get('/entity/:type/:id', requireAdmin, async (req, res) => {
 
     res.json({ success: true, data: logs });
   } catch (error) {
-    console.error('Fehler beim Abrufen der Entity-Logs:', error);
+    logger.error('Fehler beim Abrufen der Entity-Logs:', { error: error });
     res.status(500).json({ success: false, error: 'Datenbankfehler' });
   }
 });

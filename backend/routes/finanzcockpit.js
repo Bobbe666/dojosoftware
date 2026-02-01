@@ -1,11 +1,21 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 
 // ===== FINANZCOCKPIT STATISTIKEN =====
 // GET /api/finanzcockpit/stats - Hauptstatistiken
 router.get('/stats', (req, res) => {
-  const { period = 'month', start_date, end_date, dojo_id } = req.query;
+  const { period = 'month', start_date, end_date, dojo_id, dojo_ids } = req.query;
+
+  // 🔒 MULTI-DOJO SUPPORT: dojo_ids = "2,3" für mehrere Dojos
+  let dojoIdList = [];
+  if (dojo_ids) {
+    dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+  } else if (dojo_id && dojo_id !== 'all') {
+    dojoIdList = [parseInt(dojo_id)];
+  }
+  // Bei dojo_id=all OHNE dojo_ids: Keine Filterung (Legacy-Verhalten)
   
   // Datumsbereich berechnen
   let dateStart, dateEnd;
@@ -39,12 +49,12 @@ router.get('/stats', (req, res) => {
   const prevDateStart = prevStartDateObj.toISOString().slice(0, 10);
   const prevDateEnd = prevEndDateObj.toISOString().slice(0, 10);
 
-  // Dojo-Filter aufbauen
+  // Dojo-Filter aufbauen (wird nicht mehr direkt verwendet, aber für Kompatibilität)
   let dojoFilter = '';
   let dojoParams = [];
-  if (dojo_id && dojo_id !== 'all') {
-    dojoFilter = 'AND m.dojo_id = ?';
-    dojoParams = [parseInt(dojo_id)];
+  if (dojoIdList.length > 0) {
+    dojoFilter = `AND m.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`;
+    dojoParams = [...dojoIdList];
   }
 
   // Alle Statistiken parallel abrufen
@@ -54,9 +64,9 @@ router.get('/stats', (req, res) => {
       let whereClause = "WHERE v.status = 'aktiv'";
       let queryParams = [];
 
-      if (dojo_id && dojo_id !== 'all') {
-        whereClause += ' AND v.dojo_id = ?';
-        queryParams.push(parseInt(dojo_id));
+      if (dojoIdList.length > 0) {
+        whereClause += ` AND v.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`;
+        queryParams.push(...dojoIdList);
       }
 
       const query = `
@@ -86,9 +96,9 @@ router.get('/stats', (req, res) => {
       let whereConditions = ["v.status = 'aktiv'"];
       let queryParams = [];
 
-      if (dojo_id && dojo_id !== 'all') {
-        whereConditions.push('v.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+      if (dojoIdList.length > 0) {
+        whereConditions.push(`v.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+        queryParams.push(...dojoIdList);
       }
 
       const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -144,14 +154,14 @@ router.get('/stats', (req, res) => {
       let whereConditions = ['v.verkauf_datum >= ?', 'v.verkauf_datum <= ?', 'v.storniert = FALSE'];
       let queryParams = [dateStart, dateEnd];
       
-      if (dojo_id && dojo_id !== 'all') {
+      if (dojoIdList.length > 0) {
         // Bei dojo_id Filter: Laufkunden (mitglied_id IS NULL) ausschließen, nur Mitglieder des Dojos einbeziehen
-        whereConditions.push('(v.mitglied_id IS NOT NULL AND m.dojo_id = ?)');
-        queryParams.push(parseInt(dojo_id));
+        whereConditions.push(`(v.mitglied_id IS NOT NULL AND m.dojo_id IN (${dojoIdList.map(() => '?').join(',')}))`);
+        queryParams.push(...dojoIdList);
       }
-      
+
       const query = `
-        SELECT 
+        SELECT
           COUNT(*) as anzahl_verkaeufe,
           COALESCE(SUM(v.brutto_gesamt_cent), 0) as umsatz_cent,
           COALESCE(SUM(CASE WHEN v.zahlungsart = 'bar' THEN v.brutto_gesamt_cent ELSE 0 END), 0) as bar_umsatz_cent,
@@ -163,7 +173,7 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, queryParams, (err, results) => {
         if (err) {
-          console.error('Fehler bei Verkäufe-Query:', err);
+          logger.error('Fehler bei Verkäufe-Query:', { error: err });
           return reject(err);
         }
         resolve(results[0] || { anzahl_verkaeufe: 0, umsatz_cent: 0, bar_umsatz_cent: 0, karte_umsatz_cent: 0, digital_umsatz_cent: 0 });
@@ -175,14 +185,14 @@ router.get('/stats', (req, res) => {
       let whereConditions = ['v.verkauf_datum >= ?', 'v.verkauf_datum <= ?', 'v.storniert = FALSE'];
       let queryParams = [prevDateStart, prevDateEnd];
       
-      if (dojo_id && dojo_id !== 'all') {
+      if (dojoIdList.length > 0) {
         // Bei dojo_id Filter: Laufkunden (mitglied_id IS NULL) ausschließen, nur Mitglieder des Dojos einbeziehen
-        whereConditions.push('(v.mitglied_id IS NOT NULL AND m.dojo_id = ?)');
-        queryParams.push(parseInt(dojo_id));
+        whereConditions.push(`(v.mitglied_id IS NOT NULL AND m.dojo_id IN (${dojoIdList.map(() => '?').join(',')}))`);
+        queryParams.push(...dojoIdList);
       }
-      
+
       const query = `
-        SELECT 
+        SELECT
           COALESCE(SUM(v.brutto_gesamt_cent), 0) as umsatz_cent
         FROM verkaeufe v
         LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
@@ -190,7 +200,7 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, queryParams, (err, results) => {
         if (err) {
-          console.error('Fehler bei Verkäufe-Vorperiode-Query:', err);
+          logger.error('Fehler bei Verkäufe-Vorperiode-Query:', { error: err });
           return reject(err);
         }
         resolve(results[0] || { umsatz_cent: 0 });
@@ -201,10 +211,10 @@ router.get('/stats', (req, res) => {
     new Promise((resolve, reject) => {
       let whereConditions = ['r.archiviert = 0'];
       let queryParams = [];
-      
-      if (dojo_id && dojo_id !== 'all') {
-        whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+
+      if (dojoIdList.length > 0) {
+        whereConditions.push(`m.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+        queryParams.push(...dojoIdList);
       }
       
       const query = `
@@ -221,7 +231,7 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, [dateStart, dateEnd, ...queryParams], (err, results) => {
         if (err) {
-          console.error('Fehler bei Rechnungen-Query:', err);
+          logger.error('Fehler bei Rechnungen-Query:', { error: err });
           return reject(err);
         }
         resolve(results[0] || { gesamt_rechnungen: 0, offene_rechnungen: 0, bezahlte_rechnungen: 0, ueberfaellige_rechnungen: 0, offene_summe: 0, bezahlte_summe_periode: 0 });
@@ -234,9 +244,9 @@ router.get('/stats', (req, res) => {
       let queryParams = [dateStart, dateEnd];
 
       // 🔒 DOJO-FILTER: Zahlläufe jetzt mit dojo_id
-      if (dojo_id && dojo_id !== 'all') {
-        whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+      if (dojoIdList.length > 0) {
+        whereConditions.push(`dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+        queryParams.push(...dojoIdList);
       }
 
       const query = `
@@ -249,10 +259,10 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, queryParams, (err, results) => {
         if (err) {
-          console.error('Fehler bei Zahlläufe-Query:', err);
+          logger.error('Fehler bei Zahlläufe-Query:', { error: err });
           // Wenn Spalte fehlt, 0 zurückgeben
           if (err.code === 'ER_BAD_FIELD_ERROR') {
-            console.warn('⚠️ dojo_id-Spalte in zahllaeufe nicht gefunden. Migration ausführen!');
+            logger.warn('dojo_id-Spalte in zahllaeufe nicht gefunden. Migration ausführen!');
             return resolve({ gesamt_zahllaeufe: 0, abgeschlossene_zahllaeufe: 0, abgeschlossene_summe: 0 });
           }
           return reject(err);
@@ -265,10 +275,10 @@ router.get('/stats', (req, res) => {
     new Promise((resolve, reject) => {
       let whereConditions = ['z.zahlungsdatum >= ?', 'z.zahlungsdatum <= ?'];
       let queryParams = [dateStart, dateEnd];
-      
-      if (dojo_id && dojo_id !== 'all') {
-        whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+
+      if (dojoIdList.length > 0) {
+        whereConditions.push(`m.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+        queryParams.push(...dojoIdList);
       }
       
       const query = `
@@ -282,7 +292,7 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, queryParams, (err, results) => {
         if (err) {
-          console.error('Fehler bei Zahlungen-Query:', err);
+          logger.error('Fehler bei Zahlungen-Query:', { error: err });
           return reject(err);
         }
         resolve(results[0] || { anzahl_zahlungen: 0, zahlungen_summe: 0 });
@@ -295,9 +305,9 @@ router.get('/stats', (req, res) => {
       let queryParams = [dateStart, dateEnd];
 
       // 🔒 DOJO-FILTER: Kassenbuch jetzt mit dojo_id
-      if (dojo_id && dojo_id !== 'all') {
-        whereConditions.push('kb.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+      if (dojoIdList.length > 0) {
+        whereConditions.push(`kb.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+        queryParams.push(...dojoIdList);
       }
 
       const query = `
@@ -309,10 +319,10 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, queryParams, (err, results) => {
         if (err) {
-          console.error('Fehler bei Ausgaben-Query:', err);
+          logger.error('Fehler bei Ausgaben-Query:', { error: err });
           // Wenn Tabelle nicht existiert oder Spalte fehlt, 0 zurückgeben
           if (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_FIELD_ERROR') {
-            console.warn('⚠️ Kassenbuch-Tabelle oder dojo_id-Spalte nicht gefunden. Migration ausführen!');
+            logger.warn('Kassenbuch-Tabelle oder dojo_id-Spalte nicht gefunden. Migration ausführen!');
             return resolve({ anzahl_ausgaben: 0, ausgaben_cent: 0 });
           }
           return reject(err);
@@ -327,9 +337,9 @@ router.get('/stats', (req, res) => {
       let queryParams = [prevDateStart, prevDateEnd];
 
       // 🔒 DOJO-FILTER: Kassenbuch mit dojo_id
-      if (dojo_id && dojo_id !== 'all') {
-        whereConditions.push('kb.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+      if (dojoIdList.length > 0) {
+        whereConditions.push(`kb.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+        queryParams.push(...dojoIdList);
       }
 
       const query = `
@@ -340,7 +350,7 @@ router.get('/stats', (req, res) => {
       `;
       db.query(query, queryParams, (err, results) => {
         if (err) {
-          console.error('Fehler bei Ausgaben-Vorperiode-Query:', err);
+          logger.error('Fehler bei Ausgaben-Vorperiode-Query:', { error: err });
           if (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_FIELD_ERROR') {
             return resolve({ ausgaben_cent: 0 });
           }
@@ -440,14 +450,22 @@ router.get('/stats', (req, res) => {
     
     res.json({ success: true, data: stats });
   }).catch(err => {
-    console.error('Fehler beim Berechnen der Finanzstatistiken:', err);
+    logger.error('Fehler beim Berechnen der Finanzstatistiken:', { error: err });
     res.status(500).json({ success: false, error: err.message });
   });
 });
 
 // GET /api/finanzcockpit/timeline - Zeitreihen-Daten für Charts
 router.get('/timeline', (req, res) => {
-  const { period = 'month', months = 12, dojo_id } = req.query;
+  const { period = 'month', months = 12, dojo_id, dojo_ids } = req.query;
+
+  // 🔒 MULTI-DOJO SUPPORT
+  let dojoIdList = [];
+  if (dojo_ids) {
+    dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+  } else if (dojo_id && dojo_id !== 'all') {
+    dojoIdList = [parseInt(dojo_id)];
+  }
 
   const monthsNum = parseInt(months) || 12;
   const data = [];
@@ -482,9 +500,9 @@ router.get('/timeline', (req, res) => {
         ];
         let queryParams = [monthEnd, monthStart];
 
-        if (dojo_id && dojo_id !== 'all') {
-          whereConditions.push('v.dojo_id = ?');
-          queryParams.push(parseInt(dojo_id));
+        if (dojoIdList.length > 0) {
+          whereConditions.push(`v.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+          queryParams.push(...dojoIdList);
         }
 
         const query = `
@@ -496,7 +514,7 @@ router.get('/timeline', (req, res) => {
         `;
         db.query(query, queryParams, (err, results) => {
           if (err) {
-            console.error('Fehler bei Timeline-Query:', err);
+            logger.error('Fehler bei Timeline-Query:', { error: err });
             return reject(err);
           }
           const stats = results[0] || { anzahl_vertraege: 0, monatliche_einnahmen: 0 };
@@ -511,21 +529,29 @@ router.get('/timeline', (req, res) => {
   ).then(timelineData => {
     res.json({ success: true, data: timelineData });
   }).catch(err => {
-    console.error('Fehler beim Abrufen der Timeline-Daten:', err);
+    logger.error('Fehler beim Abrufen der Timeline-Daten:', { error: err });
     res.status(500).json({ success: false, error: err.message });
   });
 });
 
 // GET /api/finanzcockpit/tarif-breakdown - Einnahmen nach Tarifen
 router.get('/tarif-breakdown', (req, res) => {
-  const { dojo_id } = req.query;
+  const { dojo_id, dojo_ids } = req.query;
+
+  // 🔒 MULTI-DOJO SUPPORT
+  let dojoIdList = [];
+  if (dojo_ids) {
+    dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+  } else if (dojo_id && dojo_id !== 'all') {
+    dojoIdList = [parseInt(dojo_id)];
+  }
 
   let whereConditions = ['v.status = "aktiv"'];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
-    whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+  if (dojoIdList.length > 0) {
+    whereConditions.push(`m.dojo_id IN (${dojoIdList.map(() => '?').join(',')})`);
+    queryParams.push(...dojoIdList);
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -545,7 +571,7 @@ router.get('/tarif-breakdown', (req, res) => {
 
   db.query(query, queryParams, (err, results) => {
     if (err) {
-      console.error('Fehler bei Tarif-Breakdown-Query:', err);
+      logger.error('Fehler bei Tarif-Breakdown-Query:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
     }
 

@@ -1,4 +1,5 @@
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db.js');
 
@@ -82,7 +83,7 @@ router.get('/mitglieder/ratable-courses', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Fehler beim Laden der bewertbaren Kurse:', error);
+    logger.error('Fehler beim Laden der bewertbaren Kurse:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der Kurse'
@@ -190,7 +191,7 @@ router.post('/mitglieder/submit-rating', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Fehler beim Speichern der Bewertung:', error);
+    logger.error('Fehler beim Speichern der Bewertung:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Fehler beim Speichern der Bewertung'
@@ -235,7 +236,7 @@ router.get('/admin/course-ratings', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Fehler beim Laden der Bewertungen:', error);
+    logger.error('Fehler beim Laden der Bewertungen:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der Bewertungen'
@@ -292,7 +293,7 @@ router.get('/admin/rating-stats', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Fehler beim Laden der Bewertungsstatistiken:', error);
+    logger.error('Fehler beim Laden der Bewertungsstatistiken:', { error: error });
     res.status(500).json({
       success: false,
       message: 'Fehler beim Laden der Statistiken'

@@ -381,7 +381,7 @@ Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, 
         });
         y += 90;
       } catch (err) {
-        console.error('Fehler beim Laden der Unterschrift:', err);
+        logger.error('Fehler beim Laden der Unterschrift:', { error: err });
         this.doc.fontSize(10)
           .fillColor('#ef4444')
           .text('(Unterschrift konnte nicht geladen werden)', 60, y);

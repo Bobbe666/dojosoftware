@@ -4,6 +4,7 @@
 // ============================================================================
 
 const express = require('express');
+const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -96,7 +97,7 @@ router.get('/', requireFeature('events'), (req, res) => {
 
   db.query(query, params, (err, events) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Events:', err);
+      logger.error('Fehler beim Abrufen der Events:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Abrufen der Events',
         details: err.message
@@ -142,7 +143,7 @@ router.get('/:id', (req, res) => {
 
   db.query(query, [eventId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Abrufen des Events:', err);
+      logger.error('Fehler beim Abrufen des Events:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Abrufen des Events',
         details: err.message
@@ -187,7 +188,7 @@ router.get('/:id/anmeldungen', (req, res) => {
 
   db.query(query, [eventId], (err, anmeldungen) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Anmeldungen:', err);
+      logger.error('Fehler beim Abrufen der Anmeldungen:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Abrufen der Anmeldungen',
         details: err.message
@@ -224,7 +225,7 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
 
   db.query(query, [mitgliedId], (err, events) => {
     if (err) {
-      console.error('Fehler beim Abrufen der Mitglieder-Events:', err);
+      logger.error('Fehler beim Abrufen der Mitglieder-Events:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Abrufen der Events',
         details: err.message
@@ -285,7 +286,7 @@ router.post('/', requireFeature('events'), (req, res) => {
 
   db.query(query, params, async (err, result) => {
     if (err) {
-      console.error('Fehler beim Erstellen des Events:', err);
+      logger.error('Fehler beim Erstellen des Events:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Erstellen des Events',
         details: err.message
@@ -318,9 +319,9 @@ router.post('/', requireFeature('events'), (req, res) => {
         );
       }
 
-      console.log(`✅ Event ${eventId} erstellt und ${mitglieder.length} Benachrichtigungen versendet`);
+      logger.info('Event ${eventId} erstellt und ${mitglieder.length} Benachrichtigungen versendet');
     } catch (notifErr) {
-      console.error('Fehler beim Versenden der Benachrichtigungen:', notifErr);
+      logger.error('Fehler beim Versenden der Benachrichtigungen:', { error: notifErr });
       // Fehler bei Benachrichtigungen nicht kritisch - Event wurde trotzdem erstellt
     }
 
@@ -357,7 +358,7 @@ router.post('/:id/anmelden', (req, res) => {
 
   db.query(checkQuery, [eventId], (err, results) => {
     if (err) {
-      console.error('Fehler beim Prüfen des Events:', err);
+      logger.error('Fehler beim Prüfen des Events:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Prüfen des Events',
         details: err.message
@@ -402,7 +403,7 @@ router.post('/:id/anmelden', (req, res) => {
         if (err.code === 'ER_DUP_ENTRY') {
           return res.status(400).json({ error: 'Sie sind bereits für dieses Event angemeldet' });
         }
-        console.error('Fehler beim Anmelden:', err);
+        logger.error('Fehler beim Anmelden:', { error: err });
         return res.status(500).json({
           error: 'Fehler beim Anmelden',
           details: err.message
@@ -415,7 +416,7 @@ router.post('/:id/anmelden', (req, res) => {
           'UPDATE events SET status = "ausgebucht" WHERE event_id = ?',
           [eventId],
           (err) => {
-            if (err) console.error('Fehler beim Update des Event-Status:', err);
+            if (err) logger.error('Fehler beim Update des Event-Status:', { error: err });
           }
         );
       }
@@ -448,7 +449,7 @@ router.post('/:id/abmelden', (req, res) => {
 
   db.query(query, [eventId, mitglied_id], (err, result) => {
     if (err) {
-      console.error('Fehler beim Abmelden:', err);
+      logger.error('Fehler beim Abmelden:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Abmelden',
         details: err.message
@@ -464,7 +465,7 @@ router.post('/:id/abmelden', (req, res) => {
       'UPDATE events SET status = "anmeldung_offen" WHERE event_id = ? AND status = "ausgebucht"',
       [eventId],
       (err) => {
-        if (err) console.error('Fehler beim Update des Event-Status:', err);
+        if (err) logger.error('Fehler beim Update des Event-Status:', { error: err });
       }
     );
 
@@ -527,7 +528,7 @@ router.put('/:id', requireFeature('events'), (req, res) => {
 
   db.query(query, params, (err, result) => {
     if (err) {
-      console.error('Fehler beim Aktualisieren des Events:', err);
+      logger.error('Fehler beim Aktualisieren des Events:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Aktualisieren des Events',
         details: err.message
@@ -573,7 +574,7 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
 
   db.query(query, params, (err, result) => {
     if (err) {
-      console.error('Fehler beim Aktualisieren der Anmeldung:', err);
+      logger.error('Fehler beim Aktualisieren der Anmeldung:', { error: err });
       return res.status(500).json({
         error: 'Fehler beim Aktualisieren der Anmeldung',
         details: err.message
@@ -606,7 +607,7 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
     [eventId],
     (err, results) => {
       if (err) {
-        console.error('Fehler beim Prüfen der Anmeldungen:', err);
+        logger.error('Fehler beim Prüfen der Anmeldungen:', { error: err });
         return res.status(500).json({
           error: 'Fehler beim Prüfen der Anmeldungen',
           details: err.message
@@ -624,7 +625,7 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
       // Lösche Event
       db.query('DELETE FROM events WHERE event_id = ?', [eventId], (err, result) => {
         if (err) {
-          console.error('Fehler beim Löschen des Events:', err);
+          logger.error('Fehler beim Löschen des Events:', { error: err });
           return res.status(500).json({
             error: 'Fehler beim Löschen des Events',
             details: err.message
@@ -706,7 +707,7 @@ router.post('/:id/anmelden', async (req, res) => {
       [eventId, mitglied_id, notizen || null]
     );
 
-    console.log(`✅ Mitglied ${mitglied_id} für Event ${eventId} angemeldet`);
+    logger.info('Mitglied ${mitglied_id} für Event ${eventId} angemeldet');
 
     res.json({
       success: true,
@@ -714,7 +715,7 @@ router.post('/:id/anmelden', async (req, res) => {
       anmeldung_id: result.insertId
     });
   } catch (error) {
-    console.error('Fehler bei Event-Anmeldung:', error);
+    logger.error('Fehler bei Event-Anmeldung:', { error: error });
     res.status(500).json({ error: 'Fehler bei der Event-Anmeldung' });
   }
 });
@@ -749,14 +750,14 @@ router.delete('/:id/anmelden', async (req, res) => {
       [eventId, mitglied_id]
     );
 
-    console.log(`✅ Mitglied ${mitglied_id} von Event ${eventId} abgemeldet`);
+    logger.info('Mitglied ${mitglied_id} von Event ${eventId} abgemeldet');
 
     res.json({
       success: true,
       message: 'Erfolgreich von Event abgemeldet'
     });
   } catch (error) {
-    console.error('Fehler bei Event-Abmeldung:', error);
+    logger.error('Fehler bei Event-Abmeldung:', { error: error });
     res.status(500).json({ error: 'Fehler bei der Event-Abmeldung' });
   }
 });
@@ -802,7 +803,7 @@ router.get('/member/:mitglied_id', async (req, res) => {
       events: rows
     });
   } catch (error) {
-    console.error('Fehler beim Laden der Member-Events:', error);
+    logger.error('Fehler beim Laden der Member-Events:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Events' });
   }
 });
@@ -868,21 +869,21 @@ router.post('/:id/admin-anmelden', async (req, res) => {
       [eventId, mitglied_id, bezahlt || false, bemerkung || 'Durch Admin hinzugefügt']
     );
 
-    console.log(`✅ Admin hat Mitglied ${mitglied_id} zu Event ${eventId} hinzugefügt`);
+    logger.info('Admin hat Mitglied ${mitglied_id} zu Event ${eventId} hinzugefügt');
 
     // 5. Benachrichtigung an Mitglied senden (Optional: Email)
     // TODO: Email-Service implementieren wenn verfügbar
     try {
       // Einfache Konsolen-Notification für jetzt
-      console.log(`📧 Benachrichtigung an ${member.email}:`);
-      console.log(`   Event: ${event.titel}`);
-      console.log(`   Datum: ${new Date(event.datum).toLocaleDateString('de-DE')}`);
-      console.log(`   Status: Bestätigt - Zahlung: ${bezahlt ? 'Bezahlt' : 'Offen'}`);
+      logger.debug('📧 Benachrichtigung an ${member.email}:');
+      logger.debug('   Event: ${event.titel}');
+      logger.debug(`   Datum: ${new Date(event.datum).toLocaleDateString('de-DE')}`);
+      logger.debug(`   Status: Bestätigt - Zahlung: ${bezahlt ? 'Bezahlt' : 'Offen'}`);
 
       // Falls Email-Service existiert, hier aufrufen:
       // await sendEventNotification(member.email, event, 'admin-added');
     } catch (notifError) {
-      console.error('⚠️ Fehler beim Senden der Benachrichtigung:', notifError);
+      logger.error('⚠️ Fehler beim Senden der Benachrichtigung:', { error: notifError });
       // Fehler bei Benachrichtigung soll Anmeldung nicht verhindern
     }
 
@@ -892,7 +893,7 @@ router.post('/:id/admin-anmelden', async (req, res) => {
       anmeldung_id: result.insertId
     });
   } catch (error) {
-    console.error('❌ Fehler bei Admin-Event-Anmeldung:', error);
+    logger.error('Fehler bei Admin-Event-Anmeldung:', error);
     res.status(500).json({ error: 'Fehler beim Hinzufügen des Teilnehmers' });
   }
 });
@@ -917,14 +918,14 @@ router.put('/anmeldung/:id/bezahlt', async (req, res) => {
       return res.status(404).json({ error: 'Anmeldung nicht gefunden' });
     }
 
-    console.log(`✅ Anmeldung ${anmeldungId} wurde als bezahlt markiert`);
+    logger.info('Anmeldung ${anmeldungId} wurde als bezahlt markiert');
 
     res.json({
       success: true,
       message: 'Anmeldung wurde als bezahlt markiert'
     });
   } catch (error) {
-    console.error('❌ Fehler beim Aktualisieren des Bezahlt-Status:', error);
+    logger.error('Fehler beim Aktualisieren des Bezahlt-Status:', error);
     res.status(500).json({ error: 'Fehler beim Aktualisieren des Bezahlt-Status' });
   }
 });

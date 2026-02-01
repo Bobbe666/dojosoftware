@@ -1,4 +1,5 @@
 const express = require("express");
+const logger = require('../utils/logger');
 const db = require("../db");
 
 const router = express.Router();
@@ -36,7 +37,7 @@ router.get("/", (req, res) => {
 
     db.query(query, params, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Anwesenheitsdaten:", err);
+            logger.error('Fehler beim Abrufen der Anwesenheitsdaten:', { error: err });
             return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheitsdaten", details: err.message });
         }
 
@@ -57,7 +58,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
     // Für Super-Admin ohne spezifisches Dojo: Hole dojo_id aus dem Kurs
     const allowWithoutDojo = !dojoId || dojoId === 'all' || dojoId === 'null';
 
-    console.log("🔍 Anwesenheit Route aufgerufen:", {
+    logger.debug('Anwesenheit Route aufgerufen:', {
         stundenplan_id: req.params.stundenplan_id,
         datum: req.params.datum,
         show_all: req.query.show_all,
@@ -349,7 +350,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
 
         // Sicherstellen, dass query und params definiert sind
         if (!query || !params) {
-            console.error("Query oder Params nicht definiert für stundenplan_id:", stundenplan_id);
+            logger.error('Query oder Params nicht definiert für stundenplan_id:', { error: stundenplan_id });
             return res.status(500).json({ 
                 success: false,
                 error: "Interner Fehler: Query konnte nicht erstellt werden" 
@@ -358,9 +359,8 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
 
         db.query(query, params, (err, results) => {
             if (err) {
-                console.error("Fehler beim Abrufen der Kursmitglieder:", err);
-                console.error("SQL Fehler Details:", {
-                    message: err.message,
+                logger.error('Fehler beim Abrufen der Kursmitglieder', {
+                    error: err.message,
                     sqlState: err.sqlState,
                     sqlMessage: err.sqlMessage,
                     code: err.code,
@@ -394,7 +394,7 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
             });
         });
     } catch (error) {
-        console.error("Unerwarteter Fehler in /kurs/:stundenplan_id/:datum:", error);
+        logger.error('Unerwarteter Fehler in /kurs/:stundenplan_id/:datum:', { error: error });
         return res.status(500).json({ 
             success: false,
             error: "Unerwarteter Fehler beim Abrufen der Kursmitglieder", 
@@ -422,7 +422,7 @@ router.get("/kurse/:datum", (req, res) => {
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     const todayName = dayNames[today.getDay()];
 
-    console.log(`📅 Lade Kurse für ${datum} (${todayName}), dojo_id=${dojoId}, showAll=${showAllDojos}`);
+    logger.debug('📅 Lade Kurse für ${datum} (${todayName}), dojo_id=${dojoId}, showAll=${showAllDojos}');
 
     // Query mit optionalem Dojo-Filter
     let query = `
@@ -467,7 +467,7 @@ router.get("/kurse/:datum", (req, res) => {
 
     db.query(query, params, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Kurse:", err);
+            logger.error('Fehler beim Abrufen der Kurse:', { error: err });
             return res.status(500).json({ 
                 error: "Fehler beim Abrufen der Kurse", 
                 details: err.message 
@@ -545,7 +545,7 @@ router.get("/:mitglied_id", (req, res) => {
 
     db.query(query, params, (err, results) => {
         if (err) {
-            console.error("Fehler beim Abrufen der Anwesenheit für Mitglied:", err);
+            logger.error('Fehler beim Abrufen der Anwesenheit für Mitglied:', { error: err });
             return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheit", details: err.message });
         }
 
@@ -590,7 +590,7 @@ router.post("/", (req, res) => {
 
     db.query(query, [mitglied_id_num, stundenplan_id_num, datum, anwesend_value], (err, result) => {
         if (err) {
-            console.error("Fehler beim Eintragen der Anwesenheit:", err);
+            logger.error('Fehler beim Eintragen der Anwesenheit:', { error: err });
             return res.status(500).json({ error: "Fehler beim Eintragen der Anwesenheit", details: err.message });
         }
 
@@ -640,7 +640,7 @@ router.post("/batch", (req, res) => {
     // Transaction starten
     db.beginTransaction((err) => {
         if (err) {
-            console.error("Fehler beim Starten der Transaction:", err);
+            logger.error('Fehler beim Starten der Transaction:', { error: err });
             return res.status(500).json({ error: "Transaction-Fehler" });
         }
 
@@ -670,7 +670,7 @@ router.post("/batch", (req, res) => {
                 if (completed === eintraege.length) {
                     if (errors.length > 0) {
                         db.rollback(() => {
-                            console.error("Batch-Update fehlgeschlagen, Rollback durchgeführt");
+                            logger.error('Batch-Update fehlgeschlagen, Rollback durchgeführt');
                             res.status(500).json({ 
                                 error: "Batch-Update fehlgeschlagen", 
                                 errors: errors 
@@ -680,7 +680,7 @@ router.post("/batch", (req, res) => {
                         db.commit((commit_err) => {
                             if (commit_err) {
                                 db.rollback(() => {
-                                    console.error("Commit fehlgeschlagen, Rollback durchgeführt");
+                                    logger.error('Commit fehlgeschlagen, Rollback durchgeführt');
                                     res.status(500).json({ error: "Commit fehlgeschlagen" });
                                 });
                             } else {
@@ -712,7 +712,7 @@ router.delete("/:id", (req, res) => {
 
     db.query(query, [id], (err, result) => {
         if (err) {
-            console.error("Fehler beim Löschen der Anwesenheit:", err);
+            logger.error('Fehler beim Löschen der Anwesenheit:', { error: err });
             return res.status(500).json({ error: "Fehler beim Löschen der Anwesenheit", details: err.message });
         }
 
@@ -729,7 +729,7 @@ router.delete("/:id", (req, res) => {
 router.get("/:mitglied_id", (req, res) => {
     const mitgliedId = parseInt(req.params.mitglied_id);
 
-    console.log(`📊 Lade Anwesenheitsdaten für Mitglied ${mitgliedId}`);
+    logger.debug('📊 Lade Anwesenheitsdaten für Mitglied ${mitgliedId}');
 
     // Dojo-ID aus Tenant oder User ermitteln (für Multi-Tenant-Support)
     let dojoId = null;
@@ -761,14 +761,14 @@ router.get("/:mitglied_id", (req, res) => {
 
     db.query(query, queryParams, (err, results) => {
         if (err) {
-            console.error("❌ Fehler beim Abrufen der Anwesenheitsdaten:", err);
+            logger.error('Fehler beim Abrufen der Anwesenheitsdaten:', err);
             return res.status(500).json({
                 error: "Fehler beim Abrufen der Anwesenheitsdaten",
                 details: err.message
             });
         }
 
-        console.log(`✅ ${results.length} Anwesenheitseinträge gefunden für Mitglied ${mitgliedId} ${dojoId ? `(Dojo ${dojoId})` : ''}`);
+        logger.info('Anwesenheitseinträge gefunden', { count: results.length, mitglied_id: mitgliedId, dojo_id: dojoId });
         res.json(results);
     });
 });

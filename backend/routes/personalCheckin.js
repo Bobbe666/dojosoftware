@@ -35,7 +35,7 @@ router.get("/", (req, res) => {
   
   db.query(query, [targetDate], (error, results) => {
     if (error) {
-      console.error("Fehler beim Abrufen der Personal Check-ins:", error);
+      logger.error('Fehler beim Abrufen der Personal Check-ins:', { error: error });
       return res.status(500).json({
         success: false,
         error: "Fehler beim Abrufen der Check-in Daten"
@@ -77,7 +77,7 @@ router.get("/personal", (req, res) => {
   
   db.query(query, (error, results) => {
     if (error) {
-      console.error("Fehler beim Abrufen der Personal-Liste:", error);
+      logger.error('Fehler beim Abrufen der Personal-Liste:', { error: error });
       return res.status(500).json({
         success: false,
         error: "Fehler beim Abrufen der Personal-Daten"
@@ -113,7 +113,7 @@ router.post("/", (req, res) => {
   
   db.query(checkQuery, [personal_id], (error, existing) => {
     if (error) {
-      console.error("Fehler beim Prüfen bestehender Check-ins:", error);
+      logger.error('Fehler beim Prüfen bestehender Check-ins:', { error: error });
       return res.status(500).json({
         success: false,
         error: "Fehler beim Prüfen des Check-in Status"
@@ -140,7 +140,7 @@ router.post("/", (req, res) => {
     
     db.query(insertQuery, [personal_id, bemerkung || null], (error, result) => {
       if (error) {
-        console.error("Fehler beim Einchecken:", error);
+        logger.error('Fehler beim Einchecken:', { error: error });
         return res.status(500).json({
           success: false,
           error: "Fehler beim Einchecken"
@@ -162,7 +162,7 @@ router.post("/", (req, res) => {
       
       db.query(selectQuery, [result.insertId], (error, checkinData) => {
         if (error) {
-          console.error("Fehler beim Abrufen des Check-in:", error);
+          logger.error('Fehler beim Abrufen des Check-in:', { error: error });
           return res.status(500).json({
             success: false,
             error: "Check-in erstellt, aber Daten konnten nicht abgerufen werden"
@@ -194,7 +194,7 @@ router.put("/:checkin_id/checkout", (req, res) => {
   
   db.query(checkQuery, [checkin_id], (error, existing) => {
     if (error) {
-      console.error("Fehler beim Prüfen des Check-ins:", error);
+      logger.error('Fehler beim Prüfen des Check-ins:', { error: error });
       return res.status(500).json({
         success: false,
         error: "Fehler beim Prüfen des Check-in Status"
@@ -225,7 +225,7 @@ router.put("/:checkin_id/checkout", (req, res) => {
     
     db.query(updateQuery, [checkin.stundenlohn, bemerkung, checkin_id], (error, result) => {
       if (error) {
-        console.error("Fehler beim Auschecken:", error);
+        logger.error('Fehler beim Auschecken:', { error: error });
         return res.status(500).json({
           success: false,
           error: "Fehler beim Auschecken"
@@ -247,7 +247,7 @@ router.put("/:checkin_id/checkout", (req, res) => {
       
       db.query(selectQuery, [checkin_id], (error, checkinData) => {
         if (error) {
-          console.error("Fehler beim Abrufen der aktualisierten Daten:", error);
+          logger.error('Fehler beim Abrufen der aktualisierten Daten:', { error: error });
           return res.status(500).json({
             success: false,
             error: "Ausgecheckt, aber Daten konnten nicht abgerufen werden"
@@ -297,7 +297,7 @@ router.get("/stats", (req, res) => {
   
   db.query(statsQuery, (error, results) => {
     if (error) {
-      console.error("Fehler beim Abrufen der Statistiken:", error);
+      logger.error('Fehler beim Abrufen der Statistiken:', { error: error });
       return res.status(500).json({
         success: false,
         error: "Fehler beim Abrufen der Statistiken"
@@ -323,7 +323,7 @@ router.delete("/:checkin_id", (req, res) => {
   
   db.query(deleteQuery, [checkin_id], (error, result) => {
     if (error) {
-      console.error("Fehler beim Löschen des Check-ins:", error);
+      logger.error('Fehler beim Löschen des Check-ins:', { error: error });
       return res.status(500).json({
         success: false,
         error: "Fehler beim Löschen des Check-ins"

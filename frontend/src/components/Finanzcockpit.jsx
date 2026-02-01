@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE: Dojo-Filter
+import { Building2 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
@@ -48,9 +49,12 @@ const COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#f97316'
 const Finanzcockpit = () => {
   const navigate = useNavigate();
   const { updateTrigger } = useMitgliederUpdate();
-  const { getDojoFilterParam, activeDojo, filter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
+  const { getDojoFilterParam, activeDojo, filter, dojos, switchDojo, setFilter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+
+  // Dojo-Auswahl für schnelles Wechseln im Finanzcockpit
+  const [selectedDojoId, setSelectedDojoId] = useState(filter === 'all' ? 'all' : (activeDojo?.id || 'all'));
   const [stats, setStats] = useState(null);
   const [timelineData, setTimelineData] = useState([]);
   const [tarifData, setTarifData] = useState([]);
@@ -60,6 +64,46 @@ const Finanzcockpit = () => {
     loadTimelineData();
     loadTarifData();
   }, [updateTrigger, selectedPeriod, activeDojo, filter]); // 🔒 TAX COMPLIANCE: Neu laden wenn Dojo-Filter ändert
+
+  // Sync selectedDojoId mit aktivem Dojo
+  useEffect(() => {
+    if (filter === 'all') {
+      setSelectedDojoId('all');
+    } else if (activeDojo && typeof activeDojo === 'object') {
+      setSelectedDojoId(activeDojo.id);
+    }
+  }, [activeDojo, filter]);
+
+  // Handler für Dojo-Wechsel im Finanzcockpit
+  const handleDojoChange = (dojoId) => {
+    setSelectedDojoId(dojoId);
+    if (dojoId === 'all') {
+      // Alle Dojos anzeigen
+      if (dojos.length > 0) {
+        const hauptDojo = dojos.find(d => d.ist_hauptdojo) || dojos[0];
+        switchDojo(hauptDojo);
+      }
+      setFilter('all');
+    } else {
+      // Spezifisches Dojo auswählen
+      const selectedDojo = dojos.find(d => d.id === parseInt(dojoId));
+      if (selectedDojo) {
+        switchDojo(selectedDojo);
+        setFilter('current');
+      }
+    }
+  };
+
+  // Aktuell angezeigter Dojo-Name
+  const getCurrentDojoLabel = () => {
+    if (filter === 'all' || selectedDojoId === 'all') {
+      return 'Alle Standorte';
+    }
+    if (activeDojo && typeof activeDojo === 'object') {
+      return activeDojo.dojoname;
+    }
+    return 'Alle Standorte';
+  };
 
   const loadFinanzStats = async () => {
     try {
@@ -473,6 +517,25 @@ const Finanzcockpit = () => {
             </p>
           </div>
           <div className="finanzcockpit__controls">
+            {/* Dojo-Selektor */}
+            {dojos && dojos.length > 1 && (
+              <div className="finanzcockpit__dojo-selector">
+                <Building2 size={14} />
+                <select
+                  value={selectedDojoId}
+                  onChange={(e) => handleDojoChange(e.target.value)}
+                  className="finanzcockpit__dojo-select"
+                >
+                  <option value="all">Alle Standorte</option>
+                  {dojos.map(dojo => (
+                    <option key={dojo.id} value={dojo.id}>
+                      {dojo.dojoname}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="finanzcockpit__period-selector">
               <button
                 className={selectedPeriod === 'month' ? 'is-active' : ''}

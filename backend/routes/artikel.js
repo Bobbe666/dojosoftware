@@ -131,7 +131,7 @@ router.get('/kategorien', (req, res) => {
 
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen der Kategorien:', error);
+      logger.error('Fehler beim Abrufen der Kategorien:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen der Kategorien' });
     }
     res.json({ success: true, data: results });
@@ -169,7 +169,7 @@ router.post('/kategorien', (req, res) => {
   db.query(query, [name, beschreibung, farbe_hex || '#3B82F6', icon || 'package', reihenfolge || 0, dojoId], 
     (error, results) => {
       if (error) {
-        console.error('Fehler beim Erstellen der Kategorie:', error);
+        logger.error('Fehler beim Erstellen der Kategorie:', { error: error });
         if (error.code === 'ER_DUP_ENTRY') {
           return res.status(409).json({ error: 'Kategorie-Name bereits vorhanden' });
         }
@@ -269,7 +269,7 @@ router.get('/', (req, res) => {
 
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen der Artikel:', error);
+      logger.error('Fehler beim Abrufen der Artikel:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen der Artikel' });
     }
 
@@ -326,13 +326,13 @@ router.get('/kasse', (req, res) => {
 
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen der Kassen-Artikel:', error);
-      console.error('SQL Fehler Details:', {
+      logger.error('Fehler beim Abrufen der Kassen-Artikel:', { error: error });
+      logger.error('SQL Fehler Details:', { error: {
         message: error.message,
         sqlState: error.sqlState,
         sqlMessage: error.sqlMessage,
         code: error.code
-      });
+      } });
       return res.status(500).json({ 
         error: 'Fehler beim Abrufen der Kassen-Artikel',
         details: error.message 
@@ -421,7 +421,7 @@ router.get('/:id', (req, res) => {
 
   db.query(query, [req.params.id, dojoId], (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen des Artikels:', error);
+      logger.error('Fehler beim Abrufen des Artikels:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen des Artikels' });
     }
     
@@ -431,7 +431,7 @@ router.get('/:id', (req, res) => {
     
     const artikel = formatArtikel(results[0]);
     // DEBUG: Log loaded Handelskalkulation fields
-    console.log('🔍 GET /artikel/:id - Handelskalkulation:', {
+    logger.debug('GET /artikel/:id - Handelskalkulation:', {
       listeneinkaufspreis_euro: artikel.listeneinkaufspreis_euro,
       lieferrabatt_prozent: artikel.lieferrabatt_prozent,
       gemeinkosten_prozent: artikel.gemeinkosten_prozent,
@@ -478,7 +478,7 @@ router.post('/', (req, res) => {
   } = req.body;
 
   // DEBUG: Log Handelskalkulation fields beim Erstellen
-  console.log('🔍 POST /artikel - Handelskalkulation:', {
+  logger.debug('POST /artikel - Handelskalkulation:', {
     listeneinkaufspreis_euro, bezugskosten_euro,
     listeneinkaufspreis_kids_euro, listeneinkaufspreis_erwachsene_euro,
     gemeinkosten_prozent, gewinnzuschlag_prozent,
@@ -487,7 +487,7 @@ router.post('/', (req, res) => {
 
   // Validierung
   if (!kategorie_id || !name || !verkaufspreis_euro) {
-    console.log('❌ POST /artikel - Validierung fehlgeschlagen:', {
+    logger.debug('❌ POST /artikel - Validierung fehlgeschlagen:', {
       kategorie_id, name, verkaufspreis_euro,
       hat_preiskategorien, preis_kids_euro, preis_erwachsene_euro
     });
@@ -566,7 +566,7 @@ router.post('/', (req, res) => {
   
   db.query(query, params, (error, results) => {
     if (error) {
-      console.error('Fehler beim Erstellen des Artikels:', error);
+      logger.error('Fehler beim Erstellen des Artikels:', { error: error });
       if (error.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'Artikel-Nummer bereits vorhanden' });
       }
@@ -583,7 +583,7 @@ router.post('/', (req, res) => {
         parseInt(lagerbestand),
         'Artikel-Erstellung - Anfangsbestand',
         req.user_id || null
-      ).catch(err => console.warn('Lagerbewegung nicht protokolliert:', err.message));
+      ).catch(err => logger.warn('Lagerbewegung nicht protokolliert:', { details: err.message }));
     }
     res.json({ 
       success: true, 
@@ -630,7 +630,7 @@ router.put('/:id', (req, res) => {
   } = req.body;
 
   // DEBUG: Log Handelskalkulation fields
-  console.log('🔍 PUT /artikel/:id - Handelskalkulation:', {
+  logger.debug('PUT /artikel/:id - Handelskalkulation:', {
     listeneinkaufspreis_euro, bezugskosten_euro,
     listeneinkaufspreis_kids_euro, listeneinkaufspreis_erwachsene_euro,
     gemeinkosten_prozent, gewinnzuschlag_prozent,
@@ -640,7 +640,7 @@ router.put('/:id', (req, res) => {
   // Zuerst aktuellen Artikel abrufen
   db.query('SELECT * FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, currentResults) => {
     if (error) {
-      console.error('Fehler beim Abrufen des aktuellen Artikels:', error);
+      logger.error('Fehler beim Abrufen des aktuellen Artikels:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen des aktuellen Artikels' });
     }
 
@@ -785,7 +785,7 @@ router.put('/:id', (req, res) => {
     }
     
     if (updateFields.length === 0) {
-      console.log('❌ PUT /artikel - Keine Änderungen erkannt:', { artikel_id, body: req.body });
+      logger.debug('❌ PUT /artikel - Keine Änderungen erkannt:', { artikel_id, body: req.body });
       return res.status(400).json({ error: 'Keine Änderungen erkannt' });
     }
     
@@ -797,7 +797,7 @@ router.put('/:id', (req, res) => {
 
     db.query(query, updateValues, (error, results) => {
       if (error) {
-        console.error('Fehler beim Aktualisieren des Artikels:', error);
+        logger.error('Fehler beim Aktualisieren des Artikels:', { error: error });
         if (error.code === 'ER_DUP_ENTRY') {
           return res.status(409).json({ error: 'Artikel-Nummer bereits vorhanden' });
         }
@@ -818,7 +818,7 @@ router.put('/:id', (req, res) => {
           neuerBestand,
           grund,
           req.user_id || null
-        ).catch(err => console.warn('Lagerbewegung nicht protokolliert:', err.message));
+        ).catch(err => logger.warn('Lagerbewegung nicht protokolliert:', { details: err.message }));
       }
       res.json({ 
         success: true, 
@@ -850,7 +850,7 @@ router.delete('/:id', (req, res) => {
 
   db.query(checkSalesQuery, [artikelId], (error, results) => {
     if (error) {
-      console.error('Fehler beim Prüfen der Verkäufe:', error);
+      logger.error('Fehler beim Prüfen der Verkäufe:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Prüfen der Verkäufe' });
     }
 
@@ -862,7 +862,7 @@ router.delete('/:id', (req, res) => {
 
       db.query(archiveQuery, [artikelId, dojoId], (error, results) => {
         if (error) {
-          console.error('Fehler beim Archivieren des Artikels:', error);
+          logger.error('Fehler beim Archivieren des Artikels:', { error: error });
           return res.status(500).json({ error: 'Fehler beim Archivieren des Artikels' });
         }
 
@@ -881,7 +881,7 @@ router.delete('/:id', (req, res) => {
 
       db.query(deleteQuery, [artikelId, dojoId], (error, results) => {
         if (error) {
-          console.error('Fehler beim Löschen des Artikels:', error);
+          logger.error('Fehler beim Löschen des Artikels:', { error: error });
           return res.status(500).json({ error: 'Fehler beim Löschen des Artikels' });
         }
 
@@ -929,7 +929,7 @@ router.post('/:id/lager', (req, res) => {
   // Aktuellen Bestand abrufen
   db.query('SELECT lagerbestand FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen des Lagerbestands:', error);
+      logger.error('Fehler beim Abrufen des Lagerbestands:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen des Lagerbestands' });
     }
     
@@ -957,7 +957,7 @@ router.post('/:id/lager', (req, res) => {
       [neuerBestand, artikel_id],
       (updateError) => {
         if (updateError) {
-          console.error('Fehler beim Aktualisieren des Lagerbestands:', updateError);
+          logger.error('Fehler beim Aktualisieren des Lagerbestands:', { error: updateError });
           return res.status(500).json({ error: 'Fehler beim Aktualisieren des Lagerbestands' });
         }
         
@@ -979,7 +979,7 @@ router.post('/:id/lager', (req, res) => {
             message: 'Lagerbestand erfolgreich aktualisiert'
           });
         }).catch(err => {
-          console.error('Lagerbewegung nicht protokolliert:', err);
+          logger.error('Lagerbewegung nicht protokolliert:', { error: err });
           res.json({
             success: true,
             alter_bestand: alterBestand,
@@ -1030,7 +1030,7 @@ router.get('/:id/lager', (req, res) => {
 
   db.query(query, [req.params.id, dojoId], (error, results) => {
     if (error) {
-      console.error('Fehler beim Abrufen der Lagerbewegungen:', error);
+      logger.error('Fehler beim Abrufen der Lagerbewegungen:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen der Lagerbewegungen' });
     }
     res.json({ success: true, data: results });
@@ -1071,7 +1071,7 @@ router.get('/stats/overview', (req, res) => {
       const [query, params] = queryData;
       db.query(query, params, (error, results) => {
         if (error) {
-          console.error(`Fehler bei ${key}-Statistik:`, error);
+          logger.error('Fehler bei ${key}-Statistik:', { error: error });
           resolve({ key, value: 0 });
         } else {
           const value = key === 'lagerwert' ? 
