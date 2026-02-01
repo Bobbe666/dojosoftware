@@ -133,7 +133,8 @@ router.post('/', async (req, res) => {
     const { typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, gueltig_von, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, beitragsfrei } = req.body;
 
     if (!typ || !['dojo', 'einzelperson'].includes(typ)) return res.status(400).json({ error: 'Ungültiger Mitgliedschaftstyp' });
-    if (typ === 'dojo' && !dojo_id) return res.status(400).json({ error: 'Dojo muss ausgewählt werden' });
+    // Bei neues_dojo wird kein dojo_id benötigt - das Dojo wird vom Frontend vorher angelegt
+    if (typ === 'dojo' && !dojo_id && !req.body.neues_dojo) return res.status(400).json({ error: 'Dojo muss ausgewählt werden' });
     if (typ === 'einzelperson' && (!person_vorname || !person_nachname || !person_email)) return res.status(400).json({ error: 'Name und E-Mail sind erforderlich' });
 
     if (typ === 'dojo') {
