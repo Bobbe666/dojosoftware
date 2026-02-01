@@ -130,6 +130,33 @@ class StripeDataevProvider {
                     await this.handleSetupIntentSucceeded(event.data.object);
                     break;
 
+                // Chargeback / Dispute Events
+                case 'charge.dispute.created':
+                    await this.handleDisputeCreated(event.data.object);
+                    break;
+
+                case 'charge.dispute.updated':
+                    await this.handleDisputeUpdated(event.data.object);
+                    break;
+
+                case 'charge.dispute.closed':
+                    await this.handleDisputeClosed(event.data.object);
+                    break;
+
+                // Refund Events
+                case 'charge.refunded':
+                    await this.handleChargeRefunded(event.data.object);
+                    break;
+
+                // SEPA-specific failures
+                case 'payment_intent.requires_action':
+                    logger.info(`ℹ️  Payment requires action: ${event.data.object.id}`);
+                    break;
+
+                case 'charge.failed':
+                    await this.handleChargeFailed(event.data.object);
+                    break;
+
                 default:
                     logger.info(`ℹ️  Stripe Webhook: Unhandled event type ${event.type}`);
             }
@@ -166,11 +193,331 @@ class StripeDataevProvider {
             await this.updatePaymentIntentStatus(paymentIntent.id, 'failed');
             logger.info(`❌ Payment failed: ${paymentIntent.id}`);
 
-            // Could send notification to admin here
+            // Erstelle offene Zahlung für das Mitglied
+            const mitgliedId = paymentIntent.metadata?.mitglied_id;
+            if (mitgliedId) {
+                await this.createOpenPaymentFromFailure(mitgliedId, paymentIntent, 'payment_failed');
+            }
 
         } catch (error) {
             logger.error('❌ Error handling payment failure:', { error: error.message, stack: error.stack });
         }
+    }
+
+    // ============================================================================
+    // CHARGEBACK / DISPUTE HANDLING
+    // ============================================================================
+
+    async handleDisputeCreated(dispute) {
+        try {
+            logger.warn(`⚠️ Stripe Dispute Created: ${dispute.id} - Amount: ${dispute.amount / 100} EUR`);
+
+            // Lade die zugehörige Charge
+            const chargeId = dispute.charge;
+            const reason = dispute.reason || 'unknown';
+            const amount = dispute.amount / 100;
+
+            // Speichere den Dispute in der Datenbank
+            await this.saveDispute(dispute);
+
+            // Finde das Mitglied über die Charge
+            const mitgliedId = await this.getMitgliedIdFromCharge(chargeId);
+
+            if (mitgliedId) {
+                // Erstelle offene Zahlung (Rücklastschrift)
+                await this.createOpenPaymentFromDispute(mitgliedId, dispute);
+
+                // Markiere Mitglied als zahlungsproblematisch
+                await this.markMemberPaymentProblem(mitgliedId, 'chargeback', `Stripe Dispute: ${reason}`);
+
+                logger.info(`✅ Dispute processed for member ${mitgliedId}`);
+            } else {
+                logger.warn(`⚠️ Could not find member for dispute ${dispute.id}`);
+            }
+
+        } catch (error) {
+            logger.error('❌ Error handling dispute created:', { error: error.message, stack: error.stack });
+        }
+    }
+
+    async handleDisputeUpdated(dispute) {
+        try {
+            logger.info(`ℹ️ Stripe Dispute Updated: ${dispute.id} - Status: ${dispute.status}`);
+
+            // Update Dispute-Status in DB
+            await this.updateDisputeStatus(dispute.id, dispute.status);
+
+        } catch (error) {
+            logger.error('❌ Error handling dispute update:', { error: error.message, stack: error.stack });
+        }
+    }
+
+    async handleDisputeClosed(dispute) {
+        try {
+            const won = dispute.status === 'won';
+            logger.info(`${won ? '✅' : '❌'} Stripe Dispute Closed: ${dispute.id} - Result: ${dispute.status}`);
+
+            await this.updateDisputeStatus(dispute.id, dispute.status);
+
+            // Wenn gewonnen, offene Zahlung entfernen
+            if (won) {
+                const mitgliedId = await this.getMitgliedIdFromCharge(dispute.charge);
+                if (mitgliedId) {
+                    await this.resolveOpenPaymentFromDispute(dispute.id, mitgliedId);
+                    logger.info(`✅ Dispute won - Open payment resolved for member ${mitgliedId}`);
+                }
+            }
+
+        } catch (error) {
+            logger.error('❌ Error handling dispute closed:', { error: error.message, stack: error.stack });
+        }
+    }
+
+    async handleChargeRefunded(charge) {
+        try {
+            const refundAmount = charge.amount_refunded / 100;
+            logger.info(`💸 Stripe Charge Refunded: ${charge.id} - Amount: ${refundAmount} EUR`);
+
+            const mitgliedId = charge.metadata?.mitglied_id;
+            if (mitgliedId) {
+                // Bei Refund keine offene Zahlung erstellen, aber loggen
+                await this.logPaymentEvent(mitgliedId, 'refund', refundAmount, charge.id);
+            }
+
+        } catch (error) {
+            logger.error('❌ Error handling refund:', { error: error.message, stack: error.stack });
+        }
+    }
+
+    async handleChargeFailed(charge) {
+        try {
+            logger.warn(`❌ Stripe Charge Failed: ${charge.id} - Reason: ${charge.failure_message || 'unknown'}`);
+
+            const mitgliedId = charge.metadata?.mitglied_id;
+            if (mitgliedId) {
+                await this.createOpenPaymentFromFailure(mitgliedId, {
+                    id: charge.id,
+                    amount: charge.amount,
+                    metadata: charge.metadata
+                }, 'charge_failed');
+
+                // Bei bestimmten Fehlern Zahlungsmethode deaktivieren
+                const criticalErrors = ['card_declined', 'expired_card', 'insufficient_funds'];
+                if (criticalErrors.includes(charge.failure_code)) {
+                    await this.markMemberPaymentProblem(mitgliedId, 'payment_method_invalid', charge.failure_message);
+                }
+            }
+
+        } catch (error) {
+            logger.error('❌ Error handling charge failed:', { error: error.message, stack: error.stack });
+        }
+    }
+
+    // ============================================================================
+    // HELPER METHODS FOR DISPUTES/CHARGEBACKS
+    // ============================================================================
+
+    async saveDispute(dispute) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO stripe_disputes (
+                    stripe_dispute_id, stripe_charge_id, amount, currency, reason,
+                    status, evidence_due_by, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE status = VALUES(status), updated_at = NOW()
+            `;
+
+            const params = [
+                dispute.id,
+                dispute.charge,
+                dispute.amount,
+                dispute.currency,
+                dispute.reason,
+                dispute.status,
+                dispute.evidence_details?.due_by ? new Date(dispute.evidence_details.due_by * 1000) : null
+            ];
+
+            db.query(query, params, (err, result) => {
+                if (err) {
+                    logger.error('❌ Error saving dispute:', { error: err.message });
+                    return reject(err);
+                }
+                resolve(result);
+            });
+        });
+    }
+
+    async updateDisputeStatus(disputeId, status) {
+        return new Promise((resolve, reject) => {
+            db.query(
+                'UPDATE stripe_disputes SET status = ?, updated_at = NOW() WHERE stripe_dispute_id = ?',
+                [status, disputeId],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve(result);
+                }
+            );
+        });
+    }
+
+    async getMitgliedIdFromCharge(chargeId) {
+        return new Promise((resolve, reject) => {
+            // Zuerst in stripe_payment_intents suchen
+            const query = `
+                SELECT spi.mitglied_id
+                FROM stripe_payment_intents spi
+                WHERE spi.stripe_payment_intent_id IN (
+                    SELECT metadata->>'$.payment_intent' FROM stripe_webhooks
+                    WHERE webhook_data LIKE ?
+                )
+                LIMIT 1
+            `;
+
+            // Fallback: Direkt in den Webhooks suchen
+            db.query(
+                `SELECT webhook_data FROM stripe_webhooks WHERE webhook_data LIKE ? LIMIT 1`,
+                [`%${chargeId}%`],
+                (err, results) => {
+                    if (err) return reject(err);
+                    if (results.length > 0) {
+                        try {
+                            const data = JSON.parse(results[0].webhook_data);
+                            const mitgliedId = data.data?.object?.metadata?.mitglied_id;
+                            resolve(mitgliedId || null);
+                        } catch (e) {
+                            resolve(null);
+                        }
+                    } else {
+                        resolve(null);
+                    }
+                }
+            );
+        });
+    }
+
+    async createOpenPaymentFromDispute(mitgliedId, dispute) {
+        const amount = dispute.amount / 100;
+        const reason = dispute.reason || 'chargeback';
+
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO offene_zahlungen (
+                    mitglied_id, dojo_id, betrag, typ, status, beschreibung,
+                    referenz, erstellt_am
+                ) VALUES (?, ?, ?, 'ruecklastschrift', 'offen', ?, ?, NOW())
+            `;
+
+            const beschreibung = `Stripe Chargeback: ${this.getDisputeReasonText(reason)} (${dispute.id})`;
+
+            db.query(query, [mitgliedId, this.dojoConfig.id, amount, beschreibung, dispute.id], (err, result) => {
+                if (err) {
+                    logger.error('❌ Error creating open payment from dispute:', { error: err.message });
+                    return reject(err);
+                }
+                logger.info(`✅ Created open payment for dispute ${dispute.id}`);
+                resolve(result);
+            });
+        });
+    }
+
+    async createOpenPaymentFromFailure(mitgliedId, paymentData, failureType) {
+        const amount = (paymentData.amount || 0) / 100;
+
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO offene_zahlungen (
+                    mitglied_id, dojo_id, betrag, typ, status, beschreibung,
+                    referenz, erstellt_am
+                ) VALUES (?, ?, ?, 'fehlgeschlagen', 'offen', ?, ?, NOW())
+            `;
+
+            const beschreibung = `Stripe Zahlung fehlgeschlagen: ${failureType} (${paymentData.id})`;
+
+            db.query(query, [mitgliedId, this.dojoConfig.id, amount, beschreibung, paymentData.id], (err, result) => {
+                if (err) {
+                    // Ignoriere Duplikate
+                    if (err.code !== 'ER_DUP_ENTRY') {
+                        logger.error('❌ Error creating open payment from failure:', { error: err.message });
+                    }
+                    return reject(err);
+                }
+                logger.info(`✅ Created open payment for failed payment ${paymentData.id}`);
+                resolve(result);
+            });
+        });
+    }
+
+    async resolveOpenPaymentFromDispute(disputeId, mitgliedId) {
+        return new Promise((resolve, reject) => {
+            db.query(
+                `UPDATE offene_zahlungen SET status = 'erledigt', bearbeitet_am = NOW()
+                 WHERE referenz = ? AND mitglied_id = ?`,
+                [disputeId, mitgliedId],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve(result);
+                }
+            );
+        });
+    }
+
+    async markMemberPaymentProblem(mitgliedId, problemType, details) {
+        return new Promise((resolve, reject) => {
+            // Update Mitglied-Status
+            db.query(
+                `UPDATE mitglieder SET zahlungsproblem = 1, zahlungsproblem_details = ?, zahlungsproblem_datum = NOW()
+                 WHERE mitglied_id = ?`,
+                [`${problemType}: ${details}`, mitgliedId],
+                (err, result) => {
+                    if (err) {
+                        // Spalte existiert eventuell nicht
+                        logger.warn('⚠️ Could not mark payment problem - column may not exist');
+                        return resolve(null);
+                    }
+                    logger.info(`⚠️ Member ${mitgliedId} marked with payment problem: ${problemType}`);
+                    resolve(result);
+                }
+            );
+        });
+    }
+
+    async logPaymentEvent(mitgliedId, eventType, amount, referenz) {
+        return new Promise((resolve, reject) => {
+            db.query(
+                `INSERT INTO payment_provider_logs (dojo_id, mitglied_id, provider, action, status, message)
+                 VALUES (?, ?, 'stripe', ?, 'info', ?)`,
+                [this.dojoConfig.id, mitgliedId, eventType, `Amount: ${amount} EUR, Ref: ${referenz}`],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve(result);
+                }
+            );
+        });
+    }
+
+    getDisputeReasonText(reason) {
+        const reasons = {
+            'bank_cannot_process': 'Bank kann nicht verarbeiten',
+            'check_returned': 'Scheck zurückgegeben',
+            'credit_not_processed': 'Gutschrift nicht verarbeitet',
+            'customer_initiated': 'Vom Kunden initiiert',
+            'debit_not_authorized': 'Lastschrift nicht autorisiert',
+            'duplicate': 'Doppelte Buchung',
+            'fraudulent': 'Betrugsverdacht',
+            'general': 'Allgemein',
+            'incorrect_account_details': 'Falsche Kontodaten',
+            'insufficient_funds': 'Deckung nicht ausreichend',
+            'product_not_received': 'Produkt nicht erhalten',
+            'product_unacceptable': 'Produkt nicht akzeptabel',
+            'subscription_canceled': 'Abo gekündigt',
+            'unrecognized': 'Nicht erkannt'
+        };
+        return reasons[reason] || reason;
+    }
+
+    async handleSetupIntentSucceeded(setupIntent) {
+        // Placeholder for setup intent handling
+        logger.info(`✅ Setup Intent succeeded: ${setupIntent.id}`);
     }
 
     async exportToDatev(paymentIntentData) {

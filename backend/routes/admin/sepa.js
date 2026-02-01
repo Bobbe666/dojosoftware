@@ -284,19 +284,28 @@ router.post('/sepa/ruecklastschriften/upload', requireSuperAdmin, async (req, re
 
     let inserted = 0;
     for (const ret of parsedReturns) {
-      let transaktionId = null, mandatId = null, dojoId = null;
+      let transaktionId = null, mandatId = null, dojoId = null, mitgliedId = null;
 
       if (ret.end_to_end_id) {
-        const [txRows] = await db.promise().query('SELECT id, mandat_id, dojo_id FROM sepa_transaktionen WHERE end_to_end_id = ?', [ret.end_to_end_id]);
+        const [txRows] = await db.promise().query(`
+          SELECT t.id, t.mandat_id, t.dojo_id, t.betrag, m.mitglied_id
+          FROM sepa_transaktionen t
+          LEFT JOIN sepa_mandate sm ON t.mandat_id = sm.id
+          LEFT JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id
+          WHERE t.end_to_end_id = ?
+        `, [ret.end_to_end_id]);
+
         if (txRows.length > 0) {
           transaktionId = txRows[0].id;
           mandatId = txRows[0].mandat_id;
           dojoId = txRows[0].dojo_id;
+          mitgliedId = txRows[0].mitglied_id;
           await db.promise().query('UPDATE sepa_transaktionen SET status = ?, fehler_code = ? WHERE id = ?', ['fehlgeschlagen', ret.rueckgabe_code, transaktionId]);
         }
       }
 
-      await db.promise().query(`
+      // Rücklastschrift in Tabelle speichern
+      const [insertResult] = await db.promise().query(`
         INSERT INTO sepa_ruecklastschriften (transaktion_id, mandat_id, dojo_id, end_to_end_id, mandats_referenz,
           original_betrag, ruecklastschrift_betrag, rueckgabe_code, rueckgabe_grund, rueckgabe_datum, import_datei)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -307,8 +316,36 @@ router.post('/sepa/ruecklastschriften/upload', requireSuperAdmin, async (req, re
 
       inserted++;
 
+      // ============================================================================
+      // NEU: Automatisch offene Zahlung erstellen
+      // ============================================================================
+      if (mitgliedId && dojoId) {
+        const beschreibung = `SEPA Rücklastschrift: ${SEPA_RETURN_CODES[ret.rueckgabe_code] || ret.rueckgabe_code} (${ret.end_to_end_id || 'keine Ref'})`;
+
+        await db.promise().query(`
+          INSERT INTO offene_zahlungen (mitglied_id, dojo_id, betrag, typ, status, beschreibung, referenz)
+          VALUES (?, ?, ?, 'ruecklastschrift', 'offen', ?, ?)
+          ON DUPLICATE KEY UPDATE status = 'offen'
+        `, [mitgliedId, dojoId, ret.betrag, beschreibung, ret.end_to_end_id]);
+
+        logger.info(`✅ Offene Zahlung erstellt für Mitglied ${mitgliedId}: ${ret.betrag} EUR`);
+
+        // Mitglied als zahlungsproblematisch markieren
+        await db.promise().query(`
+          UPDATE mitglieder
+          SET zahlungsproblem = 1,
+              zahlungsproblem_details = ?,
+              zahlungsproblem_datum = NOW()
+          WHERE mitglied_id = ?
+        `, [`SEPA Rücklastschrift: ${ret.rueckgabe_code}`, mitgliedId]).catch(() => {
+          // Spalte existiert eventuell noch nicht
+        });
+      }
+
+      // Mandat widerrufen bei kritischen Fehlern
       if (mandatId && ['AC01', 'AC04', 'AC06', 'MD01', 'MD07'].includes(ret.rueckgabe_code)) {
         await db.promise().query('UPDATE sepa_mandate SET status = ? WHERE id = ?', ['widerrufen', mandatId]);
+        logger.info(`⚠️ Mandat ${mandatId} widerrufen wegen Fehlercode ${ret.rueckgabe_code}`);
       }
     }
 
@@ -383,5 +420,168 @@ function parseCsvReturns(csvContent) {
   }
   return returns;
 }
+
+// ============================================================================
+// OFFENE ZAHLUNGEN MANAGEMENT
+// ============================================================================
+
+// GET /offene-zahlungen - Alle offenen Zahlungen
+router.get('/offene-zahlungen', requireSuperAdmin, async (req, res) => {
+  try {
+    const { dojo_id, status = 'offen', typ } = req.query;
+
+    let query = `
+      SELECT oz.*, m.vorname, m.nachname, m.email, d.dojoname
+      FROM offene_zahlungen oz
+      LEFT JOIN mitglieder m ON oz.mitglied_id = m.mitglied_id
+      LEFT JOIN dojo d ON oz.dojo_id = d.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (dojo_id) {
+      query += ' AND oz.dojo_id = ?';
+      params.push(dojo_id);
+    }
+
+    if (status && status !== 'alle') {
+      query += ' AND oz.status = ?';
+      params.push(status);
+    }
+
+    if (typ) {
+      query += ' AND oz.typ = ?';
+      params.push(typ);
+    }
+
+    query += ' ORDER BY oz.erstellt_am DESC LIMIT 200';
+
+    const [zahlungen] = await db.promise().query(query, params);
+
+    // Statistiken berechnen
+    const [stats] = await db.promise().query(`
+      SELECT
+        COUNT(*) as gesamt,
+        SUM(CASE WHEN status = 'offen' THEN 1 ELSE 0 END) as offen,
+        SUM(CASE WHEN status = 'offen' THEN betrag ELSE 0 END) as summe_offen,
+        SUM(CASE WHEN typ = 'ruecklastschrift' THEN 1 ELSE 0 END) as ruecklastschriften,
+        SUM(CASE WHEN typ = 'chargeback' THEN 1 ELSE 0 END) as chargebacks
+      FROM offene_zahlungen
+      ${dojo_id ? 'WHERE dojo_id = ?' : ''}
+    `, dojo_id ? [dojo_id] : []);
+
+    res.json({
+      success: true,
+      zahlungen,
+      stats: stats[0]
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Laden offener Zahlungen:', error);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
+// PUT /offene-zahlungen/:id - Offene Zahlung bearbeiten
+router.put('/offene-zahlungen/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const { status, notizen } = req.body;
+    const userId = req.user?.id || null;
+
+    await db.promise().query(`
+      UPDATE offene_zahlungen
+      SET status = ?, notizen = ?, bearbeitet_am = NOW(), bearbeitet_von = ?
+      WHERE id = ?
+    `, [status, notizen, userId, req.params.id]);
+
+    // Wenn erledigt, Zahlungsproblem-Flag beim Mitglied prüfen
+    if (status === 'erledigt') {
+      const [rows] = await db.promise().query('SELECT mitglied_id FROM offene_zahlungen WHERE id = ?', [req.params.id]);
+      if (rows.length > 0) {
+        const mitgliedId = rows[0].mitglied_id;
+        // Prüfe ob noch andere offene Zahlungen existieren
+        const [offene] = await db.promise().query(
+          "SELECT COUNT(*) as count FROM offene_zahlungen WHERE mitglied_id = ? AND status = 'offen' AND id != ?",
+          [mitgliedId, req.params.id]
+        );
+        if (offene[0].count === 0) {
+          // Keine weiteren offenen Zahlungen - Flag entfernen
+          await db.promise().query(
+            'UPDATE mitglieder SET zahlungsproblem = 0, zahlungsproblem_details = NULL WHERE mitglied_id = ?',
+            [mitgliedId]
+          ).catch(() => {});
+        }
+      }
+    }
+
+    res.json({ success: true });
+
+  } catch (error) {
+    logger.error('Fehler beim Aktualisieren:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+  }
+});
+
+// GET /mitglieder-mit-zahlungsproblemen - Mitglieder mit Zahlungsproblemen
+router.get('/mitglieder-mit-zahlungsproblemen', requireSuperAdmin, async (req, res) => {
+  try {
+    const [mitglieder] = await db.promise().query(`
+      SELECT m.mitglied_id, m.vorname, m.nachname, m.email,
+             m.zahlungsproblem_details, m.zahlungsproblem_datum,
+             d.dojoname,
+             COUNT(oz.id) as offene_zahlungen,
+             SUM(oz.betrag) as summe_offen
+      FROM mitglieder m
+      LEFT JOIN dojo d ON m.dojo_id = d.id
+      LEFT JOIN offene_zahlungen oz ON m.mitglied_id = oz.mitglied_id AND oz.status = 'offen'
+      WHERE m.zahlungsproblem = 1
+      GROUP BY m.mitglied_id
+      ORDER BY m.zahlungsproblem_datum DESC
+    `);
+
+    res.json({ success: true, mitglieder });
+
+  } catch (error) {
+    logger.error('Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
+
+// POST /offene-zahlungen/:id/mahnung - Mahnung senden
+router.post('/offene-zahlungen/:id/mahnung', requireSuperAdmin, async (req, res) => {
+  try {
+    // Mahnung senden (TODO: Email-Integration)
+    await db.promise().query(`
+      UPDATE offene_zahlungen
+      SET mahnungen_gesendet = mahnungen_gesendet + 1, letzte_mahnung = NOW()
+      WHERE id = ?
+    `, [req.params.id]);
+
+    res.json({ success: true, message: 'Mahnung vermerkt' });
+
+  } catch (error) {
+    logger.error('Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Senden' });
+  }
+});
+
+// GET /stripe/disputes - Stripe Disputes anzeigen
+router.get('/stripe/disputes', requireSuperAdmin, async (req, res) => {
+  try {
+    const [disputes] = await db.promise().query(`
+      SELECT d.*, m.vorname, m.nachname
+      FROM stripe_disputes d
+      LEFT JOIN mitglieder m ON d.mitglied_id = m.mitglied_id
+      ORDER BY d.created_at DESC
+      LIMIT 100
+    `);
+
+    res.json({ success: true, disputes });
+
+  } catch (error) {
+    logger.error('Fehler beim Laden der Disputes:', error);
+    res.status(500).json({ error: 'Fehler beim Laden' });
+  }
+});
 
 module.exports = router;
