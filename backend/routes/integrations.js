@@ -467,8 +467,41 @@ router.get('/datev/exports', async (req, res) => {
 });
 
 // ============================================================================
-// KONFIGURATION SPEICHERN
+// KONFIGURATION LADEN UND SPEICHERN
 // ============================================================================
+
+/**
+ * GET /api/integrations/config
+ * Lädt Integration-Konfiguration (ohne Secrets)
+ */
+router.get('/config', async (req, res) => {
+    try {
+        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        const config = await getDojoConfig(dojoId);
+
+        // Maskiere sensible Daten
+        const maskedConfig = {
+            // Stripe (aus dojo Tabelle)
+            stripe_publishable_key: config.stripe_publishable_key || '',
+            stripe_secret_key: config.stripe_secret_key ? '••••••••' + config.stripe_secret_key.slice(-4) : '',
+            // PayPal
+            paypal_client_id: config.paypal_client_id || '',
+            paypal_client_secret: config.paypal_client_secret ? '••••••••' + config.paypal_client_secret.slice(-4) : '',
+            paypal_sandbox: config.paypal_sandbox === 1 || config.paypal_sandbox === true,
+            // LexOffice
+            lexoffice_api_key: config.lexoffice_api_key ? '••••••••' + config.lexoffice_api_key.slice(-4) : '',
+            // DATEV
+            datev_consultant_number: config.datev_consultant_number || '',
+            datev_client_number: config.datev_client_number || ''
+        };
+
+        res.json(maskedConfig);
+
+    } catch (error) {
+        logger.error('Config Load Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 /**
  * PUT /api/integrations/config
@@ -484,6 +517,8 @@ router.put('/config', async (req, res) => {
         }
 
         const {
+            stripe_publishable_key,
+            stripe_secret_key,
             paypal_client_id,
             paypal_client_secret,
             paypal_sandbox,
@@ -493,7 +528,39 @@ router.put('/config', async (req, res) => {
             datev_client_number
         } = req.body;
 
-        // Upsert in dojo_integrations Tabelle
+        // Stripe-Keys in dojo Tabelle speichern (nur wenn nicht maskiert)
+        const isStripeKeyMasked = (key) => key && key.startsWith('••••');
+
+        if ((stripe_publishable_key !== undefined && !isStripeKeyMasked(stripe_publishable_key)) ||
+            (stripe_secret_key !== undefined && !isStripeKeyMasked(stripe_secret_key))) {
+
+            const stripeUpdates = [];
+            const stripeParams = [];
+
+            if (stripe_publishable_key !== undefined && !isStripeKeyMasked(stripe_publishable_key)) {
+                stripeUpdates.push('stripe_publishable_key = ?');
+                stripeParams.push(stripe_publishable_key || null);
+            }
+            if (stripe_secret_key !== undefined && !isStripeKeyMasked(stripe_secret_key)) {
+                stripeUpdates.push('stripe_secret_key = ?');
+                stripeParams.push(stripe_secret_key || null);
+            }
+
+            if (stripeUpdates.length > 0) {
+                // Prüfe ob Stripe jetzt konfiguriert ist
+                const hasStripe = (stripe_publishable_key && !isStripeKeyMasked(stripe_publishable_key)) &&
+                                  (stripe_secret_key && !isStripeKeyMasked(stripe_secret_key));
+                stripeUpdates.push('payment_provider = ?');
+                stripeParams.push(hasStripe ? 'stripe_datev' : 'manual_sepa');
+                stripeParams.push(dojoId);
+
+                await db.promise().query(`
+                    UPDATE dojo SET ${stripeUpdates.join(', ')}, updated_at = NOW() WHERE id = ?
+                `, stripeParams);
+            }
+        }
+
+        // Upsert in dojo_integrations Tabelle (PayPal, LexOffice, DATEV)
         await db.promise().query(`
             INSERT INTO dojo_integrations (
                 dojo_id,

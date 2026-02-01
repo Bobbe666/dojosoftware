@@ -21,6 +21,9 @@ const IntegrationsEinstellungen = () => {
   const [testResults, setTestResults] = useState({});
 
   const [config, setConfig] = useState({
+    // Stripe
+    stripe_publishable_key: '',
+    stripe_secret_key: '',
     // PayPal
     paypal_client_id: '',
     paypal_client_secret: '',
@@ -70,7 +73,7 @@ const IntegrationsEinstellungen = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await axios.post(`/integrations/config?dojo_id=${dojoId}`, config);
+      await axios.put(`/integrations/config`, { ...config, dojo_id: dojoId });
       alert('Einstellungen gespeichert!');
       loadStatus();
     } catch (err) {
@@ -124,6 +127,12 @@ const IntegrationsEinstellungen = () => {
       {status && (
         <div style={styles.statusGrid}>
           <StatusCard
+            title="Stripe"
+            icon={<CreditCard size={24} />}
+            configured={status.stripe?.configured}
+            mode="Kreditkarte & SEPA"
+          />
+          <StatusCard
             title="PayPal"
             icon={<CreditCard size={24} />}
             configured={status.paypal?.configured}
@@ -141,6 +150,71 @@ const IntegrationsEinstellungen = () => {
           />
         </div>
       )}
+
+      {/* Stripe Section */}
+      <div style={styles.section}>
+        <div style={styles.sectionHeader}>
+          <CreditCard size={24} color="#635bff" />
+          <h3 style={styles.sectionTitle}>Stripe</h3>
+          <a
+            href="https://dashboard.stripe.com/apikeys"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.helpLink}
+          >
+            <ExternalLink size={14} /> API-Keys Dashboard
+          </a>
+        </div>
+
+        <div style={styles.infoBox}>
+          <p>
+            Stripe ermöglicht Kreditkarten- und SEPA-Lastschrift-Zahlungen. Die API-Keys findest du
+            im Stripe Dashboard unter Developers → API Keys.
+          </p>
+        </div>
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Publishable Key (öffentlich)</label>
+            <input
+              type="text"
+              value={config.stripe_publishable_key || ''}
+              onChange={e => setConfig({ ...config, stripe_publishable_key: e.target.value })}
+              style={styles.input}
+              placeholder="pk_live_... oder pk_test_..."
+            />
+          </div>
+        </div>
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Secret Key (geheim)</label>
+            <div style={styles.secretInput}>
+              <input
+                type={showSecrets.stripe ? 'text' : 'password'}
+                value={config.stripe_secret_key || ''}
+                onChange={e => setConfig({ ...config, stripe_secret_key: e.target.value })}
+                style={{ ...styles.input, flex: 1 }}
+                placeholder="sk_live_... oder sk_test_..."
+              />
+              <button style={styles.eyeButton} onClick={() => toggleSecret('stripe')}>
+                {showSecrets.stripe ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          ...styles.infoBox,
+          background: 'rgba(99, 91, 255, 0.1)',
+          borderColor: 'rgba(99, 91, 255, 0.3)'
+        }}>
+          <p style={{ margin: 0 }}>
+            <strong>Hinweis:</strong> Verwende für Tests die Test-Keys (pk_test_... / sk_test_...).
+            Für Live-Zahlungen benötigst du die Live-Keys (pk_live_... / sk_live_...).
+          </p>
+        </div>
+      </div>
 
       {/* PayPal Section */}
       <div style={styles.section}>
