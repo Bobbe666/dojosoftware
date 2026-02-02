@@ -903,4 +903,489 @@ router.get('/turniere', async (req, res) => {
   }
 });
 
+// ============================================================================
+// SHOP (TDA ARTIKEL)
+// ============================================================================
+
+/**
+ * GET /api/verband-auth/shop/artikel
+ * Holt TDA-Artikel für den Mitglieder-Shop (nur aktive, sichtbare Artikel)
+ */
+router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
+  try {
+    // TDA Verband Dojo-ID = 2
+    const TDA_DOJO_ID = 2;
+
+    const artikel = await queryAsync(
+      `SELECT
+        a.artikel_id,
+        a.name,
+        a.beschreibung,
+        a.verkaufspreis_cent,
+        a.mwst_prozent,
+        a.lagerbestand,
+        a.lager_tracking,
+        a.bild_url,
+        a.bild_base64,
+        a.hat_varianten,
+        a.varianten_groessen,
+        a.varianten_farben,
+        a.varianten_material,
+        a.varianten_bestand,
+        a.preis_kids_cent,
+        a.preis_erwachsene_cent,
+        a.hat_preiskategorien,
+        a.groessen_kids,
+        a.groessen_erwachsene,
+        ag.name as kategorie_name,
+        ag.farbe as kategorie_farbe,
+        ag.icon as kategorie_icon,
+        ag.id as kategorie_id
+      FROM artikel a
+      LEFT JOIN artikelgruppen ag ON a.kategorie_id = ag.id
+      WHERE a.dojo_id = ? AND a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
+      ORDER BY ag.sortierung ASC, a.name ASC`,
+      [TDA_DOJO_ID]
+    );
+
+    // Parse JSON fields and format prices
+    const formattedArtikel = artikel.map(art => {
+      const parseJson = (val) => {
+        if (!val) return null;
+        try { return typeof val === 'string' ? JSON.parse(val) : val; }
+        catch { return null; }
+      };
+
+      return {
+        artikel_id: art.artikel_id,
+        name: art.name,
+        beschreibung: art.beschreibung,
+        verkaufspreis_cent: art.verkaufspreis_cent,
+        verkaufspreis_euro: art.verkaufspreis_cent / 100,
+        mwst_prozent: art.mwst_prozent,
+        lagerbestand: art.lagerbestand,
+        lager_tracking: art.lager_tracking,
+        bild_url: art.bild_url,
+        bild_base64: art.bild_base64,
+        verfuegbar: art.lager_tracking ? art.lagerbestand > 0 : true,
+        hat_varianten: art.hat_varianten === 1,
+        varianten_groessen: parseJson(art.varianten_groessen) || [],
+        varianten_farben: parseJson(art.varianten_farben) || [],
+        varianten_material: parseJson(art.varianten_material) || [],
+        varianten_bestand: parseJson(art.varianten_bestand) || {},
+        hat_preiskategorien: art.hat_preiskategorien === 1,
+        preis_kids_cent: art.preis_kids_cent,
+        preis_kids_euro: art.preis_kids_cent ? art.preis_kids_cent / 100 : null,
+        preis_erwachsene_cent: art.preis_erwachsene_cent,
+        preis_erwachsene_euro: art.preis_erwachsene_cent ? art.preis_erwachsene_cent / 100 : null,
+        groessen_kids: parseJson(art.groessen_kids) || [],
+        groessen_erwachsene: parseJson(art.groessen_erwachsene) || [],
+        kategorie: {
+          id: art.kategorie_id,
+          name: art.kategorie_name,
+          farbe: art.kategorie_farbe,
+          icon: art.kategorie_icon
+        }
+      };
+    });
+
+    // Gruppiere nach Kategorien
+    const kategorien = {};
+    formattedArtikel.forEach(art => {
+      const katId = art.kategorie.id || 'sonstige';
+      if (!kategorien[katId]) {
+        kategorien[katId] = {
+          kategorie_id: katId,
+          name: art.kategorie.name || 'Sonstige',
+          farbe: art.kategorie.farbe,
+          icon: art.kategorie.icon,
+          artikel: []
+        };
+      }
+      kategorien[katId].artikel.push(art);
+    });
+
+    res.json({
+      success: true,
+      artikel: formattedArtikel,
+      kategorien: Object.values(kategorien)
+    });
+
+  } catch (error) {
+    logger.error('Shop-Artikel-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Artikel' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/shop/bestellung
+ * Erstellt eine neue Bestellung
+ */
+router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
+  try {
+    const { positionen, lieferadresse, kundennotiz } = req.body;
+
+    if (!positionen || positionen.length === 0) {
+      return res.status(400).json({ error: 'Keine Artikel im Warenkorb' });
+    }
+
+    // Mitgliedsdaten holen
+    const members = await queryAsync(
+      `SELECT id, typ, person_vorname, person_nachname, person_email, person_telefon,
+              dojo_name, dojo_email, dojo_strasse, dojo_plz, dojo_ort, dojo_land,
+              person_strasse, person_plz, person_ort, person_land
+       FROM verbandsmitgliedschaften WHERE id = ?`,
+      [req.verbandUser.id]
+    );
+
+    if (members.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const member = members[0];
+
+    // Bestellnummer generieren
+    const year = new Date().getFullYear();
+    const countResult = await queryAsync(
+      `SELECT COUNT(*) as count FROM shop_bestellungen WHERE YEAR(bestellt_am) = ?`,
+      [year]
+    );
+    const orderNum = (countResult[0].count + 1).toString().padStart(5, '0');
+    const bestellnummer = `TDA-${year}-${orderNum}`;
+
+    // Kundendaten bestimmen
+    const kundeName = member.typ === 'dojo'
+      ? member.dojo_name
+      : `${member.person_vorname} ${member.person_nachname}`;
+    const kundeEmail = member.typ === 'dojo' ? member.dojo_email : member.person_email;
+    const kundeTelefon = member.person_telefon;
+
+    // Lieferadresse (aus Request oder Mitgliedsdaten)
+    const liefStrasse = lieferadresse?.strasse || (member.typ === 'dojo' ? member.dojo_strasse : member.person_strasse);
+    const liefPlz = lieferadresse?.plz || (member.typ === 'dojo' ? member.dojo_plz : member.person_plz);
+    const liefOrt = lieferadresse?.ort || (member.typ === 'dojo' ? member.dojo_ort : member.person_ort);
+    const liefLand = lieferadresse?.land || (member.typ === 'dojo' ? member.dojo_land : member.person_land) || 'Deutschland';
+
+    // Artikel validieren und Preise berechnen
+    let zwischensumme = 0;
+    const validatedPositionen = [];
+
+    for (const pos of positionen) {
+      const artikelResult = await queryAsync(
+        `SELECT artikel_id, name, beschreibung, verkaufspreis_cent, mwst_prozent, lagerbestand, lager_tracking
+         FROM artikel WHERE artikel_id = ? AND aktiv = TRUE`,
+        [pos.artikel_id]
+      );
+
+      if (artikelResult.length === 0) {
+        return res.status(400).json({ error: `Artikel ${pos.artikel_id} nicht gefunden` });
+      }
+
+      const artikel = artikelResult[0];
+
+      // Lagerbestand prüfen
+      if (artikel.lager_tracking && artikel.lagerbestand < pos.menge) {
+        return res.status(400).json({ error: `Artikel "${artikel.name}" nicht ausreichend auf Lager` });
+      }
+
+      const einzelpreis = artikel.verkaufspreis_cent;
+      const gesamtpreis = einzelpreis * pos.menge;
+      zwischensumme += gesamtpreis;
+
+      validatedPositionen.push({
+        artikel_id: artikel.artikel_id,
+        artikel_name: artikel.name,
+        artikel_beschreibung: artikel.beschreibung,
+        variante: pos.variante || null,
+        menge: pos.menge,
+        einzelpreis_cent: einzelpreis,
+        gesamtpreis_cent: gesamtpreis,
+        mwst_prozent: artikel.mwst_prozent || 19.00
+      });
+    }
+
+    // Versandkosten (kostenlos für Verbandsmitglieder)
+    const versandkosten = 0;
+    const gesamtbetrag = zwischensumme + versandkosten;
+
+    // Bestellung erstellen
+    const bestellungResult = await queryAsync(
+      `INSERT INTO shop_bestellungen
+       (bestellnummer, verbandsmitgliedschaft_id, kunde_name, kunde_email, kunde_telefon,
+        lieferadresse_strasse, lieferadresse_plz, lieferadresse_ort, lieferadresse_land,
+        zwischensumme_cent, versandkosten_cent, gesamtbetrag_cent, kundennotiz, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'offen')`,
+      [bestellnummer, req.verbandUser.id, kundeName, kundeEmail, kundeTelefon,
+       liefStrasse, liefPlz, liefOrt, liefLand,
+       zwischensumme, versandkosten, gesamtbetrag, kundennotiz || null]
+    );
+
+    const bestellungId = bestellungResult.insertId;
+
+    // Bestellpositionen einfügen
+    for (const pos of validatedPositionen) {
+      await queryAsync(
+        `INSERT INTO shop_bestellpositionen
+         (bestellung_id, artikel_id, artikel_name, artikel_beschreibung, variante,
+          menge, einzelpreis_cent, gesamtpreis_cent, mwst_prozent)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [bestellungId, pos.artikel_id, pos.artikel_name, pos.artikel_beschreibung, pos.variante,
+         pos.menge, pos.einzelpreis_cent, pos.gesamtpreis_cent, pos.mwst_prozent]
+      );
+
+      // Lagerbestand reduzieren
+      await queryAsync(
+        `UPDATE artikel SET lagerbestand = lagerbestand - ? WHERE artikel_id = ? AND lager_tracking = TRUE`,
+        [pos.menge, pos.artikel_id]
+      );
+    }
+
+    logger.info(`Shop-Bestellung erstellt: ${bestellnummer} von Mitglied ${req.verbandUser.id}`);
+
+    res.json({
+      success: true,
+      bestellung: {
+        id: bestellungId,
+        bestellnummer,
+        gesamtbetrag_euro: gesamtbetrag / 100,
+        status: 'offen'
+      },
+      message: 'Bestellung erfolgreich aufgegeben'
+    });
+
+  } catch (error) {
+    logger.error('Shop-Bestellung-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen der Bestellung' });
+  }
+});
+
+/**
+ * GET /api/verband-auth/shop/bestellungen
+ * Holt eigene Bestellungen des Mitglieds
+ */
+router.get('/shop/bestellungen', verifyVerbandToken, async (req, res) => {
+  try {
+    const bestellungen = await queryAsync(
+      `SELECT b.*,
+              (SELECT COUNT(*) FROM shop_bestellpositionen WHERE bestellung_id = b.id) as anzahl_positionen
+       FROM shop_bestellungen b
+       WHERE b.verbandsmitgliedschaft_id = ?
+       ORDER BY b.bestellt_am DESC`,
+      [req.verbandUser.id]
+    );
+
+    // Positionen für jede Bestellung laden
+    for (const bestellung of bestellungen) {
+      const positionen = await queryAsync(
+        `SELECT * FROM shop_bestellpositionen WHERE bestellung_id = ?`,
+        [bestellung.id]
+      );
+      bestellung.positionen = positionen;
+      bestellung.gesamtbetrag_euro = bestellung.gesamtbetrag_cent / 100;
+    }
+
+    res.json({ success: true, bestellungen });
+
+  } catch (error) {
+    logger.error('Shop-Bestellungen-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Bestellungen' });
+  }
+});
+
+// ============================================================================
+// ADMIN ROUTES (für TDA SuperAdmin)
+// ============================================================================
+
+/**
+ * Middleware: Prüft ob User SuperAdmin ist
+ */
+const verifySuperAdmin = async (req, res, next) => {
+  // SuperAdmin prüfen (vereinfacht - ID 1 oder spezielle Flag)
+  // In diesem Fall: Verbandsmitglieder mit bestimmter Rolle
+  // Für jetzt: Alle authentifizierten Verbandsmitglieder mit Mitglied ID 1-5
+  // TODO: Echte Admin-Rolle implementieren
+  if (req.verbandUser.id <= 5) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Keine Berechtigung' });
+  }
+};
+
+/**
+ * GET /api/verband-auth/admin/bestellungen
+ * Holt alle Shop-Bestellungen (nur für Admins)
+ */
+router.get('/admin/bestellungen', verifyVerbandToken, verifySuperAdmin, async (req, res) => {
+  try {
+    const { status, limit = 50, offset = 0 } = req.query;
+
+    let whereClause = '1=1';
+    const params = [];
+
+    if (status && status !== 'alle') {
+      whereClause += ' AND b.status = ?';
+      params.push(status);
+    }
+
+    params.push(parseInt(limit), parseInt(offset));
+
+    const bestellungen = await queryAsync(
+      `SELECT b.*,
+              vm.mitgliedsnummer,
+              vm.typ as mitglied_typ,
+              (SELECT COUNT(*) FROM shop_bestellpositionen WHERE bestellung_id = b.id) as anzahl_positionen
+       FROM shop_bestellungen b
+       LEFT JOIN verbandsmitgliedschaften vm ON b.verbandsmitgliedschaft_id = vm.id
+       WHERE ${whereClause}
+       ORDER BY b.bestellt_am DESC
+       LIMIT ? OFFSET ?`,
+      params
+    );
+
+    // Statistik
+    const stats = await queryAsync(
+      `SELECT
+        COUNT(*) as gesamt,
+        SUM(CASE WHEN status = 'offen' THEN 1 ELSE 0 END) as offen,
+        SUM(CASE WHEN status = 'in_bearbeitung' THEN 1 ELSE 0 END) as in_bearbeitung,
+        SUM(CASE WHEN status = 'versendet' THEN 1 ELSE 0 END) as versendet,
+        SUM(CASE WHEN status = 'abgeschlossen' THEN 1 ELSE 0 END) as abgeschlossen,
+        SUM(CASE WHEN status = 'storniert' THEN 1 ELSE 0 END) as storniert
+       FROM shop_bestellungen`
+    );
+
+    // Positionen für jede Bestellung laden
+    for (const bestellung of bestellungen) {
+      const positionen = await queryAsync(
+        `SELECT * FROM shop_bestellpositionen WHERE bestellung_id = ?`,
+        [bestellung.id]
+      );
+      bestellung.positionen = positionen;
+      bestellung.gesamtbetrag_euro = bestellung.gesamtbetrag_cent / 100;
+      bestellung.zwischensumme_euro = bestellung.zwischensumme_cent / 100;
+      bestellung.versandkosten_euro = bestellung.versandkosten_cent / 100;
+    }
+
+    res.json({
+      success: true,
+      bestellungen,
+      stats: stats[0]
+    });
+
+  } catch (error) {
+    logger.error('Admin-Bestellungen-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Bestellungen' });
+  }
+});
+
+/**
+ * GET /api/verband-auth/admin/bestellungen/:id
+ * Holt eine einzelne Bestellung mit Details
+ */
+router.get('/admin/bestellungen/:id', verifyVerbandToken, verifySuperAdmin, async (req, res) => {
+  try {
+    const bestellungen = await queryAsync(
+      `SELECT b.*,
+              vm.mitgliedsnummer, vm.typ as mitglied_typ,
+              vm.person_vorname, vm.person_nachname, vm.person_email,
+              vm.dojo_name
+       FROM shop_bestellungen b
+       LEFT JOIN verbandsmitgliedschaften vm ON b.verbandsmitgliedschaft_id = vm.id
+       WHERE b.id = ?`,
+      [req.params.id]
+    );
+
+    if (bestellungen.length === 0) {
+      return res.status(404).json({ error: 'Bestellung nicht gefunden' });
+    }
+
+    const bestellung = bestellungen[0];
+
+    // Positionen laden
+    bestellung.positionen = await queryAsync(
+      `SELECT * FROM shop_bestellpositionen WHERE bestellung_id = ?`,
+      [bestellung.id]
+    );
+
+    bestellung.gesamtbetrag_euro = bestellung.gesamtbetrag_cent / 100;
+
+    res.json({ success: true, bestellung });
+
+  } catch (error) {
+    logger.error('Admin-Bestellung-Detail-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Bestellung' });
+  }
+});
+
+/**
+ * PUT /api/verband-auth/admin/bestellungen/:id
+ * Aktualisiert eine Bestellung (Status, Tracking, etc.)
+ */
+router.put('/admin/bestellungen/:id', verifyVerbandToken, verifySuperAdmin, async (req, res) => {
+  try {
+    const { status, tracking_nummer, versanddienstleister, interne_notiz } = req.body;
+
+    // Bestellung prüfen
+    const bestellungen = await queryAsync(
+      `SELECT * FROM shop_bestellungen WHERE id = ?`,
+      [req.params.id]
+    );
+
+    if (bestellungen.length === 0) {
+      return res.status(404).json({ error: 'Bestellung nicht gefunden' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (status) {
+      updates.push('status = ?');
+      params.push(status);
+
+      // Timestamps setzen
+      if (status === 'in_bearbeitung') {
+        updates.push('bearbeitet_am = NOW()');
+      } else if (status === 'versendet') {
+        updates.push('versendet_am = NOW()');
+      } else if (status === 'abgeschlossen') {
+        updates.push('abgeschlossen_am = NOW()');
+      }
+    }
+
+    if (tracking_nummer !== undefined) {
+      updates.push('tracking_nummer = ?');
+      params.push(tracking_nummer);
+    }
+
+    if (versanddienstleister !== undefined) {
+      updates.push('versanddienstleister = ?');
+      params.push(versanddienstleister);
+    }
+
+    if (interne_notiz !== undefined) {
+      updates.push('interne_notiz = ?');
+      params.push(interne_notiz);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Keine Änderungen' });
+    }
+
+    params.push(req.params.id);
+
+    await queryAsync(
+      `UPDATE shop_bestellungen SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    logger.info(`Bestellung ${req.params.id} aktualisiert: ${updates.join(', ')}`);
+
+    res.json({ success: true, message: 'Bestellung aktualisiert' });
+
+  } catch (error) {
+    logger.error('Admin-Bestellung-Update-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren der Bestellung' });
+  }
+});
+
 module.exports = router;
