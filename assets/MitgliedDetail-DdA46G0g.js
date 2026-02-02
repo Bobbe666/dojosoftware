@@ -1,0 +1,1 @@
+import{j as i}from"./query-Caj74EYQ.js";import r from"./MitgliedDetailShared-DbmkwNY9.js";import"./index-Bcs73ipe.js";import"./vendor-router-Co3o87Zc.js";import"./icons-DiLw-1i5.js";import"./charts-C1Gv3M_c.js";import"./animation-zADEEVmT.js";const o=()=>i.jsx(r,{isAdmin:!0});export{o as default};

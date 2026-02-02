@@ -212,7 +212,8 @@ router.get('/dokumente/:typ', (req, res) => {
 // GET /:id - Einzelne Mitgliedschaft
 router.get('/:id(\\d+)', async (req, res) => {
   try {
-    // COALESCE: Bei Dojo-Mitgliedschaften entweder aus verknüpftem Dojo ODER direkt aus verbandsmitgliedschaften
+    logger.info('Loading verbandsmitgliedschaft detail for id:', req.params.id);
+
     const query = `SELECT vm.*,
       COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
       COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
@@ -222,21 +223,67 @@ router.get('/:id(\\d+)', async (req, res) => {
       COALESCE(d.telefon, vm.dojo_telefon) as dojo_telefon,
       COALESCE(d.internet, vm.dojo_website) as dojo_website,
       COALESCE(d.inhaber, vm.dojo_inhaber) as dojo_inhaber,
+      d.id as linked_dojo_id,
+      d.ist_aktiv as dojo_ist_aktiv,
+      d.created_at as dojo_created_at,
+      d.subscription_status,
+      d.subscription_plan,
       CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
-      FROM verbandsmitgliedschaften vm LEFT JOIN dojo d ON vm.dojo_id = d.id LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id WHERE vm.id = ?`;
+      FROM verbandsmitgliedschaften vm
+      LEFT JOIN dojo d ON vm.dojo_id = d.id
+      LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id
+      WHERE vm.id = ?`;
 
     const results = await queryAsync(query, [req.params.id]);
-    if (results.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    }
+
+    const mitgliedschaft = results[0];
+    logger.info('Mitgliedschaft loaded - typ:', mitgliedschaft.typ, 'linked_dojo_id:', mitgliedschaft.linked_dojo_id);
 
     // Historie laden
     const historie = await queryAsync(
       `SELECT * FROM verband_vertragshistorie WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC`,
       [req.params.id]
     );
-
-    // Mitgliedschaft mit Historie zurückgeben
-    const mitgliedschaft = results[0];
     mitgliedschaft.historie = historie;
+
+    // Wenn es eine Dojo-Mitgliedschaft mit verknüpftem Dojo ist, hole zusätzliche Statistiken
+    if (mitgliedschaft.typ === 'dojo' && mitgliedschaft.linked_dojo_id) {
+      const dojoId = mitgliedschaft.linked_dojo_id;
+      logger.info('Loading dojo stats for dojoId:', dojoId);
+
+      try {
+        const [mitgliederStats, kurseStats, trainerStats, storageStats, adminStats, stilStats, standortStats, eventStats, letztesLogin] = await Promise.all([
+          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN status = "aktiv" THEN 1 ELSE 0 END) as aktiv, SUM(CASE WHEN status = "inaktiv" THEN 1 ELSE 0 END) as inaktiv, SUM(CASE WHEN status = "gekuendigt" THEN 1 ELSE 0 END) as gekuendigt FROM mitglieder WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv FROM kurse WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(DISTINCT trainer_id) as anzahl FROM kurse WHERE dojo_id = ? AND trainer_id IS NOT NULL', [dojoId]),
+          queryAsync('SELECT COALESCE(SUM(dateigroesse), 0) as bytes_total, COUNT(*) as dokumente_anzahl FROM dokumente WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv FROM admin_users WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(*) as anzahl FROM stile WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(*) as anzahl FROM standorte WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN datum >= CURDATE() THEN 1 ELSE 0 END) as kommende FROM events WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT MAX(last_login) as letztes_login FROM admin_users WHERE dojo_id = ? AND aktiv = 1', [dojoId])
+        ]);
+
+        logger.info('Dojo stats loaded successfully');
+
+        mitgliedschaft.dojo_stats = {
+          mitglieder: { gesamt: mitgliederStats[0]?.gesamt || 0, aktiv: mitgliederStats[0]?.aktiv || 0, inaktiv: mitgliederStats[0]?.inaktiv || 0, gekuendigt: mitgliederStats[0]?.gekuendigt || 0 },
+          kurse: { gesamt: kurseStats[0]?.gesamt || 0, aktiv: kurseStats[0]?.aktiv || 0 },
+          trainer: { anzahl: trainerStats[0]?.anzahl || 0 },
+          speicherplatz: { bytes: storageStats[0]?.bytes_total || 0, mb: Math.round((storageStats[0]?.bytes_total || 0) / 1024 / 1024 * 100) / 100, dokumente: storageStats[0]?.dokumente_anzahl || 0 },
+          admins: { gesamt: adminStats[0]?.gesamt || 0, aktiv: adminStats[0]?.aktiv || 0 },
+          stile: stilStats[0]?.anzahl || 0,
+          standorte: standortStats[0]?.anzahl || 0,
+          events: { gesamt: eventStats[0]?.gesamt || 0, kommende: eventStats[0]?.kommende || 0 },
+          letztes_login: letztesLogin[0]?.letztes_login || null
+        };
+      } catch (statsErr) {
+        logger.error('Error loading dojo stats:', statsErr);
+      }
+    }
 
     res.json(mitgliedschaft);
   } catch (err) {
@@ -244,6 +291,8 @@ router.get('/:id(\\d+)', async (req, res) => {
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });
+
+
 
 // POST / - Neue Mitgliedschaft anlegen
 router.post('/', async (req, res) => {
