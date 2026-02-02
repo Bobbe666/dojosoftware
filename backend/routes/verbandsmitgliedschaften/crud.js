@@ -256,7 +256,7 @@ router.get('/:id(\\d+)', async (req, res) => {
 
       try {
         const [mitgliederStats, kurseStats, trainerStats, storageStats, adminStats, stilStats, standortStats, eventStats, letztesLogin] = await Promise.all([
-          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN status = "aktiv" THEN 1 ELSE 0 END) as aktiv, SUM(CASE WHEN status = "inaktiv" THEN 1 ELSE 0 END) as inaktiv, SUM(CASE WHEN status = "gekuendigt" THEN 1 ELSE 0 END) as gekuendigt FROM mitglieder WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv, SUM(CASE WHEN aktiv = 0 THEN 1 ELSE 0 END) as inaktiv, 0 as gekuendigt FROM mitglieder WHERE dojo_id = ?', [dojoId]),
           queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv FROM kurse WHERE dojo_id = ?', [dojoId]),
           queryAsync('SELECT COUNT(DISTINCT trainer_id) as anzahl FROM kurse WHERE dojo_id = ? AND trainer_id IS NOT NULL', [dojoId]),
           queryAsync('SELECT COALESCE(SUM(dateigroesse), 0) as bytes_total, COUNT(*) as dokumente_anzahl FROM dokumente WHERE dojo_id = ?', [dojoId]),
