@@ -895,6 +895,19 @@ try {
     });
 }
 
+// 10.7 VERBAND-RECHNUNGEN - Rechnungserstellung für TDA International
+try {
+  const verbandRechnungenRouter = require(path.join(__dirname, "routes", "verband-rechnungen.js"));
+  app.use("/api/verband-rechnungen", verbandRechnungenRouter);
+  logger.success('Route gemountet', { path: '/api/verband-rechnungen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'verband-rechnungen',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 11. DOKUMENTE (PDF Management & Reports) - NEU
 try {
   const dokumenteRouter = require(path.join(__dirname, "routes", "dokumente.js"));

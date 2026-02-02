@@ -36,12 +36,14 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  Target
+  Target,
+  Receipt
 } from "lucide-react";
 import { useDojoContext } from '../context/DojoContext.jsx';
 import config from "../config/config";
 import "../styles/SuperAdminFinanzen.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import VerbandRechnungErstellen from './VerbandRechnungErstellen';
 
 const COLORS = {
   verband: '#3b82f6',    // Blau
@@ -59,6 +61,7 @@ const SuperAdminFinanzen = () => {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedBereich, setSelectedBereich] = useState('alle'); // alle, verband, software, schulen
+  const [activeView, setActiveView] = useState('uebersicht'); // 'uebersicht' | 'rechnungen'
 
   // Data States
   const [financeData, setFinanceData] = useState(null);
@@ -365,59 +368,81 @@ const SuperAdminFinanzen = () => {
 
   return (
     <div className="saf">
-      {/* Header */}
-      <header className="saf-card saf__header">
-        <div className="saf__header-top">
-          <div className="saf__headline">
-            <span className="saf__eyebrow">TDA Int'l Org</span>
-            <h1 className="saf__title">Finanzübersicht</h1>
-            <p className="saf__subtitle">
-              Alle Geschäftsbereiche auf einen Blick - Verband, Software & Schulen
-            </p>
-          </div>
-          <div className="saf__controls">
-            {/* Bereichs-Switcher */}
-            <div className="saf__bereich-switcher">
-              {['alle', 'verband', 'software', 'schulen'].map(bereich => (
-                <button
-                  key={bereich}
-                  className={selectedBereich === bereich ? 'active' : ''}
-                  onClick={() => setSelectedBereich(bereich)}
-                >
-                  {bereich === 'alle' && <Globe size={14} />}
-                  {bereich === 'verband' && <Users size={14} />}
-                  {bereich === 'software' && <Monitor size={14} />}
-                  {bereich === 'schulen' && <GraduationCap size={14} />}
-                  {bereich.charAt(0).toUpperCase() + bereich.slice(1)}
-                </button>
-              ))}
-            </div>
-            {/* Zeitraum-Selektor */}
-            <div className="saf__period-selector">
-              <button
-                className={selectedPeriod === 'month' ? 'active' : ''}
-                onClick={() => setSelectedPeriod('month')}
-              >
-                Monat
-              </button>
-              <button
-                className={selectedPeriod === 'quarter' ? 'active' : ''}
-                onClick={() => setSelectedPeriod('quarter')}
-              >
-                Quartal
-              </button>
-              <button
-                className={selectedPeriod === 'year' ? 'active' : ''}
-                onClick={() => setSelectedPeriod('year')}
-              >
-                Jahr
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* View-Switcher Tabs */}
+      <div className="saf__view-tabs">
+        <button
+          className={activeView === 'uebersicht' ? 'active' : ''}
+          onClick={() => setActiveView('uebersicht')}
+        >
+          <BarChart3 size={18} />
+          Finanzübersicht
+        </button>
+        <button
+          className={activeView === 'rechnungen' ? 'active' : ''}
+          onClick={() => setActiveView('rechnungen')}
+        >
+          <Receipt size={18} />
+          Rechnungen erstellen
+        </button>
+      </div>
 
-      {/* KPI Grid */}
+      {activeView === 'rechnungen' ? (
+        <VerbandRechnungErstellen />
+      ) : (
+        <>
+          {/* Header */}
+          <header className="saf-card saf__header">
+            <div className="saf__header-top">
+              <div className="saf__headline">
+                <span className="saf__eyebrow">TDA Int'l Org</span>
+                <h1 className="saf__title">Finanzübersicht</h1>
+                <p className="saf__subtitle">
+                  Alle Geschäftsbereiche auf einen Blick - Verband, Software & Schulen
+                </p>
+              </div>
+              <div className="saf__controls">
+                {/* Bereichs-Switcher */}
+                <div className="saf__bereich-switcher">
+                  {['alle', 'verband', 'software', 'schulen'].map(bereich => (
+                    <button
+                      key={bereich}
+                      className={selectedBereich === bereich ? 'active' : ''}
+                      onClick={() => setSelectedBereich(bereich)}
+                    >
+                      {bereich === 'alle' && <Globe size={14} />}
+                      {bereich === 'verband' && <Users size={14} />}
+                      {bereich === 'software' && <Monitor size={14} />}
+                      {bereich === 'schulen' && <GraduationCap size={14} />}
+                      {bereich.charAt(0).toUpperCase() + bereich.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                {/* Zeitraum-Selektor */}
+                <div className="saf__period-selector">
+                  <button
+                    className={selectedPeriod === 'month' ? 'active' : ''}
+                    onClick={() => setSelectedPeriod('month')}
+                  >
+                    Monat
+                  </button>
+                  <button
+                    className={selectedPeriod === 'quarter' ? 'active' : ''}
+                    onClick={() => setSelectedPeriod('quarter')}
+                  >
+                    Quartal
+                  </button>
+                  <button
+                    className={selectedPeriod === 'year' ? 'active' : ''}
+                    onClick={() => setSelectedPeriod('year')}
+                  >
+                    Jahr
+                  </button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* KPI Grid */}
       {kpis && (
         <section className={`saf__kpi-grid saf__kpi-grid--${selectedBereich}`}>
           {/* Gesamtumsatz - nur bei "alle" */}
@@ -827,6 +852,8 @@ const SuperAdminFinanzen = () => {
             </div>
           </div>
         </section>
+      )}
+        </>
       )}
     </div>
   );

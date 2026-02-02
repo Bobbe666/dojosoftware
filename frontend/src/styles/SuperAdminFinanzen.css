@@ -15,6 +15,46 @@ SUPER-ADMIN FINANZEN - TDA Int'l Org Dashboard
   gap: var(--spacing-lg);
 }
 
+/* View-Switcher Tabs */
+.saf__view-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 12px;
+  padding: 0.5rem;
+  width: fit-content;
+}
+
+.saf__view-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #888;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saf__view-tabs button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.saf__view-tabs button.active {
+  background: rgba(201, 162, 39, 0.2);
+  color: #c9a227;
+}
+
+.saf__view-tabs button svg {
+  flex-shrink: 0;
+}
+
 .saf-card {
   background: var(--bg-card);
   backdrop-filter: var(--glass-backdrop);
