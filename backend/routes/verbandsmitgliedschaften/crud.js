@@ -9,10 +9,57 @@ const router = express.Router();
 const crypto = require('crypto');
 const { DEFAULT_BEITRAG_DOJO, DEFAULT_BEITRAG_EINZEL, queryAsync, getEinstellung, generateFortlaufendeRechnungsnummer } = require('./shared');
 
+// Ländercode-Mapping (ISO 3166-1 Alpha-2)
+const LAENDER_CODES = {
+  'deutschland': 'DE',
+  'germany': 'DE',
+  'österreich': 'AT',
+  'oesterreich': 'AT',
+  'austria': 'AT',
+  'schweiz': 'CH',
+  'switzerland': 'CH',
+  'italien': 'IT',
+  'italy': 'IT',
+  'frankreich': 'FR',
+  'france': 'FR',
+  'spanien': 'ES',
+  'spain': 'ES',
+  'niederlande': 'NL',
+  'netherlands': 'NL',
+  'belgien': 'BE',
+  'belgium': 'BE',
+  'polen': 'PL',
+  'poland': 'PL',
+  'tschechien': 'CZ',
+  'czech republic': 'CZ',
+  'ungarn': 'HU',
+  'hungary': 'HU',
+  'slowenien': 'SI',
+  'slovenia': 'SI',
+  'kroatien': 'HR',
+  'croatia': 'HR',
+  'usa': 'US',
+  'united states': 'US',
+  'vereinigte staaten': 'US',
+  'großbritannien': 'GB',
+  'grossbritannien': 'GB',
+  'united kingdom': 'GB',
+  'england': 'GB'
+};
+
+const getLaenderCode = (land) => {
+  if (!land) return 'XX'; // Unbekannt
+  const normalized = land.toLowerCase().trim();
+  return LAENDER_CODES[normalized] || land.substring(0, 2).toUpperCase();
+};
+
 // Helper functions
-const getNextMitgliedsnummer = (typ) => {
+const getNextMitgliedsnummer = (typ, land = 'Deutschland') => {
   return new Promise((resolve, reject) => {
-    const prefix = typ === 'dojo' ? 'TDA-D-' : 'TDA-E-';
+    const laenderCode = getLaenderCode(land);
+    const typCode = typ === 'dojo' ? 'D' : 'E';
+    const prefix = `TDA-${laenderCode}-${typCode}-`;
+
     db.query('UPDATE verband_nummern_sequenz SET aktuelle_nummer = aktuelle_nummer + 1 WHERE typ = ?', [typ], (err) => {
       if (err) return reject(err);
       db.query('SELECT aktuelle_nummer FROM verband_nummern_sequenz WHERE typ = ?', [typ], (err, results) => {
@@ -213,7 +260,16 @@ router.post('/', async (req, res) => {
       if (existing.length > 0) return res.status(400).json({ error: 'Dieses Dojo hat bereits eine aktive Mitgliedschaft' });
     }
 
-    const mitgliedsnummer = await getNextMitgliedsnummer(typ);
+    // Land für Mitgliedsnummer ermitteln
+    let land = 'Deutschland';
+    if (typ === 'einzelperson') {
+      land = person_land || 'Deutschland';
+    } else if (typ === 'dojo' && dojo_id) {
+      const dojoData = await queryAsync('SELECT land FROM dojo WHERE id = ?', [dojo_id]);
+      land = dojoData[0]?.land || 'Deutschland';
+    }
+
+    const mitgliedsnummer = await getNextMitgliedsnummer(typ, land);
     const beitragDojo = await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO);
     const beitragEinzel = await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL);
 

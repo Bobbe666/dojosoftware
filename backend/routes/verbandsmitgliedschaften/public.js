@@ -8,6 +8,50 @@ const db = require('../../db');
 const router = express.Router();
 const { DEFAULT_BEITRAG_DOJO, DEFAULT_BEITRAG_EINZEL, getEinstellung } = require('./shared');
 
+// Ländercode-Mapping (ISO 3166-1 Alpha-2)
+const LAENDER_CODES = {
+  'deutschland': 'DE',
+  'germany': 'DE',
+  'österreich': 'AT',
+  'oesterreich': 'AT',
+  'austria': 'AT',
+  'schweiz': 'CH',
+  'switzerland': 'CH',
+  'italien': 'IT',
+  'italy': 'IT',
+  'frankreich': 'FR',
+  'france': 'FR',
+  'spanien': 'ES',
+  'spain': 'ES',
+  'niederlande': 'NL',
+  'netherlands': 'NL',
+  'belgien': 'BE',
+  'belgium': 'BE',
+  'polen': 'PL',
+  'poland': 'PL',
+  'tschechien': 'CZ',
+  'czech republic': 'CZ',
+  'ungarn': 'HU',
+  'hungary': 'HU',
+  'slowenien': 'SI',
+  'slovenia': 'SI',
+  'kroatien': 'HR',
+  'croatia': 'HR',
+  'usa': 'US',
+  'united states': 'US',
+  'vereinigte staaten': 'US',
+  'großbritannien': 'GB',
+  'grossbritannien': 'GB',
+  'united kingdom': 'GB',
+  'england': 'GB'
+};
+
+const getLaenderCode = (land) => {
+  if (!land) return 'XX'; // Unbekannt
+  const normalized = land.toLowerCase().trim();
+  return LAENDER_CODES[normalized] || land.substring(0, 2).toUpperCase();
+};
+
 // GET /public/config - Öffentliche Konfiguration
 router.get('/public/config', async (req, res) => {
   try {
@@ -63,10 +107,14 @@ router.post('/public/anmeldung', async (req, res) => {
     const gueltig_bis = new Date();
     gueltig_bis.setMonth(gueltig_bis.getMonth() + laufzeit);
 
-    const prefix = typ === 'dojo' ? 'TDA-D-' : 'TDA-E-';
+    // Land für Mitgliedsnummer ermitteln
+    const memberLand = typ === 'dojo' ? (dojo_land || 'Deutschland') : (land || 'Deutschland');
+    const laenderCode = getLaenderCode(memberLand);
+    const typCode = typ === 'dojo' ? 'D' : 'E';
+    const prefix = `TDA-${laenderCode}-${typCode}-`;
     const key = typ === 'dojo' ? 'naechste_dojo_nummer' : 'naechste_einzel_nummer';
     const nummerValue = await getEinstellung(key, 1);
-    const mitgliedsnummer = prefix + String(nummerValue).padStart(5, '0');
+    const mitgliedsnummer = prefix + String(nummerValue).padStart(4, '0');
 
     db.query('UPDATE verband_einstellungen SET einstellung_value = ? WHERE einstellung_key = ?', [nummerValue + 1, key]);
 
