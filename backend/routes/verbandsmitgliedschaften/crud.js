@@ -29,10 +29,47 @@ const calculateBrutto = (netto, mwstSatz = 19) => {
   return { netto, mwst_satz: mwstSatz, mwst_betrag: Math.round(mwst * 100) / 100, brutto: Math.round((netto + mwst) * 100) / 100 };
 };
 
+/**
+ * Protokolliert eine Aktion in der Vertragshistorie (rechtssicher)
+ * @param {number} mitgliedschaftId - ID der Verbandsmitgliedschaft
+ * @param {string} aktion - Art der Aktion (erstellt, verlaengert, geaendert, gekuendigt, reaktiviert, sepa_angelegt, sepa_geaendert, zahlung)
+ * @param {string} beschreibung - Beschreibung der Aktion
+ * @param {object} alteWerte - Alte Werte (JSON)
+ * @param {object} neueWerte - Neue Werte (JSON)
+ * @param {string} durchgefuehrtVon - Wer die Aktion durchgeführt hat
+ * @param {string} ipAdresse - IP-Adresse des Ausführenden
+ */
+const protokolliereHistorie = async (mitgliedschaftId, aktion, beschreibung, alteWerte = null, neueWerte = null, durchgefuehrtVon = null, ipAdresse = null) => {
+  try {
+    await queryAsync(
+      `INSERT INTO verband_vertragshistorie
+       (verbandsmitgliedschaft_id, aktion, beschreibung, alte_werte, neue_werte, durchgefuehrt_von, ip_adresse)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        mitgliedschaftId,
+        aktion,
+        beschreibung,
+        alteWerte ? JSON.stringify(alteWerte) : null,
+        neueWerte ? JSON.stringify(neueWerte) : null,
+        durchgefuehrtVon,
+        ipAdresse
+      ]
+    );
+    logger.debug('Historie protokolliert:', { mitgliedschaftId, aktion, beschreibung });
+  } catch (err) {
+    logger.error('Fehler beim Protokollieren der Historie:', { error: err, mitgliedschaftId, aktion });
+  }
+};
+
 // GET / - Alle Mitgliedschaften
 router.get('/', (req, res) => {
   const { typ, status, limit } = req.query;
-  let query = `SELECT vm.*, d.dojoname as dojo_name, d.ort as dojo_ort, CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
+  // COALESCE: Bei Dojo-Mitgliedschaften entweder aus verknüpftem Dojo ODER direkt aus verbandsmitgliedschaften.dojo_name
+  let query = `SELECT vm.*,
+    COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
+    COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
+    COALESCE(d.email, vm.dojo_email) as dojo_email,
+    CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
     FROM verbandsmitgliedschaften vm
     LEFT JOIN dojo d ON vm.dojo_id = d.id
     LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id WHERE 1=1`;
@@ -126,14 +163,39 @@ router.get('/dokumente/:typ', (req, res) => {
 });
 
 // GET /:id - Einzelne Mitgliedschaft
-router.get('/:id(\\d+)', (req, res) => {
-  const query = `SELECT vm.*, d.dojoname as dojo_name, d.ort as dojo_ort, d.email as dojo_email, CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
-    FROM verbandsmitgliedschaften vm LEFT JOIN dojo d ON vm.dojo_id = d.id LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id WHERE vm.id = ?`;
-  db.query(query, [req.params.id], (err, results) => {
-    if (err) return res.status(500).json({ error: 'Datenbankfehler' });
+router.get('/:id(\\d+)', async (req, res) => {
+  try {
+    // COALESCE: Bei Dojo-Mitgliedschaften entweder aus verknüpftem Dojo ODER direkt aus verbandsmitgliedschaften
+    const query = `SELECT vm.*,
+      COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
+      COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
+      COALESCE(d.email, vm.dojo_email) as dojo_email,
+      COALESCE(d.strasse, vm.dojo_strasse) as dojo_strasse,
+      COALESCE(d.plz, vm.dojo_plz) as dojo_plz,
+      COALESCE(d.telefon, vm.dojo_telefon) as dojo_telefon,
+      COALESCE(d.internet, vm.dojo_website) as dojo_website,
+      COALESCE(d.inhaber, vm.dojo_inhaber) as dojo_inhaber,
+      CONCAT(m.vorname, ' ', m.nachname) as verknuepftes_mitglied_name
+      FROM verbandsmitgliedschaften vm LEFT JOIN dojo d ON vm.dojo_id = d.id LEFT JOIN mitglieder m ON vm.mitglied_id = m.mitglied_id WHERE vm.id = ?`;
+
+    const results = await queryAsync(query, [req.params.id]);
     if (results.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
-    res.json(results[0]);
-  });
+
+    // Historie laden
+    const historie = await queryAsync(
+      `SELECT * FROM verband_vertragshistorie WHERE verbandsmitgliedschaft_id = ? ORDER BY erstellt_am DESC`,
+      [req.params.id]
+    );
+
+    // Mitgliedschaft mit Historie zurückgeben
+    const mitgliedschaft = results[0];
+    mitgliedschaft.historie = historie;
+
+    res.json(mitgliedschaft);
+  } catch (err) {
+    logger.error('Fehler beim Laden der Mitgliedschaft:', { error: err });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
 });
 
 // POST / - Neue Mitgliedschaft anlegen
@@ -185,6 +247,17 @@ router.post('/', async (req, res) => {
       ? `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft beitragsfrei angelegt`
       : `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft erfolgreich angelegt`;
 
+    // Historie protokollieren
+    await protokolliereHistorie(
+      result.insertId,
+      'erstellt',
+      `Mitgliedschaft erstellt: ${mitgliedsnummer} (${typ}), Beitrag: ${jahresbeitrag}€/Jahr, Laufzeit: ${startDatum} bis ${gueltigBis}${beitragsfrei ? ' (beitragsfrei)' : ''}`,
+      null,
+      { typ, mitgliedsnummer, jahresbeitrag, gueltig_von: startDatum, gueltig_bis: gueltigBis, status: initialStatus, zahlungsart, beitragsfrei },
+      req.user?.email || req.user?.username || 'System',
+      req.ip || req.headers['x-forwarded-for']
+    );
+
     res.status(201).json({ success: true, id: result.insertId, mitgliedsnummer, rechnungsnummer, beitragsfrei: !!beitragsfrei, message });
   } catch (err) {
     logger.error('Fehler beim Anlegen der Mitgliedschaft:', { error: err });
@@ -193,18 +266,65 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /:id/status - Status ändern
-router.put('/:id(\\d+)/status', (req, res) => {
+router.put('/:id(\\d+)/status', async (req, res) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: 'Status fehlt' });
 
-  db.query('UPDATE verbandsmitgliedschaften SET status = ?, updated_at = NOW() WHERE id = ?', [status, req.params.id], (err, result) => {
-    if (err) {
-      console.error('Fehler bei Status-Update:', err);
-      return res.status(500).json({ error: 'Datenbankfehler' });
-    }
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+  try {
+    // Alten Status laden
+    const alteMitgliedschaft = await queryAsync('SELECT status, mitgliedsnummer FROM verbandsmitgliedschaften WHERE id = ?', [req.params.id]);
+    if (alteMitgliedschaft.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+
+    const alterStatus = alteMitgliedschaft[0].status;
+    const mitgliedsnummer = alteMitgliedschaft[0].mitgliedsnummer;
+
+    await queryAsync('UPDATE verbandsmitgliedschaften SET status = ?, updated_at = NOW() WHERE id = ?', [status, req.params.id]);
+
+    // Historie protokollieren
+    const aktion = status === 'gekuendigt' ? 'gekuendigt' : (status === 'aktiv' && alterStatus === 'gekuendigt' ? 'reaktiviert' : 'geaendert');
+    await protokolliereHistorie(
+      req.params.id,
+      aktion,
+      `Status geändert: ${alterStatus} → ${status} (${mitgliedsnummer})`,
+      { status: alterStatus },
+      { status },
+      req.user?.email || req.user?.username || 'Admin',
+      req.ip || req.headers['x-forwarded-for']
+    );
+
     res.json({ success: true, message: 'Status aktualisiert' });
-  });
+  } catch (err) {
+    console.error('Fehler bei Status-Update:', err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// DELETE /:id/permanent - Mitgliedschaft DAUERHAFT löschen (nur Admin)
+router.delete('/:id(\\d+)/permanent', async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    // Prüfen ob Mitgliedschaft existiert
+    const mitgliedschaft = await queryAsync('SELECT * FROM verbandsmitgliedschaften WHERE id = ?', [id]);
+    if (mitgliedschaft.length === 0) {
+      return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+    }
+
+    // Zugehörige Zahlungen löschen
+    await queryAsync('DELETE FROM verbandsmitgliedschaft_zahlungen WHERE verbandsmitgliedschaft_id = ?', [id]);
+
+    // SEPA-Mandate löschen (falls vorhanden)
+    await queryAsync('DELETE FROM verbandsmitgliedschaft_sepa WHERE verbandsmitgliedschaft_id = ?', [id]);
+
+    // Mitgliedschaft dauerhaft löschen
+    await queryAsync('DELETE FROM verbandsmitgliedschaften WHERE id = ?', [id]);
+
+    logger.info('Verbandsmitgliedschaft dauerhaft gelöscht', { id, typ: mitgliedschaft[0].typ });
+    res.json({ success: true, message: 'Mitgliedschaft dauerhaft gelöscht' });
+  } catch (err) {
+    logger.error('Fehler beim dauerhaften Löschen:', { error: err, id: req.params.id });
+    res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+  }
 });
 
 // POST /:id/beitragsfrei - Beitragsfrei-Status umschalten (nur Admin)
@@ -315,13 +435,32 @@ router.get('/:id(\\d+)/zahlungen', (req, res) => {
 });
 
 // POST /zahlungen/:zahlungs_id/bezahlt
-router.post('/zahlungen/:zahlungs_id/bezahlt', (req, res) => {
+router.post('/zahlungen/:zahlungs_id/bezahlt', async (req, res) => {
   const { zahlungsart, transaktions_id } = req.body;
-  db.query(`UPDATE verbandsmitgliedschaft_zahlungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = ?, transaktions_id = ? WHERE id = ?`, [zahlungsart || 'ueberweisung', transaktions_id || null, req.params.zahlungs_id], (err) => {
-    if (err) return res.status(500).json({ error: 'Datenbankfehler' });
-    db.query(`UPDATE verbandsmitgliedschaften vm SET status = 'aktiv' WHERE id = (SELECT verbandsmitgliedschaft_id FROM verbandsmitgliedschaft_zahlungen WHERE id = ?) AND status = 'ausstehend'`, [req.params.zahlungs_id]);
+  try {
+    // Zahlungsdetails laden
+    const zahlung = await queryAsync('SELECT z.*, vm.mitgliedsnummer FROM verbandsmitgliedschaft_zahlungen z JOIN verbandsmitgliedschaften vm ON z.verbandsmitgliedschaft_id = vm.id WHERE z.id = ?', [req.params.zahlungs_id]);
+    if (zahlung.length === 0) return res.status(404).json({ error: 'Zahlung nicht gefunden' });
+
+    await queryAsync(`UPDATE verbandsmitgliedschaft_zahlungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = ?, transaktions_id = ? WHERE id = ?`, [zahlungsart || 'ueberweisung', transaktions_id || null, req.params.zahlungs_id]);
+    await queryAsync(`UPDATE verbandsmitgliedschaften vm SET status = 'aktiv' WHERE id = ? AND status = 'ausstehend'`, [zahlung[0].verbandsmitgliedschaft_id]);
+
+    // Historie protokollieren
+    await protokolliereHistorie(
+      zahlung[0].verbandsmitgliedschaft_id,
+      'zahlung',
+      `Zahlung eingegangen: ${zahlung[0].betrag_brutto}€ (${zahlung[0].rechnungsnummer}), Zahlungsart: ${zahlungsart || 'ueberweisung'}${transaktions_id ? ', Transaktions-ID: ' + transaktions_id : ''}`,
+      { status: 'offen' },
+      { status: 'bezahlt', zahlungsart: zahlungsart || 'ueberweisung', transaktions_id, bezahlt_am: new Date().toISOString().split('T')[0] },
+      req.user?.email || req.user?.username || 'Admin',
+      req.ip || req.headers['x-forwarded-for']
+    );
+
     res.json({ success: true, message: 'Zahlung als bezahlt markiert' });
-  });
+  } catch (err) {
+    console.error('Fehler beim Markieren der Zahlung:', err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
 });
 
 // GET /:id/sepa
@@ -339,10 +478,35 @@ router.post('/:id(\\d+)/sepa', async (req, res) => {
 
   try {
     const mandatsreferenz = `VM-${req.params.id}-${Date.now()}`;
+    const ip = ip_adresse || req.ip || req.headers['x-forwarded-for'];
+    const timestamp = unterschrift_datum || new Date();
+
     const result = await queryAsync(`INSERT INTO verband_sepa_mandate (verbandsmitgliedschaft_id, mandatsreferenz, iban, bic, kontoinhaber, bank_name, status, unterschrift_digital, unterschrift_datum, unterschrift_ip) VALUES (?, ?, ?, ?, ?, ?, 'aktiv', ?, ?, ?)`,
-      [req.params.id, mandatsreferenz, iban, bic || null, kontoinhaber, bank_name || null, unterschrift_digital || null, unterschrift_datum || new Date(), ip_adresse || null]);
+      [req.params.id, mandatsreferenz, iban, bic || null, kontoinhaber, bank_name || null, unterschrift_digital || null, timestamp, ip]);
 
     await queryAsync("UPDATE verbandsmitgliedschaften SET zahlungsart = 'sepa', sepa_iban = ?, sepa_bic = ?, sepa_kontoinhaber = ? WHERE id = ?", [iban, bic, kontoinhaber, req.params.id]);
+
+    // Mitgliedsnummer laden
+    const mitgliedschaft = await queryAsync('SELECT mitgliedsnummer FROM verbandsmitgliedschaften WHERE id = ?', [req.params.id]);
+
+    // Historie protokollieren - RECHTSSICHER
+    await protokolliereHistorie(
+      req.params.id,
+      'sepa_angelegt',
+      `SEPA-Lastschriftmandat erteilt (${mitgliedschaft[0]?.mitgliedsnummer}). Mandatsreferenz: ${mandatsreferenz}, Kontoinhaber: ${kontoinhaber}, IBAN: ${iban.substring(0, 4)}****${iban.substring(iban.length - 4)}`,
+      null,
+      {
+        mandatsreferenz,
+        kontoinhaber,
+        iban_masked: iban.substring(0, 4) + '****' + iban.substring(iban.length - 4),
+        bic,
+        bank_name,
+        unterschrift_datum: timestamp,
+        unterschrift_ip: ip
+      },
+      'Mitglied (Selbstunterschrift)',
+      ip
+    );
 
     res.json({ success: true, id: result.insertId, mandatsreferenz });
   } catch (err) {
@@ -364,8 +528,33 @@ router.post('/:id(\\d+)/unterschreiben', async (req, res) => {
   const { unterschrift_digital, unterschrift_datum, ip_adresse, agb_akzeptiert, dsgvo_akzeptiert, widerruf_akzeptiert } = req.body;
 
   try {
+    const timestamp = unterschrift_datum || new Date();
+    const ip = ip_adresse || req.ip || req.headers['x-forwarded-for'];
+
     await queryAsync(`UPDATE verbandsmitgliedschaften SET unterschrift_digital = ?, unterschrift_datum = ?, unterschrift_ip = ?, agb_akzeptiert = COALESCE(?, agb_akzeptiert), dsgvo_akzeptiert = COALESCE(?, dsgvo_akzeptiert), widerruf_akzeptiert = COALESCE(?, widerruf_akzeptiert), status = CASE WHEN status = 'ausstehend_unterschrift' THEN 'ausstehend' ELSE status END WHERE id = ?`,
-      [unterschrift_digital, unterschrift_datum || new Date(), ip_adresse || null, agb_akzeptiert, dsgvo_akzeptiert, widerruf_akzeptiert, req.params.id]);
+      [unterschrift_digital, timestamp, ip, agb_akzeptiert, dsgvo_akzeptiert, widerruf_akzeptiert, req.params.id]);
+
+    // Mitgliedsnummer für Historie laden
+    const mitgliedschaft = await queryAsync('SELECT mitgliedsnummer FROM verbandsmitgliedschaften WHERE id = ?', [req.params.id]);
+    const mitgliedsnummer = mitgliedschaft[0]?.mitgliedsnummer || req.params.id;
+
+    // Historie protokollieren - RECHTSSICHER
+    await protokolliereHistorie(
+      req.params.id,
+      'erstellt',
+      `Vertrag digital unterschrieben (${mitgliedsnummer}). AGB akzeptiert: ${agb_akzeptiert ? 'Ja' : 'Nein'}, DSGVO akzeptiert: ${dsgvo_akzeptiert ? 'Ja' : 'Nein'}, Widerrufsrecht akzeptiert: ${widerruf_akzeptiert ? 'Ja' : 'Nein'}`,
+      null,
+      {
+        unterschrift_datum: timestamp,
+        unterschrift_ip: ip,
+        agb_akzeptiert,
+        dsgvo_akzeptiert,
+        widerruf_akzeptiert,
+        unterschrift_hash: unterschrift_digital ? require('crypto').createHash('sha256').update(unterschrift_digital).digest('hex').substring(0, 16) : null
+      },
+      'Mitglied (Selbstunterschrift)',
+      ip
+    );
 
     res.json({ success: true, message: 'Unterschrift gespeichert' });
   } catch (err) {
@@ -376,7 +565,7 @@ router.post('/:id(\\d+)/unterschreiben', async (req, res) => {
 
 // GET /:id/historie
 router.get('/:id(\\d+)/historie', (req, res) => {
-  db.query(`SELECT * FROM verbandsmitgliedschaft_historie WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC`, [req.params.id], (err, results) => {
+  db.query(`SELECT * FROM verband_vertragshistorie WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC`, [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: 'Datenbankfehler' });
     res.json(results);
   });
