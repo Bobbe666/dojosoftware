@@ -116,6 +116,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /nummernkreis - Nächste Rechnungsnummer generieren
+// Format: TDA-RE-{Jahr}-{fortlaufende Nummer} für TDA International (Verband, Software, Dojo T&D)
 router.get('/nummernkreis', async (req, res) => {
   try {
     const jahr = new Date().getFullYear();
@@ -127,18 +128,18 @@ router.get('/nummernkreis', async (req, res) => {
       WHERE rechnungsnummer LIKE ?
       ORDER BY rechnungsnummer DESC
       LIMIT 1
-    `, [`TDA-${jahr}-%`]);
+    `, [`TDA-RE-${jahr}-%`]);
 
     let nextNum = 1;
     if (result.length > 0) {
       const lastNum = result[0].rechnungsnummer;
-      const match = lastNum.match(/TDA-\d+-(\d+)/);
+      const match = lastNum.match(/TDA-RE-\d+-(\d+)/);
       if (match) {
         nextNum = parseInt(match[1]) + 1;
       }
     }
 
-    const rechnungsnummer = `TDA-${jahr}-${String(nextNum).padStart(4, '0')}`;
+    const rechnungsnummer = `TDA-RE-${jahr}-${String(nextNum).padStart(4, '0')}`;
     res.json({ success: true, rechnungsnummer });
   } catch (err) {
     logger.error('Fehler beim Generieren der Rechnungsnummer:', { error: err });
