@@ -1,0 +1,188 @@
+{
+  "management": {
+    "title": "Gestione Corsi",
+    "tabs": {
+      "courses": "Gestisci Corsi",
+      "settings": "Impostazioni Dati Master"
+    },
+    "sortBy": "Ordina corsi per:",
+    "sortGroup": "Gruppo",
+    "sortRoom": "Sala",
+    "sortTrainer": "Istruttore",
+    "filterTrainer": "Filtra per istruttore:",
+    "allTrainers": "Mostra tutti gli istruttori",
+    "csvExport": "Esporta CSV"
+  },
+  "stats": {
+    "totalCourses": "Corsi Totali",
+    "filteredResults": "Risultati Filtrati",
+    "activeTrainers": "Istruttori Attivi",
+    "rooms": "Sale",
+    "childrenCourses": "Corsi Bambini",
+    "adultCourses": "Corsi Adulti"
+  },
+  "list": {
+    "title": "Corsi",
+    "subtitle": "Tutti i corsi e gruppi di allenamento",
+    "create": "Nuovo Corso",
+    "noCourses": "Nessun corso disponibile",
+    "noCoursesFound": "Nessun corso trovato",
+    "noCoursesFilter": "Nessun corso trovato con i filtri attuali.",
+    "courseCount": "{{count}} Corso",
+    "courseCountPlural": "{{count}} Corsi",
+    "columns": {
+      "name": "Nome Corso",
+      "style": "Stile",
+      "trainer": "Istruttore",
+      "schedule": "Orario",
+      "participants": "Partecipanti",
+      "status": "Stato"
+    }
+  },
+  "detail": {
+    "title": "Modifica Corso",
+    "participants": "Partecipanti",
+    "schedule": "Orario",
+    "waitlist": "Lista d'attesa"
+  },
+  "form": {
+    "name": "Nome Corso",
+    "description": "Descrizione",
+    "style": "Stile Arte Marziale",
+    "trainer": "Istruttore",
+    "maxParticipants": "Max. Partecipanti",
+    "minAge": "Età Minima",
+    "maxAge": "Età Massima",
+    "level": "Livello",
+    "color": "Colore",
+    "selectStyle": "Seleziona stile...",
+    "selectGroup": "Seleziona gruppo...",
+    "selectRoom": "Nessuna sala assegnata",
+    "noRoom": "Nessuna sala assegnata",
+    "noGroup": "Nessun Gruppo",
+    "noTrainer": "Nessun Istruttore",
+    "unknownTrainer": "Istruttore Sconosciuto",
+    "unknownRoom": "Sala Sconosciuta",
+    "unknownStyle": "Stile Sconosciuto",
+    "createCourse": "Crea Corso",
+    "createNewCourse": "Crea Nuovo Corso",
+    "enterStyle": "Inserisci stile"
+  },
+  "levels": {
+    "beginner": "Principiante",
+    "intermediate": "Intermedio",
+    "advanced": "Avanzato",
+    "all": "Tutti i Livelli"
+  },
+  "timetable": {
+    "title": "Orario",
+    "subtitle": "Programma settimanale degli allenamenti",
+    "addSlot": "Aggiungi Orario",
+    "weekdays": {
+      "monday": "Lunedì",
+      "tuesday": "Martedì",
+      "wednesday": "Mercoledì",
+      "thursday": "Giovedì",
+      "friday": "Venerdì",
+      "saturday": "Sabato",
+      "sunday": "Domenica"
+    },
+    "time": {
+      "start": "Inizio",
+      "end": "Fine",
+      "duration": "Durata"
+    },
+    "room": "Sala",
+    "recurring": "Ricorrente"
+  },
+  "attendance": {
+    "title": "Presenze",
+    "present": "Presente",
+    "absent": "Assente",
+    "excused": "Giustificato",
+    "markAll": "Segna Tutti",
+    "statistics": "Statistiche"
+  },
+  "groups": {
+    "title": "Gestisci Gruppi",
+    "subtitle": "Gestisci gruppi",
+    "create": "Nuovo Gruppo",
+    "members": "Membri nel Gruppo",
+    "existing": "Gruppi Esistenti:",
+    "addNew": "Aggiungi Nuovo Gruppo:",
+    "enterName": "Inserisci nome gruppo"
+  },
+  "styles": {
+    "title": "Gestisci Stili",
+    "subtitle": "Stili e graduazioni",
+    "create": "Crea Nuovo Stile",
+    "graduations": "Graduazioni",
+    "techniques": "Tecniche",
+    "examContent": "Contenuto Esami",
+    "existing": "Stili Esistenti:",
+    "addNew": "Aggiungi Nuovo Stile:",
+    "enterName": "Inserisci nome stile (es. BJJ, Karate)",
+    "hint": "Qui puoi gestire gli stili e selezionare quelli esistenti o aggiungerne di nuovi quando crei i corsi."
+  },
+  "trainers": {
+    "title": "Gestisci Istruttori",
+    "existing": "Istruttori Esistenti:",
+    "addNew": "Aggiungi Nuovo Istruttore:",
+    "firstName": "Nome",
+    "lastName": "Cognome",
+    "email": "Email (opzionale)",
+    "phone": "Telefono (opzionale)",
+    "addTrainer": "Aggiungi Istruttore"
+  },
+  "rooms": {
+    "title": "Gestisci Sale",
+    "existing": "Sale Esistenti:",
+    "addNew": "Aggiungi Nuova Sala:",
+    "createRoom": "Crea Nuova Sala",
+    "name": "Nome Sala",
+    "namePlaceholder": "Nome Sala (es. Sala Principale)",
+    "description": "Descrizione (opzionale)",
+    "size": "Dimensione (opzionale, es. 50m²)",
+    "capacity": "Capacità (opzionale)",
+    "persons": "Persone",
+    "hint": "Qui puoi gestire le sale e selezionare quelle esistenti o aggiungerne di nuove quando crei i corsi."
+  },
+  "errors": {
+    "loadingError": "Errore nel caricamento dei corsi",
+    "loadingRoomsError": "Errore nel caricamento delle sale",
+    "savingError": "Errore nel salvataggio",
+    "deletingError": "Errore nell'eliminazione",
+    "addingError": "Errore nell'aggiunta",
+    "courseNotFound": "Corso non trovato",
+    "noDojo": "Errore: Nessun dojo selezionato. Si prega di selezionare un dojo.",
+    "fillRequired": "Si prega di inserire nome gruppo, stile e almeno un istruttore.",
+    "enterFirstLastName": "Si prega di inserire nome e cognome.",
+    "enterGroupName": "Si prega di inserire il nome del gruppo.",
+    "enterStyleName": "Si prega di inserire il nome dello stile.",
+    "enterRoomName": "Si prega di inserire il nome della sala."
+  },
+  "messages": {
+    "saved": "Corso salvato",
+    "deleted": "Corso eliminato",
+    "participantAdded": "Partecipante aggiunto",
+    "participantRemoved": "Partecipante rimosso",
+    "courseAdded": "Corso aggiunto con successo!",
+    "trainerAdded": "Istruttore aggiunto con successo!",
+    "groupAdded": "Gruppo aggiunto con successo!",
+    "styleAdded": "Stile aggiunto con successo!",
+    "roomAdded": "Sala aggiunta con successo!",
+    "confirmDelete": "Vuoi davvero eliminare questo corso?",
+    "movedUp": "spostato su!",
+    "movedDown": "spostato giù!"
+  },
+  "tooltips": {
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "save": "Salva modifiche",
+    "cancel": "Annulla modifica",
+    "editCourse": "Modifica corso",
+    "deleteCourse": "Elimina corso",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù"
+  }
+}

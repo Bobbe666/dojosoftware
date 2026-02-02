@@ -1,0 +1,99 @@
+{
+  "header": {
+    "title": "La Mia Dashboard Dojo",
+    "dashboard": "Dashboard",
+    "support": "Supporto",
+    "wishlist": "Lista Desideri",
+    "logout": "Esci"
+  },
+  "welcome": {
+    "title": "Bentornato",
+    "subtitle": "La tua panoramica personale degli allenamenti"
+  },
+  "stats": {
+    "trainingHours": "Ore di Allenamento",
+    "attendance": "Presenze",
+    "belt": "Cintura",
+    "openFees": "Quote Aperte"
+  },
+  "navigation": {
+    "myData": "I Miei Dati",
+    "mySchedule": "I Miei Appuntamenti",
+    "myPayments": "Le Mie Quote",
+    "myStats": "Le Mie Statistiche",
+    "styleAndBelt": "Stile & Cintura",
+    "equipment": "Attrezzatura",
+    "calendarSync": "Sincronizza Calendario"
+  },
+  "quickActions": {
+    "checkin": "Check-in",
+    "myQrCode": "Il Mio QR Code",
+    "installApp": "Installa App",
+    "events": "Eventi",
+    "notifications": "Notifiche"
+  },
+  "info": {
+    "title": "Le Tue Informazioni",
+    "trainerRecommendation": "Raccomandazione Istruttore",
+    "medicalNotes": "Note Mediche",
+    "nextExam": "Prossimo Esame",
+    "daysRemaining": "giorni rimanenti",
+    "trainingProgress": "Progresso Allenamento",
+    "hoursRemaining": "Ancora",
+    "ready": "Pronto",
+    "clickForDetails": "Clicca \"Stile & Cintura\" per dettagli",
+    "myMartialArtsStyles": "I Miei Stili di Arti Marziali",
+    "lastExam": "Ultimo esame",
+    "familyDiscount": "Sconto Famiglia",
+    "discountText": "Ricevi {{percent}}% di sconto ({{reason}})"
+  },
+  "exams": {
+    "approvedExams": "Esami Approvati",
+    "examTo": "Esame per",
+    "dateWillBeAnnounced": "La data sarà annunciata",
+    "inDays": "Tra {{days}} giorni",
+    "registerNow": "Iscriviti Ora",
+    "participationConfirmed": "Partecipazione confermata",
+    "examResults": "Risultati Esami",
+    "moreExams": "+{{count}} altri esami",
+    "score": "Punteggio"
+  },
+  "examRegistration": {
+    "title": "Iscrizione Esame",
+    "subtitle": "Conferma la tua partecipazione",
+    "martialArtsStyle": "Stile Arte Marziale",
+    "examTo": "Esame per",
+    "dateAndTime": "Data & Ora",
+    "time": "Ora",
+    "location": "Luogo",
+    "examFee": "Quota Esame",
+    "deadline": "Scadenza Iscrizione",
+    "recommendedBeltLength": "Lunghezza Cintura Raccomandata",
+    "remarks": "Note",
+    "conditions": "Condizioni di Partecipazione",
+    "confirmParticipation": "Confermo la mia partecipazione all'esame e accetto le condizioni di partecipazione. Sono consapevole che la quota d'esame è dovuta.",
+    "cancel": "Annulla",
+    "confirmButton": "Conferma Partecipazione",
+    "acceptConditions": "Accetta le condizioni di partecipazione.",
+    "successMessage": "La tua partecipazione è stata confermata con successo!",
+    "errorMessage": "Errore durante l'iscrizione"
+  },
+  "notifications": {
+    "title": "Notifiche Push",
+    "confirm": "Conferma",
+    "confirmedAt": "Confermato il",
+    "justNow": "Adesso",
+    "noNotifications": "Nessuna nuova notifica",
+    "moreNotifications": "+{{count}} altre notifiche",
+    "confirmSuccess": "Notifica confermata!",
+    "confirmError": "Errore nella conferma della notifica"
+  },
+  "birthday": {
+    "title": "Buon Compleanno!",
+    "message": "Buon {{age}}° compleanno! Ti auguriamo una giornata meravigliosa!"
+  },
+  "errors": {
+    "noMemberProfile": "Nessun profilo membro trovato. Contatta l'amministratore.",
+    "loadingError": "Errore nel caricamento dei dati del membro"
+  }
+}

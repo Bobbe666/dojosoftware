@@ -1,0 +1,1 @@
+import{j as e}from"./query-Caj74EYQ.js";const i=()=>e.jsxs("div",{style:{padding:"2rem",maxWidth:"800px",margin:"0 auto"},children:[e.jsx("h1",{children:"Demo"}),e.jsx("p",{children:"Diese Seite ist in Entwicklung."})]});export{i as default};

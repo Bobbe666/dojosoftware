@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DojoSoftware - Wartung</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .maintenance-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .logo svg {
+            width: 60px;
+            height: 60px;
+            fill: white;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #4b5563;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .message strong {
+            color: #1e40af;
+        }
+
+        .spinner-container {
+            margin: 30px 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(30, 64, 175, 0.2);
+            border-top-color: #1e40af;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: #1e40af;
+            font-size: 14px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .reload-button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .reload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+        }
+
+        .reload-button:active {
+            transform: translateY(0);
+        }
+
+        .countdown {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .countdown strong {
+            color: #1e40af;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="maintenance-container">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+            </svg>
+        </div>
+
+        <h1>DojoSoftware wird aktualisiert</h1>
+
+        <div class="message">
+            Wir führen gerade wichtige Updates durch, um Ihnen ein noch besseres Erlebnis zu bieten.
+            <br><br>
+            <strong>Bitte haben Sie einen Moment Geduld.</strong>
+        </div>
+
+        <div class="spinner-container">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="info">
+            <strong>ℹ️ Was können Sie tun?</strong>
+            Die Aktualisierung dauert in der Regel nur wenige Minuten.
+            <br>
+            Laden Sie diese Seite in ca. 2-3 Minuten neu oder klicken Sie auf den Button unten.
+        </div>
+
+        <div class="countdown" id="countdown">
+            Automatischer Neuversuch in <strong id="timer">120</strong> Sekunden
+        </div>
+
+        <button class="reload-button" onclick="location.reload()">
+            🔄 Seite jetzt neu laden
+        </button>
+    </div>
+
+    <script>
+        // Countdown Timer
+        let timeLeft = 120;
+        const timerElement = document.getElementById('timer');
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                location.reload();
+            }
+        }, 1000);
+
+        // Auto-reload nach 2 Minuten
+        setTimeout(() => {
+            location.reload();
+        }, 120000);
+    </script>
+</body>
+</html>

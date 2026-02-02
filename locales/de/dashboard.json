@@ -1,0 +1,183 @@
+{
+  "header": {
+    "title": "Dojo Admin Dashboard",
+    "memberTitle": "Mitglieder Dashboard",
+    "welcome": "Willkommen",
+    "logout": "Logout",
+    "back": "Zurück",
+    "dashboard": "Dashboard",
+    "lightMode": "Hell",
+    "darkMode": "Dunkel"
+  },
+  "tabs": {
+    "checkin": "Check-in Systeme",
+    "mitglieder": "Mitgliederverwaltung",
+    "pruefungswesen": "Prüfungswesen",
+    "events": "Events",
+    "finanzen": "Finanzen",
+    "artikelverwaltung": "Artikelverwaltung",
+    "verwaltung": "Dojo-Verwaltung",
+    "personal": "Personal",
+    "berichte": "Berichte",
+    "einstellungen": "Einstellungen",
+    "schnellaktionen": "Schnellaktionen",
+    "support": "Support",
+    "wunschliste": "Wunschliste",
+    "info": "Info"
+  },
+  "checkin": {
+    "memberCheckin": "Mitglieder Check-in",
+    "memberCheckinDesc": "Touch & QR-Code Check-in für Mitglieder",
+    "attendance": "Anwesenheit",
+    "attendanceDesc": "Anwesenheitsverfolgung und Statistiken",
+    "personalCheckin": "Personal Check-in",
+    "personalCheckinDesc": "Arbeitszeit-Erfassung für Personal",
+    "checkinDisplay": "Check-in Anzeige",
+    "checkinDisplayDesc": "Check-in Display für 2. Monitor",
+    "timetableDisplay": "Stundenplan Anzeige",
+    "timetableDisplayDesc": "Rotierender Stundenplan für 2. Monitor",
+    "cashSales": "Barverkauf",
+    "cashSalesDesc": "Touch-Kasse für Verkäufe und Barzahlungen",
+    "counter": "Tresen-Übersicht",
+    "counterDesc": "Empfang, Checkin & Tagesübersicht"
+  },
+  "mitglieder": {
+    "members": "Mitglieder",
+    "membersDesc": "Verwalten Sie alle Dojo-Mitglieder",
+    "buddyGroups": "Buddy-Gruppen",
+    "buddyGroupsDesc": "Freunde-Einladungen und Gruppenverwaltung",
+    "newsletter": "Newsletter & Benachrichtigungen",
+    "newsletterDesc": "Email-Versand, Push-Nachrichten & Server-Einstellungen",
+    "former": "Ehemalige",
+    "formerDesc": "Ehemalige Mitglieder verwalten",
+    "prospects": "Interessenten",
+    "prospectsDesc": "Potenzielle Mitglieder und Leads"
+  },
+  "verwaltung": {
+    "courses": "Kurse",
+    "coursesDesc": "Kurse und Gruppen verwalten",
+    "timetable": "Stundenplan",
+    "timetableDesc": "Stundenplan und Kurszeiten verwalten",
+    "styleManagement": "Stil-Verwaltung",
+    "styleManagementDesc": "Kampfkunst-Stile, Prüfungen & Techniken",
+    "groups": "Gruppen",
+    "groupsDesc": "Trainingsgruppen verwalten",
+    "locations": "Standorte",
+    "locationsDesc": "Standorte & Filialen verwalten"
+  },
+  "personal": {
+    "trainers": "Trainer",
+    "trainersDesc": "Trainer und Qualifikationen verwalten",
+    "staff": "Personal",
+    "staffDesc": "Mitarbeiter & Personalverwaltung"
+  },
+  "finanzen": {
+    "cockpit": "Finanzcockpit",
+    "cockpitDesc": "Übersicht über alle Finanzkennzahlen",
+    "eur": "EÜR",
+    "eurDesc": "Einnahmen-Überschuss-Rechnung",
+    "expenses": "Ausgaben",
+    "expensesDesc": "Betriebsausgaben erfassen",
+    "fees": "Beiträge",
+    "feesDesc": "Mitgliedsbeiträge und Zahlungen",
+    "invoices": "Rechnungen",
+    "invoicesDesc": "Rechnungen erstellen und verwalten",
+    "directDebit": "Lastschriftlauf",
+    "directDebitDesc": "SEPA-Lastschriften generieren und verwalten",
+    "sepaMandate": "SEPA-Mandate",
+    "sepaMandateDesc": "SEPA-Einzugsermächtigungen verwalten",
+    "dunning": "Mahnwesen",
+    "dunningDesc": "Offene Rechnungen und Mahnungen",
+    "tariffs": "Tarife & Preise",
+    "tariffsDesc": "Mitgliedschaftstarife und Preisgestaltung",
+    "paymentCycles": "Zahlungszyklen",
+    "paymentCyclesDesc": "Automatische Beitragszahlungen verwalten",
+    "paymentSettings": "Zahlungseinstellungen",
+    "paymentSettingsDesc": "Stripe & DATEV Integration",
+    "datevExport": "DATEV Export",
+    "datevExportDesc": "Buchungsdaten für Steuerberater exportieren"
+  },
+  "pruefungswesen": {
+    "conductExam": "Prüfung durchführen",
+    "conductExamDesc": "Live-Ansicht für Prüfungstag - Ergebnisse eintragen",
+    "examsAndDates": "Prüfungen & Termine",
+    "examsAndDatesDesc": "Events, Prüfungen und Termine verwalten",
+    "awards": "Auszeichnungen",
+    "awardsDesc": "Badges vergeben und verwalten"
+  },
+  "artikelverwaltung": {
+    "articleGroups": "Artikelgruppen",
+    "articleGroupsDesc": "Kampfsport-Kategorien und Unterkategorien",
+    "articles": "Artikelverwaltung",
+    "articlesDesc": "Sortiment und Lagerbestände verwalten"
+  },
+  "berichte": {
+    "evaluations": "Auswertungen",
+    "evaluationsDesc": "Statistiken und Berichte erstellen",
+    "reportsAndDocs": "Berichte & Dokumente",
+    "reportsAndDocsDesc": "PDF-Berichte erstellen, ändern & verwalten",
+    "contractDocs": "Vertragsdokumente",
+    "contractDocsDesc": "AGB, Datenschutz & Hausordnung verwalten",
+    "equipment": "Equipment",
+    "equipmentDesc": "Inventar und Ausrüstung verwalten"
+  },
+  "einstellungen": {
+    "dojoManagement": "Dojo-Verwaltung",
+    "dojoManagementDesc": "Dojos verwalten, Design, Theme, Verträge & Steuern",
+    "magiclineImport": "MagicLine Import",
+    "magiclineImportDesc": "Mitglieder & Verträge aus MagicLine importieren",
+    "auditLog": "Audit-Log",
+    "auditLogDesc": "Alle Änderungen nachverfolgen - Wer hat wann was geändert?",
+    "webhooks": "Webhooks & Zapier",
+    "webhooksDesc": "Automatisierungen mit externen Services",
+    "integrations": "Integrationen",
+    "integrationsDesc": "PayPal, LexOffice, DATEV konfigurieren",
+    "calendarSync": "Kalender-Synchronisation",
+    "calendarSyncDesc": "iCal-Links für Google, Outlook, Apple"
+  },
+  "events": {
+    "manageEvents": "Events verwalten",
+    "manageEventsDesc": "Veranstaltungen, Wettkämpfe und besondere Termine"
+  },
+  "quickActions": {
+    "title": "Schnellaktionen",
+    "newMember": "Neues Mitglied",
+    "newStyle": "Neuen Stil anlegen",
+    "recordAttendance": "Anwesenheit erfassen",
+    "manageExam": "Prüfung verwalten",
+    "createBuddyGroup": "Buddy-Gruppe erstellen",
+    "newTariff": "Neuen Tarif anlegen",
+    "addArticle": "Artikel hinzufügen",
+    "cashSales": "Barverkauf",
+    "paymentSettings": "Zahlungseinstellungen",
+    "refreshStats": "Statistiken aktualisieren",
+    "loading": "Lädt..."
+  },
+  "info": {
+    "title": "System & Status",
+    "dojoStats": "Dojo Statistiken",
+    "members": "Mitglieder",
+    "courses": "Kurse",
+    "trainers": "Trainer",
+    "checkinsToday": "Check-ins heute",
+    "system": "System",
+    "version": "Version",
+    "build": "Build",
+    "developer": "Entwickler",
+    "support": "Support",
+    "quickAccess": "Schnellzugriff",
+    "dojoSettings": "Dojo-Einstellungen",
+    "editAgb": "AGB & Datenschutz bearbeiten"
+  },
+  "badges": {
+    "new": "NEU",
+    "live": "LIVE",
+    "auto": "AUTO",
+    "design": "DESIGN",
+    "import": "IMPORT"
+  },
+  "errors": {
+    "loadingStats": "Fehler beim Laden der Statistiken",
+    "retry": "Erneut versuchen"
+  }
+}

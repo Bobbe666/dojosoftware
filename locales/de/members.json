@@ -1,0 +1,118 @@
+{
+  "list": {
+    "title": "Mitgliederübersicht",
+    "subtitle": "Alle aktiven Mitglieder verwalten",
+    "searchPlaceholder": "Suchen...",
+    "noMembers": "Keine Mitglieder gefunden",
+    "addMember": "Neues Mitglied anlegen",
+    "printList": "Mitgliederliste drucken",
+    "bulkArchive": "Mehrfach archivieren",
+    "endSelection": "Auswahl beenden",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen",
+    "selectedCount": "{{count}} ausgewählt",
+    "columns": {
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "memberNumber": "Mitglieds-Nr.",
+      "status": "Status",
+      "entryDate": "Eintritt",
+      "course": "Kurs",
+      "belt": "Gürtel",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "cancelled": "Gekündigt",
+      "paused": "Pausiert"
+    },
+    "filters": {
+      "all": "Alle",
+      "active": "Aktive",
+      "inactive": "Inaktive",
+      "trial": "Probetraining",
+      "allStyles": "Alle Stile",
+      "noStyle": "Ohne Stil",
+      "age": "Alter",
+      "allBelts": "Alle Gurte"
+    }
+  },
+  "detail": {
+    "title": "Mitglied bearbeiten",
+    "tabs": {
+      "personal": "Persönliche Daten",
+      "contact": "Kontakt",
+      "contract": "Vertrag",
+      "training": "Training",
+      "payments": "Zahlungen",
+      "documents": "Dokumente",
+      "notes": "Notizen"
+    },
+    "fields": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "mobile": "Mobil",
+      "birthDate": "Geburtsdatum",
+      "gender": "Geschlecht",
+      "street": "Straße",
+      "houseNumber": "Hausnummer",
+      "zip": "PLZ",
+      "city": "Ort",
+      "country": "Land",
+      "memberNumber": "Mitgliedsnummer",
+      "entryDate": "Eintrittsdatum",
+      "exitDate": "Austrittsdatum"
+    },
+    "gender": {
+      "male": "Männlich",
+      "female": "Weiblich",
+      "diverse": "Divers"
+    }
+  },
+  "create": {
+    "title": "Neues Mitglied anlegen",
+    "subtitle": "Erfassen Sie die Daten des neuen Mitglieds",
+    "steps": {
+      "personal": "Persönliche Daten",
+      "contact": "Kontaktdaten",
+      "contract": "Vertrag",
+      "summary": "Zusammenfassung"
+    },
+    "success": "Mitglied erfolgreich angelegt",
+    "error": "Fehler beim Anlegen des Mitglieds"
+  },
+  "former": {
+    "title": "Ehemalige Mitglieder",
+    "subtitle": "Gekündigte und ausgetretene Mitglieder",
+    "reactivate": "Reaktivieren",
+    "delete": "Endgültig löschen",
+    "confirmDelete": "Möchten Sie dieses Mitglied wirklich endgültig löschen?",
+    "exitReason": "Austrittsgrund"
+  },
+  "prospects": {
+    "title": "Interessenten",
+    "subtitle": "Potenzielle neue Mitglieder",
+    "convert": "In Mitglied umwandeln",
+    "source": "Quelle",
+    "notes": "Notizen",
+    "contacted": "Kontaktiert",
+    "trialBooked": "Probetraining gebucht"
+  },
+  "errors": {
+    "loadingError": "Fehler beim Laden der Mitglieder",
+    "savingError": "Fehler beim Speichern",
+    "deletingError": "Fehler beim Löschen",
+    "notFound": "Mitglied nicht gefunden",
+    "emailExists": "E-Mail-Adresse bereits vergeben"
+  },
+  "messages": {
+    "saved": "Mitglied gespeichert",
+    "deleted": "Mitglied gelöscht",
+    "reactivated": "Mitglied reaktiviert",
+    "confirmCancel": "Änderungen verwerfen?"
+  }
+}

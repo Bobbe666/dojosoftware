@@ -1,0 +1,99 @@
+{
+  "header": {
+    "title": "Mein Dojo Dashboard",
+    "dashboard": "Dashboard",
+    "support": "Support",
+    "wishlist": "Wunschliste",
+    "logout": "Logout"
+  },
+  "welcome": {
+    "title": "Willkommen zurück",
+    "subtitle": "Deine persönliche Trainingsübersicht"
+  },
+  "stats": {
+    "trainingHours": "Trainingsstunden",
+    "attendance": "Anwesenheit",
+    "belt": "Gürtel",
+    "openFees": "Offene Beiträge"
+  },
+  "navigation": {
+    "myData": "Meine Daten",
+    "mySchedule": "Meine Termine",
+    "myPayments": "Meine Beiträge",
+    "myStats": "Meine Statistiken",
+    "styleAndBelt": "Stil & Gurt",
+    "equipment": "Equipment",
+    "calendarSync": "Kalender-Sync"
+  },
+  "quickActions": {
+    "checkin": "Check-in",
+    "myQrCode": "Mein QR-Code",
+    "installApp": "App installieren",
+    "events": "Events",
+    "notifications": "Benachrichtigungen"
+  },
+  "info": {
+    "title": "Deine Informationen",
+    "trainerRecommendation": "Trainer-Empfehlung",
+    "medicalNotes": "Medizinische Hinweise",
+    "nextExam": "Nächste Prüfung",
+    "daysRemaining": "Tage verbleiben",
+    "trainingProgress": "Trainingsfortschritt",
+    "hoursRemaining": "Noch",
+    "ready": "Bereit",
+    "clickForDetails": "Klicke auf \"Stil & Gurt\" für Details",
+    "myMartialArtsStyles": "Meine Kampfkunst-Stile",
+    "lastExam": "Letzte Prüfung",
+    "familyDiscount": "Familienrabatt",
+    "discountText": "Du erhältst {{percent}}% Rabatt ({{reason}})"
+  },
+  "exams": {
+    "approvedExams": "Zugelassene Prüfungen",
+    "examTo": "Prüfung zum",
+    "dateWillBeAnnounced": "Termin wird noch bekanntgegeben",
+    "inDays": "In {{days}} Tagen",
+    "registerNow": "Jetzt Anmelden",
+    "participationConfirmed": "Teilnahme bestätigt",
+    "examResults": "Prüfungsergebnisse",
+    "moreExams": "+{{count}} weitere Prüfungen",
+    "score": "Punktzahl"
+  },
+  "examRegistration": {
+    "title": "Prüfungsanmeldung",
+    "subtitle": "Bestätige deine Teilnahme",
+    "martialArtsStyle": "Kampfkunst-Stil",
+    "examTo": "Prüfung zum",
+    "dateAndTime": "Datum & Uhrzeit",
+    "time": "Uhrzeit",
+    "location": "Ort",
+    "examFee": "Prüfungsgebühr",
+    "deadline": "Anmeldefrist",
+    "recommendedBeltLength": "Empfohlene Gurtlänge",
+    "remarks": "Bemerkungen",
+    "conditions": "Teilnahmebedingungen",
+    "confirmParticipation": "Ich bestätige hiermit meine Teilnahme an der Prüfung und akzeptiere die Teilnahmebedingungen. Mir ist bewusst, dass die Prüfungsgebühr fällig wird.",
+    "cancel": "Abbrechen",
+    "confirmButton": "Teilnahme bestätigen",
+    "acceptConditions": "Bitte akzeptiere die Teilnahmebedingungen.",
+    "successMessage": "Deine Teilnahme wurde erfolgreich bestätigt!",
+    "errorMessage": "Fehler bei der Anmeldung"
+  },
+  "notifications": {
+    "title": "Push-Benachrichtigungen",
+    "confirm": "Bestätigen",
+    "confirmedAt": "Bestätigt am",
+    "justNow": "Gerade eben",
+    "noNotifications": "Keine neuen Benachrichtigungen",
+    "moreNotifications": "+{{count}} weitere Benachrichtigungen",
+    "confirmSuccess": "Benachrichtigung bestätigt!",
+    "confirmError": "Fehler beim Bestätigen der Benachrichtigung"
+  },
+  "birthday": {
+    "title": "Herzlichen Glückwunsch!",
+    "message": "Alles Gute zum {{age}}. Geburtstag! Wir wünschen dir einen wundervollen Tag!"
+  },
+  "errors": {
+    "noMemberProfile": "Kein Mitgliedsprofil gefunden. Bitte kontaktieren Sie den Administrator.",
+    "loadingError": "Fehler beim Laden der Mitgliederdaten"
+  }
+}

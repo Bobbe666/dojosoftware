@@ -1,0 +1,231 @@
+{
+  "invoices": {
+    "title": "Invoices",
+    "subtitle": "Manage all invoices",
+    "create": "New Invoice",
+    "edit": "Edit Invoice",
+    "view": "View Invoice",
+    "columns": {
+      "invoiceNumber": "Invoice No.",
+      "date": "Date",
+      "dueDate": "Due Date",
+      "member": "Member",
+      "amount": "Amount",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "open": "Open",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "partiallyPaid": "Partially Paid",
+      "cancelled": "Cancelled"
+    },
+    "filters": {
+      "all": "All Invoices",
+      "open": "Open",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "archive": "Archive"
+    },
+    "searchPlaceholder": "Search by invoice number, member or description...",
+    "noInvoices": "No invoices found",
+    "emptyStates": {
+      "all": "No invoices have been created yet.",
+      "open": "No open invoices available.",
+      "paid": "No paid invoices available.",
+      "overdue": "No overdue invoices available.",
+      "archive": "No archived invoices available."
+    },
+    "types": {
+      "membershipFee": "Membership Fee",
+      "examFee": "Exam Fee",
+      "courseFee": "Course Fee",
+      "equipment": "Equipment",
+      "other": "Other"
+    },
+    "details": "Invoice Details",
+    "tabs": {
+      "details": "Details",
+      "positions": "Items",
+      "payments": "Payments"
+    },
+    "positionsTable": {
+      "position": "Pos.",
+      "description": "Description",
+      "quantity": "Qty",
+      "unitPrice": "Unit Price",
+      "total": "Total",
+      "noPositions": "No items available"
+    },
+    "paymentsTable": {
+      "title": "Payment History",
+      "date": "Date",
+      "amount": "Amount",
+      "method": "Method",
+      "note": "Note",
+      "noPayments": "No payments available"
+    },
+    "confirmArchive": "Archive invoice?",
+    "confirmUnarchive": "Restore from archive?",
+    "confirmDelete": "Really delete invoice? This cannot be undone!",
+    "archived": "Invoice archived",
+    "unarchived": "Archive restored",
+    "deleted": "Invoice deleted",
+    "tooltips": {
+      "viewDetails": "View details",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete"
+    },
+    "form": {
+      "selectMember": "Select Member",
+      "invoiceDate": "Invoice Date",
+      "dueDate": "Due Date",
+      "items": "Items",
+      "addItem": "Add Item",
+      "description": "Description",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "tax": "VAT",
+      "totalAmount": "Total Amount"
+    },
+    "actions": {
+      "markPaid": "Mark as Paid",
+      "sendEmail": "Send by Email",
+      "download": "Download PDF",
+      "cancel": "Cancel",
+      "duplicate": "Duplicate"
+    }
+  },
+  "fees": {
+    "title": "Fees",
+    "subtitle": "Manage membership fees",
+    "columns": {
+      "member": "Member",
+      "tariff": "Tariff",
+      "amount": "Amount",
+      "period": "Period",
+      "dueDate": "Due Date",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    },
+    "createBatch": "Generate Fees"
+  },
+  "directDebit": {
+    "title": "Direct Debit",
+    "subtitle": "Manage SEPA direct debits",
+    "createRun": "Create New Debit Run",
+    "runDate": "Collection Date",
+    "totalAmount": "Total Amount",
+    "transactions": "Transactions",
+    "status": {
+      "pending": "Prepared",
+      "submitted": "Submitted",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "export": "Export SEPA XML"
+  },
+  "sepa": {
+    "title": "SEPA Mandates",
+    "subtitle": "Manage direct debit authorizations",
+    "columns": {
+      "mandateId": "Mandate Reference",
+      "member": "Member",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "signatureDate": "Signature Date",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "create": "Create New Mandate",
+    "revoke": "Revoke Mandate"
+  },
+  "dunning": {
+    "title": "Dunning",
+    "subtitle": "Manage outstanding claims",
+    "levels": {
+      "reminder": "Payment Reminder",
+      "dunning1": "1st Reminder",
+      "dunning2": "2nd Reminder",
+      "dunning3": "3rd Reminder"
+    },
+    "sendReminder": "Send Reminder",
+    "daysOverdue": "Days Overdue"
+  },
+  "tariffs": {
+    "title": "Tariffs & Pricing",
+    "subtitle": "Manage membership tariffs",
+    "create": "Create New Tariff",
+    "columns": {
+      "name": "Name",
+      "price": "Price",
+      "interval": "Interval",
+      "members": "Members"
+    },
+    "intervals": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "halfYearly": "Half-Yearly",
+      "yearly": "Yearly",
+      "oneTime": "One-Time"
+    }
+  },
+  "expenses": {
+    "title": "Expenses",
+    "subtitle": "Record business expenses",
+    "create": "Add Expense",
+    "columns": {
+      "date": "Date",
+      "category": "Category",
+      "description": "Description",
+      "amount": "Amount",
+      "receipt": "Receipt"
+    },
+    "categories": {
+      "rent": "Rent",
+      "utilities": "Utilities",
+      "equipment": "Equipment",
+      "marketing": "Marketing",
+      "insurance": "Insurance",
+      "other": "Other"
+    }
+  },
+  "cockpit": {
+    "title": "Finance Cockpit",
+    "subtitle": "Overview of all financial metrics",
+    "revenue": "Revenue",
+    "expenses": "Expenses",
+    "profit": "Profit",
+    "totalInvoices": "Total Invoices",
+    "openInvoices": "Open Invoices",
+    "paidInvoices": "Paid Invoices",
+    "overdueInvoices": "Overdue Invoices",
+    "overdueAmount": "Overdue Amounts",
+    "thisMonth": "This Month",
+    "thisYear": "This Year",
+    "compared": "Compared to Last Year"
+  },
+  "errors": {
+    "loadingError": "Error loading financial data",
+    "savingError": "Error saving",
+    "invoiceNotFound": "Invoice not found",
+    "paymentFailed": "Payment failed"
+  },
+  "messages": {
+    "invoiceSaved": "Invoice saved",
+    "invoiceSent": "Invoice sent",
+    "paymentRecorded": "Payment recorded"
+  }
+}
