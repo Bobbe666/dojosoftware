@@ -183,7 +183,7 @@ router.get('/:id(\\d+)', async (req, res) => {
 
     // Historie laden
     const historie = await queryAsync(
-      `SELECT * FROM verband_vertragshistorie WHERE verbandsmitgliedschaft_id = ? ORDER BY erstellt_am DESC`,
+      `SELECT * FROM verband_vertragshistorie WHERE verbandsmitgliedschaft_id = ? ORDER BY created_at DESC`,
       [req.params.id]
     );
 
