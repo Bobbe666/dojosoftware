@@ -18,6 +18,60 @@ const { requireFeature } = require('../middleware/featureAccess');
 router.use(authenticateToken);
 
 // ============================================================================
+// SICHERHEITS-HELPER: Tenant-Isolation erzwingen
+// ============================================================================
+
+/**
+ * Prüft ob User SuperAdmin ist (darf alles sehen)
+ */
+const isSuperAdmin = (user) => {
+  return user.rolle === 'super_admin' ||
+         user.role === 'super_admin' ||
+         (user.dojo_id === 2 || user.dojo_id === '2');
+};
+
+/**
+ * Erzwingt dojo_id Filter für normale User
+ * SuperAdmins können alle Events sehen
+ */
+const enforceDojo = (req) => {
+  if (isSuperAdmin(req.user)) {
+    return req.query.dojo_id || null; // SuperAdmin kann filtern oder alle sehen
+  }
+  return req.user.dojo_id; // Normale User: nur eigenes Dojo
+};
+
+/**
+ * Prüft ob User Zugriff auf ein bestimmtes Event hat
+ */
+const canAccessEvent = async (user, eventDojoId) => {
+  if (isSuperAdmin(user)) return true;
+  return user.dojo_id == eventDojoId;
+};
+
+/**
+ * Prüft ob User Zugriff auf Mitglied-Daten hat
+ */
+const canAccessMember = async (user, mitgliedId) => {
+  if (isSuperAdmin(user)) return true;
+
+  // Prüfe ob Mitglied zum gleichen Dojo gehört
+  return new Promise((resolve) => {
+    db.query(
+      'SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?',
+      [mitgliedId],
+      (err, results) => {
+        if (err || results.length === 0) {
+          resolve(false);
+        } else {
+          resolve(user.dojo_id == results[0].dojo_id);
+        }
+      }
+    );
+  });
+};
+
+// ============================================================================
 // HILFSFUNKTIONEN
 // ============================================================================
 
@@ -59,9 +113,13 @@ function getAvailableSlots(event, anmeldungen) {
  * GET /api/events
  * Holt alle Events (mit optionalem Dojo-Filter)
  * ADMIN-ROUTE: Feature-Flag erforderlich
+ * SICHERHEIT: dojo_id wird erzwungen für normale User
  */
 router.get('/', requireFeature('events'), (req, res) => {
-  const { dojo_id, status, upcoming } = req.query;
+  const { status, upcoming } = req.query;
+
+  // SICHERHEIT: dojo_id erzwingen für normale User
+  const effectiveDojoId = enforceDojo(req);
 
   let query = `
     SELECT
@@ -79,9 +137,11 @@ router.get('/', requireFeature('events'), (req, res) => {
 
   const params = [];
 
-  if (dojo_id) {
+  // SICHERHEIT: Immer nach dojo_id filtern wenn vorhanden
+  if (effectiveDojoId) {
     query += ' AND e.dojo_id = ?';
-    params.push(dojo_id);
+    params.push(effectiveDojoId);
+    logger.debug('Events: dojo_id Filter erzwungen', { user_id: req.user.id, dojo_id: effectiveDojoId });
   }
 
   if (status) {
@@ -122,8 +182,9 @@ router.get('/', requireFeature('events'), (req, res) => {
 /**
  * GET /api/events/:id
  * Holt ein einzelnes Event mit Details
+ * SICHERHEIT: Prüft ob User Zugriff auf das Event-Dojo hat
  */
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const eventId = req.params.id;
 
   const query = `
@@ -141,7 +202,7 @@ router.get('/:id', (req, res) => {
     GROUP BY e.event_id
   `;
 
-  db.query(query, [eventId], (err, results) => {
+  db.query(query, [eventId], async (err, results) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Events:', { error: err });
       return res.status(500).json({
@@ -155,6 +216,19 @@ router.get('/:id', (req, res) => {
     }
 
     const event = results[0];
+
+    // SICHERHEIT: Prüfe ob User Zugriff auf dieses Event hat
+    const hasAccess = await canAccessEvent(req.user, event.dojo_id);
+    if (!hasAccess) {
+      logger.warn('Events: Zugriff verweigert auf Event', {
+        user_id: req.user.id,
+        user_dojo_id: req.user.dojo_id,
+        event_id: eventId,
+        event_dojo_id: event.dojo_id
+      });
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Event' });
+    }
+
     event.verfuegbare_plaetze = event.max_teilnehmer
       ? event.max_teilnehmer - event.anzahl_anmeldungen
       : null;
@@ -169,9 +243,30 @@ router.get('/:id', (req, res) => {
 /**
  * GET /api/events/:id/anmeldungen
  * Holt alle Anmeldungen für ein Event
+ * SICHERHEIT: Nur für Events des eigenen Dojos
  */
-router.get('/:id/anmeldungen', (req, res) => {
+router.get('/:id/anmeldungen', async (req, res) => {
   const eventId = req.params.id;
+
+  // SICHERHEIT: Erst prüfen ob User Zugriff auf das Event hat
+  const [eventCheck] = await db.promise().query(
+    'SELECT dojo_id FROM events WHERE event_id = ?',
+    [eventId]
+  );
+
+  if (eventCheck.length === 0) {
+    return res.status(404).json({ error: 'Event nicht gefunden' });
+  }
+
+  const hasAccess = await canAccessEvent(req.user, eventCheck[0].dojo_id);
+  if (!hasAccess) {
+    logger.warn('Events: Zugriff auf Anmeldungen verweigert', {
+      user_id: req.user.id,
+      user_dojo_id: req.user.dojo_id,
+      event_id: eventId
+    });
+    return res.status(403).json({ error: 'Keine Berechtigung für dieses Event' });
+  }
 
   const query = `
     SELECT
@@ -202,9 +297,24 @@ router.get('/:id/anmeldungen', (req, res) => {
 /**
  * GET /api/events/mitglied/:mitglied_id
  * Holt alle Events eines Mitglieds
+ * SICHERHEIT: Nur für Mitglieder des eigenen Dojos oder eigenes Mitglied
  */
-router.get('/mitglied/:mitglied_id', (req, res) => {
+router.get('/mitglied/:mitglied_id', async (req, res) => {
   const mitgliedId = req.params.mitglied_id;
+
+  // SICHERHEIT: Prüfe ob User Zugriff auf dieses Mitglied hat
+  const hasAccess = await canAccessMember(req.user, mitgliedId);
+  if (!hasAccess) {
+    // Prüfe ob es das eigene Mitglied ist (Member-Login)
+    if (req.user.mitglied_id != mitgliedId) {
+      logger.warn('Events: Zugriff auf Mitglied-Events verweigert', {
+        user_id: req.user.id,
+        user_mitglied_id: req.user.mitglied_id,
+        requested_mitglied_id: mitgliedId
+      });
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Mitglied' });
+    }
+  }
 
   const query = `
     SELECT
@@ -244,9 +354,30 @@ router.get('/mitglied/:mitglied_id', (req, res) => {
  * POST /api/events
  * Erstellt ein neues Event
  * ADMIN-ROUTE: Feature-Flag erforderlich
+ * SICHERHEIT: dojo_id wird erzwungen für normale User
  */
 router.post('/', requireFeature('events'), (req, res) => {
   const eventData = req.body;
+
+  // SICHERHEIT: dojo_id erzwingen - normale User können nur für ihr Dojo erstellen
+  let effectiveDojoId;
+  if (isSuperAdmin(req.user)) {
+    // SuperAdmin kann dojo_id aus Request verwenden
+    effectiveDojoId = eventData.dojo_id;
+  } else {
+    // Normale User: immer eigenes Dojo verwenden
+    effectiveDojoId = req.user.dojo_id;
+    if (eventData.dojo_id && eventData.dojo_id != req.user.dojo_id) {
+      logger.warn('Events: dojo_id Manipulation verhindert', {
+        user_id: req.user.id,
+        user_dojo_id: req.user.dojo_id,
+        requested_dojo_id: eventData.dojo_id
+      });
+    }
+  }
+
+  // dojo_id für Validierung setzen
+  eventData.dojo_id = effectiveDojoId;
 
   // Validierung
   const errors = validateEventData(eventData);
@@ -279,7 +410,7 @@ router.post('/', requireFeature('events'), (req, res) => {
     eventData.anmeldefrist || null,
     eventData.status || 'geplant',
     eventData.trainer_ids ? eventData.trainer_ids.join(',') : null,
-    eventData.dojo_id,
+    effectiveDojoId, // SICHERHEIT: Erzwungene dojo_id
     eventData.bild_url || null,
     eventData.anforderungen || null
   ];

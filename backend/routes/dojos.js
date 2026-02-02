@@ -41,10 +41,11 @@ router.get('/', async (req, res) => {
     let queryParams = [];
 
     // Filter für zentral verwaltete Dojos (ohne separate Tenants)
+    // WICHTIG: TDA International (id=2) immer einschließen, auch wenn es Admin-User hat
     if (filter === 'managed') {
-      whereClause += ` AND d.id NOT IN (
-        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
-      )`;
+      whereClause += ` AND (d.id = 2 OR d.id NOT IN (
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2
+      ))`;
     }
 
     if (assignedDojoIds && assignedDojoIds.length > 0) {

@@ -2,11 +2,14 @@
  * Verband-Rechnungen Routes
  * Rechnungserstellung für TDA International
  * - Empfänger: Verbandsmitglieder, DojoSoftware-Nutzer
+ *
+ * SICHERHEIT: Nur für TDA-Admins (dojo_id=2) oder SuperAdmins zugänglich!
  */
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
+const { authenticateToken } = require('../middleware/auth');
 
 // Promise-basierte Query-Funktion
 const queryAsync = (query, params = []) => {
@@ -17,6 +20,55 @@ const queryAsync = (query, params = []) => {
     });
   });
 };
+
+// ============================================================================
+// SICHERHEITS-MIDDLEWARE: Nur TDA-Admins (dojo_id=2) oder SuperAdmins
+// ============================================================================
+const requireTDAAdmin = (req, res, next) => {
+  const user = req.user;
+
+  if (!user) {
+    logger.warn('Verband-Rechnungen: Zugriff ohne Authentifizierung verweigert', {
+      ip: req.ip,
+      path: req.path
+    });
+    return res.status(401).json({ error: 'Nicht authentifiziert' });
+  }
+
+  // Erlaubt: SuperAdmin (rolle) oder TDA-Admin (dojo_id=2)
+  const isSuperAdmin = user.rolle === 'super_admin' || user.role === 'super_admin';
+  const isTDAAdmin = user.dojo_id === 2 || user.dojo_id === '2';
+
+  if (!isSuperAdmin && !isTDAAdmin) {
+    logger.warn('Verband-Rechnungen: Zugriff verweigert - keine Berechtigung', {
+      user_id: user.id || user.admin_id,
+      username: user.username,
+      rolle: user.rolle || user.role,
+      dojo_id: user.dojo_id,
+      path: req.path
+    });
+    return res.status(403).json({
+      error: 'Keine Berechtigung',
+      message: 'Nur TDA-Administratoren können auf Verbandsrechnungen zugreifen'
+    });
+  }
+
+  // Zugriff erlaubt - loggen
+  logger.info('Verband-Rechnungen: Zugriff erlaubt', {
+    user_id: user.id || user.admin_id,
+    username: user.username,
+    isSuperAdmin,
+    isTDAAdmin,
+    path: req.path,
+    method: req.method
+  });
+
+  next();
+};
+
+// Alle Routen erfordern Authentifizierung + TDA-Admin
+router.use(authenticateToken);
+router.use(requireTDAAdmin);
 
 // ============================================================================
 // EMPFÄNGER LADEN (Verbandsmitglieder + DojoSoftware-Nutzer)

@@ -219,6 +219,7 @@ router.post('/register', async (req, res) => {
  * Login für Verbandsmitglieder
  */
 router.post('/login', async (req, res) => {
+  console.log('>>> LOGIN AUFGERUFEN <<<', req.body?.email);
   try {
     const { email, passwort } = req.body;
 
@@ -226,12 +227,40 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: ERROR_MESSAGES.AUTH.EMAIL_PASSWORD_REQUIRED });
     }
 
-    // Mitglied suchen
+    // Mitglied suchen - COALESCE für verknüpfte Dojos
+    // Explizite Feldliste um Überschreibung durch vm.* zu vermeiden
     const members = await queryAsync(
-      `SELECT * FROM verbandsmitgliedschaften
-       WHERE person_email = ? OR dojo_email = ?`,
-      [email, email]
+      `SELECT
+        vm.id, vm.typ, vm.dojo_id, vm.mitglied_id, vm.mitgliedsnummer,
+        vm.person_vorname, vm.person_nachname, vm.person_email,
+        vm.person_telefon, vm.person_strasse, vm.person_plz, vm.person_ort,
+        vm.person_land, vm.person_geburtsdatum, vm.person_firma, vm.person_position,
+        vm.status, vm.jahresbeitrag, vm.gueltig_von, vm.gueltig_bis,
+        vm.zahlungsart, vm.beitragsfrei, vm.agb_akzeptiert, vm.dsgvo_akzeptiert,
+        vm.widerrufsrecht_akzeptiert, vm.unterschrift_digital, vm.unterschrift_datum,
+        vm.passwort_hash, vm.email_verified, vm.last_login, vm.notizen,
+        vm.created_at, vm.updated_at, vm.dojo_mitglieder_anzahl,
+        COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
+        COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
+        COALESCE(d.email, vm.dojo_email) as dojo_email,
+        COALESCE(d.strasse, vm.dojo_strasse) as dojo_strasse,
+        COALESCE(d.plz, vm.dojo_plz) as dojo_plz,
+        COALESCE(d.telefon, vm.dojo_telefon) as dojo_telefon,
+        COALESCE(d.internet, vm.dojo_website) as dojo_website,
+        COALESCE(d.inhaber, vm.dojo_inhaber) as dojo_inhaber,
+        COALESCE(d.land, vm.dojo_land) as dojo_land
+      FROM verbandsmitgliedschaften vm
+      LEFT JOIN dojo d ON vm.dojo_id = d.id
+      WHERE vm.person_email = ? OR vm.dojo_email = ? OR d.email = ?`,
+      [email, email, email]
     );
+
+    // DEBUG
+    logger.info('Login Query Result:', {
+      email,
+      foundMembers: members.length,
+      firstMember: members[0] ? { id: members[0].id, dojo_name: members[0].dojo_name, typ: members[0].typ } : null
+    });
 
     if (members.length === 0) {
       return res.status(401).json({ error: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS });
@@ -268,20 +297,25 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Sensible Daten entfernen
+    delete member.passwort_hash;
+    delete member.verification_token;
+    delete member.reset_token;
+    delete member.reset_token_expires;
+
+    // DEBUG: Log member data
+    logger.info('Login erfolgreich - Member Daten:', {
+      id: member.id,
+      typ: member.typ,
+      dojo_name: member.dojo_name,
+      dojo_id: member.dojo_id,
+      person_vorname: member.person_vorname
+    });
+
     res.json({
       success: true,
       token,
-      member: {
-        id: member.id,
-        typ: member.typ,
-        mitgliedsnummer: member.mitgliedsnummer,
-        status: member.status,
-        gueltig_bis: member.gueltig_bis,
-        name: member.typ === 'dojo'
-          ? member.dojo_name
-          : `${member.person_vorname} ${member.person_nachname}`,
-        email: member.person_email || member.dojo_email
-      }
+      member
     });
 
   } catch (error) {
@@ -439,8 +473,31 @@ const verifyVerbandToken = (req, res, next) => {
  */
 router.get('/me', verifyVerbandToken, async (req, res) => {
   try {
+    // COALESCE: Bei verknüpften Dojos die Daten aus der dojo-Tabelle laden
+    // Explizite Feldliste um Überschreibung durch vm.* zu vermeiden
     const members = await queryAsync(
-      `SELECT * FROM verbandsmitgliedschaften WHERE id = ?`,
+      `SELECT
+        vm.id, vm.typ, vm.dojo_id, vm.mitglied_id, vm.mitgliedsnummer,
+        vm.person_vorname, vm.person_nachname, vm.person_email,
+        vm.person_telefon, vm.person_strasse, vm.person_plz, vm.person_ort,
+        vm.person_land, vm.person_geburtsdatum, vm.person_firma, vm.person_position,
+        vm.status, vm.jahresbeitrag, vm.gueltig_von, vm.gueltig_bis,
+        vm.zahlungsart, vm.beitragsfrei, vm.agb_akzeptiert, vm.dsgvo_akzeptiert,
+        vm.widerrufsrecht_akzeptiert, vm.unterschrift_digital, vm.unterschrift_datum,
+        vm.email_verified, vm.last_login, vm.notizen,
+        vm.created_at, vm.updated_at, vm.dojo_mitglieder_anzahl,
+        COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
+        COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
+        COALESCE(d.email, vm.dojo_email) as dojo_email,
+        COALESCE(d.strasse, vm.dojo_strasse) as dojo_strasse,
+        COALESCE(d.plz, vm.dojo_plz) as dojo_plz,
+        COALESCE(d.telefon, vm.dojo_telefon) as dojo_telefon,
+        COALESCE(d.internet, vm.dojo_website) as dojo_website,
+        COALESCE(d.inhaber, vm.dojo_inhaber) as dojo_inhaber,
+        COALESCE(d.land, vm.dojo_land) as dojo_land
+      FROM verbandsmitgliedschaften vm
+      LEFT JOIN dojo d ON vm.dojo_id = d.id
+      WHERE vm.id = ?`,
       [req.verbandUser.id]
     );
 
@@ -471,8 +528,9 @@ router.get('/me', verifyVerbandToken, async (req, res) => {
 router.put('/me', verifyVerbandToken, async (req, res) => {
   try {
     const allowedFields = [
-      'person_vorname', 'person_nachname', 'person_telefon',
+      'person_vorname', 'person_nachname', 'person_email', 'person_telefon',
       'person_strasse', 'person_plz', 'person_ort', 'person_land',
+      'dojo_name', 'dojo_strasse', 'dojo_plz', 'dojo_ort', 'dojo_land',
       'dojo_telefon', 'dojo_website', 'dojo_mitglieder_anzahl',
       'newsletter', 'kommunikation_email', 'kommunikation_post'
     ];
@@ -569,6 +627,210 @@ router.get('/invoices', verifyVerbandToken, async (req, res) => {
   } catch (error) {
     logger.error('Invoices-Fehler:', error);
     res.status(500).json({ error: ERROR_MESSAGES.GENERAL.LOADING_ERROR });
+  }
+});
+
+// ============================================================================
+// DOJOSOFTWARE LINKING
+// ============================================================================
+
+/**
+ * GET /api/verband-auth/dojosoftware-status
+ * Prüft ob das Verbandsmitglied einen DojoSoftware-Account hat
+ */
+router.get('/dojosoftware-status', verifyVerbandToken, async (req, res) => {
+  try {
+    // Verbandsmitglied-Daten holen
+    const members = await queryAsync(
+      `SELECT id, typ, dojo_id, person_email, dojo_email FROM verbandsmitgliedschaften WHERE id = ?`,
+      [req.verbandUser.id]
+    );
+
+    if (members.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const member = members[0];
+    const email = member.person_email || member.dojo_email;
+
+    // Fall 1: Bereits mit einem Dojo verknüpft
+    if (member.dojo_id) {
+      const dojos = await queryAsync(
+        `SELECT id, dojoname, subdomain FROM dojo WHERE id = ?`,
+        [member.dojo_id]
+      );
+
+      if (dojos.length > 0) {
+        return res.json({
+          success: true,
+          status: 'linked',
+          dojo: {
+            id: dojos[0].id,
+            name: dojos[0].dojoname,
+            subdomain: dojos[0].subdomain
+          },
+          email,
+          loginUrl: 'https://dojo.tda-intl.org/login'
+        });
+      }
+    }
+
+    // Fall 2: Prüfen ob gleiche Email in admin_users existiert
+    const adminUsers = await queryAsync(
+      `SELECT au.id, au.email, au.dojo_id, d.dojoname, d.subdomain
+       FROM admin_users au
+       LEFT JOIN dojo d ON au.dojo_id = d.id
+       WHERE au.email = ? AND au.aktiv = 1`,
+      [email]
+    );
+
+    if (adminUsers.length > 0) {
+      // Account existiert mit gleicher Email - kann verknüpft werden
+      return res.json({
+        success: true,
+        status: 'can_link',
+        dojo: {
+          id: adminUsers[0].dojo_id,
+          name: adminUsers[0].dojoname,
+          subdomain: adminUsers[0].subdomain
+        },
+        email,
+        message: 'Ein DojoSoftware-Account mit dieser E-Mail existiert bereits. Sie können sich mit den gleichen Zugangsdaten einloggen.',
+        loginUrl: 'https://dojo.tda-intl.org/login'
+      });
+    }
+
+    // Fall 3: Kein Account vorhanden
+    return res.json({
+      success: true,
+      status: 'none',
+      email,
+      message: 'Sie haben noch keinen DojoSoftware-Account.',
+      registerUrl: 'https://dojo.tda-intl.org/registrieren'
+    });
+
+  } catch (error) {
+    logger.error('DojoSoftware-Status-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Abrufen des DojoSoftware-Status' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/generate-sso-token
+ * Generiert einen einmaligen SSO-Token für automatischen DojoSoftware-Login
+ */
+router.post('/generate-sso-token', verifyVerbandToken, async (req, res) => {
+  try {
+    // Verbandsmitglied-Daten holen
+    const members = await queryAsync(
+      `SELECT id, typ, dojo_id, person_email, dojo_email FROM verbandsmitgliedschaften WHERE id = ?`,
+      [req.verbandUser.id]
+    );
+
+    if (members.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const member = members[0];
+    const email = member.person_email || member.dojo_email;
+
+    // Prüfen ob ein DojoSoftware-Account existiert
+    const adminUsers = await queryAsync(
+      `SELECT au.id, au.email, au.dojo_id, d.dojoname, d.subdomain
+       FROM admin_users au
+       LEFT JOIN dojo d ON au.dojo_id = d.id
+       WHERE au.email = ? AND au.aktiv = 1`,
+      [email]
+    );
+
+    if (adminUsers.length === 0) {
+      return res.status(404).json({ error: 'Kein DojoSoftware-Account gefunden' });
+    }
+
+    const adminUser = adminUsers[0];
+
+    // Einmaligen SSO-Token generieren (gültig für 60 Sekunden)
+    const ssoToken = crypto.randomBytes(32).toString('hex');
+    const ssoExpires = new Date();
+    ssoExpires.setSeconds(ssoExpires.getSeconds() + 60);
+
+    // Token in admin_users speichern
+    await queryAsync(
+      `UPDATE admin_users SET session_token = ?, session_ablauf = ? WHERE id = ?`,
+      [ssoToken, ssoExpires, adminUser.id]
+    );
+
+    logger.info(`SSO-Token generiert für Verbandsmitglied ${req.verbandUser.id} -> Admin ${adminUser.id}`);
+
+    res.json({
+      success: true,
+      ssoToken,
+      loginUrl: `https://dojo.tda-intl.org/sso-login?token=${ssoToken}`,
+      expiresAt: ssoExpires.toISOString()
+    });
+
+  } catch (error) {
+    logger.error('Generate-SSO-Token-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Generieren des SSO-Tokens' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/link-dojosoftware
+ * Verknüpft den Verbandsmitglied-Account mit einem DojoSoftware-Account
+ * Prüft die Credentials und verknüpft bei Erfolg
+ */
+router.post('/link-dojosoftware', verifyVerbandToken, async (req, res) => {
+  try {
+    const { email, passwort } = req.body;
+
+    if (!email || !passwort) {
+      return res.status(400).json({ error: 'E-Mail und Passwort sind erforderlich' });
+    }
+
+    // Admin-User suchen
+    const adminUsers = await queryAsync(
+      `SELECT au.id, au.email, au.password, au.dojo_id, d.dojoname, d.subdomain
+       FROM admin_users au
+       LEFT JOIN dojo d ON au.dojo_id = d.id
+       WHERE au.email = ? AND au.aktiv = 1`,
+      [email]
+    );
+
+    if (adminUsers.length === 0) {
+      return res.status(401).json({ error: 'Kein DojoSoftware-Account mit dieser E-Mail gefunden' });
+    }
+
+    const adminUser = adminUsers[0];
+
+    // Passwort prüfen
+    const isValid = await bcrypt.compare(passwort, adminUser.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Falsches Passwort' });
+    }
+
+    // Verknüpfung herstellen
+    await queryAsync(
+      `UPDATE verbandsmitgliedschaften SET dojo_id = ? WHERE id = ?`,
+      [adminUser.dojo_id, req.verbandUser.id]
+    );
+
+    logger.info(`Verbandsmitglied ${req.verbandUser.id} mit Dojo ${adminUser.dojo_id} verknüpft`);
+
+    res.json({
+      success: true,
+      message: 'Erfolgreich verknüpft!',
+      dojo: {
+        id: adminUser.dojo_id,
+        name: adminUser.dojoname,
+        subdomain: adminUser.subdomain
+      },
+      loginUrl: 'https://dojo.tda-intl.org/login'
+    });
+
+  } catch (error) {
+    logger.error('Link-DojoSoftware-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Verknüpfen' });
   }
 });
 
