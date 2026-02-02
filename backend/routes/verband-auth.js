@@ -630,6 +630,33 @@ router.get('/invoices', verifyVerbandToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/verband-auth/invoices/:id/pdf
+ * Rechnungs-PDF herunterladen (mit Besitzprüfung)
+ */
+router.get('/invoices/:id/pdf', verifyVerbandToken, async (req, res) => {
+  try {
+    // Prüfen ob die Rechnung zum eingeloggten Nutzer gehört
+    const invoice = await queryAsync(
+      `SELECT * FROM verbandsmitgliedschaft_zahlungen
+       WHERE id = ? AND verbandsmitgliedschaft_id = ?`,
+      [req.params.id, req.verbandUser.id]
+    );
+
+    if (invoice.length === 0) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden oder kein Zugriff' });
+    }
+
+    // PDF generieren
+    const { generateVerbandRechnungPdf } = require('../utils/verbandVertragPdfGenerator');
+    await generateVerbandRechnungPdf(req.params.id, res);
+
+  } catch (error) {
+    logger.error('Invoice PDF-Fehler:', error);
+    res.status(500).json({ error: 'PDF konnte nicht erstellt werden' });
+  }
+});
+
 // ============================================================================
 // DOJOSOFTWARE LINKING
 // ============================================================================
@@ -831,6 +858,48 @@ router.post('/link-dojosoftware', verifyVerbandToken, async (req, res) => {
   } catch (error) {
     logger.error('Link-DojoSoftware-Fehler:', error);
     res.status(500).json({ error: 'Fehler beim Verknüpfen' });
+  }
+});
+
+// ============================================================================
+// PUBLIC TOURNAMENT DATA (from events.tda-intl.org)
+// ============================================================================
+
+/**
+ * GET /api/verband-auth/turniere
+ * Holt öffentliche Turniere von der Turniersoftware
+ */
+router.get('/turniere', async (req, res) => {
+  try {
+    const https = require('https');
+
+    const fetchTurniere = () => {
+      return new Promise((resolve, reject) => {
+        https.get('https://events.tda-intl.org/api/turniere/public', (response) => {
+          let data = '';
+          response.on('data', chunk => data += chunk);
+          response.on('end', () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }).on('error', reject);
+      });
+    };
+
+    const result = await fetchTurniere();
+
+    if (result.success) {
+      res.json({ success: true, turniere: result.data });
+    } else {
+      res.json({ success: true, turniere: [] });
+    }
+
+  } catch (error) {
+    logger.error('Turniere-Fetch-Fehler:', error);
+    res.json({ success: true, turniere: [] }); // Graceful fallback
   }
 });
 
