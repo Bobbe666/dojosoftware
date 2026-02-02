@@ -64,7 +64,7 @@ router.get('/empfaenger', async (req, res) => {
         'software_nutzer' as kategorie
       FROM dojo d
       WHERE d.id != 2  -- TDA International ausschließen
-      AND d.aktiv = 1
+      AND d.ist_aktiv = 1
       ORDER BY d.dojoname
     `);
 
