@@ -2377,22 +2377,52 @@ router.post("/",
                     });
                 }
 
-                // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
-                createUserAccountIfNeeded(memberData, newMemberId, () => {
-                    // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
-                    createFamilyMembers(memberData.family_members, memberData, memberData.dojo_id, (famErr, createdFamilyMembers) => {
-                        res.status(201).json({
-                            success: true,
-                            mitglied_id: newMemberId,
-                            vertrag_id: vertragResult.insertId,
-                            dojo_id: memberData.dojo_id,
-                            message: "Mitglied und Vertrag erfolgreich erstellt",
-                            family_members_created: createdFamilyMembers || [],
-                            data: {
-                                ...memberData,
-                                mitglied_id: newMemberId,
-                                vertrag_id: vertragResult.insertId
+                const vertragId = vertragResult.insertId;
+
+                // 💰 Ersten Beitrag automatisch erstellen
+                const createFirstBeitrag = (callback) => {
+                    // Tarif-Preis holen
+                    db.query('SELECT price_cents FROM tarife WHERE id = ?', [memberData.vertrag_tarif_id], (tarifErr, tarifResults) => {
+                        if (tarifErr || tarifResults.length === 0) {
+                            logger.warn('Tarif nicht gefunden für Beitragserstellung');
+                            return callback();
+                        }
+
+                        const tarifPreis = tarifResults[0].price_cents / 100;
+                        const beitragQuery = `
+                            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
+                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'SEPA', 0, ?)
+                        `;
+                        db.query(beitragQuery, [newMemberId, tarifPreis, memberData.dojo_id], (beitragErr, beitragResult) => {
+                            if (beitragErr) {
+                                logger.error('Fehler beim Erstellen des ersten Beitrags:', beitragErr);
+                            } else {
+                                logger.info(`💰 Erster Beitrag erstellt: ${tarifPreis}€ für Mitglied ${newMemberId}`);
                             }
+                            callback();
+                        });
+                    });
+                };
+
+                // Beitrag erstellen, dann User-Account und Familienmitglieder
+                createFirstBeitrag(() => {
+                    // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
+                    createUserAccountIfNeeded(memberData, newMemberId, () => {
+                        // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
+                        createFamilyMembers(memberData.family_members, memberData, memberData.dojo_id, (famErr, createdFamilyMembers) => {
+                            res.status(201).json({
+                                success: true,
+                                mitglied_id: newMemberId,
+                                vertrag_id: vertragId,
+                                dojo_id: memberData.dojo_id,
+                                message: "Mitglied und Vertrag erfolgreich erstellt",
+                                family_members_created: createdFamilyMembers || [],
+                                data: {
+                                    ...memberData,
+                                    mitglied_id: newMemberId,
+                                    vertrag_id: vertragId
+                                }
+                            });
                         });
                     });
                 });
@@ -2471,6 +2501,11 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
             plz: mainMemberData.plz || null,
             ort: mainMemberData.ort || null,
             telefon: mainMemberData.telefon || null,
+            // 💳 BANKDATEN vom Hauptmitglied übernehmen
+            kontoinhaber: mainMemberData.kontoinhaber || null,
+            iban: mainMemberData.iban || null,
+            bic: mainMemberData.bic || null,
+            bankname: mainMemberData.bankname || mainMemberData.bank_name || null,
             // 👨‍👩‍👧 VERTRETER für Minderjährige
             vertreter1_typ: isFamilyMemberMinor ? 'sonstiger gesetzl. Vertreter' : null,
             vertreter1_name: isFamilyMemberMinor ? `${mainMemberData.vertreter_vorname || mainMemberData.vorname} ${mainMemberData.vertreter_nachname || mainMemberData.nachname}` : null,
@@ -2505,32 +2540,84 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
 
             // Vertrag für Familienmitglied erstellen (wenn tarif_id vorhanden)
             if (fm.tarif_id) {
-                const vertragData = {
-                    mitglied_id: newMemberId,
-                    dojo_id: dojoId,
-                    tarif_id: fm.tarif_id,
-                    status: 'aktiv',
-                    agb_akzeptiert_am: mainMemberData.vertrag_agb_akzeptiert ? new Date() : null,
-                    datenschutz_akzeptiert_am: mainMemberData.vertrag_datenschutz_akzeptiert ? new Date() : null,
-                    hausordnung_akzeptiert_am: mainMemberData.vertrag_hausordnung_akzeptiert ? new Date() : null,
-                    unterschrift_datum: new Date()
-                };
-
-                const vFields = Object.keys(vertragData).filter(k => vertragData[k] !== null);
-                const vPlaceholders = vFields.map(() => '?').join(', ');
-                const vValues = vFields.map(k => vertragData[k]);
-
-                const vertragQuery = `INSERT INTO vertraege (${vFields.join(', ')}) VALUES (${vPlaceholders})`;
-
-                db.query(vertragQuery, vValues, (vertragErr, vertragResult) => {
-                    if (vertragErr) {
-                        logger.error(`❌ Fehler beim Erstellen des Vertrags für Familienmitglied:`, vertragErr);
-                    } else {
-                        logger.info(`✅ Vertrag für Familienmitglied erstellt: ID ${vertragResult.insertId}`);
+                // Erst Tarif-Details holen für korrekten Preis
+                db.query('SELECT * FROM tarife WHERE id = ?', [fm.tarif_id], (tarifErr, tarifResults) => {
+                    if (tarifErr || tarifResults.length === 0) {
+                        logger.error(`❌ Tarif ${fm.tarif_id} nicht gefunden`);
+                        createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname });
+                        return createMember(index + 1);
                     }
 
-                    createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname, vertrag_id: vertragResult?.insertId });
-                    createMember(index + 1);
+                    const tarif = tarifResults[0];
+                    const tarifPreis = tarif.price_cents / 100; // Preis in Euro
+
+                    // Rabatt berechnen (aus fm oder mainMemberData)
+                    let rabattProzent = fm.custom_discount_value || fm.rabatt_prozent || 0;
+                    let rabattGrund = 'Familienrabatt';
+                    let monatsbeitrag = tarifPreis;
+
+                    if (rabattProzent > 0) {
+                        monatsbeitrag = Math.round((tarifPreis * (100 - rabattProzent)) * 100) / 100;
+                    }
+
+                    const vertragData = {
+                        mitglied_id: newMemberId,
+                        dojo_id: dojoId,
+                        tarif_id: fm.tarif_id,
+                        status: 'aktiv',
+                        vertragsbeginn: mainMemberData.vertragsbeginn || new Date().toISOString().split('T')[0],
+                        monatsbeitrag: monatsbeitrag,
+                        monatlicher_beitrag: monatsbeitrag,
+                        rabatt_prozent: rabattProzent,
+                        rabatt_grund: rabattProzent > 0 ? rabattGrund : null,
+                        mindestlaufzeit_monate: tarif.mindestlaufzeit_monate || 12,
+                        kuendigungsfrist_monate: tarif.kuendigungsfrist_monate || 3,
+                        aufnahmegebuehr_cents: tarif.aufnahmegebuehr_cents || 0,
+                        agb_akzeptiert_am: mainMemberData.vertrag_agb_akzeptiert ? new Date() : null,
+                        datenschutz_akzeptiert_am: mainMemberData.vertrag_datenschutz_akzeptiert ? new Date() : null,
+                        hausordnung_akzeptiert_am: mainMemberData.vertrag_hausordnung_akzeptiert ? new Date() : null,
+                        unterschrift_datum: new Date()
+                    };
+
+                    logger.info(`📝 Vertrag für ${fm.vorname}: Tarif=${tarif.name}, Preis=${tarifPreis}€, Rabatt=${rabattProzent}%, Final=${monatsbeitrag}€`);
+
+                    const vFields = Object.keys(vertragData).filter(k => vertragData[k] !== null && vertragData[k] !== undefined);
+                    const vPlaceholders = vFields.map(() => '?').join(', ');
+                    const vValues = vFields.map(k => vertragData[k]);
+
+                    const vertragQuery = `INSERT INTO vertraege (${vFields.join(', ')}) VALUES (${vPlaceholders})`;
+
+                    db.query(vertragQuery, vValues, (vertragErr, vertragResult) => {
+                        if (vertragErr) {
+                            logger.error(`❌ Fehler beim Erstellen des Vertrags für Familienmitglied:`, vertragErr);
+                            createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname });
+                            return createMember(index + 1);
+                        }
+
+                        logger.info(`✅ Vertrag für Familienmitglied erstellt: ID ${vertragResult.insertId}`);
+
+                        // 💰 Ersten Beitrag automatisch erstellen
+                        const beitragQuery = `
+                            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
+                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'SEPA', 0, ?)
+                        `;
+                        db.query(beitragQuery, [newMemberId, monatsbeitrag, dojoId], (beitragErr, beitragResult) => {
+                            if (beitragErr) {
+                                logger.error(`❌ Fehler beim Erstellen des ersten Beitrags:`, beitragErr);
+                            } else {
+                                logger.info(`💰 Erster Beitrag erstellt: ${monatsbeitrag}€ für Mitglied ${newMemberId}`);
+                            }
+
+                            createdMembers.push({
+                                mitglied_id: newMemberId,
+                                vorname: fm.vorname,
+                                nachname: fm.nachname,
+                                vertrag_id: vertragResult?.insertId,
+                                beitrag_id: beitragResult?.insertId
+                            });
+                            createMember(index + 1);
+                        });
+                    });
                 });
             } else {
                 createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname });

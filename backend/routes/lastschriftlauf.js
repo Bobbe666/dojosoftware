@@ -1,15 +1,88 @@
 const express = require("express");
 const db = require("../db");
+const logger = require("../utils/logger");
 const SepaXmlGenerator = require("../utils/sepaXmlGenerator");
 const router = express.Router();
 
 /**
+ * API-Route: Verfügbare Bankkonten für SEPA-Lastschrift abrufen
+ * GET /api/lastschriftlauf/banken
+ */
+router.get("/banken", (req, res) => {
+    const { dojo_id } = req.query;
+
+    let query = `
+        SELECT
+            id, dojo_id, bank_name, iban, bic, kontoinhaber,
+            sepa_glaeubiger_id, ist_standard, ist_aktiv
+        FROM dojo_banken
+        WHERE bank_typ = 'bank'
+          AND ist_aktiv = 1
+          AND iban IS NOT NULL
+          AND iban != ''
+    `;
+    const params = [];
+
+    if (dojo_id) {
+        query += ' AND dojo_id = ?';
+        params.push(parseInt(dojo_id));
+    }
+
+    query += ' ORDER BY ist_standard DESC, bank_name ASC';
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            logger.error('Fehler beim Laden der Bankkonten:', err);
+            return res.status(500).json({
+                success: false,
+                error: 'Datenbankfehler',
+                details: err.message
+            });
+        }
+
+        // IBAN maskieren für die Anzeige
+        const banken = results.map(bank => ({
+            ...bank,
+            iban_masked: bank.iban ? bank.iban.substring(0, 4) + '****' + bank.iban.slice(-4) : '',
+            iban_full: bank.iban
+        }));
+
+        res.json({
+            success: true,
+            count: banken.length,
+            banken: banken
+        });
+    });
+});
+
+/**
  * API-Route: Generiere SEPA-Lastschrift CSV für alle aktiven Verträge
  * GET /api/lastschriftlauf
+ * Query-Parameter:
+ *   - monat: Monat (1-12)
+ *   - jahr: Jahr
+ *   - bank_id: ID des Bankkontos für den Einzug
  */
 router.get("/", async (req, res) => {
     try {
-        logger.debug('📦 Starting SEPA batch file generation...');
+        const { monat, jahr, bank_id } = req.query;
+        logger.debug('📦 Starting SEPA batch file generation...', { monat, jahr, bank_id });
+
+        // Hole Bankdaten wenn bank_id angegeben
+        let selectedBank = null;
+        if (bank_id) {
+            const bankQuery = 'SELECT * FROM dojo_banken WHERE id = ? AND ist_aktiv = 1';
+            const bankResult = await new Promise((resolve, reject) => {
+                db.query(bankQuery, [bank_id], (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            });
+            if (bankResult.length > 0) {
+                selectedBank = bankResult[0];
+                logger.debug('💳 Ausgewählte Bank:', { bank_name: selectedBank.bank_name, iban: selectedBank.iban });
+            }
+        }
 
         // Query für alle aktiven Verträge mit SEPA-Mandat (inkl. offene Rechnungen)
         const query = `
@@ -65,25 +138,32 @@ router.get("/", async (req, res) => {
                 });
             }
 
-            logger.info('Found ${results.length} active contracts with SEPA mandate');
+            logger.info(`Found ${results.length} active contracts with SEPA mandate`);
 
-            // Ermittle häufigste Bank
-            const mostCommonBank = getMostCommonBank(results);
+            // Verwende ausgewählte Bank oder ermittle häufigste Bank
+            const bankName = selectedBank ? selectedBank.bank_name : getMostCommonBank(results);
 
-            // Generiere CSV
-            const csvData = generateSepaCSV(results);
-            const filename = `SEPA_Lastschriftlauf_${new Date().toISOString().split('T')[0]}.csv`;
+            // Generiere CSV mit Bankinfo
+            const csvData = generateSepaCSV(results, selectedBank);
+            const dateStr = new Date().toISOString().split('T')[0];
+            const monthStr = monat ? String(monat).padStart(2, '0') : String(new Date().getMonth() + 1).padStart(2, '0');
+            const yearStr = jahr || new Date().getFullYear();
+            const filename = `SEPA_Lastschriftlauf_${yearStr}-${monthStr}_${dateStr}.csv`;
 
             // Send as downloadable file
             res.setHeader('Content-Type', 'text/csv; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
             res.setHeader('X-Mandate-Count', results.length);
             res.setHeader('X-Total-Amount', calculateTotalAmount(results));
-            res.setHeader('X-Primary-Bank', mostCommonBank || 'Unbekannt');
+            res.setHeader('X-Creditor-Bank', bankName || 'Unbekannt');
+            if (selectedBank) {
+                res.setHeader('X-Creditor-IBAN', selectedBank.iban || '');
+                res.setHeader('X-Creditor-Name', selectedBank.kontoinhaber || '');
+            }
 
             res.send('\uFEFF' + csvData); // UTF-8 BOM für Excel
 
-            logger.debug('📄 SEPA batch file generated: ${filename} via ${mostCommonBank}');
+            logger.debug(`📄 SEPA batch file generated: ${filename} via ${bankName}`);
         });
 
     } catch (error) {
@@ -352,10 +432,23 @@ router.get("/missing-mandates", (req, res) => {
 /**
  * API-Route: Vorschau der Lastschriften (JSON)
  * GET /api/lastschriftlauf/preview
+ * Query-Parameter:
+ *   - monat: Monat (1-12), default: aktueller Monat
+ *   - jahr: Jahr (z.B. 2026), default: aktuelles Jahr
  */
 router.get("/preview", (req, res) => {
     try {
-        logger.debug('📢 Preview-Route aufgerufen');
+        // Monat und Jahr aus Query-Parametern oder aktuelle Werte
+        const now = new Date();
+        const monat = parseInt(req.query.monat) || (now.getMonth() + 1);
+        const jahr = parseInt(req.query.jahr) || now.getFullYear();
+
+        // Berechne Start- und Enddatum des Monats für die Beitrags-Filterung
+        const monatStart = `${jahr}-${String(monat).padStart(2, '0')}-01`;
+        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-31`;
+
+        logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatStart, monatEnde });
+
         const query = `
             SELECT
                 m.mitglied_id,
@@ -368,31 +461,33 @@ router.get("/preview", (req, res) => {
                 sm.bankname,
                 sm.mandatsreferenz,
                 sm.glaeubiger_id,
-                COALESCE(SUM(v.monatsbeitrag), 0) as monatlicher_beitrag,
-                COALESCE(SUM(r.betrag), 0) as offene_rechnungen,
+                b.betrag as beitrag_betrag,
+                b.beitrag_id,
+                COALESCE(v.monatsbeitrag, 0) as monatlicher_beitrag,
                 COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ', '), 'Kein Tarif') as tarif_name,
                 'monatlich' as zahlungszyklus
             FROM mitglieder m
-            JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+            JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
             LEFT JOIN tarife t ON v.tarif_id = t.id
-            LEFT JOIN rechnungen r ON m.mitglied_id = r.mitglied_id
-                AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
-                AND r.archiviert = 0
+            -- Nur Mitglieder mit offenen Beiträgen für den ausgewählten Monat
+            JOIN beitraege b ON m.mitglied_id = b.mitglied_id
+                AND b.bezahlt = 0
+                AND b.zahlungsdatum >= ?
+                AND b.zahlungsdatum <= ?
             INNER JOIN (
                 SELECT mitglied_id, bankname, mandatsreferenz, glaeubiger_id
                 FROM sepa_mandate
                 WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
-                ORDER BY erstellungsdatum DESC
-                LIMIT 18446744073709551615
             ) sm ON m.mitglied_id = sm.mitglied_id
-            WHERE v.status = 'aktiv'
-              AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+            WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
-            GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber, m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id
+            GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
+                     m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id,
+                     b.betrag, b.beitrag_id, v.monatsbeitrag
             ORDER BY m.nachname, m.vorname
         `;
 
-        db.query(query, (err, results) => {
+        db.query(query, [monatStart, monatEnde], (err, results) => {
             if (err) {
                 logger.error('Database error in /preview:', err);
                 logger.error('SQL Query:', query);
@@ -413,17 +508,26 @@ router.get("/preview", (req, res) => {
                     mitglied_id: r.mitglied_id,
                     name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
                     iban: maskIBAN(r.iban),
-                    betrag: calculateAmount(r),
+                    // Verwende Betrag aus beitraege-Tabelle
+                    betrag: parseFloat(r.beitrag_betrag || r.monatlicher_beitrag || 0),
                     mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
                     tarif: r.tarif_name || 'Kein Tarif',
                     zahlungszyklus: r.zahlungszyklus || 'monatlich',
-                    bank: r.bankname || 'Unbekannt'
+                    bank: r.bankname || 'Unbekannt',
+                    beitrag_id: r.beitrag_id
                 }));
+
+                // Berechne Gesamtsumme aus den Beiträgen
+                const totalAmount = results.reduce((sum, r) =>
+                    sum + parseFloat(r.beitrag_betrag || r.monatlicher_beitrag || 0), 0
+                ).toFixed(2);
 
                 res.json({
                     success: true,
                     count: results.length,
-                    total_amount: calculateTotalAmount(results),
+                    total_amount: totalAmount,
+                    monat: monat,
+                    jahr: jahr,
                     primary_bank: mostCommonBank || 'Gemischte Banken',
                     preview: preview
                 });
@@ -448,8 +552,22 @@ router.get("/preview", (req, res) => {
 
 /**
  * Generiere SEPA-CSV im PAIN.008 Format (vereinfacht)
+ * @param {Array} contracts - Liste der Verträge
+ * @param {Object} creditorBank - Gläubiger-Bank (optional)
  */
-function generateSepaCSV(contracts) {
+function generateSepaCSV(contracts, creditorBank = null) {
+    const rows = [];
+
+    // Kopfzeile mit Gläubiger-Informationen
+    if (creditorBank) {
+        rows.push(`# SEPA-Lastschriftlauf - Gläubiger: ${creditorBank.kontoinhaber || creditorBank.bank_name}`);
+        rows.push(`# Gläubiger-IBAN: ${creditorBank.iban}`);
+        rows.push(`# Gläubiger-BIC: ${creditorBank.bic || ''}`);
+        rows.push(`# Gläubiger-ID: ${creditorBank.sepa_glaeubiger_id || ''}`);
+        rows.push(`# Erstellt am: ${new Date().toLocaleString('de-DE')}`);
+        rows.push('');
+    }
+
     // CSV Headers (Deutsche Bank Format)
     const headers = [
         'Mandatsreferenz',
@@ -464,7 +582,7 @@ function generateSepaCSV(contracts) {
         'Tarif'
     ];
 
-    const rows = [headers.join(';')];
+    rows.push(headers.join(';'));
 
     contracts.forEach(contract => {
         const betrag = calculateAmount(contract);

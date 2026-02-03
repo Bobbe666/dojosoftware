@@ -479,7 +479,7 @@ router.put("/:id/archive-allergie", (req, res) => {
 // ===================================================================
 router.get("/:id/familie", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const dojoId = req.user?.dojo_id;
+  const dojoId = req.dojo_id;
 
   logger.info('👨‍👩‍👧 Familie-API aufgerufen', { mitglied_id: id, dojo_id: dojoId });
 
