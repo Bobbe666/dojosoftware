@@ -733,7 +733,7 @@ function getMostCommonBank(contracts) {
  */
 router.get("/stripe/status", async (req, res) => {
     try {
-        const dojoId = req.dojo_id || req.query.dojo_id;
+        const dojoId = req.dojo_id || req.user?.dojo_id || req.query.dojo_id;
 
         // Prüfe Stripe-Konfiguration
         const dojoQuery = 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?';
@@ -778,7 +778,7 @@ router.get("/stripe/status", async (req, res) => {
 router.post("/stripe/setup-customer", async (req, res) => {
     try {
         const { mitglied_id } = req.body;
-        const dojoId = req.dojo_id || req.body.dojo_id;
+        const dojoId = req.dojo_id || req.user?.dojo_id || req.body.dojo_id;
 
         if (!mitglied_id) {
             return res.status(400).json({ error: 'mitglied_id erforderlich' });
@@ -838,7 +838,7 @@ router.post("/stripe/setup-customer", async (req, res) => {
  */
 router.post("/stripe/setup-all", async (req, res) => {
     try {
-        const dojoId = req.dojo_id || req.body.dojo_id;
+        const dojoId = req.dojo_id || req.user?.dojo_id || req.body.dojo_id;
 
         // Finde alle Mitglieder die Setup benötigen
         const mitgliederQuery = `
@@ -920,7 +920,7 @@ router.post("/stripe/setup-all", async (req, res) => {
 router.post("/stripe/execute", async (req, res) => {
     try {
         const { monat, jahr, mitglieder } = req.body;
-        const dojoId = req.dojo_id || req.body.dojo_id;
+        const dojoId = req.dojo_id || req.user?.dojo_id || req.body.dojo_id;
 
         if (!monat || !jahr) {
             return res.status(400).json({ error: 'Monat und Jahr erforderlich' });
@@ -930,6 +930,35 @@ router.post("/stripe/execute", async (req, res) => {
             return res.status(400).json({ error: 'Keine Mitglieder ausgewählt' });
         }
 
+        // Prüfe ob Beiträge bereits bezahlt sind (verhindert Doppelabbuchung)
+        const filteredMitglieder = [];
+        for (const mitglied of mitglieder) {
+            if (mitglied.beitraege && mitglied.beitraege.length > 0) {
+                const beitragIds = mitglied.beitraege.map(b => b.beitrag_id);
+                const placeholders = beitragIds.map(() => '?').join(',');
+                const unbezahlteBeitraege = await queryAsync(
+                    `SELECT beitrag_id, betrag FROM beitraege WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
+                    beitragIds
+                );
+
+                if (unbezahlteBeitraege.length > 0) {
+                    // Nur unbezahlte Beiträge einziehen
+                    const neuerBetrag = unbezahlteBeitraege.reduce((sum, b) => sum + parseFloat(b.betrag), 0);
+                    filteredMitglieder.push({
+                        ...mitglied,
+                        beitraege: unbezahlteBeitraege.map(b => ({ beitrag_id: b.beitrag_id })),
+                        betrag: neuerBetrag
+                    });
+                } else {
+                    logger.info(`⏭️ Mitglied ${mitglied.mitglied_id}: Alle Beiträge bereits bezahlt - übersprungen`);
+                }
+            }
+        }
+
+        if (filteredMitglieder.length === 0) {
+            return res.status(400).json({ error: 'Alle ausgewählten Beiträge sind bereits bezahlt' });
+        }
+
         // Hole Stripe Provider
         const provider = await PaymentProviderFactory.getProvider(dojoId);
 
@@ -937,8 +966,8 @@ router.post("/stripe/execute", async (req, res) => {
             return res.status(400).json({ error: 'Stripe nicht konfiguriert' });
         }
 
-        // Führe Batch aus
-        const result = await provider.processLastschriftBatch(mitglieder, monat, jahr);
+        // Führe Batch aus (nur mit unbezahlten Beiträgen)
+        const result = await provider.processLastschriftBatch(filteredMitglieder, monat, jahr);
 
         // Markiere erfolgreiche Beiträge als bezahlt
         if (result.succeeded > 0 || result.processing > 0) {
@@ -949,7 +978,7 @@ router.post("/stripe/execute", async (req, res) => {
                     if (mitgliedData && mitgliedData.beitraege) {
                         for (const beitrag of mitgliedData.beitraege) {
                             await queryAsync(
-                                'UPDATE beitraege SET bezahlt = 1, bezahlt_am = NOW(), zahlungsart = ? WHERE beitrag_id = ?',
+                                'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
                                 ['Stripe SEPA', beitrag.beitrag_id]
                             );
                         }
@@ -981,7 +1010,7 @@ router.post("/stripe/execute", async (req, res) => {
 router.get("/stripe/batch/:batchId", async (req, res) => {
     try {
         const { batchId } = req.params;
-        const dojoId = req.dojo_id || req.query.dojo_id;
+        const dojoId = req.dojo_id || req.user?.dojo_id || req.query.dojo_id;
 
         const provider = await PaymentProviderFactory.getProvider(dojoId);
 
