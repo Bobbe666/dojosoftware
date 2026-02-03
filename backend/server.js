@@ -1294,7 +1294,8 @@ const skipFiles = [
   "templatePdfGenerator.js",
   "vertragPdfGeneratorExtended.js",
   "ManualSepaProvider.js",
-  "PaymentProviderFactory.js"
+  "PaymentProviderFactory.js",
+  "StripeDataevProvider.js"
 ];
 
 fs.readdirSync(routesPath).forEach((file) => {

@@ -128,7 +128,7 @@ router.post('/bestellungen', authenticateToken, async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { positionen, lieferadresse, rechnungsadresse, anmerkungen } = req.body;
+    const { positionen, lieferadresse, rechnungsadresse, anmerkungen, zahlungsart, stripe_payment_intent_id, bezahlt } = req.body;
     const userId = req.user.id;
     const dojoId = req.user.dojo_id;
 
@@ -139,22 +139,48 @@ router.post('/bestellungen', authenticateToken, async (req, res) => {
     // Bestellnummer generieren
     const bestellnummer = 'TDA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
 
-    // Gesamtsumme berechnen
-    let gesamtsumme = 0;
+    // Gesamtsumme berechnen (in Cent)
+    let zwischensumme = 0;
     for (const pos of positionen) {
       const [produkt] = await connection.query('SELECT preis FROM shop_produkte WHERE id = ?', [pos.produkt_id]);
       if (produkt.length > 0) {
-        gesamtsumme += produkt[0].preis * pos.menge;
+        zwischensumme += produkt[0].preis * pos.menge * 100; // in Cent
       }
     }
 
-    // Bestellung anlegen
+    const versandkosten = zwischensumme >= 5000 ? 0 : 495; // Frei ab 50€, sonst 4,95€
+    const gesamtbetrag = zwischensumme + versandkosten;
+
+    // Kundennamen aus lieferadresse
+    const kundeName = lieferadresse ? `${lieferadresse.vorname || ''} ${lieferadresse.nachname || ''}`.trim() : 'Unbekannt';
+    const kundeEmail = rechnungsadresse?.email || '';
+
+    // Bestellung anlegen (mit korrekter Tabellenstruktur)
     const [bestellung] = await connection.query(`
       INSERT INTO shop_bestellungen
-      (bestellnummer, user_id, dojo_id, status, gesamtsumme, lieferadresse, rechnungsadresse, anmerkungen)
-      VALUES (?, ?, ?, 'neu', ?, ?, ?, ?)
-    `, [bestellnummer, userId, dojoId, gesamtsumme,
-        JSON.stringify(lieferadresse), JSON.stringify(rechnungsadresse), anmerkungen]);
+      (bestellnummer, verbandsmitgliedschaft_id, kunde_name, kunde_email,
+       lieferadresse_strasse, lieferadresse_plz, lieferadresse_ort, lieferadresse_land,
+       zwischensumme_cent, versandkosten_cent, gesamtbetrag_cent,
+       status, zahlungsart, bezahlt, bezahlt_am, stripe_payment_intent_id, kundennotiz)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'offen', ?, ?, ?, ?, ?)
+    `, [
+      bestellnummer,
+      userId, // verbandsmitgliedschaft_id
+      kundeName,
+      kundeEmail,
+      lieferadresse?.strasse || '',
+      lieferadresse?.plz || '',
+      lieferadresse?.ort || '',
+      lieferadresse?.land || 'Deutschland',
+      zwischensumme,
+      versandkosten,
+      gesamtbetrag,
+      zahlungsart || 'rechnung',
+      bezahlt ? 1 : 0,
+      bezahlt ? new Date() : null,
+      stripe_payment_intent_id || null,
+      anmerkungen || null
+    ]);
 
     const bestellungId = bestellung.insertId;
 
@@ -176,12 +202,12 @@ router.post('/bestellungen', authenticateToken, async (req, res) => {
       success: true,
       bestellnummer,
       bestellung_id: bestellungId,
-      gesamtsumme
+      gesamtsumme: gesamtbetrag / 100 // zurück in Euro für Frontend
     });
   } catch (error) {
     await connection.rollback();
     logger.error('Fehler beim Erstellen der Bestellung:', { error: error });
-    res.status(500).json({ error: 'Fehler beim Erstellen der Bestellung' });
+    res.status(500).json({ error: 'Fehler beim Erstellen der Bestellung', details: error.message });
   } finally {
     connection.release();
   }
@@ -194,8 +220,8 @@ router.get('/bestellungen/meine', authenticateToken, async (req, res) => {
       SELECT b.*,
              (SELECT COUNT(*) FROM shop_bestellpositionen WHERE bestellung_id = b.id) as anzahl_positionen
       FROM shop_bestellungen b
-      WHERE b.user_id = ?
-      ORDER BY b.erstellt_am DESC
+      WHERE b.verbandsmitgliedschaft_id = ?
+      ORDER BY b.bestellt_am DESC
     `, [req.user.id]);
 
     res.json(bestellungen);

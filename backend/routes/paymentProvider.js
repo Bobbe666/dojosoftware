@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const PaymentProviderFactory = require('../services/PaymentProviderFactory');
+const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // Get current payment provider status
-router.get('/status', async (req, res) => {
+router.get('/status', authenticateToken, async (req, res) => {
     try {
-        const status = await PaymentProviderFactory.getProviderStatus();
+        const dojoId = req.user?.dojo_id || req.query.dojo_id || 1;
+        const status = await PaymentProviderFactory.getProviderStatus(dojoId);
         res.json(status);
 
     } catch (error) {
@@ -18,8 +21,9 @@ router.get('/status', async (req, res) => {
 });
 
 // Configure payment provider
-router.post('/configure', async (req, res) => {
+router.post('/configure', authenticateToken, async (req, res) => {
     try {
+        const dojoId = req.user?.dojo_id || req.body.dojo_id;
         const {
             payment_provider,
             stripe_secret_key,
@@ -45,12 +49,10 @@ router.post('/configure', async (req, res) => {
             });
         }
 
-        // Update configuration (assuming dojo ID 1 for now)
-        const dojoId = 1;
         await PaymentProviderFactory.updatePaymentProvider(dojoId, req.body);
 
         // Get updated status
-        const updatedStatus = await PaymentProviderFactory.getProviderStatus();
+        const updatedStatus = await PaymentProviderFactory.getProviderStatus(dojoId);
         res.json({
             success: true,
             message: 'Payment provider successfully configured',
@@ -67,9 +69,10 @@ router.post('/configure', async (req, res) => {
 });
 
 // Test payment provider configuration
-router.post('/test', async (req, res) => {
+router.post('/test', authenticateToken, async (req, res) => {
     try {
-        const provider = await PaymentProviderFactory.getProvider();
+        const dojoId = req.user?.dojo_id || req.body.dojo_id;
+        const provider = await PaymentProviderFactory.getProvider(dojoId);
         const isConfigured = await provider.isConfigured();
         const configStatus = await provider.getConfigurationStatus();
 
@@ -81,7 +84,6 @@ router.post('/test', async (req, res) => {
         };
 
         if (provider.constructor.name === 'StripeDataevProvider' && isConfigured) {
-            // Could add actual Stripe API test here
             testResult.stripe_connection = 'Ready to test';
             testResult.datev_connection = 'Ready to test';
         }
@@ -100,12 +102,13 @@ router.post('/test', async (req, res) => {
 });
 
 // Get payment provider logs
-router.get('/logs', async (req, res) => {
+router.get('/logs', authenticateToken, async (req, res) => {
     try {
+        const dojoId = req.user?.dojo_id;
         const limit = parseInt(req.query.limit) || 50;
         const provider = req.query.provider || null;
 
-        const logs = await getPaymentProviderLogs(limit, provider);
+        const logs = await getPaymentProviderLogs(limit, provider, dojoId);
         res.json({
             logs: logs,
             count: logs.length
@@ -121,17 +124,18 @@ router.get('/logs', async (req, res) => {
 });
 
 // Create payment intent (Stripe)
-router.post('/payment-intent', async (req, res) => {
+router.post('/payment-intent', authenticateToken, async (req, res) => {
     try {
-        const { mitglied_id, amount, description } = req.body;
+        const dojoId = req.user?.dojo_id || req.body.dojo_id;
+        const { mitglied_id, amount, description, currency = 'eur', rechnung_id, reference, referenceType } = req.body;
 
-        if (!mitglied_id || !amount) {
+        if (!amount) {
             return res.status(400).json({
-                error: 'mitglied_id and amount are required'
+                error: 'amount is required'
             });
         }
 
-        const provider = await PaymentProviderFactory.getProvider();
+        const provider = await PaymentProviderFactory.getProvider(dojoId);
 
         if (provider.constructor.name !== 'StripeDataevProvider') {
             return res.status(400).json({
@@ -139,16 +143,25 @@ router.post('/payment-intent', async (req, res) => {
             });
         }
 
-        // Get member data
-        const memberData = await getMemberData(mitglied_id);
-        if (!memberData) {
-            return res.status(404).json({
-                error: 'Member not found'
-            });
-        }
+        // Create payment intent
+        const result = await provider.createPaymentIntentDirect({
+            amount: Math.round(amount), // amount in cents
+            currency: currency,
+            description: description || 'Zahlung',
+            metadata: {
+                dojo_id: dojoId,
+                mitglied_id: mitglied_id,
+                rechnung_id: rechnung_id,
+                reference: reference,
+                referenceType: referenceType
+            }
+        });
 
-        const result = await provider.createPaymentIntent(memberData, amount, description);
-        res.json(result);
+        res.json({
+            client_secret: result.client_secret,
+            payment_intent_id: result.id,
+            status: result.status
+        });
 
     } catch (error) {
         logger.error('API: Error creating payment intent:', { error: error });
@@ -168,15 +181,15 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
         let event;
 
         if (endpointSecret) {
-            // Verify webhook signature in production
             const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
             event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
         } else {
-            // For development, parse the body directly
             event = JSON.parse(req.body.toString());
         }
 
-        const provider = await PaymentProviderFactory.getProvider();
+        // Get dojoId from metadata if available
+        const dojoId = event.data?.object?.metadata?.dojo_id || 1;
+        const provider = await PaymentProviderFactory.getProvider(dojoId);
 
         if (provider.constructor.name === 'StripeDataevProvider') {
             await provider.handleWebhook(event);
@@ -193,7 +206,7 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
 });
 
 // Helper functions
-async function getPaymentProviderLogs(limit, provider) {
+async function getPaymentProviderLogs(limit, provider, dojoId) {
     const db = require('../db');
 
     return new Promise((resolve, reject) => {
@@ -201,12 +214,18 @@ async function getPaymentProviderLogs(limit, provider) {
             SELECT ppl.*, m.vorname, m.nachname
             FROM payment_provider_logs ppl
             LEFT JOIN mitglieder m ON ppl.mitglied_id = m.mitglied_id
+            WHERE 1=1
         `;
 
         const params = [];
 
+        if (dojoId) {
+            query += ' AND ppl.dojo_id = ?';
+            params.push(dojoId);
+        }
+
         if (provider) {
-            query += ' WHERE ppl.provider = ?';
+            query += ' AND ppl.provider = ?';
             params.push(provider);
         }
 
@@ -217,26 +236,7 @@ async function getPaymentProviderLogs(limit, provider) {
             if (err) {
                 return reject(err);
             }
-            resolve(results);
-        });
-    });
-}
-
-async function getMemberData(mitgliedId) {
-    const db = require('../db');
-
-    return new Promise((resolve, reject) => {
-        const query = `
-            SELECT mitglied_id, vorname, nachname, email, strasse, plz, ort
-            FROM mitglieder
-            WHERE mitglied_id = ?
-        `;
-
-        db.query(query, [mitgliedId], (err, results) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(results[0] || null);
+            resolve(results || []);
         });
     });
 }

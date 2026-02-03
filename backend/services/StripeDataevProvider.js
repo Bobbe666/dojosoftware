@@ -78,6 +78,81 @@ class StripeDataevProvider {
         }
     }
 
+    // Direct payment intent creation without member data
+    async createPaymentIntentDirect(options) {
+        if (!this.stripe) {
+            throw new Error('Stripe not configured for this dojo');
+        }
+
+        try {
+            const { amount, currency = 'eur', description, metadata = {} } = options;
+
+            logger.info(`💳 Stripe: Creating direct payment intent - €${amount / 100}`);
+
+            const paymentIntent = await this.stripe.paymentIntents.create({
+                amount: Math.round(amount),
+                currency: currency,
+                automatic_payment_methods: {
+                    enabled: true,
+                },
+                metadata: {
+                    ...metadata,
+                    dojo_id: this.dojoConfig.id
+                },
+                description: description || 'Zahlung'
+            });
+
+            // Save to database if we have a mitglied_id
+            if (metadata.mitglied_id) {
+                await this.savePaymentIntentDirect(metadata.mitglied_id, paymentIntent, amount);
+            }
+
+            logger.info(`✅ Stripe: Payment Intent created - ${paymentIntent.id}`);
+
+            return {
+                id: paymentIntent.id,
+                client_secret: paymentIntent.client_secret,
+                status: paymentIntent.status,
+                publishable_key: this.dojoConfig.stripe_publishable_key
+            };
+
+        } catch (error) {
+            logger.error('❌ Stripe: Error creating direct payment intent:', { error: error.message });
+            throw error;
+        }
+    }
+
+    async savePaymentIntentDirect(mitgliedId, paymentIntent, amount) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO stripe_payment_intents (
+                    dojo_id, mitglied_id, stripe_payment_intent_id, amount, currency, status,
+                    description, metadata
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            const params = [
+                this.dojoConfig.id,
+                mitgliedId || null,
+                paymentIntent.id,
+                amount,
+                paymentIntent.currency,
+                paymentIntent.status,
+                paymentIntent.description,
+                JSON.stringify(paymentIntent.metadata)
+            ];
+
+            db.query(query, params, (err, result) => {
+                if (err) {
+                    logger.error('❌ Database: Error saving payment intent:', { error: err.message });
+                    return reject(err);
+                }
+                logger.info(`✅ Database: Payment intent saved with ID ${result.insertId}`);
+                resolve(result);
+            });
+        });
+    }
+
     async savePaymentIntent(mitgliedId, paymentIntent, amount) {
         return new Promise((resolve, reject) => {
             const query = `

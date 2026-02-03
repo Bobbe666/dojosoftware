@@ -842,7 +842,7 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
  */
 router.post('/:id/anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { mitglied_id, notizen } = req.body;
+  const { mitglied_id, notizen, payment_intent_id, bezahlt } = req.body;
 
   if (!mitglied_id) {
     return res.status(400).json({ error: 'Mitglied-ID fehlt' });
@@ -901,12 +901,13 @@ router.post('/:id/anmelden', async (req, res) => {
       aufWarteliste = true;
     }
 
-    // 6. Erstelle Anmeldung
+    // 6. Erstelle Anmeldung (mit optionaler Zahlungsinformation)
+    const istBezahlt = bezahlt || !!payment_intent_id;
     const [result] = await db.promise().query(
       `INSERT INTO event_anmeldungen
-       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung)
-       VALUES (?, ?, ?, ?, NOW(), ?)`,
-      [eventId, mitglied_id, status, wartelistePosition, notizen || null]
+       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung, bezahlt, bezahldatum, stripe_payment_intent_id)
+       VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)`,
+      [eventId, mitglied_id, status, wartelistePosition, notizen || null, istBezahlt ? 1 : 0, istBezahlt ? new Date() : null, payment_intent_id || null]
     );
 
     logger.info(`Mitglied ${mitglied_id} für Event ${eventId} angemeldet (Status: ${status})`);
