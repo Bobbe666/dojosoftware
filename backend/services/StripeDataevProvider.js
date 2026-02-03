@@ -743,6 +743,412 @@ class StripeDataevProvider {
             }
         });
     }
+
+    // ============================================================================
+    // SEPA LASTSCHRIFT BATCH METHODS
+    // ============================================================================
+
+    /**
+     * Erstellt einen Stripe Customer mit SEPA PaymentMethod für ein Mitglied
+     * @param {Object} mitglied - Mitglied-Daten mit vorname, nachname, email
+     * @param {string} iban - IBAN des Bankkontos
+     * @param {string} kontoinhaber - Name des Kontoinhabers
+     * @returns {Object} - Stripe Customer und PaymentMethod IDs
+     */
+    async createSepaCustomer(mitglied, iban, kontoinhaber) {
+        if (!this.stripe) {
+            throw new Error('Stripe nicht konfiguriert für dieses Dojo');
+        }
+
+        try {
+            logger.info(`💳 Stripe SEPA: Erstelle Customer für ${mitglied.vorname} ${mitglied.nachname}`);
+
+            // 1. Prüfe ob bereits ein Stripe Customer existiert
+            let customerId = mitglied.stripe_customer_id;
+
+            if (!customerId) {
+                // Erstelle neuen Stripe Customer
+                const customer = await this.stripe.customers.create({
+                    email: mitglied.email || `mitglied_${mitglied.mitglied_id}@placeholder.local`,
+                    name: `${mitglied.vorname} ${mitglied.nachname}`,
+                    metadata: {
+                        mitglied_id: mitglied.mitglied_id.toString(),
+                        dojo_id: this.dojoConfig.id.toString()
+                    }
+                });
+                customerId = customer.id;
+
+                // Speichere Customer ID beim Mitglied
+                await this.updateMitgliedStripeCustomerId(mitglied.mitglied_id, customerId);
+                logger.info(`✅ Stripe Customer erstellt: ${customerId}`);
+            } else {
+                logger.info(`ℹ️  Verwende existierenden Stripe Customer: ${customerId}`);
+            }
+
+            // 2. Erstelle SEPA PaymentMethod
+            const paymentMethod = await this.stripe.paymentMethods.create({
+                type: 'sepa_debit',
+                sepa_debit: {
+                    iban: iban.replace(/\s/g, '') // Entferne Leerzeichen
+                },
+                billing_details: {
+                    name: kontoinhaber || `${mitglied.vorname} ${mitglied.nachname}`,
+                    email: mitglied.email || `mitglied_${mitglied.mitglied_id}@placeholder.local`
+                }
+            });
+
+            // 3. Hänge PaymentMethod an Customer an
+            await this.stripe.paymentMethods.attach(paymentMethod.id, {
+                customer: customerId
+            });
+
+            // 4. Setze als Standard-Zahlungsmethode
+            await this.stripe.customers.update(customerId, {
+                invoice_settings: {
+                    default_payment_method: paymentMethod.id
+                }
+            });
+
+            // 5. Speichere PaymentMethod ID in sepa_mandate
+            await this.updateSepaMandateStripeIds(mitglied.mitglied_id, paymentMethod.id, null);
+
+            logger.info(`✅ SEPA PaymentMethod erstellt und angehängt: ${paymentMethod.id}`);
+
+            return {
+                success: true,
+                stripe_customer_id: customerId,
+                stripe_payment_method_id: paymentMethod.id
+            };
+
+        } catch (error) {
+            logger.error('❌ Stripe SEPA Setup Fehler:', {
+                error: error.message,
+                mitglied_id: mitglied.mitglied_id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Führt eine SEPA-Lastschrift für ein Mitglied durch
+     * @param {number} mitgliedId - ID des Mitglieds
+     * @param {number} amount - Betrag in EUR
+     * @param {string} description - Beschreibung für die Zahlung
+     * @param {Array<number>} beitragIds - Array der Beitrags-IDs
+     * @returns {Object} - PaymentIntent Details
+     */
+    async chargeSepaDirectDebit(mitgliedId, amount, description, beitragIds = []) {
+        if (!this.stripe) {
+            throw new Error('Stripe nicht konfiguriert für dieses Dojo');
+        }
+
+        try {
+            // Lade Mitglied mit Stripe-Daten
+            const mitglied = await this.getMitgliedWithStripeData(mitgliedId);
+
+            if (!mitglied) {
+                throw new Error(`Mitglied ${mitgliedId} nicht gefunden`);
+            }
+            if (!mitglied.stripe_customer_id) {
+                throw new Error(`Mitglied ${mitgliedId} hat keinen Stripe Customer`);
+            }
+            if (!mitglied.stripe_payment_method_id) {
+                throw new Error(`Mitglied ${mitgliedId} hat keine SEPA PaymentMethod`);
+            }
+
+            logger.info(`💳 Stripe SEPA: Lastschrift für ${mitglied.vorname} ${mitglied.nachname} - €${amount}`);
+
+            // Erstelle PaymentIntent mit off_session (keine Kundeninteraktion)
+            const paymentIntent = await this.stripe.paymentIntents.create({
+                amount: Math.round(amount * 100), // In Cents
+                currency: 'eur',
+                customer: mitglied.stripe_customer_id,
+                payment_method: mitglied.stripe_payment_method_id,
+                payment_method_types: ['sepa_debit'],
+                confirm: true,
+                off_session: true,
+                mandate_data: {
+                    customer_acceptance: {
+                        type: 'offline'
+                    }
+                },
+                description: description || `Mitgliedsbeitrag ${mitglied.vorname} ${mitglied.nachname}`,
+                metadata: {
+                    mitglied_id: mitgliedId.toString(),
+                    dojo_id: this.dojoConfig.id.toString(),
+                    beitrag_ids: JSON.stringify(beitragIds),
+                    member_name: `${mitglied.vorname} ${mitglied.nachname}`
+                }
+            });
+
+            logger.info(`✅ PaymentIntent erstellt: ${paymentIntent.id} - Status: ${paymentIntent.status}`);
+
+            return {
+                success: true,
+                payment_intent_id: paymentIntent.id,
+                status: paymentIntent.status,
+                amount: amount,
+                mitglied_id: mitgliedId
+            };
+
+        } catch (error) {
+            logger.error('❌ Stripe SEPA Lastschrift Fehler:', {
+                error: error.message,
+                code: error.code,
+                mitglied_id: mitgliedId
+            });
+
+            // Bei bestimmten Fehlern spezifische Meldung
+            if (error.code === 'payment_intent_authentication_failure') {
+                error.userMessage = 'Authentifizierung erforderlich - Kunde muss Zahlung bestätigen';
+            } else if (error.code === 'payment_method_invalid') {
+                error.userMessage = 'Zahlungsmethode ungültig - SEPA-Mandat neu einrichten';
+            }
+
+            throw error;
+        }
+    }
+
+    /**
+     * Verarbeitet einen Batch von Lastschriften
+     * @param {Array} mitgliederMitBeitraegen - Array mit Mitgliedern und deren offenen Beiträgen
+     * @param {number} monat - Abrechnungsmonat
+     * @param {number} jahr - Abrechnungsjahr
+     * @returns {Object} - Batch-Ergebnis mit erfolgreichen und fehlgeschlagenen Transaktionen
+     */
+    async processLastschriftBatch(mitgliederMitBeitraegen, monat, jahr) {
+        if (!this.stripe) {
+            throw new Error('Stripe nicht konfiguriert für dieses Dojo');
+        }
+
+        const batchId = `BATCH-${this.dojoConfig.id}-${jahr}${String(monat).padStart(2, '0')}-${Date.now()}`;
+
+        logger.info(`📦 Stripe Lastschrift-Batch gestartet: ${batchId}`);
+        logger.info(`   Anzahl Mitglieder: ${mitgliederMitBeitraegen.length}`);
+
+        // Erstelle Batch-Eintrag
+        await this.createBatchEntry(batchId, monat, jahr, mitgliederMitBeitraegen);
+
+        const results = {
+            batch_id: batchId,
+            total: mitgliederMitBeitraegen.length,
+            succeeded: 0,
+            failed: 0,
+            processing: 0,
+            transactions: []
+        };
+
+        // Verarbeite jeden Mitglied
+        for (const item of mitgliederMitBeitraegen) {
+            try {
+                const beitragIds = item.beitraege ? item.beitraege.map(b => b.beitrag_id) : [];
+                const description = `Mitgliedsbeitrag ${monat}/${jahr} - ${item.offene_monate || ''}`;
+
+                const result = await this.chargeSepaDirectDebit(
+                    item.mitglied_id,
+                    item.betrag,
+                    description,
+                    beitragIds
+                );
+
+                // Speichere Transaktion
+                await this.saveTransaktion(batchId, item.mitglied_id, result.payment_intent_id, beitragIds, item.betrag, result.status);
+
+                // SEPA ist initially 'processing'
+                if (result.status === 'succeeded') {
+                    results.succeeded++;
+                } else if (result.status === 'processing') {
+                    results.processing++;
+                }
+
+                results.transactions.push({
+                    mitglied_id: item.mitglied_id,
+                    name: item.name,
+                    betrag: item.betrag,
+                    status: result.status,
+                    payment_intent_id: result.payment_intent_id
+                });
+
+            } catch (error) {
+                results.failed++;
+
+                // Speichere fehlgeschlagene Transaktion
+                await this.saveTransaktion(batchId, item.mitglied_id, null, [], item.betrag, 'failed', error.message);
+
+                results.transactions.push({
+                    mitglied_id: item.mitglied_id,
+                    name: item.name,
+                    betrag: item.betrag,
+                    status: 'failed',
+                    error: error.userMessage || error.message
+                });
+            }
+        }
+
+        // Update Batch-Status
+        const finalStatus = results.failed === results.total ? 'failed'
+            : results.succeeded + results.processing === results.total ? 'completed'
+            : 'partial';
+
+        await this.updateBatchStatus(batchId, finalStatus, results.succeeded, results.failed);
+
+        logger.info(`✅ Batch ${batchId} abgeschlossen: ${results.succeeded} erfolgreich, ${results.processing} in Verarbeitung, ${results.failed} fehlgeschlagen`);
+
+        return results;
+    }
+
+    // ============================================================================
+    // HELPER METHODS FOR SEPA LASTSCHRIFT
+    // ============================================================================
+
+    async updateMitgliedStripeCustomerId(mitgliedId, customerId) {
+        return new Promise((resolve, reject) => {
+            db.query(
+                'UPDATE mitglieder SET stripe_customer_id = ? WHERE mitglied_id = ?',
+                [customerId, mitgliedId],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve(result);
+                }
+            );
+        });
+    }
+
+    async updateSepaMandateStripeIds(mitgliedId, paymentMethodId, mandateId) {
+        return new Promise((resolve, reject) => {
+            db.query(
+                `UPDATE sepa_mandate
+                 SET stripe_payment_method_id = ?, stripe_mandate_id = ?
+                 WHERE mitglied_id = ? AND status = 'aktiv'`,
+                [paymentMethodId, mandateId, mitgliedId],
+                (err, result) => {
+                    if (err) return reject(err);
+                    resolve(result);
+                }
+            );
+        });
+    }
+
+    async getMitgliedWithStripeData(mitgliedId) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT
+                    m.mitglied_id, m.vorname, m.nachname, m.email,
+                    m.stripe_customer_id,
+                    sm.stripe_payment_method_id, sm.iban, sm.kontoinhaber
+                FROM mitglieder m
+                LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+                WHERE m.mitglied_id = ?
+            `;
+            db.query(query, [mitgliedId], (err, results) => {
+                if (err) return reject(err);
+                resolve(results[0] || null);
+            });
+        });
+    }
+
+    async createBatchEntry(batchId, monat, jahr, mitglieder) {
+        const gesamtbetrag = mitglieder.reduce((sum, m) => sum + parseFloat(m.betrag || 0), 0);
+
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO stripe_lastschrift_batch
+                (batch_id, dojo_id, monat, jahr, anzahl_transaktionen, gesamtbetrag, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'processing')
+            `;
+            db.query(query, [batchId, this.dojoConfig.id, monat, jahr, mitglieder.length, gesamtbetrag], (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            });
+        });
+    }
+
+    async saveTransaktion(batchId, mitgliedId, paymentIntentId, beitragIds, betrag, status, errorMessage = null) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO stripe_lastschrift_transaktion
+                (batch_id, mitglied_id, stripe_payment_intent_id, beitrag_ids, betrag, status, error_message)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `;
+            db.query(query, [batchId, mitgliedId, paymentIntentId, JSON.stringify(beitragIds), betrag, status, errorMessage], (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            });
+        });
+    }
+
+    async updateBatchStatus(batchId, status, erfolgreiche, fehlgeschlagene) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                UPDATE stripe_lastschrift_batch
+                SET status = ?, erfolgreiche = ?, fehlgeschlagene = ?, completed_at = NOW()
+                WHERE batch_id = ?
+            `;
+            db.query(query, [status, erfolgreiche, fehlgeschlagene, batchId], (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            });
+        });
+    }
+
+    async getBatchStatus(batchId) {
+        return new Promise((resolve, reject) => {
+            const batchQuery = 'SELECT * FROM stripe_lastschrift_batch WHERE batch_id = ?';
+            const transQuery = 'SELECT * FROM stripe_lastschrift_transaktion WHERE batch_id = ? ORDER BY id';
+
+            db.query(batchQuery, [batchId], (err, batchResults) => {
+                if (err) return reject(err);
+                if (batchResults.length === 0) return resolve(null);
+
+                db.query(transQuery, [batchId], (err2, transResults) => {
+                    if (err2) return reject(err2);
+                    resolve({
+                        batch: batchResults[0],
+                        transaktionen: transResults
+                    });
+                });
+            });
+        });
+    }
+
+    /**
+     * Prüft welche Mitglieder noch kein Stripe SEPA Setup haben
+     * @param {Array} mitgliederIds - Array von Mitglieder-IDs
+     * @returns {Object} - ready und needsSetup Arrays
+     */
+    async checkSepaSetupStatus(mitgliederIds) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT
+                    m.mitglied_id,
+                    m.vorname,
+                    m.nachname,
+                    m.stripe_customer_id,
+                    sm.stripe_payment_method_id,
+                    sm.iban
+                FROM mitglieder m
+                LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+                WHERE m.mitglied_id IN (?)
+            `;
+            db.query(query, [mitgliederIds], (err, results) => {
+                if (err) return reject(err);
+
+                const ready = [];
+                const needsSetup = [];
+
+                for (const m of results) {
+                    if (m.stripe_customer_id && m.stripe_payment_method_id) {
+                        ready.push(m);
+                    } else if (m.iban) {
+                        needsSetup.push(m);
+                    }
+                    // Mitglieder ohne IBAN können nicht eingerichtet werden
+                }
+
+                resolve({ ready, needsSetup });
+            });
+        });
+    }
 }
 
 module.exports = StripeDataevProvider;
