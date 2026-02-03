@@ -2186,20 +2186,72 @@ router.post("/",
             return res.status(400).json({ error: "dojo_id ist erforderlich für Familienmitglieder" });
         }
 
-        // Familienmitglieder erstellen
-        createFamilyMembers(memberData.family_members, memberData, dojoId, (famErr, createdFamilyMembers) => {
-            if (famErr) {
-                logger.error('Fehler beim Erstellen der Familienmitglieder:', famErr);
-                return res.status(500).json({ error: "Fehler beim Erstellen der Familienmitglieder" });
-            }
+        const existingMemberId = memberData.existing_member_id;
+        if (!existingMemberId) {
+            return res.status(400).json({ error: "existing_member_id ist erforderlich für Familienmitglieder" });
+        }
 
-            res.status(201).json({
-                success: true,
-                message: `${createdFamilyMembers.length} Familienmitglieder erfolgreich erstellt`,
-                family_members_created: createdFamilyMembers,
-                existing_member_id: memberData.existing_member_id
-            });
-        });
+        // 1. Bestehende Mitgliederdaten holen (für familien_id und Vertreter-Info)
+        db.query(
+            'SELECT mitglied_id, familien_id, vorname, nachname, email, telefon FROM mitglieder WHERE mitglied_id = ?',
+            [existingMemberId],
+            (err, existingMemberRows) => {
+                if (err || existingMemberRows.length === 0) {
+                    logger.error('Fehler beim Abrufen des bestehenden Mitglieds:', err);
+                    return res.status(404).json({ error: "Bestehendes Mitglied nicht gefunden" });
+                }
+
+                const existingMember = existingMemberRows[0];
+                let familienId = existingMember.familien_id;
+
+                // 2. Falls kein familien_id vorhanden, verwende mitglied_id als familien_id
+                const ensureFamilienIdAndContinue = () => {
+                    // Familienmitglieder erstellen mit familien_id und Vertreter-Info
+                    const enrichedMainData = {
+                        ...memberData,
+                        familien_id: familienId,
+                        vertreter_vorname: existingMember.vorname,
+                        vertreter_nachname: existingMember.nachname,
+                        vertreter_email: existingMember.email || memberData.email,
+                        vertreter_telefon: existingMember.telefon || memberData.telefon
+                    };
+
+                    createFamilyMembers(memberData.family_members, enrichedMainData, dojoId, (famErr, createdFamilyMembers) => {
+                        if (famErr) {
+                            logger.error('Fehler beim Erstellen der Familienmitglieder:', famErr);
+                            return res.status(500).json({ error: "Fehler beim Erstellen der Familienmitglieder" });
+                        }
+
+                        res.status(201).json({
+                            success: true,
+                            message: `${createdFamilyMembers.length} Familienmitglieder erfolgreich erstellt`,
+                            family_members_created: createdFamilyMembers,
+                            existing_member_id: existingMemberId,
+                            familien_id: familienId
+                        });
+                    });
+                };
+
+                if (!familienId) {
+                    // Setze mitglied_id als familien_id für das bestehende Mitglied
+                    familienId = existingMemberId;
+                    db.query(
+                        'UPDATE mitglieder SET familien_id = ? WHERE mitglied_id = ?',
+                        [familienId, existingMemberId],
+                        (updateErr) => {
+                            if (updateErr) {
+                                logger.error('Fehler beim Setzen der familien_id:', updateErr);
+                            } else {
+                                logger.info(`✅ familien_id ${familienId} für bestehendes Mitglied ${existingMemberId} gesetzt`);
+                            }
+                            ensureFamilienIdAndContinue();
+                        }
+                    );
+                } else {
+                    ensureFamilienIdAndContinue();
+                }
+            }
+        );
         return; // Wichtig: Hier aufhören, nicht weiter zum normalen Flow
     }
 
@@ -2378,6 +2430,19 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
     const createdMembers = [];
     const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
+    // Hilfsfunktion: Prüfe ob Person minderjährig ist
+    const isMinor = (geburtsdatum) => {
+        if (!geburtsdatum) return false;
+        const birthDate = new Date(geburtsdatum);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age < 18;
+    };
+
     const createMember = async (index) => {
         if (index >= familyMembers.length) {
             return callback(null, createdMembers);
@@ -2385,6 +2450,9 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
 
         const fm = familyMembers[index];
         logger.info(`👤 Erstelle Familienmitglied ${index + 1}: ${fm.vorname} ${fm.nachname}`);
+
+        // Prüfe ob das Familienmitglied minderjährig ist
+        const isFamilyMemberMinor = isMinor(fm.geburtsdatum);
 
         // Familienmitglied-Daten vorbereiten
         const memberFields = {
@@ -2394,12 +2462,20 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
             geburtsdatum: fm.geburtsdatum,
             geschlecht: fm.geschlecht || 'divers',
             email: fm.email || null,
+            // 👨‍👩‍👧 FAMILIEN-VERKNÜPFUNG
+            familien_id: mainMemberData.familien_id || null,
+            rabatt_grund: 'Familie',
             // Adresse vom Hauptmitglied übernehmen
             strasse: mainMemberData.strasse || null,
             hausnummer: mainMemberData.hausnummer || null,
             plz: mainMemberData.plz || null,
             ort: mainMemberData.ort || null,
             telefon: mainMemberData.telefon || null,
+            // 👨‍👩‍👧 VERTRETER für Minderjährige
+            vertreter1_typ: isFamilyMemberMinor ? 'sonstiger gesetzl. Vertreter' : null,
+            vertreter1_name: isFamilyMemberMinor ? `${mainMemberData.vertreter_vorname || mainMemberData.vorname} ${mainMemberData.vertreter_nachname || mainMemberData.nachname}` : null,
+            vertreter1_email: isFamilyMemberMinor ? (mainMemberData.vertreter_email || mainMemberData.email) : null,
+            vertreter1_telefon: isFamilyMemberMinor ? (mainMemberData.vertreter_telefon || mainMemberData.telefon) : null,
             // Dokumentakzeptanzen (gelten für alle Familienmitglieder)
             agb_akzeptiert: mainMemberData.vertrag_agb_akzeptiert ? 1 : 0,
             agb_akzeptiert_am: mainMemberData.vertrag_agb_akzeptiert ? now : null,
@@ -2409,6 +2485,8 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
             hausordnung_akzeptiert_am: mainMemberData.vertrag_hausordnung_akzeptiert ? now : null,
             eintrittsdatum: now.split(' ')[0]
         };
+
+        logger.info(`📎 Familien-Verknüpfung: familien_id=${memberFields.familien_id}, minderjährig=${isFamilyMemberMinor}`);
 
         const insertFields = Object.keys(memberFields).filter(k => memberFields[k] !== undefined && memberFields[k] !== null);
         const placeholders = insertFields.map(() => '?').join(', ');

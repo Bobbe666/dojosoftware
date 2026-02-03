@@ -474,4 +474,93 @@ router.put("/:id/archive-allergie", (req, res) => {
   });
 });
 
+// ===================================================================
+// 👨‍👩‍👧 FAMILIENMITGLIEDER ABRUFEN
+// ===================================================================
+router.get("/:id/familie", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const dojoId = req.user?.dojo_id;
+
+  logger.info('👨‍👩‍👧 Familie-API aufgerufen', { mitglied_id: id, dojo_id: dojoId });
+
+  try {
+    // 1. Hole familien_id des Mitglieds
+    let familienQuery = 'SELECT familien_id FROM mitglieder WHERE mitglied_id = ?';
+    const queryParams = [id];
+
+    if (dojoId) {
+      familienQuery += ' AND dojo_id = ?';
+      queryParams.push(dojoId);
+    }
+
+    db.query(familienQuery, queryParams, (err, results) => {
+      if (err) {
+        logger.error('Fehler beim Abrufen der familien_id:', err);
+        return res.status(500).json({ error: "Fehler beim Abrufen der Familiendaten" });
+      }
+
+      logger.info('👨‍👩‍👧 Query Result:', { results_length: results.length, first_result: results[0] });
+
+      if (results.length === 0) {
+        logger.warn('👨‍👩‍👧 Mitglied nicht gefunden', { mitglied_id: id });
+        return res.status(404).json({ error: "Mitglied nicht gefunden" });
+      }
+
+      const familienId = results[0].familien_id;
+      logger.info('👨‍👩‍👧 familien_id gefunden:', { familienId });
+
+      if (!familienId) {
+        logger.info('👨‍👩‍👧 Keine familien_id, return empty');
+        return res.json({
+          familien_id: null,
+          familienmitglieder: []
+        });
+      }
+
+      // 2. Hole alle Familienmitglieder mit gleicher familien_id
+      let membersQuery = `
+        SELECT
+          m.mitglied_id, m.vorname, m.nachname, m.geburtsdatum, m.email, m.telefon,
+          m.familien_id, m.rabatt_prozent, m.rabatt_grund,
+          m.vertreter1_typ, m.vertreter1_name, m.vertreter1_email, m.vertreter1_telefon,
+          TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) AS alter_jahre,
+          v.status AS vertrag_status,
+          t.name AS tarif_name
+        FROM mitglieder m
+        LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+        LEFT JOIN tarife t ON v.tarif_id = t.id
+        WHERE m.familien_id = ?
+      `;
+      const membersParams = [familienId];
+
+      if (dojoId) {
+        membersQuery += ' AND m.dojo_id = ?';
+        membersParams.push(dojoId);
+      }
+
+      membersQuery += ' ORDER BY m.mitglied_id ASC';
+
+      db.query(membersQuery, membersParams, (err2, members) => {
+        if (err2) {
+          logger.error('Fehler beim Abrufen der Familienmitglieder:', err2);
+          return res.status(500).json({ error: "Fehler beim Abrufen der Familienmitglieder" });
+        }
+
+        logger.info(`👨‍👩‍👧 ${members.length} Familienmitglieder gefunden für familien_id ${familienId}`);
+
+        res.json({
+          familien_id: familienId,
+          familienmitglieder: members.map(m => ({
+            ...m,
+            ist_minderjaehrig: m.alter_jahre !== null && m.alter_jahre < 18
+          }))
+        });
+      });
+    });
+  } catch (error) {
+    logger.error('Fehler beim Abrufen der Familienmitglieder:', error);
+    res.status(500).json({ error: "Fehler beim Abrufen der Familienmitglieder" });
+  }
+});
+
 module.exports = router;
