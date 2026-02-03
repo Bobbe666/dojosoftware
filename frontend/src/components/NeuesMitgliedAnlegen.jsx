@@ -9,6 +9,115 @@ import '../styles/NeuesMitgliedAnlegen.css';
 import "../styles/themes.css";
 import "../styles/components.css";
 
+// Custom DateInput Component mit Auto-Advance
+const DateInputAutoAdvance = ({ value, onChange, name, id, required, style }) => {
+  // Parse existing value (YYYY-MM-DD format)
+  const parseDate = (dateStr) => {
+    if (!dateStr) return { day: '', month: '', year: '' };
+    const parts = dateStr.split('-');
+    return {
+      year: parts[0] || '',
+      month: parts[1] || '',
+      day: parts[2] || ''
+    };
+  };
+
+  const [dateParts, setDateParts] = React.useState(parseDate(value));
+
+  // Update parent when parts change
+  React.useEffect(() => {
+    if (dateParts.day && dateParts.month && dateParts.year && dateParts.year.length === 4) {
+      const newDate = `${dateParts.year}-${dateParts.month.padStart(2, '0')}-${dateParts.day.padStart(2, '0')}`;
+      if (newDate !== value) {
+        onChange({ target: { name, value: newDate } });
+      }
+    }
+  }, [dateParts, name, onChange, value]);
+
+  // Sync with external value changes
+  React.useEffect(() => {
+    const parsed = parseDate(value);
+    if (parsed.day !== dateParts.day || parsed.month !== dateParts.month || parsed.year !== dateParts.year) {
+      setDateParts(parsed);
+    }
+  }, [value]);
+
+  const handleDayChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    if (parseInt(val) > 31) val = '31';
+    setDateParts(prev => ({ ...prev, day: val }));
+    // Auto-advance to month
+    if (val.length === 2) {
+      document.getElementById(`${id}-month`)?.focus();
+    }
+  };
+
+  const handleMonthChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    if (parseInt(val) > 12) val = '12';
+    setDateParts(prev => ({ ...prev, month: val }));
+    // Auto-advance to year
+    if (val.length === 2) {
+      document.getElementById(`${id}-year`)?.focus();
+    }
+  };
+
+  const handleYearChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setDateParts(prev => ({ ...prev, year: val }));
+  };
+
+  const inputStyle = {
+    padding: '0.4rem 0.3rem',
+    border: '2px solid var(--border-color)',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    lineHeight: '1.3',
+    height: '32px',
+    textAlign: 'center',
+    background: 'rgba(255, 255, 255, 0.08)',
+    color: 'rgba(255, 255, 255, 0.95)',
+    ...style
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+      <input
+        type="text"
+        id={`${id}-day`}
+        value={dateParts.day}
+        onChange={handleDayChange}
+        placeholder="TT"
+        maxLength={2}
+        style={{ ...inputStyle, width: '45px' }}
+        required={required}
+      />
+      <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>.</span>
+      <input
+        type="text"
+        id={`${id}-month`}
+        value={dateParts.month}
+        onChange={handleMonthChange}
+        placeholder="MM"
+        maxLength={2}
+        style={{ ...inputStyle, width: '45px' }}
+        required={required}
+      />
+      <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>.</span>
+      <input
+        type="text"
+        id={`${id}-year`}
+        value={dateParts.year}
+        onChange={handleYearChange}
+        placeholder="JJJJ"
+        maxLength={4}
+        style={{ ...inputStyle, width: '60px' }}
+        required={required}
+      />
+    </div>
+  );
+};
+
 const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrationComplete, existingMemberForFamily = null }) => {
   // Hole das aktive Dojo aus dem Context
   const { activeDojo, getBestDojoForNewMember } = useDojoContext();
@@ -484,9 +593,19 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       try {
         const endpoint = isRegistrationFlow ? '/public/tarife' : '/tarife';
         const response = await axios.get(endpoint);
-        setAvailableTarife(response.data || []);
+        // API kann entweder direkt ein Array oder {success: true, data: [...]} zurückgeben
+        const tarifeData = response.data?.data || response.data;
+        // Normalisiere Feldnamen: public API hat 'id' und 'price_cents', interne API hat 'tarif_id' und 'monatlicher_beitrag_cents'
+        const normalizedTarife = (Array.isArray(tarifeData) ? tarifeData : []).map(tarif => ({
+          ...tarif,
+          tarif_id: tarif.tarif_id || tarif.id,
+          monatlicher_beitrag_cents: tarif.monatlicher_beitrag_cents ?? tarif.price_cents ?? 0,
+          aktiv: tarif.aktiv !== undefined ? tarif.aktiv : true // Public API gibt nur aktive zurück
+        }));
+        setAvailableTarife(normalizedTarife);
       } catch (error) {
         console.error("Fehler beim Laden der Tarife:", error);
+        setAvailableTarife([]);
       }
     };
 
@@ -497,7 +616,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   // Tarif für Familienmitglied aktualisieren
   const updateFamilyMemberTarif = (index, tarifId) => {
-    const tarif = availableTarife.find(t => t.tarif_id === parseInt(tarifId));
+    const tarif = (availableTarife || []).find(t => t.tarif_id === parseInt(tarifId));
     if (tarif) {
       setFamilyMembers(prev => prev.map((member, i) => {
         if (i === index) {
@@ -517,24 +636,29 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   const getFilteredTarife = (geburtsdatum) => {
     const isKid = isFamilyMemberMinor(geburtsdatum);
     return (availableTarife || []).filter(tarif => {
+      // Nur aktive Tarife mit gültigem Preis anzeigen
+      if (tarif.aktiv === false || tarif.aktiv === 0) return false;
+
       const tarifName = (tarif.name || '').toLowerCase();
       const tarifBeschreibung = (tarif.beschreibung || '').toLowerCase();
+
+      // Spezielle Tarife ausschließen die nicht für normale Mitglieder sind
+      if (tarifName.includes('beitragsfrei') || tarifName.includes('anzug') ||
+          tarifName.includes('10er karte') || tarifName.includes('familientarif') ||
+          tarifName.includes('familienmitglied')) return false;
 
       // Kids-Tarife erkennen
       const isKidsTarif = tarifName.includes('kind') || tarifName.includes('kids') ||
                           tarifName.includes('jugend') || tarifName.includes('schüler') ||
+                          tarifName.includes('studenten') ||
                           tarifBeschreibung.includes('kind') || tarifBeschreibung.includes('kids');
 
-      // Erwachsenen-Tarife erkennen
-      const isAdultTarif = tarifName.includes('erwachsen') || tarifName.includes('adult') ||
-                          (!isKidsTarif); // Wenn nicht explizit Kids, dann Erwachsene
-
       if (isKid) {
-        // Für Kinder: Kids-Tarife oder allgemeine Tarife anzeigen
-        return isKidsTarif || (!tarifName.includes('erwachsen') && !tarifName.includes('adult'));
+        // Für Kinder: Kids-Tarife anzeigen
+        return isKidsTarif;
       } else {
-        // Für Erwachsene: Erwachsenen-Tarife oder allgemeine Tarife (keine Kids-Tarife)
-        return !isKidsTarif;
+        // Für Erwachsene: Erwachsenen-Tarife (keine Kids-Tarife)
+        return tarifName.includes('erwachsen') || tarifName.includes('adult');
       }
     });
   };
@@ -1100,25 +1224,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             marginBottom: '0.4rem',
             color: 'var(--text-color)',
             fontSize: '0.85rem'
-          }}>Geburtsdatum *</label>
-          <input
-            type="date"
+          }}>Geburtsdatum * (TT.MM.JJJJ)</label>
+          <DateInputAutoAdvance
             id="geburtsdatum"
             name="geburtsdatum"
             value={memberData.geburtsdatum}
             onChange={handleChange}
-            className="input-field"
-            style={{
-              padding: '0.4rem 0.5rem',
-              border: '2px solid var(--border-color)',
-              borderRadius: '6px',
-              fontSize: '0.85rem',
-              lineHeight: '1.3',
-              height: '32px',
-              transition: 'all 0.3s ease',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: 'rgba(255, 255, 255, 0.95)'
-            }}
             required
           />
         </div>
@@ -1788,21 +1899,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
                 <div className="input-group">
                   <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
-                    Geburtsdatum *
+                    Geburtsdatum * (TT.MM.JJJJ)
                   </label>
-                  <input
-                    type="date"
+                  <DateInputAutoAdvance
+                    id="family-geburtsdatum"
+                    name="geburtsdatum"
                     value={newFamilyMember.geburtsdatum}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, geburtsdatum: e.target.value }))}
-                    className="input-field"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
+                    required
                   />
                 </div>
 
@@ -2398,7 +2502,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           {familyMembers.map((member, index) => {
             const filteredTarife = getFilteredTarife(member.geburtsdatum);
             const discount = getFamilyDiscount(member.position);
-            const selectedTarif = availableTarife.find(t => t.tarif_id === member.tarif_id);
+            const selectedTarif = (availableTarife || []).find(t => t.tarif_id === member.tarif_id);
             const originalPrice = selectedTarif ? selectedTarif.monatlicher_beitrag_cents : 0;
             const discountAmount = Math.round(originalPrice * discount.prozent / 100);
             const finalPrice = originalPrice - discountAmount;
@@ -2463,7 +2567,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                     <option value="">Bitte Tarif wählen...</option>
                     {filteredTarife.map(tarif => (
                       <option key={tarif.tarif_id} value={tarif.tarif_id}>
-                        {tarif.name} - {(tarif.monatlicher_beitrag_cents / 100).toFixed(2)} €/Monat
+                        {tarif.name} - {((tarif.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €/Monat
                         {tarif.mindestlaufzeit_monate ? ` (${tarif.mindestlaufzeit_monate} Mon. Laufzeit)` : ''}
                       </option>
                     ))}
@@ -2583,7 +2687,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 </span>
                 <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                   {memberData.vertrag_tarif_id ?
-                    `${((availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €` :
+                    `${(((availableTarife || []).find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €` :
                     '-- €'}
                 </span>
               </div>
@@ -2603,10 +2707,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
                   <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    {member.vorname} {member.nachname}
-                    <span style={{ color: '#10b981', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
-                      (-{discount.prozent}%)
-                    </span>
+                    {member.vorname || 'Vorname'} {member.nachname || 'Nachname'}
+                    {discount.prozent > 0 && (
+                      <span style={{ color: '#10b981', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                        (-{discount.prozent}%)
+                      </span>
+                    )}
                   </span>
                   <span style={{ color: member.tarif_id ? '#10b981' : 'rgba(255, 255, 255, 0.5)' }}>
                     {member.tarif_id ? `${(finalPrice / 100).toFixed(2)} €` : '-- €'}
@@ -2632,7 +2738,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   // Bei existing member mode: nur Familienmitglieder-Preise
                   // Sonst: Hauptmitglied + Familienmitglieder
                   const hauptmitgliedPreis = existingMemberMode ? 0 :
-                    (availableTarife.find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0);
+                    ((availableTarife || []).find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0);
                   const familienPreis = familyMembers.reduce((sum, member) => {
                     const discount = getFamilyDiscount(member.position);
                     const price = member.tarif_preis || 0;
@@ -2643,6 +2749,125 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               </span>
             </div>
           </div>
+
+          {/* AGB-Checkboxen für Familienmitglieder im existingMemberMode */}
+          {existingMemberMode && (
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '1.25rem',
+              background: 'rgba(31, 41, 55, 0.9)',
+              border: '2px solid rgba(245, 158, 11, 0.5)',
+              borderRadius: '12px'
+            }}>
+              <h5 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 1rem 0' }}>
+                Rechtliche Bestätigungen für neue Familienmitglieder
+              </h5>
+
+              {/* AGB */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                padding: '0.75rem',
+                background: memberData.vertrag_agb_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${memberData.vertrag_agb_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                marginBottom: '0.75rem'
+              }}>
+                <input
+                  type="checkbox"
+                  name="vertrag_agb_akzeptiert"
+                  checked={memberData.vertrag_agb_akzeptiert}
+                  onChange={handleInputChange}
+                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                />
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                  Ich akzeptiere die <strong>Allgemeinen Geschäftsbedingungen (AGB)</strong> *
+                </span>
+              </label>
+
+              {/* Datenschutz */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                padding: '0.75rem',
+                background: memberData.vertrag_datenschutz_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${memberData.vertrag_datenschutz_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                marginBottom: '0.75rem'
+              }}>
+                <input
+                  type="checkbox"
+                  name="vertrag_datenschutz_akzeptiert"
+                  checked={memberData.vertrag_datenschutz_akzeptiert}
+                  onChange={handleInputChange}
+                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                />
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                  Ich akzeptiere die <strong>Datenschutzerklärung</strong> *
+                </span>
+              </label>
+
+              {/* Dojo-Regeln */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                padding: '0.75rem',
+                background: memberData.vertrag_dojo_regeln_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${memberData.vertrag_dojo_regeln_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                marginBottom: '0.75rem'
+              }}>
+                <input
+                  type="checkbox"
+                  name="vertrag_dojo_regeln_akzeptiert"
+                  checked={memberData.vertrag_dojo_regeln_akzeptiert}
+                  onChange={handleInputChange}
+                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                />
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                  Ich akzeptiere die <strong>Dojo-Regeln</strong> *
+                </span>
+              </label>
+
+              {/* Hausordnung */}
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                padding: '0.75rem',
+                background: memberData.vertrag_hausordnung_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${memberData.vertrag_hausordnung_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  name="vertrag_hausordnung_akzeptiert"
+                  checked={memberData.vertrag_hausordnung_akzeptiert}
+                  onChange={handleInputChange}
+                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                />
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                  Ich akzeptiere die <strong>Hausordnung</strong> *
+                </span>
+              </label>
+
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.8rem',
+                marginTop: '0.75rem',
+                marginBottom: 0
+              }}>
+                * Pflichtfelder - Diese Bestätigungen gelten für alle neuen Familienmitglieder
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
