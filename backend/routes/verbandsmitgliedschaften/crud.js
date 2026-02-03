@@ -255,27 +255,34 @@ router.get('/:id(\\d+)', async (req, res) => {
       logger.info('Loading dojo stats for dojoId:', dojoId);
 
       try {
-        const [mitgliederStats, kurseStats, trainerStats, storageStats, adminStats, stilStats, standortStats, eventStats, letztesLogin] = await Promise.all([
-          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv, SUM(CASE WHEN aktiv = 0 THEN 1 ELSE 0 END) as inaktiv, 0 as gekuendigt FROM mitglieder WHERE dojo_id = ?', [dojoId]),
-          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv FROM kurse WHERE dojo_id = ?', [dojoId]),
+        const [mitgliederStats, kurseStats, trainerStats, storageStats, adminStats, standortStats, eventStats, letztesLogin] = await Promise.all([
+          // Mitglieder: aktiv column is 1/0
+          queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv, SUM(CASE WHEN aktiv = 0 THEN 1 ELSE 0 END) as inaktiv FROM mitglieder WHERE dojo_id = ?', [dojoId]),
+          // Kurse: no aktiv column, count all
+          queryAsync('SELECT COUNT(*) as gesamt, COUNT(*) as aktiv FROM kurse WHERE dojo_id = ?', [dojoId]),
+          // Trainer: count distinct
           queryAsync('SELECT COUNT(DISTINCT trainer_id) as anzahl FROM kurse WHERE dojo_id = ? AND trainer_id IS NOT NULL', [dojoId]),
+          // Speicherplatz
           queryAsync('SELECT COALESCE(SUM(dateigroesse), 0) as bytes_total, COUNT(*) as dokumente_anzahl FROM dokumente WHERE dojo_id = ?', [dojoId]),
+          // Admin Users
           queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv FROM admin_users WHERE dojo_id = ?', [dojoId]),
-          queryAsync('SELECT COUNT(*) as anzahl FROM stile WHERE dojo_id = ?', [dojoId]),
+          // Standorte: ist_aktiv column
           queryAsync('SELECT COUNT(*) as anzahl FROM standorte WHERE dojo_id = ?', [dojoId]),
+          // Events
           queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN datum >= CURDATE() THEN 1 ELSE 0 END) as kommende FROM events WHERE dojo_id = ?', [dojoId]),
+          // Letztes Login
           queryAsync('SELECT MAX(last_login) as letztes_login FROM admin_users WHERE dojo_id = ? AND aktiv = 1', [dojoId])
         ]);
 
         logger.info('Dojo stats loaded successfully');
 
         mitgliedschaft.dojo_stats = {
-          mitglieder: { gesamt: mitgliederStats[0]?.gesamt || 0, aktiv: mitgliederStats[0]?.aktiv || 0, inaktiv: mitgliederStats[0]?.inaktiv || 0, gekuendigt: mitgliederStats[0]?.gekuendigt || 0 },
+          mitglieder: { gesamt: mitgliederStats[0]?.gesamt || 0, aktiv: mitgliederStats[0]?.aktiv || 0, inaktiv: mitgliederStats[0]?.inaktiv || 0, gekuendigt: 0 },
           kurse: { gesamt: kurseStats[0]?.gesamt || 0, aktiv: kurseStats[0]?.aktiv || 0 },
           trainer: { anzahl: trainerStats[0]?.anzahl || 0 },
           speicherplatz: { bytes: storageStats[0]?.bytes_total || 0, mb: Math.round((storageStats[0]?.bytes_total || 0) / 1024 / 1024 * 100) / 100, dokumente: storageStats[0]?.dokumente_anzahl || 0 },
           admins: { gesamt: adminStats[0]?.gesamt || 0, aktiv: adminStats[0]?.aktiv || 0 },
-          stile: stilStats[0]?.anzahl || 0,
+          stile: 0,
           standorte: standortStats[0]?.anzahl || 0,
           events: { gesamt: eventStats[0]?.gesamt || 0, kommende: eventStats[0]?.kommende || 0 },
           letztes_login: letztesLogin[0]?.letztes_login || null
@@ -293,84 +300,6 @@ router.get('/:id(\\d+)', async (req, res) => {
 });
 
 
-
-// POST / - Neue Mitgliedschaft anlegen
-router.post('/', async (req, res) => {
-  try {
-    const { typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, gueltig_von, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, beitragsfrei } = req.body;
-
-    if (!typ || !['dojo', 'einzelperson'].includes(typ)) return res.status(400).json({ error: 'Ungültiger Mitgliedschaftstyp' });
-    // Bei neues_dojo wird kein dojo_id benötigt - das Dojo wird vom Frontend vorher angelegt
-    if (typ === 'dojo' && !dojo_id && !req.body.neues_dojo) return res.status(400).json({ error: 'Dojo muss ausgewählt werden' });
-    if (typ === 'einzelperson' && (!person_vorname || !person_nachname || !person_email)) return res.status(400).json({ error: 'Name und E-Mail sind erforderlich' });
-
-    if (typ === 'dojo') {
-      const existing = await queryAsync("SELECT id FROM verbandsmitgliedschaften WHERE dojo_id = ? AND status IN ('aktiv', 'ausstehend')", [dojo_id]);
-      if (existing.length > 0) return res.status(400).json({ error: 'Dieses Dojo hat bereits eine aktive Mitgliedschaft' });
-    }
-
-    // Land für Mitgliedsnummer ermitteln
-    let land = 'Deutschland';
-    if (typ === 'einzelperson') {
-      land = person_land || 'Deutschland';
-    } else if (typ === 'dojo' && dojo_id) {
-      const dojoData = await queryAsync('SELECT land FROM dojo WHERE id = ?', [dojo_id]);
-      land = dojoData[0]?.land || 'Deutschland';
-    }
-
-    const mitgliedsnummer = await getNextMitgliedsnummer(typ, land);
-    const beitragDojo = await getEinstellung('preis_dojo_mitgliedschaft', DEFAULT_BEITRAG_DOJO);
-    const beitragEinzel = await getEinstellung('preis_einzel_mitgliedschaft', DEFAULT_BEITRAG_EINZEL);
-
-    // Wenn beitragsfrei, dann 0€ - ansonsten normaler Beitrag
-    const jahresbeitrag = beitragsfrei ? 0 : (typ === 'dojo' ? beitragDojo : beitragEinzel);
-    const laufzeitMonate = await getEinstellung('laufzeit_monate', 12);
-
-    const startDatum = gueltig_von || new Date().toISOString().split('T')[0];
-    const endDatum = new Date(startDatum);
-    endDatum.setMonth(endDatum.getMonth() + laufzeitMonate);
-    const gueltigBis = endDatum.toISOString().split('T')[0];
-
-    // Bei beitragsfrei sofort 'aktiv', ansonsten 'ausstehend'
-    const initialStatus = beitragsfrei ? 'aktiv' : 'ausstehend';
-
-    const result = await queryAsync(`INSERT INTO verbandsmitgliedschaften (typ, dojo_id, person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, mitglied_id, mitgliedsnummer, jahresbeitrag, gueltig_von, gueltig_bis, status, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, beitragsfrei) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [typ, dojo_id || null, person_vorname || null, person_nachname || null, person_email || null, person_telefon || null, person_strasse || null, person_plz || null, person_ort || null, person_land || 'Deutschland', person_geburtsdatum || null, mitglied_id || null, mitgliedsnummer, jahresbeitrag, startDatum, gueltigBis, initialStatus, zahlungsart || 'rechnung', sepa_iban || null, sepa_bic || null, sepa_kontoinhaber || null, notizen || null, beitragsfrei ? 1 : 0]);
-
-    let rechnungsnummer = null;
-
-    // Nur Zahlung anlegen wenn nicht beitragsfrei
-    if (!beitragsfrei) {
-      const betraege = calculateBrutto(jahresbeitrag);
-      rechnungsnummer = await generateFortlaufendeRechnungsnummer();
-
-      await queryAsync(`INSERT INTO verbandsmitgliedschaft_zahlungen (verbandsmitgliedschaft_id, rechnungsnummer, rechnungsdatum, faellig_am, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto, zeitraum_von, zeitraum_bis, status) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), ?, ?, ?, ?, ?, ?, 'offen')`,
-        [result.insertId, rechnungsnummer, betraege.netto, betraege.mwst_satz, betraege.mwst_betrag, betraege.brutto, startDatum, gueltigBis]);
-    }
-
-    const message = beitragsfrei
-      ? `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft beitragsfrei angelegt`
-      : `${typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft erfolgreich angelegt`;
-
-    // Historie protokollieren
-    await protokolliereHistorie(
-      result.insertId,
-      'erstellt',
-      `Mitgliedschaft erstellt: ${mitgliedsnummer} (${typ}), Beitrag: ${jahresbeitrag}€/Jahr, Laufzeit: ${startDatum} bis ${gueltigBis}${beitragsfrei ? ' (beitragsfrei)' : ''}`,
-      null,
-      { typ, mitgliedsnummer, jahresbeitrag, gueltig_von: startDatum, gueltig_bis: gueltigBis, status: initialStatus, zahlungsart, beitragsfrei },
-      req.user?.email || req.user?.username || 'System',
-      req.ip || req.headers['x-forwarded-for']
-    );
-
-    res.status(201).json({ success: true, id: result.insertId, mitgliedsnummer, rechnungsnummer, beitragsfrei: !!beitragsfrei, message });
-  } catch (err) {
-    logger.error('Fehler beim Anlegen der Mitgliedschaft:', { error: err });
-    res.status(500).json({ error: 'Datenbankfehler: ' + err.message });
-  }
-});
-
-// PUT /:id/status - Status ändern
 router.put('/:id(\\d+)/status', async (req, res) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: 'Status fehlt' });
