@@ -16,7 +16,6 @@ import {
   BookOpen, Medal, ScrollText, BadgeCheck, Loader2, AlertCircle,
   Edit3, Save, ChevronDown, Settings
 } from 'lucide-react';
-import StripeCheckout from './StripeCheckout';
 import '../styles/VerbandShop.css';
 
 // Icon-Mapping für dynamische Kategorien
@@ -49,8 +48,6 @@ const VerbandShop = () => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState(null);
-  const [showStripePayment, setShowStripePayment] = useState(false);
-  const [pendingOrder, setPendingOrder] = useState(null);
 
   // Admin State
   const isAdmin = user?.role === 'admin';
@@ -239,56 +236,37 @@ const VerbandShop = () => {
 
   // Checkout Handler
   const handleCheckout = async () => {
-    const bestellung = {
-      positionen: warenkorb.map(item => ({
-        produkt_id: item.produktId,
-        menge: item.menge,
-        optionen: item.optionen
-      })),
-      lieferadresse: {
-        vorname: checkoutData.vorname,
-        nachname: checkoutData.nachname,
-        strasse: checkoutData.strasse,
-        plz: checkoutData.plz,
-        ort: checkoutData.ort,
-        land: checkoutData.land,
-        telefon: checkoutData.telefon
-      },
-      rechnungsadresse: {
-        vorname: checkoutData.vorname,
-        nachname: checkoutData.nachname,
-        email: checkoutData.email,
-        strasse: checkoutData.strasse,
-        plz: checkoutData.plz,
-        ort: checkoutData.ort,
-        land: checkoutData.land
-      },
-      anmerkungen: checkoutData.anmerkungen,
-      zahlungsart: checkoutData.zahlungsart
-    };
-
-    // Bei Stripe-Zahlung: Modal öffnen
-    if (checkoutData.zahlungsart === 'stripe') {
-      setPendingOrder(bestellung);
-      setShowStripePayment(true);
-      setShowCheckout(false);
-      return;
-    }
-
-    // Ansonsten normale Bestellung
-    await submitOrder(bestellung);
-  };
-
-  const submitOrder = async (bestellung, paymentIntentId = null) => {
     setLoading(true);
 
     try {
-      // Füge Payment Intent ID hinzu wenn vorhanden
-      if (paymentIntentId) {
-        bestellung.stripe_payment_intent_id = paymentIntentId;
-        bestellung.bezahlt = true;
-      }
+      const bestellung = {
+        positionen: warenkorb.map(item => ({
+          produkt_id: item.produktId,
+          menge: item.menge,
+          optionen: item.optionen
+        })),
+        lieferadresse: {
+          vorname: checkoutData.vorname,
+          nachname: checkoutData.nachname,
+          strasse: checkoutData.strasse,
+          plz: checkoutData.plz,
+          ort: checkoutData.ort,
+          land: checkoutData.land,
+          telefon: checkoutData.telefon
+        },
+        rechnungsadresse: {
+          vorname: checkoutData.vorname,
+          nachname: checkoutData.nachname,
+          email: checkoutData.email,
+          strasse: checkoutData.strasse,
+          plz: checkoutData.plz,
+          ort: checkoutData.ort,
+          land: checkoutData.land
+        },
+        anmerkungen: checkoutData.anmerkungen
+      };
 
+      // WICHTIG: Relative Pfade verwenden, da axios.defaults.baseURL bereits /api ist
       await axios.post('/shop/bestellungen', bestellung, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -297,8 +275,6 @@ const VerbandShop = () => {
       setBestellungErfolgreich(true);
       clearCart();
       setShowCheckout(false);
-      setShowStripePayment(false);
-      setPendingOrder(null);
 
     } catch (error) {
       console.error('Bestellfehler:', error);
@@ -808,20 +784,6 @@ const VerbandShop = () => {
                   <span className="za-info">Überweisung vor Versand</span>
                 </div>
               </label>
-              <label className={`zahlungsart ${checkoutData.zahlungsart === 'stripe' ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="zahlungsart"
-                  value="stripe"
-                  checked={checkoutData.zahlungsart === 'stripe'}
-                  onChange={e => setCheckoutData(prev => ({ ...prev, zahlungsart: e.target.value }))}
-                />
-                <CreditCard size={20} />
-                <div>
-                  <span className="za-name">Kreditkarte</span>
-                  <span className="za-info">Sofortige Zahlung mit Karte</span>
-                </div>
-              </label>
             </div>
           </div>
 
@@ -1250,30 +1212,6 @@ const VerbandShop = () => {
       <WarenkorbSidebar />
       {showCheckout && <CheckoutModal />}
       {bestellungErfolgreich && <BestellungErfolgreichModal />}
-
-      {/* Stripe Payment Modal */}
-      {showStripePayment && pendingOrder && (
-        <div className="modal-overlay" onClick={() => setShowStripePayment(false)}>
-          <div className="modal-content checkout-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowStripePayment(false)}>
-              <X size={24} />
-            </button>
-            <h2><CreditCard size={24} /> Kartenzahlung</h2>
-            <StripeCheckout
-              amount={Math.round(gesamtSumme * 100)}
-              description={`Shop-Bestellung: ${warenkorb.length} Artikel`}
-              reference={`shop-order-${Date.now()}`}
-              referenceType="shop"
-              onSuccess={(paymentIntent) => submitOrder(pendingOrder, paymentIntent.id)}
-              onCancel={() => {
-                setShowStripePayment(false);
-                setShowCheckout(true);
-              }}
-              successMessage="Zahlung erfolgreich! Ihre Bestellung wird bearbeitet."
-            />
-          </div>
-        </div>
-      )}
       {showProduktEditor && <ProduktEditorModal />}
 
       {/* Overlay für Warenkorb */}

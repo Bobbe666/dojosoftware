@@ -6,9 +6,11 @@
 // =====================================================================================
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, ShoppingCart, User, CreditCard, Euro } from 'lucide-react';
+import { X, ShoppingCart, User, CreditCard, Euro, Smartphone } from 'lucide-react';
+import axios from 'axios';
 import config from '../config/config.js';
 import { useDojoContext } from '../context/DojoContext';
+import SumUpCheckout from './SumUpCheckout';
 import '../styles/VerkaufKasse.css';
 import '../styles/CheckinSystem.css';
 
@@ -97,6 +99,10 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   const [showVariantenModal, setShowVariantenModal] = useState(false);
   const [selectedArtikelForVariant, setSelectedArtikelForVariant] = useState(null);
   const [selectedVariante, setSelectedVariante] = useState({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+
+  // SumUp State
+  const [sumupAvailable, setSumupAvailable] = useState(false);
+  const [showSumupCheckout, setShowSumupCheckout] = useState(false);
 
   const aggregierteCheckins = useMemo(
     () => aggregateCheckinsByMember(checkinsHeute),
@@ -217,7 +223,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         setError('Warenkorb ist leer');
         return;
       }
-      
+
       const verkaufData = {
         mitglied_id: mitgliedId || null,
         kunde_name: kundeName || null,
@@ -233,12 +239,12 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         dojo_id: activeDojo?.id || null,
         checkin_id: checkin_id || null // Verknüpfung zur Anwesenheit
       };
-      
+
       const response = await apiCall('/verkaeufe', {
         method: 'POST',
         body: JSON.stringify(verkaufData)
       });
-      
+
       if (response.success) {
         setLetzterVerkauf(response);
         setVerkaufErfolgreich(true);
@@ -249,8 +255,64 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         setBemerkung('');
         setShowZahlung(false);
         setError(null);
-        
+
         // Nach 3 Sekunden zur Kasse zurückkehren
+        setTimeout(() => {
+          setVerkaufErfolgreich(false);
+          setLetzterVerkauf(null);
+        }, 3000);
+      } else {
+        setError(response.error || 'Fehler beim Verkauf');
+      }
+    } catch (error) {
+      setError('Fehler beim Verkauf: ' + error.message);
+    }
+  };
+
+  // Verkauf mit SumUp-Zahlung abschließen
+  const durchfuehrenVerkaufMitSumUp = async (sumupResult) => {
+    try {
+      if (warenkorb.length === 0) {
+        setError('Warenkorb ist leer');
+        return;
+      }
+
+      const verkaufData = {
+        mitglied_id: mitgliedId || null,
+        kunde_name: kundeName || null,
+        artikel: warenkorb.map(item => ({
+          artikel_id: item.artikel_id,
+          menge: item.menge,
+          einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100)
+        })),
+        zahlungsart: 'sumup',
+        gegeben_cent: null,
+        bemerkung: bemerkung || null,
+        verkauft_von_name: 'Kassierer',
+        dojo_id: activeDojo?.id || null,
+        checkin_id: checkin_id || null,
+        // SumUp-spezifische Daten
+        sumup_checkout_id: sumupResult.checkoutId,
+        sumup_transaction_id: sumupResult.transactionId
+      };
+
+      const response = await apiCall('/verkaeufe', {
+        method: 'POST',
+        body: JSON.stringify(verkaufData)
+      });
+
+      if (response.success) {
+        setLetzterVerkauf(response);
+        setVerkaufErfolgreich(true);
+        setWarenkorb([]);
+        setGegebenBetrag('');
+        setKundeName('');
+        setMitgliedId('');
+        setBemerkung('');
+        setShowZahlung(false);
+        setShowSumupCheckout(false);
+        setError(null);
+
         setTimeout(() => {
           setVerkaufErfolgreich(false);
           setLetzterVerkauf(null);
@@ -455,6 +517,21 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     loadKassenArtikel();
     loadHeutigeCheckins();
   }, []);
+
+  // SumUp Verfügbarkeit prüfen
+  useEffect(() => {
+    const checkSumup = async () => {
+      const dojoId = activeDojo?.id || activeDojo;
+      if (!dojoId) return;
+      try {
+        const response = await axios.get(`/sumup/status?dojo_id=${dojoId}`);
+        setSumupAvailable(response.data?.active && response.data?.configured);
+      } catch (err) {
+        setSumupAvailable(false);
+      }
+    };
+    checkSumup();
+  }, [activeDojo]);
   
   // =====================================================================================
   // RENDER FUNCTIONS
@@ -615,6 +692,19 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
             />
             <span>💳 Lastschrift</span>
           </label>
+
+          {sumupAvailable && (
+            <label className="zahlungsart-option sumup">
+              <input
+                type="radio"
+                name="zahlungsart"
+                value="sumup"
+                checked={zahlungsart === 'sumup'}
+                onChange={(e) => setZahlungsart(e.target.value)}
+              />
+              <span><Smartphone size={16} style={{verticalAlign: 'middle', marginRight: 4}} /> SumUp Terminal</span>
+            </label>
+          )}
         </div>
         
         {zahlungsart === 'bar' && (
@@ -649,6 +739,28 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {zahlungsart === 'sumup' && (
+          <div className="sumup-zahlung">
+            <SumUpCheckout
+              amount={warenkorbSummeEuro}
+              description={`Verkauf ${warenkorb.length} Artikel`}
+              dojoId={activeDojo?.id || activeDojo}
+              mitgliedId={mitgliedId}
+              zahlungstyp="verkauf"
+              onSuccess={(result) => {
+                // Verkauf mit SumUp-Daten abschließen
+                durchfuehrenVerkaufMitSumUp(result);
+              }}
+              onError={(error) => {
+                setError('SumUp Zahlung fehlgeschlagen: ' + error);
+              }}
+              onCancel={() => {
+                setZahlungsart('bar');
+              }}
+            />
           </div>
         )}
 
@@ -687,19 +799,21 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         </div>
         
         <div className="zahlung-actions">
-          <button 
+          <button
             className="btn btn-secondary"
             onClick={() => setShowZahlung(false)}
           >
             Abbrechen
           </button>
-          <button 
-            className="btn btn-primary"
-            onClick={durchfuehrenVerkauf}
-            disabled={zahlungsart === 'bar' && parseFloat(gegebenBetrag) < warenkorbSummeEuro}
-          >
-            Verkauf abschließen
-          </button>
+          {zahlungsart !== 'sumup' && (
+            <button
+              className="btn btn-primary"
+              onClick={durchfuehrenVerkauf}
+              disabled={zahlungsart === 'bar' && parseFloat(gegebenBetrag) < warenkorbSummeEuro}
+            >
+              Verkauf abschließen
+            </button>
+          )}
         </div>
       </div>
     </div>

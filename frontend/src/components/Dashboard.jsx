@@ -443,6 +443,14 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '🔴',
+      title: 'Offene Zahlungen',
+      description: 'Rücklastschriften & Chargebacks verwalten',
+      path: '/dashboard/offene-zahlungen',
+      badge: 'NEU',
+      featured: true
+    },
+    {
       icon: '🎯',
       title: 'Tarife & Preise',
       description: 'Mitgliedschaftstarife und Preisgestaltung',
@@ -622,6 +630,13 @@ function Dashboard() {
       path: '/dashboard/events',
       badge: 'NEU',
       featured: true
+    },
+    {
+      icon: '📊',
+      title: 'Event-Dashboard',
+      description: 'Statistiken, Zahlungen & Export',
+      path: '/dashboard/events-dashboard',
+      badge: 'NEU'
     }
   ];
 

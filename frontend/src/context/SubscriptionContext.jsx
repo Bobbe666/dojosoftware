@@ -37,8 +37,11 @@ export const SubscriptionProvider = ({ children }) => {
       setSubscription(response.data);
       setError(null);
     } catch (err) {
-      console.error('Failed to load subscription:', err);
-      setError(err.response?.data?.error || 'Fehler beim Laden der Subscription');
+      // 403 = nicht authentifiziert, kein echter Fehler für öffentliche Seiten
+      if (err.response?.status !== 403) {
+        console.error('Failed to load subscription:', err);
+        setError(err.response?.data?.error || 'Fehler beim Laden der Subscription');
+      }
     } finally {
       setLoading(false);
     }

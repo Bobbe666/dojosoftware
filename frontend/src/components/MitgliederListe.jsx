@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useTranslation } from 'react-i18next';
-import { Grid } from 'react-window';
+// Grid von react-window temporär deaktiviert wegen Object.values Bug
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import "../styles/themes.css";
@@ -166,6 +166,9 @@ const VirtualizedMemberGrid = React.memo(({
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
+  // Schutzprüfung: Stelle sicher dass members ein Array ist
+  const safeMembers = Array.isArray(members) ? members : [];
+
   // Container-Breite messen
   useEffect(() => {
     const updateWidth = () => {
@@ -187,7 +190,7 @@ const VirtualizedMemberGrid = React.memo(({
     return COLUMN_COUNT;
   }, [containerWidth]);
 
-  const rowCount = useMemo(() => Math.ceil(members.length / columnCount), [members.length, columnCount]);
+  const rowCount = useMemo(() => Math.ceil(safeMembers.length / columnCount), [safeMembers.length, columnCount]);
 
   // Berechne Karten-Breite basierend auf verfügbarem Platz
   const cardWidth = useMemo(() => {
@@ -197,9 +200,9 @@ const VirtualizedMemberGrid = React.memo(({
   // Cell Renderer für das Grid
   const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
     const index = rowIndex * columnCount + columnIndex;
-    if (index >= members.length) return null;
+    if (index >= safeMembers.length) return null;
 
-    const mitglied = members[index];
+    const mitglied = safeMembers[index];
     return (
       <div style={{
         ...style,
@@ -217,10 +220,10 @@ const VirtualizedMemberGrid = React.memo(({
         />
       </div>
     );
-  }, [members, columnCount, selectionMode, selectedMembers, onToggleSelection, onNavigate]);
+  }, [safeMembers, columnCount, selectionMode, selectedMembers, onToggleSelection, onNavigate]);
 
   // Empty State
-  if (members.length === 0) {
+  if (safeMembers.length === 0) {
     return (
       <div className="stat-card" style={{
         padding: '2rem',
@@ -237,57 +240,31 @@ const VirtualizedMemberGrid = React.memo(({
     );
   }
 
-  // Für kleine Listen (<50) kein Virtualisierung nötig
-  if (members.length < 50) {
-    return (
-      <div
-        ref={containerRef}
-        className="stats-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-          gap: `${GAP}px`,
-          marginTop: '0.2rem',
-          marginBottom: '0.5rem'
-        }}
-      >
-        {members.map((mitglied) => (
-          <MemberCard
-            key={mitglied.mitglied_id}
-            mitglied={mitglied}
-            selectionMode={selectionMode}
-            isSelected={selectedMembers.includes(mitglied.mitglied_id)}
-            onToggleSelection={onToggleSelection}
-            onNavigate={onNavigate}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  // Virtualisiertes Grid für große Listen
+  // Einfaches Grid für alle Listen (Virtualisierung temporär deaktiviert)
   return (
     <div
       ref={containerRef}
+      className="stats-grid"
       style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+        gap: `${GAP}px`,
         marginTop: '0.2rem',
         marginBottom: '0.5rem',
-        width: '100%'
+        maxHeight: '600px',
+        overflowY: 'auto'
       }}
     >
-      {containerWidth > 0 && (
-        <Grid
-          columnCount={columnCount}
-          columnWidth={cardWidth + GAP}
-          height={Math.min(rowCount * (CARD_HEIGHT + GAP), 600)} // Max 600px Höhe, dann scrollen
-          rowCount={rowCount}
-          rowHeight={CARD_HEIGHT + GAP}
-          width={containerWidth}
-          style={{ overflowX: 'hidden' }}
-        >
-          {Cell}
-        </Grid>
-      )}
+      {safeMembers.map((mitglied) => (
+        <MemberCard
+          key={mitglied.mitglied_id}
+          mitglied={mitglied}
+          selectionMode={selectionMode}
+          isSelected={selectedMembers.includes(mitglied.mitglied_id)}
+          onToggleSelection={onToggleSelection}
+          onNavigate={onNavigate}
+        />
+      ))}
     </div>
   );
 });
@@ -295,10 +272,10 @@ const VirtualizedMemberGrid = React.memo(({
 VirtualizedMemberGrid.displayName = 'VirtualizedMemberGrid';
 
 const MitgliederListe = () => {
-  const { t } = useTranslation(['members', 'common']);
+  const { t, ready } = useTranslation(['members', 'common']);
   // CACHE BREAK - Force reload
   const cacheBreak = Date.now();
-  const { getDojoFilterParam, activeDojo, filter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
+  const { getDojoFilterParam, activeDojo, filter, dojos } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
   
   // CSS für dunklen Placeholder-Text
@@ -349,6 +326,12 @@ const MitgliederListe = () => {
   const [availableGurte, setAvailableGurte] = useState([]);
 
   useEffect(() => {
+    // Warte bis Übersetzungen und Context bereit sind
+    if (!ready || !dojos) {
+      console.log('⏳ Warte auf Übersetzungen/Dojos...');
+      return;
+    }
+
     // 🔒 TAX COMPLIANCE: Lade Mitglieder mit Dojo-Filter
     const dojoFilterParam = getDojoFilterParam();
     const url = dojoFilterParam
@@ -396,7 +379,7 @@ const MitgliederListe = () => {
         setError(t('errors.loadingError'));
       })
       .finally(() => setLoading(false));
-  }, [activeDojo, filter, updateTrigger]); // 🔒 TAX COMPLIANCE: Reload when dojo, filter or members change!
+  }, [activeDojo, filter, updateTrigger, ready, dojos]); // 🔒 TAX COMPLIANCE: Reload when dojo, filter or members change!
 
   // Filter-Logik mit useMemo (nur neu berechnet wenn sich Dependencies ändern)
   const filteredMitglieder = useMemo(() => {
@@ -641,6 +624,18 @@ const MitgliederListe = () => {
       alert(`Fehler bei der Archivierung: ${error.response?.data?.error || error.message}`);
     }
   };
+
+  // Warte bis Übersetzungen und Context bereit sind
+  if (!ready || !dojos) {
+    return (
+      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="loading-spinner"></div>
+          <p style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.7)' }}>Lade Daten...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
@@ -1106,7 +1101,7 @@ const MitgliederListe = () => {
         </div>
       )}
 
-      {!loading && (
+      {!loading && Array.isArray(filteredMitglieder) && (
         <VirtualizedMemberGrid
           members={filteredMitglieder}
           selectionMode={selectionMode}

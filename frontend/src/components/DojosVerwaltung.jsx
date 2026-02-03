@@ -65,18 +65,31 @@ const DojosVerwaltung = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Möchten Sie dieses Dojo wirklich deaktivieren?')) return;
+    // Dojo-Namen finden für die Bestätigung
+    const dojo = dojos.find(d => d.id === id);
+    const dojoName = dojo?.dojoname || dojo?.name || 'Unbekannt';
+
+    // Erste Bestätigung
+    if (!window.confirm(`Möchten Sie das Dojo "${dojoName}" wirklich DAUERHAFT löschen?\n\nDies kann NICHT rückgängig gemacht werden!\nAlle Mitglieder, Kurse, Verträge und Daten werden gelöscht.`)) return;
+
+    // Zweite Bestätigung - Name eingeben
+    const eingabe = prompt(`Zur Bestätigung bitte den Dojo-Namen eingeben:\n"${dojoName}"`);
+    if (eingabe !== dojoName) {
+      alert('Name stimmt nicht überein. Löschen abgebrochen.');
+      return;
+    }
 
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos/${id}`, {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/dojos/${id}/permanent`, {
         method: 'DELETE'
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error);
+        throw new Error(error.error || 'Löschen fehlgeschlagen');
       }
-      setMessage('Dojo erfolgreich deaktiviert');
+      setMessage('Dojo wurde dauerhaft gelöscht');
       loadDojos();
+      loadGesamtStatistiken();
     } catch (error) {
       setMessage(`Fehler: ${error.message}`);
     }

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Users, AlertCircle, CheckCircle, X, CreditCard, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import axios from 'axios';
 import MemberHeader from './MemberHeader.jsx';
-import StripeCheckout from './StripeCheckout.jsx';
 import '../styles/components.css';
 import '../styles/themes.css';
 
@@ -12,8 +11,7 @@ const MemberEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [memberData, setMemberData] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
-  const [paymentModal, setPaymentModal] = useState({ show: false, event: null });
+  const [actionLoading, setActionLoading] = useState(null); // event_id während Anmeldung/Abmeldung
 
   useEffect(() => {
     if (user?.email) {
@@ -42,51 +40,22 @@ const MemberEvents = () => {
   const handleAnmelden = async (eventId) => {
     if (!memberData) return;
 
-    // Finde das Event
-    const event = events.find(e => e.event_id === eventId);
-    if (!event) return;
-
-    // Wenn es eine Teilnahmegebühr gibt, zeige Zahlungsmodal
-    const fee = parseFloat(event.teilnahmegebuehr || 0);
-    if (fee > 0) {
-      setPaymentModal({ show: true, event });
-      return;
-    }
-
-    // Ansonsten direkte Anmeldung ohne Zahlung
-    await completeRegistration(eventId);
-  };
-
-  const completeRegistration = async (eventId, paymentIntentId = null) => {
     setActionLoading(eventId);
     try {
       const response = await axios.post(`/events/${eventId}/anmelden`, {
-        mitglied_id: memberData.mitglied_id,
-        payment_intent_id: paymentIntentId,
-        bezahlt: !!paymentIntentId
+        mitglied_id: memberData.mitglied_id
       });
 
       if (response.data.success) {
         alert('✅ ' + response.data.message);
-        loadMemberDataAndEvents();
+        loadMemberDataAndEvents(); // Neu laden um Status zu aktualisieren
       }
     } catch (error) {
       console.error('Fehler bei Event-Anmeldung:', error);
       alert('❌ ' + (error.response?.data?.error || 'Fehler bei der Anmeldung'));
     } finally {
       setActionLoading(null);
-      setPaymentModal({ show: false, event: null });
     }
-  };
-
-  const handlePaymentSuccess = async (paymentIntent) => {
-    if (paymentModal.event) {
-      await completeRegistration(paymentModal.event.event_id, paymentIntent.id);
-    }
-  };
-
-  const handlePaymentCancel = () => {
-    setPaymentModal({ show: false, event: null });
   };
 
   const handleAbmelden = async (eventId) => {
@@ -409,85 +378,6 @@ const MemberEvents = () => {
           </div>
         )}
       </div>
-
-      {/* Stripe Payment Modal */}
-      {paymentModal.show && paymentModal.event && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
-            borderRadius: '16px',
-            maxWidth: '500px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            border: '1px solid rgba(255, 215, 0, 0.2)'
-          }}>
-            <div style={{
-              padding: '1.5rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h3 style={{ color: '#FFD700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CreditCard size={24} />
-                Zahlung für Event
-              </h3>
-              <button
-                onClick={handlePaymentCancel}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  cursor: 'pointer',
-                  padding: '0.5rem'
-                }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{
-                background: 'rgba(255, 215, 0, 0.1)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '8px',
-                padding: '1rem',
-                marginBottom: '1.5rem'
-              }}>
-                <h4 style={{ color: '#FFD700', margin: '0 0 0.5rem 0' }}>
-                  {paymentModal.event.titel}
-                </h4>
-                <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.9rem' }}>
-                  {formatDate(paymentModal.event.datum)}
-                </p>
-              </div>
-
-              <StripeCheckout
-                amount={Math.round(parseFloat(paymentModal.event.teilnahmegebuehr) * 100)}
-                description={`Teilnahmegebühr: ${paymentModal.event.titel}`}
-                reference={`event-${paymentModal.event.event_id}`}
-                referenceType="event"
-                onSuccess={handlePaymentSuccess}
-                onCancel={handlePaymentCancel}
-                successMessage="Zahlung erfolgreich! Sie werden jetzt für das Event angemeldet."
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -10,7 +10,8 @@ import {
   Building2, User, Plus, Search, Filter, RefreshCw, Check, X, Clock,
   AlertTriangle, Euro, Calendar, Mail, Phone, MapPin, CreditCard,
   ChevronDown, ChevronUp, FileText, Award, Percent, Gift, Edit, Trash2,
-  Download, PenTool, Shield, ScrollText, History, Banknote, Settings, Save
+  Download, PenTool, Shield, ScrollText, History, Banknote, Settings, Save,
+  Globe
 } from 'lucide-react';
 import { createSafeHtml } from '../utils/sanitizer';
 
@@ -463,11 +464,37 @@ const VerbandsMitglieder = () => {
   const handleKuendigen = async (id) => {
     if (!confirm('Mitgliedschaft wirklich kündigen?')) return;
     try {
-      await api.delete(`/verbandsmitgliedschaften/${id}`);
+      await api.put(`/verbandsmitgliedschaften/${id}/status`, { status: 'gekuendigt' });
       loadData();
       setShowDetailModal(false);
     } catch (err) {
       alert(err.response?.data?.error || 'Fehler beim Kündigen');
+    }
+  };
+
+  // Permanentes Löschen mit doppelter Sicherheitsabfrage
+  const handleLoeschen = async (mitgliedschaft) => {
+    const name = mitgliedschaft.typ === 'dojo'
+      ? (mitgliedschaft.dojo_name || 'Unbenannt')
+      : `${mitgliedschaft.person_vorname || ''} ${mitgliedschaft.person_nachname || ''}`.trim() || 'Unbenannt';
+
+    // Erste Bestätigung
+    if (!confirm(`Mitgliedschaft "${name}" wirklich DAUERHAFT löschen?\n\nDies kann NICHT rückgängig gemacht werden!`)) return;
+
+    // Zweite Bestätigung - Name eingeben
+    const eingabe = prompt(`Zur Bestätigung bitte "${name}" eingeben:`);
+    if (eingabe !== name) {
+      alert('Name stimmt nicht überein. Löschen abgebrochen.');
+      return;
+    }
+
+    try {
+      await api.delete(`/verbandsmitgliedschaften/${mitgliedschaft.id}/permanent`);
+      alert('Mitgliedschaft wurde dauerhaft gelöscht.');
+      loadData();
+      setShowDetailModal(false);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Fehler beim Löschen');
     }
   };
 
@@ -786,7 +813,13 @@ const VerbandsMitglieder = () => {
 
   const formatDate = (date) => {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('de-DE');
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('de-DE');
+    } catch (e) {
+      return '-';
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -1770,190 +1803,6 @@ const VerbandsMitglieder = () => {
                     </div>
                   )}
 
-
-                  {/* Dojo Statistiken */}
-                  {selectedMitgliedschaft.typ === 'dojo' && selectedMitgliedschaft.dojo_stats && (
-                    <div style={styles.detailSection}>
-                      <h4 style={styles.detailSectionTitle}>
-                        <Building2 size={16} style={{ marginRight: '8px' }} />
-                        Dojo Statistiken
-                      </h4>
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                        gap: '12px',
-                        marginTop: '12px'
-                      }}>
-                        {/* Mitglieder */}
-                        <div style={{
-                          background: 'rgba(59, 130, 246, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>
-                            {selectedMitgliedschaft.dojo_stats.mitglieder?.aktiv || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Mitglieder aktiv</div>
-                          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
-                            ({selectedMitgliedschaft.dojo_stats.mitglieder?.gesamt || 0} gesamt)
-                          </div>
-                        </div>
-
-                        {/* Kurse */}
-                        <div style={{
-                          background: 'rgba(16, 185, 129, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>
-                            {selectedMitgliedschaft.dojo_stats.kurse?.gesamt || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Kurse</div>
-                        </div>
-
-                        {/* Trainer */}
-                        <div style={{
-                          background: 'rgba(245, 158, 11, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#f59e0b' }}>
-                            {selectedMitgliedschaft.dojo_stats.trainer?.anzahl || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Trainer</div>
-                        </div>
-
-                        {/* Admins */}
-                        <div style={{
-                          background: 'rgba(139, 92, 246, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#8b5cf6' }}>
-                            {selectedMitgliedschaft.dojo_stats.admins?.aktiv || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Admin-Accounts</div>
-                        </div>
-
-                        {/* Stile */}
-                        <div style={{
-                          background: 'rgba(236, 72, 153, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#ec4899' }}>
-                            {selectedMitgliedschaft.dojo_stats.stile || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Kampfstile</div>
-                        </div>
-
-                        {/* Standorte */}
-                        <div style={{
-                          background: 'rgba(6, 182, 212, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#06b6d4' }}>
-                            {selectedMitgliedschaft.dojo_stats.standorte || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Standorte</div>
-                        </div>
-
-                        {/* Events */}
-                        <div style={{
-                          background: 'rgba(251, 146, 60, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fb923c' }}>
-                            {selectedMitgliedschaft.dojo_stats.events?.kommende || 0}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Events (kommend)</div>
-                          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
-                            ({selectedMitgliedschaft.dojo_stats.events?.gesamt || 0} gesamt)
-                          </div>
-                        </div>
-
-                        {/* Speicherplatz */}
-                        <div style={{
-                          background: 'rgba(100, 116, 139, 0.15)',
-                          borderRadius: '8px',
-                          padding: '12px',
-                          textAlign: 'center'
-                        }}>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#64748b' }}>
-                            {selectedMitgliedschaft.dojo_stats.speicherplatz?.mb || 0} MB
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Speicherplatz</div>
-                          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
-                            ({selectedMitgliedschaft.dojo_stats.speicherplatz?.dokumente || 0} Dokumente)
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Zusätzliche Infos */}
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '16px',
-                        marginTop: '16px',
-                        padding: '12px',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        borderRadius: '8px'
-                      }}>
-                        <div style={{ flex: '1 1 200px' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Dojo erstellt am:</span>
-                          <div style={{ color: '#fff', fontWeight: '500' }}>
-                            {selectedMitgliedschaft.dojo_created_at
-                              ? new Date(selectedMitgliedschaft.dojo_created_at).toLocaleDateString('de-DE')
-                              : '-'}
-                          </div>
-                        </div>
-                        <div style={{ flex: '1 1 200px' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Letztes Admin-Login:</span>
-                          <div style={{ color: '#fff', fontWeight: '500' }}>
-                            {selectedMitgliedschaft.dojo_stats.letztes_login
-                              ? new Date(selectedMitgliedschaft.dojo_stats.letztes_login).toLocaleString('de-DE')
-                              : 'Noch nie'}
-                          </div>
-                        </div>
-                        <div style={{ flex: '1 1 200px' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Subscription:</span>
-                          <div style={{ color: '#fff', fontWeight: '500' }}>
-                            {selectedMitgliedschaft.subscription_plan || 'Keine'}
-                            {selectedMitgliedschaft.subscription_status && (
-                              <span style={{
-                                marginLeft: '8px',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                fontSize: '0.7rem',
-                                background: selectedMitgliedschaft.subscription_status === 'active' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                color: selectedMitgliedschaft.subscription_status === 'active' ? '#10b981' : '#ef4444'
-                              }}>
-                                {selectedMitgliedschaft.subscription_status}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ flex: '1 1 200px' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Dojo Status:</span>
-                          <div style={{
-                            color: selectedMitgliedschaft.dojo_ist_aktiv ? '#10b981' : '#ef4444',
-                            fontWeight: '500'
-                          }}>
-                            {selectedMitgliedschaft.dojo_ist_aktiv ? '✓ Aktiv' : '✗ Inaktiv'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                   {/* Kontakt (bei Einzelperson) */}
                   {selectedMitgliedschaft.typ === 'einzelperson' && (
                     <div style={styles.detailSection}>
@@ -1977,6 +1826,87 @@ const VerbandsMitglieder = () => {
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Dojo-Details (bei Dojo) */}
+                  {selectedMitgliedschaft.typ === 'dojo' && (
+                    <>
+                      {/* Dojo Kontaktdaten */}
+                      <div style={styles.detailSection}>
+                        <h4 style={styles.detailSectionTitle}>Dojo-Kontaktdaten</h4>
+                        <div style={styles.detailRow}>
+                          <div style={styles.detailItem}>
+                            <Mail size={14} />
+                            <span>{selectedMitgliedschaft.dojo_email || '-'}</span>
+                          </div>
+                          <div style={styles.detailItem}>
+                            <Phone size={14} />
+                            <span>{selectedMitgliedschaft.dojo_telefon || '-'}</span>
+                          </div>
+                        </div>
+                        {selectedMitgliedschaft.dojo_strasse && (
+                          <div style={styles.detailItem}>
+                            <MapPin size={14} />
+                            <span>
+                              {selectedMitgliedschaft.dojo_strasse}, {selectedMitgliedschaft.dojo_plz} {selectedMitgliedschaft.dojo_ort}
+                              {selectedMitgliedschaft.dojo_land && selectedMitgliedschaft.dojo_land !== 'Deutschland' && `, ${selectedMitgliedschaft.dojo_land}`}
+                            </span>
+                          </div>
+                        )}
+                        {selectedMitgliedschaft.dojo_website && (
+                          <div style={styles.detailItem}>
+                            <Globe size={14} />
+                            <a href={selectedMitgliedschaft.dojo_website.startsWith('http') ? selectedMitgliedschaft.dojo_website : `https://${selectedMitgliedschaft.dojo_website}`}
+                               target="_blank" rel="noopener noreferrer"
+                               style={{ color: '#3b82f6', textDecoration: 'none' }}>
+                              {selectedMitgliedschaft.dojo_website}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dojo-Informationen */}
+                      <div style={styles.detailSection}>
+                        <h4 style={styles.detailSectionTitle}>Dojo-Informationen</h4>
+                        <div style={styles.detailRow}>
+                          <div style={styles.detailItem}>
+                            <span style={styles.detailLabel}>Inhaber</span>
+                            <span style={styles.detailValue}>{selectedMitgliedschaft.dojo_inhaber || '-'}</span>
+                          </div>
+                          <div style={styles.detailItem}>
+                            <span style={styles.detailLabel}>Mitglieder</span>
+                            <span style={styles.detailValue}>{selectedMitgliedschaft.dojo_mitglieder_anzahl || '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ansprechpartner */}
+                      {(selectedMitgliedschaft.person_vorname || selectedMitgliedschaft.person_nachname) && (
+                        <div style={styles.detailSection}>
+                          <h4 style={styles.detailSectionTitle}>Ansprechpartner</h4>
+                          <div style={styles.detailRow}>
+                            <div style={styles.detailItem}>
+                              <User size={14} />
+                              <span>{selectedMitgliedschaft.person_vorname} {selectedMitgliedschaft.person_nachname}</span>
+                            </div>
+                          </div>
+                          <div style={styles.detailRow}>
+                            {selectedMitgliedschaft.person_email && (
+                              <div style={styles.detailItem}>
+                                <Mail size={14} />
+                                <span>{selectedMitgliedschaft.person_email}</span>
+                              </div>
+                            )}
+                            {selectedMitgliedschaft.person_telefon && (
+                              <div style={styles.detailItem}>
+                                <Phone size={14} />
+                                <span>{selectedMitgliedschaft.person_telefon}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Zahlungen - nicht anzeigen bei vertragsfrei */}
@@ -2213,6 +2143,15 @@ const VerbandsMitglieder = () => {
             </div>
 
             <div style={styles.modalFooter}>
+              {isAdmin && (
+                <button
+                  style={{ ...styles.dangerButton, backgroundColor: '#450a0a', borderColor: '#7f1d1d' }}
+                  onClick={() => handleLoeschen(selectedMitgliedschaft)}
+                  title="Mitgliedschaft dauerhaft löschen"
+                >
+                  <Trash2 size={16} /> Dauerhaft löschen
+                </button>
+              )}
               {isAdmin && selectedMitgliedschaft.status !== 'vertragsfrei' && (
                 <button
                   style={{ ...styles.dangerButton, backgroundColor: '#7f1d1d' }}

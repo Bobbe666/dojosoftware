@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import {
   FileText, Plus, Trash2, Save, Eye, Download, Building2, User,
-  Euro, Calendar, Search, X, CheckCircle, AlertCircle, Loader2
+  Euro, Calendar, Search, X, CheckCircle, AlertCircle, Loader2, ShoppingBag
 } from 'lucide-react';
 import '../styles/VerbandRechnungErstellen.css';
 
@@ -32,9 +32,12 @@ const VerbandRechnungErstellen = () => {
   const [manuellAdresse, setManuellAdresse] = useState('');
   const [manuellEmail, setManuellEmail] = useState('');
 
+  // Artikel aus Shop
+  const [artikel, setArtikel] = useState([]);
+
   // Positionen
   const [positionen, setPositionen] = useState([
-    { bezeichnung: '', menge: 1, einzelpreis: 0, mwst_satz: 19, einheit: 'Stück' }
+    { artikel_id: '', bezeichnung: '', menge: 1, einzelpreis: 0, mwst_satz: 19, einheit: 'Stück' }
   ]);
 
   // Bestehende Rechnungen
@@ -68,10 +71,11 @@ const VerbandRechnungErstellen = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [empfaengerRes, nummernRes, rechnungenRes] = await Promise.all([
+      const [empfaengerRes, nummernRes, rechnungenRes, artikelRes] = await Promise.all([
         api.get('/verband-rechnungen/empfaenger'),
         api.get('/verband-rechnungen/nummernkreis'),
-        api.get('/verband-rechnungen')
+        api.get('/verband-rechnungen'),
+        api.get('/artikel?dojo_id=2') // TDA International Shop-Artikel
       ]);
 
       if (empfaengerRes.data.success) {
@@ -83,6 +87,9 @@ const VerbandRechnungErstellen = () => {
       if (rechnungenRes.data.success) {
         setRechnungen(rechnungenRes.data.rechnungen);
       }
+      // Artikel laden (kann Array oder {data: []} sein)
+      const artikelData = artikelRes.data?.data || artikelRes.data || [];
+      setArtikel(Array.isArray(artikelData) ? artikelData : []);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
       setError('Fehler beim Laden der Daten');
@@ -117,7 +124,30 @@ const VerbandRechnungErstellen = () => {
 
   // Position hinzufügen
   const addPosition = () => {
-    setPositionen([...positionen, { bezeichnung: '', menge: 1, einzelpreis: 0, mwst_satz: 19, einheit: 'Stück' }]);
+    setPositionen([...positionen, { artikel_id: '', bezeichnung: '', menge: 1, einzelpreis: 0, mwst_satz: 19, einheit: 'Stück' }]);
+  };
+
+  // Artikel auswählen und Felder automatisch ausfüllen
+  const handleArtikelSelect = (index, artikelId) => {
+    if (!artikelId) {
+      // Manuell - nur artikel_id leeren
+      updatePosition(index, 'artikel_id', '');
+      return;
+    }
+
+    const art = artikel.find(a => a.artikel_id == artikelId || a.id == artikelId);
+    if (art) {
+      const updated = [...positionen];
+      updated[index] = {
+        ...updated[index],
+        artikel_id: artikelId,
+        bezeichnung: art.name || art.bezeichnung || '',
+        einzelpreis: parseFloat(art.verkaufspreis_brutto || art.preis || 0),
+        mwst_satz: parseFloat(art.ust_prozent || art.mwst_satz || 19),
+        einheit: art.einheit || 'Stück'
+      };
+      setPositionen(updated);
+    }
   };
 
   // Position entfernen
@@ -474,10 +504,11 @@ const VerbandRechnungErstellen = () => {
 
           {/* Positionen */}
           <div className="form-section">
-            <h3>3. Positionen</h3>
+            <h3><ShoppingBag size={16} style={{ marginRight: '0.5rem' }} />3. Positionen</h3>
             <table className="positionen-table">
               <thead>
                 <tr>
+                  <th style={{ width: '180px' }}>Artikel</th>
                   <th>Bezeichnung</th>
                   <th>Menge</th>
                   <th>Einheit</th>
@@ -490,6 +521,20 @@ const VerbandRechnungErstellen = () => {
               <tbody>
                 {positionen.map((pos, index) => (
                   <tr key={index}>
+                    <td>
+                      <select
+                        value={pos.artikel_id || ''}
+                        onChange={(e) => handleArtikelSelect(index, e.target.value)}
+                        style={{ minWidth: '150px' }}
+                      >
+                        <option value="">-- Manuell --</option>
+                        {artikel.map(art => (
+                          <option key={art.artikel_id || art.id} value={art.artikel_id || art.id}>
+                            {art.name || art.bezeichnung} ({formatCurrency(art.verkaufspreis_brutto || art.preis || 0)} €)
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td>
                       <input
                         type="text"

@@ -13,6 +13,7 @@ import ZehnerkartenVerwaltung from './ZehnerkartenVerwaltung';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🏢 TAX COMPLIANCE
 import { useAuth } from '../context/AuthContext.jsx'; // For member ID
 import ReferralCodeVerwaltung from './ReferralCodeVerwaltung';
+import MitgliedsAusweis from './MitgliedsAusweis';
 import { createSafeHtml } from '../utils/sanitizer';
 import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
@@ -20,6 +21,7 @@ import "../styles/MitgliedDetail.css";
 
 // Extrahierte Tab-Komponenten
 import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab } from './mitglied-detail';
+import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 
 // Hilfsfunktion: Wandelt einen ISO-Datumsstring in "yyyy-MM-dd" um.
 function toMySqlDate(dateString) {
@@ -236,7 +238,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [financeSubTab, setFinanceSubTab] = useState("finanzübersicht");
   const [graduationListCollapsed, setGraduationListCollapsed] = useState(true); // Graduierungen-Liste standardmäßig eingeklappt
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
+
+  // Familienmitglied hinzufügen Modal State
+  const [showFamilyMemberModal, setShowFamilyMemberModal] = useState(false);
+
   // Beiträge Ansichts-Filter State
   const [beitraegeViewMode, setBeiträgeViewMode] = useState("monat"); // "monat", "quartal", "jahr"
   const [collapsedPeriods, setCollapsedPeriods] = useState({});
@@ -283,6 +288,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   // Drei-Punkte-Menü State
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showMitgliedsausweis, setShowMitgliedsausweis] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
   const [newVertrag, setNewVertrag] = useState(() => {
     const heute = new Date();
@@ -2627,6 +2633,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         <span>{generatingPdf ? 'Generiere PDF...' : 'PDF exportieren'}</span>
                       </button>
 
+                      <button
+                        className="mitglied-detail-menu-item"
+                        onClick={() => {
+                          setShowMitgliedsausweis(true);
+                          setShowActionsMenu(false);
+                        }}
+                      >
+                        <span className="menu-item-icon">🪪</span>
+                        <span>Mitgliedsausweis</span>
+                      </button>
+
                       <div className="mitglied-detail-menu-divider" />
 
                       <button
@@ -4230,13 +4247,63 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "familie" && (
-            <MemberFamilyTab
-              mitglied={mitglied}
-              updatedData={updatedData}
-              editMode={editMode}
-              handleChange={handleChange}
-              CustomSelect={CustomSelect}
-            />
+            <>
+              {/* Familienmitglied hinzufügen Button - nur für Admin */}
+              {isAdmin && (
+                <div style={{
+                  marginBottom: '1.5rem',
+                  padding: '1rem',
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(139, 92, 246, 0.2)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1rem' }}>Familienmitglied hinzufügen</h4>
+                      <p style={{ margin: '0.25rem 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
+                        Fügen Sie ein neues Familienmitglied mit Familienrabatt hinzu
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowFamilyMemberModal(true)}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.9rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <span>👨‍👩‍👧</span>
+                      Familienmitglied hinzufügen
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <MemberFamilyTab
+                mitglied={mitglied}
+                updatedData={updatedData}
+                editMode={editMode}
+                handleChange={handleChange}
+                CustomSelect={CustomSelect}
+              />
+
+              {/* Familienmitglied Modal */}
+              {showFamilyMemberModal && (
+                <NeuesMitgliedAnlegen
+                  onClose={() => setShowFamilyMemberModal(false)}
+                  existingMemberForFamily={mitglied}
+                />
+              )}
+            </>
           )}
 
 
@@ -8878,6 +8945,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mitgliedsausweis Modal */}
+      {showMitgliedsausweis && member && (
+        <MitgliedsAusweis
+          mitglied={member}
+          dojo={currentDojo}
+          onClose={() => setShowMitgliedsausweis(false)}
+          isModal={true}
+        />
       )}
 
     </div>

@@ -8,9 +8,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Building2, User, Check, X, Euro, Calendar, Mail, Phone, MapPin,
   CreditCard, FileText, Shield, ChevronRight, ChevronLeft, Award,
-  Percent, Gift, AlertCircle, CheckCircle, Loader
+  Percent, Gift, AlertCircle, CheckCircle, Loader, Smartphone
 } from 'lucide-react';
+import axios from 'axios';
 import config from '../config/config.js';
+import SumUpCheckout from './SumUpCheckout';
 
 const VerbandMitgliedWerden = () => {
   const navigate = useNavigate();
@@ -63,11 +65,30 @@ const VerbandMitgliedWerden = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureData, setSignatureData] = useState(null);
 
+  // SumUp State
+  const [sumupAvailable, setSumupAvailable] = useState(false);
+  const [sumupPaid, setSumupPaid] = useState(false);
+  const [sumupCheckoutId, setSumupCheckoutId] = useState(null);
+
+  // TDA International Dojo ID (Verband)
+  const VERBAND_DOJO_ID = 2;
+
   // Load Einstellungen und Vorteile
   useEffect(() => {
     loadPublicConfig();
     loadVorteile();
+    checkSumupAvailability();
   }, []);
+
+  // SumUp Verfügbarkeit prüfen (für Verband)
+  const checkSumupAvailability = async () => {
+    try {
+      const res = await axios.get(`${config.apiBaseUrl}/sumup/status?dojo_id=${VERBAND_DOJO_ID}`);
+      setSumupAvailable(res.data?.active && res.data?.configured);
+    } catch (err) {
+      setSumupAvailable(false);
+    }
+  };
 
   const loadPublicConfig = async () => {
     try {
@@ -154,6 +175,10 @@ const VerbandMitgliedWerden = () => {
             return false;
           }
         }
+        if (formData.zahlungsart === 'sumup' && !sumupPaid) {
+          setError('Bitte schließen Sie die Kartenzahlung ab, bevor Sie fortfahren.');
+          return false;
+        }
         return true;
       case 4:
         if (!formData.agb_accepted || !formData.dsgvo_accepted || !formData.widerrufsrecht_acknowledged) {
@@ -189,7 +214,10 @@ const VerbandMitgliedWerden = () => {
       const submitData = {
         ...formData,
         unterschrift_digital: signatureData,
-        unterschrift_datum: new Date().toISOString()
+        unterschrift_datum: new Date().toISOString(),
+        // SumUp Daten falls vorhanden
+        sumup_checkout_id: sumupCheckoutId || null,
+        sumup_paid: sumupPaid
       };
 
       const res = await fetch(`${config.apiBaseUrl}/verbandsmitgliedschaften/public/anmeldung`, {
@@ -587,6 +615,25 @@ const VerbandMitgliedWerden = () => {
           <span style={styles.zahlungsartTitle}>SEPA-Lastschrift</span>
           <span style={styles.zahlungsartDesc}>Bequem & automatisch</span>
         </label>
+
+        {sumupAvailable && (
+          <label style={{
+            ...styles.zahlungsartCard,
+            borderColor: formData.zahlungsart === 'sumup' ? '#ffd700' : 'rgba(255,255,255,0.1)'
+          }}>
+            <input
+              type="radio"
+              name="zahlungsart"
+              value="sumup"
+              checked={formData.zahlungsart === 'sumup'}
+              onChange={handleChange}
+              style={{ display: 'none' }}
+            />
+            <Smartphone size={32} color={formData.zahlungsart === 'sumup' ? '#ffd700' : '#888'} />
+            <span style={styles.zahlungsartTitle}>Kartenzahlung</span>
+            <span style={styles.zahlungsartDesc}>Mit SumUp sofort bezahlen</span>
+          </label>
+        )}
       </div>
 
       {formData.zahlungsart === 'lastschrift' && (
@@ -638,6 +685,41 @@ const VerbandMitgliedWerden = () => {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {formData.zahlungsart === 'sumup' && !sumupPaid && (
+        <div style={styles.sumupSection}>
+          <h3 style={styles.sectionTitle}><Smartphone size={20} /> Kartenzahlung mit SumUp</h3>
+          <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
+            Bezahlen Sie den Jahresbeitrag direkt mit Ihrer Kredit- oder Debitkarte.
+          </p>
+          <SumUpCheckout
+            amount={formData.typ === 'dojo' ? (einstellungen.preis_dojo || 99) : (einstellungen.preis_einzel || 49)}
+            description={`TDA ${formData.typ === 'dojo' ? 'Dojo' : 'Einzel'}-Mitgliedschaft`}
+            dojoId={VERBAND_DOJO_ID}
+            zahlungstyp="verbandsbeitrag"
+            showQRCode={true}
+            onSuccess={(result) => {
+              setSumupPaid(true);
+              setSumupCheckoutId(result.checkoutId);
+            }}
+            onError={(error) => {
+              setError('Kartenzahlung fehlgeschlagen: ' + error);
+            }}
+          />
+        </div>
+      )}
+
+      {formData.zahlungsart === 'sumup' && sumupPaid && (
+        <div style={styles.sumupPaidBox}>
+          <CheckCircle size={48} color="#10b981" />
+          <span style={{ fontSize: '1.2rem', fontWeight: '600', color: '#10b981' }}>
+            Zahlung erfolgreich!
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+            Bitte fahren Sie mit der Anmeldung fort.
+          </span>
         </div>
       )}
 
@@ -1037,6 +1119,24 @@ const styles = {
     background: 'rgba(0,0,0,0.2)',
     borderRadius: '12px',
     padding: '1.5rem',
+    marginBottom: '1.5rem'
+  },
+  sumupSection: {
+    background: 'rgba(0, 181, 173, 0.1)',
+    borderRadius: '12px',
+    padding: '1.5rem',
+    marginBottom: '1.5rem',
+    border: '1px solid rgba(0, 181, 173, 0.3)'
+  },
+  sumupPaidBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '2rem',
+    background: 'rgba(16, 185, 129, 0.1)',
+    borderRadius: '12px',
+    border: '1px solid rgba(16, 185, 129, 0.3)',
     marginBottom: '1.5rem'
   },
   sectionTitle: {

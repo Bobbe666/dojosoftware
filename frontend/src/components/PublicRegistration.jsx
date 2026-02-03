@@ -346,7 +346,13 @@ const PublicRegistration = ({ onClose }) => {
       if (data.success) {
         if (currentStep === 7) {
           setSuccess("Registrierung erfolgreich abgeschlossen! Sie erhalten eine Bestätigungs-Email.");
-          setTimeout(() => onClose(), 3000);
+          setTimeout(() => {
+            if (onClose) {
+              onClose();
+            } else {
+              window.location.href = '/';
+            }
+          }, 3000);
         } else if (currentStep === 1) {
           setSuccess("Registrierung gestartet. Bitte prüfen Sie Ihre E-Mails zur Verifizierung.");
           setTimeout(() => {
@@ -1288,7 +1294,7 @@ const PublicRegistration = ({ onClose }) => {
       <div className="modal-content registration-modal">
         <div className="modal-header">
           <h2>Mitgliedschaft beantragen</h2>
-          <button className="close-button" onClick={onClose}>×</button>
+          {onClose && <button className="close-button" onClick={onClose}>×</button>}
         </div>
 
         <div className="progress-container">

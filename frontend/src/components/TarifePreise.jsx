@@ -19,10 +19,7 @@ import {
   ChevronUp,
   Baby,
   User,
-  GraduationCap,
-  RefreshCw,
-  CheckCircle,
-  Loader2
+  GraduationCap
 } from "lucide-react";
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
@@ -64,8 +61,6 @@ const TarifePreise = () => {
   const [individuellCollapsed, setIndividuellCollapsed] = useState(false);
   const [alteTarifeCollapsed, setAlteTarifeCollapsed] = useState(true);
   const [showNewIndividuell, setShowNewIndividuell] = useState(false);
-  const [syncingTarifId, setSyncingTarifId] = useState(null);
-  const [syncedTarife, setSyncedTarife] = useState({});
 
   // Ermittle die dojo_id aus dem aktivem Dojo
   const getDojoId = () => {
@@ -229,36 +224,6 @@ const TarifePreise = () => {
     } catch (error) {
       console.error('Fehler beim Speichern des Tarifs:', error);
       alert('Fehler beim Speichern des Tarifs');
-    }
-  };
-
-  // Stripe Sync - Tarif mit Stripe Product/Price synchronisieren
-  const syncTarifWithStripe = async (tarifId) => {
-    setSyncingTarifId(tarifId);
-    try {
-      const dojoId = getDojoId();
-      const response = await axios.post('/stripe/sync-tarif', {
-        tarifId,
-        dojoId
-      });
-
-      if (response.data.success) {
-        setSyncedTarife(prev => ({
-          ...prev,
-          [tarifId]: {
-            productId: response.data.productId,
-            priceId: response.data.priceId,
-            syncedAt: new Date()
-          }
-        }));
-        // Tarife neu laden um stripe_price_id zu aktualisieren
-        await loadTarifeUndRabatte();
-      }
-    } catch (error) {
-      console.error('Stripe Sync Fehler:', error);
-      alert('Fehler beim Synchronisieren mit Stripe: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setSyncingTarifId(null);
     }
   };
 
@@ -448,24 +413,6 @@ const TarifePreise = () => {
                     >
                       {tarif.ist_archiviert ? '↺' : '📦'}
                     </button>
-                    <button
-                      className="action-btn stripe-sync"
-                      onClick={() => syncTarifWithStripe(tarif.id)}
-                      disabled={syncingTarifId === tarif.id}
-                      title={tarif.stripe_price_id ? "Mit Stripe synchronisiert" : "Mit Stripe synchronisieren"}
-                      style={{
-                        backgroundColor: tarif.stripe_price_id ? '#10b981' : '#6366f1',
-                        color: 'white'
-                      }}
-                    >
-                      {syncingTarifId === tarif.id ? (
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      ) : tarif.stripe_price_id ? (
-                        <CheckCircle size={16} />
-                      ) : (
-                        <RefreshCw size={16} />
-                      )}
-                    </button>
                   </div>
                 </div>
 
@@ -582,24 +529,6 @@ const TarifePreise = () => {
                     >
                       {tarif.ist_archiviert ? '↺' : '📦'}
                     </button>
-                    <button
-                      className="action-btn stripe-sync"
-                      onClick={() => syncTarifWithStripe(tarif.id)}
-                      disabled={syncingTarifId === tarif.id}
-                      title={tarif.stripe_price_id ? "Mit Stripe synchronisiert" : "Mit Stripe synchronisieren"}
-                      style={{
-                        backgroundColor: tarif.stripe_price_id ? '#10b981' : '#6366f1',
-                        color: 'white'
-                      }}
-                    >
-                      {syncingTarifId === tarif.id ? (
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      ) : tarif.stripe_price_id ? (
-                        <CheckCircle size={16} />
-                      ) : (
-                        <RefreshCw size={16} />
-                      )}
-                    </button>
                   </div>
                 </div>
 
@@ -715,24 +644,6 @@ const TarifePreise = () => {
                       }}
                     >
                       {tarif.ist_archiviert ? '↺' : '📦'}
-                    </button>
-                    <button
-                      className="action-btn stripe-sync"
-                      onClick={() => syncTarifWithStripe(tarif.id)}
-                      disabled={syncingTarifId === tarif.id}
-                      title={tarif.stripe_price_id ? "Mit Stripe synchronisiert" : "Mit Stripe synchronisieren"}
-                      style={{
-                        backgroundColor: tarif.stripe_price_id ? '#10b981' : '#6366f1',
-                        color: 'white'
-                      }}
-                    >
-                      {syncingTarifId === tarif.id ? (
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                      ) : tarif.stripe_price_id ? (
-                        <CheckCircle size={16} />
-                      ) : (
-                        <RefreshCw size={16} />
-                      )}
                     </button>
                   </div>
                 </div>

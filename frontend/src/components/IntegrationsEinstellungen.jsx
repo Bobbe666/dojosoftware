@@ -1,14 +1,14 @@
 // ============================================================================
 // INTEGRATIONS-EINSTELLUNGEN
 // Frontend/src/components/IntegrationsEinstellungen.jsx
-// Admin-Komponente für PayPal, LexOffice, DATEV Konfiguration
+// Admin-Komponente für PayPal, SumUp, LexOffice, DATEV Konfiguration
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Settings, CreditCard, FileText, Calculator, Save, Eye, EyeOff,
-  CheckCircle, AlertCircle, RefreshCw, ExternalLink, Link2
+  CheckCircle, AlertCircle, RefreshCw, ExternalLink, Link2, Smartphone
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 
@@ -28,6 +28,12 @@ const IntegrationsEinstellungen = () => {
     paypal_client_id: '',
     paypal_client_secret: '',
     paypal_sandbox: true,
+    // SumUp
+    sumup_api_key: '',
+    sumup_merchant_code: '',
+    sumup_client_id: '',
+    sumup_client_secret: '',
+    sumup_aktiv: false,
     // LexOffice
     lexoffice_api_key: '',
     // DATEV
@@ -119,7 +125,7 @@ const IntegrationsEinstellungen = () => {
         <Settings size={32} color="#ffd700" />
         <div>
           <h2 style={styles.title}>Integration-Einstellungen</h2>
-          <p style={styles.subtitle}>Konfiguriere PayPal, LexOffice und DATEV</p>
+          <p style={styles.subtitle}>Konfiguriere PayPal, SumUp, LexOffice und DATEV</p>
         </div>
       </div>
 
@@ -137,6 +143,12 @@ const IntegrationsEinstellungen = () => {
             icon={<CreditCard size={24} />}
             configured={status.paypal?.configured}
             mode={status.paypal?.sandbox ? 'Sandbox' : 'Live'}
+          />
+          <StatusCard
+            title="SumUp"
+            icon={<Smartphone size={24} />}
+            configured={status.sumup?.configured}
+            mode={status.sumup?.active ? 'Aktiv' : 'Inaktiv'}
           />
           <StatusCard
             title="LexOffice"
@@ -285,6 +297,120 @@ const IntegrationsEinstellungen = () => {
           onTest={() => testConnection('paypal')}
           result={testResults.paypal}
           disabled={!config.paypal_client_id || !config.paypal_client_secret}
+        />
+      </div>
+
+      {/* SumUp Section */}
+      <div style={styles.section}>
+        <div style={styles.sectionHeader}>
+          <Smartphone size={24} color="#00b5ad" />
+          <h3 style={styles.sectionTitle}>SumUp Kartenterminal</h3>
+          <a
+            href="https://developer.sumup.com/docs/api/getting-started/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.helpLink}
+          >
+            <ExternalLink size={14} /> Entwickler-Dokumentation
+          </a>
+        </div>
+
+        <div style={styles.infoBox}>
+          <p>
+            SumUp ermöglicht Kartenzahlungen über das Kartenterminal (Solo, Air).
+            Du kannst entweder einen API-Key oder OAuth-Credentials verwenden.
+            Die Zugangsdaten findest du im SumUp Business-Portal unter Entwickleroptionen.
+          </p>
+        </div>
+
+        <div style={styles.formRow}>
+          <label style={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={config.sumup_aktiv}
+              onChange={e => setConfig({ ...config, sumup_aktiv: e.target.checked })}
+            />
+            <span>SumUp aktivieren</span>
+          </label>
+        </div>
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Merchant Code</label>
+            <input
+              type="text"
+              value={config.sumup_merchant_code || ''}
+              onChange={e => setConfig({ ...config, sumup_merchant_code: e.target.value })}
+              style={styles.input}
+              placeholder="MER1234..."
+            />
+          </div>
+        </div>
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>API Key</label>
+            <div style={styles.secretInput}>
+              <input
+                type={showSecrets.sumup_api ? 'text' : 'password'}
+                value={config.sumup_api_key || ''}
+                onChange={e => setConfig({ ...config, sumup_api_key: e.target.value })}
+                style={{ ...styles.input, flex: 1 }}
+                placeholder="sup_sk_..."
+              />
+              <button style={styles.eyeButton} onClick={() => toggleSecret('sumup_api')}>
+                {showSecrets.sumup_api ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          ...styles.infoBox,
+          background: 'rgba(0, 181, 173, 0.1)',
+          borderColor: 'rgba(0, 181, 173, 0.3)'
+        }}>
+          <p style={{ margin: '0 0 8px 0' }}>
+            <strong>Optional: OAuth-Credentials</strong> (nur wenn kein API-Key verwendet wird)
+          </p>
+        </div>
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Client ID (optional)</label>
+            <input
+              type="text"
+              value={config.sumup_client_id || ''}
+              onChange={e => setConfig({ ...config, sumup_client_id: e.target.value })}
+              style={styles.input}
+              placeholder="OAuth Client ID..."
+            />
+          </div>
+        </div>
+
+        <div style={styles.formRow}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Client Secret (optional)</label>
+            <div style={styles.secretInput}>
+              <input
+                type={showSecrets.sumup_secret ? 'text' : 'password'}
+                value={config.sumup_client_secret || ''}
+                onChange={e => setConfig({ ...config, sumup_client_secret: e.target.value })}
+                style={{ ...styles.input, flex: 1 }}
+                placeholder="OAuth Client Secret..."
+              />
+              <button style={styles.eyeButton} onClick={() => toggleSecret('sumup_secret')}>
+                {showSecrets.sumup_secret ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <TestButton
+          service="sumup"
+          onTest={() => testConnection('sumup')}
+          result={testResults.sumup}
+          disabled={!config.sumup_api_key && (!config.sumup_client_id || !config.sumup_client_secret)}
         />
       </div>
 

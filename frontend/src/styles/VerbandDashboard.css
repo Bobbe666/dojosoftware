@@ -224,6 +224,31 @@
   line-height: 1.4;
 }
 
+.stat-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.breakdown-value {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.breakdown-separator {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
 .stat-badge {
   position: absolute;
   top: 0.75rem;

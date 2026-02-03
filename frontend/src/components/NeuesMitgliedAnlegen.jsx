@@ -9,7 +9,7 @@ import '../styles/NeuesMitgliedAnlegen.css';
 import "../styles/themes.css";
 import "../styles/components.css";
 
-const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrationComplete }) => {
+const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrationComplete, existingMemberForFamily = null }) => {
   // Hole das aktive Dojo aus dem Context
   const { activeDojo, getBestDojoForNewMember } = useDojoContext();
   // Hole den Update-Context für automatische Updates
@@ -280,6 +280,36 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     passwort_wiederholen: ''
   });
 
+  // Wenn ein bestehendes Mitglied übergeben wurde, Familienmodus automatisch aktivieren
+  useEffect(() => {
+    if (existingMemberForFamily) {
+      // Direkt in Familienmodus wechseln
+      setExistingMemberMode(true);
+      setExistingMemberLogin(prev => ({ ...prev, loggedIn: true }));
+      setExistingMemberData({
+        mitglied_id: existingMemberForFamily.mitglied_id,
+        vorname: existingMemberForFamily.vorname,
+        nachname: existingMemberForFamily.nachname,
+        email: existingMemberForFamily.email,
+        familien_id: existingMemberForFamily.familien_id || null,
+        strasse: existingMemberForFamily.strasse,
+        hausnummer: existingMemberForFamily.hausnummer,
+        plz: existingMemberForFamily.plz,
+        ort: existingMemberForFamily.ort,
+        iban: existingMemberForFamily.iban,
+        bic: existingMemberForFamily.bic,
+        bank_name: existingMemberForFamily.bank_name,
+        kontoinhaber: existingMemberForFamily.kontoinhaber
+      });
+      // Familie-Session starten (inline, da Funktion noch nicht definiert)
+      const sessionId = `family_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setFamilySessionId(sessionId);
+      setFamilyMode(true);
+      // Direkt zu Schritt 3 (Familie) springen
+      setCurrentStep(3);
+    }
+  }, [existingMemberForFamily]);
+
   // Prüfe ob Minderjährig
   const isMinor = () => {
     if (!memberData.geburtsdatum) return false;
@@ -295,14 +325,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   // Anzahl der tatsächlichen Schritte (für Navigation)
   const getTotalSteps = () => {
-    // 8 Schritte für öffentliche Registrierung (mit Familie + Account), 6 für interne Admin-Erstellung
-    return isRegistrationFlow ? 8 : 6;
+    // 8 Schritte für öffentliche Registrierung (mit Familie + Account), 7 für interne Admin-Erstellung (mit Familie)
+    return isRegistrationFlow ? 8 : 7;
   };
 
   // Anzahl der angezeigten Schritte (für Progress Bar)
   const getDisplayStepCount = () => {
-    // 8 Schritte für öffentliche Registrierung (mit Familie + Account), 6 für interne Admin-Erstellung
-    return isRegistrationFlow ? 8 : 6;
+    // 8 Schritte für öffentliche Registrierung (mit Familie + Account), 7 für interne Admin-Erstellung (mit Familie)
+    return isRegistrationFlow ? 8 : 7;
   };
 
   // Mapping für Schrittnummern (1:1 Zuordnung - keine Schritte werden übersprungen)
@@ -486,7 +516,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   // Tarife nach Alter filtern (Kids = unter 18, Erwachsene = 18+)
   const getFilteredTarife = (geburtsdatum) => {
     const isKid = isFamilyMemberMinor(geburtsdatum);
-    return availableTarife.filter(tarif => {
+    return (availableTarife || []).filter(tarif => {
       const tarifName = (tarif.name || '').toLowerCase();
       const tarifBeschreibung = (tarif.beschreibung || '').toLowerCase();
 
@@ -757,10 +787,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         }
       }
     } else {
-      // Für Admin-Bereich (6 Schritte ohne Familie)
+      // Für Admin-Bereich (7 Schritte mit Familie)
 
-      // Validierung Schritt 3: Vertragsdaten
-      if (currentStep === 3) {
+      // Schritt 3: Familie - keine Pflichtfelder, wird im Step selbst gehandhabt
+
+      // Validierung Schritt 4: Vertragsdaten
+      if (currentStep === 4) {
         if (!memberData.vertrag_tarif_id) {
           setError("Bitte wählen Sie einen Tarif aus");
           return;
@@ -770,20 +802,28 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
           return;
         }
+        // Prüfen ob alle Familienmitglieder einen Tarif haben
+        if (familyMembers.length > 0) {
+          const missingTarif = familyMembers.find(m => !m.tarif_id);
+          if (missingTarif) {
+            setError(`Bitte wählen Sie einen Tarif für ${missingTarif.vorname} ${missingTarif.nachname}`);
+            return;
+          }
+        }
       }
 
-      // Validierung Schritt 4: Bankdaten
-      if (currentStep === 4) {
+      // Validierung Schritt 5: Bankdaten
+      if (currentStep === 5) {
         if (!memberData.kontoinhaber || !memberData.iban) {
           setError("Bitte füllen Sie alle Pflichtfelder der Bankdaten aus (Kontoinhaber, IBAN)");
           return;
         }
       }
 
-      // Schritt 5: Medizinisch - keine Pflichtfelder
+      // Schritt 6: Medizinisch - keine Pflichtfelder
 
-      // Validierung Schritt 6: Widerrufsrecht
-      if (currentStep === 6) {
+      // Validierung Schritt 7: Widerrufsrecht
+      if (currentStep === 7) {
         if (!memberData.vertragsbeginn_option) {
           setError("Bitte wählen Sie eine Option für den Vertragsbeginn");
           return;
@@ -2849,14 +2889,15 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         default: return renderStep1();
       }
     } else {
-      // Für Admin-Bereich: 6 Schritte ohne Familie
+      // Für Admin-Bereich: 7 Schritte mit Familie
       switch (currentStep) {
-        case 1: return renderStep1();  // Grunddaten
-        case 2: return renderStep2();  // Kontakt
-        case 3: return renderStep6();  // Vertrag
-        case 4: return renderStep5();  // Bank
-        case 5: return renderStep4();  // Medizinisch
-        case 6: return renderStep7();  // Widerruf
+        case 1: return renderStep1();      // Grunddaten
+        case 2: return renderStep2();      // Kontakt
+        case 3: return renderFamilyStep(); // Familie
+        case 4: return renderStep6();      // Vertrag
+        case 5: return renderStep5();      // Bank
+        case 6: return renderStep4();      // Medizinisch
+        case 7: return renderStep7();      // Widerruf
         default: return renderStep1();
       }
     }
@@ -2992,15 +3033,16 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                     {actualStep === 8 && 'Account'}
                   </>
                 )}
-                {/* Labels für Admin-Bereich (6 Schritte) */}
+                {/* Labels für Admin-Bereich (7 Schritte mit Familie) */}
                 {!isRegistrationFlow && (
                   <>
                     {actualStep === 1 && 'Grunddaten'}
                     {actualStep === 2 && 'Kontakt'}
-                    {actualStep === 3 && 'Vertrag'}
-                    {actualStep === 4 && 'Bank'}
-                    {actualStep === 5 && 'Medizinisch'}
-                    {actualStep === 6 && 'Widerruf'}
+                    {actualStep === 3 && 'Familie'}
+                    {actualStep === 4 && 'Vertrag'}
+                    {actualStep === 5 && 'Bank'}
+                    {actualStep === 6 && 'Medizinisch'}
+                    {actualStep === 7 && 'Widerruf'}
                   </>
                 )}
               </div>

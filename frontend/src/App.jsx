@@ -18,6 +18,7 @@ import AgbConfirmationWrapper from "./components/AgbConfirmationWrapper";
 // SOFORT GELADEN - Kritisch für Initial Load
 // ============================================================================
 import Login from "./components/Login";
+import SSOLogin from "./components/SSOLogin";
 import LandingPage from "./pages/LandingPage";
 
 // ============================================================================
@@ -65,6 +66,7 @@ const EuerUebersicht = lazy(() => import(/* webpackChunkName: "finance" */ "./co
 const AusgabenVerwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/AusgabenVerwaltung"));
 const Beitraege = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Beitraege"));
 const Mahnwesen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Mahnwesen"));
+const OffeneZahlungen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/OffeneZahlungen"));
 const MahnstufenEinstellungen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/MahnstufenEinstellungen"));
 const Rechnungsverwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Rechnungsverwaltung"));
 const RechnungErstellen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/RechnungErstellen"));
@@ -145,6 +147,8 @@ const KalenderAbo = lazy(() => import(/* webpackChunkName: "member-area" */ "./c
 // LAZY LOADED - Payment Checkout
 // ============================================================================
 const PaymentCheckout = lazy(() => import(/* webpackChunkName: "payment" */ "./components/PaymentCheckout"));
+const EventPaymentCheckout = lazy(() => import(/* webpackChunkName: "payment" */ "./components/EventPaymentCheckout"));
+const EventsDashboard = lazy(() => import(/* webpackChunkName: "events" */ "./components/EventsDashboard"));
 
 // ============================================================================
 // LAZY LOADED - Events & News
@@ -295,6 +299,7 @@ const App = () => {
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}
               <Route path="/login" element={<Login />} />
+              <Route path="/sso-login" element={<SSOLogin />} />
 
               {/* Public Marketing Pages - Lazy Loaded */}
               <Route path="/pricing" element={<Suspense fallback={<LazyLoadFallback />}><PricingPage /></Suspense>} />
@@ -325,6 +330,9 @@ const App = () => {
 
             {/* Probetraining-Buchung - Öffentlich zugänglich */}
             <Route path="/probetraining" element={<Suspense fallback={<LazyLoadFallback />}><ProbetrainingBuchung /></Suspense>} />
+
+            {/* Neumitglied-Registrierung - Öffentlich zugänglich */}
+            <Route path="/mitglied-werden" element={<Suspense fallback={<LazyLoadFallback />}><PublicRegistration /></Suspense>} />
 
             {/* ======== MITGLIEDER-ROUTEN (Lazy Loaded) ======== */}
             <Route
@@ -361,6 +369,14 @@ const App = () => {
               element={
                 <MemberOnlyRoute>
                   <Suspense fallback={<LazyLoadFallback />}><MemberEvents /></Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/events/:eventId/bezahlen"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}><EventPaymentCheckout /></Suspense>
                 </MemberOnlyRoute>
               }
             />
@@ -558,6 +574,7 @@ const App = () => {
 
               {/* Events-Verwaltung */}
               <Route path="events" element={<Suspense fallback={<LazyLoadFallback />}><Events /></Suspense>} />
+              <Route path="events-dashboard" element={<Suspense fallback={<LazyLoadFallback />}><EventsDashboard /></Suspense>} />
               <Route path="meine-events" element={<Suspense fallback={<LazyLoadFallback />}><MeineEvents /></Suspense>} />
 
               {/* News-Verwaltung (nur Haupt-Admin) */}
@@ -576,6 +593,7 @@ const App = () => {
               <Route path="mitglieder-filter/:filterType" element={<Suspense fallback={<LazyLoadFallback />}><MitgliederFilter /></Suspense>} />
               <Route path="beitraege" element={<Suspense fallback={<LazyLoadFallback />}><Beitraege /></Suspense>} />
               <Route path="mahnwesen" element={<Suspense fallback={<LazyLoadFallback />}><Mahnwesen /></Suspense>} />
+              <Route path="offene-zahlungen" element={<Suspense fallback={<LazyLoadFallback />}><OffeneZahlungen /></Suspense>} />
               <Route path="mahnstufen-einstellungen" element={<Suspense fallback={<LazyLoadFallback />}><MahnstufenEinstellungen /></Suspense>} />
               <Route path="rechnungen" element={<Suspense fallback={<LazyLoadFallback />}><Rechnungsverwaltung /></Suspense>} />
               <Route path="rechnungen/:id" element={<Suspense fallback={<LazyLoadFallback />}><Rechnungsverwaltung /></Suspense>} />

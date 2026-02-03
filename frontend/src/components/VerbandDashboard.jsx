@@ -19,7 +19,7 @@ import {
   CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket
 } from 'lucide-react';
 import VerbandsMitglieder from './VerbandsMitglieder';
-import VerbandShop from './VerbandShop';
+import ArtikelVerwaltung from './ArtikelVerwaltung';
 import ZieleEntwicklung from './ZieleEntwicklung';
 import SupportTickets from './SupportTickets';
 import '../styles/VerbandDashboard.css';
@@ -34,6 +34,9 @@ const VerbandDashboard = () => {
   // State für Verbands-Statistiken
   const [stats, setStats] = useState({
     mitgliedsschulen: 0,
+    mitgliedsschulenGesamt: 0,
+    mitgliedsschulenMitBeitrag: 0,
+    mitgliedsschulenVertragsfrei: 0,
     einzelmitglieder: 0,
     aktiveMitgliedschaften: 0,
     pendingMitgliedschaften: 0,
@@ -76,6 +79,9 @@ const VerbandDashboard = () => {
         const s = statsRes.data.stats || {};
         setStats({
           mitgliedsschulen: s.dojos || 0,
+          mitgliedsschulenGesamt: s.dojosGesamt || 0,
+          mitgliedsschulenMitBeitrag: s.dojosMitBeitrag || 0,
+          mitgliedsschulenVertragsfrei: s.dojosVertragsfrei || 0,
           einzelmitglieder: s.einzelpersonen || 0,
           aktiveMitgliedschaften: s.aktiv || 0,
           pendingMitgliedschaften: s.pending || 0,
@@ -108,7 +114,7 @@ const VerbandDashboard = () => {
   const tabs = [
     { id: 'overview', label: 'Übersicht', icon: BarChart3 },
     { id: 'mitglieder', label: 'Mitglieder', icon: Users },
-    { id: 'shop', label: 'Shop', icon: ShoppingCart },
+    { id: 'shop', label: 'Artikel/Shop', icon: ShoppingCart },
     { id: 'entwicklung', label: 'Entwicklung', icon: Target },
     { id: 'support', label: 'Support', icon: Ticket },
     { id: 'turniere', label: 'Turniere', icon: Trophy },
@@ -152,8 +158,17 @@ const VerbandDashboard = () => {
             <Building2 size={24} />
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.mitgliedsschulen}</span>
-            <span className="stat-label">Mitgliedsschulen</span>
+            <span className="stat-value">{stats.mitgliedsschulenGesamt}</span>
+            <span className="stat-label">MITGLIEDSSCHULEN</span>
+            <div className="stat-breakdown">
+              <span className="breakdown-item">
+                <span className="breakdown-value">{stats.mitgliedsschulenMitBeitrag}</span> mit Beitrag
+              </span>
+              <span className="breakdown-separator">•</span>
+              <span className="breakdown-item">
+                <span className="breakdown-value">{stats.mitgliedsschulenVertragsfrei}</span> vertragsfrei
+              </span>
+            </div>
           </div>
           <div className="stat-badge">
             <span className="badge-text">99€/Jahr</span>
@@ -240,7 +255,7 @@ const VerbandDashboard = () => {
                         {m.typ === 'dojo' ? m.dojo_name : `${m.person_vorname} ${m.person_nachname}`}
                       </span>
                       <span className="mitgliedschaft-meta">
-                        {m.mitgliedsnummer} • seit {new Date(m.beitritt_datum).toLocaleDateString('de-DE')}
+                        {m.mitgliedsnummer} • seit {m.gueltig_von ? new Date(m.gueltig_von).toLocaleDateString('de-DE') : '-'}
                       </span>
                     </div>
                     <StatusBadge status={m.status} />
@@ -500,7 +515,7 @@ const VerbandDashboard = () => {
       <div className="verband-tab-content">
         {activeTab === 'overview' && <OverviewContent />}
         {activeTab === 'mitglieder' && <VerbandsMitglieder />}
-        {activeTab === 'shop' && <VerbandShop />}
+        {activeTab === 'shop' && <ArtikelVerwaltung />}
         {activeTab === 'entwicklung' && <ZieleEntwicklung bereich="verband" />}
         {activeTab === 'support' && <SupportTickets bereich="verband" />}
         {activeTab === 'turniere' && <TurniereContent />}

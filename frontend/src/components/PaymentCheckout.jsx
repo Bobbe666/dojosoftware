@@ -11,10 +11,11 @@ import { useAuth } from '../context/AuthContext';
 import config from '../config/config';
 import {
   CreditCard, CheckCircle, XCircle, Loader2, ArrowLeft,
-  Building2, AlertCircle, Shield, Lock
+  Building2, AlertCircle, Shield, Lock, Smartphone
 } from 'lucide-react';
 import StripeCheckout from './StripeCheckout';
 import PayPalCheckout from './PayPalCheckout';
+import SumUpCheckout from './SumUpCheckout';
 import '../styles/PaymentCheckout.css';
 
 const PaymentCheckout = () => {
@@ -34,6 +35,8 @@ const PaymentCheckout = () => {
   // Payment Provider Status
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [paypalEnabled, setPaypalEnabled] = useState(false);
+  const [sumupEnabled, setSumupEnabled] = useState(false);
+  const [dojoId, setDojoId] = useState(null);
 
   // Lade Rechnungsdaten und Payment-Konfiguration
   useEffect(() => {
@@ -76,12 +79,20 @@ const PaymentCheckout = () => {
       const integrationStatus = configRes.data;
       setStripeEnabled(integrationStatus?.stripe?.configured || false);
       setPaypalEnabled(integrationStatus?.paypal?.configured || false);
+      setSumupEnabled(integrationStatus?.sumup?.configured && integrationStatus?.sumup?.active || false);
+
+      // Dojo ID für SumUp speichern
+      if (rechnungRes.data.rechnung?.dojo_id) {
+        setDojoId(rechnungRes.data.rechnung.dojo_id);
+      }
 
       // Setze Standard-Zahlungsmethode
       if (integrationStatus?.stripe?.configured) {
         setPaymentMethod('stripe');
       } else if (integrationStatus?.paypal?.configured) {
         setPaymentMethod('paypal');
+      } else if (integrationStatus?.sumup?.configured && integrationStatus?.sumup?.active) {
+        setPaymentMethod('sumup');
       }
 
     } catch (err) {
@@ -98,10 +109,11 @@ const PaymentCheckout = () => {
 
     // Optional: Rechnung als bezahlt markieren
     try {
+      const zahlungsart = paymentMethod === 'stripe' ? 'kreditkarte' : paymentMethod === 'sumup' ? 'sumup' : 'paypal';
       await axios.post(`${config.apiBaseUrl}/rechnungen/${rechnungId}/zahlung`, {
         betrag: rechnung.gesamtbetrag,
-        zahlungsart: paymentMethod === 'stripe' ? 'kreditkarte' : 'paypal',
-        referenz: paymentData.id || paymentData.orderId
+        zahlungsart: zahlungsart,
+        referenz: paymentData.id || paymentData.orderId || paymentData.transactionId
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -188,7 +200,7 @@ const PaymentCheckout = () => {
   }
 
   // Keine Payment Provider konfiguriert
-  if (!stripeEnabled && !paypalEnabled) {
+  if (!stripeEnabled && !paypalEnabled && !sumupEnabled) {
     return (
       <div className="payment-checkout">
         <div className="payment-not-available">
@@ -270,6 +282,15 @@ const PaymentCheckout = () => {
                 <span>PayPal</span>
               </button>
             )}
+            {sumupEnabled && (
+              <button
+                className={`method-tab ${paymentMethod === 'sumup' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('sumup')}
+              >
+                <Smartphone size={20} />
+                <span>SumUp</span>
+              </button>
+            )}
           </div>
 
           {/* Payment Form */}
@@ -292,6 +313,25 @@ const PaymentCheckout = () => {
                 description={`Rechnung ${rechnung?.rechnungsnummer}`}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
+              />
+            )}
+
+            {paymentMethod === 'sumup' && sumupEnabled && (
+              <SumUpCheckout
+                amount={parseFloat(rechnung?.gesamtbetrag || 0)}
+                description={`Rechnung ${rechnung?.rechnungsnummer}`}
+                dojoId={dojoId}
+                rechnungId={rechnungId}
+                zahlungstyp="rechnung"
+                onSuccess={(result) => {
+                  handlePaymentSuccess({
+                    id: result.checkoutId,
+                    transactionId: result.transactionId
+                  });
+                }}
+                onError={(error) => {
+                  handlePaymentError({ message: error });
+                }}
               />
             )}
           </div>
