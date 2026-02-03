@@ -255,37 +255,48 @@ router.get('/:id(\\d+)', async (req, res) => {
       logger.info('Loading dojo stats for dojoId:', dojoId);
 
       try {
-        const [mitgliederStats, kurseStats, trainerStats, storageStats, adminStats, standortStats, eventStats, letztesLogin] = await Promise.all([
-          // Mitglieder: aktiv column is 1/0
+        // Speicherplatz aus Dateisystem berechnen
+        const { execSync } = require('child_process');
+        let storageBytes = 0;
+        try {
+          // Mitglieder-IDs holen
+          const mitgliederIds = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?', [dojoId]);
+          for (const m of mitgliederIds) {
+            const path = `/var/www/dojosoftware/backend/uploads/mitglieder/${m.mitglied_id}`;
+            try {
+              const size = execSync(`du -sb "${path}" 2>/dev/null | cut -f1`, { encoding: 'utf8' }).trim();
+              if (size) storageBytes += parseInt(size, 10) || 0;
+            } catch (e) { /* Ordner existiert nicht */ }
+          }
+        } catch (e) {
+          logger.error('Error calculating storage:', e);
+        }
+
+        const [mitgliederStats, kurseStats, trainerStats, adminStats, standortStats, eventStats, letztesLogin, stileStats, stundenplanStats] = await Promise.all([
           queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv, SUM(CASE WHEN aktiv = 0 THEN 1 ELSE 0 END) as inaktiv FROM mitglieder WHERE dojo_id = ?', [dojoId]),
-          // Kurse: no aktiv column, count all
-          queryAsync('SELECT COUNT(*) as gesamt, COUNT(*) as aktiv FROM kurse WHERE dojo_id = ?', [dojoId]),
-          // Trainer: count distinct
-          queryAsync('SELECT COUNT(DISTINCT trainer_id) as anzahl FROM kurse WHERE dojo_id = ? AND trainer_id IS NOT NULL', [dojoId]),
-          // Speicherplatz
-          queryAsync('SELECT COALESCE(SUM(dateigroesse), 0) as bytes_total, COUNT(*) as dokumente_anzahl FROM dokumente WHERE dojo_id = ?', [dojoId]),
-          // Admin Users
+          queryAsync('SELECT COUNT(*) as gesamt FROM kurse WHERE dojo_id = ?', [dojoId]),
+          queryAsync('SELECT COUNT(DISTINCT JSON_UNQUOTE(jt.trainer_id)) as anzahl FROM kurse k, JSON_TABLE(COALESCE(k.trainer_ids, \"[]\"), \"$[*]\" COLUMNS (trainer_id VARCHAR(10) PATH \"$\")) jt WHERE k.dojo_id = ? AND jt.trainer_id IS NOT NULL', [dojoId]),
           queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as aktiv FROM admin_users WHERE dojo_id = ?', [dojoId]),
-          // Standorte: ist_aktiv column
           queryAsync('SELECT COUNT(*) as anzahl FROM standorte WHERE dojo_id = ?', [dojoId]),
-          // Events
           queryAsync('SELECT COUNT(*) as gesamt, SUM(CASE WHEN datum >= CURDATE() THEN 1 ELSE 0 END) as kommende FROM events WHERE dojo_id = ?', [dojoId]),
-          // Letztes Login
-          queryAsync('SELECT MAX(last_login) as letztes_login FROM admin_users WHERE dojo_id = ? AND aktiv = 1', [dojoId])
+          queryAsync('SELECT MAX(letzter_login) as letztes_login FROM admin_users WHERE dojo_id = ? AND aktiv = 1', [dojoId]),
+          queryAsync('SELECT COUNT(DISTINCT stil) as anzahl FROM kurse WHERE dojo_id = ? AND stil IS NOT NULL AND stil \!= \"\"', [dojoId]),
+          queryAsync('SELECT COUNT(*) as anzahl FROM stundenplan sp JOIN kurse k ON sp.kurs_id = k.kurs_id WHERE k.dojo_id = ?', [dojoId])
         ]);
 
         logger.info('Dojo stats loaded successfully');
 
         mitgliedschaft.dojo_stats = {
-          mitglieder: { gesamt: mitgliederStats[0]?.gesamt || 0, aktiv: mitgliederStats[0]?.aktiv || 0, inaktiv: mitgliederStats[0]?.inaktiv || 0, gekuendigt: 0 },
-          kurse: { gesamt: kurseStats[0]?.gesamt || 0, aktiv: kurseStats[0]?.aktiv || 0 },
+          mitglieder: { gesamt: mitgliederStats[0]?.gesamt || 0, aktiv: mitgliederStats[0]?.aktiv || 0, inaktiv: mitgliederStats[0]?.inaktiv || 0 },
+          kurse: { gesamt: kurseStats[0]?.gesamt || 0 },
           trainer: { anzahl: trainerStats[0]?.anzahl || 0 },
-          speicherplatz: { bytes: storageStats[0]?.bytes_total || 0, mb: Math.round((storageStats[0]?.bytes_total || 0) / 1024 / 1024 * 100) / 100, dokumente: storageStats[0]?.dokumente_anzahl || 0 },
+          speicherplatz: { bytes: storageBytes, mb: Math.round(storageBytes / 1024 / 1024 * 100) / 100 },
           admins: { gesamt: adminStats[0]?.gesamt || 0, aktiv: adminStats[0]?.aktiv || 0 },
-          stile: 0,
+          stile: stileStats[0]?.anzahl || 0,
           standorte: standortStats[0]?.anzahl || 0,
           events: { gesamt: eventStats[0]?.gesamt || 0, kommende: eventStats[0]?.kommende || 0 },
-          letztes_login: letztesLogin[0]?.letztes_login || null
+          letztes_login: letztesLogin[0]?.letztes_login || null,
+          stundenplan: stundenplanStats[0]?.anzahl || 0
         };
       } catch (statsErr) {
         logger.error('Error loading dojo stats:', statsErr);
@@ -299,67 +310,6 @@ router.get('/:id(\\d+)', async (req, res) => {
   }
 });
 
-
-router.put('/:id(\\d+)/status', async (req, res) => {
-  const { status } = req.body;
-  if (!status) return res.status(400).json({ error: 'Status fehlt' });
-
-  try {
-    // Alten Status laden
-    const alteMitgliedschaft = await queryAsync('SELECT status, mitgliedsnummer FROM verbandsmitgliedschaften WHERE id = ?', [req.params.id]);
-    if (alteMitgliedschaft.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
-
-    const alterStatus = alteMitgliedschaft[0].status;
-    const mitgliedsnummer = alteMitgliedschaft[0].mitgliedsnummer;
-
-    await queryAsync('UPDATE verbandsmitgliedschaften SET status = ?, updated_at = NOW() WHERE id = ?', [status, req.params.id]);
-
-    // Historie protokollieren
-    const aktion = status === 'gekuendigt' ? 'gekuendigt' : (status === 'aktiv' && alterStatus === 'gekuendigt' ? 'reaktiviert' : 'geaendert');
-    await protokolliereHistorie(
-      req.params.id,
-      aktion,
-      `Status geändert: ${alterStatus} → ${status} (${mitgliedsnummer})`,
-      { status: alterStatus },
-      { status },
-      req.user?.email || req.user?.username || 'Admin',
-      req.ip || req.headers['x-forwarded-for']
-    );
-
-    res.json({ success: true, message: 'Status aktualisiert' });
-  } catch (err) {
-    console.error('Fehler bei Status-Update:', err);
-    res.status(500).json({ error: 'Datenbankfehler' });
-  }
-});
-
-// DELETE /:id/permanent - Mitgliedschaft DAUERHAFT löschen (nur Admin)
-router.delete('/:id(\\d+)/permanent', async (req, res) => {
-  try {
-    const id = req.params.id;
-
-    // Prüfen ob Mitgliedschaft existiert
-    const mitgliedschaft = await queryAsync('SELECT * FROM verbandsmitgliedschaften WHERE id = ?', [id]);
-    if (mitgliedschaft.length === 0) {
-      return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
-    }
-
-    // Zugehörige Zahlungen löschen
-    await queryAsync('DELETE FROM verbandsmitgliedschaft_zahlungen WHERE verbandsmitgliedschaft_id = ?', [id]);
-
-    // SEPA-Mandate löschen (falls vorhanden)
-    await queryAsync('DELETE FROM verbandsmitgliedschaft_sepa WHERE verbandsmitgliedschaft_id = ?', [id]);
-
-    // Mitgliedschaft dauerhaft löschen
-    await queryAsync('DELETE FROM verbandsmitgliedschaften WHERE id = ?', [id]);
-
-    logger.info('Verbandsmitgliedschaft dauerhaft gelöscht', { id, typ: mitgliedschaft[0].typ });
-    res.json({ success: true, message: 'Mitgliedschaft dauerhaft gelöscht' });
-  } catch (err) {
-    logger.error('Fehler beim dauerhaften Löschen:', { error: err, id: req.params.id });
-    res.status(500).json({ error: 'Datenbankfehler', details: err.message });
-  }
-});
 
 // POST /:id/beitragsfrei - Beitragsfrei-Status umschalten (nur Admin)
 router.post('/:id(\\d+)/beitragsfrei', async (req, res) => {

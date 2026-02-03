@@ -1808,12 +1808,9 @@ const VerbandsMitglieder = () => {
                           textAlign: 'center'
                         }}>
                           <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>
-                            {selectedMitgliedschaft.dojo_stats.kurse?.aktiv || 0}
+                            {selectedMitgliedschaft.dojo_stats.kurse?.gesamt || 0}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Kurse aktiv</div>
-                          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
-                            ({selectedMitgliedschaft.dojo_stats.kurse?.gesamt || 0} gesamt)
-                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Kurse</div>
                         </div>
 
                         {/* Trainer */}
