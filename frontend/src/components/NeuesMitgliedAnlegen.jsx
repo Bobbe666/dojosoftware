@@ -392,6 +392,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   // Wenn ein bestehendes Mitglied übergeben wurde, Familienmodus automatisch aktivieren
   useEffect(() => {
     if (existingMemberForFamily) {
+      console.log('🏠 existingMemberForFamily Mode aktiviert:', existingMemberForFamily);
       // Direkt in Familienmodus wechseln
       setExistingMemberMode(true);
       setExistingMemberLogin(prev => ({ ...prev, loggedIn: true }));
@@ -401,6 +402,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         nachname: existingMemberForFamily.nachname,
         email: existingMemberForFamily.email,
         familien_id: existingMemberForFamily.familien_id || null,
+        dojo_id: existingMemberForFamily.dojo_id,
         strasse: existingMemberForFamily.strasse,
         hausnummer: existingMemberForFamily.hausnummer,
         plz: existingMemberForFamily.plz,
@@ -410,6 +412,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         bank_name: existingMemberForFamily.bank_name,
         kontoinhaber: existingMemberForFamily.kontoinhaber
       });
+      // dojo_id auch in memberData setzen für Backend
+      setMemberData(prev => ({
+        ...prev,
+        dojo_id: existingMemberForFamily.dojo_id,
+        existing_member_dojo_id: existingMemberForFamily.dojo_id
+      }));
       // Familie-Session starten (inline, da Funktion noch nicht definiert)
       const sessionId = `family_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       setFamilySessionId(sessionId);
@@ -591,8 +599,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   useEffect(() => {
     const loadTarife = async () => {
       try {
-        const endpoint = isRegistrationFlow ? '/public/tarife' : '/tarife';
-        const response = await axios.get(endpoint);
+        // Immer public/tarife verwenden - funktioniert ohne Auth und hat alle aktiven Tarife
+        const response = await axios.get('/public/tarife');
         // API kann entweder direkt ein Array oder {success: true, data: [...]} zurückgeben
         const tarifeData = response.data?.data || response.data;
         // Normalisiere Feldnamen: public API hat 'id' und 'price_cents', interne API hat 'tarif_id' und 'monatlicher_beitrag_cents'
@@ -636,29 +644,30 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   const getFilteredTarife = (geburtsdatum) => {
     const isKid = isFamilyMemberMinor(geburtsdatum);
     return (availableTarife || []).filter(tarif => {
-      // Nur aktive Tarife mit gültigem Preis anzeigen
+      // Nur aktive Tarife anzeigen
       if (tarif.aktiv === false || tarif.aktiv === 0) return false;
 
       const tarifName = (tarif.name || '').toLowerCase();
-      const tarifBeschreibung = (tarif.beschreibung || '').toLowerCase();
 
       // Spezielle Tarife ausschließen die nicht für normale Mitglieder sind
       if (tarifName.includes('beitragsfrei') || tarifName.includes('anzug') ||
           tarifName.includes('10er karte') || tarifName.includes('familientarif') ||
-          tarifName.includes('familienmitglied')) return false;
+          tarifName.includes('3.familienmitglied')) return false;
 
       // Kids-Tarife erkennen
       const isKidsTarif = tarifName.includes('kind') || tarifName.includes('kids') ||
                           tarifName.includes('jugend') || tarifName.includes('schüler') ||
-                          tarifName.includes('studenten') ||
-                          tarifBeschreibung.includes('kind') || tarifBeschreibung.includes('kids');
+                          tarifName.includes('studenten');
+
+      // Erwachsenen-Tarife erkennen
+      const isAdultTarif = tarifName.includes('erwachsen');
 
       if (isKid) {
-        // Für Kinder: Kids-Tarife anzeigen
-        return isKidsTarif;
+        // Für Kinder: Kids-Tarife oder allgemeine Tarife (nicht explizit Erwachsene)
+        return isKidsTarif || !isAdultTarif;
       } else {
-        // Für Erwachsene: Erwachsenen-Tarife (keine Kids-Tarife)
-        return tarifName.includes('erwachsen') || tarifName.includes('adult');
+        // Für Erwachsene: Erwachsenen-Tarife oder allgemeine Tarife (nicht explizit Kids)
+        return isAdultTarif || !isKidsTarif;
       }
     });
   };
@@ -1046,27 +1055,41 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }
     } else {
       // Standard-Validierung für Admin-Bereich
+      // AGB etc. immer prüfen (gilt für Hauptmitglied oder Familienmitglieder)
       if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
         setError("Bitte akzeptieren Sie die AGB, Datenschutzerklärung, Dojo-Regeln und Hausordnung.");
         return;
       }
 
-      // Widerrufsrecht-Prüfung (Schritt 7)
-      if (!memberData.vertragsbeginn_option) {
-        setError("Bitte wählen Sie eine Option für den Vertragsbeginn (Sofortbeginn oder Normaler Beginn).");
-        return;
-      }
+      // Folgende Validierungen NUR wenn NICHT im existingMemberMode
+      // (Im existingMemberMode existiert das Hauptmitglied bereits)
+      if (!existingMemberMode) {
+        // Widerrufsrecht-Prüfung (Schritt 7)
+        if (!memberData.vertragsbeginn_option) {
+          setError("Bitte wählen Sie eine Option für den Vertragsbeginn (Sofortbeginn oder Normaler Beginn).");
+          return;
+        }
 
-      if (memberData.vertragsbeginn_option === 'sofort') {
-        if (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) {
-          setError("Bei Sofortbeginn müssen Sie beide Bestätigungen akzeptieren.");
+        if (memberData.vertragsbeginn_option === 'sofort') {
+          if (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) {
+            setError("Bei Sofortbeginn müssen Sie beide Bestätigungen akzeptieren.");
+            return;
+          }
+        }
+
+        if (!memberData.vertrag_tarif_id) {
+          setError("Bitte wählen Sie einen Tarif aus.");
           return;
         }
       }
 
-      if (!memberData.vertrag_tarif_id) {
-        setError("Bitte wählen Sie einen Tarif aus.");
-        return;
+      // Bei existingMemberMode: Prüfen ob alle Familienmitglieder einen Tarif haben
+      if (existingMemberMode && familyMembers.length > 0) {
+        const missingTarif = familyMembers.find(fm => !fm.tarif_id);
+        if (missingTarif) {
+          setError(`Bitte wählen Sie einen Tarif für ${missingTarif.vorname} ${missingTarif.nachname} aus.`);
+          return;
+        }
       }
     }
 
@@ -2779,7 +2802,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   type="checkbox"
                   name="vertrag_agb_akzeptiert"
                   checked={memberData.vertrag_agb_akzeptiert}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
                 />
                 <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
@@ -2803,7 +2826,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   type="checkbox"
                   name="vertrag_datenschutz_akzeptiert"
                   checked={memberData.vertrag_datenschutz_akzeptiert}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
                 />
                 <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
@@ -2827,7 +2850,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   type="checkbox"
                   name="vertrag_dojo_regeln_akzeptiert"
                   checked={memberData.vertrag_dojo_regeln_akzeptiert}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
                 />
                 <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
@@ -2850,7 +2873,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   type="checkbox"
                   name="vertrag_hausordnung_akzeptiert"
                   checked={memberData.vertrag_hausordnung_akzeptiert}
-                  onChange={handleInputChange}
+                  onChange={handleChange}
                   style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
                 />
                 <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>

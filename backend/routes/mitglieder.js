@@ -2176,6 +2176,33 @@ router.post("/",
         memberData.foto_einverstaendnis_datum = now;
     }
 
+    // 👨‍👩‍👧 SPEZIALFALL: existing_member_mode - Nur Familienmitglieder hinzufügen (kein neues Hauptmitglied)
+    if (memberData.existing_member_mode && memberData.family_members && memberData.family_members.length > 0) {
+        logger.info(`👨‍👩‍👧 Existing Member Mode: Füge ${memberData.family_members.length} Familienmitglieder zu bestehendem Mitglied hinzu`);
+
+        // dojo_id vom bestehenden Mitglied holen wenn nicht vorhanden
+        const dojoId = memberData.dojo_id || memberData.existing_member_dojo_id;
+        if (!dojoId) {
+            return res.status(400).json({ error: "dojo_id ist erforderlich für Familienmitglieder" });
+        }
+
+        // Familienmitglieder erstellen
+        createFamilyMembers(memberData.family_members, memberData, dojoId, (famErr, createdFamilyMembers) => {
+            if (famErr) {
+                logger.error('Fehler beim Erstellen der Familienmitglieder:', famErr);
+                return res.status(500).json({ error: "Fehler beim Erstellen der Familienmitglieder" });
+            }
+
+            res.status(201).json({
+                success: true,
+                message: `${createdFamilyMembers.length} Familienmitglieder erfolgreich erstellt`,
+                family_members_created: createdFamilyMembers,
+                existing_member_id: memberData.existing_member_id
+            });
+        });
+        return; // Wichtig: Hier aufhören, nicht weiter zum normalen Flow
+    }
+
     // 🔒 KRITISCH: dojo_id ist PFLICHTFELD für Tax Compliance!
     if (!memberData.dojo_id) {
         logger.error('KRITISCHER FEHLER: Neues Mitglied ohne dojo_id!');
@@ -2300,17 +2327,21 @@ router.post("/",
 
                 // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
                 createUserAccountIfNeeded(memberData, newMemberId, () => {
-                    res.status(201).json({
-                        success: true,
-                        mitglied_id: newMemberId,
-                        vertrag_id: vertragResult.insertId,
-                        dojo_id: memberData.dojo_id,
-                        message: "Mitglied und Vertrag erfolgreich erstellt",
-                        data: {
-                            ...memberData,
+                    // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
+                    createFamilyMembers(memberData.family_members, memberData, memberData.dojo_id, (famErr, createdFamilyMembers) => {
+                        res.status(201).json({
+                            success: true,
                             mitglied_id: newMemberId,
-                            vertrag_id: vertragResult.insertId
-                        }
+                            vertrag_id: vertragResult.insertId,
+                            dojo_id: memberData.dojo_id,
+                            message: "Mitglied und Vertrag erfolgreich erstellt",
+                            family_members_created: createdFamilyMembers || [],
+                            data: {
+                                ...memberData,
+                                mitglied_id: newMemberId,
+                                vertrag_id: vertragResult.insertId
+                            }
+                        });
                     });
                 });
             });
@@ -2318,20 +2349,120 @@ router.post("/",
             // Kein Vertrag, nur Mitglied erstellt
             // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
             createUserAccountIfNeeded(memberData, newMemberId, () => {
-                res.status(201).json({
-                    success: true,
-                    mitglied_id: newMemberId,
-                    dojo_id: memberData.dojo_id,
-                    message: "Mitglied erfolgreich erstellt",
-                    data: {
-                        ...memberData,
-                        mitglied_id: newMemberId
-                    }
+                // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
+                createFamilyMembers(memberData.family_members, memberData, memberData.dojo_id, (famErr, createdFamilyMembers) => {
+                    res.status(201).json({
+                        success: true,
+                        mitglied_id: newMemberId,
+                        dojo_id: memberData.dojo_id,
+                        message: "Mitglied erfolgreich erstellt",
+                        family_members_created: createdFamilyMembers || [],
+                        data: {
+                            ...memberData,
+                            mitglied_id: newMemberId
+                        }
+                    });
                 });
             });
         }
     });
 });
+
+// 👨‍👩‍👧 HILFSFUNKTION: Familienmitglieder erstellen
+async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callback) {
+    if (!familyMembers || familyMembers.length === 0) {
+        return callback(null, []);
+    }
+
+    logger.info(`👨‍👩‍👧 Erstelle ${familyMembers.length} Familienmitglieder...`);
+    const createdMembers = [];
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    const createMember = async (index) => {
+        if (index >= familyMembers.length) {
+            return callback(null, createdMembers);
+        }
+
+        const fm = familyMembers[index];
+        logger.info(`👤 Erstelle Familienmitglied ${index + 1}: ${fm.vorname} ${fm.nachname}`);
+
+        // Familienmitglied-Daten vorbereiten
+        const memberFields = {
+            dojo_id: dojoId,
+            vorname: fm.vorname,
+            nachname: fm.nachname,
+            geburtsdatum: fm.geburtsdatum,
+            geschlecht: fm.geschlecht || 'divers',
+            email: fm.email || null,
+            // Adresse vom Hauptmitglied übernehmen
+            strasse: mainMemberData.strasse || null,
+            hausnummer: mainMemberData.hausnummer || null,
+            plz: mainMemberData.plz || null,
+            ort: mainMemberData.ort || null,
+            telefon: mainMemberData.telefon || null,
+            // Dokumentakzeptanzen (gelten für alle Familienmitglieder)
+            agb_akzeptiert: mainMemberData.vertrag_agb_akzeptiert ? 1 : 0,
+            agb_akzeptiert_am: mainMemberData.vertrag_agb_akzeptiert ? now : null,
+            datenschutz_akzeptiert: mainMemberData.vertrag_datenschutz_akzeptiert ? 1 : 0,
+            datenschutz_akzeptiert_am: mainMemberData.vertrag_datenschutz_akzeptiert ? now : null,
+            hausordnung_akzeptiert: mainMemberData.vertrag_hausordnung_akzeptiert ? 1 : 0,
+            hausordnung_akzeptiert_am: mainMemberData.vertrag_hausordnung_akzeptiert ? now : null,
+            eintrittsdatum: now.split(' ')[0]
+        };
+
+        const insertFields = Object.keys(memberFields).filter(k => memberFields[k] !== undefined && memberFields[k] !== null);
+        const placeholders = insertFields.map(() => '?').join(', ');
+        const values = insertFields.map(k => memberFields[k]);
+
+        const memberQuery = `INSERT INTO mitglieder (${insertFields.join(', ')}) VALUES (${placeholders})`;
+
+        db.query(memberQuery, values, (err, result) => {
+            if (err) {
+                logger.error(`❌ Fehler beim Erstellen von Familienmitglied ${fm.vorname}:`, err);
+                return createMember(index + 1); // Weitermachen mit nächstem
+            }
+
+            const newMemberId = result.insertId;
+            logger.info(`✅ Familienmitglied erstellt: ID ${newMemberId}`);
+
+            // Vertrag für Familienmitglied erstellen (wenn tarif_id vorhanden)
+            if (fm.tarif_id) {
+                const vertragData = {
+                    mitglied_id: newMemberId,
+                    dojo_id: dojoId,
+                    tarif_id: fm.tarif_id,
+                    status: 'aktiv',
+                    agb_akzeptiert_am: mainMemberData.vertrag_agb_akzeptiert ? new Date() : null,
+                    datenschutz_akzeptiert_am: mainMemberData.vertrag_datenschutz_akzeptiert ? new Date() : null,
+                    hausordnung_akzeptiert_am: mainMemberData.vertrag_hausordnung_akzeptiert ? new Date() : null,
+                    unterschrift_datum: new Date()
+                };
+
+                const vFields = Object.keys(vertragData).filter(k => vertragData[k] !== null);
+                const vPlaceholders = vFields.map(() => '?').join(', ');
+                const vValues = vFields.map(k => vertragData[k]);
+
+                const vertragQuery = `INSERT INTO vertraege (${vFields.join(', ')}) VALUES (${vPlaceholders})`;
+
+                db.query(vertragQuery, vValues, (vertragErr, vertragResult) => {
+                    if (vertragErr) {
+                        logger.error(`❌ Fehler beim Erstellen des Vertrags für Familienmitglied:`, vertragErr);
+                    } else {
+                        logger.info(`✅ Vertrag für Familienmitglied erstellt: ID ${vertragResult.insertId}`);
+                    }
+
+                    createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname, vertrag_id: vertragResult?.insertId });
+                    createMember(index + 1);
+                });
+            } else {
+                createdMembers.push({ mitglied_id: newMemberId, vorname: fm.vorname, nachname: fm.nachname });
+                createMember(index + 1);
+            }
+        });
+    };
+
+    createMember(0);
+}
 
 // 🔐 HILFSFUNKTION: User-Account erstellen (nur bei öffentlicher Registrierung)
 async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
