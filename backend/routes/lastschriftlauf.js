@@ -13,13 +13,12 @@ router.get("/banken", (req, res) => {
 
     let query = `
         SELECT
-            id, dojo_id, bank_name, iban, bic, kontoinhaber,
-            sepa_glaeubiger_id, ist_standard, ist_aktiv
-        FROM dojo_banken
-        WHERE bank_typ = 'bank'
-          AND ist_aktiv = 1
-          AND iban IS NOT NULL
-          AND iban != ''
+            db.id, db.dojo_id, db.bank_name, db.bank_typ, db.iban, db.bic, db.kontoinhaber,
+            db.sepa_glaeubiger_id, db.ist_standard, db.ist_aktiv,
+            d.dojoname
+        FROM dojo_banken db
+        LEFT JOIN dojo d ON db.dojo_id = d.id
+        WHERE db.ist_aktiv = 1
     `;
     const params = [];
 
@@ -43,8 +42,11 @@ router.get("/banken", (req, res) => {
         // IBAN maskieren für die Anzeige
         const banken = results.map(bank => ({
             ...bank,
-            iban_masked: bank.iban ? bank.iban.substring(0, 4) + '****' + bank.iban.slice(-4) : '',
-            iban_full: bank.iban
+            iban_masked: bank.iban ? bank.iban.substring(0, 4) + '****' + bank.iban.slice(-4) : '(keine IBAN)',
+            iban_full: bank.iban,
+            typ_label: bank.bank_typ === 'bank' ? 'Bank' :
+                       bank.bank_typ === 'stripe' ? 'Stripe' :
+                       bank.bank_typ === 'paypal' ? 'PayPal' : 'Sonstige'
         }));
 
         res.json({
@@ -435,6 +437,9 @@ router.get("/missing-mandates", (req, res) => {
  * Query-Parameter:
  *   - monat: Monat (1-12), default: aktueller Monat
  *   - jahr: Jahr (z.B. 2026), default: aktuelles Jahr
+ *
+ * WICHTIG: Zeigt ALLE offenen Beiträge bis einschließlich dem ausgewählten Monat,
+ * kumuliert pro Mitglied als Gesamtsumme.
  */
 router.get("/preview", (req, res) => {
     try {
@@ -443,11 +448,10 @@ router.get("/preview", (req, res) => {
         const monat = parseInt(req.query.monat) || (now.getMonth() + 1);
         const jahr = parseInt(req.query.jahr) || now.getFullYear();
 
-        // Berechne Start- und Enddatum des Monats für die Beitrags-Filterung
-        const monatStart = `${jahr}-${String(monat).padStart(2, '0')}-01`;
+        // Enddatum des ausgewählten Monats (alle offenen Beiträge BIS zu diesem Datum)
         const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-31`;
 
-        logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatStart, monatEnde });
+        logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatEnde });
 
         const query = `
             SELECT
@@ -461,18 +465,22 @@ router.get("/preview", (req, res) => {
                 sm.bankname,
                 sm.mandatsreferenz,
                 sm.glaeubiger_id,
-                b.betrag as beitrag_betrag,
-                b.beitrag_id,
-                COALESCE(v.monatsbeitrag, 0) as monatlicher_beitrag,
+                -- Summe aller offenen Beiträge bis zum ausgewählten Monat
+                SUM(b.betrag) as gesamt_betrag,
+                COUNT(b.beitrag_id) as anzahl_offene_monate,
+                MIN(b.zahlungsdatum) as aeltester_beitrag,
+                MAX(b.zahlungsdatum) as neuester_beitrag,
+                GROUP_CONCAT(DISTINCT DATE_FORMAT(b.zahlungsdatum, '%m/%Y') ORDER BY b.zahlungsdatum SEPARATOR ', ') as offene_monate,
+                -- Details der einzelnen Beiträge (Format: betrag|datum|beitrag_id;...)
+                GROUP_CONCAT(CONCAT(b.betrag, '|', DATE_FORMAT(b.zahlungsdatum, '%Y-%m-%d'), '|', b.beitrag_id) ORDER BY b.zahlungsdatum SEPARATOR ';') as beitraege_details,
                 COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ', '), 'Kein Tarif') as tarif_name,
                 'monatlich' as zahlungszyklus
             FROM mitglieder m
             JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
             LEFT JOIN tarife t ON v.tarif_id = t.id
-            -- Nur Mitglieder mit offenen Beiträgen für den ausgewählten Monat
+            -- Alle offenen Beiträge BIS ZUM ausgewählten Monat (kumuliert)
             JOIN beitraege b ON m.mitglied_id = b.mitglied_id
                 AND b.bezahlt = 0
-                AND b.zahlungsdatum >= ?
                 AND b.zahlungsdatum <= ?
             INNER JOIN (
                 SELECT mitglied_id, bankname, mandatsreferenz, glaeubiger_id
@@ -482,12 +490,11 @@ router.get("/preview", (req, res) => {
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
             GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
-                     m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id,
-                     b.betrag, b.beitrag_id, v.monatsbeitrag
+                     m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id
             ORDER BY m.nachname, m.vorname
         `;
 
-        db.query(query, [monatStart, monatEnde], (err, results) => {
+        db.query(query, [monatEnde], (err, results) => {
             if (err) {
                 logger.error('Database error in /preview:', err);
                 logger.error('SQL Query:', query);
@@ -504,22 +511,41 @@ router.get("/preview", (req, res) => {
                 // Ermittle häufigste Bank
                 const mostCommonBank = getMostCommonBank(results);
 
+                // Hilfsfunktion zum Parsen der Beiträge-Details
+                const parseBeitraegeDetails = (detailsStr) => {
+                    if (!detailsStr) return [];
+                    return detailsStr.split(';').map(item => {
+                        const [betrag, datum, beitrag_id] = item.split('|');
+                        const dateParts = datum.split('-');
+                        const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+                        return {
+                            beitrag_id: parseInt(beitrag_id),
+                            betrag: parseFloat(betrag),
+                            datum: formattedDate,
+                            monat: `${dateParts[1]}/${dateParts[0]}`
+                        };
+                    });
+                };
+
                 const preview = results.map(r => ({
                     mitglied_id: r.mitglied_id,
                     name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
                     iban: maskIBAN(r.iban),
-                    // Verwende Betrag aus beitraege-Tabelle
-                    betrag: parseFloat(r.beitrag_betrag || r.monatlicher_beitrag || 0),
+                    // Gesamtbetrag aller offenen Beiträge
+                    betrag: parseFloat(r.gesamt_betrag || 0),
+                    anzahl_monate: r.anzahl_offene_monate || 1,
+                    offene_monate: r.offene_monate || '',
+                    // Einzelne Beiträge als Array
+                    beitraege: parseBeitraegeDetails(r.beitraege_details),
                     mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
                     tarif: r.tarif_name || 'Kein Tarif',
                     zahlungszyklus: r.zahlungszyklus || 'monatlich',
-                    bank: r.bankname || 'Unbekannt',
-                    beitrag_id: r.beitrag_id
+                    bank: r.bankname || 'Unbekannt'
                 }));
 
-                // Berechne Gesamtsumme aus den Beiträgen
+                // Berechne Gesamtsumme aller Beiträge
                 const totalAmount = results.reduce((sum, r) =>
-                    sum + parseFloat(r.beitrag_betrag || r.monatlicher_beitrag || 0), 0
+                    sum + parseFloat(r.gesamt_betrag || 0), 0
                 ).toFixed(2);
 
                 res.json({

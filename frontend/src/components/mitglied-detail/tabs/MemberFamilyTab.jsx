@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import config from '../../../config/config';
 
 // Vertreter-Typ Optionen
 const VERTRETER_TYPEN = [
@@ -65,6 +66,54 @@ const MemberFamilyTab = ({
   handleChange,
   CustomSelect
 }) => {
+  // State fuer Familienmitglieder
+  const [familienmitglieder, setFamilienmitglieder] = useState([]);
+  const [familienId, setFamilienId] = useState(null);
+  const [loadingFamilie, setLoadingFamilie] = useState(false);
+
+  // Familienmitglieder laden
+  useEffect(() => {
+    const fetchFamilienmitglieder = async () => {
+      console.log('👨‍👩‍👧 Familie useEffect triggered', { mitglied_id: mitglied?.mitglied_id, familien_id: mitglied?.familien_id });
+
+      if (!mitglied?.mitglied_id) {
+        console.log('👨‍👩‍👧 Kein mitglied_id, skip fetch');
+        return;
+      }
+
+      setLoadingFamilie(true);
+      try {
+        const token = localStorage.getItem('dojo_auth_token');
+        const url = `${config.apiBaseUrl}/mitglieddetail/${mitglied.mitglied_id}/familie`;
+        console.log('👨‍👩‍👧 Fetching Familie von:', url);
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('👨‍👩‍👧 Response status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('👨‍👩‍👧 Familie data:', data);
+          setFamilienId(data.familien_id);
+          setFamilienmitglieder(data.familienmitglieder || []);
+        } else {
+          console.error('👨‍👩‍👧 API Fehler:', response.status, await response.text());
+        }
+      } catch (error) {
+        console.error('👨‍👩‍👧 Fehler beim Laden der Familienmitglieder:', error);
+      } finally {
+        setLoadingFamilie(false);
+      }
+    };
+
+    fetchFamilienmitglieder();
+  }, [mitglied?.mitglied_id, mitglied?.familien_id]);
+
   // Fallback Select-Komponente
   const SelectComponent = CustomSelect || (({ value, onChange, options }) => (
     <select value={value} onChange={onChange} style={inputStyle}>
@@ -76,6 +125,161 @@ const MemberFamilyTab = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Familienmitglieder-Liste - immer anzeigen */}
+      <div className="field-group card" style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>Familienmitglieder</span>
+            {familienId && (
+              <span style={{
+                fontSize: '0.75rem',
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(255, 215, 0, 0.15)',
+                borderRadius: '4px',
+                color: '#FFD700'
+              }}>
+                Familie #{familienId}
+              </span>
+            )}
+          </h3>
+
+          {loadingFamilie ? (
+            <div style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,255,255,0.5)' }}>
+              Lade Familienmitglieder...
+            </div>
+          ) : familienmitglieder.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {familienmitglieder.map((fm) => (
+                <div
+                  key={fm.mitglied_id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '0.75rem 1rem',
+                    background: fm.mitglied_id === mitglied?.mitglied_id
+                      ? 'rgba(255, 215, 0, 0.1)'
+                      : 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '8px',
+                    border: fm.mitglied_id === mitglied?.mitglied_id
+                      ? '1px solid rgba(255, 215, 0, 0.3)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    cursor: fm.mitglied_id !== mitglied?.mitglied_id ? 'pointer' : 'default',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => {
+                    if (fm.mitglied_id !== mitglied?.mitglied_id) {
+                      window.location.href = `/dashboard/mitglieder/${fm.mitglied_id}`;
+                    }
+                  }}
+                  onMouseEnter={(e) => {
+                    if (fm.mitglied_id !== mitglied?.mitglied_id) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (fm.mitglied_id !== mitglied?.mitglied_id) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                    }
+                  }}
+                >
+                  {/* Avatar/Icon */}
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: fm.ist_minderjaehrig ? 'rgba(100, 149, 237, 0.2)' : 'rgba(255, 215, 0, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem',
+                    flexShrink: 0
+                  }}>
+                    {fm.ist_minderjaehrig ? '👶' : '👤'}
+                  </div>
+
+                  {/* Name und Details */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: '500',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      {fm.vorname} {fm.nachname}
+                      {fm.mitglied_id === mitglied?.mitglied_id && (
+                        <span style={{
+                          fontSize: '0.7rem',
+                          padding: '0.15rem 0.4rem',
+                          background: 'rgba(255, 215, 0, 0.2)',
+                          borderRadius: '3px',
+                          color: '#FFD700'
+                        }}>
+                          aktuell
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      color: 'rgba(255, 255, 255, 0.5)',
+                      display: 'flex',
+                      gap: '0.75rem',
+                      flexWrap: 'wrap',
+                      alignItems: 'center'
+                    }}>
+                      {fm.alter_jahre !== null && (
+                        <span>{fm.alter_jahre} Jahre</span>
+                      )}
+                      {fm.tarif_name && (
+                        <span style={{ color: 'rgba(255, 215, 0, 0.7)' }}>{fm.tarif_name}</span>
+                      )}
+                      {fm.rabatt_prozent && parseFloat(fm.rabatt_prozent) > 0 && (
+                        <span style={{
+                          padding: '0.15rem 0.4rem',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          background: 'rgba(76, 175, 80, 0.2)',
+                          color: '#4CAF50',
+                          fontWeight: '500'
+                        }}>
+                          -{fm.rabatt_prozent}% {fm.rabatt_grund || 'Rabatt'}
+                        </span>
+                      )}
+                      {fm.vertrag_status && (
+                        <span style={{
+                          padding: '0.1rem 0.3rem',
+                          borderRadius: '3px',
+                          fontSize: '0.75rem',
+                          background: fm.vertrag_status === 'aktiv' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)',
+                          color: fm.vertrag_status === 'aktiv' ? '#4CAF50' : '#FF9800'
+                        }}>
+                          {fm.vertrag_status}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Link-Icon */}
+                  {fm.mitglied_id !== mitglied?.mitglied_id && (
+                    <div style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '1.2rem' }}>
+                      →
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              padding: '1.5rem',
+              color: 'rgba(255, 255, 255, 0.5)',
+              fontStyle: 'italic'
+            }}>
+              Keine Familienmitglieder vorhanden
+            </div>
+          )}
+        </div>
+
       {/* Familienmanagement */}
       <div className="field-group card">
         <h3>Familienmanagement</h3>

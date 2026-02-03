@@ -11,7 +11,9 @@ import {
   Calendar,
   DollarSign,
   Users,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -28,11 +30,28 @@ const Lastschriftlauf = ({ embedded = false }) => {
   const [selectedFormat, setSelectedFormat] = useState('csv');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [availableBanks, setAvailableBanks] = useState([]);
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  // Toggle für Beiträge-Details Dropdown
+  const toggleRowExpanded = (mitgliedId) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(mitgliedId)) {
+        newSet.delete(mitgliedId);
+      } else {
+        newSet.add(mitgliedId);
+      }
+      return newSet;
+    });
+  };
 
   const loadPreview = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview`);
+      // Monat und Jahr als Query-Parameter übergeben
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview?monat=${selectedMonth}&jahr=${selectedYear}`);
 
       if (!response.ok) {
         let errorMessage = 'Fehler beim Laden der Vorschau';
@@ -78,10 +97,32 @@ const Lastschriftlauf = ({ embedded = false }) => {
     }
   };
 
+  const loadBanks = async () => {
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/banken`);
+      if (response.ok) {
+        const data = await response.json();
+        const banken = data.banken || [];
+        setAvailableBanks(banken);
+        // Standardbank automatisch auswählen
+        const standardBank = banken.find(b => b.ist_standard) || banken[0];
+        if (standardBank && !selectedBank) {
+          setSelectedBank(standardBank.id);
+        }
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Bankkonten:', error);
+    }
+  };
+
   useEffect(() => {
-    loadPreview();
+    loadBanks();
     loadMissingMandates();
   }, []);
+
+  useEffect(() => {
+    loadPreview();
+  }, [selectedMonth, selectedYear]);
 
   const handleExport = () => {
     if (!preview || preview.count === 0) {
@@ -89,9 +130,18 @@ const Lastschriftlauf = ({ embedded = false }) => {
       return;
     }
 
+    if (!selectedBank) {
+      alert('Bitte wählen Sie ein Bankkonto für den Einzug aus');
+      return;
+    }
+
+    const bankInfo = availableBanks.find(b => b.id === selectedBank);
+    const bankName = bankInfo ? bankInfo.bank_name : 'Unbekannt';
+
     const confirmMessage = `SEPA-Lastschriftlauf exportieren?\n\n` +
       `Format: ${selectedFormat.toUpperCase()}\n` +
       `Monat: ${selectedMonth}/${selectedYear}\n` +
+      `Einzugsbank: ${bankName}\n` +
       `Anzahl Mandate: ${preview.count}\n` +
       `Gesamtbetrag: €${preview.total_amount}\n\n` +
       `Die Datei wird heruntergeladen und kann in Ihre Banking-Software importiert werden.`;
@@ -100,10 +150,12 @@ const Lastschriftlauf = ({ embedded = false }) => {
       return;
     }
 
+    const exportParams = `?monat=${selectedMonth}&jahr=${selectedYear}&bank_id=${selectedBank}`;
+
     if (selectedFormat === 'csv') {
-      window.open(`${config.apiBaseUrl}/lastschriftlauf`, '_blank');
+      window.open(`${config.apiBaseUrl}/lastschriftlauf${exportParams}`, '_blank');
     } else if (selectedFormat === 'xml') {
-      window.open(`${config.apiBaseUrl}/lastschriftlauf/xml`, '_blank');
+      window.open(`${config.apiBaseUrl}/lastschriftlauf/xml${exportParams}`, '_blank');
     }
   };
 
@@ -326,6 +378,30 @@ const Lastschriftlauf = ({ embedded = false }) => {
             </select>
           </div>
 
+          <div className="form-field-inline">
+            <label>
+              <CreditCard size={14} />
+              Einzugsbank
+            </label>
+            <select
+              value={selectedBank || ''}
+              onChange={(e) => setSelectedBank(parseInt(e.target.value))}
+              className="form-select-compact"
+              style={{ minWidth: '200px' }}
+            >
+              {availableBanks.length === 0 ? (
+                <option value="">Keine Bankkonten verfügbar</option>
+              ) : (
+                availableBanks.map(bank => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.dojoname ? `[${bank.dojoname}] ` : ''}{bank.bank_name} ({bank.typ_label || bank.bank_typ}) {bank.iban_masked}
+                    {bank.ist_standard ? ' ★' : ''}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
           <button
             className="logout-button"
             onClick={loadPreview}
@@ -351,48 +427,92 @@ const Lastschriftlauf = ({ embedded = false }) => {
       {/* Vorschau Tabelle */}
       {preview && preview.preview && preview.preview.length > 0 && (
         <div className="preview-card">
-          <h2>Vorschau ({preview.count} Einträge)</h2>
+          <h2>Vorschau ({preview.count} Einträge) - Gesamtsumme: {formatCurrency(preview.total_amount)}</h2>
 
           <div className="table-container">
             <table className="preview-table">
               <thead>
                 <tr>
+                  <th style={{ width: '30px' }}></th>
                   <th>Mitglied</th>
                   <th>IBAN</th>
-                  <th>Betrag</th>
+                  <th>Offene Monate</th>
+                  <th>Gesamtbetrag</th>
                   <th>Mandatsreferenz</th>
                   <th>Tarif</th>
-                  <th>Zyklus</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.preview.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <strong>{item.name}</strong>
-                      <br />
-                      <small>ID: {item.mitglied_id}</small>
-                    </td>
-                    <td>
-                      <code>{item.iban}</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: '#10b981' }}>
-                        {formatCurrency(item.betrag)}
-                      </strong>
-                    </td>
-                    <td>
-                      {item.mandatsreferenz === 'KEIN MANDAT' ? (
-                        <span className="badge badge-danger">{item.mandatsreferenz}</span>
-                      ) : (
-                        <span className="badge badge-success">{item.mandatsreferenz}</span>
-                      )}
-                    </td>
-                    <td>{item.tarif}</td>
-                    <td>
-                      <span className="badge badge-info">{item.zahlungszyklus || 'monatlich'}</span>
-                    </td>
-                  </tr>
+                  <React.Fragment key={index}>
+                    <tr>
+                      <td style={{ textAlign: 'center', cursor: 'pointer', padding: '0.5rem' }}
+                          onClick={() => toggleRowExpanded(item.mitglied_id)}>
+                        {expandedRows.has(item.mitglied_id) ? (
+                          <ChevronDown size={18} />
+                        ) : (
+                          <ChevronRight size={18} />
+                        )}
+                      </td>
+                      <td>
+                        <strong>{item.name}</strong>
+                        <br />
+                        <small>ID: {item.mitglied_id}</small>
+                      </td>
+                      <td>
+                        <code>{item.iban}</code>
+                      </td>
+                      <td>
+                        <span className="badge badge-warning" style={{ marginRight: '0.5rem' }}>
+                          {item.anzahl_monate} {item.anzahl_monate === 1 ? 'Monat' : 'Monate'}
+                        </span>
+                        <br />
+                        <small style={{ color: 'rgba(255,255,255,0.6)' }}>{item.offene_monate}</small>
+                      </td>
+                      <td>
+                        <strong style={{ color: item.anzahl_monate > 1 ? '#f59e0b' : '#10b981' }}>
+                          {formatCurrency(item.betrag)}
+                        </strong>
+                      </td>
+                      <td>
+                        {item.mandatsreferenz === 'KEIN MANDAT' ? (
+                          <span className="badge badge-danger">{item.mandatsreferenz}</span>
+                        ) : (
+                          <span className="badge badge-success">{item.mandatsreferenz}</span>
+                        )}
+                      </td>
+                      <td>{item.tarif}</td>
+                    </tr>
+                    {/* Details-Zeile - nur anzeigen wenn expandiert */}
+                    {expandedRows.has(item.mitglied_id) && item.beitraege && item.beitraege.length > 0 && (
+                      <tr className="details-row">
+                        <td></td>
+                        <td colSpan={6} style={{ padding: '0.5rem 1rem', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                          <div style={{ fontSize: '0.85rem' }}>
+                            <strong style={{ marginBottom: '0.5rem', display: 'block' }}>Einzelne Beiträge:</strong>
+                            <table style={{ width: '100%', marginTop: '0.5rem' }}>
+                              <thead>
+                                <tr style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Monat</th>
+                                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Datum</th>
+                                  <th style={{ textAlign: 'right', padding: '0.25rem' }}>Betrag</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {item.beitraege.map((beitrag, bIdx) => (
+                                  <tr key={bIdx} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <td style={{ padding: '0.25rem' }}>{beitrag.monat}</td>
+                                    <td style={{ padding: '0.25rem' }}>{beitrag.datum}</td>
+                                    <td style={{ padding: '0.25rem', textAlign: 'right' }}>{formatCurrency(beitrag.betrag)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

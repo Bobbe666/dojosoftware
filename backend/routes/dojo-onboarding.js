@@ -205,6 +205,23 @@ router.post('/register-dojo', async (req, res) => {
 
     logger.info('Admin-User erstellt: ${owner_email}');
 
+    // ===== 3b. VERBANDSMITGLIED VERKNÜPFEN (falls vorhanden) =====
+    // Prüfen ob ein Verbandsmitglied mit gleicher Email existiert
+    const [verbandsMitglieder] = await connection.query(
+      `SELECT id FROM verbandsmitgliedschaften
+       WHERE (person_email = ? OR dojo_email = ?) AND dojo_id IS NULL`,
+      [owner_email.toLowerCase(), owner_email.toLowerCase()]
+    );
+
+    if (verbandsMitglieder.length > 0) {
+      // Automatische Verknüpfung herstellen
+      await connection.query(
+        `UPDATE verbandsmitgliedschaften SET dojo_id = ? WHERE id = ?`,
+        [dojo_id, verbandsMitglieder[0].id]
+      );
+      logger.info(`Verbandsmitglied ${verbandsMitglieder[0].id} automatisch mit Dojo ${dojo_id} verknüpft`);
+    }
+
     // ===== 4. ERSTELLE INITIALE DATEN =====
     // HINWEIS: Für lokale DB auskommentiert, da Stile/Gürtel/Tarife global sind
     // await initializeDojoDefaults(connection, dojo_id);

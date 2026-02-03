@@ -758,6 +758,94 @@ router.post('/token-login', async (req, res) => {
 });
 
 // ===================================================================
+// SSO LOGIN (für Verband-Portal Integration)
+// ===================================================================
+
+/**
+ * POST /api/auth/sso-login
+ * Automatischer Login mit SSO-Token vom Verband-Portal
+ */
+router.post('/sso-login', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'SSO-Token fehlt' });
+    }
+
+    // Token in admin_users suchen (muss noch gültig sein)
+    const [users] = await db.promise().query(
+      `SELECT au.*, d.dojoname, d.subdomain
+       FROM admin_users au
+       LEFT JOIN dojo d ON au.dojo_id = d.id
+       WHERE au.session_token = ? AND au.session_ablauf > NOW() AND au.aktiv = 1`,
+      [token]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({ success: false, error: 'Ungültiger oder abgelaufener SSO-Token' });
+    }
+
+    const user = users[0];
+
+    // Token invalidieren (einmalige Verwendung)
+    await db.promise().query(
+      `UPDATE admin_users SET session_token = NULL, session_ablauf = NULL WHERE id = ?`,
+      [user.id]
+    );
+
+    // Neuen Session-Token erstellen
+    const newSessionToken = require('crypto').randomBytes(32).toString('hex');
+    const sessionExpiry = new Date();
+    sessionExpiry.setHours(sessionExpiry.getHours() + 24);
+
+    await db.promise().query(
+      `UPDATE admin_users SET session_token = ?, session_ablauf = ?, letzter_login = NOW() WHERE id = ?`,
+      [newSessionToken, sessionExpiry, user.id]
+    );
+
+    // JWT erstellen
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'dojo-secret-key-2024';
+
+    const jwtToken = jwt.sign(
+      {
+        id: user.id,
+        dojo_id: user.dojo_id,
+        username: user.username,
+        email: user.email,
+        rolle: user.rolle
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    logger.info(`SSO-Login erfolgreich: ${user.email} (Dojo: ${user.dojoname})`);
+
+    res.json({
+      success: true,
+      token: jwtToken,
+      sessionToken: newSessionToken,
+      user: {
+        id: user.id,
+        dojo_id: user.dojo_id,
+        username: user.username,
+        email: user.email,
+        vorname: user.vorname,
+        nachname: user.nachname,
+        rolle: user.rolle,
+        dojoname: user.dojoname,
+        subdomain: user.subdomain
+      }
+    });
+
+  } catch (error) {
+    logger.error('SSO-Login-Fehler:', error);
+    res.status(500).json({ success: false, error: 'SSO-Login fehlgeschlagen' });
+  }
+});
+
+// ===================================================================
 // ERROR HANDLING
 // ===================================================================
 
@@ -773,6 +861,7 @@ router.use('*', (req, res) => {
       'GET /api/auth/test',
       'POST /api/auth/login',
       'POST /api/auth/token-login',
+      'POST /api/auth/sso-login',
       'GET /api/auth/me',
       'POST /api/auth/logout',
       'GET /api/auth/users (dev only)',
