@@ -1,5 +1,6 @@
 const db = require('../db');
 const StripeDataevProvider = require('./StripeDataevProvider');
+const StripeConnectProvider = require('./StripeConnectProvider');
 const ManualSepaProvider = require('./ManualSepaProvider');
 const logger = require('../utils/logger');
 
@@ -13,6 +14,10 @@ class PaymentProviderFactory {
             switch (dojoConfig.payment_provider) {
                 case 'stripe_datev':
                     return new StripeDataevProvider(dojoConfig);
+
+                case 'stripe_connect':
+                    const connectAccount = await this.getConnectAccount(dojoId);
+                    return new StripeConnectProvider(dojoConfig, connectAccount);
 
                 case 'manual_sepa':
                 default:
@@ -162,6 +167,29 @@ class PaymentProviderFactory {
         });
     }
 
+    static async getConnectAccount(dojoId) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT * FROM stripe_connect_accounts
+                WHERE dojo_id = ? AND connection_status = 'connected'
+            `;
+
+            db.query(query, [dojoId], (err, results) => {
+                if (err) {
+                    logger.error('❌ PaymentProviderFactory: Error loading Connect Account:', err);
+                    return reject(err);
+                }
+
+                if (results.length === 0) {
+                    logger.warn(`⚠️  PaymentProviderFactory: No Connect Account found for Dojo ${dojoId}`);
+                    return resolve(null);
+                }
+
+                resolve(results[0]);
+            });
+        });
+    }
+
     static async getProviderStatus(dojoId = null) {
         try {
             const config = await this.getDojoConfig(dojoId);
@@ -175,8 +203,10 @@ class PaymentProviderFactory {
                 last_updated: config.updated_at,
                 // Stripe-spezifische Daten für Frontend
                 stripe: {
-                    configured: config.payment_provider === 'stripe_datev' && !!config.stripe_publishable_key,
-                    publishable_key: config.stripe_publishable_key || null
+                    configured: (config.payment_provider === 'stripe_datev' && !!config.stripe_publishable_key) ||
+                               config.payment_provider === 'stripe_connect',
+                    publishable_key: config.stripe_publishable_key || process.env.STRIPE_PUBLISHABLE_KEY || null,
+                    is_connect: config.payment_provider === 'stripe_connect'
                 }
             };
         } catch (error) {

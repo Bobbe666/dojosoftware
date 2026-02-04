@@ -1255,6 +1255,19 @@ try {
     });
 }
 
+// STRIPE CONNECT - Multi-Dojo Payment Platform
+try {
+  const stripeConnectRouter = require(path.join(__dirname, "routes", "stripe-connect.js"));
+  app.use("/api/stripe-connect", stripeConnectRouter);
+  logger.success('Route gemountet', { path: '/api/stripe-connect' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'stripe-connect',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // =============================================
 // AUTOMATIC LOADING OF REMAINING ROUTES
 // =============================================
@@ -1283,6 +1296,7 @@ const skipFiles = [
   "notifications.js",
   "pruefungen.js",
   "lastschriftlauf.js",
+  "stripe-connect.js",
   "kurse.js",
   "trainer.js",
   "raeume.js",
