@@ -986,6 +986,82 @@ const DojoSepaTab = ({ token }) => {
         </div>
       </div>
 
+      {/* Dojos ohne Mandat - Detailliste */}
+      {dojosOhneMandat.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ marginBottom: '1rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertCircle size={20} /> Dojos ohne SEPA-Mandat ({dojosOhneMandat.length})
+          </h3>
+          <div style={{
+            background: 'rgba(251,191,36,0.1)',
+            border: '1px solid rgba(251,191,36,0.3)',
+            borderRadius: '12px',
+            overflow: 'hidden'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'rgba(251,191,36,0.1)' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '600' }}>Dojo</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'right', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '600' }}>Jahresbeitrag</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'center', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '600' }}>Aktuelle Zahlungsart</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'center', color: '#fbbf24', fontSize: '0.85rem', fontWeight: '600' }}>Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dojosOhneMandat.map((dojo, idx) => (
+                  <tr key={dojo.id} style={{
+                    borderBottom: idx < dojosOhneMandat.length - 1 ? '1px solid rgba(251,191,36,0.2)' : 'none'
+                  }}>
+                    <td style={{ padding: '0.75rem' }}>
+                      <strong style={{ color: 'var(--text-primary)' }}>{dojo.dojoname}</strong>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {dojo.id}</div>
+                    </td>
+                    <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--primary)', fontWeight: '600' }}>
+                      {parseFloat(dojo.monthly_price || 0).toFixed(2)} €
+                    </td>
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <span style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--text-secondary)'
+                      }}>
+                        {dojo.zahlungsart || 'Nicht festgelegt'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <button
+                        onClick={() => {
+                          setSelectedDojo(dojo);
+                          setShowNewMandatModal(true);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: '0.35rem 0.75rem',
+                          background: 'var(--primary)',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Plus size={14} />
+                        Mandat erstellen
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Batches Liste */}
       <div>
         <h3 style={{ marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
