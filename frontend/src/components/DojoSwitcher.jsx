@@ -300,7 +300,7 @@ const DojoSwitcher = () => {
                         <div className="item-content">
                           <div className="item-row">
                             <span className="item-name">{dojo.dojoname}</span>
-                            {dojo.ist_hauptdojo && <span className="item-badge primary">Haupt</span>}
+                            {!!dojo.ist_hauptdojo && <span className="item-badge primary">Haupt</span>}
                           </div>
                           <div className="item-info" style={{ color: info.color }}>
                             {info.text}
