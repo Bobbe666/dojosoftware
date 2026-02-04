@@ -396,14 +396,19 @@ router.get("/diagnose", (req, res) => {
 });
 
 router.get("/missing-mandates", (req, res) => {
+    const { dojo_id } = req.query;
+
     const query = `
         SELECT DISTINCT
             m.mitglied_id,
             m.vorname,
             m.nachname,
             m.email,
+            m.telefon,
             m.zahlungsmethode,
-            COUNT(v.id) as anzahl_vertraege
+            m.created_at as mitglied_seit,
+            COUNT(v.id) as anzahl_vertraege,
+            GROUP_CONCAT(DISTINCT v.name SEPARATOR ', ') as vertrag_namen
         FROM mitglieder m
         JOIN vertraege v ON m.mitglied_id = v.mitglied_id
         LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
@@ -411,6 +416,7 @@ router.get("/missing-mandates", (req, res) => {
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND sm.mandat_id IS NULL
           AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+          ${dojo_id ? `AND m.dojo_id = ${parseInt(dojo_id)}` : ''}
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
     `;

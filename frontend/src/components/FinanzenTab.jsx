@@ -395,7 +395,7 @@ const MitgliederLastschrift = ({ token }) => {
         </div>
       )}
 
-      {/* Warnung: Fehlende Mandate */}
+      {/* Warnung: Fehlende Mandate mit Details */}
       {missingMandates.length > 0 && (
         <div style={{
           background: 'rgba(251,191,36,0.1)',
@@ -404,13 +404,83 @@ const MitgliederLastschrift = ({ token }) => {
           padding: '1rem 1.25rem',
           marginBottom: '1.5rem'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
             <AlertCircle size={20} color="#fbbf24" />
             <strong style={{ color: '#fbbf24' }}>Fehlende SEPA-Mandate ({missingMandates.length})</strong>
           </div>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
             Diese Mitglieder haben Verträge mit Lastschrift aber kein aktives SEPA-Mandat.
           </p>
+          <div style={{
+            background: 'var(--bg-primary)',
+            borderRadius: '8px',
+            overflow: 'hidden'
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-secondary)' }}>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)' }}>Name</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)' }}>E-Mail</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: 'var(--text-secondary)' }}>Verträge</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600', color: 'var(--text-secondary)' }}>Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {missingMandates.map((member, idx) => (
+                  <tr key={member.mitglied_id} style={{
+                    borderBottom: idx < missingMandates.length - 1 ? '1px solid var(--border-default)' : 'none'
+                  }}>
+                    <td style={{ padding: '0.75rem' }}>
+                      <strong>{member.vorname} {member.nachname}</strong>
+                      {member.telefon && (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{member.telefon}</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
+                      {member.email || '-'}
+                    </td>
+                    <td style={{ padding: '0.75rem' }}>
+                      <span style={{
+                        background: 'var(--bg-secondary)',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.8rem'
+                      }}>
+                        {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege !== 1 ? 'e' : ''}
+                      </span>
+                      {member.vertrag_namen && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                          {member.vertrag_namen}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <a
+                        href={`/dashboard/mitglieder/${member.mitglied_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: '0.35rem 0.75rem',
+                          background: 'var(--primary)',
+                          color: '#000',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: '500',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        <Eye size={14} />
+                        Details
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
