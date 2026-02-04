@@ -20,7 +20,8 @@ const FinanzenTab = ({ token }) => {
 
   const subTabs = [
     { id: 'uebersicht', label: 'Übersicht', icon: BarChart3 },
-    { id: 'lastschrift', label: 'Lastschrift', icon: CreditCard }
+    { id: 'lastschrift', label: 'Lastschrift', icon: CreditCard },
+    { id: 'fehlende-mandate', label: 'Fehlende Mandate', icon: AlertCircle }
   ];
 
   return (
@@ -67,6 +68,292 @@ const FinanzenTab = ({ token }) => {
 
       {activeSubTab === 'lastschrift' && (
         <LastschriftTab token={token} />
+      )}
+
+      {activeSubTab === 'fehlende-mandate' && (
+        <FehlendeMandateTab token={token} />
+      )}
+    </div>
+  );
+};
+
+/**
+ * FehlendeMandateTab - Übersicht aller fehlenden SEPA-Mandate
+ */
+const FehlendeMandateTab = ({ token }) => {
+  const TDA_DOJO_ID = 2;
+  const [loading, setLoading] = useState(true);
+  const [missingMitglieder, setMissingMitglieder] = useState([]);
+  const [missingDojos, setMissingDojos] = useState([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [mitgliederRes, dojosRes] = await Promise.all([
+        axios.get(`/lastschriftlauf/missing-mandates?dojo_id=${TDA_DOJO_ID}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('/admin/sepa/dojos-without-mandate', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      setMissingMitglieder(mitgliederRes.data?.members || []);
+      setMissingDojos(dojosRes.data?.dojos || []);
+    } catch (error) {
+      console.error('Fehler beim Laden:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
+        <Loader size={32} className="spin" />
+        <span style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>Lade fehlende Mandate...</span>
+      </div>
+    );
+  }
+
+  const totalMissing = missingMitglieder.length + missingDojos.length;
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ margin: 0, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <AlertCircle size={24} /> Fehlende SEPA-Mandate
+        </h2>
+        <p style={{ margin: '0.5rem 0 0', color: 'var(--text-secondary)' }}>
+          Mitglieder und Dojos ohne aktives SEPA-Mandat
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ background: 'rgba(251,191,36,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+              <AlertCircle size={20} color="#fbbf24" />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Gesamt fehlend</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fbbf24' }}>{totalMissing}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ background: 'rgba(16,185,129,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+              <Users size={20} color="#10b981" />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Mitglieder</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>{missingMitglieder.length}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ background: 'rgba(59,130,246,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+              <Building2 size={20} color="#3b82f6" />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Dojos</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>{missingDojos.length}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Refresh Button */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <button
+          onClick={loadData}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            padding: '0.5rem 1rem', background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-default)', borderRadius: '6px',
+            color: 'var(--text-primary)', cursor: 'pointer'
+          }}
+        >
+          <RefreshCw size={16} /> Aktualisieren
+        </button>
+      </div>
+
+      {totalMissing === 0 ? (
+        <div style={{
+          textAlign: 'center',
+          padding: '3rem',
+          background: 'rgba(16,185,129,0.1)',
+          border: '1px solid rgba(16,185,129,0.3)',
+          borderRadius: '12px'
+        }}>
+          <CheckCircle size={48} color="#10b981" style={{ marginBottom: '1rem' }} />
+          <p style={{ color: '#10b981', fontSize: '1.1rem', fontWeight: '600' }}>Alle Mandate vorhanden!</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Es gibt keine fehlenden SEPA-Mandate.</p>
+        </div>
+      ) : (
+        <>
+          {/* Mitglieder ohne Mandat */}
+          {missingMitglieder.length > 0 && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ marginBottom: '1rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Users size={20} /> Mitglieder ohne SEPA-Mandat ({missingMitglieder.length})
+              </h3>
+              <div style={{
+                background: 'var(--bg-secondary)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-default)',
+                overflow: 'hidden'
+              }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Name</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>E-Mail</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Telefon</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Verträge</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {missingMitglieder.map((member, idx) => (
+                      <tr key={member.mitglied_id} style={{ borderBottom: idx < missingMitglieder.length - 1 ? '1px solid var(--border-default)' : 'none' }}>
+                        <td style={{ padding: '0.75rem' }}>
+                          <strong>{member.vorname} {member.nachname}</strong>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {member.mitglied_id}</div>
+                        </td>
+                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{member.email || '-'}</td>
+                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{member.telefon || '-'}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '0.25rem 0.5rem',
+                            background: 'rgba(251,191,36,0.2)',
+                            color: '#fbbf24',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem'
+                          }}>
+                            {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege !== 1 ? 'e' : ''}
+                          </span>
+                          {member.vertrag_namen && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                              {member.vertrag_namen}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                          <a
+                            href={`/dashboard/mitglieder/${member.mitglied_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              padding: '0.35rem 0.75rem',
+                              background: 'var(--primary)',
+                              color: '#000',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <Eye size={14} />
+                            Details
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Dojos ohne Mandat */}
+          {missingDojos.length > 0 && (
+            <div>
+              <h3 style={{ marginBottom: '1rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Building2 size={20} /> Dojos ohne SEPA-Mandat ({missingDojos.length})
+              </h3>
+              <div style={{
+                background: 'var(--bg-secondary)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-default)',
+                overflow: 'hidden'
+              }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Dojo</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Plan</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Monatsbeitrag</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Zahlungsart</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {missingDojos.map((dojo, idx) => (
+                      <tr key={dojo.id} style={{ borderBottom: idx < missingDojos.length - 1 ? '1px solid var(--border-default)' : 'none' }}>
+                        <td style={{ padding: '0.75rem' }}>
+                          <strong>{dojo.dojoname}</strong>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {dojo.id}</div>
+                        </td>
+                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{dojo.plan_type || '-'}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--primary)', fontWeight: '600' }}>
+                          {formatCurrency(dojo.monthly_price)}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                          <span style={{
+                            padding: '0.25rem 0.5rem',
+                            background: 'var(--bg-tertiary)',
+                            color: 'var(--text-secondary)',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem'
+                          }}>
+                            {dojo.zahlungsart || 'Nicht festgelegt'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                          <a
+                            href={`/dashboard/dojos/${dojo.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              padding: '0.35rem 0.75rem',
+                              background: '#3b82f6',
+                              color: '#fff',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            <Eye size={14} />
+                            Details
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
