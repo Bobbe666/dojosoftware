@@ -406,7 +406,6 @@ router.get("/missing-mandates", (req, res) => {
             m.email,
             m.telefon,
             m.zahlungsmethode,
-            m.created_at as mitglied_seit,
             COUNT(v.id) as anzahl_vertraege,
             GROUP_CONCAT(DISTINCT v.name SEPARATOR ', ') as vertrag_namen
         FROM mitglieder m

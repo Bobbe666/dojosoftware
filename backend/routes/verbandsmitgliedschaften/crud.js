@@ -356,6 +356,40 @@ router.post('/:id(\\d+)/beitragsfrei', async (req, res) => {
   }
 });
 
+// PUT /:id/status - Status ändern (vertragsfrei, aktiv, gekuendigt, etc.)
+router.put('/:id(\\d+)/status', async (req, res) => {
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ error: 'Status fehlt' });
+
+  try {
+    // Alten Status laden
+    const alteMitgliedschaft = await queryAsync('SELECT status, mitgliedsnummer FROM verbandsmitgliedschaften WHERE id = ?', [req.params.id]);
+    if (alteMitgliedschaft.length === 0) return res.status(404).json({ error: 'Mitgliedschaft nicht gefunden' });
+
+    const alterStatus = alteMitgliedschaft[0].status;
+    const mitgliedsnummer = alteMitgliedschaft[0].mitgliedsnummer;
+
+    await queryAsync('UPDATE verbandsmitgliedschaften SET status = ?, updated_at = NOW() WHERE id = ?', [status, req.params.id]);
+
+    // Historie protokollieren
+    const aktion = status === 'gekuendigt' ? 'gekuendigt' : (status === 'aktiv' && alterStatus === 'gekuendigt' ? 'reaktiviert' : 'geaendert');
+    await protokolliereHistorie(
+      req.params.id,
+      aktion,
+      `Status geändert: ${alterStatus} → ${status} (${mitgliedsnummer})`,
+      { status: alterStatus },
+      { status },
+      req.user?.email || req.user?.username || 'Admin',
+      req.ip || req.headers['x-forwarded-for']
+    );
+
+    res.json({ success: true, message: 'Status aktualisiert' });
+  } catch (err) {
+    console.error('Fehler bei Status-Update:', err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
 // PUT /:id - Mitgliedschaft aktualisieren
 router.put('/:id(\\d+)', (req, res) => {
   const { person_vorname, person_nachname, person_email, person_telefon, person_strasse, person_plz, person_ort, person_land, person_geburtsdatum, zahlungsart, sepa_iban, sepa_bic, sepa_kontoinhaber, notizen, status } = req.body;
