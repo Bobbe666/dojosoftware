@@ -13,10 +13,9 @@ import {
   ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro, Ticket
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
-import SuperAdminFinanzen from './SuperAdminFinanzen';
 import ContractsTab from './ContractsTab';
 import UsersTab from './UsersTab';
-import SepaTab from './SepaTab';
+import FinanzenTab from './FinanzenTab';
 import ZieleEntwicklung from './ZieleEntwicklung';
 import SupportTickets from './SupportTickets';
 import VerbandsMitglieder from './VerbandsMitglieder';
@@ -473,11 +472,10 @@ const SuperAdminDashboard = () => {
     { id: 'entwicklung', label: 'Entwicklung', icon: '🎯' },
     { id: 'support', label: 'Support', icon: '🎫' },
     { id: 'statistics', label: 'Statistiken', icon: '📈' },
-    { id: 'finance', label: 'Finanzen', icon: '💰' },
+    { id: 'finanzen', label: 'Finanzen', icon: '💰' },
     { id: 'contracts', label: 'Verträge', icon: '📄' },
     { id: 'users', label: 'Benutzer', icon: '👤' },
     { id: 'plans', label: 'Pläne & Preise', icon: '💳' },
-    { id: 'sepa', label: 'SEPA Lastschrift', icon: '€' },
     { id: 'email', label: 'E-Mail', icon: '✉️' }
   ];
 
@@ -1052,9 +1050,9 @@ const SuperAdminDashboard = () => {
           <StatisticsTab token={token} />
         )}
 
-        {/* Finanzen Tab - Umfassendes Finanz-Dashboard */}
-        {activeTab === 'finance' && (
-          <SuperAdminFinanzen />
+        {/* Finanzen Tab - Kombiniert: Übersicht, Mitglieder-Lastschrift, Dojo-SEPA */}
+        {activeTab === 'finanzen' && (
+          <FinanzenTab token={token} />
         )}
 
         {/* Verträge Tab */}
@@ -1222,10 +1220,6 @@ const SuperAdminDashboard = () => {
               </div>
             )}
           </div>
-        )}
-
-        {activeTab === 'sepa' && (
-          <SepaTab token={token} />
         )}
 
         {activeTab === 'users' && (

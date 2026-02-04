@@ -72,6 +72,7 @@ const Rechnungsverwaltung = lazy(() => import(/* webpackChunkName: "finance" */ 
 const RechnungErstellen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/RechnungErstellen"));
 const SepaMandateVerwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/SepaMandateVerwaltung"));
 const LastschriftManagement = lazy(() => import(/* webpackChunkName: "finance" */ "./components/LastschriftManagement"));
+const Lastschriftlauf = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Lastschriftlauf"));
 const TarifePreise = lazy(() => import(/* webpackChunkName: "finance" */ "./components/TarifePreise"));
 const Rabattsystem = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Rabattsystem"));
 const ZahlungszyklenSeite = lazy(() => import(/* webpackChunkName: "finance" */ "./components/ZahlungszyklenSeite"));
@@ -599,7 +600,7 @@ const App = () => {
               <Route path="rechnungen/:id" element={<Suspense fallback={<LazyLoadFallback />}><Rechnungsverwaltung /></Suspense>} />
               <Route path="rechnung-erstellen" element={<Suspense fallback={<LazyLoadFallback />}><RechnungErstellen /></Suspense>} />
               <Route path="zahlung/:rechnungId" element={<Suspense fallback={<LazyLoadFallback />}><PaymentCheckout /></Suspense>} />
-              <Route path="lastschriftlauf" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftManagement /></Suspense>} />
+              <Route path="lastschriftlauf" element={<Suspense fallback={<LazyLoadFallback />}><Lastschriftlauf /></Suspense>} />
               <Route path="sepa-mandate" element={<Suspense fallback={<LazyLoadFallback />}><SepaMandateVerwaltung /></Suspense>} />
               <Route path="zahllaeufe" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftManagement /></Suspense>} />
 

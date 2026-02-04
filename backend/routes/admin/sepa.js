@@ -42,35 +42,72 @@ const SEPA_RETURN_CODES = {
   'FRAD': 'Betrugsverdacht'
 };
 
-// GET /sepa/mandate - Alle SEPA-Mandate
+// GET /sepa/mandate - Alle SEPA-Mandate (aus verbandsmitgliedschaften)
 router.get('/sepa/mandate', requireSuperAdmin, async (req, res) => {
   try {
+    // Query verbandsmitgliedschaften with SEPA data (for Dojo subscriptions to TDA)
     const [mandate] = await db.promise().query(`
-      SELECT m.*, d.dojoname, ds.plan_type, ds.monthly_price, ds.billing_interval
-      FROM sepa_mandate m
-      JOIN dojo d ON m.dojo_id = d.id
-      LEFT JOIN dojo_subscriptions ds ON m.dojo_id = ds.dojo_id
-      ORDER BY m.created_at DESC
+      SELECT
+        vm.id,
+        vm.dojo_id,
+        vm.dojo_name as dojoname,
+        vm.sepa_kontoinhaber as kontoinhaber,
+        vm.sepa_iban as iban,
+        vm.sepa_bic as bic,
+        vm.sepa_mandatsreferenz as mandats_referenz,
+        vm.sepa_mandatsdatum as mandats_datum,
+        vm.jahresbeitrag as monthly_price,
+        vm.status,
+        vm.zahlungsart,
+        'RCUR' as sequenz_typ,
+        vm.created_at,
+        vm.updated_at,
+        d.dojoname as dojo_dojoname
+      FROM verbandsmitgliedschaften vm
+      LEFT JOIN dojo d ON vm.dojo_id = d.id
+      WHERE vm.typ = 'dojo'
+        AND vm.zahlungsart = 'lastschrift'
+        AND vm.sepa_mandatsreferenz IS NOT NULL
+        AND vm.sepa_iban IS NOT NULL
+      ORDER BY vm.created_at DESC
     `);
-    res.json({ success: true, mandate });
+
+    // Map to expected format
+    const formattedMandate = mandate.map(m => ({
+      ...m,
+      dojoname: m.dojo_dojoname || m.dojoname,
+      status: m.status === 'aktiv' ? 'aktiv' : m.status
+    }));
+
+    res.json({ success: true, mandate: formattedMandate });
   } catch (error) {
     logger.error('Fehler beim Laden der Mandate:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Mandate' });
   }
 });
 
-// POST /sepa/mandate - Neues SEPA-Mandat
+// POST /sepa/mandate - Neues SEPA-Mandat (updates verbandsmitgliedschaft)
 router.post('/sepa/mandate', requireSuperAdmin, async (req, res) => {
   try {
     const { dojo_id, kontoinhaber, iban, bic, mandats_datum } = req.body;
     const mandats_referenz = `TDA-DOJO${dojo_id}-${Date.now()}`;
 
-    await db.promise().query(`
-      INSERT INTO sepa_mandate (dojo_id, mandats_referenz, mandats_datum, kontoinhaber, iban, bic, status, sequenz_typ)
-      VALUES (?, ?, ?, ?, ?, ?, 'aktiv', 'FRST')
-    `, [dojo_id, mandats_referenz, mandats_datum, kontoinhaber, iban.replace(/\s/g, ''), bic]);
+    // Update the verbandsmitgliedschaft with SEPA data
+    const [result] = await db.promise().query(`
+      UPDATE verbandsmitgliedschaften
+      SET zahlungsart = 'lastschrift',
+          sepa_kontoinhaber = ?,
+          sepa_iban = ?,
+          sepa_bic = ?,
+          sepa_mandatsreferenz = ?,
+          sepa_mandatsdatum = ?
+      WHERE dojo_id = ? AND typ = 'dojo'
+    `, [kontoinhaber, iban.replace(/\s/g, ''), bic, mandats_referenz, mandats_datum, dojo_id]);
 
-    await db.promise().query('UPDATE dojo_subscriptions SET payment_method = "sepa" WHERE dojo_id = ?', [dojo_id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Keine Verbandsmitgliedschaft für dieses Dojo gefunden' });
+    }
+
     res.json({ success: true, mandats_referenz });
   } catch (error) {
     logger.error('Fehler beim Erstellen des Mandats:', error);
@@ -78,11 +115,20 @@ router.post('/sepa/mandate', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// PUT /sepa/mandate/:id
+// PUT /sepa/mandate/:id (updates verbandsmitgliedschaft)
 router.put('/sepa/mandate/:id', requireSuperAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    await db.promise().query('UPDATE sepa_mandate SET status = ? WHERE id = ?', [status, req.params.id]);
+    // If status is 'widerrufen' or similar, clear SEPA data
+    if (status === 'widerrufen' || status === 'inaktiv') {
+      await db.promise().query(`
+        UPDATE verbandsmitgliedschaften
+        SET zahlungsart = 'rechnung'
+        WHERE id = ?
+      `, [req.params.id]);
+    } else {
+      await db.promise().query('UPDATE verbandsmitgliedschaften SET status = ? WHERE id = ?', [status, req.params.id]);
+    }
     res.json({ success: true });
   } catch (error) {
     logger.error('Fehler beim Aktualisieren:', error);
@@ -101,7 +147,7 @@ router.get('/sepa/batches', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// POST /sepa/batch/create - Neuen Batch erstellen
+// POST /sepa/batch/create - Neuen Batch erstellen (from verbandsmitgliedschaften)
 router.post('/sepa/batch/create', requireSuperAdmin, async (req, res) => {
   try {
     const { ausfuehrungsdatum, dojo_ids } = req.body;
@@ -112,15 +158,29 @@ router.post('/sepa/batch/create', requireSuperAdmin, async (req, res) => {
     }
 
     let mandateQuery = `
-      SELECT m.*, d.dojoname, ds.monthly_price, ds.billing_interval, ds.plan_type
-      FROM sepa_mandate m JOIN dojo d ON m.dojo_id = d.id
-      JOIN dojo_subscriptions ds ON m.dojo_id = ds.dojo_id
-      WHERE m.status = 'aktiv' AND ds.status = 'active' AND ds.monthly_price > 0
+      SELECT
+        vm.id,
+        vm.dojo_id,
+        vm.dojo_name as dojoname,
+        vm.sepa_kontoinhaber as kontoinhaber,
+        vm.sepa_iban as iban,
+        vm.sepa_bic as bic,
+        vm.sepa_mandatsreferenz as mandats_referenz,
+        vm.sepa_mandatsdatum as mandats_datum,
+        vm.jahresbeitrag as monthly_price,
+        'TDA Mitgliedschaft' as plan_type
+      FROM verbandsmitgliedschaften vm
+      WHERE vm.typ = 'dojo'
+        AND vm.status = 'aktiv'
+        AND vm.zahlungsart = 'lastschrift'
+        AND vm.sepa_mandatsreferenz IS NOT NULL
+        AND vm.sepa_iban IS NOT NULL
+        AND vm.jahresbeitrag > 0
     `;
 
     let mandateParams = [];
     if (dojo_ids && dojo_ids.length > 0) {
-      mandateQuery += ` AND m.dojo_id IN (${dojo_ids.map(() => '?').join(',')})`;
+      mandateQuery += ` AND vm.dojo_id IN (${dojo_ids.map(() => '?').join(',')})`;
       mandateParams = dojo_ids;
     }
 
@@ -139,7 +199,7 @@ router.post('/sepa/batch/create', requireSuperAdmin, async (req, res) => {
 
     for (const mandat of mandate) {
       const endToEndId = `TDA-${mandat.dojo_id}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-      const verwendungszweck = `Dojo-Software ${mandat.plan_type} - ${new Date(ausfuehrungsdatum).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`;
+      const verwendungszweck = `TDA Mitgliedschaft - ${new Date(ausfuehrungsdatum).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`;
 
       await db.promise().query(`
         INSERT INTO sepa_transaktionen (batch_id, mandat_id, dojo_id, betrag, verwendungszweck, end_to_end_id, status)
@@ -166,10 +226,20 @@ router.get('/sepa/batch/:id/xml', requireSuperAdmin, async (req, res) => {
     const [tdaBank] = await db.promise().query('SELECT * FROM dojo_banken WHERE dojo_id = 2 AND ist_standard = 1');
     const bank = tdaBank[0];
 
+    // Query from verbandsmitgliedschaften via sepa_transaktionen
     const [transaktionen] = await db.promise().query(`
-      SELECT t.*, m.mandats_referenz, m.mandats_datum, m.kontoinhaber, m.iban, m.bic, m.sequenz_typ, d.dojoname
-      FROM sepa_transaktionen t JOIN sepa_mandate m ON t.mandat_id = m.id
-      JOIN dojo d ON t.dojo_id = d.id WHERE t.batch_id = ?
+      SELECT t.*,
+        vm.sepa_mandatsreferenz as mandats_referenz,
+        vm.sepa_mandatsdatum as mandats_datum,
+        vm.sepa_kontoinhaber as kontoinhaber,
+        vm.sepa_iban as iban,
+        vm.sepa_bic as bic,
+        'RCUR' as sequenz_typ,
+        COALESCE(d.dojoname, vm.dojo_name) as dojoname
+      FROM sepa_transaktionen t
+      LEFT JOIN verbandsmitgliedschaften vm ON t.mandat_id = vm.id
+      LEFT JOIN dojo d ON t.dojo_id = d.id
+      WHERE t.batch_id = ?
     `, [batchId]);
 
     const creationDateTime = new Date().toISOString();
@@ -217,9 +287,14 @@ router.get('/sepa/batch/:id/xml', requireSuperAdmin, async (req, res) => {
 
     await db.promise().query('UPDATE sepa_batches SET xml_datei = ?, status = ? WHERE id = ?', [xml, 'exportiert', batchId]);
 
-    const mandatIds = transaktionen.map(t => t.mandat_id);
+    // Update letzte_lastschrift in verbandsmitgliedschaften
+    const mandatIds = transaktionen.map(t => t.mandat_id).filter(id => id);
     if (mandatIds.length > 0) {
-      await db.promise().query(`UPDATE sepa_mandate SET sequenz_typ = 'RCUR', letzte_nutzung = CURDATE() WHERE id IN (${mandatIds.join(',')})`);
+      await db.promise().query(`
+        UPDATE verbandsmitgliedschaften
+        SET updated_at = NOW()
+        WHERE id IN (${mandatIds.join(',')})
+      `);
     }
 
     res.setHeader('Content-Type', 'application/xml');
@@ -231,16 +306,37 @@ router.get('/sepa/batch/:id/xml', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// GET /sepa/dojos-without-mandate
+// GET /sepa/dojos-without-mandate (dojos without SEPA in verbandsmitgliedschaften)
 router.get('/sepa/dojos-without-mandate', requireSuperAdmin, async (req, res) => {
   try {
+    // Find Dojo verbandsmitgliedschaften that are active but don't have SEPA mandate
     const [dojos] = await db.promise().query(`
-      SELECT d.id, d.dojoname, ds.plan_type, ds.monthly_price, ds.status as subscription_status
-      FROM dojo d JOIN dojo_subscriptions ds ON d.id = ds.dojo_id
-      LEFT JOIN sepa_mandate m ON d.id = m.dojo_id AND m.status = 'aktiv'
-      WHERE m.id IS NULL AND d.id != 2 AND ds.status = 'active'
+      SELECT
+        vm.id,
+        vm.dojo_id,
+        vm.dojo_name as dojoname,
+        vm.jahresbeitrag as monthly_price,
+        vm.status as subscription_status,
+        vm.zahlungsart,
+        d.dojoname as dojo_dojoname
+      FROM verbandsmitgliedschaften vm
+      LEFT JOIN dojo d ON vm.dojo_id = d.id
+      WHERE vm.typ = 'dojo'
+        AND vm.status = 'aktiv'
+        AND (vm.sepa_mandatsreferenz IS NULL OR vm.sepa_iban IS NULL OR vm.zahlungsart != 'lastschrift')
+        AND vm.dojo_id != 2
     `);
-    res.json({ success: true, dojos });
+
+    // Map to expected format
+    const formattedDojos = dojos.map(d => ({
+      id: d.dojo_id || d.id,
+      dojoname: d.dojo_dojoname || d.dojoname,
+      monthly_price: d.monthly_price,
+      subscription_status: d.subscription_status,
+      zahlungsart: d.zahlungsart
+    }));
+
+    res.json({ success: true, dojos: formattedDojos });
   } catch (error) {
     logger.error('Fehler:', error);
     res.status(500).json({ error: 'Fehler beim Laden' });
@@ -251,10 +347,10 @@ router.get('/sepa/dojos-without-mandate', requireSuperAdmin, async (req, res) =>
 router.get('/sepa/ruecklastschriften', requireSuperAdmin, async (req, res) => {
   try {
     const [returns] = await db.promise().query(`
-      SELECT r.*, d.dojoname, m.kontoinhaber
+      SELECT r.*, d.dojoname, vm.sepa_kontoinhaber as kontoinhaber
       FROM sepa_ruecklastschriften r
       LEFT JOIN dojo d ON r.dojo_id = d.id
-      LEFT JOIN sepa_mandate m ON r.mandat_id = m.id
+      LEFT JOIN verbandsmitgliedschaften vm ON r.mandat_id = vm.id
       ORDER BY r.importiert_am DESC LIMIT 100
     `);
     res.json({ success: true, ruecklastschriften: returns, codes: SEPA_RETURN_CODES });
@@ -342,9 +438,13 @@ router.post('/sepa/ruecklastschriften/upload', requireSuperAdmin, async (req, re
         });
       }
 
-      // Mandat widerrufen bei kritischen Fehlern
+      // Mandat widerrufen bei kritischen Fehlern - update verbandsmitgliedschaften
       if (mandatId && ['AC01', 'AC04', 'AC06', 'MD01', 'MD07'].includes(ret.rueckgabe_code)) {
-        await db.promise().query('UPDATE sepa_mandate SET status = ? WHERE id = ?', ['widerrufen', mandatId]);
+        await db.promise().query(`
+          UPDATE verbandsmitgliedschaften
+          SET zahlungsart = 'rechnung'
+          WHERE id = ?
+        `, [mandatId]);
         logger.info(`⚠️ Mandat ${mandatId} widerrufen wegen Fehlercode ${ret.rueckgabe_code}`);
       }
     }

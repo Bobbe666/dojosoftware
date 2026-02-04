@@ -13,9 +13,13 @@ import {
   Users,
   RefreshCw,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Settings,
+  Loader
 } from "lucide-react";
 import config from "../config/config";
+import { useDojoContext } from '../context/DojoContext';
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Lastschriftlauf.css";
@@ -24,6 +28,8 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const Lastschriftlauf = ({ embedded = false }) => {
   const navigate = useNavigate();
+  const { activeDojo } = useDojoContext();
+  const dojoId = activeDojo?.id || activeDojo;
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [missingMandates, setMissingMandates] = useState([]);
@@ -33,6 +39,12 @@ const Lastschriftlauf = ({ embedded = false }) => {
   const [availableBanks, setAvailableBanks] = useState([]);
   const [selectedBank, setSelectedBank] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
+
+  // Stripe SEPA State
+  const [stripeStatus, setStripeStatus] = useState(null);
+  const [stripeProcessing, setStripeProcessing] = useState(false);
+  const [stripeSetupProgress, setStripeSetupProgress] = useState(null);
+  const [stripeBatchResult, setStripeBatchResult] = useState(null);
 
   // Toggle für Beiträge-Details Dropdown
   const toggleRowExpanded = (mitgliedId) => {
@@ -115,10 +127,136 @@ const Lastschriftlauf = ({ embedded = false }) => {
     }
   };
 
+  // Stripe Status laden
+  const loadStripeStatus = async () => {
+    if (!dojoId) return;
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/status?dojo_id=${dojoId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setStripeStatus(data);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden des Stripe-Status:', error);
+    }
+  };
+
+  // Stripe Setup für alle Mitglieder
+  const handleStripeSetupAll = async () => {
+    if (!window.confirm('Stripe SEPA Setup für alle Mitglieder ohne Setup durchführen?\n\nDies erstellt Stripe Customers und SEPA PaymentMethods für alle Mitglieder mit aktivem SEPA-Mandat.')) {
+      return;
+    }
+
+    setStripeProcessing(true);
+    setStripeSetupProgress({ status: 'running', message: 'Setup wird durchgeführt...' });
+
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/setup-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: dojoId })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStripeSetupProgress({
+          status: 'completed',
+          message: `Setup abgeschlossen: ${data.succeeded} erfolgreich, ${data.failed} fehlgeschlagen`,
+          details: data.details
+        });
+        // Status neu laden
+        await loadStripeStatus();
+      } else {
+        setStripeSetupProgress({
+          status: 'error',
+          message: data.error || 'Setup fehlgeschlagen'
+        });
+      }
+    } catch (error) {
+      setStripeSetupProgress({
+        status: 'error',
+        message: 'Fehler: ' + error.message
+      });
+    } finally {
+      setStripeProcessing(false);
+    }
+  };
+
+  // Stripe Lastschrift ausführen
+  const handleStripeExecute = async () => {
+    if (!preview || !preview.preview || preview.preview.length === 0) {
+      alert('Keine Mitglieder für den Lastschriftlauf vorhanden');
+      return;
+    }
+
+    const confirmMessage = `Stripe SEPA Lastschriftlauf ausführen?\n\n` +
+      `Monat: ${selectedMonth}/${selectedYear}\n` +
+      `Anzahl Mitglieder: ${preview.count}\n` +
+      `Gesamtbetrag: €${preview.total_amount}\n\n` +
+      `Die Lastschriften werden direkt über Stripe eingezogen.\n` +
+      `ACHTUNG: Dies kann nicht rückgängig gemacht werden!`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setStripeProcessing(true);
+    setStripeBatchResult(null);
+
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dojo_id: dojoId,
+          monat: selectedMonth,
+          jahr: selectedYear,
+          mitglieder: preview.preview.map(m => ({
+            mitglied_id: m.mitglied_id,
+            name: m.name,
+            betrag: m.betrag,
+            beitraege: m.beitraege,
+            offene_monate: m.offene_monate
+          }))
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStripeBatchResult({
+          status: 'completed',
+          batch_id: data.batch_id,
+          total: data.total,
+          succeeded: data.succeeded,
+          processing: data.processing,
+          failed: data.failed,
+          transactions: data.transactions
+        });
+        // Vorschau neu laden um bezahlte Beiträge zu aktualisieren
+        await loadPreview();
+      } else {
+        setStripeBatchResult({
+          status: 'error',
+          message: data.error || 'Lastschriftlauf fehlgeschlagen'
+        });
+      }
+    } catch (error) {
+      setStripeBatchResult({
+        status: 'error',
+        message: 'Fehler: ' + error.message
+      });
+    } finally {
+      setStripeProcessing(false);
+    }
+  };
+
   useEffect(() => {
     loadBanks();
     loadMissingMandates();
-  }, []);
+    loadStripeStatus();
+  }, [dojoId]);
 
   useEffect(() => {
     loadPreview();
@@ -421,7 +559,103 @@ const Lastschriftlauf = ({ embedded = false }) => {
             <Download size={16} />
             Jetzt exportieren
           </button>
+
+          {/* Stripe Buttons - nur anzeigen wenn Stripe konfiguriert */}
+          {stripeStatus?.stripe_configured && (
+            <>
+              <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', height: '40px', margin: '0 0.5rem' }} />
+
+              {stripeStatus.needs_setup > 0 && (
+                <button
+                  className="logout-button"
+                  onClick={handleStripeSetupAll}
+                  disabled={stripeProcessing}
+                  style={{ whiteSpace: 'nowrap', background: 'rgba(99, 102, 241, 0.2)', borderColor: 'rgba(99, 102, 241, 0.5)' }}
+                  title={`${stripeStatus.needs_setup} Mitglieder benötigen Stripe Setup`}
+                >
+                  {stripeProcessing ? <Loader size={16} className="spin" /> : <Settings size={16} />}
+                  Stripe Setup ({stripeStatus.needs_setup})
+                </button>
+              )}
+
+              <button
+                className="logout-button"
+                onClick={handleStripeExecute}
+                disabled={stripeProcessing || !preview || preview.count === 0}
+                style={{ whiteSpace: 'nowrap', background: 'rgba(99, 102, 241, 0.3)', borderColor: 'rgba(99, 102, 241, 0.6)' }}
+              >
+                {stripeProcessing ? <Loader size={16} className="spin" /> : <Zap size={16} />}
+                Mit Stripe einziehen
+              </button>
+            </>
+          )}
         </div>
+
+        {/* Stripe Setup Fortschritt */}
+        {stripeSetupProgress && (
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            background: stripeSetupProgress.status === 'error' ? 'rgba(239, 68, 68, 0.1)' :
+                        stripeSetupProgress.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' :
+                        'rgba(99, 102, 241, 0.1)',
+            border: `1px solid ${stripeSetupProgress.status === 'error' ? 'rgba(239, 68, 68, 0.3)' :
+                                 stripeSetupProgress.status === 'completed' ? 'rgba(16, 185, 129, 0.3)' :
+                                 'rgba(99, 102, 241, 0.3)'}`
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {stripeSetupProgress.status === 'running' && <Loader size={16} className="spin" />}
+              {stripeSetupProgress.status === 'completed' && <CheckCircle size={16} style={{ color: '#10b981' }} />}
+              {stripeSetupProgress.status === 'error' && <AlertCircle size={16} style={{ color: '#ef4444' }} />}
+              <span>{stripeSetupProgress.message}</span>
+              {stripeSetupProgress.status !== 'running' && (
+                <button
+                  onClick={() => setStripeSetupProgress(null)}
+                  style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Stripe Batch Ergebnis */}
+        {stripeBatchResult && (
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            background: stripeBatchResult.status === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+            border: `1px solid ${stripeBatchResult.status === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {stripeBatchResult.status === 'error' ? (
+                  <AlertCircle size={16} style={{ color: '#ef4444' }} />
+                ) : (
+                  <CheckCircle size={16} style={{ color: '#10b981' }} />
+                )}
+                <span>
+                  {stripeBatchResult.status === 'error' ? stripeBatchResult.message :
+                    `Lastschriftlauf abgeschlossen: ${stripeBatchResult.succeeded} erfolgreich, ${stripeBatchResult.processing || 0} in Verarbeitung, ${stripeBatchResult.failed} fehlgeschlagen`}
+                </span>
+              </div>
+              <button
+                onClick={() => setStripeBatchResult(null)}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+            {stripeBatchResult.batch_id && (
+              <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                Batch-ID: {stripeBatchResult.batch_id}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Vorschau Tabelle */}
