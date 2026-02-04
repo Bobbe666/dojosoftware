@@ -1014,4 +1014,251 @@ router.post('/family-login', async (req, res) => {
   }
 });
 
+// =============================================
+// ÖFFENTLICHE MITGLIED-ANMELDUNG (für externe Websites)
+// =============================================
+
+// GET /api/public/tarife/:dojo_id - Tarife für ein bestimmtes Dojo
+router.get('/tarife/:dojo_id', async (req, res) => {
+  try {
+    const { dojo_id } = req.params;
+
+    const tarife = await queryAsync(`
+      SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
+             altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents
+      FROM tarife
+      WHERE dojo_id = ? AND active = 1 AND (ist_archiviert IS NULL OR ist_archiviert = 0)
+      ORDER BY altersgruppe ASC, price_cents ASC
+    `, [dojo_id]);
+
+    const tarifeFormatted = tarife.map(tarif => ({
+      ...tarif,
+      price_euros: (tarif.price_cents / 100).toFixed(2),
+      aufnahmegebuehr_euros: ((tarif.aufnahmegebuehr_cents || 0) / 100).toFixed(2)
+    }));
+
+    res.json({ success: true, data: tarifeFormatted });
+  } catch (err) {
+    logger.error('Fehler beim Abrufen der Dojo-Tarife:', { error: err, dojo_id: req.params.dojo_id });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
+// GET /api/public/dojo/:subdomain - Dojo-Info anhand Subdomain
+router.get('/dojo/:subdomain', async (req, res) => {
+  try {
+    const { subdomain } = req.params;
+
+    const dojos = await queryAsync(`
+      SELECT id, dojoname, subdomain, inhaber, ort, ist_aktiv
+      FROM dojo
+      WHERE subdomain = ? AND ist_aktiv = 1
+      LIMIT 1
+    `, [subdomain]);
+
+    if (dojos.length === 0) {
+      return res.status(404).json({ success: false, error: 'Dojo nicht gefunden' });
+    }
+
+    res.json({ success: true, data: dojos[0] });
+  } catch (err) {
+    logger.error('Fehler beim Abrufen des Dojos:', { error: err });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
+// POST /api/public/mitglied-anlegen - Neues Mitglied öffentlich anlegen
+router.post('/mitglied-anlegen', async (req, res) => {
+  try {
+    const {
+      dojo_id,
+      vorname, nachname, geburtsdatum, geschlecht,
+      strasse, hausnummer, plz, ort, telefon, email,
+      iban, bic, bank_name, kontoinhaber,
+      tarif_id, vertragsbeginn,
+      // Optional: Gesundheitsfragen
+      gesundheitsfragen,
+      // Optional: Familien-Verknüpfung
+      familien_id, hauptmitglied_id,
+      // Einverständnisse
+      agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged
+    } = req.body;
+
+    // Pflichtfeld-Validierung
+    if (!dojo_id || !vorname || !nachname || !geburtsdatum || !geschlecht) {
+      return res.status(400).json({
+        success: false,
+        error: 'Pflichtfelder fehlen: dojo_id, vorname, nachname, geburtsdatum, geschlecht'
+      });
+    }
+
+    // Dojo prüfen
+    const dojoCheck = await queryAsync('SELECT id, dojoname FROM dojo WHERE id = ? AND ist_aktiv = 1', [dojo_id]);
+    if (dojoCheck.length === 0) {
+      return res.status(400).json({ success: false, error: 'Ungültiges Dojo' });
+    }
+
+    // E-Mail Duplikat prüfen (falls angegeben)
+    if (email) {
+      const emailCheck = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE email = ? AND dojo_id = ?', [email, dojo_id]);
+      if (emailCheck.length > 0) {
+        return res.status(400).json({ success: false, error: 'Diese E-Mail-Adresse ist bereits registriert' });
+      }
+    }
+
+    // Mitgliedsnummer generieren
+    const lastMember = await queryAsync(
+      'SELECT mitgliedsnummer FROM mitglieder WHERE dojo_id = ? ORDER BY mitglied_id DESC LIMIT 1',
+      [dojo_id]
+    );
+    let nextNumber = 1;
+    if (lastMember.length > 0 && lastMember[0].mitgliedsnummer) {
+      const match = lastMember[0].mitgliedsnummer.match(/(\d+)$/);
+      if (match) nextNumber = parseInt(match[1]) + 1;
+    }
+    const mitgliedsnummer = `M-${String(nextNumber).padStart(5, '0')}`;
+
+    // Familien-ID generieren falls neue Familie
+    let finalFamilienId = familien_id;
+    if (!finalFamilienId && !hauptmitglied_id) {
+      // Neue Familie für Hauptmitglied
+      const familyResult = await queryAsync(
+        'SELECT COALESCE(MAX(familien_id), 0) + 1 as next_id FROM mitglieder WHERE dojo_id = ?',
+        [dojo_id]
+      );
+      finalFamilienId = familyResult[0].next_id;
+    }
+
+    // Mitglied einfügen
+    const insertResult = await queryAsync(`
+      INSERT INTO mitglieder (
+        dojo_id, vorname, nachname, geburtsdatum, geschlecht,
+        strasse, hausnummer, plz, ort, telefon_mobil, email,
+        iban, bic, bank_name, kontoinhaber,
+        mitgliedsnummer, status, familien_id, hauptmitglied_id,
+        eintrittsdatum, created_at,
+        registration_source
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktiv', ?, ?, ?, NOW(), 'public_website')
+    `, [
+      dojo_id, vorname, nachname, geburtsdatum, geschlecht,
+      strasse || '', hausnummer || '', plz || '', ort || '', telefon || '', email || '',
+      iban || '', bic || '', bank_name || '', kontoinhaber || `${vorname} ${nachname}`,
+      mitgliedsnummer, finalFamilienId, hauptmitglied_id || null,
+      vertragsbeginn || new Date().toISOString().split('T')[0]
+    ]);
+
+    const newMitgliedId = insertResult.insertId;
+
+    // Vertrag anlegen falls tarif_id angegeben
+    if (tarif_id) {
+      const tarif = await queryAsync('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
+      if (tarif.length > 0) {
+        const t = tarif[0];
+        const startDate = vertragsbeginn || new Date().toISOString().split('T')[0];
+
+        await queryAsync(`
+          INSERT INTO vertraege (
+            mitglied_id, dojo_id, tarif_id, vertragsbeginn, status,
+            preis, aufnahmegebuehr, zahlungsintervall, created_at
+          ) VALUES (?, ?, ?, ?, 'aktiv', ?, ?, ?, NOW())
+        `, [
+          newMitgliedId, dojo_id, tarif_id, startDate,
+          t.price_cents, t.aufnahmegebuehr_cents || 0,
+          t.billing_cycle === 'MONTHLY' ? 'monatlich' : t.billing_cycle === 'QUARTERLY' ? 'vierteljährlich' : 'jährlich'
+        ]);
+      }
+    }
+
+    // Gesundheitsfragen speichern falls vorhanden
+    if (gesundheitsfragen && Object.keys(gesundheitsfragen).length > 0) {
+      await queryAsync(`
+        INSERT INTO mitglieder_gesundheit (
+          mitglied_id, vorerkrankungen, medikamente, herzprobleme,
+          rueckenprobleme, gelenkprobleme, sonstige_einschraenkungen,
+          notfallkontakt_name, notfallkontakt_telefon, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [
+        newMitgliedId,
+        gesundheitsfragen.vorerkrankungen || 'nein',
+        gesundheitsfragen.medikamente || 'nein',
+        gesundheitsfragen.herzprobleme || 'nein',
+        gesundheitsfragen.rueckenprobleme || 'nein',
+        gesundheitsfragen.gelenkprobleme || 'nein',
+        gesundheitsfragen.sonstige_einschraenkungen || '',
+        gesundheitsfragen.notfallkontakt_name || '',
+        gesundheitsfragen.notfallkontakt_telefon || ''
+      ]);
+    }
+
+    logger.info('Neues Mitglied über öffentliche Website angelegt', {
+      mitglied_id: newMitgliedId,
+      dojo_id,
+      name: `${vorname} ${nachname}`,
+      source: 'public_website'
+    });
+
+    res.json({
+      success: true,
+      message: 'Mitglied erfolgreich angelegt',
+      data: {
+        mitglied_id: newMitgliedId,
+        mitgliedsnummer,
+        vorname,
+        nachname
+      }
+    });
+
+  } catch (err) {
+    logger.error('Fehler beim öffentlichen Mitglied-Anlegen:', { error: err });
+    res.status(500).json({ success: false, error: 'Serverfehler beim Anlegen des Mitglieds' });
+  }
+});
+
+// POST /api/public/iban-validate - IBAN validieren (öffentlich)
+router.post('/iban-validate', async (req, res) => {
+  try {
+    const { iban } = req.body;
+
+    if (!iban) {
+      return res.json({ valid: false, error: 'IBAN fehlt' });
+    }
+
+    // IBAN Format prüfen (DE + 20 Zeichen)
+    const cleanIban = iban.replace(/\s/g, '').toUpperCase();
+    if (!/^DE\d{20}$/.test(cleanIban)) {
+      return res.json({ valid: false, error: 'Ungültiges IBAN-Format' });
+    }
+
+    // IBAN Prüfziffer validieren
+    const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4);
+    const numericIban = rearranged.split('').map(char => {
+      const code = char.charCodeAt(0);
+      return code >= 65 ? (code - 55).toString() : char;
+    }).join('');
+
+    let remainder = 0;
+    for (let i = 0; i < numericIban.length; i++) {
+      remainder = (remainder * 10 + parseInt(numericIban[i])) % 97;
+    }
+
+    if (remainder !== 1) {
+      return res.json({ valid: false, error: 'Ungültige IBAN-Prüfziffer' });
+    }
+
+    // BIC aus BLZ ermitteln (erste 8 Ziffern nach DE + Prüfziffer)
+    const blz = cleanIban.substring(4, 12);
+
+    res.json({
+      valid: true,
+      iban: cleanIban,
+      blz,
+      formatted: cleanIban.replace(/(.{4})/g, '$1 ').trim()
+    });
+
+  } catch (err) {
+    logger.error('Fehler bei IBAN-Validierung:', { error: err });
+    res.status(500).json({ valid: false, error: 'Serverfehler' });
+  }
+});
+
 module.exports = router;
