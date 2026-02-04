@@ -733,7 +733,8 @@ function getMostCommonBank(contracts) {
  */
 router.get("/stripe/status", async (req, res) => {
     try {
-        const dojoId = req.dojo_id || req.user?.dojo_id || req.query.dojo_id;
+        // Priorität: Query > User > Request (Query ist explizit vom Frontend)
+        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         // Prüfe Stripe-Konfiguration
         const dojoQuery = 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?';
@@ -778,7 +779,8 @@ router.get("/stripe/status", async (req, res) => {
 router.post("/stripe/setup-customer", async (req, res) => {
     try {
         const { mitglied_id } = req.body;
-        const dojoId = req.dojo_id || req.user?.dojo_id || req.body.dojo_id;
+        // Priorität: Body > User > Request (Body ist explizit vom Frontend)
+        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         if (!mitglied_id) {
             return res.status(400).json({ error: 'mitglied_id erforderlich' });
@@ -838,7 +840,8 @@ router.post("/stripe/setup-customer", async (req, res) => {
  */
 router.post("/stripe/setup-all", async (req, res) => {
     try {
-        const dojoId = req.dojo_id || req.user?.dojo_id || req.body.dojo_id;
+        // Priorität: Body > User > Request (Body ist explizit vom Frontend)
+        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         // Finde alle Mitglieder die Setup benötigen
         const mitgliederQuery = `
@@ -920,7 +923,8 @@ router.post("/stripe/setup-all", async (req, res) => {
 router.post("/stripe/execute", async (req, res) => {
     try {
         const { monat, jahr, mitglieder } = req.body;
-        const dojoId = req.dojo_id || req.user?.dojo_id || req.body.dojo_id;
+        // Priorität: Body > User > Request (Body ist explizit vom Frontend)
+        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         if (!monat || !jahr) {
             return res.status(400).json({ error: 'Monat und Jahr erforderlich' });
@@ -1010,7 +1014,8 @@ router.post("/stripe/execute", async (req, res) => {
 router.get("/stripe/batch/:batchId", async (req, res) => {
     try {
         const { batchId } = req.params;
-        const dojoId = req.dojo_id || req.user?.dojo_id || req.query.dojo_id;
+        // Priorität: Query > User > Request (Query ist explizit vom Frontend)
+        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         const provider = await PaymentProviderFactory.getProvider(dojoId);
 
