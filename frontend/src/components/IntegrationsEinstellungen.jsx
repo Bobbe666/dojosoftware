@@ -11,6 +11,7 @@ import {
   CheckCircle, AlertCircle, RefreshCw, ExternalLink, Link2, Smartphone
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
+import StripeConnectSetup from './StripeConnectSetup';
 
 const IntegrationsEinstellungen = () => {
   const { activeDojo } = useDojoContext();
@@ -227,6 +228,9 @@ const IntegrationsEinstellungen = () => {
           </p>
         </div>
       </div>
+
+      {/* Stripe Connect Section */}
+      <StripeConnectSetup />
 
       {/* PayPal Section */}
       <div style={styles.section}>

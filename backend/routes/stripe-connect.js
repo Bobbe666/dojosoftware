@@ -4,6 +4,7 @@ const Stripe = require('stripe');
 const crypto = require('crypto');
 const db = require('../db');
 const logger = require('../utils/logger');
+const { encrypt } = require('../utils/encryption');
 
 // Platform Stripe Client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -123,8 +124,9 @@ router.get('/callback', async (req, res) => {
         });
 
         const stripeAccountId = response.stripe_user_id;
-        const accessToken = response.access_token;
-        const refreshToken = response.refresh_token;
+        // Verschlüssele Tokens vor dem Speichern
+        const accessToken = encrypt(response.access_token);
+        const refreshToken = encrypt(response.refresh_token);
 
         // Hole Account-Details
         const account = await stripe.accounts.retrieve(stripeAccountId);

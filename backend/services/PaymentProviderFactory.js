@@ -3,6 +3,7 @@ const StripeDataevProvider = require('./StripeDataevProvider');
 const StripeConnectProvider = require('./StripeConnectProvider');
 const ManualSepaProvider = require('./ManualSepaProvider');
 const logger = require('../utils/logger');
+const { decrypt, encrypt } = require('../utils/encryption');
 
 class PaymentProviderFactory {
     static async getProvider(dojoId = null) {
@@ -72,6 +73,22 @@ class PaymentProviderFactory {
                 }
 
                 const config = results[0];
+
+                // Entschlüssele sensible Felder
+                try {
+                    if (config.stripe_secret_key) {
+                        config.stripe_secret_key = decrypt(config.stripe_secret_key);
+                    }
+                    if (config.stripe_publishable_key) {
+                        config.stripe_publishable_key = decrypt(config.stripe_publishable_key);
+                    }
+                    if (config.datev_api_key) {
+                        config.datev_api_key = decrypt(config.datev_api_key);
+                    }
+                } catch (decryptError) {
+                    logger.error('❌ PaymentProviderFactory: Decryption error:', { error: decryptError.message });
+                }
+
                 logger.info(`✅ PaymentProviderFactory: Loaded config for ${config.name} (Provider: ${config.payment_provider})`);
                 resolve(config);
             });
@@ -101,11 +118,12 @@ class PaymentProviderFactory {
                 WHERE id = ?
             `;
 
+            // Verschlüssele sensible Felder vor dem Speichern
             const params = [
                 payment_provider,
-                stripe_secret_key,
-                stripe_publishable_key,
-                datev_api_key,
+                stripe_secret_key ? encrypt(stripe_secret_key) : null,
+                stripe_publishable_key ? encrypt(stripe_publishable_key) : null,
+                datev_api_key ? encrypt(datev_api_key) : null,
                 datev_consultant_number,
                 datev_client_number,
                 dojoId
@@ -185,7 +203,21 @@ class PaymentProviderFactory {
                     return resolve(null);
                 }
 
-                resolve(results[0]);
+                const account = results[0];
+
+                // Entschlüssele Tokens
+                try {
+                    if (account.access_token) {
+                        account.access_token = decrypt(account.access_token);
+                    }
+                    if (account.refresh_token) {
+                        account.refresh_token = decrypt(account.refresh_token);
+                    }
+                } catch (decryptError) {
+                    logger.error('❌ PaymentProviderFactory: Token decryption error:', { error: decryptError.message });
+                }
+
+                resolve(account);
             });
         });
     }
