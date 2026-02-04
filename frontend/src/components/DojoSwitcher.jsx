@@ -148,6 +148,31 @@ const DojoSwitcher = () => {
 
   const modeInfo = getCurrentModeInfo();
 
+  // Helper: Format currency
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value || 0);
+  };
+
+  // Helper: Get dojo info line
+  const getDojoInfo = (dojo) => {
+    if (dojo.steuer_status === 'kleinunternehmer') {
+      const umsatz = dojo.jahresumsatz_aktuell || 0;
+      const grenze = dojo.kleinunternehmer_grenze || 22000;
+      const prozent = Math.round((umsatz / grenze) * 100);
+      return {
+        text: `${formatCurrency(umsatz)} / ${formatCurrency(grenze)}`,
+        percent: prozent,
+        color: prozent >= 90 ? '#ef4444' : prozent >= 75 ? '#f59e0b' : '#22c55e'
+      };
+    }
+    return { text: 'Regelbesteuert', percent: null, color: '#6b7280' };
+  };
+
   return (
     <div className="dojo-switcher">
       <button
@@ -261,19 +286,32 @@ const DojoSwitcher = () => {
                     </div>
                   )}
 
-                  {filteredDojos.map(dojo => (
-                    <button
-                      key={dojo.id}
-                      type="button"
-                      className={`dropdown-item compact ${!showAllDojos && activeDojo?.id === dojo.id ? 'active' : ''}`}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchDojo(dojo); }}
-                      style={{ '--accent-color': dojo.farbe || '#FFD700' }}
-                    >
-                      <span className="item-icon">🥋</span>
-                      <span className="item-name">{dojo.dojoname}</span>
-                      {dojo.ist_hauptdojo && <span className="item-badge primary">Haupt</span>}
-                    </button>
-                  ))}
+                  {filteredDojos.map(dojo => {
+                    const info = getDojoInfo(dojo);
+                    return (
+                      <button
+                        key={dojo.id}
+                        type="button"
+                        className={`dropdown-item with-info ${!showAllDojos && activeDojo?.id === dojo.id ? 'active' : ''}`}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchDojo(dojo); }}
+                        style={{ '--accent-color': dojo.farbe || '#FFD700' }}
+                      >
+                        <span className="item-icon">🥋</span>
+                        <div className="item-content">
+                          <div className="item-row">
+                            <span className="item-name">{dojo.dojoname}</span>
+                            {dojo.ist_hauptdojo && <span className="item-badge primary">Haupt</span>}
+                          </div>
+                          <div className="item-info" style={{ color: info.color }}>
+                            {info.text}
+                            {info.percent !== null && (
+                              <span className="item-percent">({info.percent}%)</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </>
               )}
 
