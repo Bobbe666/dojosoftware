@@ -35,8 +35,9 @@ const requireTDAAdmin = (req, res, next) => {
     return res.status(401).json({ error: 'Nicht authentifiziert' });
   }
 
-  // Erlaubt: SuperAdmin (rolle) oder TDA-Admin (dojo_id=2)
-  const isSuperAdmin = user.rolle === 'super_admin' || user.role === 'super_admin';
+  // Erlaubt: SuperAdmin/Admin (rolle) oder TDA-Admin (dojo_id=2)
+  const isSuperAdmin = user.rolle === 'super_admin' || user.role === 'super_admin' ||
+                       user.rolle === 'admin' || user.role === 'admin';
   const isTDAAdmin = user.dojo_id === 2 || user.dojo_id === '2';
 
   if (!isSuperAdmin && !isTDAAdmin) {
