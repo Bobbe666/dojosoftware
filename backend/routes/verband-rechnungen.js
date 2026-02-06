@@ -121,7 +121,7 @@ router.get('/empfaenger', async (req, res) => {
       ORDER BY d.dojoname
     `);
 
-    // 3. Dojo-Mitglieder (TDA International dojo_id=2 und Kampfkunstschule Schreiner dojo_id=1)
+    // 3. Dojo-Mitglieder (TDA International dojo_id=2 und Kampfkunstschule Schreiner dojo_id=3)
     const dojoMitglieder = await queryAsync(`
       SELECT
         m.mitglied_id as id,
@@ -134,7 +134,7 @@ router.get('/empfaenger', async (req, res) => {
         'dojo_mitglied' as kategorie
       FROM mitglieder m
       LEFT JOIN dojo d ON m.dojo_id = d.id
-      WHERE m.dojo_id IN (1, 2)
+      WHERE m.dojo_id IN (2, 3)
       AND m.aktiv = 1
       ORDER BY d.dojoname, m.nachname, m.vorname
     `);
