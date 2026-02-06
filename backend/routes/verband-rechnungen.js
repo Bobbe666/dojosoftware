@@ -128,14 +128,14 @@ router.get('/empfaenger', async (req, res) => {
         CONCAT(m.vorname, ' ', m.nachname) as name,
         m.email,
         CONCAT(COALESCE(m.strasse, ''), ' ', COALESCE(m.hausnummer, ''), ', ', COALESCE(m.plz, ''), ' ', COALESCE(m.ort, '')) as adresse,
-        m.status,
+        m.aktiv,
         m.dojo_id,
         d.dojoname as dojo_name,
         'dojo_mitglied' as kategorie
       FROM mitglieder m
       LEFT JOIN dojo d ON m.dojo_id = d.id
       WHERE m.dojo_id IN (1, 2)
-      AND m.status = 'aktiv'
+      AND m.aktiv = 1
       ORDER BY d.dojoname, m.nachname, m.vorname
     `);
 
