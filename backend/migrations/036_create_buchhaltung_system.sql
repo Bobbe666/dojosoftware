@@ -210,15 +210,15 @@ UNION ALL
 -- Bezahlte Rechnungen
 SELECT
     'rechnung' as quelle,
-    r.id as referenz_id,
-    r.dojo_id,
-    CASE WHEN r.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END as organisation_name,
-    COALESCE(r.bezahlt_am, r.faellig_am) as datum,
+    r.rechnung_id as referenz_id,
+    1 as dojo_id,
+    'Kampfkunstschule Schreiner' as organisation_name,
+    COALESCE(r.bezahlt_am, r.faelligkeitsdatum) as datum,
     r.brutto_betrag as betrag_brutto,
     'betriebseinnahmen' as kategorie,
     CONCAT('Rechnung ', r.rechnungsnummer) as beschreibung,
-    YEAR(COALESCE(r.bezahlt_am, r.faellig_am)) as jahr,
-    MONTH(COALESCE(r.bezahlt_am, r.faellig_am)) as monat
+    YEAR(COALESCE(r.bezahlt_am, r.faelligkeitsdatum)) as jahr,
+    MONTH(COALESCE(r.bezahlt_am, r.faelligkeitsdatum)) as monat
 FROM rechnungen r
 WHERE r.status = 'bezahlt'
 
@@ -228,7 +228,7 @@ UNION ALL
 SELECT
     'verkauf' as quelle,
     v.verkauf_id as referenz_id,
-    v.dojo_id,
+    COALESCE(v.dojo_id, 1) as dojo_id,
     CASE WHEN v.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END as organisation_name,
     v.verkauf_datum as datum,
     v.brutto_gesamt_cent / 100 as betrag_brutto,
@@ -244,15 +244,15 @@ UNION ALL
 -- Verbandsbeiträge (TDA)
 SELECT
     'verbandsbeitrag' as quelle,
-    z.zahlung_id as referenz_id,
-    2 as dojo_id,  -- TDA International
+    z.id as referenz_id,
+    2 as dojo_id,
     'TDA International' as organisation_name,
-    z.zahlungsdatum as datum,
+    COALESCE(z.bezahlt_am, z.rechnungsdatum) as datum,
     z.betrag_brutto as betrag_brutto,
     'betriebseinnahmen' as kategorie,
-    CONCAT('Verbandsbeitrag ', z.jahr) as beschreibung,
-    YEAR(z.zahlungsdatum) as jahr,
-    MONTH(z.zahlungsdatum) as monat
+    CONCAT('Verbandsbeitrag ', z.rechnungsnummer) as beschreibung,
+    YEAR(COALESCE(z.bezahlt_am, z.rechnungsdatum)) as jahr,
+    MONTH(COALESCE(z.bezahlt_am, z.rechnungsdatum)) as monat
 FROM verbandsmitgliedschaft_zahlungen z
 WHERE z.status = 'bezahlt'
 
@@ -261,13 +261,13 @@ UNION ALL
 -- Mitgliedsbeiträge
 SELECT
     'beitrag' as quelle,
-    b.id as referenz_id,
-    b.dojo_id,
+    b.beitrag_id as referenz_id,
+    COALESCE(b.dojo_id, 1) as dojo_id,
     CASE WHEN b.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END as organisation_name,
     b.zahlungsdatum as datum,
     b.betrag as betrag_brutto,
     'betriebseinnahmen' as kategorie,
-    CONCAT('Mitgliedsbeitrag ', b.monat, '/', b.jahr) as beschreibung,
+    'Mitgliedsbeitrag' as beschreibung,
     YEAR(b.zahlungsdatum) as jahr,
     MONTH(b.zahlungsdatum) as monat
 FROM beitraege b
@@ -295,14 +295,14 @@ UNION ALL
 -- Kassenbuch-Ausgaben
 SELECT
     'kassenbuch' as quelle,
-    k.id as referenz_id,
-    k.dojo_id,
+    k.eintrag_id as referenz_id,
+    COALESCE(k.dojo_id, 1) as dojo_id,
     CASE WHEN k.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END as organisation_name,
-    k.datum as datum,
+    k.geschaeft_datum as datum,
     k.betrag_cent / 100 as betrag_brutto,
     'sonstige_kosten' as kategorie,
     k.beschreibung,
-    YEAR(k.datum) as jahr,
-    MONTH(k.datum) as monat
+    YEAR(k.geschaeft_datum) as jahr,
+    MONTH(k.geschaeft_datum) as monat
 FROM kassenbuch k
-WHERE k.bewegungsart = 'Ausgabe';
+WHERE k.bewegungsart = 'ausgabe';
