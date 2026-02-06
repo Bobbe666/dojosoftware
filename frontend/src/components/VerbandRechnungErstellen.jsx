@@ -16,9 +16,9 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   const [success, setSuccess] = useState('');
 
   // Empfänger
-  const [empfaenger, setEmpfaenger] = useState({ verbandsmitglieder: [], softwareNutzer: [] });
+  const [empfaenger, setEmpfaenger] = useState({ verbandsmitglieder: [], softwareNutzer: [], dojoMitglieder: [] });
   const [selectedEmpfaenger, setSelectedEmpfaenger] = useState(null);
-  const [empfaengerTyp, setEmpfaengerTyp] = useState('verbandsmitglied'); // verbandsmitglied | software_nutzer | manuell
+  const [empfaengerTyp, setEmpfaengerTyp] = useState('verbandsmitglied'); // verbandsmitglied | software_nutzer | dojo_mitglied | manuell
   const [searchTerm, setSearchTerm] = useState('');
 
   // Rechnungsdaten
@@ -116,6 +116,11 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
       return empfaenger.verbandsmitglieder.filter(e =>
         e.name?.toLowerCase().includes(term) ||
         e.mitgliedsnummer?.toLowerCase().includes(term)
+      );
+    } else if (empfaengerTyp === 'dojo_mitglied') {
+      return (empfaenger.dojoMitglieder || []).filter(e =>
+        e.name?.toLowerCase().includes(term) ||
+        e.dojo_name?.toLowerCase().includes(term)
       );
     } else if (empfaengerTyp === 'software_nutzer') {
       return empfaenger.softwareNutzer.filter(e =>
@@ -381,6 +386,13 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 DojoSoftware-Nutzer ({empfaenger.softwareNutzer.length})
               </button>
               <button
+                className={empfaengerTyp === 'dojo_mitglied' ? 'active' : ''}
+                onClick={() => { setEmpfaengerTyp('dojo_mitglied'); setSelectedEmpfaenger(null); }}
+              >
+                <User size={16} />
+                Dojo-Mitglieder ({(empfaenger.dojoMitglieder || []).length})
+              </button>
+              <button
                 className={empfaengerTyp === 'manuell' ? 'active' : ''}
                 onClick={() => { setEmpfaengerTyp('manuell'); setSelectedEmpfaenger(null); }}
               >
@@ -415,7 +427,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                   </div>
                 ) : (
                   <div className="empfaenger-liste">
-                    {getFilteredEmpfaenger().slice(0, 10).map(emp => (
+                    {getFilteredEmpfaenger().slice(0, 20).map(emp => (
                       <div
                         key={emp.id}
                         className="empfaenger-item"
@@ -424,12 +436,14 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                         <div className="emp-icon">
                           {empfaengerTyp === 'verbandsmitglied' ?
                             (emp.typ === 'dojo' ? <Building2 size={18} /> : <User size={18} />) :
+                            empfaengerTyp === 'dojo_mitglied' ? <User size={18} /> :
                             <Building2 size={18} />
                           }
                         </div>
                         <div className="emp-details">
                           <strong>{emp.name}</strong>
                           {emp.mitgliedsnummer && <span>{emp.mitgliedsnummer}</span>}
+                          {emp.dojo_name && <span className="dojo-tag">{emp.dojo_name}</span>}
                           <span className="email">{emp.email}</span>
                         </div>
                       </div>

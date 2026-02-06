@@ -121,11 +121,30 @@ router.get('/empfaenger', async (req, res) => {
       ORDER BY d.dojoname
     `);
 
+    // 3. Dojo-Mitglieder (TDA International dojo_id=2 und Kampfkunstschule Schreiner dojo_id=1)
+    const dojoMitglieder = await queryAsync(`
+      SELECT
+        m.mitglied_id as id,
+        CONCAT(m.vorname, ' ', m.nachname) as name,
+        m.email,
+        CONCAT(COALESCE(m.strasse, ''), ' ', COALESCE(m.hausnummer, ''), ', ', COALESCE(m.plz, ''), ' ', COALESCE(m.ort, '')) as adresse,
+        m.status,
+        m.dojo_id,
+        d.dojoname as dojo_name,
+        'dojo_mitglied' as kategorie
+      FROM mitglieder m
+      LEFT JOIN dojo d ON m.dojo_id = d.id
+      WHERE m.dojo_id IN (1, 2)
+      AND m.status = 'aktiv'
+      ORDER BY d.dojoname, m.nachname, m.vorname
+    `);
+
     res.json({
       success: true,
       empfaenger: {
         verbandsmitglieder: verbandsmitglieder,
-        softwareNutzer: softwareNutzer
+        softwareNutzer: softwareNutzer,
+        dojoMitglieder: dojoMitglieder
       }
     });
 
