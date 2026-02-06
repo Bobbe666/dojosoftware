@@ -126,13 +126,13 @@ SELECT
     COALESCE(v.dojo_id, 1) as dojo_id,
     CASE WHEN v.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END as organisation_name,
     v.verkauf_datum as datum,
-    v.gesamt_brutto as betrag_brutto,
+    v.brutto_gesamt_cent / 100 as betrag_brutto,
     'betriebseinnahmen' as kategorie,
     CONCAT('Verkauf #', v.verkauf_id) as beschreibung,
     YEAR(v.verkauf_datum) as jahr,
     MONTH(v.verkauf_datum) as monat
 FROM verkaeufe v
-WHERE v.bezahlt = TRUE;
+WHERE v.storniert = FALSE;
 
 -- Aktualisiere die View für EÜR-Ausgaben (OHNE Privatentnahmen)
 CREATE OR REPLACE VIEW v_euer_ausgaben AS
