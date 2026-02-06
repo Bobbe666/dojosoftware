@@ -16,6 +16,7 @@ import StatisticsTab from './StatisticsTab';
 import ContractsTab from './ContractsTab';
 import UsersTab from './UsersTab';
 import FinanzenTab from './FinanzenTab';
+import BuchhaltungTab from './BuchhaltungTab';
 import ZieleEntwicklung from './ZieleEntwicklung';
 import SupportTickets from './SupportTickets';
 import VerbandsMitglieder from './VerbandsMitglieder';
@@ -473,6 +474,7 @@ const SuperAdminDashboard = () => {
     { id: 'support', label: 'Support', icon: '🎫' },
     { id: 'statistics', label: 'Statistiken', icon: '📈' },
     { id: 'finanzen', label: 'Finanzen', icon: '💰' },
+    { id: 'buchhaltung', label: 'Buchhaltung', icon: '📒' },
     { id: 'contracts', label: 'Verträge', icon: '📄' },
     { id: 'users', label: 'Benutzer', icon: '👤' },
     { id: 'plans', label: 'Pläne & Preise', icon: '💳' },
@@ -1053,6 +1055,11 @@ const SuperAdminDashboard = () => {
         {/* Finanzen Tab - Kombiniert: Übersicht, Mitglieder-Lastschrift, Dojo-SEPA */}
         {activeTab === 'finanzen' && (
           <FinanzenTab token={token} />
+        )}
+
+        {/* Buchhaltung Tab - EÜR */}
+        {activeTab === 'buchhaltung' && (
+          <BuchhaltungTab token={token} />
         )}
 
         {/* Verträge Tab */}

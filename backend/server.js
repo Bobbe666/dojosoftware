@@ -303,6 +303,19 @@ try {
     });
 }
 
+// BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
+try {
+  const buchhaltungRoutes = require('./routes/buchhaltung');
+  app.use('/api/buchhaltung', authenticateToken, buchhaltungRoutes);
+  logger.success('Route gemountet', { path: '/api/buchhaltung' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'buchhaltung routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // EMAIL-SETTINGS ROUTES (globale und Dojo-spezifische E-Mail-Konfiguration)
 try {
   const emailSettingsRoutes = require('./routes/email-settings');
