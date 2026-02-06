@@ -66,7 +66,15 @@ const generateBelegNummer = async (dojoId, jahr) => {
 
 // Prüfe Super Admin Berechtigung
 const requireSuperAdmin = (req, res, next) => {
-  if (req.user?.is_super_admin || req.user?.rolle === 'super_admin') {
+  // Check various ways super admin might be indicated
+  const isSuperAdmin =
+    req.user?.is_super_admin === true ||
+    req.user?.rolle === 'super_admin' ||
+    req.user?.role === 'admin' ||  // Main admin user has role "admin"
+    req.user?.role === 'super_admin' ||
+    (req.user?.username === 'admin' && req.user?.dojo_id === null);
+
+  if (isSuperAdmin) {
     return next();
   }
   return res.status(403).json({ message: 'Nur für Super-Admin zugänglich' });
