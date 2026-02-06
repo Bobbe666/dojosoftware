@@ -57,6 +57,9 @@ const BuchhaltungTab = ({ token }) => {
   const [selectedBankTx, setSelectedBankTx] = useState(null);
   const [selectedBankTxIds, setSelectedBankTxIds] = useState([]);
   const [bankUploading, setBankUploading] = useState(false);
+  const [bankSortField, setBankSortField] = useState('buchungsdatum');
+  const [bankSortDirection, setBankSortDirection] = useState('desc');
+  const [bankSearchTerm, setBankSearchTerm] = useState('');
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -350,7 +353,7 @@ const BuchhaltungTab = ({ token }) => {
 
   // Select all visible
   const toggleAllBankTx = () => {
-    const visibleIds = bankTransaktionen
+    const visibleIds = getFilteredSortedTransaktionen()
       .filter(tx => tx.status !== 'zugeordnet' && tx.status !== 'ignoriert')
       .map(tx => tx.transaktion_id);
 
@@ -359,6 +362,72 @@ const BuchhaltungTab = ({ token }) => {
     } else {
       setSelectedBankTxIds(visibleIds);
     }
+  };
+
+  // Sortierung umschalten
+  const toggleBankSort = (field) => {
+    if (bankSortField === field) {
+      setBankSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setBankSortField(field);
+      setBankSortDirection('asc');
+    }
+  };
+
+  // Gefilterte und sortierte Transaktionen
+  const getFilteredSortedTransaktionen = () => {
+    let filtered = [...bankTransaktionen];
+
+    // Suchfilter
+    if (bankSearchTerm.trim()) {
+      const search = bankSearchTerm.toLowerCase();
+      filtered = filtered.filter(tx =>
+        (tx.auftraggeber_empfaenger || '').toLowerCase().includes(search) ||
+        (tx.verwendungszweck || '').toLowerCase().includes(search) ||
+        (tx.organisation_name || '').toLowerCase().includes(search) ||
+        String(tx.betrag).includes(search)
+      );
+    }
+
+    // Sortierung
+    filtered.sort((a, b) => {
+      let aVal, bVal;
+      switch (bankSortField) {
+        case 'buchungsdatum':
+          aVal = new Date(a.buchungsdatum);
+          bVal = new Date(b.buchungsdatum);
+          break;
+        case 'betrag':
+          aVal = parseFloat(a.betrag);
+          bVal = parseFloat(b.betrag);
+          break;
+        case 'auftraggeber_empfaenger':
+          aVal = (a.auftraggeber_empfaenger || '').toLowerCase();
+          bVal = (b.auftraggeber_empfaenger || '').toLowerCase();
+          break;
+        case 'verwendungszweck':
+          aVal = (a.verwendungszweck || '').toLowerCase();
+          bVal = (b.verwendungszweck || '').toLowerCase();
+          break;
+        case 'organisation_name':
+          aVal = (a.organisation_name || '').toLowerCase();
+          bVal = (b.organisation_name || '').toLowerCase();
+          break;
+        case 'status':
+          aVal = a.status || '';
+          bVal = b.status || '';
+          break;
+        default:
+          aVal = a[bankSortField];
+          bVal = b[bankSortField];
+      }
+
+      if (aVal < bVal) return bankSortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return bankSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
   };
 
   // Transaktion löschen
@@ -1061,6 +1130,20 @@ const BuchhaltungTab = ({ token }) => {
                     <option value="ignoriert">Ignoriert</option>
                   </select>
                 </div>
+                <div className="bank-search">
+                  <Search size={16} />
+                  <input
+                    type="text"
+                    placeholder="Suchen..."
+                    value={bankSearchTerm}
+                    onChange={(e) => setBankSearchTerm(e.target.value)}
+                  />
+                  {bankSearchTerm && (
+                    <button className="search-clear" onClick={() => setBankSearchTerm('')}>
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
               <button className="btn-primary" onClick={() => setShowBankUploadModal(true)}>
                 <FileUp size={16} />
@@ -1098,30 +1181,60 @@ const BuchhaltungTab = ({ token }) => {
                       <input
                         type="checkbox"
                         checked={selectedBankTxIds.length > 0 &&
-                          selectedBankTxIds.length === bankTransaktionen.filter(tx =>
+                          selectedBankTxIds.length === getFilteredSortedTransaktionen().filter(tx =>
                             tx.status !== 'zugeordnet' && tx.status !== 'ignoriert'
                           ).length}
                         onChange={toggleAllBankTx}
                       />
                     </th>
-                    <th>Datum</th>
-                    <th>Organisation</th>
-                    <th className="betrag-col">Betrag</th>
-                    <th>Auftraggeber/Empfänger</th>
-                    <th>Verwendungszweck</th>
-                    <th>Status</th>
+                    <th className="sortable" onClick={() => toggleBankSort('buchungsdatum')}>
+                      Datum
+                      {bankSortField === 'buchungsdatum' && (
+                        bankSortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      )}
+                    </th>
+                    <th className="sortable" onClick={() => toggleBankSort('organisation_name')}>
+                      Organisation
+                      {bankSortField === 'organisation_name' && (
+                        bankSortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      )}
+                    </th>
+                    <th className="betrag-col sortable" onClick={() => toggleBankSort('betrag')}>
+                      Betrag
+                      {bankSortField === 'betrag' && (
+                        bankSortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      )}
+                    </th>
+                    <th className="sortable" onClick={() => toggleBankSort('auftraggeber_empfaenger')}>
+                      Auftraggeber/Empfänger
+                      {bankSortField === 'auftraggeber_empfaenger' && (
+                        bankSortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      )}
+                    </th>
+                    <th className="sortable" onClick={() => toggleBankSort('verwendungszweck')}>
+                      Verwendungszweck
+                      {bankSortField === 'verwendungszweck' && (
+                        bankSortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      )}
+                    </th>
+                    <th className="sortable" onClick={() => toggleBankSort('status')}>
+                      Status
+                      {bankSortField === 'status' && (
+                        bankSortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                      )}
+                    </th>
                     <th>Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bankTransaktionen.length === 0 ? (
+                  {getFilteredSortedTransaktionen().length === 0 ? (
                     <tr>
                       <td colSpan="8" className="no-data">
-                        Keine Transaktionen gefunden. Importieren Sie einen Kontoauszug.
+                        {bankSearchTerm ? 'Keine Treffer für die Suche.' : 'Keine Transaktionen gefunden. Importieren Sie einen Kontoauszug.'}
                       </td>
                     </tr>
                   ) : (
-                    bankTransaktionen.map(tx => (
+                    getFilteredSortedTransaktionen().map(tx => (
                       <React.Fragment key={tx.transaktion_id}>
                         <tr className={`bank-row ${tx.status}`}>
                           <td className="checkbox-col">

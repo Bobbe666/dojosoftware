@@ -1039,6 +1039,69 @@
   font-size: 0.85rem;
 }
 
+/* Bank Search */
+.bank-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: var(--bg-secondary, #fff);
+}
+
+.bank-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+  width: 150px;
+  color: var(--text-primary, #333);
+}
+
+.bank-search input::placeholder {
+  color: var(--text-secondary, #999);
+}
+
+.bank-search svg {
+  color: var(--text-secondary, #999);
+  flex-shrink: 0;
+}
+
+.search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary, #999);
+  border-radius: 50%;
+}
+
+.search-clear:hover {
+  background: var(--bg-tertiary, #f0f0f0);
+  color: var(--text-primary, #333);
+}
+
+/* Sortable Headers */
+.bank-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.bank-table th.sortable:hover {
+  background: var(--bg-hover, #e8e8e8);
+}
+
+.bank-table th.sortable svg {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
 /* Batch Actions */
 .bank-batch-actions {
   display: flex;
