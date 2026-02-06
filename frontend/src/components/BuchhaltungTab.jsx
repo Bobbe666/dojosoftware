@@ -61,6 +61,7 @@ const BuchhaltungTab = ({ token }) => {
   const [bankSortDirection, setBankSortDirection] = useState('desc');
   const [bankSearchTerm, setBankSearchTerm] = useState('');
   const [bankLimit, setBankLimit] = useState(30);
+  const [bankBetragFilter, setBankBetragFilter] = useState(''); // '', 'einnahmen', 'ausgaben'
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -388,6 +389,13 @@ const BuchhaltungTab = ({ token }) => {
         (tx.organisation_name || '').toLowerCase().includes(search) ||
         String(tx.betrag).includes(search)
       );
+    }
+
+    // Einnahmen/Ausgaben Filter
+    if (bankBetragFilter === 'einnahmen') {
+      filtered = filtered.filter(tx => parseFloat(tx.betrag) >= 0);
+    } else if (bankBetragFilter === 'ausgaben') {
+      filtered = filtered.filter(tx => parseFloat(tx.betrag) < 0);
     }
 
     // Sortierung
@@ -1129,6 +1137,14 @@ const BuchhaltungTab = ({ token }) => {
                     <option value="vorgeschlagen">Mit Vorschlag</option>
                     <option value="zugeordnet">Zugeordnet</option>
                     <option value="ignoriert">Ignoriert</option>
+                  </select>
+                  <select
+                    value={bankBetragFilter}
+                    onChange={(e) => setBankBetragFilter(e.target.value)}
+                  >
+                    <option value="">Alle Buchungen</option>
+                    <option value="einnahmen">Nur Einnahmen</option>
+                    <option value="ausgaben">Nur Ausgaben</option>
                   </select>
                 </div>
                 <div className="bank-search">
