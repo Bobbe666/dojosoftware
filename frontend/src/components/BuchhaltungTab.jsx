@@ -60,6 +60,7 @@ const BuchhaltungTab = ({ token }) => {
   const [bankSortField, setBankSortField] = useState('buchungsdatum');
   const [bankSortDirection, setBankSortDirection] = useState('desc');
   const [bankSearchTerm, setBankSearchTerm] = useState('');
+  const [bankLimit, setBankLimit] = useState(30);
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -196,8 +197,8 @@ const BuchhaltungTab = ({ token }) => {
         params: {
           organisation: selectedOrg !== 'alle' ? selectedOrg : undefined,
           status: bankStatusFilter || undefined,
-          seite: bankPage,
-          limit: 30
+          seite: bankLimit === 0 ? 1 : bankPage,
+          limit: bankLimit === 0 ? 10000 : bankLimit
         }
       });
       setBankTransaktionen(res.data.transaktionen);
@@ -207,7 +208,7 @@ const BuchhaltungTab = ({ token }) => {
     } finally {
       setLoading(false);
     }
-  }, [token, selectedOrg, bankStatusFilter, bankPage]);
+  }, [token, selectedOrg, bankStatusFilter, bankPage, bankLimit]);
 
   // Bank-Statistik laden
   const loadBankStatistik = useCallback(async () => {
@@ -1336,19 +1337,39 @@ const BuchhaltungTab = ({ token }) => {
             {/* Pagination */}
             {bankTransaktionenTotal > 30 && (
               <div className="pagination">
+                {bankLimit !== 0 && (
+                  <>
+                    <button
+                      disabled={bankPage === 1}
+                      onClick={() => setBankPage(p => Math.max(1, p - 1))}
+                    >
+                      Zurück
+                    </button>
+                    <span>Seite {bankPage} von {Math.ceil(bankTransaktionenTotal / bankLimit)}</span>
+                    <button
+                      disabled={bankPage >= Math.ceil(bankTransaktionenTotal / bankLimit)}
+                      onClick={() => setBankPage(p => p + 1)}
+                    >
+                      Weiter
+                    </button>
+                  </>
+                )}
                 <button
-                  disabled={bankPage === 1}
-                  onClick={() => setBankPage(p => Math.max(1, p - 1))}
+                  className={bankLimit === 0 ? 'btn-active' : ''}
+                  onClick={() => {
+                    if (bankLimit === 0) {
+                      setBankLimit(30);
+                      setBankPage(1);
+                    } else {
+                      setBankLimit(0);
+                    }
+                  }}
                 >
-                  Zurück
+                  {bankLimit === 0 ? 'Seiten anzeigen' : 'Alle anzeigen'}
                 </button>
-                <span>Seite {bankPage} von {Math.ceil(bankTransaktionenTotal / 30)}</span>
-                <button
-                  disabled={bankPage >= Math.ceil(bankTransaktionenTotal / 30)}
-                  onClick={() => setBankPage(p => p + 1)}
-                >
-                  Weiter
-                </button>
+                {bankLimit === 0 && (
+                  <span>{bankTransaktionenTotal} Transaktionen</span>
+                )}
               </div>
             )}
 
