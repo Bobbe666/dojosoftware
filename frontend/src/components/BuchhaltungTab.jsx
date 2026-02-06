@@ -12,6 +12,7 @@ import {
   Landmark, Check, XCircle, Lightbulb, FileUp, History
 } from 'lucide-react';
 import '../styles/BuchhaltungTab.css';
+import VerbandRechnungErstellen from './VerbandRechnungErstellen';
 
 const BuchhaltungTab = ({ token }) => {
   // Sub-Tab Navigation
@@ -754,6 +755,7 @@ const BuchhaltungTab = ({ token }) => {
   const subTabs = [
     { id: 'euer', label: 'EÜR Übersicht', icon: <PieChart size={16} /> },
     { id: 'belege', label: 'Belegerfassung', icon: <Receipt size={16} /> },
+    { id: 'rechnungen', label: 'Rechnungen', icon: <FileText size={16} /> },
     { id: 'auto', label: 'Auto. Buchungen', icon: <RefreshCw size={16} /> },
     { id: 'bankimport', label: 'Bank-Import', icon: <Landmark size={16} /> },
     { id: 'abschluss', label: 'Jahresabschluss', icon: <FileSpreadsheet size={16} /> }
@@ -1082,6 +1084,13 @@ const BuchhaltungTab = ({ token }) => {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== RECHNUNGEN ERSTELLEN ==================== */}
+        {activeSubTab === 'rechnungen' && (
+          <div className="rechnungen-content">
+            <VerbandRechnungErstellen />
           </div>
         )}
 

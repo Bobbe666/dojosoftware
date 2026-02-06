@@ -1579,6 +1579,11 @@
   background: rgba(111, 66, 193, 0.1);
 }
 
+/* Rechnungen Content */
+.rechnungen-content {
+  padding: 0;
+}
+
 /* Umbuchung Modal */
 .tx-preview-row.highlight {
   background: rgba(74, 144, 217, 0.1);

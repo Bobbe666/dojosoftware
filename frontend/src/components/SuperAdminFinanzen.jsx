@@ -43,7 +43,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import config from "../config/config";
 import "../styles/SuperAdminFinanzen.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
-import VerbandRechnungErstellen from './VerbandRechnungErstellen';
+// VerbandRechnungErstellen wurde nach BuchhaltungTab verschoben
 
 const COLORS = {
   verband: '#3b82f6',    // Blau
@@ -61,7 +61,7 @@ const SuperAdminFinanzen = () => {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedBereich, setSelectedBereich] = useState('alle'); // alle, verband, software, schulen
-  const [activeView, setActiveView] = useState('uebersicht'); // 'uebersicht' | 'rechnungen'
+  // activeView wurde entfernt - Rechnungen erstellen ist jetzt in BuchhaltungTab
 
   // Data States
   const [financeData, setFinanceData] = useState(null);
@@ -368,28 +368,6 @@ const SuperAdminFinanzen = () => {
 
   return (
     <div className="saf">
-      {/* View-Switcher Tabs */}
-      <div className="saf__view-tabs">
-        <button
-          className={activeView === 'uebersicht' ? 'active' : ''}
-          onClick={() => setActiveView('uebersicht')}
-        >
-          <BarChart3 size={18} />
-          Finanzübersicht
-        </button>
-        <button
-          className={activeView === 'rechnungen' ? 'active' : ''}
-          onClick={() => setActiveView('rechnungen')}
-        >
-          <Receipt size={18} />
-          Rechnungen erstellen
-        </button>
-      </div>
-
-      {activeView === 'rechnungen' ? (
-        <VerbandRechnungErstellen />
-      ) : (
-        <>
           {/* Header */}
           <header className="saf-card saf__header">
             <div className="saf__header-top">
@@ -852,8 +830,6 @@ const SuperAdminFinanzen = () => {
             </div>
           </div>
         </section>
-      )}
-        </>
       )}
     </div>
   );
