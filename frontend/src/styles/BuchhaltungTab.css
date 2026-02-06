@@ -1288,28 +1288,29 @@
   max-width: 600px;
 }
 
-.kategorie-modal-wide {
-  max-width: 1100px;
-  width: 95%;
-  max-height: 80vh;
-  margin: 0;
-}
-
-/* Spezielle Overlay-Styles für Kategorie-Modal - erzwingt Zentrierung */
+/* Spezielle Overlay-Styles für Kategorie-Modal */
 .kategorie-overlay {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
   z-index: 9999 !important;
-  overflow: hidden !important;
   background: rgba(0, 0, 0, 0.6) !important;
+  display: block !important;
+}
+
+/* Modal selbst zentriert im Viewport */
+.kategorie-modal-wide {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: 1100px;
+  width: 95%;
+  max-height: 80vh;
+  margin: 0;
+  z-index: 10000 !important;
 }
 
 .kategorie-modal-wide .modal-body {
