@@ -114,17 +114,21 @@
 }
 
 .position-input {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 0.35rem;
-  align-items: end;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .position-input select {
-  width: 100%;
+  flex: 1;
+  min-width: 150px;
+  padding: 0.5rem 0.6rem;
   color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 6px;
+  font-size: 0.85rem;
 }
 
 .position-input select option {
@@ -133,33 +137,42 @@
   padding: 0.5rem;
 }
 
-.position-input input {
+.position-input input[type="number"] {
   width: 70px;
-  padding: 0.35rem 0.5rem;
+  padding: 0.5rem 0.4rem;
   color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 4px;
-  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.position-input input[type="number"]::-webkit-outer-spin-button,
+.position-input input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .btn-add {
-  padding: 0.35rem 0.6rem;
+  padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 4px;
-  font-size: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .btn-add:hover {
   background: linear-gradient(135deg, #059669, #047857);
-  border-color: rgba(16, 185, 129, 0.5);
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .rechnung-erstellen-container .btn-save {
@@ -438,34 +451,60 @@
 }
 
 .rechnung-erstellen-container input[type="checkbox"] {
-  width: 14px !important;
-  height: 14px !important;
-  min-width: 14px !important;
-  max-width: 14px !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
   flex-shrink: 0;
   margin: 0;
   padding: 0;
   cursor: pointer;
+  accent-color: #ffd700;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 4px;
 }
 
 .rechnung-erstellen-container .checkbox-label {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .rechnung-erstellen-container .rabatt-label {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
 }
 
 .rechnung-erstellen-container .rabatt-input {
-  padding: 0.3rem 0.5rem;
-  font-size: 0.75rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
   width: 80px;
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 4px;
+  border-radius: 6px;
   color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.rechnung-erstellen-container .rabatt-input::-webkit-outer-spin-button,
+.rechnung-erstellen-container .rabatt-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Alle number inputs im Formular - keine Spinner */
+.rechnung-erstellen-container input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.rechnung-erstellen-container input[type="number"]::-webkit-outer-spin-button,
+.rechnung-erstellen-container input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Responsive */
