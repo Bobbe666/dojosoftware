@@ -1289,30 +1289,66 @@
 }
 
 .kategorie-modal-wide {
-  max-width: 800px;
-  width: 90%;
+  max-width: 1100px;
+  width: 95%;
+  max-height: 85vh;
+  margin: auto;
+  position: relative;
+}
+
+.kategorie-modal-wide .modal-body {
+  padding: 1rem 1.5rem;
+  overflow-y: auto;
+}
+
+.kategorie-modal-wide .tx-preview {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+}
+
+.kategorie-modal-wide .tx-preview-row {
+  padding: 0.25rem 0;
+}
+
+.kategorie-modal-wide .kategorie-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.kategorie-modal-wide .kategorie-btn {
+  padding: 0.6rem 0.75rem;
+}
+
+.kategorie-modal-wide .kategorie-btn .kat-name {
+  font-size: 0.8rem;
+}
+
+.kategorie-modal-wide .kategorie-btn .kat-desc {
+  font-size: 0.7rem;
 }
 
 /* Regel lernen oben */
 .regel-lernen-top {
   background: var(--bg-tertiary, #f0f7ff);
   border: 1px solid var(--border-color, #cce0f5);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .regel-lernen-top label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
+  margin: 0;
 }
 
 .regel-lernen-top input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Batch Preview */
