@@ -1110,6 +1110,7 @@ const BuchhaltungTab = ({ token }) => {
                       />
                     </th>
                     <th>Datum</th>
+                    <th>Organisation</th>
                     <th className="betrag-col">Betrag</th>
                     <th>Auftraggeber/Empfänger</th>
                     <th>Verwendungszweck</th>
@@ -1120,7 +1121,7 @@ const BuchhaltungTab = ({ token }) => {
                 <tbody>
                   {bankTransaktionen.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="no-data">
+                      <td colSpan="8" className="no-data">
                         Keine Transaktionen gefunden. Importieren Sie einen Kontoauszug.
                       </td>
                     </tr>
@@ -1138,6 +1139,7 @@ const BuchhaltungTab = ({ token }) => {
                             )}
                           </td>
                           <td>{formatDate(tx.buchungsdatum)}</td>
+                          <td className="organisation-col">{tx.organisation_name || '-'}</td>
                           <td className={`betrag-col ${tx.betrag >= 0 ? 'einnahme' : 'ausgabe'}`}>
                             {formatCurrency(tx.betrag)}
                           </td>
@@ -1253,6 +1255,7 @@ const BuchhaltungTab = ({ token }) => {
                   <thead>
                     <tr>
                       <th>Datei</th>
+                      <th>Organisation</th>
                       <th>Bank</th>
                       <th>Transaktionen</th>
                       <th>Importiert am</th>
@@ -1263,6 +1266,7 @@ const BuchhaltungTab = ({ token }) => {
                     {bankImportHistorie.map((h, idx) => (
                       <tr key={idx}>
                         <td>{h.datei_name}</td>
+                        <td>{h.organisation_name || '-'}</td>
                         <td>{h.bank_name}</td>
                         <td>{h.anzahl_transaktionen}</td>
                         <td>{formatDate(h.importiert_am)}</td>
