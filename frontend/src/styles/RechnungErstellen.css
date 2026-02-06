@@ -18,44 +18,29 @@
   margin: 0 auto;
 }
 
-/* Formular Bereich - Light Mode */
+/* Formular Bereich - IMMER DUNKEL */
 .rechnung-erstellen-container .rechnung-form {
-  background: #ffffff !important;
-  border: 1px solid #dee2e6 !important;
+  background: rgba(26, 26, 46, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 8px !important;
   padding: 0.75rem 1rem !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
   height: fit-content !important;
   position: sticky !important;
   top: 2rem !important;
 }
 
-/* Formular Bereich - Dark Mode */
-[data-theme="dark"] .rechnung-erstellen-container .rechnung-form {
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
-}
-
 .rechnung-erstellen-container .rechnung-form h2 {
   margin: 0 0 0.5rem 0 !important;
-  color: #2c3e50 !important;
+  color: #ffffff !important;
   font-size: 1rem !important;
   text-shadow: none !important;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .rechnung-form h2 {
-  color: #ffffff !important;
 }
 
 .rechnung-erstellen-container .form-section {
   margin-bottom: 0.4rem !important;
   padding-bottom: 0.4rem !important;
-  border-bottom: 1px solid #dee2e6 !important;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .form-section {
   border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
 }
 
@@ -72,42 +57,26 @@
 
 .rechnung-erstellen-container .form-section h3 {
   margin: 0 0 0.3rem 0 !important;
-  color: #6B4423 !important;
+  color: #ffd700 !important;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .form-section h3 {
-  color: #ffd700 !important;
 }
 
 .rechnung-erstellen-container .form-section select,
 .rechnung-erstellen-container .form-section input {
   width: 100% !important;
   padding: 0.3rem 0.45rem !important;
-  border: 1px solid #dee2e6 !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 4px !important;
   font-size: 0.75rem !important;
-  color: #2c3e50 !important;
-  background: #ffffff !important;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .form-section select,
-[data-theme="dark"] .rechnung-erstellen-container .form-section input {
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .form-section select option {
-  background: #ffffff;
-  color: #2c3e50;
-  padding: 0.5rem;
-}
-
-[data-theme="dark"] .form-section select option {
-  background: var(--bg-secondary);
+  background: #1a1a2e;
   color: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem;
 }
 
 .form-section select:focus,
@@ -133,14 +102,10 @@
 .rechnung-erstellen-container .form-grid label {
   display: block !important;
   margin-bottom: 0 !important;
-  color: #495057 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
   line-height: 1.2 !important;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .form-grid label {
-  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 /* Wenn nur ein Feld in der Zeile sein soll (z.B. Zahlungsfrist) */
@@ -157,42 +122,25 @@
 
 .position-input select {
   width: 100%;
-  color: #2c3e50;
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-}
-
-[data-theme="dark"] .position-input select {
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .position-input select option {
-  background: #ffffff;
-  color: #2c3e50;
-  padding: 0.5rem;
-}
-
-[data-theme="dark"] .position-input select option {
-  background: var(--bg-secondary);
+  background: #1a1a2e;
   color: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem;
 }
 
 .position-input input {
   width: 70px;
   padding: 0.35rem 0.5rem;
-  color: #2c3e50;
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  font-size: 0.75rem;
-}
-
-[data-theme="dark"] .position-input input {
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 4px;
+  font-size: 0.75rem;
 }
 
 .btn-add {
@@ -467,42 +415,25 @@
 /* Positionen Liste */
 .rechnung-erstellen-container .positionen-liste-header {
   font-size: 0.85rem;
-  color: #6B4423;
+  color: #ffd700;
   margin-bottom: 0.5rem;
   text-transform: uppercase;
 }
 
-[data-theme="dark"] .rechnung-erstellen-container .positionen-liste-header {
-  color: #ffd700;
-}
-
 .rechnung-erstellen-container .position-item {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 6px;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
 }
 
-[data-theme="dark"] .rechnung-erstellen-container .position-item {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-}
-
 .rechnung-erstellen-container .position-item-text {
   font-size: 0.8rem;
-  color: #2c3e50;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .position-item-text {
   color: rgba(255, 255, 255, 0.9);
 }
 
 .rechnung-erstellen-container .position-item-divider {
-  border-top: 1px solid #dee2e6;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .position-item-divider {
   border-top: 1px solid rgba(255, 215, 0, 0.1);
 }
 
@@ -519,19 +450,11 @@
 
 .rechnung-erstellen-container .checkbox-label {
   font-size: 0.75rem;
-  color: #495057;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .checkbox-label {
   color: rgba(255, 255, 255, 0.8);
 }
 
 .rechnung-erstellen-container .rabatt-label {
   font-size: 0.7rem;
-  color: #6c757d;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .rabatt-label {
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -539,15 +462,9 @@
   padding: 0.3rem 0.5rem;
   font-size: 0.75rem;
   width: 80px;
-  background: #f8f9fa;
-  border: 1px solid #6B4423;
-  border-radius: 4px;
-  color: #2c3e50;
-}
-
-[data-theme="dark"] .rechnung-erstellen-container .rabatt-input {
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
   color: rgba(255, 255, 255, 0.95);
 }
 
