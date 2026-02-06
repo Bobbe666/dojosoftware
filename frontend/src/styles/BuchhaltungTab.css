@@ -1141,9 +1141,26 @@
   opacity: 0.6;
 }
 
+.bank-row.zugeordnet .actions,
+.bank-row.ignoriert .actions {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
 .bank-row.ignoriert {
   opacity: 0.5;
   text-decoration: line-through;
+}
+
+/* Fix für leere Action-Zellen */
+.bank-table td.actions {
+  border-left: none;
+  border-right: none;
+}
+
+.bank-table td:last-child {
+  border-right: none;
 }
 
 /* Bank Status Badge */
