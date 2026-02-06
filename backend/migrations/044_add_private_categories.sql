@@ -101,21 +101,21 @@ WHERE r.status = 'bezahlt'
 
 UNION ALL
 
--- Gebuchte Beiträge
+-- Bezahlte Beiträge
 SELECT
     'beitrag' as quelle,
     b.beitrag_id as referenz_id,
     COALESCE(m.dojo_id, 1) as dojo_id,
     'Kampfkunstschule Schreiner' as organisation_name,
-    b.faellig_am as datum,
+    b.zahlungsdatum as datum,
     b.betrag as betrag_brutto,
     'betriebseinnahmen' as kategorie,
     CONCAT('Mitgliedsbeitrag ', COALESCE(m.vorname, ''), ' ', COALESCE(m.nachname, '')) as beschreibung,
-    YEAR(b.faellig_am) as jahr,
-    MONTH(b.faellig_am) as monat
+    YEAR(b.zahlungsdatum) as jahr,
+    MONTH(b.zahlungsdatum) as monat
 FROM beitraege b
 LEFT JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
-WHERE b.status = 'gebucht'
+WHERE b.bezahlt = TRUE
 
 UNION ALL
 
@@ -168,7 +168,7 @@ SELECT
     YEAR(k.geschaeft_datum) as jahr,
     MONTH(k.geschaeft_datum) as monat
 FROM kassenbuch k
-WHERE k.typ = 'ausgabe';
+WHERE k.bewegungsart = 'ausgabe';
 
 -- Neue View für Privatbuchungen (zur Übersicht)
 CREATE OR REPLACE VIEW v_euer_privat AS
