@@ -329,10 +329,17 @@ const parseExcelContent = (filePath) => {
       const rowData = jsonData[i];
       if (!rowData || rowData.length < 3) continue;
 
-      // Erstelle Objekt aus Spalten
+      // Erstelle Objekt aus Spalten (numerische Werte beibehalten!)
       const row = {};
       headers.forEach((header, idx) => {
-        row[header] = rowData[idx] !== undefined ? String(rowData[idx]).trim() : '';
+        const val = rowData[idx];
+        if (val === undefined || val === null) {
+          row[header] = '';
+        } else if (typeof val === 'number') {
+          row[header] = val; // Numerische Werte direkt übernehmen
+        } else {
+          row[header] = String(val).trim();
+        }
       });
 
       // Versuche Transaktion zu parsen
