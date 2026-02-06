@@ -2,71 +2,80 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
-import {
-  FileText, Plus, Trash2, Save, Eye, Download, Building2, User,
-  Euro, Calendar, Search, X, CheckCircle, AlertCircle, Loader2, Users
-} from 'lucide-react';
-import '../styles/VerbandRechnungErstellen.css';
+import { Building2, Check, Search, X, Loader2, Save, Eye, Download } from 'lucide-react';
+import '../styles/RechnungErstellen.css';
 
 const VerbandRechnungErstellen = ({ token: propToken }) => {
   const { token: contextToken } = useAuth();
   const token = propToken || contextToken;
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
-  // Empfänger
+  // Organisation-Auswahl (Step 1)
+  const [showOrganisationSelection, setShowOrganisationSelection] = useState(true);
+  const [selectedOrganisation, setSelectedOrganisation] = useState(null);
+
+  // Form Data
   const [empfaenger, setEmpfaenger] = useState({ verbandsmitglieder: [], softwareNutzer: [], dojoMitglieder: [] });
+  const [artikel, setArtikel] = useState([]);
   const [selectedEmpfaenger, setSelectedEmpfaenger] = useState(null);
   const [empfaengerTyp, setEmpfaengerTyp] = useState('dojo_mitglied');
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Rechnungsdaten
-  const [rechnungsnummer, setRechnungsnummer] = useState('');
-  const [rechnungsdatum, setRechnungsdatum] = useState(new Date().toISOString().split('T')[0]);
-  const [leistungsdatum, setLeistungsdatum] = useState(new Date().toISOString().split('T')[0]);
-  const [faelligAm, setFaelligAm] = useState('');
-  const [notizen, setNotizen] = useState('');
-
-  // Skonto
-  const [skontoAktiv, setSkontoAktiv] = useState(false);
-  const [skontoProzent, setSkontoProzent] = useState(2);
-  const [skontoTage, setSkontoTage] = useState(7);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState('');
 
   // Manuelle Empfängerdaten
   const [manuellName, setManuellName] = useState('');
   const [manuellAdresse, setManuellAdresse] = useState('');
   const [manuellEmail, setManuellEmail] = useState('');
 
-  // Artikel aus Shop
-  const [artikel, setArtikel] = useState([]);
+  // TDA Bankdaten
+  const [bankDaten] = useState({
+    bank_name: 'Sparkasse Niederbayern-Mitte',
+    iban: 'DE89370400440532013000',
+    bic: 'COBADEFFXXX',
+    kontoinhaber: 'Tiger & Dragon Association International'
+  });
 
-  // Positionen
+  // Berechne Zahlungsfrist (7 Tage nach Belegdatum)
+  const calculateZahlungsfrist = (belegdatum) => {
+    if (!belegdatum) return '';
+    const datum = new Date(belegdatum);
+    datum.setDate(datum.getDate() + 7);
+    return datum.toISOString().split('T')[0];
+  };
+
+  const [rechnungsDaten, setRechnungsDaten] = useState({
+    rechnungsnummer: 'Wird geladen...',
+    kundennummer: '',
+    belegdatum: new Date().toISOString().split('T')[0],
+    leistungsdatum: new Date().toISOString().split('T')[0],
+    zahlungsfrist: calculateZahlungsfrist(new Date().toISOString().split('T')[0]),
+    rabatt_prozent: 0,
+    rabatt_auf_betrag: 0,
+    skonto_prozent: 0,
+    skonto_tage: 0
+  });
+
   const [positionen, setPositionen] = useState([]);
   const [neuePosition, setNeuePosition] = useState({
     artikel_id: '',
     bezeichnung: '',
+    artikelnummer: '',
     menge: 1,
     einzelpreis: 0,
-    mwst_satz: 19
+    ust_prozent: 19,
+    ist_rabattfaehig: false,
+    rabatt_prozent: 0
   });
-
-  // Bestehende Rechnungen
-  const [rechnungen, setRechnungen] = useState([]);
-  const [showRechnungen, setShowRechnungen] = useState(false);
+  const [showRabattHinweis, setShowRabattHinweis] = useState(false);
 
   // Vorschau Modal
   const [showVorschauModal, setShowVorschauModal] = useState(false);
   const [vorschauUrl, setVorschauUrl] = useState('');
 
-  // TDA Bankdaten (fest)
-  const bankDaten = {
-    bank_name: 'Sparkasse',
-    iban: 'DE89370400440532013000',
-    bic: 'COBADEFFXXX',
-    kontoinhaber: 'Tiger & Dragon Association International'
-  };
+  // Bestehende Rechnungen
+  const [rechnungen, setRechnungen] = useState([]);
 
   // API Helper
   const getApi = () => axios.create({
@@ -74,17 +83,39 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  useEffect(() => {
-    if (token) loadData();
-  }, [token]);
-
-  useEffect(() => {
-    if (rechnungsdatum) {
-      const date = new Date(rechnungsdatum);
-      date.setDate(date.getDate() + 14);
-      setFaelligAm(date.toISOString().split('T')[0]);
+  // Organisationen für Auswahl
+  const organisationen = [
+    {
+      id: 'tda',
+      name: 'Tiger & Dragon Association International',
+      adresse: 'Ohmstr. 14, 84137 Vilsbiburg',
+      typ: 'verband'
     }
-  }, [rechnungsdatum]);
+  ];
+
+  // Daten laden wenn Organisation gewählt
+  useEffect(() => {
+    if (selectedOrganisation && token) {
+      loadData();
+    }
+  }, [selectedOrganisation, token]);
+
+  // Skonto-Tage automatisch berechnen
+  useEffect(() => {
+    if (rechnungsDaten.belegdatum && rechnungsDaten.zahlungsfrist) {
+      const belegdatum = new Date(rechnungsDaten.belegdatum);
+      const zahlungsfrist = new Date(rechnungsDaten.zahlungsfrist);
+      const diffTime = zahlungsfrist - belegdatum;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        setRechnungsDaten(prev => ({
+          ...prev,
+          skonto_tage: diffDays
+        }));
+      }
+    }
+  }, [rechnungsDaten.belegdatum, rechnungsDaten.zahlungsfrist]);
 
   const loadData = async () => {
     setLoading(true);
@@ -97,10 +128,11 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
       ]);
 
       if (empfaengerRes.data.success) setEmpfaenger(empfaengerRes.data.empfaenger);
-      if (nummernRes.data.success) setRechnungsnummer(nummernRes.data.rechnungsnummer);
+      if (nummernRes.data.success) setRechnungsDaten(prev => ({ ...prev, rechnungsnummer: nummernRes.data.rechnungsnummer }));
       if (rechnungenRes.data.success) setRechnungen(rechnungenRes.data.rechnungen);
       const artikelData = artikelRes.data?.data || artikelRes.data || [];
       setArtikel(Array.isArray(artikelData) ? artikelData : []);
+      setError(null);
     } catch (err) {
       console.error('Fehler beim Laden:', err);
       setError('Fehler beim Laden der Daten');
@@ -109,9 +141,15 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
   };
 
-  const handleSelectEmpfaenger = (emp, typ) => {
+  const handleOrganisationSelect = (org) => {
+    setSelectedOrganisation(org);
+    setShowOrganisationSelection(false);
+  };
+
+  const handleEmpfaengerSelect = (emp, typ) => {
     setSelectedEmpfaenger(emp);
     setEmpfaengerTyp(typ);
+    setRechnungsDaten(prev => ({ ...prev, kundennummer: emp.id || '' }));
     setSearchTerm('');
   };
 
@@ -138,8 +176,9 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         ...neuePosition,
         artikel_id: art.artikel_id || art.id,
         bezeichnung: art.name || art.bezeichnung,
+        artikelnummer: art.artikel_nummer || '',
         einzelpreis: preis,
-        mwst_satz: art.mwst_prozent || 19
+        ust_prozent: art.mwst_prozent || 19
       });
     }
   };
@@ -147,20 +186,41 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   const addPosition = () => {
     if (!neuePosition.bezeichnung || neuePosition.menge <= 0) return;
 
-    setPositionen([...positionen, {
-      ...neuePosition,
-      pos: positionen.length + 1,
-      menge: Number(neuePosition.menge),
-      einzelpreis: Number(neuePosition.einzelpreis),
-      mwst_satz: Number(neuePosition.mwst_satz)
-    }]);
+    // Prüfe ob Artikel bereits existiert
+    const existingIndex = positionen.findIndex(pos =>
+      pos.artikel_id === neuePosition.artikel_id &&
+      pos.bezeichnung === neuePosition.bezeichnung &&
+      Number(pos.einzelpreis) === Number(neuePosition.einzelpreis)
+    );
+
+    if (existingIndex !== -1) {
+      const updatedPositionen = [...positionen];
+      updatedPositionen[existingIndex] = {
+        ...updatedPositionen[existingIndex],
+        menge: Number(updatedPositionen[existingIndex].menge) + Number(neuePosition.menge)
+      };
+      setPositionen(updatedPositionen);
+    } else {
+      setPositionen([...positionen, {
+        ...neuePosition,
+        pos: positionen.length + 1,
+        menge: Number(neuePosition.menge),
+        einzelpreis: Number(neuePosition.einzelpreis),
+        ust_prozent: Number(neuePosition.ust_prozent),
+        ist_rabattfaehig: neuePosition.ist_rabattfaehig,
+        rabatt_prozent: Number(neuePosition.rabatt_prozent) || 0
+      }]);
+    }
 
     setNeuePosition({
       artikel_id: '',
       bezeichnung: '',
+      artikelnummer: '',
       menge: 1,
       einzelpreis: 0,
-      mwst_satz: 19
+      ust_prozent: 19,
+      ist_rabattfaehig: false,
+      rabatt_prozent: 0
     });
   };
 
@@ -170,42 +230,51 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   };
 
   // Berechnungen
-  const calculateNetto = () => {
-    return positionen.reduce((sum, pos) => sum + (Number(pos.einzelpreis) * Number(pos.menge)), 0);
-  };
-
-  const calculateMwst = () => {
+  const calculateZwischensumme = () => {
     return positionen.reduce((sum, pos) => {
-      const netto = Number(pos.einzelpreis) * Number(pos.menge);
-      return sum + (netto * Number(pos.mwst_satz) / 100);
+      const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+      const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+      return sum + (bruttoPreis - rabattBetrag);
     }, 0);
   };
 
-  const calculateBrutto = () => {
-    return calculateNetto() + calculateMwst();
+  const calculateRabatt = () => {
+    const zwischensumme = calculateZwischensumme();
+    if (rechnungsDaten.rabatt_prozent > 0) {
+      const rabattBasis = rechnungsDaten.rabatt_auf_betrag || zwischensumme;
+      return (rabattBasis * rechnungsDaten.rabatt_prozent) / 100;
+    }
+    return 0;
   };
 
-  const calculateSkontoBetrag = () => {
-    if (!skontoAktiv) return 0;
-    return calculateBrutto() * (skontoProzent / 100);
+  const calculateSumme = () => {
+    return calculateZwischensumme() - calculateRabatt();
   };
 
-  const calculateBruttoMitSkonto = () => {
-    return calculateBrutto() - calculateSkontoBetrag();
+  const calculateSkonto = () => {
+    const summe = calculateSumme();
+    if (rechnungsDaten.skonto_prozent > 0 && rechnungsDaten.skonto_tage > 0) {
+      return (summe * rechnungsDaten.skonto_prozent) / 100;
+    }
+    return 0;
   };
 
-  const getSkontoDatum = () => {
-    if (!rechnungsdatum || !skontoAktiv) return '';
-    const date = new Date(rechnungsdatum);
-    date.setDate(date.getDate() + skontoTage);
-    return date.toISOString().split('T')[0];
+  const calculateUSt = () => {
+    const summe = calculateSumme();
+    return (summe * 19) / 100;
   };
 
-  const formatCurrency = (n) => (n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const calculateEndbetrag = () => {
+    return calculateSumme() + calculateUSt();
+  };
 
-  const formatDateDDMMYYYY = (dateString) => {
+  // Formatiere Datum im Format dd.mm.yyyy
+  const formatDateDDMMYYYY = (dateString, addDays = 0) => {
     if (!dateString) return '';
     const date = new Date(dateString);
+    if (addDays > 0) {
+      date.setDate(date.getDate() + addDays);
+    }
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -218,7 +287,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
       return '';
     }
 
-    const verwendungszweck = `Rechnung ${rechnungsnummer || ''}`.substring(0, 140);
+    const verwendungszweck = `Rechnung ${rechnungsDaten.rechnungsnummer || ''}`.substring(0, 140);
 
     return [
       'BCD',
@@ -231,15 +300,15 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
       `EUR${Number(betrag).toFixed(2)}`,
       '',
       verwendungszweck,
-      rechnungsnummer?.substring(0, 35) || '',
+      rechnungsDaten.rechnungsnummer?.substring(0, 35) || '',
       '',
       ''
     ].join('\n');
   };
 
-  const handleSave = async () => {
+  const handleSpeichern = async () => {
     if (!selectedEmpfaenger && empfaengerTyp !== 'manuell') {
-      setError('Bitte wählen Sie einen Empfänger aus');
+      setError('Bitte wählen Sie einen Kunden aus');
       return;
     }
     if (empfaengerTyp === 'manuell' && !manuellName) {
@@ -261,15 +330,19 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         empfaenger_name: empfaengerTyp === 'manuell' ? manuellName : selectedEmpfaenger?.name,
         empfaenger_adresse: empfaengerTyp === 'manuell' ? manuellAdresse : selectedEmpfaenger?.adresse,
         empfaenger_email: empfaengerTyp === 'manuell' ? manuellEmail : selectedEmpfaenger?.email,
-        rechnungsdatum,
-        leistungsdatum,
-        faelligkeitsdatum: faelligAm,
-        notizen,
+        rechnungsdatum: rechnungsDaten.belegdatum,
+        leistungsdatum: rechnungsDaten.leistungsdatum,
+        faelligkeitsdatum: rechnungsDaten.zahlungsfrist,
+        rabatt_prozent: rechnungsDaten.rabatt_prozent,
+        skonto_prozent: rechnungsDaten.skonto_prozent,
+        skonto_tage: rechnungsDaten.skonto_tage,
         positionen: positionen.map(pos => ({
           bezeichnung: pos.bezeichnung,
           menge: pos.menge,
           einzelpreis: pos.einzelpreis,
-          mwst_satz: pos.mwst_satz
+          mwst_satz: pos.ust_prozent,
+          ist_rabattfaehig: pos.ist_rabattfaehig,
+          rabatt_prozent: pos.rabatt_prozent
         }))
       };
 
@@ -286,10 +359,9 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         setManuellAdresse('');
         setManuellEmail('');
         setPositionen([]);
-        setNotizen('');
 
         const numRes = await getApi().get('/verband-rechnungen/nummernkreis');
-        if (numRes.data.success) setRechnungsnummer(numRes.data.rechnungsnummer);
+        if (numRes.data.success) setRechnungsDaten(prev => ({ ...prev, rechnungsnummer: numRes.data.rechnungsnummer }));
         loadData();
       }
     } catch (err) {
@@ -300,35 +372,55 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
   };
 
-  const StatusBadge = ({ status }) => {
-    const config = {
-      offen: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)', label: 'Offen' },
-      bezahlt: { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.2)', label: 'Bezahlt' },
-      storniert: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', label: 'Storniert' },
-      mahnung: { color: '#f97316', bg: 'rgba(249, 115, 22, 0.2)', label: 'Mahnung' }
-    }[status] || { color: '#666', bg: '#eee', label: status };
+  // Organisation-Auswahl Modal
+  if (showOrganisationSelection) {
     return (
-      <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: config.color, background: config.bg }}>
-        {config.label}
-      </span>
+      <div className="rechnung-erstellen-container">
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="dojo-selection-modal" style={{ background: '#1a1a2e', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '16px', padding: '1.5rem', maxWidth: '500px', width: '90%' }}>
+            <div className="modal-header" style={{ marginBottom: '1.5rem' }}>
+              <h2 style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+                <Building2 size={24} style={{ color: '#ffd700' }} />
+                Organisation wählen
+              </h2>
+              <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                Für welche Organisation möchten Sie eine Rechnung erstellen?
+              </p>
+            </div>
+            <div className="dojo-selection-grid" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {organisationen.map((org) => (
+                <div
+                  key={org.id}
+                  className="dojo-selection-card"
+                  onClick={() => handleOrganisationSelect(org)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '2px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: '#ffd700' }}>
+                    <Building2 size={32} />
+                  </div>
+                  <h3 style={{ color: '#fff', textAlign: 'center', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{org.name}</h3>
+                  <p style={{ color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0, fontSize: '0.85rem' }}>{org.adresse}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     );
-  };
-
-  const getEmpfaengerName = () => {
-    if (empfaengerTyp === 'manuell') return manuellName || 'Bitte Empfänger wählen';
-    return selectedEmpfaenger?.name || 'Bitte Empfänger wählen';
-  };
-
-  const getEmpfaengerAdresse = () => {
-    if (empfaengerTyp === 'manuell') return manuellAdresse;
-    return selectedEmpfaenger?.adresse || '';
-  };
+  }
 
   if (loading) {
     return (
       <div className="rechnung-erstellen-container">
         <div style={{ textAlign: 'center', padding: '3rem', color: '#ffffff' }}>
-          <Loader2 className="spin" size={32} style={{ animation: 'spin 1s linear infinite' }} />
+          <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
           <p>Lade Daten...</p>
         </div>
       </div>
@@ -337,483 +429,514 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
   return (
     <div className="rechnung-erstellen-container">
-      {/* Alerts */}
-      {error && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <AlertCircle size={18} />
-          <span>{error}</span>
-          <button onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={16} /></button>
-        </div>
-      )}
-      {success && (
-        <div style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <CheckCircle size={18} />
-          <span>{success}</span>
-          <button onClick={() => setSuccess('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={16} /></button>
-        </div>
-      )}
+      <div className="rechnung-editor">
+        {/* Eingabeformular */}
+        <div className="rechnung-form">
+          <h2>NEUE RECHNUNG ERSTELLEN</h2>
 
-      {showRechnungen ? (
-        /* Rechnungsliste */
-        <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ color: '#ffd700', margin: 0 }}>Bestehende Rechnungen</h3>
-            <button onClick={() => setShowRechnungen(false)} className="btn-add">Neue Rechnung</button>
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#888', fontSize: '0.75rem' }}>Nr.</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#888', fontSize: '0.75rem' }}>Empfänger</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#888', fontSize: '0.75rem' }}>Datum</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right', color: '#888', fontSize: '0.75rem' }}>Betrag</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: '#888', fontSize: '0.75rem' }}>Status</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: '#888', fontSize: '0.75rem' }}>PDF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rechnungen.map(r => (
-                <tr key={r.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                  <td style={{ padding: '0.75rem', color: '#ddd' }}>{r.rechnungsnummer}</td>
-                  <td style={{ padding: '0.75rem', color: '#ddd' }}>{r.empfaenger_display_name || r.empfaenger_name}</td>
-                  <td style={{ padding: '0.75rem', color: '#ddd' }}>{formatDateDDMMYYYY(r.rechnungsdatum)}</td>
-                  <td style={{ padding: '0.75rem', color: '#ddd', textAlign: 'right' }}>{formatCurrency(r.summe_brutto)} €</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}><StatusBadge status={r.status} /></td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                    <button onClick={() => window.open(`/api/verband-rechnungen/${r.id}/pdf`, '_blank')} style={{ background: 'none', border: 'none', color: '#c9a227', cursor: 'pointer' }}>
-                      <Eye size={16} />
-                    </button>
-                  </td>
-                </tr>
+          {/* Kunde */}
+          <div className="form-section">
+            <h3>KUNDE</h3>
+            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+              {[
+                { id: 'dojo_mitglied', label: 'Mitglieder' },
+                { id: 'verbandsmitglied', label: 'Verband' },
+                { id: 'software_nutzer', label: 'Software' },
+                { id: 'manuell', label: 'Manuell' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setEmpfaengerTyp(tab.id); setSelectedEmpfaenger(null); }}
+                  style={{
+                    padding: '0.3rem 0.5rem',
+                    fontSize: '0.7rem',
+                    background: empfaengerTyp === tab.id ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${empfaengerTyp === tab.id ? '#ffd700' : 'rgba(255, 255, 255, 0.1)'}`,
+                    borderRadius: '4px',
+                    color: empfaengerTyp === tab.id ? '#ffd700' : '#aaa',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {tab.label}
+                </button>
               ))}
-              {rechnungen.length === 0 && (
-                <tr><td colSpan="6" style={{ textAlign: 'center', color: '#888', padding: '2rem' }}>Noch keine Rechnungen</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* Formular + Vorschau Layout */
-        <div className="rechnung-editor">
-          {/* Linke Seite: Formular */}
-          <div className="rechnung-form">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <h2>TDA Rechnung erstellen</h2>
-              <button onClick={() => setShowRechnungen(true)} style={{ background: 'none', border: '1px solid rgba(255, 215, 0, 0.3)', color: '#ffd700', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}>
-                Rechnungen ({rechnungen.length})
-              </button>
             </div>
 
-            {/* Empfänger */}
-            <div className="form-section">
-              <h3>Empfänger</h3>
-              <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'dojo_mitglied', label: `Mitglieder (${(empfaenger.dojoMitglieder || []).length})` },
-                  { id: 'verbandsmitglied', label: `Verband (${empfaenger.verbandsmitglieder.length})` },
-                  { id: 'software_nutzer', label: `Software (${empfaenger.softwareNutzer.length})` },
-                  { id: 'manuell', label: 'Manuell' }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => { setEmpfaengerTyp(tab.id); setSelectedEmpfaenger(null); }}
-                    style={{
-                      padding: '0.3rem 0.5rem',
-                      fontSize: '0.7rem',
-                      background: empfaengerTyp === tab.id ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                      border: `1px solid ${empfaengerTyp === tab.id ? '#ffd700' : 'rgba(255, 255, 255, 0.1)'}`,
-                      borderRadius: '4px',
-                      color: empfaengerTyp === tab.id ? '#ffd700' : '#aaa',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
+            {empfaengerTyp !== 'manuell' ? (
+              <select
+                onChange={(e) => {
+                  const emp = getFilteredEmpfaenger().find(em => em.id === parseInt(e.target.value));
+                  if (emp) handleEmpfaengerSelect(emp, empfaengerTyp);
+                }}
+                value={selectedEmpfaenger?.id || ''}
+              >
+                <option value="">Bitte wählen...</option>
+                {getFilteredEmpfaenger().map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name} {emp.dojo_name ? `(${emp.dojo_name})` : ''}
+                  </option>
                 ))}
+              </select>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <input type="text" value={manuellName} onChange={(e) => setManuellName(e.target.value)} placeholder="Name / Firma *" />
+                <textarea value={manuellAdresse} onChange={(e) => setManuellAdresse(e.target.value)} placeholder="Adresse" rows={2} style={{ resize: 'none' }} />
+                <input type="email" value={manuellEmail} onChange={(e) => setManuellEmail(e.target.value)} placeholder="E-Mail" />
               </div>
-
-              {empfaengerTyp !== 'manuell' ? (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '4px', padding: '0.3rem 0.5rem', marginBottom: '0.5rem' }}>
-                    <Search size={14} style={{ color: '#666' }} />
-                    <input
-                      type="text"
-                      placeholder="Suchen..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: '0.8rem', outline: 'none' }}
-                    />
-                  </div>
-                  {selectedEmpfaenger ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '6px', padding: '0.5rem 0.75rem' }}>
-                      <div>
-                        <strong style={{ color: '#fff', fontSize: '0.85rem' }}>{selectedEmpfaenger.name}</strong>
-                        {selectedEmpfaenger.dojo_name && <span style={{ marginLeft: '0.5rem', padding: '0.15rem 0.4rem', background: 'rgba(255, 215, 0, 0.2)', color: '#ffd700', borderRadius: '4px', fontSize: '0.65rem' }}>{selectedEmpfaenger.dojo_name}</span>}
-                        <div style={{ color: '#888', fontSize: '0.7rem' }}>{selectedEmpfaenger.email}</div>
-                      </div>
-                      <button onClick={() => setSelectedEmpfaenger(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={14} /></button>
-                    </div>
-                  ) : (
-                    <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      {getFilteredEmpfaenger().slice(0, 8).map(emp => (
-                        <div
-                          key={emp.id}
-                          onClick={() => handleSelectEmpfaenger(emp, empfaengerTyp)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.5rem', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          <strong style={{ color: '#fff', fontSize: '0.8rem' }}>{emp.name}</strong>
-                          {emp.dojo_name && <span style={{ padding: '0.1rem 0.3rem', background: 'rgba(255, 215, 0, 0.2)', color: '#ffd700', borderRadius: '3px', fontSize: '0.6rem' }}>{emp.dojo_name}</span>}
-                        </div>
-                      ))}
-                      {getFilteredEmpfaenger().length === 0 && <div style={{ textAlign: 'center', color: '#666', padding: '0.5rem', fontSize: '0.8rem' }}>Keine Treffer</div>}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <input type="text" value={manuellName} onChange={(e) => setManuellName(e.target.value)} placeholder="Name / Firma *" />
-                  <textarea value={manuellAdresse} onChange={(e) => setManuellAdresse(e.target.value)} placeholder="Adresse *" rows={2} style={{ resize: 'none' }} />
-                  <input type="email" value={manuellEmail} onChange={(e) => setManuellEmail(e.target.value)} placeholder="E-Mail" />
-                </div>
-              )}
-            </div>
-
-            {/* Rechnungsdaten */}
-            <div className="form-section">
-              <h3>Rechnungsdaten</h3>
-              <div className="form-grid">
-                <div>
-                  <label>Belegdatum</label>
-                  <input type="date" value={rechnungsdatum} onChange={(e) => setRechnungsdatum(e.target.value)} />
-                </div>
-                <div>
-                  <label>Leistungsdatum</label>
-                  <input type="date" value={leistungsdatum} onChange={(e) => setLeistungsdatum(e.target.value)} />
-                </div>
-                <div>
-                  <label>Zahlungsfrist</label>
-                  <input type="date" value={faelligAm} onChange={(e) => setFaelligAm(e.target.value)} />
-                </div>
-              </div>
-            </div>
-
-            {/* Position hinzufügen */}
-            <div className="form-section">
-              <h3>Position hinzufügen</h3>
-              <div className="position-input">
-                <select onChange={(e) => handleArtikelChange(e.target.value)} value={neuePosition.artikel_id}>
-                  <option value="">Artikel wählen...</option>
-                  {artikel.map(a => (
-                    <option key={a.artikel_id || a.id} value={a.artikel_id || a.id}>
-                      {a.name || a.bezeichnung} - {formatCurrency(a.verkaufspreis_cent ? a.verkaufspreis_cent / 100 : a.preis)} €
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  placeholder="Menge"
-                  value={neuePosition.menge}
-                  onChange={(e) => setNeuePosition({ ...neuePosition, menge: parseInt(e.target.value) || 1 })}
-                  min="1"
-                  style={{ width: '60px' }}
-                />
-                <button onClick={addPosition} className="btn-add">Hinzufügen</button>
-              </div>
-
-              {/* Hinzugefügte Positionen */}
-              {positionen.length > 0 && (
-                <div style={{ marginTop: '0.75rem', maxHeight: '200px', overflowY: 'auto' }}>
-                  <h4 className="positionen-liste-header">Hinzugefügte Positionen:</h4>
-                  {positionen.map((pos, index) => (
-                    <div key={index} className="position-item">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div className="position-item-text">
-                          <strong>{pos.bezeichnung}</strong> - {pos.menge}x {formatCurrency(pos.einzelpreis)} €
-                        </div>
-                        <button
-                          onClick={() => removePosition(index)}
-                          style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '4px', color: '#ef4444', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', padding: 0 }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Skonto */}
-            <div className="form-section">
-              <h3>Skonto</h3>
-              <div className="form-grid">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    id="skontoAktiv"
-                    checked={skontoAktiv}
-                    onChange={(e) => setSkontoAktiv(e.target.checked)}
-                    style={{ width: '16px', height: '16px' }}
-                  />
-                  <label htmlFor="skontoAktiv" style={{ cursor: 'pointer' }}>Skonto aktiv</label>
-                </div>
-                {skontoAktiv && (
-                  <>
-                    <div>
-                      <label>Skonto %</label>
-                      <input
-                        type="number"
-                        value={skontoProzent}
-                        onChange={(e) => setSkontoProzent(parseFloat(e.target.value) || 0)}
-                        min="0"
-                        max="100"
-                        step="0.5"
-                      />
-                    </div>
-                    <div>
-                      <label>Skonto Tage</label>
-                      <input
-                        type="number"
-                        value={skontoTage}
-                        onChange={(e) => setSkontoTage(parseInt(e.target.value) || 0)}
-                        min="0"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Notizen */}
-            <div className="form-section" style={{ borderBottom: 'none' }}>
-              <h3>Notizen</h3>
-              <textarea
-                value={notizen}
-                onChange={(e) => setNotizen(e.target.value)}
-                placeholder="Optionale Hinweise für die Rechnung..."
-                rows={2}
-                style={{ resize: 'none' }}
-              />
-            </div>
-
-            <button onClick={handleSave} className="btn-save" disabled={saving}>
-              {saving ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Speichern...</> : <><Save size={16} /> Rechnung speichern</>}
-            </button>
+            )}
           </div>
 
-          {/* Rechte Seite: Vorschau */}
-          <div className="rechnung-preview">
-            <div className="invoice-page">
-              {/* Header */}
-              <div className="invoice-header">
-                <div className="company-info">
-                  <div className="company-small">
-                    Tiger & Dragon Association International | Ohmstr. 14 | 84137 Vilsbiburg
-                  </div>
-                  <div className="recipient-address">
-                    {selectedEmpfaenger || (empfaengerTyp === 'manuell' && manuellName) ? (
-                      <>
-                        <div>Herrn/Frau</div>
-                        <div>{getEmpfaengerName()}</div>
-                        {getEmpfaengerAdresse() && getEmpfaengerAdresse().split('\n').map((line, i) => (
-                          <div key={i}>{line}</div>
-                        ))}
-                      </>
-                    ) : (
-                      <div style={{ color: '#999' }}>Bitte Kunde wählen</div>
+          {/* Rechnungsdaten */}
+          <div className="form-section">
+            <h3>RECHNUNGSDATEN</h3>
+            <div className="form-grid">
+              <div>
+                <label>Belegdatum</label>
+                <input
+                  type="date"
+                  value={rechnungsDaten.belegdatum}
+                  onChange={(e) => setRechnungsDaten({
+                    ...rechnungsDaten,
+                    belegdatum: e.target.value,
+                    zahlungsfrist: calculateZahlungsfrist(e.target.value)
+                  })}
+                />
+              </div>
+              <div>
+                <label>Leistungsdatum</label>
+                <input
+                  type="date"
+                  value={rechnungsDaten.leistungsdatum}
+                  onChange={(e) => setRechnungsDaten({ ...rechnungsDaten, leistungsdatum: e.target.value })}
+                />
+              </div>
+              <div>
+                <label>Zahlungsfrist</label>
+                <input
+                  type="date"
+                  value={rechnungsDaten.zahlungsfrist}
+                  onChange={(e) => setRechnungsDaten({ ...rechnungsDaten, zahlungsfrist: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Position hinzufügen */}
+          <div className="form-section">
+            <h3>POSITION HINZUFÜGEN</h3>
+            <div className="position-input">
+              <select onChange={(e) => handleArtikelChange(e.target.value)} value={neuePosition.artikel_id}>
+                <option value="">Artikel wählen...</option>
+                {artikel.map(a => (
+                  <option key={a.artikel_id || a.id} value={a.artikel_id || a.id}>
+                    {a.name || a.bezeichnung}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={neuePosition.menge}
+                onChange={(e) => setNeuePosition({ ...neuePosition, menge: parseInt(e.target.value) || 1 })}
+                min="1"
+                style={{ width: '60px' }}
+              />
+              <button onClick={addPosition} className="btn-add">Hinzufügen</button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <input
+                type="checkbox"
+                id="rabattfaehig"
+                checked={neuePosition.ist_rabattfaehig}
+                onChange={(e) => setNeuePosition({ ...neuePosition, ist_rabattfaehig: e.target.checked })}
+                style={{ width: '14px', height: '14px' }}
+              />
+              <label htmlFor="rabattfaehig" className="checkbox-label">Rabattfähig</label>
+            </div>
+
+            {/* Hinzugefügte Positionen */}
+            {positionen.length > 0 && (
+              <div style={{ marginTop: '0.75rem', maxHeight: '150px', overflowY: 'auto' }}>
+                {positionen.map((pos, index) => (
+                  <div key={index} className="position-item">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className="position-item-text">
+                        <strong>{pos.bezeichnung}</strong> - {pos.menge}x {pos.einzelpreis.toFixed(2)} €
+                        {pos.ist_rabattfaehig && pos.rabatt_prozent > 0 && (
+                          <span style={{ color: '#ffd700', marginLeft: '0.5rem' }}>(-{pos.rabatt_prozent}%)</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removePosition(index)}
+                        style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '4px', color: '#ef4444', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', padding: 0 }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {pos.ist_rabattfaehig && (
+                      <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label className="rabatt-label">Rabatt %:</label>
+                        <input
+                          type="number"
+                          className="rabatt-input"
+                          value={pos.rabatt_prozent}
+                          onChange={(e) => {
+                            const updatedPositionen = [...positionen];
+                            updatedPositionen[index] = { ...pos, rabatt_prozent: parseFloat(e.target.value) || 0 };
+                            setPositionen(updatedPositionen);
+                          }}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                        />
+                      </div>
                     )}
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Rabatt & Skonto */}
+          <div className="form-section">
+            <h3>RABATT & SKONTO</h3>
+            <div className="form-grid">
+              <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <label>Rabatt %</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowRabattHinweis(!showRabattHinweis)}
+                    style={{
+                      background: 'rgba(255, 215, 0, 0.2)',
+                      border: '1px solid rgba(255, 215, 0, 0.4)',
+                      borderRadius: '50%',
+                      color: '#ffd700',
+                      width: '14px',
+                      height: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: '0.65rem',
+                      fontWeight: 'bold',
+                      padding: 0
+                    }}
+                  >
+                    ?
+                  </button>
                 </div>
-                <div className="invoice-meta">
-                  <div className="logo-placeholder">TDA</div>
-                  <div className="invoice-numbers">
-                    <div>Rechnungs-Nr.: {rechnungsnummer || 'wird generiert'}</div>
-                    <div>Kundennummer: {selectedEmpfaenger?.id || '-'}</div>
-                    <div>Belegdatum: {formatDateDDMMYYYY(rechnungsdatum)}</div>
-                    <div>Liefer-/Leistungsdatum: {formatDateDDMMYYYY(leistungsdatum)}</div>
-                  </div>
+                <input
+                  type="number"
+                  value={rechnungsDaten.rabatt_prozent}
+                  onChange={(e) => setRechnungsDaten({ ...rechnungsDaten, rabatt_prozent: parseFloat(e.target.value) || 0 })}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label>Skonto %</label>
+                <input
+                  type="number"
+                  value={rechnungsDaten.skonto_prozent}
+                  onChange={(e) => setRechnungsDaten({ ...rechnungsDaten, skonto_prozent: parseFloat(e.target.value) || 0 })}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label>Skonto Tage</label>
+                <input
+                  type="number"
+                  value={rechnungsDaten.skonto_tage}
+                  readOnly
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', cursor: 'not-allowed' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Rabatt Hinweis Modal */}
+          {showRabattHinweis && (
+            <>
+              <div style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 9999,
+                padding: '1rem',
+                background: 'rgba(255, 215, 0, 0.98)',
+                border: '2px solid #ffd700',
+                borderRadius: '8px',
+                color: '#000',
+                fontSize: '0.85rem',
+                maxWidth: '320px',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)'
+              }}>
+                <strong>Globaler Rabatt:</strong> Dieser Rabatt wird auf die gesamte Rechnung angewendet.
+                <br /><br />
+                Für <strong>einzelne Positionen</strong> können Sie den Rabatt oben in der Positionsliste festlegen.
+                <button
+                  onClick={() => setShowRabattHinweis(false)}
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.4rem 0.75rem',
+                    background: '#000',
+                    color: '#ffd700',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  Verstanden
+                </button>
+              </div>
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 9998
+              }} onClick={() => setShowRabattHinweis(false)} />
+            </>
+          )}
+
+          {error && (
+            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.5rem', borderRadius: '6px', marginTop: '0.5rem', fontSize: '0.8rem' }}>
+              {error}
+            </div>
+          )}
+
+          <button onClick={handleSpeichern} className="btn-save" disabled={saving}>
+            {saving ? 'Speichern...' : 'Rechnung speichern'}
+          </button>
+        </div>
+
+        {/* Rechnungsvorschau */}
+        <div className="rechnung-preview">
+          <div className="invoice-page">
+            {/* Header */}
+            <div className="invoice-header">
+              <div className="company-info">
+                <div className="company-small">
+                  {selectedOrganisation?.name} | {selectedOrganisation?.adresse}
+                </div>
+                <div className="recipient-address">
+                  {selectedEmpfaenger ? (
+                    <>
+                      <div>Herrn/Frau</div>
+                      <div>{selectedEmpfaenger.name}</div>
+                      {selectedEmpfaenger.adresse && selectedEmpfaenger.adresse.split('\n').map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
+                    </>
+                  ) : empfaengerTyp === 'manuell' && manuellName ? (
+                    <>
+                      <div>Herrn/Frau</div>
+                      <div>{manuellName}</div>
+                      {manuellAdresse && manuellAdresse.split('\n').map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
+                    </>
+                  ) : (
+                    <div style={{ color: '#999' }}>Bitte Kunde wählen</div>
+                  )}
                 </div>
               </div>
-
-              {/* Title */}
-              <div className="invoice-title">
-                <h1 style={{ color: '#000000', fontWeight: 'bold', textShadow: 'none', boxShadow: 'none' }}>Rechnung</h1>
-                <div className="page-number">Seite 1 von 1</div>
+              <div className="invoice-meta">
+                <div className="logo-placeholder">TDA</div>
+                <div className="invoice-numbers">
+                  <div>Rechnungs-Nr.: {rechnungsDaten.rechnungsnummer}</div>
+                  <div>Kundennummer: {rechnungsDaten.kundennummer || '-'}</div>
+                  <div>Belegdatum: {rechnungsDaten.belegdatum}</div>
+                  <div>Liefer-/Leistungsdatum: {rechnungsDaten.leistungsdatum}</div>
+                </div>
               </div>
+            </div>
 
-              {/* Positions Table */}
-              <table className="invoice-table">
-                <thead>
-                  <tr>
-                    <th>Pos.</th>
-                    <th>Bezeichnung</th>
-                    <th>Artikelnummer</th>
-                    <th>Menge</th>
-                    <th>Einheit</th>
-                    <th>Preis</th>
-                    <th>USt %</th>
-                    <th>Betrag EUR</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {positionen.length > 0 ? positionen.map((pos, index) => (
+            {/* Title */}
+            <div className="invoice-title">
+              <h1>RECHNUNG</h1>
+              <div className="page-number">Seite 1 von 1</div>
+            </div>
+
+            {/* Positions Table */}
+            <table className="invoice-table">
+              <thead>
+                <tr>
+                  <th>Pos.</th>
+                  <th>Bezeichnung</th>
+                  <th>Artikelnummer</th>
+                  <th>Menge</th>
+                  <th>Einheit</th>
+                  <th>Preis</th>
+                  <th>Rabatt %</th>
+                  <th>USt %</th>
+                  <th>Betrag EUR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positionen.map((pos, index) => {
+                  const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
+                  const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+                  const nettoPreis = bruttoPreis - rabattBetrag;
+
+                  return (
                     <tr key={index}>
                       <td>{pos.pos}</td>
                       <td>{pos.bezeichnung}</td>
-                      <td>-</td>
-                      <td style={{ textAlign: 'right' }}>{pos.menge}</td>
-                      <td style={{ textAlign: 'center' }}>Stk.</td>
-                      <td style={{ textAlign: 'right' }}>{formatCurrency(pos.einzelpreis)}</td>
-                      <td style={{ textAlign: 'right' }}>{pos.mwst_satz.toFixed(2)} %</td>
-                      <td style={{ textAlign: 'right' }}>{formatCurrency(pos.einzelpreis * pos.menge)}</td>
+                      <td>{pos.artikelnummer || '-'}</td>
+                      <td>{pos.menge}</td>
+                      <td>Stk.</td>
+                      <td>{Number(pos.einzelpreis).toFixed(2)}</td>
+                      <td>{pos.ist_rabattfaehig ? `${Number(pos.rabatt_prozent).toFixed(2)} %` : '-'}</td>
+                      <td>{Number(pos.ust_prozent).toFixed(2)} %</td>
+                      <td>{nettoPreis.toFixed(2)}</td>
                     </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>
-                        Keine Positionen
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  );
+                })}
+              </tbody>
+            </table>
 
-              {/* Totals */}
-              <div className="invoice-totals">
+            {/* Totals */}
+            <div className="invoice-totals">
+              <div className="totals-row">
+                <span>Zwischensumme:</span>
+                <span>{calculateZwischensumme().toFixed(2)}</span>
+              </div>
+              {rechnungsDaten.rabatt_prozent > 0 && (
                 <div className="totals-row">
-                  <span>Zwischensumme:</span>
-                  <span>{formatCurrency(calculateNetto())}</span>
+                  <span>{rechnungsDaten.rabatt_prozent.toFixed(2)} % Rabatt:</span>
+                  <span>-{calculateRabatt().toFixed(2)}</span>
                 </div>
-                <div className="totals-row">
-                  <span>Summe:</span>
-                  <span>{formatCurrency(calculateNetto())}</span>
-                </div>
-                <div className="totals-row">
-                  <span>19,00 % USt. auf EUR {formatCurrency(calculateNetto())}:</span>
-                  <span>{formatCurrency(calculateMwst())}</span>
-                </div>
-                <div className="totals-row total-final">
-                  <span>Endbetrag:</span>
-                  <span>{formatCurrency(calculateBrutto())}</span>
-                </div>
+              )}
+              <div className="totals-row">
+                <span>Summe:</span>
+                <span>{calculateSumme().toFixed(2)}</span>
+              </div>
+              <div className="totals-row">
+                <span>19,00 % USt. auf EUR {calculateSumme().toFixed(2)}:</span>
+                <span>{calculateUSt().toFixed(2)}</span>
+              </div>
+              <div className="totals-row total-final">
+                <span>Endbetrag:</span>
+                <span>{calculateEndbetrag().toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Payment Terms und QR Codes */}
+            <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', alignItems: 'flex-start' }}>
+              <div className="payment-terms" style={{ flex: '1', minWidth: '300px' }}>
+                <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
+                {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
+                  <p>
+                    {Number(rechnungsDaten.skonto_prozent).toFixed(2)} % Skonto bei Zahlung innerhalb von {rechnungsDaten.skonto_tage} Tagen (bis zum {formatDateDDMMYYYY(rechnungsDaten.belegdatum, rechnungsDaten.skonto_tage)}).
+                    <br />
+                    Ohne Abzug bis zum {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}.
+                    <br />
+                    Skonto-Betrag: {calculateSkonto().toFixed(2)} €
+                    <br />
+                    Zu überweisender Betrag: {(calculateEndbetrag() - calculateSkonto()).toFixed(2)} €
+                  </p>
+                ) : (
+                  <p>Ohne Abzug bis zum {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}.</p>
+                )}
               </div>
 
-              {/* Payment Terms und QR Codes nebeneinander */}
-              <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', alignItems: 'flex-start' }}>
-                {/* Payment Terms - Links */}
-                <div className="payment-terms" style={{ flex: '1', minWidth: '300px' }}>
-                  <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
-                  {skontoAktiv && skontoProzent > 0 && skontoTage > 0 ? (
-                    <p>
-                      {skontoProzent.toFixed(2)} % Skonto bei Zahlung innerhalb von {skontoTage} Tagen (bis zum {formatDateDDMMYYYY(getSkontoDatum())}).
-                      <br />
-                      Ohne Abzug bis zum {formatDateDDMMYYYY(faelligAm)}.
-                      <br />
-                      Skonto-Betrag: {formatCurrency(calculateSkontoBetrag())} €
-                      <br />
-                      Zu überweisender Betrag: {formatCurrency(calculateBruttoMitSkonto())} €
-                    </p>
-                  ) : (
-                    <p>Ohne Abzug bis zum {formatDateDDMMYYYY(faelligAm)}.</p>
-                  )}
-                  {notizen && (
-                    <p style={{ marginTop: '1rem', fontStyle: 'italic' }}>
-                      Hinweis: {notizen}
-                    </p>
-                  )}
-                </div>
-
-                {/* QR Codes für Überweisung - Rechts */}
-                {calculateBrutto() > 0 && (
-                  <div className="qr-codes-section" style={{ flex: '0 0 auto', display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', width: skontoAktiv ? '180px' : '100px', marginRight: '5mm' }}>
-                    {skontoAktiv && skontoProzent > 0 && skontoTage > 0 ? (
-                      <>
-                        {/* QR-Code mit Skonto */}
-                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
-                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
-                            <QRCodeSVG
-                              value={generateEPCQRCode(calculateBruttoMitSkonto())}
-                              size={70}
-                              level="M"
-                            />
-                          </div>
-                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                            Betrag: {formatCurrency(calculateBruttoMitSkonto())} €
-                          </p>
-                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                            bis zum {formatDateDDMMYYYY(getSkontoDatum())} zu zahlen
-                          </p>
-                        </div>
-                        {/* QR-Code ohne Skonto */}
-                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
-                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
-                            <QRCodeSVG
-                              value={generateEPCQRCode(calculateBrutto())}
-                              size={70}
-                              level="M"
-                            />
-                          </div>
-                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                            Betrag: {formatCurrency(calculateBrutto())} €
-                          </p>
-                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                            ab {formatDateDDMMYYYY(faelligAm)} zu zahlen
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      /* QR-Code ohne Skonto (wenn kein Skonto definiert) */
+              {/* QR Codes */}
+              {calculateEndbetrag() > 0 && (
+                <div className="qr-codes-section" style={{ flex: '0 0 auto', display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', width: Number(rechnungsDaten.skonto_prozent) > 0 ? '180px' : '90px', marginRight: '5mm' }}>
+                  {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
+                    <>
+                      {/* QR-Code mit Skonto */}
                       <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
+                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
                         <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
                           <QRCodeSVG
-                            value={generateEPCQRCode(calculateBrutto())}
+                            value={generateEPCQRCode(calculateEndbetrag() - calculateSkonto())}
                             size={70}
                             level="M"
                           />
                         </div>
-                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                          Betrag: {formatCurrency(calculateBrutto())} €
+                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000', fontWeight: '600' }}>
+                          Betrag: {(calculateEndbetrag() - calculateSkonto()).toFixed(2)} €
                         </p>
-                        <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                          bis zum {formatDateDDMMYYYY(faelligAm)} zu zahlen
+                        <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000' }}>
+                          bis zum {formatDateDDMMYYYY(rechnungsDaten.belegdatum, rechnungsDaten.skonto_tage)}
                         </p>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      {/* QR-Code ohne Skonto */}
+                      <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
+                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
+                        <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                          <QRCodeSVG
+                            value={generateEPCQRCode(calculateEndbetrag())}
+                            size={70}
+                            level="M"
+                          />
+                        </div>
+                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000', fontWeight: '600' }}>
+                          Betrag: {calculateEndbetrag().toFixed(2)} €
+                        </p>
+                        <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000' }}>
+                          ab {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
+                      <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
+                      <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                        <QRCodeSVG
+                          value={generateEPCQRCode(calculateEndbetrag())}
+                          size={70}
+                          level="M"
+                        />
+                      </div>
+                      <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000', fontWeight: '600' }}>
+                        Betrag: {calculateEndbetrag().toFixed(2)} €
+                      </p>
+                      <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000' }}>
+                        bis zum {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
-              {/* Fußzeile mit TDA-Daten und Bankdaten */}
-              <div className="rechnung-footer" style={{
-                position: 'absolute',
-                bottom: '0',
-                left: '20mm',
-                right: '20mm',
-                paddingTop: '0.75rem',
-                paddingBottom: '0.5rem',
-                borderTop: '1px solid rgba(0, 0, 0, 0.2)',
-                fontSize: '7pt',
-                color: '#000000',
-                lineHeight: '1.6',
-                textAlign: 'center'
-              }}>
-                {/* Zeile 1: TDA-Informationen */}
-                <div style={{ marginBottom: '0.3rem' }}>
-                  Tiger & Dragon Association International | Ohmstr. 14 | 84137 Vilsbiburg | info@tda-intl.org | www.tda-intl.org
-                </div>
-                {/* Zeile 2: Bankdaten */}
-                <div>
-                  {bankDaten.bank_name} | {bankDaten.kontoinhaber} | {bankDaten.iban} | {bankDaten.bic}
-                </div>
+            {/* Footer */}
+            <div className="rechnung-footer" style={{
+              position: 'absolute',
+              bottom: '0',
+              left: '20mm',
+              right: '20mm',
+              paddingTop: '0.75rem',
+              paddingBottom: '0.5rem',
+              borderTop: '1px solid rgba(0, 0, 0, 0.2)',
+              fontSize: '7pt',
+              color: '#000',
+              lineHeight: '1.6',
+              textAlign: 'center'
+            }}>
+              <div style={{ marginBottom: '0.3rem' }}>
+                {selectedOrganisation?.name} | {selectedOrganisation?.adresse} | info@tda-intl.org | www.tda-intl.org
+              </div>
+              <div>
+                {bankDaten.bank_name} | {bankDaten.kontoinhaber} | {bankDaten.iban} | {bankDaten.bic}
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Vorschau Modal nach Erstellung */}
+      {/* Vorschau Modal */}
       {showVorschauModal && (
         <div className="modal-overlay" onClick={() => setShowVorschauModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a2e', border: '1px solid rgba(201, 162, 39, 0.3)', borderRadius: '12px', width: '900px', height: '85vh', maxWidth: '90vw', display: 'flex', flexDirection: 'column' }}>
