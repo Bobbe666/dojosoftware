@@ -6,7 +6,7 @@ import {
   FileText, Plus, Trash2, Save, Eye, Download, Building2, User,
   Euro, Calendar, Search, X, CheckCircle, AlertCircle, Loader2, Users
 } from 'lucide-react';
-import '../styles/RechnungErstellen.css';
+import '../styles/VerbandRechnungErstellen.css';
 
 const VerbandRechnungErstellen = ({ token: propToken }) => {
   const { token: contextToken } = useAuth();
@@ -28,6 +28,11 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   const [leistungsdatum, setLeistungsdatum] = useState(new Date().toISOString().split('T')[0]);
   const [faelligAm, setFaelligAm] = useState('');
   const [notizen, setNotizen] = useState('');
+
+  // Skonto
+  const [skontoAktiv, setSkontoAktiv] = useState(false);
+  const [skontoProzent, setSkontoProzent] = useState(2);
+  const [skontoTage, setSkontoTage] = useState(7);
 
   // Manuelle Empfängerdaten
   const [manuellName, setManuellName] = useState('');
@@ -178,6 +183,22 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
   const calculateBrutto = () => {
     return calculateNetto() + calculateMwst();
+  };
+
+  const calculateSkontoBetrag = () => {
+    if (!skontoAktiv) return 0;
+    return calculateBrutto() * (skontoProzent / 100);
+  };
+
+  const calculateBruttoMitSkonto = () => {
+    return calculateBrutto() - calculateSkontoBetrag();
+  };
+
+  const getSkontoDatum = () => {
+    if (!rechnungsdatum || !skontoAktiv) return '';
+    const date = new Date(rechnungsdatum);
+    date.setDate(date.getDate() + skontoTage);
+    return date.toISOString().split('T')[0];
   };
 
   const formatCurrency = (n) => (n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -522,6 +543,47 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
               )}
             </div>
 
+            {/* Skonto */}
+            <div className="form-section">
+              <h3>Skonto</h3>
+              <div className="form-grid">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    id="skontoAktiv"
+                    checked={skontoAktiv}
+                    onChange={(e) => setSkontoAktiv(e.target.checked)}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  <label htmlFor="skontoAktiv" style={{ cursor: 'pointer' }}>Skonto aktiv</label>
+                </div>
+                {skontoAktiv && (
+                  <>
+                    <div>
+                      <label>Skonto %</label>
+                      <input
+                        type="number"
+                        value={skontoProzent}
+                        onChange={(e) => setSkontoProzent(parseFloat(e.target.value) || 0)}
+                        min="0"
+                        max="100"
+                        step="0.5"
+                      />
+                    </div>
+                    <div>
+                      <label>Skonto Tage</label>
+                      <input
+                        type="number"
+                        value={skontoTage}
+                        onChange={(e) => setSkontoTage(parseInt(e.target.value) || 0)}
+                        min="0"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* Notizen */}
             <div className="form-section" style={{ borderBottom: 'none' }}>
               <h3>Notizen</h3>
@@ -546,7 +608,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
               <div className="invoice-header">
                 <div className="company-info">
                   <div className="company-small">
-                    Tiger & Dragon Association International | Schwandweg 3a | 92712 Pirk
+                    Tiger & Dragon Association International | Ohmstr. 14 | 84137 Vilsbiburg
                   </div>
                   <div className="recipient-address">
                     {selectedEmpfaenger || (empfaengerTyp === 'manuell' && manuellName) ? (
@@ -640,7 +702,19 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 {/* Payment Terms - Links */}
                 <div className="payment-terms" style={{ flex: '1', minWidth: '300px' }}>
                   <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
-                  <p>Ohne Abzug bis zum {formatDateDDMMYYYY(faelligAm)}.</p>
+                  {skontoAktiv && skontoProzent > 0 && skontoTage > 0 ? (
+                    <p>
+                      {skontoProzent.toFixed(2)} % Skonto bei Zahlung innerhalb von {skontoTage} Tagen (bis zum {formatDateDDMMYYYY(getSkontoDatum())}).
+                      <br />
+                      Ohne Abzug bis zum {formatDateDDMMYYYY(faelligAm)}.
+                      <br />
+                      Skonto-Betrag: {formatCurrency(calculateSkontoBetrag())} €
+                      <br />
+                      Zu überweisender Betrag: {formatCurrency(calculateBruttoMitSkonto())} €
+                    </p>
+                  ) : (
+                    <p>Ohne Abzug bis zum {formatDateDDMMYYYY(faelligAm)}.</p>
+                  )}
                   {notizen && (
                     <p style={{ marginTop: '1rem', fontStyle: 'italic' }}>
                       Hinweis: {notizen}
@@ -650,23 +724,63 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
                 {/* QR Codes für Überweisung - Rechts */}
                 {calculateBrutto() > 0 && (
-                  <div className="qr-codes-section" style={{ flex: '0 0 auto', display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', width: '100px', marginRight: '5mm' }}>
-                    <div style={{ textAlign: 'center', flex: '0 0 auto', width: '100px' }}>
-                      <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
-                      <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
-                        <QRCodeSVG
-                          value={generateEPCQRCode(calculateBrutto())}
-                          size={70}
-                          level="M"
-                        />
+                  <div className="qr-codes-section" style={{ flex: '0 0 auto', display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', width: skontoAktiv ? '180px' : '100px', marginRight: '5mm' }}>
+                    {skontoAktiv && skontoProzent > 0 && skontoTage > 0 ? (
+                      <>
+                        {/* QR-Code mit Skonto */}
+                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
+                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
+                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                            <QRCodeSVG
+                              value={generateEPCQRCode(calculateBruttoMitSkonto())}
+                              size={70}
+                              level="M"
+                            />
+                          </div>
+                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            Betrag: {formatCurrency(calculateBruttoMitSkonto())} €
+                          </p>
+                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            bis zum {formatDateDDMMYYYY(getSkontoDatum())} zu zahlen
+                          </p>
+                        </div>
+                        {/* QR-Code ohne Skonto */}
+                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
+                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
+                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                            <QRCodeSVG
+                              value={generateEPCQRCode(calculateBrutto())}
+                              size={70}
+                              level="M"
+                            />
+                          </div>
+                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            Betrag: {formatCurrency(calculateBrutto())} €
+                          </p>
+                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                            ab {formatDateDDMMYYYY(faelligAm)} zu zahlen
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      /* QR-Code ohne Skonto (wenn kein Skonto definiert) */
+                      <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
+                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
+                        <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                          <QRCodeSVG
+                            value={generateEPCQRCode(calculateBrutto())}
+                            size={70}
+                            level="M"
+                          />
+                        </div>
+                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          Betrag: {formatCurrency(calculateBrutto())} €
+                        </p>
+                        <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          bis zum {formatDateDDMMYYYY(faelligAm)} zu zahlen
+                        </p>
                       </div>
-                      <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                        Betrag: {formatCurrency(calculateBrutto())} €
-                      </p>
-                      <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
-                        bis zum {formatDateDDMMYYYY(faelligAm)} zu zahlen
-                      </p>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -687,7 +801,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
               }}>
                 {/* Zeile 1: TDA-Informationen */}
                 <div style={{ marginBottom: '0.3rem' }}>
-                  Tiger & Dragon Association International | Schwandweg 3a | 92712 Pirk | info@tda-intl.org | www.tda-intl.org
+                  Tiger & Dragon Association International | Ohmstr. 14 | 84137 Vilsbiburg | info@tda-intl.org | www.tda-intl.org
                 </div>
                 {/* Zeile 2: Bankdaten */}
                 <div>

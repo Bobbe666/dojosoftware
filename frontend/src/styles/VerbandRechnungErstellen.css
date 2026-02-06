@@ -1,5 +1,217 @@
 /* VerbandRechnungErstellen.css */
 
+/* Override RechnungErstellen.css for dark mode in Buchhaltung context */
+
+/* Container - Dark Mode */
+.rechnung-erstellen-container {
+  min-height: auto;
+  background: transparent !important;
+  padding: 1rem !important;
+}
+
+/* Editor Grid */
+.rechnung-editor {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Form - Dark Mode (left side) */
+.rechnung-erstellen-container .rechnung-form {
+  background: rgba(26, 26, 46, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(201, 162, 39, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 1rem 1.25rem !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  height: fit-content !important;
+  position: sticky !important;
+  top: 1rem !important;
+}
+
+.rechnung-erstellen-container .rechnung-form h2 {
+  margin: 0 0 0.75rem 0 !important;
+  color: #ffd700 !important;
+  font-size: 1.1rem !important;
+  text-shadow: none !important;
+}
+
+.rechnung-erstellen-container .form-section {
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
+}
+
+.rechnung-erstellen-container .form-section:last-of-type,
+.rechnung-erstellen-container .form-section:last-child {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.rechnung-erstellen-container .form-section h3 {
+  margin: 0 0 0.5rem 0 !important;
+  color: #ffd700 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+
+.rechnung-erstellen-container .form-section select,
+.rechnung-erstellen-container .form-section input,
+.rechnung-erstellen-container .form-section textarea {
+  width: 100% !important;
+  padding: 0.4rem 0.5rem !important;
+  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.rechnung-erstellen-container .form-section select:focus,
+.rechnung-erstellen-container .form-section input:focus,
+.rechnung-erstellen-container .form-section textarea:focus {
+  outline: none !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1) !important;
+}
+
+.rechnung-erstellen-container .form-section select option {
+  background: #1a1a2e !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.rechnung-erstellen-container .form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.5rem 0.75rem !important;
+  align-items: start !important;
+}
+
+.rechnung-erstellen-container .form-grid > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.15rem !important;
+}
+
+.rechnung-erstellen-container .form-grid label {
+  display: block !important;
+  margin-bottom: 0 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+/* Checkbox styling */
+.rechnung-erstellen-container input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  cursor: pointer !important;
+}
+
+/* Button styles */
+.rechnung-erstellen-container .btn-add {
+  padding: 0.4rem 0.75rem !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.rechnung-erstellen-container .btn-add:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  transform: translateY(-1px) !important;
+}
+
+.rechnung-erstellen-container .btn-save {
+  width: 100% !important;
+  padding: 0.7rem !important;
+  background: linear-gradient(135deg, #ffd700, #f59e0b) !important;
+  color: #1a1a2e !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin-top: 0.75rem !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+.rechnung-erstellen-container .btn-save:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  transform: translateY(-1px) !important;
+}
+
+.rechnung-erstellen-container .btn-save:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Positions list */
+.rechnung-erstellen-container .positionen-liste-header {
+  font-size: 0.75rem !important;
+  color: #ffd700 !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+}
+
+.rechnung-erstellen-container .position-item {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.rechnung-erstellen-container .position-item-text {
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Position input */
+.rechnung-erstellen-container .position-input {
+  display: grid !important;
+  grid-template-columns: 1fr auto auto !important;
+  gap: 0.5rem !important;
+  align-items: end !important;
+}
+
+/* Preview - keep white/light for paper effect */
+.rechnung-erstellen-container .rechnung-preview {
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .rechnung-editor {
+    grid-template-columns: 1fr !important;
+  }
+
+  .rechnung-erstellen-container .rechnung-form {
+    position: static !important;
+  }
+}
+
+/* ============================================ */
+
 .verband-rechnung-erstellen {
   padding: 1.5rem;
   max-width: 1200px;
