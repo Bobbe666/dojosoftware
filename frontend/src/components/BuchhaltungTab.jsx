@@ -62,6 +62,9 @@ const BuchhaltungTab = ({ token }) => {
   const [bankSearchTerm, setBankSearchTerm] = useState('');
   const [bankLimit, setBankLimit] = useState(30);
   const [bankBetragFilter, setBankBetragFilter] = useState(''); // '', 'einnahmen', 'ausgaben'
+  const [bankKategorieFilter, setBankKategorieFilter] = useState(''); // Filter für zugeordnete Kategorie
+  const [showUmbuchungModal, setShowUmbuchungModal] = useState(false);
+  const [umbuchungTx, setUmbuchungTx] = useState(null);
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -398,6 +401,11 @@ const BuchhaltungTab = ({ token }) => {
       filtered = filtered.filter(tx => parseFloat(tx.betrag) < 0);
     }
 
+    // Kategorie Filter
+    if (bankKategorieFilter) {
+      filtered = filtered.filter(tx => tx.kategorie === bankKategorieFilter);
+    }
+
     // Sortierung
     filtered.sort((a, b) => {
       let aVal, bVal;
@@ -437,6 +445,43 @@ const BuchhaltungTab = ({ token }) => {
     });
 
     return filtered;
+  };
+
+  // Statistik pro Kategorie berechnen
+  const getKategorieStatistik = () => {
+    const stats = {};
+    bankTransaktionen
+      .filter(tx => tx.status === 'zugeordnet' && tx.kategorie)
+      .forEach(tx => {
+        if (!stats[tx.kategorie]) {
+          stats[tx.kategorie] = { count: 0, summe: 0 };
+        }
+        stats[tx.kategorie].count++;
+        stats[tx.kategorie].summe += parseFloat(tx.betrag);
+      });
+    return stats;
+  };
+
+  // Umbuchung - Kategorie ändern
+  const umbuchenTransaktion = async (txId, neueKategorie) => {
+    try {
+      setLoading(true);
+      await axios.post(`/buchhaltung/bank-import/umbuchen/${txId}`, {
+        kategorie: neueKategorie
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Kategorie geändert');
+      setShowUmbuchungModal(false);
+      setUmbuchungTx(null);
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler bei der Umbuchung');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Transaktion löschen
@@ -1146,6 +1191,24 @@ const BuchhaltungTab = ({ token }) => {
                     <option value="einnahmen">Nur Einnahmen</option>
                     <option value="ausgaben">Nur Ausgaben</option>
                   </select>
+                  <select
+                    value={bankKategorieFilter}
+                    onChange={(e) => setBankKategorieFilter(e.target.value)}
+                  >
+                    <option value="">Alle Kategorien</option>
+                    {kategorien.map(k => (
+                      <option key={k.id} value={k.id}>{k.name}</option>
+                    ))}
+                  </select>
+                  {bankKategorieFilter && (
+                    <button
+                      className="btn-small"
+                      onClick={() => setBankKategorieFilter('')}
+                      title="Filter zurücksetzen"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
                 <div className="bank-search">
                   <Search size={16} />
@@ -1322,6 +1385,15 @@ const BuchhaltungTab = ({ token }) => {
                                 onClick={() => deleteTransaktion(tx.transaktion_id)}
                               >
                                 <Trash2 size={14} />
+                              </button>
+                            )}
+                            {tx.status === 'zugeordnet' && (
+                              <button
+                                className="btn-icon"
+                                title="Kategorie ändern (Umbuchung)"
+                                onClick={() => { setUmbuchungTx(tx); setShowUmbuchungModal(true); }}
+                              >
+                                <Edit size={14} />
                               </button>
                             )}
                           </td>
@@ -1896,6 +1968,77 @@ const BuchhaltungTab = ({ token }) => {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== UMBUCHUNG MODAL ==================== */}
+      {showUmbuchungModal && umbuchungTx && (
+        <div className="modal-overlay kategorie-overlay" onClick={() => setShowUmbuchungModal(false)}>
+          <div className="modal kategorie-modal kategorie-modal-wide" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Kategorie ändern (Umbuchung)</h3>
+              <button className="close-btn" onClick={() => setShowUmbuchungModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {/* Transaction Details */}
+              <div className="tx-preview">
+                <div className="tx-preview-row">
+                  <span>Datum:</span>
+                  <span>{formatDate(umbuchungTx.buchungsdatum)}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Betrag:</span>
+                  <span className={umbuchungTx.betrag >= 0 ? 'einnahme' : 'ausgabe'}>
+                    {formatCurrency(umbuchungTx.betrag)}
+                  </span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Auftraggeber:</span>
+                  <span>{umbuchungTx.auftraggeber_empfaenger}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Verwendungszweck:</span>
+                  <span>{umbuchungTx.verwendungszweck}</span>
+                </div>
+                <div className="tx-preview-row highlight">
+                  <span>Aktuelle Kategorie:</span>
+                  <span className="current-kategorie">{getKategorieName(umbuchungTx.kategorie)}</span>
+                </div>
+              </div>
+
+              <h4 className="neue-kategorie-title">Neue Kategorie wählen:</h4>
+
+              <div className="kategorie-grid">
+                {kategorien.map(kat => (
+                  <button
+                    key={kat.id}
+                    className={`kategorie-btn ${kat.typ} ${umbuchungTx.kategorie === kat.id ? 'current' : ''}`}
+                    onClick={() => {
+                      if (kat.id !== umbuchungTx.kategorie) {
+                        umbuchenTransaktion(umbuchungTx.transaktion_id, kat.id);
+                      }
+                    }}
+                    disabled={kat.id === umbuchungTx.kategorie}
+                  >
+                    <span className="kat-name">{kat.name}</span>
+                    <span className="kat-desc">{kat.beschreibung}</span>
+                    {umbuchungTx.kategorie === kat.id && (
+                      <span className="current-marker">Aktuell</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => { setShowUmbuchungModal(false); setUmbuchungTx(null); }}>
+                Abbrechen
+              </button>
             </div>
           </div>
         </div>

@@ -2268,6 +2268,52 @@ router.post('/bank-import/ignorieren/:id', requireSuperAdmin, (req, res) => {
 });
 
 // ===================================================================
+// 🔄 POST /api/buchhaltung/bank-import/umbuchen/:id - Kategorie ändern (Umbuchung)
+// ===================================================================
+router.post('/bank-import/umbuchen/:id', requireSuperAdmin, (req, res) => {
+  const transaktionId = req.params.id;
+  const { kategorie } = req.body;
+
+  if (!kategorie) {
+    return res.status(400).json({ message: 'Kategorie ist erforderlich' });
+  }
+
+  db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ?', [transaktionId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ message: 'Transaktion nicht gefunden' });
+    }
+
+    const tx = results[0];
+
+    // Update Kategorie in bank_transaktionen
+    db.query(`
+      UPDATE bank_transaktionen SET kategorie = ?
+      WHERE transaktion_id = ?
+    `, [kategorie, transaktionId], (err) => {
+      if (err) {
+        console.error('Umbuchung-Fehler:', err);
+        return res.status(500).json({ message: 'Fehler bei der Umbuchung' });
+      }
+
+      // Falls ein Beleg existiert, auch dort die Kategorie ändern
+      if (tx.beleg_id) {
+        db.query(`
+          UPDATE buchhaltung_belege SET kategorie = ?
+          WHERE beleg_id = ?
+        `, [kategorie, tx.beleg_id], (err) => {
+          if (err) {
+            console.error('Beleg-Update-Fehler:', err);
+          }
+          res.json({ message: 'Kategorie geändert' });
+        });
+      } else {
+        res.json({ message: 'Kategorie geändert' });
+      }
+    });
+  });
+});
+
+// ===================================================================
 // 🔄 POST /api/buchhaltung/bank-import/vorschlag-annehmen/:id - Vorschlag annehmen
 // ===================================================================
 router.post('/bank-import/vorschlag-annehmen/:id', requireSuperAdmin, async (req, res) => {
