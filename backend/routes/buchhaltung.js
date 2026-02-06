@@ -2374,6 +2374,49 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireSuperAdmin, async (req
 });
 
 // ===================================================================
+// 🗑️ DELETE /api/buchhaltung/bank-import/transaktion/:id - Einzelne Transaktion löschen
+// ===================================================================
+router.delete('/bank-import/transaktion/:id', requireSuperAdmin, (req, res) => {
+  const transaktionId = req.params.id;
+
+  db.query('DELETE FROM bank_transaktionen WHERE transaktion_id = ? AND beleg_id IS NULL', [transaktionId], (err, result) => {
+    if (err) {
+      console.error('Transaktion-Löschen-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Löschen' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: 'Transaktion nicht gefunden oder bereits mit Beleg verknüpft' });
+    }
+
+    res.json({ message: 'Transaktion gelöscht' });
+  });
+});
+
+// ===================================================================
+// 🗑️ DELETE /api/buchhaltung/bank-import/import/:importId - Ganzen Import löschen
+// ===================================================================
+router.delete('/bank-import/import/:importId', requireSuperAdmin, (req, res) => {
+  const importId = req.params.importId;
+
+  // Lösche nur Transaktionen ohne Beleg-Verknüpfung
+  db.query('DELETE FROM bank_transaktionen WHERE import_id = ? AND beleg_id IS NULL', [importId], (err, result) => {
+    if (err) {
+      console.error('Import-Löschen-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Löschen' });
+    }
+
+    // Update Historie
+    db.query('DELETE FROM bank_import_historie WHERE import_id = ?', [importId], () => {
+      res.json({
+        message: `${result.affectedRows} Transaktionen gelöscht`,
+        deleted: result.affectedRows
+      });
+    });
+  });
+});
+
+// ===================================================================
 // 📜 GET /api/buchhaltung/bank-import/historie - Import-Historie
 // ===================================================================
 router.get('/bank-import/historie', requireSuperAdmin, (req, res) => {

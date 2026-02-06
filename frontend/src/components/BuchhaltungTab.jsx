@@ -358,6 +358,46 @@ const BuchhaltungTab = ({ token }) => {
     }
   };
 
+  // Transaktion löschen
+  const deleteTransaktion = async (txId) => {
+    if (!confirm('Transaktion wirklich löschen?')) return;
+
+    try {
+      setLoading(true);
+      await axios.delete(`/buchhaltung/bank-import/transaktion/${txId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Transaktion gelöscht');
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Löschen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Ganzen Import löschen
+  const deleteImport = async (importId) => {
+    if (!confirm('Alle Transaktionen dieses Imports löschen? (Bereits zugeordnete bleiben erhalten)')) return;
+
+    try {
+      setLoading(true);
+      const res = await axios.delete(`/buchhaltung/bank-import/import/${importId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess(res.data.message);
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Löschen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Initial Load
   useEffect(() => {
     loadKategorien();
@@ -1148,6 +1188,15 @@ const BuchhaltungTab = ({ token }) => {
                                 <XCircle size={14} />
                               </button>
                             )}
+                            {tx.status !== 'zugeordnet' && (
+                              <button
+                                className="btn-icon danger"
+                                title="Transaktion löschen"
+                                onClick={() => deleteTransaktion(tx.transaktion_id)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
                           </td>
                         </tr>
                         {/* Vorschlag-Zeile */}
@@ -1207,6 +1256,7 @@ const BuchhaltungTab = ({ token }) => {
                       <th>Bank</th>
                       <th>Transaktionen</th>
                       <th>Importiert am</th>
+                      <th>Aktion</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1216,6 +1266,15 @@ const BuchhaltungTab = ({ token }) => {
                         <td>{h.bank_name}</td>
                         <td>{h.anzahl_transaktionen}</td>
                         <td>{formatDate(h.importiert_am)}</td>
+                        <td>
+                          <button
+                            className="btn-icon danger"
+                            title="Import löschen"
+                            onClick={() => deleteImport(h.import_id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
