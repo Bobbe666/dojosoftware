@@ -49,16 +49,18 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   const [showVorschau, setShowVorschau] = useState(false);
   const [vorschauUrl, setVorschauUrl] = useState('');
 
-  // API Helper
-  const api = axios.create({
+  // API Helper - mit aktuellem Token
+  const getApi = () => axios.create({
     baseURL: '/api',
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  // Daten laden
+  // Daten laden - nur wenn Token vorhanden
   useEffect(() => {
-    loadData();
-  }, []);
+    if (token) {
+      loadData();
+    }
+  }, [token]);
 
   // Fälligkeitsdatum automatisch setzen (14 Tage nach Rechnungsdatum)
   useEffect(() => {
@@ -73,10 +75,10 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     setLoading(true);
     try {
       const [empfaengerRes, nummernRes, rechnungenRes, artikelRes] = await Promise.all([
-        api.get('/verband-rechnungen/empfaenger'),
-        api.get('/verband-rechnungen/nummernkreis'),
-        api.get('/verband-rechnungen'),
-        api.get('/artikel?dojo_id=2') // TDA International Shop-Artikel
+        getApi().get('/verband-rechnungen/empfaenger'),
+        getApi().get('/verband-rechnungen/nummernkreis'),
+        getApi().get('/verband-rechnungen'),
+        getApi().get('/artikel?dojo_id=2') // TDA International Shop-Artikel
       ]);
 
       if (empfaengerRes.data.success) {
@@ -222,7 +224,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         notizen
       };
 
-      const response = await api.post('/verband-rechnungen', data);
+      const response = await getApi().post('/verband-rechnungen', data);
 
       if (response.data.success) {
         setSuccess(`Rechnung ${rechnungsnummer} erfolgreich erstellt!`);
@@ -240,7 +242,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         setNotizen('');
 
         // Neue Rechnungsnummer laden
-        const numRes = await api.get('/verband-rechnungen/nummernkreis');
+        const numRes = await getApi().get('/verband-rechnungen/nummernkreis');
         if (numRes.data.success) {
           setRechnungsnummer(numRes.data.rechnungsnummer);
         }
