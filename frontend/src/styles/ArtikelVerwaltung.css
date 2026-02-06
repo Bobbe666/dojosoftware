@@ -380,51 +380,50 @@
 }
 
 /* ============================================
-   ARTIKELGRUPPE BADGE - Hell: eckig, Dunkel: rund
+   ARTIKELGRUPPE BADGE - Lesbar auf dunklem Hintergrund
    ============================================ */
 .artikelgruppe-badge {
   display: inline-block !important;
-  padding: 0.25rem 0.75rem !important;
-  border-radius: 4px !important;
-  color: #6B4423 !important;
-  font-size: 0.75rem !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 20px !important;
+  color: #FFD700 !important;
+  font-size: 0.8rem !important;
   font-weight: 600 !important;
-  background: rgba(107, 68, 35, 0.15) !important;
-  border: 1px solid rgba(107, 68, 35, 0.3) !important;
+  background: rgba(139, 90, 43, 0.6) !important;
+  border: 1px solid rgba(255, 215, 0, 0.4) !important;
   white-space: nowrap !important;
   vertical-align: middle !important;
   line-height: 1.4 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ============================================
-   KATEGORIE BADGE - Hell: eckig, Dunkel: rund
+   KATEGORIE BADGE - Lesbar auf dunklem Hintergrund
    ============================================ */
 
 .kategorie-badge {
   display: inline-block !important;
-  padding: 0.25rem 0.75rem !important;
-  border-radius: 4px !important;
-  color: #6B4423 !important;
-  font-size: 0.75rem !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 20px !important;
+  color: #90EE90 !important;
+  font-size: 0.8rem !important;
   font-weight: 600 !important;
-  background: rgba(107, 68, 35, 0.15) !important;
-  border: 1px solid rgba(107, 68, 35, 0.3) !important;
+  background: rgba(34, 139, 34, 0.5) !important;
+  border: 1px solid rgba(144, 238, 144, 0.4) !important;
   white-space: nowrap !important;
   vertical-align: middle !important;
   line-height: 1.4 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Dark Mode - runde Badges mit Gold */
-[data-theme="dark"] .artikelgruppe-badge,
-[data-theme="dark"] .kategorie-badge,
-.dark .artikelgruppe-badge,
-.dark .kategorie-badge,
-body.dark-mode .artikelgruppe-badge,
-body.dark-mode .kategorie-badge {
-  border-radius: 20px !important;
-  background: #6B4423 !important;
-  color: #FFD700 !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+/* Light Mode Override */
+[data-theme="light"] .artikelgruppe-badge,
+[data-theme="light"] .kategorie-badge {
+  border-radius: 4px !important;
+  background: rgba(107, 68, 35, 0.15) !important;
+  color: #6B4423 !important;
+  border: 1px solid rgba(107, 68, 35, 0.3) !important;
+  text-shadow: none !important;
 }
 
 /* ============================================
