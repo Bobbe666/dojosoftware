@@ -1090,7 +1090,7 @@ const BuchhaltungTab = ({ token }) => {
         {/* ==================== RECHNUNGEN ERSTELLEN ==================== */}
         {activeSubTab === 'rechnungen' && (
           <div className="rechnungen-content">
-            <VerbandRechnungErstellen />
+            <VerbandRechnungErstellen token={token} />
           </div>
         )}
 

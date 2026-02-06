@@ -7,8 +7,9 @@ import {
 } from 'lucide-react';
 import '../styles/VerbandRechnungErstellen.css';
 
-const VerbandRechnungErstellen = () => {
-  const { token } = useAuth();
+const VerbandRechnungErstellen = ({ token: propToken }) => {
+  const { token: contextToken } = useAuth();
+  const token = propToken || contextToken;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
