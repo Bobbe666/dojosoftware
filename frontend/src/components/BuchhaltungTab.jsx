@@ -1645,7 +1645,7 @@ const BuchhaltungTab = ({ token }) => {
 
       {/* ==================== KATEGORIE MODAL ==================== */}
       {showKategorieModal && (selectedBankTx || selectedBankTxIds.length > 0) && (
-        <div className="modal-overlay" onClick={() => setShowKategorieModal(false)}>
+        <div className="modal-overlay kategorie-overlay" onClick={() => setShowKategorieModal(false)}>
           <div className="modal kategorie-modal kategorie-modal-wide" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
