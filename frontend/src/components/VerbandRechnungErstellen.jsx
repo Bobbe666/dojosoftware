@@ -3,7 +3,8 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import {
   FileText, Plus, Trash2, Save, Eye, Download, Building2, User,
-  Euro, Calendar, Search, X, CheckCircle, AlertCircle, Loader2, ShoppingBag
+  Euro, Calendar, Search, X, CheckCircle, AlertCircle, Loader2, ShoppingBag,
+  ChevronDown, ChevronUp, List
 } from 'lucide-react';
 import '../styles/VerbandRechnungErstellen.css';
 
@@ -18,7 +19,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   // Empfänger
   const [empfaenger, setEmpfaenger] = useState({ verbandsmitglieder: [], softwareNutzer: [], dojoMitglieder: [] });
   const [selectedEmpfaenger, setSelectedEmpfaenger] = useState(null);
-  const [empfaengerTyp, setEmpfaengerTyp] = useState('verbandsmitglied'); // verbandsmitglied | software_nutzer | dojo_mitglied | manuell
+  const [empfaengerTyp, setEmpfaengerTyp] = useState('dojo_mitglied');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Rechnungsdaten
@@ -45,24 +46,20 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   const [rechnungen, setRechnungen] = useState([]);
   const [showRechnungen, setShowRechnungen] = useState(false);
 
-  // Vorschau
-  const [showVorschau, setShowVorschau] = useState(false);
+  // Vorschau Modal
+  const [showVorschauModal, setShowVorschauModal] = useState(false);
   const [vorschauUrl, setVorschauUrl] = useState('');
 
-  // API Helper - mit aktuellem Token
+  // API Helper
   const getApi = () => axios.create({
     baseURL: '/api',
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  // Daten laden - nur wenn Token vorhanden
   useEffect(() => {
-    if (token) {
-      loadData();
-    }
+    if (token) loadData();
   }, [token]);
 
-  // Fälligkeitsdatum automatisch setzen (14 Tage nach Rechnungsdatum)
   useEffect(() => {
     if (rechnungsdatum) {
       const date = new Date(rechnungsdatum);
@@ -78,19 +75,12 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         getApi().get('/verband-rechnungen/empfaenger'),
         getApi().get('/verband-rechnungen/nummernkreis'),
         getApi().get('/verband-rechnungen'),
-        getApi().get('/artikel?dojo_id=2') // TDA International Shop-Artikel
+        getApi().get('/artikel?dojo_id=2')
       ]);
 
-      if (empfaengerRes.data.success) {
-        setEmpfaenger(empfaengerRes.data.empfaenger);
-      }
-      if (nummernRes.data.success) {
-        setRechnungsnummer(nummernRes.data.rechnungsnummer);
-      }
-      if (rechnungenRes.data.success) {
-        setRechnungen(rechnungenRes.data.rechnungen);
-      }
-      // Artikel laden (kann Array oder {data: []} sein)
+      if (empfaengerRes.data.success) setEmpfaenger(empfaengerRes.data.empfaenger);
+      if (nummernRes.data.success) setRechnungsnummer(nummernRes.data.rechnungsnummer);
+      if (rechnungenRes.data.success) setRechnungen(rechnungenRes.data.rechnungen);
       const artikelData = artikelRes.data?.data || artikelRes.data || [];
       setArtikel(Array.isArray(artikelData) ? artikelData : []);
     } catch (err) {
@@ -101,48 +91,37 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
   };
 
-  // Empfänger auswählen
   const handleSelectEmpfaenger = (emp, typ) => {
     setSelectedEmpfaenger(emp);
     setEmpfaengerTyp(typ);
     setSearchTerm('');
   };
 
-  // Empfänger filtern
   const getFilteredEmpfaenger = () => {
     const term = searchTerm.toLowerCase();
-
     if (empfaengerTyp === 'verbandsmitglied') {
       return empfaenger.verbandsmitglieder.filter(e =>
-        e.name?.toLowerCase().includes(term) ||
-        e.mitgliedsnummer?.toLowerCase().includes(term)
+        e.name?.toLowerCase().includes(term) || e.mitgliedsnummer?.toLowerCase().includes(term)
       );
     } else if (empfaengerTyp === 'dojo_mitglied') {
       return (empfaenger.dojoMitglieder || []).filter(e =>
-        e.name?.toLowerCase().includes(term) ||
-        e.dojo_name?.toLowerCase().includes(term)
+        e.name?.toLowerCase().includes(term) || e.dojo_name?.toLowerCase().includes(term)
       );
     } else if (empfaengerTyp === 'software_nutzer') {
-      return empfaenger.softwareNutzer.filter(e =>
-        e.name?.toLowerCase().includes(term)
-      );
+      return empfaenger.softwareNutzer.filter(e => e.name?.toLowerCase().includes(term));
     }
     return [];
   };
 
-  // Position hinzufügen
   const addPosition = () => {
     setPositionen([...positionen, { artikel_id: '', bezeichnung: '', menge: 1, einzelpreis: 0, mwst_satz: 19, einheit: 'Stück' }]);
   };
 
-  // Artikel auswählen und Felder automatisch ausfüllen
   const handleArtikelSelect = (index, artikelId) => {
     if (!artikelId) {
-      // Manuell - nur artikel_id leeren
       updatePosition(index, 'artikel_id', '');
       return;
     }
-
     const art = artikel.find(a => a.artikel_id == artikelId || a.id == artikelId);
     if (art) {
       const updated = [...positionen];
@@ -158,45 +137,31 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
   };
 
-  // Position entfernen
   const removePosition = (index) => {
-    if (positionen.length > 1) {
-      setPositionen(positionen.filter((_, i) => i !== index));
-    }
+    if (positionen.length > 1) setPositionen(positionen.filter((_, i) => i !== index));
   };
 
-  // Position aktualisieren
   const updatePosition = (index, field, value) => {
     const updated = [...positionen];
     updated[index][field] = value;
     setPositionen(updated);
   };
 
-  // Summen berechnen
   const calculateSums = () => {
-    let netto = 0;
-    let mwst = 0;
-
+    let netto = 0, mwst = 0;
     positionen.forEach(pos => {
       const posNetto = pos.menge * pos.einzelpreis;
       const posMwst = posNetto * (pos.mwst_satz / 100);
       netto += posNetto;
       mwst += posMwst;
     });
-
-    return {
-      netto,
-      mwst,
-      brutto: netto + mwst
-    };
+    return { netto, mwst, brutto: netto + mwst };
   };
 
-  // Rechnung speichern
   const handleSave = async () => {
     setError('');
     setSuccess('');
 
-    // Validierung
     if (empfaengerTyp === 'manuell') {
       if (!manuellName || !manuellAdresse) {
         setError('Bitte Name und Adresse des Empfängers eingeben');
@@ -213,7 +178,6 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
 
     setSaving(true);
-
     try {
       const data = {
         empfaenger_typ: empfaengerTyp,
@@ -233,12 +197,10 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
       if (response.data.success) {
         setSuccess(`Rechnung ${rechnungsnummer} erfolgreich erstellt!`);
-
-        // Vorschau öffnen
         setVorschauUrl(`/api/verband-rechnungen/${response.data.rechnung_id}/pdf`);
-        setShowVorschau(true);
+        setShowVorschauModal(true);
 
-        // Formular zurücksetzen
+        // Reset form
         setSelectedEmpfaenger(null);
         setManuellName('');
         setManuellAdresse('');
@@ -246,13 +208,8 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         setPositionen([{ bezeichnung: '', menge: 1, einzelpreis: 0, mwst_satz: 19, einheit: 'Stück' }]);
         setNotizen('');
 
-        // Neue Rechnungsnummer laden
         const numRes = await getApi().get('/verband-rechnungen/nummernkreis');
-        if (numRes.data.success) {
-          setRechnungsnummer(numRes.data.rechnungsnummer);
-        }
-
-        // Rechnungsliste aktualisieren
+        if (numRes.data.success) setRechnungsnummer(numRes.data.rechnungsnummer);
         loadData();
       }
     } catch (err) {
@@ -263,7 +220,6 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
   };
 
-  // Status Badge
   const StatusBadge = ({ status }) => {
     const config = {
       offen: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)', label: 'Offen' },
@@ -271,7 +227,6 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
       storniert: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', label: 'Storniert' },
       mahnung: { color: '#f97316', bg: 'rgba(249, 115, 22, 0.2)', label: 'Mahnung' }
     }[status] || { color: '#666', bg: '#eee', label: status };
-
     return (
       <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: config.color, background: config.bg }}>
         {config.label}
@@ -281,6 +236,17 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
   const sums = calculateSums();
   const formatCurrency = (n) => (n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '-';
+
+  const getEmpfaengerName = () => {
+    if (empfaengerTyp === 'manuell') return manuellName || 'Empfänger auswählen...';
+    return selectedEmpfaenger?.name || 'Empfänger auswählen...';
+  };
+
+  const getEmpfaengerAdresse = () => {
+    if (empfaengerTyp === 'manuell') return manuellAdresse;
+    return selectedEmpfaenger?.adresse || '';
+  };
 
   if (loading) {
     return (
@@ -293,16 +259,19 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
   return (
     <div className="verband-rechnung-erstellen">
+      {/* Header */}
       <div className="page-header">
         <div className="header-left">
           <FileText size={24} />
-          <h2>Verbandsrechnung erstellen</h2>
+          <h2>Rechnung erstellen</h2>
         </div>
         <button className="btn btn-outline" onClick={() => setShowRechnungen(!showRechnungen)}>
+          <List size={16} />
           {showRechnungen ? 'Neue Rechnung' : `Rechnungen (${rechnungen.length})`}
         </button>
       </div>
 
+      {/* Alerts */}
       {error && (
         <div className="alert alert-error">
           <AlertCircle size={18} />
@@ -310,7 +279,6 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
           <button onClick={() => setError('')}><X size={16} /></button>
         </div>
       )}
-
       {success && (
         <div className="alert alert-success">
           <CheckCircle size={18} />
@@ -339,343 +307,267 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 <tr key={r.id}>
                   <td>{r.rechnungsnummer}</td>
                   <td>{r.empfaenger_display_name || r.empfaenger_name}</td>
-                  <td>{new Date(r.rechnungsdatum).toLocaleDateString('de-DE')}</td>
+                  <td>{formatDate(r.rechnungsdatum)}</td>
                   <td>{formatCurrency(r.summe_brutto)} €</td>
                   <td><StatusBadge status={r.status} /></td>
                   <td>
-                    <button
-                      className="btn-icon"
-                      onClick={() => window.open(`/api/verband-rechnungen/${r.id}/pdf`, '_blank')}
-                      title="PDF anzeigen"
-                    >
+                    <button className="btn-icon" onClick={() => window.open(`/api/verband-rechnungen/${r.id}/pdf`, '_blank')} title="PDF">
                       <Eye size={16} />
                     </button>
                   </td>
                 </tr>
               ))}
               {rechnungen.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', color: '#888' }}>
-                    Noch keine Rechnungen vorhanden
-                  </td>
-                </tr>
+                <tr><td colSpan="6" style={{ textAlign: 'center', color: '#888' }}>Noch keine Rechnungen</td></tr>
               )}
             </tbody>
           </table>
         </div>
       ) : (
-        /* Neue Rechnung erstellen */
-        <div className="rechnung-form">
-          {/* Empfänger-Auswahl */}
-          <div className="form-section">
-            <h3>1. Empfänger auswählen</h3>
-
-            <div className="empfaenger-tabs">
-              <button
-                className={empfaengerTyp === 'verbandsmitglied' ? 'active' : ''}
-                onClick={() => { setEmpfaengerTyp('verbandsmitglied'); setSelectedEmpfaenger(null); }}
-              >
-                <Building2 size={16} />
-                Verbandsmitglieder ({empfaenger.verbandsmitglieder.length})
-              </button>
-              <button
-                className={empfaengerTyp === 'software_nutzer' ? 'active' : ''}
-                onClick={() => { setEmpfaengerTyp('software_nutzer'); setSelectedEmpfaenger(null); }}
-              >
-                <User size={16} />
-                DojoSoftware-Nutzer ({empfaenger.softwareNutzer.length})
-              </button>
-              <button
-                className={empfaengerTyp === 'dojo_mitglied' ? 'active' : ''}
-                onClick={() => { setEmpfaengerTyp('dojo_mitglied'); setSelectedEmpfaenger(null); }}
-              >
-                <User size={16} />
-                Dojo-Mitglieder ({(empfaenger.dojoMitglieder || []).length})
-              </button>
-              <button
-                className={empfaengerTyp === 'manuell' ? 'active' : ''}
-                onClick={() => { setEmpfaengerTyp('manuell'); setSelectedEmpfaenger(null); }}
-              >
-                <FileText size={16} />
-                Manuell eingeben
-              </button>
-            </div>
-
-            {empfaengerTyp !== 'manuell' ? (
-              <>
-                <div className="search-box">
-                  <Search size={18} />
-                  <input
-                    type="text"
-                    placeholder="Empfänger suchen..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+        /* Zwei-Spalten Layout: Formular + Vorschau */
+        <div className="rechnung-split-layout">
+          {/* Linke Seite: Formular */}
+          <div className="rechnung-form-column">
+            {/* Empfänger */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <User size={18} />
+                <span>Empfänger</span>
+              </div>
+              <div className="form-card-body">
+                <div className="empfaenger-tabs compact">
+                  <button className={empfaengerTyp === 'dojo_mitglied' ? 'active' : ''} onClick={() => { setEmpfaengerTyp('dojo_mitglied'); setSelectedEmpfaenger(null); }}>
+                    Mitglieder ({(empfaenger.dojoMitglieder || []).length})
+                  </button>
+                  <button className={empfaengerTyp === 'verbandsmitglied' ? 'active' : ''} onClick={() => { setEmpfaengerTyp('verbandsmitglied'); setSelectedEmpfaenger(null); }}>
+                    Verband ({empfaenger.verbandsmitglieder.length})
+                  </button>
+                  <button className={empfaengerTyp === 'software_nutzer' ? 'active' : ''} onClick={() => { setEmpfaengerTyp('software_nutzer'); setSelectedEmpfaenger(null); }}>
+                    Software ({empfaenger.softwareNutzer.length})
+                  </button>
+                  <button className={empfaengerTyp === 'manuell' ? 'active' : ''} onClick={() => { setEmpfaengerTyp('manuell'); setSelectedEmpfaenger(null); }}>
+                    Manuell
+                  </button>
                 </div>
 
-                {selectedEmpfaenger ? (
-                  <div className="selected-empfaenger">
-                    <div className="empfaenger-info">
-                      <strong>{selectedEmpfaenger.name}</strong>
-                      {selectedEmpfaenger.mitgliedsnummer && (
-                        <span className="mitgliedsnummer">{selectedEmpfaenger.mitgliedsnummer}</span>
-                      )}
-                      <span className="email">{selectedEmpfaenger.email}</span>
-                      <span className="adresse">{selectedEmpfaenger.adresse}</span>
+                {empfaengerTyp !== 'manuell' ? (
+                  <>
+                    <div className="search-box compact">
+                      <Search size={16} />
+                      <input type="text" placeholder="Suchen..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
-                    <button onClick={() => setSelectedEmpfaenger(null)}><X size={16} /></button>
-                  </div>
-                ) : (
-                  <div className="empfaenger-liste">
-                    {getFilteredEmpfaenger().slice(0, 20).map(emp => (
-                      <div
-                        key={emp.id}
-                        className="empfaenger-item"
-                        onClick={() => handleSelectEmpfaenger(emp, empfaengerTyp)}
-                      >
-                        <div className="emp-icon">
-                          {empfaengerTyp === 'verbandsmitglied' ?
-                            (emp.typ === 'dojo' ? <Building2 size={18} /> : <User size={18} />) :
-                            empfaengerTyp === 'dojo_mitglied' ? <User size={18} /> :
-                            <Building2 size={18} />
-                          }
+                    {selectedEmpfaenger ? (
+                      <div className="selected-empfaenger compact">
+                        <div>
+                          <strong>{selectedEmpfaenger.name}</strong>
+                          {selectedEmpfaenger.dojo_name && <span className="dojo-tag">{selectedEmpfaenger.dojo_name}</span>}
+                          <small>{selectedEmpfaenger.email}</small>
                         </div>
-                        <div className="emp-details">
-                          <strong>{emp.name}</strong>
-                          {emp.mitgliedsnummer && <span>{emp.mitgliedsnummer}</span>}
-                          {emp.dojo_name && <span className="dojo-tag">{emp.dojo_name}</span>}
-                          <span className="email">{emp.email}</span>
-                        </div>
+                        <button onClick={() => setSelectedEmpfaenger(null)}><X size={14} /></button>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="empfaenger-liste compact">
+                        {getFilteredEmpfaenger().slice(0, 8).map(emp => (
+                          <div key={emp.id} className="empfaenger-item compact" onClick={() => handleSelectEmpfaenger(emp, empfaengerTyp)}>
+                            <strong>{emp.name}</strong>
+                            {emp.dojo_name && <span className="dojo-tag small">{emp.dojo_name}</span>}
+                          </div>
+                        ))}
+                        {getFilteredEmpfaenger().length === 0 && <div className="no-results">Keine Treffer</div>}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="manuell-form compact">
+                    <input type="text" value={manuellName} onChange={(e) => setManuellName(e.target.value)} placeholder="Name / Firma *" />
+                    <textarea value={manuellAdresse} onChange={(e) => setManuellAdresse(e.target.value)} placeholder="Adresse *" rows={2} />
+                    <input type="email" value={manuellEmail} onChange={(e) => setManuellEmail(e.target.value)} placeholder="E-Mail" />
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="manuell-form">
-                <div className="form-row">
-                  <label>Name / Firma *</label>
-                  <input
-                    type="text"
-                    value={manuellName}
-                    onChange={(e) => setManuellName(e.target.value)}
-                    placeholder="Name des Empfängers"
-                  />
-                </div>
-                <div className="form-row">
-                  <label>Adresse *</label>
-                  <textarea
-                    value={manuellAdresse}
-                    onChange={(e) => setManuellAdresse(e.target.value)}
-                    placeholder="Straße, PLZ Ort"
-                    rows={3}
-                  />
-                </div>
-                <div className="form-row">
-                  <label>E-Mail</label>
-                  <input
-                    type="email"
-                    value={manuellEmail}
-                    onChange={(e) => setManuellEmail(e.target.value)}
-                    placeholder="email@example.com"
-                  />
-                </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Rechnungsdaten */}
-          <div className="form-section">
-            <h3>2. Rechnungsdaten</h3>
-            <div className="form-grid">
-              <div className="form-row">
-                <label>Rechnungsnummer</label>
-                <input type="text" value={rechnungsnummer} readOnly className="readonly" />
+            {/* Rechnungsdaten */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <Calendar size={18} />
+                <span>Rechnungsdaten</span>
               </div>
-              <div className="form-row">
-                <label>Rechnungsdatum</label>
-                <input
-                  type="date"
-                  value={rechnungsdatum}
-                  onChange={(e) => setRechnungsdatum(e.target.value)}
-                />
+              <div className="form-card-body">
+                <div className="form-grid-2">
+                  <div className="form-field">
+                    <label>Rechnungsnr.</label>
+                    <input type="text" value={rechnungsnummer} readOnly className="readonly" />
+                  </div>
+                  <div className="form-field">
+                    <label>Rechnungsdatum</label>
+                    <input type="date" value={rechnungsdatum} onChange={(e) => setRechnungsdatum(e.target.value)} />
+                  </div>
+                  <div className="form-field">
+                    <label>Leistungsdatum</label>
+                    <input type="date" value={leistungsdatum} onChange={(e) => setLeistungsdatum(e.target.value)} />
+                  </div>
+                  <div className="form-field">
+                    <label>Fällig bis</label>
+                    <input type="date" value={faelligAm} onChange={(e) => setFaelligAm(e.target.value)} />
+                  </div>
+                </div>
               </div>
-              <div className="form-row">
-                <label>Leistungsdatum</label>
-                <input
-                  type="date"
-                  value={leistungsdatum}
-                  onChange={(e) => setLeistungsdatum(e.target.value)}
-                />
+            </div>
+
+            {/* Positionen */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <ShoppingBag size={18} />
+                <span>Positionen</span>
+                <button className="btn-add-small" onClick={addPosition}><Plus size={14} /></button>
               </div>
-              <div className="form-row">
-                <label>Fällig bis</label>
-                <input
-                  type="date"
-                  value={faelligAm}
-                  onChange={(e) => setFaelligAm(e.target.value)}
-                />
+              <div className="form-card-body no-padding">
+                <div className="positionen-compact">
+                  {positionen.map((pos, index) => (
+                    <div key={index} className="position-row">
+                      <div className="position-main">
+                        <select value={pos.artikel_id || ''} onChange={(e) => handleArtikelSelect(index, e.target.value)}>
+                          <option value="">Artikel wählen...</option>
+                          {artikel.map(art => (
+                            <option key={art.artikel_id || art.id} value={art.artikel_id || art.id}>
+                              {art.name || art.bezeichnung}
+                            </option>
+                          ))}
+                        </select>
+                        <input type="text" value={pos.bezeichnung} onChange={(e) => updatePosition(index, 'bezeichnung', e.target.value)} placeholder="Bezeichnung" />
+                      </div>
+                      <div className="position-details">
+                        <input type="number" value={pos.menge} onChange={(e) => updatePosition(index, 'menge', parseFloat(e.target.value) || 0)} min="0" step="1" className="menge" />
+                        <span className="multiply">×</span>
+                        <input type="number" value={pos.einzelpreis} onChange={(e) => updatePosition(index, 'einzelpreis', parseFloat(e.target.value) || 0)} min="0" step="0.01" className="preis" />
+                        <span className="currency">€</span>
+                        <select value={pos.mwst_satz} onChange={(e) => updatePosition(index, 'mwst_satz', parseFloat(e.target.value))} className="mwst">
+                          <option value="19">19%</option>
+                          <option value="7">7%</option>
+                          <option value="0">0%</option>
+                        </select>
+                        <span className="pos-total">{formatCurrency(pos.menge * pos.einzelpreis * (1 + pos.mwst_satz / 100))} €</span>
+                        <button className="btn-remove" onClick={() => removePosition(index)} disabled={positionen.length === 1}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Notizen */}
+            <div className="form-card">
+              <div className="form-card-header">
+                <FileText size={18} />
+                <span>Notizen</span>
+              </div>
+              <div className="form-card-body">
+                <textarea value={notizen} onChange={(e) => setNotizen(e.target.value)} placeholder="Optionale Hinweise..." rows={2} />
               </div>
             </div>
           </div>
 
-          {/* Positionen */}
-          <div className="form-section">
-            <h3><ShoppingBag size={16} style={{ marginRight: '0.5rem' }} />3. Positionen</h3>
-            <table className="positionen-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '180px' }}>Artikel</th>
-                  <th>Bezeichnung</th>
-                  <th>Menge</th>
-                  <th>Einheit</th>
-                  <th>Einzelpreis</th>
-                  <th>MwSt.</th>
-                  <th>Gesamt</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {positionen.map((pos, index) => (
-                  <tr key={index}>
-                    <td>
-                      <select
-                        value={pos.artikel_id || ''}
-                        onChange={(e) => handleArtikelSelect(index, e.target.value)}
-                        style={{ minWidth: '150px' }}
-                      >
-                        <option value="">-- Manuell --</option>
-                        {artikel.map(art => (
-                          <option key={art.artikel_id || art.id} value={art.artikel_id || art.id}>
-                            {art.name || art.bezeichnung} ({formatCurrency(art.verkaufspreis_brutto || art.preis || 0)} €)
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={pos.bezeichnung}
-                        onChange={(e) => updatePosition(index, 'bezeichnung', e.target.value)}
-                        placeholder="Beschreibung"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={pos.menge}
-                        onChange={(e) => updatePosition(index, 'menge', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        step="0.01"
-                      />
-                    </td>
-                    <td>
-                      <select
-                        value={pos.einheit}
-                        onChange={(e) => updatePosition(index, 'einheit', e.target.value)}
-                      >
-                        <option value="Stück">Stück</option>
-                        <option value="Monat">Monat</option>
-                        <option value="Jahr">Jahr</option>
-                        <option value="Stunde">Stunde</option>
-                        <option value="Pauschale">Pauschale</option>
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={pos.einzelpreis}
-                        onChange={(e) => updatePosition(index, 'einzelpreis', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        step="0.01"
-                      />
-                    </td>
-                    <td>
-                      <select
-                        value={pos.mwst_satz}
-                        onChange={(e) => updatePosition(index, 'mwst_satz', parseFloat(e.target.value))}
-                      >
-                        <option value="19">19%</option>
-                        <option value="7">7%</option>
-                        <option value="0">0%</option>
-                      </select>
-                    </td>
-                    <td className="text-right">
-                      {formatCurrency(pos.menge * pos.einzelpreis * (1 + pos.mwst_satz / 100))} €
-                    </td>
-                    <td>
-                      <button
-                        className="btn-icon danger"
-                        onClick={() => removePosition(index)}
-                        disabled={positionen.length === 1}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <button className="btn btn-outline add-position" onClick={addPosition}>
-              <Plus size={16} /> Position hinzufügen
-            </button>
-
-            {/* Summen */}
-            <div className="summen">
-              <div className="summe-row">
-                <span>Netto:</span>
-                <span>{formatCurrency(sums.netto)} €</span>
+          {/* Rechte Seite: Live-Vorschau */}
+          <div className="rechnung-preview-column">
+            <div className="preview-card">
+              <div className="preview-header">
+                <Eye size={18} />
+                <span>Live-Vorschau</span>
               </div>
-              <div className="summe-row">
-                <span>MwSt.:</span>
-                <span>{formatCurrency(sums.mwst)} €</span>
+              <div className="preview-content">
+                {/* Rechnungskopf */}
+                <div className="preview-document">
+                  <div className="preview-logo">
+                    <strong>Tiger & Dragon Association</strong>
+                    <small>International</small>
+                  </div>
+
+                  <div className="preview-recipient">
+                    <small>Empfänger:</small>
+                    <strong>{getEmpfaengerName()}</strong>
+                    <span>{getEmpfaengerAdresse()}</span>
+                  </div>
+
+                  <div className="preview-meta">
+                    <div className="preview-title">RECHNUNG</div>
+                    <div className="preview-info">
+                      <div><span>Nr.:</span> <strong>{rechnungsnummer}</strong></div>
+                      <div><span>Datum:</span> {formatDate(rechnungsdatum)}</div>
+                      <div><span>Fällig:</span> {formatDate(faelligAm)}</div>
+                    </div>
+                  </div>
+
+                  {/* Positionen */}
+                  <table className="preview-table">
+                    <thead>
+                      <tr>
+                        <th>Beschreibung</th>
+                        <th>Menge</th>
+                        <th>Preis</th>
+                        <th>Gesamt</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {positionen.filter(p => p.bezeichnung).map((pos, i) => (
+                        <tr key={i}>
+                          <td>{pos.bezeichnung}</td>
+                          <td>{pos.menge}</td>
+                          <td>{formatCurrency(pos.einzelpreis)} €</td>
+                          <td>{formatCurrency(pos.menge * pos.einzelpreis * (1 + pos.mwst_satz / 100))} €</td>
+                        </tr>
+                      ))}
+                      {positionen.every(p => !p.bezeichnung) && (
+                        <tr><td colSpan="4" className="empty">Positionen hinzufügen...</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  {/* Summen */}
+                  <div className="preview-sums">
+                    <div className="sum-row"><span>Netto:</span> <span>{formatCurrency(sums.netto)} €</span></div>
+                    <div className="sum-row"><span>MwSt.:</span> <span>{formatCurrency(sums.mwst)} €</span></div>
+                    <div className="sum-row total"><span>Gesamt:</span> <span>{formatCurrency(sums.brutto)} €</span></div>
+                  </div>
+
+                  {notizen && (
+                    <div className="preview-notes">
+                      <small>Hinweis:</small>
+                      <p>{notizen}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="summe-row total">
-                <span>Gesamtbetrag:</span>
-                <span>{formatCurrency(sums.brutto)} €</span>
+
+              {/* Aktionen */}
+              <div className="preview-actions">
+                <button className="btn btn-primary btn-large" onClick={handleSave} disabled={saving}>
+                  {saving ? <Loader2 className="spin" size={18} /> : <Save size={18} />}
+                  Rechnung erstellen
+                </button>
               </div>
             </div>
-          </div>
-
-          {/* Notizen */}
-          <div className="form-section">
-            <h3>4. Notizen (optional)</h3>
-            <textarea
-              value={notizen}
-              onChange={(e) => setNotizen(e.target.value)}
-              placeholder="Zusätzliche Hinweise für die Rechnung..."
-              rows={3}
-            />
-          </div>
-
-          {/* Aktionen */}
-          <div className="form-actions">
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="spin" size={18} /> : <Save size={18} />}
-              Rechnung erstellen
-            </button>
           </div>
         </div>
       )}
 
-      {/* Vorschau Modal */}
-      {showVorschau && (
-        <div className="modal-overlay" onClick={() => setShowVorschau(false)}>
+      {/* Vorschau Modal nach Erstellung */}
+      {showVorschauModal && (
+        <div className="modal-overlay" onClick={() => setShowVorschauModal(false)}>
           <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Rechnungsvorschau</h3>
-              <button onClick={() => setShowVorschau(false)}><X size={20} /></button>
+              <h3>Rechnung erstellt</h3>
+              <button onClick={() => setShowVorschauModal(false)}><X size={20} /></button>
             </div>
             <div className="modal-body">
               <iframe src={vorschauUrl} title="Rechnung Vorschau" />
             </div>
             <div className="modal-footer">
-              <button className="btn btn-outline" onClick={() => setShowVorschau(false)}>
-                Schließen
-              </button>
+              <button className="btn btn-outline" onClick={() => setShowVorschauModal(false)}>Schließen</button>
               <button className="btn btn-primary" onClick={() => window.open(vorschauUrl + '?print=1', '_blank')}>
-                <Download size={16} /> Drucken / PDF
+                <Download size={16} /> PDF herunterladen
               </button>
             </div>
           </div>
