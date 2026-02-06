@@ -1507,7 +1507,9 @@ router.get('/kategorien', requireSuperAdmin, (req, res) => {
     { id: 'buerokosten', name: 'Bürokosten', typ: 'ausgabe', beschreibung: 'Büromaterial, Porto' },
     { id: 'fortbildung', name: 'Fortbildung', typ: 'ausgabe', beschreibung: 'Seminare, Weiterbildung' },
     { id: 'abschreibungen', name: 'Abschreibungen', typ: 'ausgabe', beschreibung: 'AfA auf Anlagegüter' },
-    { id: 'sonstige_kosten', name: 'Sonstige Kosten', typ: 'ausgabe', beschreibung: 'Sonstige betriebliche Aufwendungen' }
+    { id: 'sonstige_kosten', name: 'Sonstige Kosten', typ: 'ausgabe', beschreibung: 'Sonstige betriebliche Aufwendungen' },
+    { id: 'privateinlage', name: 'Privateinlage', typ: 'privat', beschreibung: 'Private Einzahlung (kein Umsatz)' },
+    { id: 'privatentnahme', name: 'Privatentnahme', typ: 'privat', beschreibung: 'Private Entnahme (keine Ausgabe)' }
   ];
 
   res.json(kategorien);
