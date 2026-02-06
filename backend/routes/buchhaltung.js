@@ -296,13 +296,21 @@ const parseExcelContent = (filePath) => {
       return { error: 'Excel-Datei enthält keine Daten', transaktionen: [] };
     }
 
-    // Finde Header-Zeile (kann in den ersten 10 Zeilen sein)
+    // Finde Header-Zeile (kann in den ersten 15 Zeilen sein - Holvi hat Header in Zeile 7)
     let headerIndex = -1;
     let headers = [];
-    for (let i = 0; i < Math.min(jsonData.length, 10); i++) {
+    for (let i = 0; i < Math.min(jsonData.length, 15); i++) {
       const row = jsonData[i].map(cell => String(cell || '').toLowerCase().trim());
-      // Suche nach typischen Bank-Spalten
-      if (row.some(cell => cell.includes('buchung') || cell.includes('datum') || cell.includes('betrag') || cell.includes('umsatz'))) {
+      // Suche nach typischen Bank-Spalten (inkl. Holvi: valutadatum, gegenpartei)
+      if (row.some(cell =>
+        cell.includes('buchung') ||
+        cell.includes('valuta') ||
+        cell.includes('datum') ||
+        cell.includes('betrag') ||
+        cell.includes('umsatz') ||
+        cell.includes('gegenpartei') ||
+        cell.includes('counterparty')
+      )) {
         headerIndex = i;
         headers = row;
         break;
@@ -411,11 +419,11 @@ const parseExcelRow = (row, headers) => {
     t.betrag = Math.abs(parseGermanAmount(String(habenValue)));
   }
 
-  // Verwendungszweck
-  t.verwendungszweck = findColumn(['verwendungszweck', 'beschreibung', 'buchungstext', 'text', 'info']) || '';
+  // Verwendungszweck (inkl. Holvi: "Bezeichnung", "Nachricht")
+  t.verwendungszweck = findColumn(['verwendungszweck', 'bezeichnung', 'nachricht', 'message', 'description', 'beschreibung', 'buchungstext', 'text', 'info']) || '';
 
-  // Auftraggeber/Empfänger
-  t.auftraggeber_empfaenger = findColumn(['auftraggeber', 'empfänger', 'empfaenger', 'name', 'begünstigter', 'beguenstigter', 'zahlungspflichtiger']) || '';
+  // Auftraggeber/Empfänger (inkl. Holvi: "Gegenpartei")
+  t.auftraggeber_empfaenger = findColumn(['gegenpartei', 'counterparty', 'auftraggeber', 'empfänger', 'empfaenger', 'name', 'begünstigter', 'beguenstigter', 'zahlungspflichtiger']) || '';
 
   // IBAN
   t.iban_gegenkonto = findColumn(['iban', 'konto', 'kontonummer', 'gegenkonto']) || '';
