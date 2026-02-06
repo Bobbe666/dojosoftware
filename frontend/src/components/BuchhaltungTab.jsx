@@ -277,13 +277,16 @@ const BuchhaltungTab = ({ token }) => {
   };
 
   // Batch-Zuordnung
-  const batchZuordnen = async (kategorie) => {
+  const batchZuordnen = async (kategorie, lerneRegel = false) => {
     if (selectedBankTxIds.length === 0) return;
 
     try {
       setLoading(true);
       const transaktionen = selectedBankTxIds.map(id => ({ id, kategorie }));
-      await axios.post('/buchhaltung/bank-import/batch-zuordnen', { transaktionen }, {
+      await axios.post('/buchhaltung/bank-import/batch-zuordnen', {
+        transaktionen,
+        lerne_regel: lerneRegel
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess(`${selectedBankTxIds.length} Transaktionen zugeordnet`);
@@ -1070,20 +1073,12 @@ const BuchhaltungTab = ({ token }) => {
               <div className="bank-batch-actions">
                 <span>{selectedBankTxIds.length} ausgewählt</span>
                 <div className="batch-buttons">
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        batchZuordnen(e.target.value);
-                        e.target.value = '';
-                      }
-                    }}
-                    defaultValue=""
+                  <button
+                    className="btn-primary"
+                    onClick={() => setShowKategorieModal(true)}
                   >
-                    <option value="" disabled>Kategorie zuweisen...</option>
-                    {kategorien.map(k => (
-                      <option key={k.id} value={k.id}>{k.name}</option>
-                    ))}
-                  </select>
+                    Kategorie zuordnen
+                  </button>
                   <button
                     className="btn-secondary"
                     onClick={() => setSelectedBankTxIds([])}
@@ -1649,56 +1644,107 @@ const BuchhaltungTab = ({ token }) => {
       )}
 
       {/* ==================== KATEGORIE MODAL ==================== */}
-      {showKategorieModal && selectedBankTx && (
+      {showKategorieModal && (selectedBankTx || selectedBankTxIds.length > 0) && (
         <div className="modal-overlay" onClick={() => setShowKategorieModal(false)}>
-          <div className="modal kategorie-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal kategorie-modal kategorie-modal-wide" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Kategorie zuordnen</h3>
+              <h3>
+                {selectedBankTxIds.length > 0 && !selectedBankTx
+                  ? `${selectedBankTxIds.length} Transaktionen zuordnen`
+                  : 'Kategorie zuordnen'}
+              </h3>
               <button className="close-btn" onClick={() => setShowKategorieModal(false)}>
                 <X size={20} />
               </button>
             </div>
 
             <div className="modal-body">
-              <div className="tx-preview">
-                <div className="tx-preview-row">
-                  <span>Datum:</span>
-                  <span>{formatDate(selectedBankTx.buchungsdatum)}</span>
-                </div>
-                <div className="tx-preview-row">
-                  <span>Betrag:</span>
-                  <span className={selectedBankTx.betrag >= 0 ? 'einnahme' : 'ausgabe'}>
-                    {formatCurrency(selectedBankTx.betrag)}
-                  </span>
-                </div>
-                <div className="tx-preview-row">
-                  <span>Auftraggeber:</span>
-                  <span>{selectedBankTx.auftraggeber_empfaenger}</span>
-                </div>
-                <div className="tx-preview-row">
-                  <span>Verwendungszweck:</span>
-                  <span>{selectedBankTx.verwendungszweck}</span>
-                </div>
+              {/* Regel lernen - jetzt oben */}
+              <div className="form-group checkbox-group regel-lernen-top">
+                <label>
+                  <input type="checkbox" id="lerne-regel" />
+                  Regel lernen (diese Zuordnung für ähnliche Transaktionen merken)
+                </label>
               </div>
+
+              {/* Single Transaction Preview */}
+              {selectedBankTx && (
+                <div className="tx-preview">
+                  <div className="tx-preview-row">
+                    <span>Datum:</span>
+                    <span>{formatDate(selectedBankTx.buchungsdatum)}</span>
+                  </div>
+                  <div className="tx-preview-row">
+                    <span>Betrag:</span>
+                    <span className={selectedBankTx.betrag >= 0 ? 'einnahme' : 'ausgabe'}>
+                      {formatCurrency(selectedBankTx.betrag)}
+                    </span>
+                  </div>
+                  <div className="tx-preview-row">
+                    <span>Auftraggeber:</span>
+                    <span>{selectedBankTx.auftraggeber_empfaenger}</span>
+                  </div>
+                  <div className="tx-preview-row">
+                    <span>Verwendungszweck:</span>
+                    <span>{selectedBankTx.verwendungszweck}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Batch Preview */}
+              {selectedBankTxIds.length > 0 && !selectedBankTx && (
+                <div className="tx-preview batch-preview">
+                  <div className="batch-summary">
+                    <strong>{selectedBankTxIds.length} Transaktionen ausgewählt</strong>
+                    <span className="batch-total">
+                      Gesamt: {formatCurrency(
+                        bankTransaktionen
+                          .filter(tx => selectedBankTxIds.includes(tx.transaktion_id))
+                          .reduce((sum, tx) => sum + parseFloat(tx.betrag), 0)
+                      )}
+                    </span>
+                  </div>
+                  <div className="batch-list">
+                    {bankTransaktionen
+                      .filter(tx => selectedBankTxIds.includes(tx.transaktion_id))
+                      .slice(0, 5)
+                      .map(tx => (
+                        <div key={tx.transaktion_id} className="batch-item">
+                          <span>{formatDate(tx.buchungsdatum)}</span>
+                          <span className={tx.betrag >= 0 ? 'einnahme' : 'ausgabe'}>
+                            {formatCurrency(tx.betrag)}
+                          </span>
+                          <span>{tx.auftraggeber_empfaenger}</span>
+                        </div>
+                      ))}
+                    {selectedBankTxIds.length > 5 && (
+                      <div className="batch-more">
+                        ... und {selectedBankTxIds.length - 5} weitere
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="kategorie-grid">
                 {kategorien.map(kat => (
                   <button
                     key={kat.id}
                     className={`kategorie-btn ${kat.typ}`}
-                    onClick={() => zuordnenTransaktion(kat.id)}
+                    onClick={() => {
+                      const lerneRegel = document.getElementById('lerne-regel')?.checked || false;
+                      if (selectedBankTxIds.length > 0 && !selectedBankTx) {
+                        batchZuordnen(kat.id, lerneRegel);
+                        setShowKategorieModal(false);
+                      } else {
+                        zuordnenTransaktion(kat.id, lerneRegel);
+                      }
+                    }}
                   >
                     <span className="kat-name">{kat.name}</span>
                     <span className="kat-desc">{kat.beschreibung}</span>
                   </button>
                 ))}
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label>
-                  <input type="checkbox" id="lerne-regel" />
-                  Regel lernen (diese Zuordnung für ähnliche Transaktionen merken)
-                </label>
               </div>
             </div>
           </div>

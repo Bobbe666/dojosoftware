@@ -1271,6 +1271,98 @@
   max-width: 600px;
 }
 
+.kategorie-modal-wide {
+  max-width: 800px;
+  width: 90%;
+}
+
+/* Regel lernen oben */
+.regel-lernen-top {
+  background: var(--bg-tertiary, #f0f7ff);
+  border: 1px solid var(--border-color, #cce0f5);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.regel-lernen-top label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.regel-lernen-top input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+/* Batch Preview */
+.batch-preview {
+  background: var(--bg-tertiary, #f8f9fa);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.batch-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.batch-summary strong {
+  font-size: 1rem;
+}
+
+.batch-total {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.batch-item {
+  display: grid;
+  grid-template-columns: 100px 100px 1fr;
+  gap: 1rem;
+  font-size: 0.85rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.batch-item:last-child {
+  border-bottom: none;
+}
+
+.batch-item .einnahme {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.batch-item .ausgabe {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.batch-more {
+  text-align: center;
+  color: var(--text-secondary, #666);
+  font-size: 0.85rem;
+  padding-top: 0.5rem;
+  font-style: italic;
+}
+
 .tx-preview {
   background: var(--bg-tertiary, #f8f9fa);
   border-radius: 8px;
