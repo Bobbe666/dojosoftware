@@ -1550,14 +1550,14 @@ const BuchhaltungTab = ({ token }) => {
               <div className="upload-area">
                 <div className="upload-info">
                   <FileUp size={48} />
-                  <p>CSV oder MT940 Datei hochladen</p>
+                  <p>CSV, Excel oder MT940 Datei hochladen</p>
                   <p className="upload-hint">
-                    Unterstützte Banken: Sparkasse, Volksbank, DKB und viele weitere
+                    Unterstützte Formate: CSV, XLS, XLSX, MT940 (STA)
                   </p>
                 </div>
                 <input
                   type="file"
-                  accept=".csv,.sta,.mt940,.txt"
+                  accept=".csv,.sta,.mt940,.txt,.xls,.xlsx"
                   onChange={(e) => setBankUploadFile(e.target.files[0])}
                 />
                 {bankUploadFile && (

@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const iconv = require('iconv-lite');
+const XLSX = require('xlsx');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -66,13 +67,14 @@ const bankUpload = multer({
   storage: bankStorage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB für große Kontoauszüge
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['text/csv', 'text/plain', 'application/octet-stream'];
-    const allowedExts = ['.csv', '.sta', '.mt940', '.txt'];
+    const allowedTypes = ['text/csv', 'text/plain', 'application/octet-stream',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const allowedExts = ['.csv', '.sta', '.mt940', '.txt', '.xls', '.xlsx'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(file.mimetype) || allowedExts.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Nur CSV und MT940 Dateien erlaubt'));
+      cb(new Error('Nur CSV, MT940 und Excel Dateien erlaubt'));
     }
   }
 });
@@ -275,6 +277,156 @@ const getBankName = (format) => {
     'generic': 'Unbekannte Bank'
   };
   return names[format] || 'Unbekannte Bank';
+};
+
+// ===================================================================
+// 🏦 EXCEL PARSER (XLS/XLSX)
+// ===================================================================
+
+const parseExcelContent = (filePath) => {
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+
+    // Konvertiere zu JSON (mit Header-Zeile)
+    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+    if (jsonData.length < 2) {
+      return { error: 'Excel-Datei enthält keine Daten', transaktionen: [] };
+    }
+
+    // Finde Header-Zeile (kann in den ersten 10 Zeilen sein)
+    let headerIndex = -1;
+    let headers = [];
+    for (let i = 0; i < Math.min(jsonData.length, 10); i++) {
+      const row = jsonData[i].map(cell => String(cell || '').toLowerCase().trim());
+      // Suche nach typischen Bank-Spalten
+      if (row.some(cell => cell.includes('buchung') || cell.includes('datum') || cell.includes('betrag') || cell.includes('umsatz'))) {
+        headerIndex = i;
+        headers = row;
+        break;
+      }
+    }
+
+    if (headerIndex === -1) {
+      // Versuche erste Zeile als Header
+      headerIndex = 0;
+      headers = jsonData[0].map(cell => String(cell || '').toLowerCase().trim());
+    }
+
+    const transaktionen = [];
+
+    for (let i = headerIndex + 1; i < jsonData.length; i++) {
+      const rowData = jsonData[i];
+      if (!rowData || rowData.length < 3) continue;
+
+      // Erstelle Objekt aus Spalten
+      const row = {};
+      headers.forEach((header, idx) => {
+        row[header] = rowData[idx] !== undefined ? String(rowData[idx]).trim() : '';
+      });
+
+      // Versuche Transaktion zu parsen
+      const tx = parseExcelRow(row, headers);
+      if (tx && tx.buchungsdatum && tx.betrag !== 0) {
+        transaktionen.push(tx);
+      }
+    }
+
+    return { format: 'excel', bank: 'Excel Import', transaktionen };
+  } catch (err) {
+    console.error('Excel Parse Error:', err);
+    return { error: 'Excel-Datei konnte nicht gelesen werden: ' + err.message, transaktionen: [] };
+  }
+};
+
+// Parse eine Excel-Zeile (sucht nach bekannten Spaltennamen)
+const parseExcelRow = (row, headers) => {
+  const t = {
+    buchungsdatum: null,
+    valutadatum: null,
+    betrag: 0,
+    verwendungszweck: '',
+    auftraggeber_empfaenger: '',
+    iban_gegenkonto: '',
+    bic: '',
+    buchungstext: '',
+    mandatsreferenz: '',
+    kundenreferenz: ''
+  };
+
+  // Finde Spalten anhand verschiedener möglicher Namen
+  const findColumn = (keywords) => {
+    for (const key of Object.keys(row)) {
+      if (keywords.some(kw => key.includes(kw))) {
+        return row[key];
+      }
+    }
+    return '';
+  };
+
+  // Datum
+  const datumValue = findColumn(['buchungstag', 'buchungsdatum', 'datum', 'valuta', 'wertstellung']);
+  if (datumValue) {
+    // Excel kann Datum als Nummer (Serial) oder als String liefern
+    if (typeof datumValue === 'number') {
+      // Excel Serial Date to JS Date
+      const excelEpoch = new Date(1899, 11, 30);
+      const jsDate = new Date(excelEpoch.getTime() + datumValue * 24 * 60 * 60 * 1000);
+      t.buchungsdatum = jsDate.toISOString().split('T')[0];
+    } else {
+      t.buchungsdatum = parseGermanDate(String(datumValue));
+    }
+  }
+
+  // Valuta
+  const valutaValue = findColumn(['valuta', 'wertstellung', 'wert']);
+  if (valutaValue && valutaValue !== datumValue) {
+    if (typeof valutaValue === 'number') {
+      const excelEpoch = new Date(1899, 11, 30);
+      const jsDate = new Date(excelEpoch.getTime() + valutaValue * 24 * 60 * 60 * 1000);
+      t.valutadatum = jsDate.toISOString().split('T')[0];
+    } else {
+      t.valutadatum = parseGermanDate(String(valutaValue));
+    }
+  }
+
+  // Betrag
+  const betragValue = findColumn(['betrag', 'umsatz', 'soll', 'haben', 'betrag (eur)', 'betrag in eur']);
+  if (betragValue !== '' && betragValue !== undefined) {
+    if (typeof betragValue === 'number') {
+      t.betrag = betragValue;
+    } else {
+      t.betrag = parseGermanAmount(String(betragValue));
+    }
+  }
+
+  // Prüfe ob Soll/Haben getrennt sind
+  const sollValue = findColumn(['soll', 'ausgabe', 'lastschrift']);
+  const habenValue = findColumn(['haben', 'einnahme', 'gutschrift']);
+  if (sollValue && !habenValue) {
+    t.betrag = -Math.abs(parseGermanAmount(String(sollValue)));
+  } else if (habenValue && !sollValue) {
+    t.betrag = Math.abs(parseGermanAmount(String(habenValue)));
+  }
+
+  // Verwendungszweck
+  t.verwendungszweck = findColumn(['verwendungszweck', 'beschreibung', 'buchungstext', 'text', 'info']) || '';
+
+  // Auftraggeber/Empfänger
+  t.auftraggeber_empfaenger = findColumn(['auftraggeber', 'empfänger', 'empfaenger', 'name', 'begünstigter', 'beguenstigter', 'zahlungspflichtiger']) || '';
+
+  // IBAN
+  t.iban_gegenkonto = findColumn(['iban', 'konto', 'kontonummer', 'gegenkonto']) || '';
+
+  // BIC
+  t.bic = findColumn(['bic', 'blz', 'bankleitzahl']) || '';
+
+  // Buchungstext
+  t.buchungstext = findColumn(['buchungsart', 'buchungstext', 'textschlüssel', 'art']) || '';
+
+  return t;
 };
 
 // ===================================================================
@@ -1394,12 +1546,15 @@ router.post('/bank-import/upload', requireSuperAdmin, bankUpload.single('datei')
       return res.status(400).json({ message: 'Datei konnte nicht gelesen werden' });
     }
 
-    // Bestimme Format (MT940 oder CSV)
+    // Bestimme Format (Excel, MT940 oder CSV)
     let parseResult;
     const ext = path.extname(req.file.originalname).toLowerCase();
-    const isMT940 = ext === '.sta' || ext === '.mt940' || content.includes(':20:') && content.includes(':61:');
+    const isExcel = ext === '.xls' || ext === '.xlsx';
+    const isMT940 = ext === '.sta' || ext === '.mt940' || (content && content.includes(':20:') && content.includes(':61:'));
 
-    if (isMT940 || requestedFormat === 'mt940') {
+    if (isExcel) {
+      parseResult = parseExcelContent(req.file.path);
+    } else if (isMT940 || requestedFormat === 'mt940') {
       parseResult = parseMT940Content(content);
     } else {
       parseResult = parseCSVContent(content);
@@ -1449,7 +1604,7 @@ router.post('/bank-import/upload', requireSuperAdmin, bankUpload.single('datei')
         db.query(insertSql, [
           importId,
           req.file.originalname,
-          isMT940 ? 'mt940' : 'csv',
+          isExcel ? 'csv' : (isMT940 ? 'mt940' : 'csv'),
           dojoId,
           organisation,
           tx.buchungsdatum,
@@ -1508,7 +1663,7 @@ router.post('/bank-import/upload', requireSuperAdmin, bankUpload.single('datei')
       message: 'Import erfolgreich',
       import_id: importId,
       bank: parseResult.bank,
-      format: isMT940 ? 'mt940' : 'csv',
+      format: isExcel ? 'excel' : (isMT940 ? 'mt940' : 'csv'),
       count: insertedCount,
       duplikate: duplicateCount,
       gesamt: parseResult.transaktionen.length
