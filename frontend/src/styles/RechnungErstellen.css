@@ -114,15 +114,14 @@
 }
 
 .position-input {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 60px auto;
   gap: 0.5rem;
   align-items: center;
-  flex-wrap: wrap;
 }
 
 .position-input select {
-  flex: 1;
-  min-width: 150px;
+  width: 100%;
   padding: 0.5rem 0.6rem;
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.08);
@@ -138,7 +137,8 @@
 }
 
 .position-input input[type="number"] {
-  width: 70px;
+  width: 60px !important;
+  max-width: 60px !important;
   padding: 0.5rem 0.4rem;
   color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 255, 255, 0.08);
@@ -460,16 +460,21 @@
   padding: 0;
   cursor: pointer;
   accent-color: #ffd700;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 215, 0, 0.4);
-  border-radius: 4px;
 }
 
-.rechnung-erstellen-container .checkbox-label {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.95);
-  font-weight: 500;
-  cursor: pointer;
+/* Checkbox Label - gut lesbar */
+.rechnung-erstellen-container .checkbox-label,
+.rechnung-erstellen-container label.checkbox-label,
+.form-section .checkbox-label {
+  font-size: 0.9rem !important;
+  color: #ffd700 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  background: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  margin: 0 !important;
 }
 
 .rechnung-erstellen-container .rabatt-label {
