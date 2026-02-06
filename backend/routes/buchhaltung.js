@@ -8,6 +8,8 @@ const db = require('../db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const iconv = require('iconv-lite');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -42,6 +44,357 @@ const upload = multer({
     }
   }
 });
+
+// Bank-Import Upload Config
+const bankUploadDir = path.join(__dirname, '..', 'uploads', 'bank-import');
+if (!fs.existsSync(bankUploadDir)) {
+  fs.mkdirSync(bankUploadDir, { recursive: true });
+}
+
+const bankStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, bankUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    cb(null, `${timestamp}_${safeName}`);
+  }
+});
+
+const bankUpload = multer({
+  storage: bankStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB für große Kontoauszüge
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['text/csv', 'text/plain', 'application/octet-stream'];
+    const allowedExts = ['.csv', '.sta', '.mt940', '.txt'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(file.mimetype) || allowedExts.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Nur CSV und MT940 Dateien erlaubt'));
+    }
+  }
+});
+
+// ===================================================================
+// 🏦 BANK CSV PARSER (Deutsche Banken)
+// ===================================================================
+
+// Erkennt Bank-Format anhand der Header-Zeile
+const detectBankFormat = (headerLine) => {
+  const lower = headerLine.toLowerCase();
+  if (lower.includes('auftragskonto') || lower.includes('kontonummer des auftraggebers')) {
+    return 'sparkasse';
+  }
+  if (lower.includes('textschlüssel') || lower.includes('textschluessel')) {
+    return 'volksbank';
+  }
+  if (lower.includes('gläubiger-id') || lower.includes('glaeubiger-id') || lower.includes('mandatsreferenz')) {
+    return 'dkb';
+  }
+  if (lower.includes('buchungstag') && lower.includes('betrag')) {
+    return 'generic';
+  }
+  return 'unknown';
+};
+
+// Parsed deutschen Betrag (1.234,56 -> 1234.56)
+const parseGermanAmount = (str) => {
+  if (!str) return 0;
+  // Entferne Währungssymbole und Leerzeichen
+  let cleaned = str.replace(/[€\s]/g, '').trim();
+  // Deutsche Notation: 1.234,56 -> 1234.56
+  cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+  return parseFloat(cleaned) || 0;
+};
+
+// Parsed deutsches Datum (DD.MM.YYYY -> YYYY-MM-DD)
+const parseGermanDate = (str) => {
+  if (!str) return null;
+  const parts = str.trim().split('.');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    let year = parts[2];
+    if (year.length === 2) {
+      year = parseInt(year) > 50 ? '19' + year : '20' + year;
+    }
+    return `${year}-${month}-${day}`;
+  }
+  // Falls ISO-Format
+  if (str.includes('-')) return str;
+  return null;
+};
+
+// CSV Parser für verschiedene Bank-Formate
+const parseCSVContent = (content, encoding = 'utf-8') => {
+  // Konvertiere Encoding falls nötig
+  let text = content;
+  if (encoding !== 'utf-8') {
+    text = iconv.decode(Buffer.from(content), encoding);
+  }
+
+  const lines = text.split(/\r?\n/).filter(line => line.trim());
+  if (lines.length < 2) return { error: 'Datei ist leer oder hat keine Daten', transaktionen: [] };
+
+  // Finde Header-Zeile (kann in Zeile 0-5 sein)
+  let headerIndex = 0;
+  let format = 'unknown';
+  for (let i = 0; i < Math.min(lines.length, 6); i++) {
+    format = detectBankFormat(lines[i]);
+    if (format !== 'unknown') {
+      headerIndex = i;
+      break;
+    }
+  }
+
+  if (format === 'unknown') {
+    return { error: 'Unbekanntes Bank-Format', transaktionen: [] };
+  }
+
+  const headerLine = lines[headerIndex];
+  const separator = headerLine.includes('\t') ? '\t' : ';';
+  const headers = headerLine.split(separator).map(h => h.replace(/"/g, '').trim().toLowerCase());
+
+  const transaktionen = [];
+
+  for (let i = headerIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+
+    // Parse CSV-Zeile (berücksichtigt Anführungszeichen)
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (const char of line + separator) {
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === separator && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    if (values.length < 3) continue;
+
+    // Erstelle Objekt aus Spalten
+    const row = {};
+    headers.forEach((header, idx) => {
+      row[header] = values[idx] || '';
+    });
+
+    // Normalisiere basierend auf Format
+    let transaktion;
+    try {
+      transaktion = normalizeTransaction(row, format);
+      if (transaktion && transaktion.buchungsdatum && transaktion.betrag !== 0) {
+        transaktionen.push(transaktion);
+      }
+    } catch (e) {
+      console.error('Fehler beim Parsen der Zeile:', e, row);
+    }
+  }
+
+  return { format, bank: getBankName(format), transaktionen };
+};
+
+// Normalisiert Transaktion basierend auf Bank-Format
+const normalizeTransaction = (row, format) => {
+  let t = {
+    buchungsdatum: null,
+    valutadatum: null,
+    betrag: 0,
+    verwendungszweck: '',
+    auftraggeber_empfaenger: '',
+    iban_gegenkonto: '',
+    bic: '',
+    buchungstext: '',
+    mandatsreferenz: '',
+    kundenreferenz: ''
+  };
+
+  switch (format) {
+    case 'sparkasse':
+      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum']);
+      t.valutadatum = parseGermanDate(row['valuta'] || row['wertstellung']);
+      t.betrag = parseGermanAmount(row['betrag']);
+      t.verwendungszweck = row['verwendungszweck'] || '';
+      t.auftraggeber_empfaenger = row['beguenstigter/zahlungspflichtiger'] || row['begünstigter'] || row['name'] || '';
+      t.iban_gegenkonto = row['iban'] || row['kontonummer'] || '';
+      t.bic = row['bic'] || row['blz'] || '';
+      t.buchungstext = row['buchungstext'] || '';
+      break;
+
+    case 'volksbank':
+      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum']);
+      t.valutadatum = parseGermanDate(row['valuta'] || row['wertstellung']);
+      t.betrag = parseGermanAmount(row['betrag']);
+      t.verwendungszweck = row['verwendungszweck'] || '';
+      t.auftraggeber_empfaenger = row['auftraggeber/zahlungsempfänger'] || row['auftraggeber/zahlungsempfaenger'] || row['name'] || '';
+      t.iban_gegenkonto = row['iban'] || '';
+      t.bic = row['bic'] || '';
+      t.buchungstext = row['textschlüssel'] || row['textschluessel'] || row['buchungstext'] || '';
+      break;
+
+    case 'dkb':
+      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum']);
+      t.valutadatum = parseGermanDate(row['wertstellung'] || row['valuta']);
+      t.betrag = parseGermanAmount(row['betrag (eur)'] || row['betrag']);
+      t.verwendungszweck = row['verwendungszweck'] || '';
+      t.auftraggeber_empfaenger = row['auftraggeber / begünstigter'] || row['auftraggeber/begünstigter'] || row['auftraggeber / beguenstigter'] || '';
+      t.iban_gegenkonto = row['kontonummer'] || row['iban'] || '';
+      t.bic = row['blz'] || row['bic'] || '';
+      t.buchungstext = row['buchungstext'] || '';
+      t.mandatsreferenz = row['mandatsreferenz'] || '';
+      break;
+
+    case 'generic':
+    default:
+      // Versuche häufige Spaltennamen
+      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum'] || row['datum']);
+      t.valutadatum = parseGermanDate(row['valuta'] || row['wertstellung'] || row['valutadatum']);
+      t.betrag = parseGermanAmount(row['betrag'] || row['betrag (eur)'] || row['umsatz']);
+      t.verwendungszweck = row['verwendungszweck'] || row['beschreibung'] || row['text'] || '';
+      t.auftraggeber_empfaenger = row['name'] || row['auftraggeber'] || row['empfaenger'] || row['begünstigter'] || '';
+      t.iban_gegenkonto = row['iban'] || row['konto'] || row['kontonummer'] || '';
+      break;
+  }
+
+  return t;
+};
+
+// Bank-Name für Anzeige
+const getBankName = (format) => {
+  const names = {
+    'sparkasse': 'Sparkasse',
+    'volksbank': 'Volksbank',
+    'dkb': 'DKB',
+    'generic': 'Unbekannte Bank'
+  };
+  return names[format] || 'Unbekannte Bank';
+};
+
+// ===================================================================
+// 🏦 MT940 PARSER (SWIFT-Standard)
+// ===================================================================
+
+const parseMT940Content = (content) => {
+  const transaktionen = [];
+
+  // MT940 Blöcke finden
+  const blocks = content.split(/(?=:20:)/);
+
+  for (const block of blocks) {
+    if (!block.includes(':61:')) continue;
+
+    // Finde alle :61: Zeilen (Transaktionen)
+    const lines = block.split('\n');
+    let currentTx = null;
+    let infoBuffer = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // :61: - Transaktionszeile
+      if (line.startsWith(':61:')) {
+        if (currentTx) {
+          currentTx.verwendungszweck = infoBuffer.trim();
+          transaktionen.push(currentTx);
+        }
+
+        const txData = line.substring(4);
+        currentTx = parseMT940Transaction(txData);
+        infoBuffer = '';
+      }
+      // :86: - Verwendungszweck (kann mehrzeilig sein)
+      else if (line.startsWith(':86:')) {
+        infoBuffer = line.substring(4);
+      }
+      // Fortsetzung der :86: Info
+      else if (currentTx && !line.startsWith(':') && line.length > 0) {
+        infoBuffer += ' ' + line;
+      }
+    }
+
+    // Letzte Transaktion
+    if (currentTx) {
+      currentTx.verwendungszweck = infoBuffer.trim();
+      transaktionen.push(currentTx);
+    }
+  }
+
+  return { format: 'mt940', bank: 'MT940 Import', transaktionen };
+};
+
+// Parsed eine MT940 :61: Zeile
+const parseMT940Transaction = (line) => {
+  // Format: YYMMDDYYMMDD[C/D/RC/RD]amount...
+  // Beispiel: 2301150115C1234,56NTRFNONREF
+  const t = {
+    buchungsdatum: null,
+    valutadatum: null,
+    betrag: 0,
+    verwendungszweck: '',
+    auftraggeber_empfaenger: '',
+    iban_gegenkonto: '',
+    bic: '',
+    buchungstext: '',
+    mandatsreferenz: '',
+    kundenreferenz: ''
+  };
+
+  try {
+    // Valutadatum (YYMMDD)
+    const valutaStr = line.substring(0, 6);
+    const valutaYear = parseInt(valutaStr.substring(0, 2)) > 50 ? '19' : '20';
+    t.valutadatum = `${valutaYear}${valutaStr.substring(0, 2)}-${valutaStr.substring(2, 4)}-${valutaStr.substring(4, 6)}`;
+
+    // Buchungsdatum (optional, MMDD)
+    let offset = 6;
+    if (line.length > 10 && /^\d{4}/.test(line.substring(6, 10))) {
+      const buchungStr = line.substring(6, 10);
+      t.buchungsdatum = `${valutaYear}${valutaStr.substring(0, 2)}-${buchungStr.substring(0, 2)}-${buchungStr.substring(2, 4)}`;
+      offset = 10;
+    } else {
+      t.buchungsdatum = t.valutadatum;
+    }
+
+    // Credit/Debit Indikator
+    let isCredit = true;
+    if (line.charAt(offset) === 'R') {
+      offset++;
+    }
+    if (line.charAt(offset) === 'D') {
+      isCredit = false;
+      offset++;
+    } else if (line.charAt(offset) === 'C') {
+      isCredit = true;
+      offset++;
+    }
+
+    // Betrag (bis zum nächsten Buchstaben)
+    let amountStr = '';
+    while (offset < line.length && (/[\d,.]/.test(line.charAt(offset)))) {
+      amountStr += line.charAt(offset);
+      offset++;
+    }
+    t.betrag = parseGermanAmount(amountStr);
+    if (!isCredit) t.betrag = -t.betrag;
+
+    // Buchungstext (3 Zeichen)
+    if (offset + 3 <= line.length) {
+      t.buchungstext = line.substring(offset, offset + 4);
+    }
+
+  } catch (e) {
+    console.error('MT940 Parse Error:', e, line);
+  }
+
+  return t;
+};
 
 // ===================================================================
 // 🔧 HELPER FUNCTIONS
@@ -991,6 +1344,902 @@ router.get('/kategorien', requireSuperAdmin, (req, res) => {
   ];
 
   res.json(kategorien);
+});
+
+// ===================================================================
+// 🏦 BANK-IMPORT ENDPOINTS
+// ===================================================================
+
+// Generiere Hash für Duplikaterkennung
+const generateTransactionHash = (buchungsdatum, betrag, verwendungszweck) => {
+  const data = `${buchungsdatum}|${betrag}|${verwendungszweck.substring(0, 100)}`;
+  return crypto.createHash('sha256').update(data).digest('hex');
+};
+
+// Generiere Import-ID
+const generateImportId = () => {
+  return `IMP-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+};
+
+// ===================================================================
+// 📤 POST /api/buchhaltung/bank-import/upload - Bank-Datei hochladen
+// ===================================================================
+router.post('/bank-import/upload', requireSuperAdmin, bankUpload.single('datei'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Keine Datei hochgeladen' });
+    }
+
+    const { organisation = 'Kampfkunstschule Schreiner', format: requestedFormat } = req.body;
+    const dojoId = organisation === 'TDA International' ? 2 : 1;
+    const importId = generateImportId();
+
+    // Lese Datei
+    let content;
+    try {
+      // Versuche verschiedene Encodings
+      const rawBuffer = fs.readFileSync(req.file.path);
+      // Prüfe auf UTF-8 BOM
+      if (rawBuffer[0] === 0xEF && rawBuffer[1] === 0xBB && rawBuffer[2] === 0xBF) {
+        content = rawBuffer.toString('utf-8').substring(1);
+      }
+      // Versuche ISO-8859-1 wenn Umlaute kaputt aussehen
+      else if (rawBuffer.includes(0xC4) || rawBuffer.includes(0xD6) || rawBuffer.includes(0xDC)) {
+        content = iconv.decode(rawBuffer, 'iso-8859-1');
+      } else {
+        content = rawBuffer.toString('utf-8');
+      }
+    } catch (e) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Datei konnte nicht gelesen werden' });
+    }
+
+    // Bestimme Format (MT940 oder CSV)
+    let parseResult;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const isMT940 = ext === '.sta' || ext === '.mt940' || content.includes(':20:') && content.includes(':61:');
+
+    if (isMT940 || requestedFormat === 'mt940') {
+      parseResult = parseMT940Content(content);
+    } else {
+      parseResult = parseCSVContent(content);
+    }
+
+    if (parseResult.error) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: parseResult.error });
+    }
+
+    if (parseResult.transaktionen.length === 0) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Keine Transaktionen in der Datei gefunden' });
+    }
+
+    // Speichere Transaktionen in Datenbank
+    let insertedCount = 0;
+    let duplicateCount = 0;
+    const insertedTransactions = [];
+
+    for (const tx of parseResult.transaktionen) {
+      const hashKey = generateTransactionHash(tx.buchungsdatum, tx.betrag, tx.verwendungszweck);
+
+      // Prüfe auf Duplikat
+      const existingCheck = await new Promise((resolve, reject) => {
+        db.query('SELECT transaktion_id FROM bank_transaktionen WHERE hash_key = ?', [hashKey], (err, results) => {
+          if (err) reject(err);
+          else resolve(results);
+        });
+      });
+
+      if (existingCheck.length > 0) {
+        duplicateCount++;
+        continue;
+      }
+
+      // Füge Transaktion ein
+      const insertSql = `
+        INSERT INTO bank_transaktionen (
+          import_id, import_datei, import_format, dojo_id, organisation_name,
+          buchungsdatum, valutadatum, betrag, verwendungszweck, auftraggeber_empfaenger,
+          iban_gegenkonto, bic, buchungstext, mandatsreferenz, kundenreferenz, hash_key
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const result = await new Promise((resolve, reject) => {
+        db.query(insertSql, [
+          importId,
+          req.file.originalname,
+          isMT940 ? 'mt940' : 'csv',
+          dojoId,
+          organisation,
+          tx.buchungsdatum,
+          tx.valutadatum,
+          tx.betrag,
+          tx.verwendungszweck,
+          tx.auftraggeber_empfaenger,
+          tx.iban_gegenkonto,
+          tx.bic,
+          tx.buchungstext,
+          tx.mandatsreferenz,
+          tx.kundenreferenz,
+          hashKey
+        ], (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+
+      insertedCount++;
+      insertedTransactions.push({
+        transaktion_id: result.insertId,
+        ...tx
+      });
+    }
+
+    // Speichere Import-Historie
+    const datumVon = parseResult.transaktionen.reduce((min, tx) =>
+      !min || tx.buchungsdatum < min ? tx.buchungsdatum : min, null);
+    const datumBis = parseResult.transaktionen.reduce((max, tx) =>
+      !max || tx.buchungsdatum > max ? tx.buchungsdatum : max, null);
+
+    await new Promise((resolve, reject) => {
+      db.query(`
+        INSERT INTO bank_import_historie (
+          import_id, dojo_id, organisation_name, datei_name, datei_format,
+          bank_name, anzahl_transaktionen, anzahl_duplikate, datum_von, datum_bis, importiert_von
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        importId, dojoId, organisation, req.file.originalname,
+        isMT940 ? 'mt940' : 'csv', parseResult.bank,
+        insertedCount, duplicateCount, datumVon, datumBis,
+        req.user?.id || 1
+      ], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Führe Auto-Matching für alle neuen Transaktionen durch
+    for (const tx of insertedTransactions) {
+      await runAutoMatching(tx.transaktion_id, dojoId);
+    }
+
+    res.json({
+      message: 'Import erfolgreich',
+      import_id: importId,
+      bank: parseResult.bank,
+      format: isMT940 ? 'mt940' : 'csv',
+      count: insertedCount,
+      duplikate: duplicateCount,
+      gesamt: parseResult.transaktionen.length
+    });
+
+  } catch (err) {
+    console.error('Bank-Import-Fehler:', err);
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch (e) {}
+    }
+    res.status(500).json({ message: 'Fehler beim Import', error: err.message });
+  }
+});
+
+// Auto-Matching für eine Transaktion
+const runAutoMatching = async (transaktionId, dojoId) => {
+  return new Promise((resolve, reject) => {
+    // Hole Transaktion
+    db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ?', [transaktionId], async (err, results) => {
+      if (err || results.length === 0) return resolve();
+
+      const tx = results[0];
+      const verwendungszweck = (tx.verwendungszweck || '').toLowerCase();
+      const auftraggeber = (tx.auftraggeber_empfaenger || '').toLowerCase();
+      const betrag = Math.abs(tx.betrag);
+      const isEinnahme = tx.betrag > 0;
+
+      let bestMatch = null;
+      let bestConfidence = 0;
+
+      // 1. Suche nach Rechnungsnummer im Verwendungszweck
+      const rechnungsMatch = verwendungszweck.match(/re[-\s]?(\d+)/i) || verwendungszweck.match(/rechnung\s*[-#:]?\s*(\d+)/i);
+      if (rechnungsMatch && isEinnahme) {
+        const rechnungen = await new Promise((resolve) => {
+          db.query(`
+            SELECT r.rechnung_id, r.rechnungsnummer, r.brutto_betrag,
+                   m.vorname, m.nachname
+            FROM rechnungen r
+            LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+            WHERE r.rechnungsnummer LIKE ? AND ABS(r.brutto_betrag - ?) < 1
+          `, [`%${rechnungsMatch[1]}%`, betrag], (err, results) => {
+            resolve(err ? [] : results);
+          });
+        });
+
+        if (rechnungen.length > 0) {
+          bestMatch = {
+            typ: 'rechnung',
+            id: rechnungen[0].rechnung_id,
+            details: {
+              rechnungsnummer: rechnungen[0].rechnungsnummer,
+              name: `${rechnungen[0].vorname || ''} ${rechnungen[0].nachname || ''}`.trim(),
+              betrag: rechnungen[0].brutto_betrag
+            }
+          };
+          bestConfidence = 0.95;
+        }
+      }
+
+      // 2. Suche nach Mitgliedsnummer im Verwendungszweck
+      if (!bestMatch) {
+        const mitgliedMatch = verwendungszweck.match(/mitglied\s*[-#:]?\s*(\d+)/i) ||
+                              verwendungszweck.match(/nr\.\s*(\d+)/i);
+        if (mitgliedMatch && isEinnahme) {
+          const beitraege = await new Promise((resolve) => {
+            db.query(`
+              SELECT b.beitrag_id, b.betrag, b.monat, b.jahr,
+                     m.mitglieder_nr, m.vorname, m.nachname
+              FROM beitraege b
+              JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+              WHERE m.mitglieder_nr LIKE ? AND ABS(b.betrag - ?) < 1 AND b.bezahlt = 0
+              ORDER BY b.faelligkeit ASC
+              LIMIT 1
+            `, [`%${mitgliedMatch[1]}%`, betrag], (err, results) => {
+              resolve(err ? [] : results);
+            });
+          });
+
+          if (beitraege.length > 0) {
+            bestMatch = {
+              typ: 'beitrag',
+              id: beitraege[0].beitrag_id,
+              details: {
+                mitglieder_nr: beitraege[0].mitglieder_nr,
+                name: `${beitraege[0].vorname} ${beitraege[0].nachname}`,
+                monat: beitraege[0].monat,
+                jahr: beitraege[0].jahr,
+                betrag: beitraege[0].betrag
+              }
+            };
+            bestConfidence = 0.85;
+          }
+        }
+      }
+
+      // 3. Suche nach Namensübereinstimmung + Betrag
+      if (!bestMatch && isEinnahme) {
+        // Extrahiere mögliche Namen aus Verwendungszweck/Auftraggeber
+        const nameWords = (auftraggeber + ' ' + verwendungszweck)
+          .replace(/[^a-zäöüß\s]/gi, ' ')
+          .split(/\s+/)
+          .filter(w => w.length > 2);
+
+        for (const name of nameWords) {
+          const mitglieder = await new Promise((resolve) => {
+            db.query(`
+              SELECT b.beitrag_id, b.betrag, b.monat, b.jahr,
+                     m.mitglieder_nr, m.vorname, m.nachname
+              FROM beitraege b
+              JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+              WHERE (m.nachname LIKE ? OR m.vorname LIKE ?)
+                AND ABS(b.betrag - ?) < 1
+                AND b.bezahlt = 0
+              ORDER BY b.faelligkeit ASC
+              LIMIT 1
+            `, [`%${name}%`, `%${name}%`, betrag], (err, results) => {
+              resolve(err ? [] : results);
+            });
+          });
+
+          if (mitglieder.length > 0) {
+            bestMatch = {
+              typ: 'beitrag',
+              id: mitglieder[0].beitrag_id,
+              details: {
+                mitglieder_nr: mitglieder[0].mitglieder_nr,
+                name: `${mitglieder[0].vorname} ${mitglieder[0].nachname}`,
+                monat: mitglieder[0].monat,
+                jahr: mitglieder[0].jahr,
+                betrag: mitglieder[0].betrag
+              }
+            };
+            bestConfidence = 0.75;
+            break;
+          }
+        }
+      }
+
+      // 4. Prüfe gelernte Regeln
+      if (!bestMatch) {
+        const regeln = await new Promise((resolve) => {
+          db.query(`
+            SELECT * FROM bank_zuordnung_regeln
+            WHERE dojo_id = ? AND aktiv = TRUE
+            ORDER BY verwendungen DESC
+          `, [dojoId], (err, results) => {
+            resolve(err ? [] : results);
+          });
+        });
+
+        for (const regel of regeln) {
+          const suchfeld = regel.match_feld === 'auftraggeber' ? auftraggeber :
+                           regel.match_feld === 'iban' ? tx.iban_gegenkonto : verwendungszweck;
+          const suchwert = regel.match_wert.toLowerCase();
+
+          let matches = false;
+          if (regel.match_typ === 'exakt') {
+            matches = suchfeld === suchwert;
+          } else if (regel.match_typ === 'beginnt_mit') {
+            matches = suchfeld.startsWith(suchwert);
+          } else {
+            matches = suchfeld.includes(suchwert);
+          }
+
+          if (matches) {
+            if (regel.aktion === 'ignorieren') {
+              // Transaktion ignorieren
+              await new Promise((resolve) => {
+                db.query(`
+                  UPDATE bank_transaktionen SET status = 'ignoriert'
+                  WHERE transaktion_id = ?
+                `, [transaktionId], () => resolve());
+              });
+              return resolve();
+            } else {
+              // Kategorie-Vorschlag
+              bestMatch = {
+                typ: 'manuell',
+                id: null,
+                details: { kategorie: regel.kategorie, regel_id: regel.regel_id }
+              };
+              bestConfidence = 0.70;
+              break;
+            }
+          }
+        }
+      }
+
+      // Update Transaktion mit Match
+      if (bestMatch && bestConfidence >= 0.5) {
+        await new Promise((resolve) => {
+          db.query(`
+            UPDATE bank_transaktionen SET
+              status = 'vorgeschlagen',
+              match_typ = ?,
+              match_id = ?,
+              match_confidence = ?,
+              match_details = ?
+            WHERE transaktion_id = ?
+          `, [
+            bestMatch.typ,
+            bestMatch.id,
+            bestConfidence,
+            JSON.stringify(bestMatch.details),
+            transaktionId
+          ], () => resolve());
+        });
+      }
+
+      resolve();
+    });
+  });
+};
+
+// ===================================================================
+// 📋 GET /api/buchhaltung/bank-import/transaktionen - Transaktionen abrufen
+// ===================================================================
+router.get('/bank-import/transaktionen', requireSuperAdmin, (req, res) => {
+  const { status, import_id, organisation, von, bis, seite = 1, limit = 50 } = req.query;
+  const offset = (parseInt(seite) - 1) * parseInt(limit);
+
+  let whereClause = '1=1';
+  const params = [];
+
+  if (status) {
+    whereClause += ' AND status = ?';
+    params.push(status);
+  }
+
+  if (import_id) {
+    whereClause += ' AND import_id = ?';
+    params.push(import_id);
+  }
+
+  if (organisation && organisation !== 'alle') {
+    whereClause += ' AND organisation_name = ?';
+    params.push(organisation);
+  }
+
+  if (von) {
+    whereClause += ' AND buchungsdatum >= ?';
+    params.push(von);
+  }
+
+  if (bis) {
+    whereClause += ' AND buchungsdatum <= ?';
+    params.push(bis);
+  }
+
+  const countSql = `SELECT COUNT(*) as total FROM bank_transaktionen WHERE ${whereClause}`;
+  const dataSql = `
+    SELECT
+      transaktion_id, import_id, import_datei, import_format, import_datum,
+      organisation_name, buchungsdatum, valutadatum, betrag, waehrung,
+      verwendungszweck, auftraggeber_empfaenger, iban_gegenkonto, buchungstext,
+      status, kategorie, match_typ, match_id, match_confidence, match_details,
+      beleg_id, zugeordnet_am
+    FROM bank_transaktionen
+    WHERE ${whereClause}
+    ORDER BY buchungsdatum DESC, transaktion_id DESC
+    LIMIT ? OFFSET ?
+  `;
+
+  db.query(countSql, params, (err, countResult) => {
+    if (err) {
+      console.error('Transaktionen-Count-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Zählen' });
+    }
+
+    const total = countResult[0]?.total || 0;
+    const dataParams = [...params, parseInt(limit), offset];
+
+    db.query(dataSql, dataParams, (err, transaktionen) => {
+      if (err) {
+        console.error('Transaktionen-Fehler:', err);
+        return res.status(500).json({ message: 'Fehler beim Laden' });
+      }
+
+      // Parse JSON fields
+      transaktionen.forEach(tx => {
+        if (tx.match_details && typeof tx.match_details === 'string') {
+          try { tx.match_details = JSON.parse(tx.match_details); } catch (e) {}
+        }
+      });
+
+      res.json({
+        transaktionen,
+        pagination: {
+          seite: parseInt(seite),
+          limit: parseInt(limit),
+          total,
+          seiten: Math.ceil(total / parseInt(limit))
+        }
+      });
+    });
+  });
+});
+
+// ===================================================================
+// 📊 GET /api/buchhaltung/bank-import/statistik - Import-Statistiken
+// ===================================================================
+router.get('/bank-import/statistik', requireSuperAdmin, (req, res) => {
+  const { organisation } = req.query;
+
+  let whereClause = '1=1';
+  const params = [];
+
+  if (organisation && organisation !== 'alle') {
+    whereClause += ' AND organisation_name = ?';
+    params.push(organisation);
+  }
+
+  db.query(`
+    SELECT
+      COUNT(*) as gesamt,
+      SUM(CASE WHEN status = 'unzugeordnet' THEN 1 ELSE 0 END) as unzugeordnet,
+      SUM(CASE WHEN status = 'vorgeschlagen' THEN 1 ELSE 0 END) as vorgeschlagen,
+      SUM(CASE WHEN status = 'zugeordnet' THEN 1 ELSE 0 END) as zugeordnet,
+      SUM(CASE WHEN status = 'ignoriert' THEN 1 ELSE 0 END) as ignoriert,
+      SUM(CASE WHEN betrag > 0 THEN betrag ELSE 0 END) as summe_einnahmen,
+      SUM(CASE WHEN betrag < 0 THEN ABS(betrag) ELSE 0 END) as summe_ausgaben
+    FROM bank_transaktionen
+    WHERE ${whereClause}
+  `, params, (err, results) => {
+    if (err) {
+      console.error('Statistik-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Laden der Statistik' });
+    }
+
+    const stats = results[0] || {};
+
+    // Letzte Imports
+    db.query(`
+      SELECT import_id, datei_name, bank_name, anzahl_transaktionen, importiert_am
+      FROM bank_import_historie
+      WHERE ${whereClause.replace('1=1', '1=1')}
+      ORDER BY importiert_am DESC
+      LIMIT 5
+    `, params, (err, imports) => {
+      res.json({
+        statistik: stats,
+        letzteImports: imports || []
+      });
+    });
+  });
+});
+
+// ===================================================================
+// ✅ POST /api/buchhaltung/bank-import/zuordnen/:id - Transaktion zuordnen
+// ===================================================================
+router.post('/bank-import/zuordnen/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const transaktionId = req.params.id;
+    const { kategorie, match_typ, match_id, lerne_regel = false } = req.body;
+
+    if (!kategorie) {
+      return res.status(400).json({ message: 'Kategorie ist erforderlich' });
+    }
+
+    // Hole Transaktion
+    const txResult = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ?', [transaktionId], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    if (txResult.length === 0) {
+      return res.status(404).json({ message: 'Transaktion nicht gefunden' });
+    }
+
+    const tx = txResult[0];
+    const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
+
+    // Erstelle Buchhaltungs-Beleg
+    const jahr = new Date(tx.buchungsdatum).getFullYear();
+    const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
+
+    const belegResult = await new Promise((resolve, reject) => {
+      db.query(`
+        INSERT INTO buchhaltung_belege (
+          beleg_nummer, dojo_id, organisation_name, buchungsart,
+          beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+          kategorie, beschreibung, lieferant_kunde, erstellt_von
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+      `, [
+        belegNummer,
+        tx.dojo_id,
+        tx.organisation_name,
+        buchungsart,
+        tx.buchungsdatum,
+        tx.buchungsdatum,
+        Math.abs(tx.betrag),
+        Math.abs(tx.betrag),
+        kategorie,
+        tx.verwendungszweck || 'Bank-Import',
+        tx.auftraggeber_empfaenger,
+        req.user?.id || 1
+      ], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    // Update Transaktion
+    await new Promise((resolve, reject) => {
+      db.query(`
+        UPDATE bank_transaktionen SET
+          status = 'zugeordnet',
+          kategorie = ?,
+          match_typ = ?,
+          match_id = ?,
+          beleg_id = ?,
+          zugeordnet_von = ?,
+          zugeordnet_am = NOW()
+        WHERE transaktion_id = ?
+      `, [kategorie, match_typ || 'manuell', match_id, belegResult.insertId, req.user?.id || 1, transaktionId], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Optional: Lerne Regel
+    if (lerne_regel && tx.auftraggeber_empfaenger) {
+      await new Promise((resolve) => {
+        db.query(`
+          INSERT IGNORE INTO bank_zuordnung_regeln (
+            dojo_id, match_feld, match_wert, match_typ, kategorie, erstellt_von
+          ) VALUES (?, 'auftraggeber', ?, 'enthält', ?, ?)
+        `, [tx.dojo_id, tx.auftraggeber_empfaenger.substring(0, 100), kategorie, req.user?.id || 1], () => resolve());
+      });
+    }
+
+    // Audit Log
+    await logAudit(belegResult.insertId, 'erstellt', null, {
+      beleg_nummer: belegNummer,
+      betrag_brutto: Math.abs(tx.betrag),
+      kategorie,
+      quelle: 'bank-import',
+      transaktion_id: transaktionId
+    }, req.user?.id || 1, req.user?.username);
+
+    res.json({
+      message: 'Transaktion erfolgreich zugeordnet',
+      beleg_id: belegResult.insertId,
+      beleg_nummer: belegNummer
+    });
+
+  } catch (err) {
+    console.error('Zuordnung-Fehler:', err);
+    res.status(500).json({ message: 'Fehler bei der Zuordnung', error: err.message });
+  }
+});
+
+// ===================================================================
+// ✅ POST /api/buchhaltung/bank-import/batch-zuordnen - Mehrere zuordnen
+// ===================================================================
+router.post('/bank-import/batch-zuordnen', requireSuperAdmin, async (req, res) => {
+  try {
+    const { transaktionen } = req.body;
+
+    if (!Array.isArray(transaktionen) || transaktionen.length === 0) {
+      return res.status(400).json({ message: 'Keine Transaktionen angegeben' });
+    }
+
+    const results = [];
+    for (const tx of transaktionen) {
+      try {
+        // Hole Transaktion
+        const txResult = await new Promise((resolve, reject) => {
+          db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ? AND status != "zugeordnet"',
+            [tx.id], (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+          });
+        });
+
+        if (txResult.length === 0) {
+          results.push({ id: tx.id, success: false, message: 'Nicht gefunden oder bereits zugeordnet' });
+          continue;
+        }
+
+        const transaction = txResult[0];
+        const buchungsart = transaction.betrag > 0 ? 'einnahme' : 'ausgabe';
+        const jahr = new Date(transaction.buchungsdatum).getFullYear();
+        const belegNummer = await generateBelegNummer(transaction.dojo_id, jahr);
+
+        const belegResult = await new Promise((resolve, reject) => {
+          db.query(`
+            INSERT INTO buchhaltung_belege (
+              beleg_nummer, dojo_id, organisation_name, buchungsart,
+              beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+              kategorie, beschreibung, lieferant_kunde, erstellt_von
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+          `, [
+            belegNummer,
+            transaction.dojo_id,
+            transaction.organisation_name,
+            buchungsart,
+            transaction.buchungsdatum,
+            transaction.buchungsdatum,
+            Math.abs(transaction.betrag),
+            Math.abs(transaction.betrag),
+            tx.kategorie,
+            transaction.verwendungszweck || 'Bank-Import',
+            transaction.auftraggeber_empfaenger,
+            req.user?.id || 1
+          ], (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
+        });
+
+        await new Promise((resolve, reject) => {
+          db.query(`
+            UPDATE bank_transaktionen SET
+              status = 'zugeordnet',
+              kategorie = ?,
+              match_typ = 'manuell',
+              beleg_id = ?,
+              zugeordnet_von = ?,
+              zugeordnet_am = NOW()
+            WHERE transaktion_id = ?
+          `, [tx.kategorie, belegResult.insertId, req.user?.id || 1, tx.id], (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+
+        results.push({ id: tx.id, success: true, beleg_id: belegResult.insertId });
+      } catch (err) {
+        results.push({ id: tx.id, success: false, message: err.message });
+      }
+    }
+
+    const successful = results.filter(r => r.success).length;
+    res.json({
+      message: `${successful} von ${transaktionen.length} Transaktionen zugeordnet`,
+      results
+    });
+
+  } catch (err) {
+    console.error('Batch-Zuordnung-Fehler:', err);
+    res.status(500).json({ message: 'Fehler bei der Batch-Zuordnung', error: err.message });
+  }
+});
+
+// ===================================================================
+// ❌ POST /api/buchhaltung/bank-import/ignorieren/:id - Transaktion ignorieren
+// ===================================================================
+router.post('/bank-import/ignorieren/:id', requireSuperAdmin, (req, res) => {
+  const transaktionId = req.params.id;
+  const { lerne_regel = false } = req.body;
+
+  db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ?', [transaktionId], async (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).json({ message: 'Transaktion nicht gefunden' });
+    }
+
+    const tx = results[0];
+
+    db.query(`
+      UPDATE bank_transaktionen SET status = 'ignoriert'
+      WHERE transaktion_id = ?
+    `, [transaktionId], async (err) => {
+      if (err) {
+        console.error('Ignorieren-Fehler:', err);
+        return res.status(500).json({ message: 'Fehler beim Ignorieren' });
+      }
+
+      // Optional: Lerne Ignorier-Regel
+      if (lerne_regel && tx.auftraggeber_empfaenger) {
+        await new Promise((resolve) => {
+          db.query(`
+            INSERT IGNORE INTO bank_zuordnung_regeln (
+              dojo_id, match_feld, match_wert, match_typ, kategorie, aktion, erstellt_von
+            ) VALUES (?, 'auftraggeber', ?, 'enthält', 'sonstige_kosten', 'ignorieren', ?)
+          `, [tx.dojo_id, tx.auftraggeber_empfaenger.substring(0, 100), req.user?.id || 1], () => resolve());
+        });
+      }
+
+      res.json({ message: 'Transaktion ignoriert' });
+    });
+  });
+});
+
+// ===================================================================
+// 🔄 POST /api/buchhaltung/bank-import/vorschlag-annehmen/:id - Vorschlag annehmen
+// ===================================================================
+router.post('/bank-import/vorschlag-annehmen/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const transaktionId = req.params.id;
+
+    // Hole Transaktion mit Vorschlag
+    const txResult = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ? AND status = "vorgeschlagen"',
+        [transaktionId], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    if (txResult.length === 0) {
+      return res.status(404).json({ message: 'Transaktion nicht gefunden oder kein Vorschlag vorhanden' });
+    }
+
+    const tx = txResult[0];
+    let matchDetails = tx.match_details;
+    if (typeof matchDetails === 'string') {
+      try { matchDetails = JSON.parse(matchDetails); } catch (e) {}
+    }
+
+    // Je nach Match-Typ unterschiedliche Aktionen
+    if (tx.match_typ === 'beitrag' && tx.match_id) {
+      // Markiere Beitrag als bezahlt
+      await new Promise((resolve, reject) => {
+        db.query(`
+          UPDATE beitraege SET
+            bezahlt = 1,
+            zahlungsdatum = ?,
+            zahlungsart = 'Überweisung'
+          WHERE beitrag_id = ?
+        `, [tx.buchungsdatum, tx.match_id], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    } else if (tx.match_typ === 'rechnung' && tx.match_id) {
+      // Markiere Rechnung als bezahlt
+      await new Promise((resolve, reject) => {
+        db.query(`
+          UPDATE rechnungen SET
+            status = 'bezahlt',
+            bezahlt_am = ?
+          WHERE rechnung_id = ?
+        `, [tx.buchungsdatum, tx.match_id], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
+
+    // Erstelle Beleg und markiere als zugeordnet
+    const kategorie = matchDetails?.kategorie || 'betriebseinnahmen';
+    const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
+    const jahr = new Date(tx.buchungsdatum).getFullYear();
+    const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
+
+    const belegResult = await new Promise((resolve, reject) => {
+      db.query(`
+        INSERT INTO buchhaltung_belege (
+          beleg_nummer, dojo_id, organisation_name, buchungsart,
+          beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+          kategorie, beschreibung, lieferant_kunde, erstellt_von
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+      `, [
+        belegNummer,
+        tx.dojo_id,
+        tx.organisation_name,
+        buchungsart,
+        tx.buchungsdatum,
+        tx.buchungsdatum,
+        Math.abs(tx.betrag),
+        Math.abs(tx.betrag),
+        kategorie,
+        tx.verwendungszweck || 'Bank-Import',
+        tx.auftraggeber_empfaenger,
+        req.user?.id || 1
+      ], (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+
+    await new Promise((resolve, reject) => {
+      db.query(`
+        UPDATE bank_transaktionen SET
+          status = 'zugeordnet',
+          kategorie = ?,
+          beleg_id = ?,
+          zugeordnet_von = ?,
+          zugeordnet_am = NOW()
+        WHERE transaktion_id = ?
+      `, [kategorie, belegResult.insertId, req.user?.id || 1, transaktionId], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    res.json({
+      message: 'Vorschlag angenommen',
+      beleg_id: belegResult.insertId,
+      beleg_nummer: belegNummer
+    });
+
+  } catch (err) {
+    console.error('Vorschlag-Annehmen-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Annehmen des Vorschlags', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📜 GET /api/buchhaltung/bank-import/historie - Import-Historie
+// ===================================================================
+router.get('/bank-import/historie', requireSuperAdmin, (req, res) => {
+  const { organisation, limit = 20 } = req.query;
+
+  let whereClause = '1=1';
+  const params = [];
+
+  if (organisation && organisation !== 'alle') {
+    whereClause += ' AND organisation_name = ?';
+    params.push(organisation);
+  }
+
+  db.query(`
+    SELECT
+      h.*,
+      (SELECT COUNT(*) FROM bank_transaktionen t WHERE t.import_id = h.import_id AND t.status = 'zugeordnet') as aktuell_zugeordnet
+    FROM bank_import_historie h
+    WHERE ${whereClause}
+    ORDER BY importiert_am DESC
+    LIMIT ?
+  `, [...params, parseInt(limit)], (err, results) => {
+    if (err) {
+      console.error('Historie-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Laden der Historie' });
+    }
+
+    res.json(results);
+  });
 });
 
 module.exports = router;

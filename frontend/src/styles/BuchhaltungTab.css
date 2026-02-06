@@ -963,6 +963,404 @@
   to { transform: rotate(360deg); }
 }
 
+/* ==================== BANK-IMPORT ==================== */
+
+/* Statistik-Karten */
+.bank-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.bank-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary, #fff);
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.bank-stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary, #333);
+}
+
+.bank-stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #666);
+  margin-top: 0.25rem;
+}
+
+.bank-stat-card.vorschlag {
+  border-left: 3px solid #ffc107;
+}
+
+.bank-stat-card.zugeordnet {
+  border-left: 3px solid #28a745;
+}
+
+.bank-stat-card.ignoriert {
+  border-left: 3px solid #6c757d;
+}
+
+/* Bank Header */
+.bank-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.bank-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.bank-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.bank-filter select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: var(--bg-secondary, #fff);
+  font-size: 0.85rem;
+}
+
+/* Batch Actions */
+.bank-batch-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(74, 144, 217, 0.1);
+  border: 1px solid rgba(74, 144, 217, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.bank-batch-actions span {
+  font-weight: 500;
+  color: #4a90d9;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.batch-buttons select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: var(--bg-secondary, #fff);
+  font-size: 0.85rem;
+  min-width: 180px;
+}
+
+/* Bank Table */
+.bank-table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  margin-bottom: 1rem;
+}
+
+.bank-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary, #fff);
+}
+
+.bank-table th,
+.bank-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  font-size: 0.85rem;
+}
+
+.bank-table th {
+  background: var(--bg-tertiary, #f8f9fa);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bank-table .checkbox-col {
+  width: 40px;
+  text-align: center;
+}
+
+.bank-table .betrag-col {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.bank-table .betrag-col.einnahme {
+  color: #28a745;
+}
+
+.bank-table .betrag-col.ausgabe {
+  color: #dc3545;
+}
+
+.bank-table .auftraggeber-col {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-table .verwendungszweck-col {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-row:hover {
+  background: var(--bg-hover, #f5f5f5);
+}
+
+.bank-row.zugeordnet {
+  opacity: 0.6;
+}
+
+.bank-row.ignoriert {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* Bank Status Badge */
+.bank-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.bank-status-badge.unzugeordnet {
+  background: rgba(108, 117, 125, 0.15);
+  color: #6c757d;
+}
+
+.bank-status-badge.vorgeschlagen {
+  background: rgba(255, 193, 7, 0.2);
+  color: #d39e00;
+}
+
+.bank-status-badge.zugeordnet {
+  background: rgba(40, 167, 69, 0.15);
+  color: #28a745;
+}
+
+.bank-status-badge.ignoriert {
+  background: rgba(108, 117, 125, 0.1);
+  color: #adb5bd;
+}
+
+/* Vorschlag-Zeile */
+.vorschlag-row {
+  background: rgba(255, 193, 7, 0.05) !important;
+}
+
+.vorschlag-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #856404;
+  padding-left: 0.5rem !important;
+}
+
+.vorschlag-info svg {
+  color: #ffc107;
+  flex-shrink: 0;
+}
+
+.vorschlag-info .confidence {
+  color: var(--text-secondary, #999);
+  font-size: 0.75rem;
+}
+
+/* Icon Button Variants */
+.btn-icon.success:hover {
+  background: #28a745;
+  color: white;
+}
+
+/* Bank Historie */
+.bank-historie {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.bank-historie h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--text-secondary, #666);
+}
+
+.historie-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.historie-table th,
+.historie-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.historie-table th {
+  font-weight: 500;
+  color: var(--text-secondary, #666);
+}
+
+/* Bank Upload Modal */
+.bank-upload-modal {
+  max-width: 480px;
+}
+
+.upload-area {
+  margin-top: 1rem;
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #999);
+  margin-top: 0.25rem;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  border-radius: 8px;
+  margin-top: 1rem;
+  color: #28a745;
+}
+
+/* Kategorie Modal */
+.kategorie-modal {
+  max-width: 600px;
+}
+
+.tx-preview {
+  background: var(--bg-tertiary, #f8f9fa);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.tx-preview-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+}
+
+.tx-preview-row span:first-child {
+  color: var(--text-secondary, #666);
+}
+
+.tx-preview-row .einnahme {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.tx-preview-row .ausgabe {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.kategorie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kategorie-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  background: var(--bg-secondary, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.kategorie-btn:hover {
+  border-color: var(--primary-color, #4a90d9);
+  background: rgba(74, 144, 217, 0.05);
+}
+
+.kategorie-btn .kat-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary, #333);
+}
+
+.kategorie-btn .kat-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  margin-top: 0.2rem;
+}
+
+.kategorie-btn.einnahme {
+  border-left: 3px solid #28a745;
+}
+
+.kategorie-btn.ausgabe {
+  border-left: 3px solid #dc3545;
+}
+
+.checkbox-group {
+  margin-top: 1rem;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
 /* ==================== DARK MODE ==================== */
 
 [data-theme="dark"] .buchhaltung-tab,

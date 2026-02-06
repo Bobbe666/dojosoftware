@@ -8,7 +8,8 @@ import axios from 'axios';
 import {
   Calculator, FileText, Receipt, Download, Upload, Plus, Edit, Trash2, Lock, X,
   TrendingUp, TrendingDown, PieChart, Calendar, Filter, Search, ChevronDown, ChevronUp,
-  AlertCircle, CheckCircle, RefreshCw, Building2, Euro, FileSpreadsheet
+  AlertCircle, CheckCircle, RefreshCw, Building2, Euro, FileSpreadsheet,
+  Landmark, Check, XCircle, Lightbulb, FileUp, History
 } from 'lucide-react';
 import '../styles/BuchhaltungTab.css';
 
@@ -41,6 +42,21 @@ const BuchhaltungTab = ({ token }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadBelegId, setUploadBelegId] = useState(null);
   const [showAbschlussModal, setShowAbschlussModal] = useState(false);
+
+  // Bank-Import States
+  const [bankTransaktionen, setBankTransaktionen] = useState([]);
+  const [bankTransaktionenTotal, setBankTransaktionenTotal] = useState(0);
+  const [bankStatistik, setBankStatistik] = useState(null);
+  const [bankImportHistorie, setBankImportHistorie] = useState([]);
+  const [bankStatusFilter, setBankStatusFilter] = useState('');
+  const [bankPage, setBankPage] = useState(1);
+  const [bankUploadFile, setBankUploadFile] = useState(null);
+  const [bankUploadOrg, setBankUploadOrg] = useState('Kampfkunstschule Schreiner');
+  const [showBankUploadModal, setShowBankUploadModal] = useState(false);
+  const [showKategorieModal, setShowKategorieModal] = useState(false);
+  const [selectedBankTx, setSelectedBankTx] = useState(null);
+  const [selectedBankTxIds, setSelectedBankTxIds] = useState([]);
+  const [bankUploading, setBankUploading] = useState(false);
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -168,6 +184,180 @@ const BuchhaltungTab = ({ token }) => {
     }
   }, [token, selectedOrg, selectedJahr]);
 
+  // Bank-Transaktionen laden
+  const loadBankTransaktionen = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/buchhaltung/bank-import/transaktionen', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          organisation: selectedOrg !== 'alle' ? selectedOrg : undefined,
+          status: bankStatusFilter || undefined,
+          seite: bankPage,
+          limit: 30
+        }
+      });
+      setBankTransaktionen(res.data.transaktionen);
+      setBankTransaktionenTotal(res.data.pagination.total);
+    } catch (err) {
+      console.error('Bank-Transaktionen laden fehlgeschlagen:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, selectedOrg, bankStatusFilter, bankPage]);
+
+  // Bank-Statistik laden
+  const loadBankStatistik = useCallback(async () => {
+    try {
+      const res = await axios.get('/buchhaltung/bank-import/statistik', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+      });
+      setBankStatistik(res.data.statistik);
+      setBankImportHistorie(res.data.letzteImports);
+    } catch (err) {
+      console.error('Bank-Statistik laden fehlgeschlagen:', err);
+    }
+  }, [token, selectedOrg]);
+
+  // Bank-Datei hochladen
+  const uploadBankFile = async () => {
+    if (!bankUploadFile) return;
+
+    const formData = new FormData();
+    formData.append('datei', bankUploadFile);
+    formData.append('organisation', bankUploadOrg);
+
+    try {
+      setBankUploading(true);
+      setError('');
+      const res = await axios.post('/buchhaltung/bank-import/upload', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setSuccess(`Import erfolgreich: ${res.data.count} Transaktionen importiert, ${res.data.duplikate} Duplikate übersprungen`);
+      setShowBankUploadModal(false);
+      setBankUploadFile(null);
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      console.error('Bank-Upload fehlgeschlagen:', err);
+      setError(err.response?.data?.message || 'Fehler beim Import');
+    } finally {
+      setBankUploading(false);
+    }
+  };
+
+  // Transaktion zuordnen
+  const zuordnenTransaktion = async (kategorie, lerneRegel = false) => {
+    if (!selectedBankTx) return;
+
+    try {
+      setLoading(true);
+      await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, {
+        kategorie,
+        lerne_regel: lerneRegel
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Transaktion zugeordnet');
+      setShowKategorieModal(false);
+      setSelectedBankTx(null);
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler bei der Zuordnung');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Batch-Zuordnung
+  const batchZuordnen = async (kategorie) => {
+    if (selectedBankTxIds.length === 0) return;
+
+    try {
+      setLoading(true);
+      const transaktionen = selectedBankTxIds.map(id => ({ id, kategorie }));
+      await axios.post('/buchhaltung/bank-import/batch-zuordnen', { transaktionen }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess(`${selectedBankTxIds.length} Transaktionen zugeordnet`);
+      setSelectedBankTxIds([]);
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler bei der Batch-Zuordnung');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Transaktion ignorieren
+  const ignorierenTransaktion = async (txId, lerneRegel = false) => {
+    try {
+      setLoading(true);
+      await axios.post(`/buchhaltung/bank-import/ignorieren/${txId}`, {
+        lerne_regel: lerneRegel
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Transaktion ignoriert');
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Ignorieren');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Vorschlag annehmen
+  const vorschlagAnnehmen = async (txId) => {
+    try {
+      setLoading(true);
+      await axios.post(`/buchhaltung/bank-import/vorschlag-annehmen/${txId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Vorschlag angenommen');
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Annehmen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Checkbox Toggle
+  const toggleBankTxSelection = (txId) => {
+    setSelectedBankTxIds(prev =>
+      prev.includes(txId)
+        ? prev.filter(id => id !== txId)
+        : [...prev, txId]
+    );
+  };
+
+  // Select all visible
+  const toggleAllBankTx = () => {
+    const visibleIds = bankTransaktionen
+      .filter(tx => tx.status !== 'zugeordnet' && tx.status !== 'ignoriert')
+      .map(tx => tx.transaktion_id);
+
+    if (selectedBankTxIds.length === visibleIds.length) {
+      setSelectedBankTxIds([]);
+    } else {
+      setSelectedBankTxIds(visibleIds);
+    }
+  };
+
   // Initial Load
   useEffect(() => {
     loadKategorien();
@@ -182,10 +372,13 @@ const BuchhaltungTab = ({ token }) => {
       loadBelege();
     } else if (activeSubTab === 'auto') {
       loadAutoEinnahmen();
+    } else if (activeSubTab === 'bankimport') {
+      loadBankTransaktionen();
+      loadBankStatistik();
     } else if (activeSubTab === 'abschluss') {
       loadAbschluss();
     }
-  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadAbschluss]);
+  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadAbschluss]);
 
   // Beleg speichern
   const saveBeleg = async () => {
@@ -396,6 +589,7 @@ const BuchhaltungTab = ({ token }) => {
     { id: 'euer', label: 'EÜR Übersicht', icon: <PieChart size={16} /> },
     { id: 'belege', label: 'Belegerfassung', icon: <Receipt size={16} /> },
     { id: 'auto', label: 'Auto. Buchungen', icon: <RefreshCw size={16} /> },
+    { id: 'bankimport', label: 'Bank-Import', icon: <Landmark size={16} /> },
     { id: 'abschluss', label: 'Jahresabschluss', icon: <FileSpreadsheet size={16} /> }
   ];
 
@@ -780,6 +974,257 @@ const BuchhaltungTab = ({ token }) => {
           </div>
         )}
 
+        {/* ==================== BANK-IMPORT ==================== */}
+        {activeSubTab === 'bankimport' && (
+          <div className="bankimport-content">
+            {/* Statistik-Karten */}
+            {bankStatistik && (
+              <div className="bank-stats-cards">
+                <div className="bank-stat-card">
+                  <span className="stat-value">{bankStatistik.unzugeordnet || 0}</span>
+                  <span className="stat-label">Unzugeordnet</span>
+                </div>
+                <div className="bank-stat-card vorschlag">
+                  <span className="stat-value">{bankStatistik.vorgeschlagen || 0}</span>
+                  <span className="stat-label">Mit Vorschlag</span>
+                </div>
+                <div className="bank-stat-card zugeordnet">
+                  <span className="stat-value">{bankStatistik.zugeordnet || 0}</span>
+                  <span className="stat-label">Zugeordnet</span>
+                </div>
+                <div className="bank-stat-card ignoriert">
+                  <span className="stat-value">{bankStatistik.ignoriert || 0}</span>
+                  <span className="stat-label">Ignoriert</span>
+                </div>
+              </div>
+            )}
+
+            {/* Header mit Upload-Button */}
+            <div className="bank-header">
+              <div className="bank-header-left">
+                <h3>
+                  <Landmark size={18} />
+                  Bank-Transaktionen
+                </h3>
+                <div className="bank-filter">
+                  <select
+                    value={bankStatusFilter}
+                    onChange={(e) => { setBankStatusFilter(e.target.value); setBankPage(1); }}
+                  >
+                    <option value="">Alle Status</option>
+                    <option value="unzugeordnet">Unzugeordnet</option>
+                    <option value="vorgeschlagen">Mit Vorschlag</option>
+                    <option value="zugeordnet">Zugeordnet</option>
+                    <option value="ignoriert">Ignoriert</option>
+                  </select>
+                </div>
+              </div>
+              <button className="btn-primary" onClick={() => setShowBankUploadModal(true)}>
+                <FileUp size={16} />
+                Kontoauszug importieren
+              </button>
+            </div>
+
+            {/* Batch-Aktionen */}
+            {selectedBankTxIds.length > 0 && (
+              <div className="bank-batch-actions">
+                <span>{selectedBankTxIds.length} ausgewählt</span>
+                <div className="batch-buttons">
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        batchZuordnen(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Kategorie zuweisen...</option>
+                    {kategorien.map(k => (
+                      <option key={k.id} value={k.id}>{k.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => setSelectedBankTxIds([])}
+                  >
+                    Auswahl aufheben
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Transaktions-Tabelle */}
+            <div className="bank-table-container">
+              <table className="bank-table">
+                <thead>
+                  <tr>
+                    <th className="checkbox-col">
+                      <input
+                        type="checkbox"
+                        checked={selectedBankTxIds.length > 0 &&
+                          selectedBankTxIds.length === bankTransaktionen.filter(tx =>
+                            tx.status !== 'zugeordnet' && tx.status !== 'ignoriert'
+                          ).length}
+                        onChange={toggleAllBankTx}
+                      />
+                    </th>
+                    <th>Datum</th>
+                    <th className="betrag-col">Betrag</th>
+                    <th>Auftraggeber/Empfänger</th>
+                    <th>Verwendungszweck</th>
+                    <th>Status</th>
+                    <th>Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bankTransaktionen.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="no-data">
+                        Keine Transaktionen gefunden. Importieren Sie einen Kontoauszug.
+                      </td>
+                    </tr>
+                  ) : (
+                    bankTransaktionen.map(tx => (
+                      <React.Fragment key={tx.transaktion_id}>
+                        <tr className={`bank-row ${tx.status}`}>
+                          <td className="checkbox-col">
+                            {tx.status !== 'zugeordnet' && tx.status !== 'ignoriert' && (
+                              <input
+                                type="checkbox"
+                                checked={selectedBankTxIds.includes(tx.transaktion_id)}
+                                onChange={() => toggleBankTxSelection(tx.transaktion_id)}
+                              />
+                            )}
+                          </td>
+                          <td>{formatDate(tx.buchungsdatum)}</td>
+                          <td className={`betrag-col ${tx.betrag >= 0 ? 'einnahme' : 'ausgabe'}`}>
+                            {formatCurrency(tx.betrag)}
+                          </td>
+                          <td className="auftraggeber-col">{tx.auftraggeber_empfaenger}</td>
+                          <td className="verwendungszweck-col">{tx.verwendungszweck}</td>
+                          <td>
+                            <span className={`bank-status-badge ${tx.status}`}>
+                              {tx.status === 'unzugeordnet' && 'Offen'}
+                              {tx.status === 'vorgeschlagen' && 'Vorschlag'}
+                              {tx.status === 'zugeordnet' && 'Zugeordnet'}
+                              {tx.status === 'ignoriert' && 'Ignoriert'}
+                            </span>
+                          </td>
+                          <td className="actions">
+                            {tx.status === 'vorgeschlagen' && (
+                              <>
+                                <button
+                                  className="btn-icon success"
+                                  title="Vorschlag annehmen"
+                                  onClick={() => vorschlagAnnehmen(tx.transaktion_id)}
+                                >
+                                  <Check size={14} />
+                                </button>
+                                <button
+                                  className="btn-icon"
+                                  title="Andere Kategorie wählen"
+                                  onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); }}
+                                >
+                                  <Edit size={14} />
+                                </button>
+                              </>
+                            )}
+                            {tx.status === 'unzugeordnet' && (
+                              <button
+                                className="btn-icon"
+                                title="Kategorie zuordnen"
+                                onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); }}
+                              >
+                                <Plus size={14} />
+                              </button>
+                            )}
+                            {(tx.status === 'unzugeordnet' || tx.status === 'vorgeschlagen') && (
+                              <button
+                                className="btn-icon danger"
+                                title="Ignorieren"
+                                onClick={() => ignorierenTransaktion(tx.transaktion_id)}
+                              >
+                                <XCircle size={14} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {/* Vorschlag-Zeile */}
+                        {tx.status === 'vorgeschlagen' && tx.match_details && (
+                          <tr className="vorschlag-row">
+                            <td></td>
+                            <td colSpan="6" className="vorschlag-info">
+                              <Lightbulb size={14} />
+                              <span>
+                                {tx.match_typ === 'beitrag' && `Beitrag: ${tx.match_details.name} (${tx.match_details.monat}/${tx.match_details.jahr})`}
+                                {tx.match_typ === 'rechnung' && `Rechnung: ${tx.match_details.rechnungsnummer} - ${tx.match_details.name}`}
+                                {tx.match_typ === 'manuell' && `Kategorie: ${getKategorieName(tx.match_details.kategorie)}`}
+                              </span>
+                              <span className="confidence">
+                                ({Math.round((tx.match_confidence || 0) * 100)}% Sicherheit)
+                              </span>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {bankTransaktionenTotal > 30 && (
+              <div className="pagination">
+                <button
+                  disabled={bankPage === 1}
+                  onClick={() => setBankPage(p => Math.max(1, p - 1))}
+                >
+                  Zurück
+                </button>
+                <span>Seite {bankPage} von {Math.ceil(bankTransaktionenTotal / 30)}</span>
+                <button
+                  disabled={bankPage >= Math.ceil(bankTransaktionenTotal / 30)}
+                  onClick={() => setBankPage(p => p + 1)}
+                >
+                  Weiter
+                </button>
+              </div>
+            )}
+
+            {/* Import-Historie */}
+            {bankImportHistorie.length > 0 && (
+              <div className="bank-historie">
+                <h4>
+                  <History size={16} />
+                  Letzte Imports
+                </h4>
+                <table className="historie-table">
+                  <thead>
+                    <tr>
+                      <th>Datei</th>
+                      <th>Bank</th>
+                      <th>Transaktionen</th>
+                      <th>Importiert am</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankImportHistorie.map((h, idx) => (
+                      <tr key={idx}>
+                        <td>{h.datei_name}</td>
+                        <td>{h.bank_name}</td>
+                        <td>{h.anzahl_transaktionen}</td>
+                        <td>{formatDate(h.importiert_am)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ==================== JAHRESABSCHLUSS ==================== */}
         {activeSubTab === 'abschluss' && (
           <div className="abschluss-content">
@@ -1074,6 +1519,124 @@ const BuchhaltungTab = ({ token }) => {
               <button className="btn-danger" onClick={festschreibenJahr} disabled={loading}>
                 {loading ? 'Wird festgeschrieben...' : 'Endgültig festschreiben'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== BANK UPLOAD MODAL ==================== */}
+      {showBankUploadModal && (
+        <div className="modal-overlay" onClick={() => setShowBankUploadModal(false)}>
+          <div className="modal bank-upload-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Kontoauszug importieren</h3>
+              <button className="close-btn" onClick={() => setShowBankUploadModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Organisation *</label>
+                <select
+                  value={bankUploadOrg}
+                  onChange={e => setBankUploadOrg(e.target.value)}
+                >
+                  <option value="Kampfkunstschule Schreiner">Kampfkunstschule Schreiner</option>
+                  <option value="TDA International">TDA International</option>
+                </select>
+              </div>
+
+              <div className="upload-area">
+                <div className="upload-info">
+                  <FileUp size={48} />
+                  <p>CSV oder MT940 Datei hochladen</p>
+                  <p className="upload-hint">
+                    Unterstützte Banken: Sparkasse, Volksbank, DKB und viele weitere
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept=".csv,.sta,.mt940,.txt"
+                  onChange={(e) => setBankUploadFile(e.target.files[0])}
+                />
+                {bankUploadFile && (
+                  <div className="selected-file">
+                    <FileText size={16} />
+                    {bankUploadFile.name}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => { setShowBankUploadModal(false); setBankUploadFile(null); }}>
+                Abbrechen
+              </button>
+              <button
+                className="btn-primary"
+                onClick={uploadBankFile}
+                disabled={!bankUploadFile || bankUploading}
+              >
+                {bankUploading ? 'Wird importiert...' : 'Importieren'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== KATEGORIE MODAL ==================== */}
+      {showKategorieModal && selectedBankTx && (
+        <div className="modal-overlay" onClick={() => setShowKategorieModal(false)}>
+          <div className="modal kategorie-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Kategorie zuordnen</h3>
+              <button className="close-btn" onClick={() => setShowKategorieModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="tx-preview">
+                <div className="tx-preview-row">
+                  <span>Datum:</span>
+                  <span>{formatDate(selectedBankTx.buchungsdatum)}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Betrag:</span>
+                  <span className={selectedBankTx.betrag >= 0 ? 'einnahme' : 'ausgabe'}>
+                    {formatCurrency(selectedBankTx.betrag)}
+                  </span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Auftraggeber:</span>
+                  <span>{selectedBankTx.auftraggeber_empfaenger}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Verwendungszweck:</span>
+                  <span>{selectedBankTx.verwendungszweck}</span>
+                </div>
+              </div>
+
+              <div className="kategorie-grid">
+                {kategorien.map(kat => (
+                  <button
+                    key={kat.id}
+                    className={`kategorie-btn ${kat.typ}`}
+                    onClick={() => zuordnenTransaktion(kat.id)}
+                  >
+                    <span className="kat-name">{kat.name}</span>
+                    <span className="kat-desc">{kat.beschreibung}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="form-group checkbox-group">
+                <label>
+                  <input type="checkbox" id="lerne-regel" />
+                  Regel lernen (diese Zuordnung für ähnliche Transaktionen merken)
+                </label>
+              </div>
             </div>
           </div>
         </div>
