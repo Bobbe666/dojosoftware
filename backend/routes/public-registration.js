@@ -1262,3 +1262,42 @@ router.post('/iban-validate', async (req, res) => {
 });
 
 module.exports = router;
+// GET /api/public/stundenplan/:dojo_id - Öffentlicher Stundenplan für Website
+router.get('/stundenplan/:dojo_id', async (req, res) => {
+  try {
+    const dojo_id = parseInt(req.params.dojo_id);
+    
+    if (!dojo_id) {
+      return res.status(400).json({ success: false, error: 'Dojo ID erforderlich' });
+    }
+
+    const [stundenplan] = await db.promise().query(`
+      SELECT 
+        sp.stundenplan_id,
+        sp.tag,
+        sp.uhrzeit_start,
+        sp.uhrzeit_ende,
+        k.gruppenname AS kursname,
+        k.stil,
+        
+        CONCAT(t.vorname, ' ', t.nachname) AS trainer,
+        r.name AS raum,
+        st.name AS standort
+      FROM stundenplan sp
+      INNER JOIN kurse k ON sp.kurs_id = k.kurs_id
+      LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
+      LEFT JOIN raeume r ON sp.raum_id = r.id
+      LEFT JOIN standorte st ON sp.standort_id = st.standort_id
+      WHERE k.dojo_id = ? 
+      ORDER BY FIELD(sp.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'),
+               sp.uhrzeit_start
+    `, [dojo_id]);
+
+    res.json({ success: true, data: stundenplan });
+  } catch (err) {
+    console.error('Fehler beim Abrufen des Stundenplans:', err);
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
+module.exports = router;

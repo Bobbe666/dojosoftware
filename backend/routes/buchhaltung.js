@@ -711,8 +711,8 @@ router.get('/euer', requireSuperAdmin, (req, res) => {
     ? `AND organisation_name = ${db.escape(organisation)}`
     : '';
 
-  // Einnahmen nach Kategorie
-  const einnahmenSql = `
+  // Einnahmen - Gruppiert nach Kategorie und Quelle
+  const einnahmenGroupedSql = `
     SELECT
       kategorie,
       quelle,
@@ -724,8 +724,21 @@ router.get('/euer', requireSuperAdmin, (req, res) => {
     ORDER BY kategorie, quelle
   `;
 
-  // Ausgaben nach Kategorie
-  const ausgabenSql = `
+  // Einnahmen - Einzelne Buchungen für Details
+  const einnahmenDetailsSql = `
+    SELECT
+      kategorie,
+      quelle,
+      datum,
+      betrag_brutto,
+      beschreibung
+    FROM v_euer_einnahmen
+    WHERE ${dateFilter} ${orgFilter}
+    ORDER BY kategorie, quelle, datum DESC
+  `;
+
+  // Ausgaben - Gruppiert nach Kategorie und Quelle
+  const ausgabenGroupedSql = `
     SELECT
       kategorie,
       quelle,
@@ -737,48 +750,95 @@ router.get('/euer', requireSuperAdmin, (req, res) => {
     ORDER BY kategorie, quelle
   `;
 
+  // Ausgaben - Einzelne Buchungen für Details
+  const ausgabenDetailsSql = `
+    SELECT
+      kategorie,
+      quelle,
+      datum,
+      betrag_brutto,
+      beschreibung
+    FROM v_euer_ausgaben
+    WHERE ${dateFilter} ${orgFilter}
+    ORDER BY kategorie, quelle, datum DESC
+  `;
+
   Promise.all([
     new Promise((resolve, reject) => {
-      db.query(einnahmenSql, (err, results) => {
+      db.query(einnahmenGroupedSql, (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
     }),
     new Promise((resolve, reject) => {
-      db.query(ausgabenSql, (err, results) => {
+      db.query(einnahmenDetailsSql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(ausgabenGroupedSql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(ausgabenDetailsSql, (err, results) => {
         if (err) reject(err);
         else resolve(results);
       });
     })
   ])
-  .then(([einnahmen, ausgaben]) => {
-    // Gruppiere nach Kategorie
+  .then(([einnahmenGrouped, einnahmenDetails, ausgabenGrouped, ausgabenDetails]) => {
+    // Gruppiere Einnahmen nach Kategorie mit Einzelbuchungen
     const einnahmenNachKategorie = {};
     let totalEinnahmen = 0;
-    einnahmen.forEach(row => {
+    einnahmenGrouped.forEach(row => {
       if (!einnahmenNachKategorie[row.kategorie]) {
         einnahmenNachKategorie[row.kategorie] = { summe: 0, details: [] };
       }
       einnahmenNachKategorie[row.kategorie].summe += parseFloat(row.summe);
+
+      // Finde die Einzelbuchungen für diese Kategorie + Quelle
+      const einzelbuchungen = einnahmenDetails
+        .filter(d => d.kategorie === row.kategorie && d.quelle === row.quelle)
+        .map(d => ({
+          datum: d.datum,
+          betrag: parseFloat(d.betrag_brutto),
+          beschreibung: d.beschreibung
+        }));
+
       einnahmenNachKategorie[row.kategorie].details.push({
         quelle: row.quelle,
         summe: parseFloat(row.summe),
-        anzahl: row.anzahl
+        anzahl: parseInt(row.anzahl),
+        einzelbuchungen: einzelbuchungen
       });
       totalEinnahmen += parseFloat(row.summe);
     });
 
     const ausgabenNachKategorie = {};
     let totalAusgaben = 0;
-    ausgaben.forEach(row => {
+    ausgabenGrouped.forEach(row => {
       if (!ausgabenNachKategorie[row.kategorie]) {
         ausgabenNachKategorie[row.kategorie] = { summe: 0, details: [] };
       }
       ausgabenNachKategorie[row.kategorie].summe += parseFloat(row.summe);
+
+      // Finde die Einzelbuchungen für diese Kategorie + Quelle
+      const einzelbuchungen = ausgabenDetails
+        .filter(d => d.kategorie === row.kategorie && d.quelle === row.quelle)
+        .map(d => ({
+          datum: d.datum,
+          betrag: parseFloat(d.betrag_brutto),
+          beschreibung: d.beschreibung
+        }));
+
       ausgabenNachKategorie[row.kategorie].details.push({
         quelle: row.quelle,
         summe: parseFloat(row.summe),
-        anzahl: row.anzahl
+        anzahl: parseInt(row.anzahl),
+        einzelbuchungen: einzelbuchungen
       });
       totalAusgaben += parseFloat(row.summe);
     });
