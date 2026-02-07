@@ -2136,6 +2136,123 @@ router.post('/bank-import/zuordnen/:id', requireSuperAdmin, async (req, res) => 
 });
 
 // ===================================================================
+// ✅ POST /api/buchhaltung/bank-import/rechnung-verknuepfen/:id
+// Verknüpft Bank-Transaktion mit Verbandsrechnung OHNE EÜR-Buchung
+// (EÜR kommt aus der Bank-Transaktion selbst)
+// ===================================================================
+router.post('/bank-import/rechnung-verknuepfen/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const transaktionId = req.params.id;
+    const { rechnung_id } = req.body;
+
+    if (!rechnung_id) {
+      return res.status(400).json({ message: 'Rechnungs-ID ist erforderlich' });
+    }
+
+    // Hole Transaktion
+    const txResult = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM bank_transaktionen WHERE transaktion_id = ?', [transaktionId], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    if (txResult.length === 0) {
+      return res.status(404).json({ message: 'Transaktion nicht gefunden' });
+    }
+
+    // Hole Rechnung
+    const rechnungResult = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM verband_rechnungen WHERE id = ?', [rechnung_id], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    if (rechnungResult.length === 0) {
+      return res.status(404).json({ message: 'Rechnung nicht gefunden' });
+    }
+
+    const rechnung = rechnungResult[0];
+    const tx = txResult[0];
+
+    // Update Bank-Transaktion (Verknüpfung, KEIN neuer Beleg!)
+    await new Promise((resolve, reject) => {
+      db.query(`
+        UPDATE bank_transaktionen SET
+          status = 'zugeordnet',
+          kategorie = 'betriebseinnahmen',
+          match_typ = 'verband_rechnung',
+          match_id = ?,
+          match_details = ?,
+          zugeordnet_von = ?,
+          zugeordnet_am = NOW()
+        WHERE transaktion_id = ?
+      `, [
+        rechnung_id,
+        JSON.stringify({ rechnungsnummer: rechnung.rechnungsnummer, empfaenger: rechnung.empfaenger_name }),
+        req.user?.id || 1,
+        transaktionId
+      ], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    // Update Rechnung (als bezahlt markieren + Bank-Transaktion verknüpfen)
+    await new Promise((resolve, reject) => {
+      db.query(`
+        UPDATE verband_rechnungen SET
+          status = 'bezahlt',
+          bezahlt_am = ?,
+          bank_transaktion_id = ?
+        WHERE id = ?
+      `, [tx.buchungsdatum, transaktionId, rechnung_id], (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    console.log(`Bank-Transaktion ${transaktionId} mit Verbandsrechnung ${rechnung.rechnungsnummer} verknüpft (ohne EÜR-Buchung)`);
+
+    res.json({
+      success: true,
+      message: `Transaktion mit Rechnung ${rechnung.rechnungsnummer} verknüpft`,
+      rechnungsnummer: rechnung.rechnungsnummer
+    });
+
+  } catch (err) {
+    console.error('Rechnung-Verknüpfung-Fehler:', err);
+    res.status(500).json({ message: 'Fehler bei der Verknüpfung', error: err.message });
+  }
+});
+
+// ===================================================================
+// ✅ GET /api/buchhaltung/bank-import/offene-rechnungen
+// Lädt offene Verbandsrechnungen für Verknüpfung
+// ===================================================================
+router.get('/bank-import/offene-rechnungen', requireSuperAdmin, async (req, res) => {
+  try {
+    const rechnungen = await new Promise((resolve, reject) => {
+      db.query(`
+        SELECT id, rechnungsnummer, empfaenger_name, summe_brutto, rechnungsdatum, status
+        FROM verband_rechnungen
+        WHERE status = 'offen'
+        ORDER BY rechnungsdatum DESC
+      `, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+
+    res.json({ success: true, rechnungen });
+  } catch (err) {
+    console.error('Fehler beim Laden offener Rechnungen:', err);
+    res.status(500).json({ message: 'Fehler beim Laden', error: err.message });
+  }
+});
+
+// ===================================================================
 // ✅ POST /api/buchhaltung/bank-import/batch-zuordnen - Mehrere zuordnen
 // ===================================================================
 router.post('/bank-import/batch-zuordnen', requireSuperAdmin, async (req, res) => {

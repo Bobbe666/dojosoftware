@@ -345,6 +345,89 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
+// POST /:id/euer-buchen - Rechnung manuell in EÜR buchen
+// Erstellt einen Eintrag in buchhaltung_belege (Betriebseinnahme)
+router.post('/:id/euer-buchen', async (req, res) => {
+  try {
+    const rechnungId = req.params.id;
+
+    // Rechnung laden
+    const [rechnung] = await queryAsync(`
+      SELECT * FROM verband_rechnungen WHERE id = ?
+    `, [rechnungId]);
+
+    if (!rechnung) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    }
+
+    // Prüfen ob bereits gebucht
+    if (rechnung.euer_gebucht) {
+      return res.status(400).json({ error: 'Rechnung wurde bereits in EÜR gebucht' });
+    }
+
+    // Nächste Belegnummer generieren
+    const jahr = new Date().getFullYear();
+    const [lastBeleg] = await queryAsync(`
+      SELECT beleg_nummer FROM buchhaltung_belege
+      WHERE beleg_nummer LIKE ?
+      ORDER BY beleg_nummer DESC
+      LIMIT 1
+    `, [`TDA-${jahr}-%`]);
+
+    let nextNum = 1;
+    if (lastBeleg) {
+      const match = lastBeleg.beleg_nummer.match(/TDA-\d+-(\d+)/);
+      if (match) nextNum = parseInt(match[1]) + 1;
+    }
+    const belegNummer = `TDA-${jahr}-${String(nextNum).padStart(4, '0')}`;
+
+    // Beleg erstellen (Betriebseinnahme für TDA = dojo_id 2)
+    const result = await queryAsync(`
+      INSERT INTO buchhaltung_belege (
+        dojo_id, organisation_name, beleg_nummer, beleg_datum,
+        buchungsart, kategorie, betrag_brutto, beschreibung,
+        storniert, erstellt_von
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      2, // TDA International
+      'Tiger & Dragon Association International',
+      belegNummer,
+      rechnung.bezahlt_am || rechnung.rechnungsdatum,
+      'einnahme',
+      'betriebseinnahmen',
+      rechnung.summe_brutto,
+      `Rechnung ${rechnung.rechnungsnummer} - ${rechnung.empfaenger_name || 'Unbekannt'}`,
+      false,
+      req.user?.id || req.user?.admin_id || null
+    ]);
+
+    // Rechnung als EÜR-gebucht markieren
+    await queryAsync(`
+      UPDATE verband_rechnungen
+      SET euer_gebucht = TRUE, euer_beleg_id = ?
+      WHERE id = ?
+    `, [result.insertId, rechnungId]);
+
+    logger.info('Verbandsrechnung in EÜR gebucht:', {
+      rechnung_id: rechnungId,
+      rechnungsnummer: rechnung.rechnungsnummer,
+      beleg_id: result.insertId,
+      beleg_nummer: belegNummer
+    });
+
+    res.json({
+      success: true,
+      beleg_id: result.insertId,
+      beleg_nummer: belegNummer,
+      message: 'Rechnung erfolgreich in EÜR gebucht'
+    });
+
+  } catch (err) {
+    logger.error('Fehler beim EÜR-Buchen:', { error: err });
+    res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+  }
+});
+
 // GET /:id/pdf - PDF generieren
 router.get('/:id/pdf', async (req, res) => {
   try {
