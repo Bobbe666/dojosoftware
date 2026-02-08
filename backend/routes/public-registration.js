@@ -1106,22 +1106,28 @@ router.post('/mitglied-anlegen', async (req, res) => {
       }
     }
 
-    // Mitgliedsnummer generieren
-    const lastMember = await queryAsync(
-      'SELECT mitgliedsnummer FROM mitglieder WHERE dojo_id = ? ORDER BY mitglied_id DESC LIMIT 1',
-      [dojo_id]
-    );
-    let nextNumber = 1;
-    if (lastMember.length > 0 && lastMember[0].mitgliedsnummer) {
-      const match = lastMember[0].mitgliedsnummer.match(/(\d+)$/);
-      if (match) nextNumber = parseInt(match[1]) + 1;
-    }
-    const mitgliedsnummer = `M-${String(nextNumber).padStart(5, '0')}`;
+    // Alle vorhandenen Spalten der mitglieder-Tabelle abrufen
+    const allColumns = await queryAsync('SHOW COLUMNS FROM mitglieder');
+    const existingColumns = new Set(allColumns.map(c => c.Field));
 
-    // Familien-ID generieren falls neue Familie
+    // Mitgliedsnummer generieren falls Spalte existiert
+    let mitgliedsnummer = null;
+    if (existingColumns.has('mitgliedsnummer')) {
+      const lastMember = await queryAsync(
+        'SELECT mitgliedsnummer FROM mitglieder WHERE dojo_id = ? ORDER BY mitglied_id DESC LIMIT 1',
+        [dojo_id]
+      );
+      let nextNumber = 1;
+      if (lastMember.length > 0 && lastMember[0].mitgliedsnummer) {
+        const match = lastMember[0].mitgliedsnummer.match(/(\d+)$/);
+        if (match) nextNumber = parseInt(match[1]) + 1;
+      }
+      mitgliedsnummer = `M-${String(nextNumber).padStart(5, '0')}`;
+    }
+
+    // Familien-ID generieren falls Spalte existiert
     let finalFamilienId = familien_id;
-    if (!finalFamilienId && !hauptmitglied_id) {
-      // Neue Familie für Hauptmitglied
+    if (existingColumns.has('familien_id') && !finalFamilienId && !hauptmitglied_id) {
       const familyResult = await queryAsync(
         'SELECT COALESCE(MAX(familien_id), 0) + 1 as next_id FROM mitglieder WHERE dojo_id = ?',
         [dojo_id]
@@ -1129,23 +1135,48 @@ router.post('/mitglied-anlegen', async (req, res) => {
       finalFamilienId = familyResult[0].next_id;
     }
 
-    // Mitglied einfügen
-    const insertResult = await queryAsync(`
-      INSERT INTO mitglieder (
-        dojo_id, vorname, nachname, geburtsdatum, geschlecht,
-        strasse, hausnummer, plz, ort, telefon_mobil, email,
-        iban, bic, bank_name, kontoinhaber,
-        mitgliedsnummer, status, familien_id, hauptmitglied_id,
-        eintrittsdatum, created_at,
-        registration_source
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Aktiv', ?, ?, ?, NOW(), 'public_website')
-    `, [
-      dojo_id, vorname, nachname, geburtsdatum, geschlecht,
-      strasse || '', hausnummer || '', plz || '', ort || '', telefon || '', email || '',
-      iban || '', bic || '', bank_name || '', kontoinhaber || `${vorname} ${nachname}`,
-      mitgliedsnummer, finalFamilienId, hauptmitglied_id || null,
-      vertragsbeginn || new Date().toISOString().split('T')[0]
-    ]);
+    // Alle möglichen Felder mit Werten definieren
+    const allFields = {
+      dojo_id: dojo_id,
+      vorname: vorname,
+      nachname: nachname,
+      geburtsdatum: geburtsdatum,
+      geschlecht: geschlecht,
+      strasse: strasse || '',
+      hausnummer: hausnummer || '',
+      plz: plz || '',
+      ort: ort || '',
+      telefon: telefon || '',
+      telefon_mobil: telefon || '',
+      email: email || '',
+      iban: iban || '',
+      bic: bic || '',
+      bank_name: bank_name || '',
+      kontoinhaber: kontoinhaber || `${vorname} ${nachname}`,
+      status: 'Aktiv',
+      eintrittsdatum: vertragsbeginn || new Date().toISOString().split('T')[0],
+      created_at: new Date(),
+      mitgliedsnummer: mitgliedsnummer,
+      familien_id: finalFamilienId,
+      hauptmitglied_id: hauptmitglied_id || null,
+      registration_source: 'public_website'
+    };
+
+    // Nur Felder einfügen die in der Tabelle existieren
+    const insertFields = [];
+    const insertValues = [];
+    for (const [field, value] of Object.entries(allFields)) {
+      if (existingColumns.has(field) && value !== null) {
+        insertFields.push(field);
+        insertValues.push(value);
+      }
+    }
+
+    const placeholders = insertValues.map(() => '?').join(', ');
+    const insertResult = await queryAsync(
+      `INSERT INTO mitglieder (${insertFields.join(', ')}) VALUES (${placeholders})`,
+      insertValues
+    );
 
     const newMitgliedId = insertResult.insertId;
 
@@ -1202,7 +1233,7 @@ router.post('/mitglied-anlegen', async (req, res) => {
       message: 'Mitglied erfolgreich angelegt',
       data: {
         mitglied_id: newMitgliedId,
-        mitgliedsnummer,
+        mitgliedsnummer: mitgliedsnummer || `ID-${newMitgliedId}`,
         vorname,
         nachname
       }
