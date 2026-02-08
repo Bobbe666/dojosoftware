@@ -14,10 +14,13 @@ import { useDojoContext } from '../context/DojoContext.jsx'; // 🏢 TAX COMPLIA
 import { useAuth } from '../context/AuthContext.jsx'; // For member ID
 import ReferralCodeVerwaltung from './ReferralCodeVerwaltung';
 import MitgliedsAusweis from './MitgliedsAusweis';
+import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
 import { createSafeHtml } from '../utils/sanitizer';
 import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
 import "../styles/MitgliedDetail.css";
+import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 
 // Extrahierte Tab-Komponenten
 import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab } from './mitglied-detail';
@@ -169,6 +172,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // State for dynamically resolved member ID
   const [resolvedMemberId, setResolvedMemberId] = useState(null);
+
+  // Ref für Mitgliedsausweis Download
+  const ausweisRef = React.useRef(null);
 
   // Determine which ID to use: URL param (admin) or dynamically loaded (member)
   const id = isAdmin ? (memberIdProp || urlId) : resolvedMemberId;
@@ -2677,6 +2683,123 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
           {activeTab === "allgemein" && (
             <div className="grid-container">
+              {/* Mitgliedsausweis - ganz oben */}
+              <div className="field-group card mitgliedsausweis-container">
+                <h3>Mitgliedsausweis</h3>
+                <div className="mitgliedsausweis" ref={ausweisRef}>
+                  {/* Header mit Titel */}
+                  <div className="ausweis-title">
+                    <span className="title-jp">格闘技学校</span>
+                    <span className="title-de">Kampfkunstschule Schreiner</span>
+                  </div>
+
+                  {/* Hauptbereich: Logo links, Daten mitte, Foto+QR rechts */}
+                  <div className="ausweis-body">
+                    {/* Linke Seite: Großes Logo */}
+                    <div className="ausweis-left">
+                      <img
+                        src={dojoLogo}
+                        alt="Kampfkunstschule Schreiner"
+                        className="ausweis-logo"
+                      />
+                    </div>
+
+                    {/* Mitte: Name und Infos */}
+                    <div className="ausweis-center">
+                      <div className="ausweis-kanji">武道</div>
+                      <div className="ausweis-name">
+                        {mitglied?.vorname} · {mitglied?.nachname}
+                      </div>
+                      <div className="ausweis-info-list">
+                        <div className="ausweis-info-row">
+                          <span className="info-label">Mitglieds-Nr.</span>
+                          <span className="info-value">{String(mitglied?.mitglied_id).padStart(5, '0')}</span>
+                        </div>
+                        <div className="ausweis-info-row">
+                          <span className="info-label">Mitglied seit</span>
+                          <span className="info-value">
+                            {mitglied?.eintrittsdatum
+                              ? new Date(mitglied.eintrittsdatum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' })
+                              : '—'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rechte Seite: Foto oben, QR unten */}
+                    <div className="ausweis-right">
+                      <div className="ausweis-foto">
+                        {(mitglied?.foto_pfad || photoPreview) ? (
+                          <img
+                            src={photoPreview || (mitglied?.foto_pfad ? `${window.location.protocol}//${window.location.hostname}:3000/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}
+                            alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
+                          />
+                        ) : (
+                          <div className="ausweis-foto-placeholder">
+                            <span>写真</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="ausweis-qr">
+                        <QRCodeSVG
+                          value={`DOJO-CHECKIN:${mitglied?.dojo_id || '0'}:${mitglied?.mitglied_id || '0'}`}
+                          size={88}
+                          level="M"
+                          bgColor="#ffffff"
+                          fgColor="#000000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="ausweis-footer">
+                    <div className="ausweis-motto">心技体 — Shin Gi Tai</div>
+                    <div className="ausweis-website">www.tda-vib.de</div>
+                  </div>
+                </div>
+
+                <div className="ausweis-actions">
+                  <button
+                    className="btn btn-secondary ausweis-download-btn"
+                    onClick={async () => {
+                      if (!ausweisRef.current) return;
+                      try {
+                        // Wrapper mit Padding erstellen für Download
+                        const wrapper = document.createElement('div');
+                        wrapper.style.padding = '20px';
+                        wrapper.style.background = '#000000';
+                        wrapper.style.display = 'inline-block';
+
+                        const clone = ausweisRef.current.cloneNode(true);
+                        wrapper.appendChild(clone);
+                        document.body.appendChild(wrapper);
+
+                        const canvas = await html2canvas(wrapper, {
+                          backgroundColor: '#000000',
+                          scale: 3,
+                          useCORS: true,
+                          allowTaint: true,
+                          logging: false,
+                          imageTimeout: 15000
+                        });
+
+                        document.body.removeChild(wrapper);
+                        const link = document.createElement('a');
+                        link.download = `mitgliedsausweis-${mitglied?.nachname?.toLowerCase() || 'member'}.png`;
+                        link.href = canvas.toDataURL('image/png', 1.0);
+                        link.click();
+                      } catch (err) {
+                        console.error('Download failed:', err);
+                        alert('Download fehlgeschlagen: ' + err.message);
+                      }
+                    }}
+                  >
+                    Als Bild speichern
+                  </button>
+                </div>
+              </div>
+
               <div className="field-group card">
                 <h3>Allgemeine Informationen</h3>
                 

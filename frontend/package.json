@@ -25,6 +25,7 @@
     "get-user-locale": "^3.0.0",
     "grapesjs": "^0.22.13",
     "grapesjs-preset-webpage": "^1.0.3",
+    "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
     "i18next": "^25.8.0",
     "i18next-browser-languagedetector": "^8.2.0",

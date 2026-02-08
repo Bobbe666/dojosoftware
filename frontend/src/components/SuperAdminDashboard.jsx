@@ -659,67 +659,96 @@ const SuperAdminDashboard = () => {
                     {isExpanded && (
                       <tr className="expandable-row">
                         <td colSpan={11} className="expandable-cell">
-                          <div className="expandable-content">
-                            <div className="expandable-section">
-                              <h4>Kontaktdaten</h4>
-                              <div className="info-grid">
-                                <div className="info-item">
-                                  <strong>E-Mail:</strong> {dojo.email || '-'}
+                          <div className="dojo-details-panel">
+                            {/* Kontaktdaten */}
+                            <div className="details-card">
+                              <div className="details-card-header">
+                                <span className="details-card-icon">📍</span>
+                                <h4>Kontaktdaten</h4>
+                              </div>
+                              <div className="details-card-body">
+                                <div className="details-row">
+                                  <span className="details-label">E-Mail</span>
+                                  <span className="details-value">{dojo.email || '-'}</span>
                                 </div>
-                                <div className="info-item">
-                                  <strong>Telefon:</strong> {dojo.telefon || '-'}
+                                <div className="details-row">
+                                  <span className="details-label">Telefon</span>
+                                  <span className="details-value">{dojo.telefon || '-'}</span>
                                 </div>
-                                <div className="info-item">
-                                  <strong>Straße:</strong> {dojo.strasse || '-'} {dojo.hausnummer || ''}
+                                <div className="details-row">
+                                  <span className="details-label">Adresse</span>
+                                  <span className="details-value">
+                                    {dojo.strasse || dojo.plz || dojo.ort
+                                      ? `${dojo.strasse || ''} ${dojo.hausnummer || ''}, ${dojo.plz || ''} ${dojo.ort || ''}`
+                                      : '-'}
+                                  </span>
                                 </div>
-                                <div className="info-item">
-                                  <strong>PLZ:</strong> {dojo.plz || '-'}
-                                </div>
-                                <div className="info-item">
-                                  <strong>Ort:</strong> {dojo.ort || '-'}
-                                </div>
-                                <div className="info-item">
-                                  <strong>Land:</strong> {dojo.land || '-'}
+                                <div className="details-row">
+                                  <span className="details-label">Land</span>
+                                  <span className="details-value">{dojo.land || 'Deutschland'}</span>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="expandable-section">
-                              <h4>Abonnement Details</h4>
-                              <div className="info-grid">
-                                <div className="info-item">
-                                  <strong>Status:</strong> {getSubscriptionStatusBadge(dojo)}
+                            {/* Abonnement Details */}
+                            <div className="details-card">
+                              <div className="details-card-header">
+                                <span className="details-card-icon">💳</span>
+                                <h4>Abonnement</h4>
+                              </div>
+                              <div className="details-card-body">
+                                <div className="details-row">
+                                  <span className="details-label">Status</span>
+                                  <span className="details-value">{getSubscriptionStatusBadge(dojo)}</span>
                                 </div>
                                 {dojo.subscription_status === 'trial' && (
                                   <>
-                                    <div className="info-item">
-                                      <strong>Trial Start:</strong> {dojo.trial_starts_at ? new Date(dojo.trial_starts_at).toLocaleDateString('de-DE') : '-'}
+                                    <div className="details-row">
+                                      <span className="details-label">Trial Start</span>
+                                      <span className="details-value">
+                                        {dojo.trial_starts_at ? new Date(dojo.trial_starts_at).toLocaleDateString('de-DE') : '-'}
+                                      </span>
                                     </div>
-                                    <div className="info-item">
-                                      <strong>Trial Ende:</strong> {dojo.trial_ends_at ? new Date(dojo.trial_ends_at).toLocaleDateString('de-DE') : '-'}
+                                    <div className="details-row">
+                                      <span className="details-label">Trial Ende</span>
+                                      <span className="details-value">
+                                        {dojo.trial_ends_at ? new Date(dojo.trial_ends_at).toLocaleDateString('de-DE') : '-'}
+                                      </span>
                                     </div>
-                                    <div className="info-item">
-                                      <strong>Verbleibende Tage:</strong> {dojo.trial_days_remaining !== null ? `${dojo.trial_days_remaining} Tage` : '-'}
+                                    <div className="details-row highlight">
+                                      <span className="details-label">Verbleibend</span>
+                                      <span className="details-value countdown">
+                                        {dojo.trial_days_remaining !== null ? `${dojo.trial_days_remaining} Tage` : '-'}
+                                      </span>
                                     </div>
                                   </>
                                 )}
                                 {dojo.subscription_status === 'active' && (
                                   <>
-                                    <div className="info-item">
-                                      <strong>Plan:</strong> {dojo.subscription_plan || '-'}
+                                    <div className="details-row">
+                                      <span className="details-label">Plan</span>
+                                      <span className="details-value plan-badge">{dojo.subscription_plan || '-'}</span>
                                     </div>
-                                    <div className="info-item">
-                                      <strong>Intervall:</strong> {dojo.subscription_interval || '-'}
+                                    <div className="details-row">
+                                      <span className="details-label">Intervall</span>
+                                      <span className="details-value">{dojo.subscription_interval || '-'}</span>
                                     </div>
-                                    <div className="info-item">
-                                      <strong>Abo Start:</strong> {dojo.subscription_starts_at ? new Date(dojo.subscription_starts_at).toLocaleDateString('de-DE') : '-'}
+                                    <div className="details-row">
+                                      <span className="details-label">Abo Start</span>
+                                      <span className="details-value">
+                                        {dojo.subscription_starts_at ? new Date(dojo.subscription_starts_at).toLocaleDateString('de-DE') : '-'}
+                                      </span>
                                     </div>
-                                    <div className="info-item">
-                                      <strong>Abo Ende:</strong> {dojo.subscription_ends_at ? new Date(dojo.subscription_ends_at).toLocaleDateString('de-DE') : '-'}
+                                    <div className="details-row">
+                                      <span className="details-label">Abo Ende</span>
+                                      <span className="details-value">
+                                        {dojo.subscription_ends_at ? new Date(dojo.subscription_ends_at).toLocaleDateString('de-DE') : '-'}
+                                      </span>
                                     </div>
                                     {dojo.subscription_days_remaining !== null && (
-                                      <div className="info-item">
-                                        <strong>Verbleibende Tage:</strong> {dojo.subscription_days_remaining} Tage
+                                      <div className="details-row highlight">
+                                        <span className="details-label">Verbleibend</span>
+                                        <span className="details-value countdown">{dojo.subscription_days_remaining} Tage</span>
                                       </div>
                                     )}
                                   </>
@@ -727,55 +756,65 @@ const SuperAdminDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="expandable-section">
-                              <h4>Aktionen</h4>
-                              <div className="action-buttons">
-                                {dojo.subscription_status === 'trial' && (
+                            {/* Aktionen */}
+                            <div className="details-card actions-card">
+                              <div className="details-card-header">
+                                <span className="details-card-icon">⚡</span>
+                                <h4>Aktionen</h4>
+                              </div>
+                              <div className="details-card-body">
+                                <div className="action-buttons-grid">
+                                  {dojo.subscription_status === 'trial' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleExtendTrial(dojo);
+                                      }}
+                                      className="action-btn warning"
+                                      title="Trial verlängern"
+                                    >
+                                      <Clock size={16} />
+                                      <span>Trial verlängern</span>
+                                    </button>
+                                  )}
+                                  {(dojo.subscription_status === 'trial' || dojo.subscription_status === 'expired') && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleActivateSubscription(dojo);
+                                      }}
+                                      className="action-btn success"
+                                      title="Abo aktivieren"
+                                    >
+                                      <CheckCircle size={16} />
+                                      <span>Abo aktivieren</span>
+                                    </button>
+                                  )}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleExtendTrial(dojo);
+                                      handleEditDojo(dojo);
                                     }}
-                                    className="btn btn-sm btn-warning"
-                                    title="Trial verlängern"
+                                    className="action-btn secondary"
+                                    title="Bearbeiten"
                                   >
-                                    <Clock size={14} /> Trial verlängern
+                                    <Edit size={16} />
+                                    <span>Bearbeiten</span>
                                   </button>
-                                )}
-                                {(dojo.subscription_status === 'trial' || dojo.subscription_status === 'expired') && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleActivateSubscription(dojo);
-                                    }}
-                                    className="btn btn-sm btn-success"
-                                    title="Abo aktivieren"
-                                  >
-                                    <CheckCircle size={14} /> Abo aktivieren
-                                  </button>
-                                )}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditDojo(dojo);
-                                  }}
-                                  className="btn btn-sm btn-secondary"
-                                  title="Bearbeiten"
-                                >
-                                  <Edit size={14} /> Bearbeiten
-                                </button>
-                                {dojo.id !== 2 && ( // TDA International nicht löschbar
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteDojo(dojo);
-                                    }}
-                                    className="btn btn-sm btn-danger"
-                                    title="Deaktivieren"
-                                  >
-                                    <Trash2 size={14} /> Deaktivieren
-                                  </button>
-                                )}
+                                  {dojo.id !== 2 && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteDojo(dojo);
+                                      }}
+                                      className="action-btn danger"
+                                      title="Deaktivieren"
+                                    >
+                                      <Trash2 size={16} />
+                                      <span>Deaktivieren</span>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>

@@ -1281,6 +1281,18 @@ try {
     });
 }
 
+try {
+  const walletRouter = require(path.join(__dirname, "routes", "wallet.js"));
+  app.use("/api/wallet", authenticateToken, walletRouter);
+  logger.success('Route gemountet', { path: '/api/wallet' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'wallet',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // =============================================
 // AUTOMATIC LOADING OF REMAINING ROUTES
 // =============================================
@@ -1310,6 +1322,7 @@ const skipFiles = [
   "pruefungen.js",
   "lastschriftlauf.js",
   "stripe-connect.js",
+  "wallet.js",
   "kurse.js",
   "trainer.js",
   "raeume.js",

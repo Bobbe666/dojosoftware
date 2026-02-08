@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Calculator, FileText, Receipt, Download, Upload, Plus, Edit, Trash2, Lock, X,
-  TrendingUp, TrendingDown, PieChart, Calendar, Filter, Search, ChevronDown, ChevronUp,
+  TrendingUp, TrendingDown, PieChart, Calendar, Filter, Search, ChevronDown, ChevronUp, ChevronRight,
   AlertCircle, CheckCircle, RefreshCw, Building2, Euro, FileSpreadsheet,
   Landmark, Check, XCircle, Lightbulb, FileUp, History
 } from 'lucide-react';
@@ -36,6 +36,7 @@ const BuchhaltungTab = ({ token }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [expandedKategorien, setExpandedKategorien] = useState({});
 
   // Modal States
   const [showBelegModal, setShowBelegModal] = useState(false);
@@ -66,6 +67,9 @@ const BuchhaltungTab = ({ token }) => {
   const [bankKategorieFilter, setBankKategorieFilter] = useState(''); // Filter für zugeordnete Kategorie
   const [showUmbuchungModal, setShowUmbuchungModal] = useState(false);
   const [umbuchungTx, setUmbuchungTx] = useState(null);
+  const [showRechnungModal, setShowRechnungModal] = useState(false);
+  const [offeneRechnungen, setOffeneRechnungen] = useState([]);
+  const [rechnungTx, setRechnungTx] = useState(null);
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -505,6 +509,42 @@ const BuchhaltungTab = ({ token }) => {
     }
   };
 
+  // Offene Rechnungen laden (für Verknüpfung)
+  const loadOffeneRechnungen = async () => {
+    try {
+      const res = await axios.get('/buchhaltung/bank-import/offene-rechnungen', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOffeneRechnungen(res.data.rechnungen || []);
+    } catch (err) {
+      console.error('Fehler beim Laden offener Rechnungen:', err);
+    }
+  };
+
+  // Bank-Transaktion mit Rechnung verknüpfen (ohne EÜR-Buchung)
+  const verknuepfeMitRechnung = async (rechnungId) => {
+    if (!rechnungTx) return;
+
+    try {
+      setLoading(true);
+      await axios.post(`/buchhaltung/bank-import/rechnung-verknuepfen/${rechnungTx.transaktion_id}`, {
+        rechnung_id: rechnungId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Transaktion mit Rechnung verknüpft');
+      setShowRechnungModal(false);
+      setRechnungTx(null);
+      loadBankTransaktionen();
+      loadBankStatistik();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler bei der Verknüpfung');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Ganzen Import löschen
   const deleteImport = async (importId) => {
     if (!confirm('Alle Transaktionen dieses Imports löschen? (Bereits zugeordnete bleiben erhalten)')) return;
@@ -901,16 +941,50 @@ const BuchhaltungTab = ({ token }) => {
                     <tbody>
                       {Object.entries(euerData.einnahmen?.nachKategorie || {}).map(([kat, data]) => (
                         <React.Fragment key={kat}>
-                          <tr className="kategorie-row">
-                            <td colSpan="2"><strong>{getKategorieName(kat)}</strong></td>
+                          <tr
+                            className="kategorie-row clickable"
+                            onClick={() => setExpandedKategorien(prev => ({ ...prev, [`ein_${kat}`]: !prev[`ein_${kat}`] }))}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td colSpan="2">
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {expandedKategorien[`ein_${kat}`] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                <strong>{getKategorieName(kat)}</strong>
+                              </span>
+                            </td>
                             <td className="right"><strong>{formatCurrency(data.summe)}</strong></td>
                           </tr>
-                          {data.details?.map((detail, idx) => (
-                            <tr key={`${kat}-${idx}`} className="detail-row">
-                              <td></td>
-                              <td>{detail.quelle} ({detail.anzahl}x)</td>
-                              <td className="right">{formatCurrency(detail.summe)}</td>
-                            </tr>
+                          {expandedKategorien[`ein_${kat}`] && data.details?.map((detail, idx) => (
+                            <React.Fragment key={`${kat}-${idx}`}>
+                              <tr
+                                className="detail-row clickable"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedKategorien(prev => ({ ...prev, [`ein_${kat}_${idx}`]: !prev[`ein_${kat}_${idx}`] }));
+                                }}
+                                style={{ cursor: detail.einzelbuchungen?.length > 0 ? 'pointer' : 'default' }}
+                              >
+                                <td></td>
+                                <td>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    {detail.einzelbuchungen?.length > 0 && (
+                                      expandedKategorien[`ein_${kat}_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />
+                                    )}
+                                    {detail.quelle} ({detail.anzahl}x)
+                                  </span>
+                                </td>
+                                <td className="right">{formatCurrency(detail.summe)}</td>
+                              </tr>
+                              {expandedKategorien[`ein_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
+                                <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
+                                  <td></td>
+                                  <td style={{ paddingLeft: '2rem', fontSize: '0.85em', color: '#fff' }}>
+                                    {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
+                                  </td>
+                                  <td className="right" style={{ fontSize: '0.85em', color: '#fff' }}>{formatCurrency(buchung.betrag)}</td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
                           ))}
                         </React.Fragment>
                       ))}
@@ -938,16 +1012,50 @@ const BuchhaltungTab = ({ token }) => {
                     <tbody>
                       {Object.entries(euerData.ausgaben?.nachKategorie || {}).map(([kat, data]) => (
                         <React.Fragment key={kat}>
-                          <tr className="kategorie-row">
-                            <td colSpan="2"><strong>{getKategorieName(kat)}</strong></td>
+                          <tr
+                            className="kategorie-row clickable"
+                            onClick={() => setExpandedKategorien(prev => ({ ...prev, [`aus_${kat}`]: !prev[`aus_${kat}`] }))}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td colSpan="2">
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {expandedKategorien[`aus_${kat}`] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                <strong>{getKategorieName(kat)}</strong>
+                              </span>
+                            </td>
                             <td className="right"><strong>{formatCurrency(data.summe)}</strong></td>
                           </tr>
-                          {data.details?.map((detail, idx) => (
-                            <tr key={`${kat}-${idx}`} className="detail-row">
-                              <td></td>
-                              <td>{detail.quelle} ({detail.anzahl}x)</td>
-                              <td className="right">{formatCurrency(detail.summe)}</td>
-                            </tr>
+                          {expandedKategorien[`aus_${kat}`] && data.details?.map((detail, idx) => (
+                            <React.Fragment key={`${kat}-${idx}`}>
+                              <tr
+                                className="detail-row clickable"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedKategorien(prev => ({ ...prev, [`aus_${kat}_${idx}`]: !prev[`aus_${kat}_${idx}`] }));
+                                }}
+                                style={{ cursor: detail.einzelbuchungen?.length > 0 ? 'pointer' : 'default' }}
+                              >
+                                <td></td>
+                                <td>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    {detail.einzelbuchungen?.length > 0 && (
+                                      expandedKategorien[`aus_${kat}_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />
+                                    )}
+                                    {detail.quelle} ({detail.anzahl}x)
+                                  </span>
+                                </td>
+                                <td className="right">{formatCurrency(detail.summe)}</td>
+                              </tr>
+                              {expandedKategorien[`aus_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
+                                <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
+                                  <td></td>
+                                  <td style={{ paddingLeft: '2rem', fontSize: '0.85em', color: '#fff' }}>
+                                    {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
+                                  </td>
+                                  <td className="right" style={{ fontSize: '0.85em', color: '#fff' }}>{formatCurrency(buchung.betrag)}</td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
                           ))}
                         </React.Fragment>
                       ))}
@@ -1376,6 +1484,15 @@ const BuchhaltungTab = ({ token }) => {
                                 onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); }}
                               >
                                 <Plus size={14} />
+                              </button>
+                            )}
+                            {tx.status === 'unzugeordnet' && tx.betrag > 0 && (
+                              <button
+                                className="btn-icon rechnung"
+                                title="Mit Rechnung verknüpfen"
+                                onClick={() => { setRechnungTx(tx); loadOffeneRechnungen(); setShowRechnungModal(true); }}
+                              >
+                                <FileText size={14} />
                               </button>
                             )}
                             {(tx.status === 'unzugeordnet' || tx.status === 'vorgeschlagen') && (
@@ -2046,6 +2163,98 @@ const BuchhaltungTab = ({ token }) => {
 
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => { setShowUmbuchungModal(false); setUmbuchungTx(null); }}>
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rechnung Verknüpfen Modal */}
+      {showRechnungModal && rechnungTx && (
+        <div className="modal-overlay kategorie-overlay" onClick={() => setShowRechnungModal(false)}>
+          <div className="modal kategorie-modal kategorie-modal-wide" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Mit Rechnung verknüpfen</h3>
+              <button className="close-btn" onClick={() => setShowRechnungModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {/* Transaction Details */}
+              <div className="tx-preview">
+                <div className="tx-preview-row">
+                  <span>Datum:</span>
+                  <span>{formatDate(rechnungTx.buchungsdatum)}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Betrag:</span>
+                  <span className="einnahme">{formatCurrency(rechnungTx.betrag)}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Auftraggeber:</span>
+                  <span>{rechnungTx.auftraggeber_empfaenger}</span>
+                </div>
+                <div className="tx-preview-row">
+                  <span>Verwendungszweck:</span>
+                  <span>{rechnungTx.verwendungszweck}</span>
+                </div>
+              </div>
+
+              <h4 className="neue-kategorie-title">Offene Rechnungen:</h4>
+
+              {offeneRechnungen.length === 0 ? (
+                <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '1rem' }}>
+                  Keine offenen Verbandsrechnungen vorhanden
+                </p>
+              ) : (
+                <div className="rechnungen-liste" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {offeneRechnungen.map(re => (
+                    <div
+                      key={re.id}
+                      className="rechnung-item"
+                      onClick={() => verknuepfeMitRechnung(re.id)}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem 1rem',
+                        background: Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01
+                          ? 'rgba(34, 197, 94, 0.15)'
+                          : 'rgba(255, 255, 255, 0.05)',
+                        border: Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01
+                          ? '1px solid rgba(34, 197, 94, 0.4)'
+                          : '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '8px',
+                        marginBottom: '0.5rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#fff' }}>{re.rechnungsnummer}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>{re.empfaenger_name}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{formatDate(re.rechnungsdatum)}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: '600', color: '#22c55e' }}>{formatCurrency(re.summe_brutto)}</div>
+                        {Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01 && (
+                          <div style={{ fontSize: '0.75rem', color: '#22c55e' }}>✓ Betrag stimmt</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '1rem', fontStyle: 'italic' }}>
+                Hinweis: Die Verknüpfung markiert die Rechnung als bezahlt. Die EÜR-Buchung erfolgt über die Bank-Transaktion.
+              </p>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => { setShowRechnungModal(false); setRechnungTx(null); }}>
                 Abbrechen
               </button>
             </div>

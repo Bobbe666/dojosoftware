@@ -2,16 +2,23 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
-import { Building2, Check, Search, X, Loader2, Save, Eye, Download } from 'lucide-react';
+import { Building2, Check, Search, X, Loader2, Save, Eye, Download, CheckCircle, BookOpen } from 'lucide-react';
 import '../styles/RechnungErstellen.css';
 
 const VerbandRechnungErstellen = ({ token: propToken }) => {
   const { token: contextToken } = useAuth();
   const token = propToken || contextToken;
 
-  // Organisation-Auswahl (Step 1)
-  const [showOrganisationSelection, setShowOrganisationSelection] = useState(true);
-  const [selectedOrganisation, setSelectedOrganisation] = useState(null);
+  // View Mode: 'erstellen' oder 'ansehen'
+  const [viewMode, setViewMode] = useState('erstellen');
+
+  // Organisation ist immer TDA (keine Auswahl mehr nötig)
+  const [selectedOrganisation] = useState({
+    id: 'tda',
+    name: 'Tiger & Dragon Association International',
+    adresse: 'Ohmstr. 14, 84137 Vilsbiburg',
+    typ: 'verband'
+  });
 
   // Form Data
   const [empfaenger, setEmpfaenger] = useState({ verbandsmitglieder: [], softwareNutzer: [], dojoMitglieder: [] });
@@ -83,22 +90,13 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  // Organisationen für Auswahl
-  const organisationen = [
-    {
-      id: 'tda',
-      name: 'Tiger & Dragon Association International',
-      adresse: 'Ohmstr. 14, 84137 Vilsbiburg',
-      typ: 'verband'
-    }
-  ];
 
-  // Daten laden wenn Organisation gewählt
+  // Daten laden beim Start
   useEffect(() => {
-    if (selectedOrganisation && token) {
+    if (token) {
       loadData();
     }
-  }, [selectedOrganisation, token]);
+  }, [token]);
 
   // Skonto-Tage automatisch berechnen
   useEffect(() => {
@@ -139,11 +137,6 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleOrganisationSelect = (org) => {
-    setSelectedOrganisation(org);
-    setShowOrganisationSelection(false);
   };
 
   const handleEmpfaengerSelect = (emp, typ) => {
@@ -372,49 +365,59 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
     }
   };
 
-  // Organisation-Auswahl Modal
-  if (showOrganisationSelection) {
-    return (
-      <div className="rechnung-erstellen-container">
-        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="dojo-selection-modal" style={{ background: '#1a1a2e', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '16px', padding: '1.5rem', maxWidth: '500px', width: '90%' }}>
-            <div className="modal-header" style={{ marginBottom: '1.5rem' }}>
-              <h2 style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-                <Building2 size={24} style={{ color: '#ffd700' }} />
-                Organisation wählen
-              </h2>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                Für welche Organisation möchten Sie eine Rechnung erstellen?
-              </p>
-            </div>
-            <div className="dojo-selection-grid" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {organisationen.map((org) => (
-                <div
-                  key={org.id}
-                  className="dojo-selection-card"
-                  onClick={() => handleOrganisationSelect(org)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '2px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '12px',
-                    padding: '1.25rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem', color: '#ffd700' }}>
-                    <Building2 size={32} />
-                  </div>
-                  <h3 style={{ color: '#fff', textAlign: 'center', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{org.name}</h3>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.6)', textAlign: 'center', margin: 0, fontSize: '0.85rem' }}>{org.adresse}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Download-Funktion für Rechnungen (öffnet Print-Dialog)
+  const handleDownloadRechnung = (rechnungId) => {
+    window.open(`/api/verband-rechnungen/${rechnungId}/pdf?print=1`, '_blank');
+  };
+
+  // Rechnung ansehen (HTML in neuem Tab öffnen)
+  const handleViewRechnung = (rechnungId) => {
+    window.open(`/api/verband-rechnungen/${rechnungId}/pdf`, '_blank');
+  };
+
+  // Status-Badge Farbe
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'bezahlt': return { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgba(34, 197, 94, 0.5)', text: '#22c55e' };
+      case 'offen': return { bg: 'rgba(234, 179, 8, 0.2)', border: 'rgba(234, 179, 8, 0.5)', text: '#eab308' };
+      case 'ueberfaellig': return { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.5)', text: '#ef4444' };
+      case 'storniert': return { bg: 'rgba(107, 114, 128, 0.2)', border: 'rgba(107, 114, 128, 0.5)', text: '#6b7280' };
+      default: return { bg: 'rgba(255, 255, 255, 0.1)', border: 'rgba(255, 255, 255, 0.3)', text: '#fff' };
+    }
+  };
+
+  // Rechnung als bezahlt markieren (OHNE EÜR-Eintrag)
+  const handleMarkAsBezahlt = async (rechnungId) => {
+    try {
+      const response = await getApi().put(`/verband-rechnungen/${rechnungId}/status`, {
+        status: 'bezahlt',
+        bezahlt_am: new Date().toISOString().split('T')[0]
+      });
+
+      if (response.data.success) {
+        setSuccess('Rechnung als bezahlt markiert');
+        loadData(); // Liste neu laden
+      }
+    } catch (err) {
+      console.error('Fehler beim Markieren:', err);
+      setError('Fehler beim Markieren als bezahlt');
+    }
+  };
+
+  // Rechnung in EÜR buchen (erstellt Beleg in buchhaltung_belege)
+  const handleEuerZuordnen = async (rechnung) => {
+    try {
+      const response = await getApi().post(`/verband-rechnungen/${rechnung.rechnung_id}/euer-buchen`);
+
+      if (response.data.success) {
+        setSuccess(`Rechnung ${rechnung.rechnungsnummer} in EÜR gebucht (Beleg ${response.data.beleg_nummer})`);
+        loadData();
+      }
+    } catch (err) {
+      console.error('Fehler beim EÜR-Buchen:', err);
+      setError(err.response?.data?.error || 'Fehler beim Buchen in EÜR');
+    }
+  };
 
   if (loading) {
     return (
@@ -429,10 +432,226 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
   return (
     <div className="rechnung-erstellen-container">
-      <div className="rechnung-editor">
-        {/* Eingabeformular */}
-        <div className="rechnung-form">
-          <h2>NEUE RECHNUNG ERSTELLEN</h2>
+      {/* View Mode Toggle */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        padding: '1rem',
+        background: 'rgba(26, 26, 46, 0.95)',
+        borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
+        marginBottom: '1rem'
+      }}>
+        <button
+          onClick={() => setViewMode('erstellen')}
+          style={{
+            padding: '0.6rem 1.5rem',
+            background: viewMode === 'erstellen' ? 'linear-gradient(135deg, #c9a227, #a68519)' : 'rgba(255, 255, 255, 0.05)',
+            border: viewMode === 'erstellen' ? 'none' : '1px solid rgba(255, 215, 0, 0.3)',
+            borderRadius: '8px',
+            color: viewMode === 'erstellen' ? '#000' : '#ffd700',
+            cursor: 'pointer',
+            fontWeight: viewMode === 'erstellen' ? '600' : '400',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <Save size={18} />
+          Rechnung erstellen
+        </button>
+        <button
+          onClick={() => setViewMode('ansehen')}
+          style={{
+            padding: '0.6rem 1.5rem',
+            background: viewMode === 'ansehen' ? 'linear-gradient(135deg, #c9a227, #a68519)' : 'rgba(255, 255, 255, 0.05)',
+            border: viewMode === 'ansehen' ? 'none' : '1px solid rgba(255, 215, 0, 0.3)',
+            borderRadius: '8px',
+            color: viewMode === 'ansehen' ? '#000' : '#ffd700',
+            cursor: 'pointer',
+            fontWeight: viewMode === 'ansehen' ? '600' : '400',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <Eye size={18} />
+          Rechnungen ansehen
+        </button>
+      </div>
+
+      {/* Rechnungen Liste */}
+      {viewMode === 'ansehen' ? (
+        <div style={{ padding: '1rem', maxWidth: '1400px', margin: '0 auto' }}>
+          <div style={{
+            background: 'rgba(26, 26, 46, 0.95)',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 215, 0, 0.2)',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Building2 size={24} style={{ color: '#ffd700' }} />
+                TDA Rechnungen
+              </h2>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+                {rechnungen.length} Rechnungen
+              </span>
+            </div>
+
+            {rechnungen.length === 0 ? (
+              <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+                Keine Rechnungen vorhanden
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Rechnungs-Nr.</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Datum</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Empfänger</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Betrag</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Status</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rechnungen.map((rechnung) => {
+                      const statusColors = getStatusColor(rechnung.status);
+                      return (
+                        <tr key={rechnung.rechnung_id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          <td style={{ padding: '0.75rem 1rem', color: '#fff', fontFamily: 'monospace' }}>
+                            {rechnung.rechnungsnummer}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.8)' }}>
+                            {rechnung.rechnungsdatum ? formatDateDDMMYYYY(rechnung.rechnungsdatum) : '-'}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.8)' }}>
+                            {rechnung.empfaenger_name || '-'}
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#fff', fontWeight: '500' }}>
+                            {Number(rechnung.summe_brutto || 0).toFixed(2)} €
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '0.25rem 0.75rem',
+                              background: statusColors.bg,
+                              border: `1px solid ${statusColors.border}`,
+                              borderRadius: '12px',
+                              color: statusColors.text,
+                              fontSize: '0.8rem',
+                              fontWeight: '500',
+                              textTransform: 'capitalize'
+                            }}>
+                              {rechnung.status || 'offen'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => handleViewRechnung(rechnung.rechnung_id)}
+                                title="Ansehen"
+                                style={{
+                                  padding: '0.4rem',
+                                  background: 'rgba(255, 215, 0, 0.1)',
+                                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                                  borderRadius: '6px',
+                                  color: '#ffd700',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <Eye size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDownloadRechnung(rechnung.rechnung_id)}
+                                title="Drucken/PDF"
+                                style={{
+                                  padding: '0.4rem',
+                                  background: 'rgba(99, 102, 241, 0.1)',
+                                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                                  borderRadius: '6px',
+                                  color: '#6366f1',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <Download size={16} />
+                              </button>
+                              {rechnung.status !== 'bezahlt' && (
+                                <button
+                                  onClick={() => handleMarkAsBezahlt(rechnung.rechnung_id)}
+                                  title="Als bezahlt markieren"
+                                  style={{
+                                    padding: '0.4rem',
+                                    background: 'rgba(34, 197, 94, 0.1)',
+                                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                                    borderRadius: '6px',
+                                    color: '#22c55e',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <CheckCircle size={16} />
+                                </button>
+                              )}
+                              {!rechnung.euer_gebucht && (
+                                <button
+                                  onClick={() => handleEuerZuordnen(rechnung)}
+                                  title="In EÜR buchen"
+                                  style={{
+                                    padding: '0.4rem',
+                                    background: 'rgba(168, 85, 247, 0.1)',
+                                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                                    borderRadius: '6px',
+                                    color: '#a855f7',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <BookOpen size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.75rem 1rem', borderRadius: '8px', marginTop: '1rem', fontSize: '0.9rem' }}>
+              {error}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rechnung-editor">
+          {/* Eingabeformular */}
+          <div className="rechnung-form">
+            <h2>NEUE RECHNUNG ERSTELLEN</h2>
 
           {/* Kunde */}
           <div className="form-section">
@@ -935,6 +1154,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Vorschau Modal */}
       {showVorschauModal && (

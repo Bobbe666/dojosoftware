@@ -7300,3 +7300,338 @@ option:checked {
   background-color: #2a2a2a !important;
   color: var(--primary) !important;
 }
+
+/* ========================================
+   MITGLIEDSAUSWEIS - Japanischer Style
+   ======================================== */
+
+.mitgliedsausweis-container {
+  grid-column: 1 / -1;
+}
+
+.mitgliedsausweis {
+  display: block !important;
+  grid-template-columns: none !important;
+  background: #000;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border: 3px solid #ffd700;
+  box-sizing: border-box;
+}
+
+/* Titel oben */
+.ausweis-title {
+  text-align: center !important;
+  margin-bottom: 20px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 2px solid #ffd700 !important;
+}
+
+.ausweis-title .title-jp {
+  display: block !important;
+  font-size: 16px !important;
+  color: #ffd700 !important;
+  letter-spacing: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.ausweis-title .title-de {
+  display: block !important;
+  font-size: 20px !important;
+  color: #fff !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 2px !important;
+}
+
+.ausweis-body {
+  display: flex !important;
+  gap: 24px !important;
+  align-items: stretch !important;
+  margin-bottom: 16px !important;
+}
+
+/* Linke Seite: Großes Logo */
+.ausweis-left {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.ausweis-logo {
+  width: 150px !important;
+  height: 150px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 3px solid #ffd700 !important;
+}
+
+/* Mitte: Kanji, Name, Infos */
+.ausweis-center {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+
+.ausweis-kanji {
+  font-size: 28px !important;
+  color: #ffd700 !important;
+  letter-spacing: 10px !important;
+  font-weight: bold !important;
+  margin-bottom: 8px !important;
+}
+
+.ausweis-name {
+  font-size: 20px !important;
+  font-weight: bold !important;
+  color: #fff !important;
+  margin-bottom: 12px !important;
+}
+
+.ausweis-info-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.ausweis-info-row {
+  display: flex !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+.ausweis-info-row .info-label {
+  font-size: 11px !important;
+  color: #ffd700 !important;
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+  min-width: 100px !important;
+}
+
+.ausweis-info-row .info-value {
+  font-size: 14px !important;
+  color: #fff !important;
+}
+
+/* Rechte Seite: Foto oben, QR unten */
+.ausweis-right {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.mitgliedsausweis .ausweis-foto {
+  width: 90px !important;
+  height: 110px !important;
+  background: #1a1a1a !important;
+  border-radius: 8px !important;
+  border: 3px solid #ffd700 !important;
+  overflow: hidden !important;
+}
+
+.ausweis-foto img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.ausweis-foto-placeholder {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #ffd700 !important;
+  font-size: 24px !important;
+}
+
+.ausweis-qr {
+  width: 100px !important;
+  height: 100px !important;
+  background: #fff !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ausweis-qr svg {
+  width: 88px !important;
+  height: 88px !important;
+}
+
+/* Footer */
+.ausweis-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding-top: 12px !important;
+  border-top: 2px solid #ffd700 !important;
+}
+
+.ausweis-motto {
+  font-size: 12px !important;
+  color: #ffd700 !important;
+  font-style: italic !important;
+}
+
+.ausweis-website {
+  font-size: 12px !important;
+  color: #888 !important;
+}
+
+/* Legacy - nicht mehr verwendet */
+.ausweis-header,
+.ausweis-info-grid,
+.ausweis-info-item,
+.ausweis-pattern,
+.ausweis-header-text,
+.ausweis-daten,
+.ausweis-valid,
+.name-vorname,
+.name-nachname {
+  display: none !important;
+}
+
+.status-badge {
+  font-size: 14px !important;
+}
+
+.status-badge.aktiv {
+  color: #22c55e;
+}
+
+.ausweis-qr {
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ausweis-qr svg {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.ausweis-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #ffd700;
+}
+
+.ausweis-motto {
+  font-size: 9px;
+  color: #ffd700;
+  font-style: italic;
+}
+
+.ausweis-valid {
+  font-size: 9px;
+  color: #888;
+}
+
+/* Ausweis Actions */
+.ausweis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  justify-content: center;
+}
+
+.ausweis-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-wallet {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-wallet svg {
+  flex-shrink: 0;
+}
+
+.btn-apple-wallet {
+  background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+  color: #fff;
+}
+
+.btn-apple-wallet:hover {
+  background: linear-gradient(135deg, #333 0%, #444 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-google-wallet {
+  background: linear-gradient(135deg, #4285f4 0%, #34a853 50%, #fbbc05 75%, #ea4335 100%);
+  background-size: 200% 200%;
+  color: #fff;
+  animation: google-gradient 3s ease infinite;
+}
+
+.btn-google-wallet:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+}
+
+@keyframes google-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .mitgliedsausweis {
+    padding: 1rem;
+  }
+  
+  .ausweis-foto {
+    width: 70px;
+    height: 90px;
+  }
+  
+  .ausweis-kanji {
+    font-size: 1.5rem;
+  }
+  
+  .dojo-title {
+    font-size: 1rem;
+  }
+  
+  .name-nachname {
+    font-size: 1.1rem;
+  }
+  
+  .ausweis-info-grid {
+    gap: 0.3rem 0.5rem;
+  }
+}
