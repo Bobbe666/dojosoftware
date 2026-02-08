@@ -14,6 +14,14 @@ const { requireFeature } = require('../middleware/featureAccess');
 // const path = require('path');
 // const fs = require('fs');
 
+// Logger
+const logger = {
+  info: (...args) => console.log('[Artikel]', ...args),
+  error: (...args) => console.error('[Artikel ERROR]', ...args),
+  debug: (...args) => console.log('[Artikel DEBUG]', ...args),
+  warn: (...args) => console.warn('[Artikel WARN]', ...args)
+};
+
 // =====================================================================================
 // FEATURE PROTECTION: Verkauf & Lagerhaltung
 // =====================================================================================

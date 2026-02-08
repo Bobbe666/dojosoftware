@@ -407,6 +407,19 @@ try {
     });
 }
 
+// 2.2. ARTIKEL BESTELLUNGEN ROUTES - BESTELLSYSTEM
+try {
+  const artikelBestellungenRoutes = require('./routes/artikelBestellungen');
+  app.use('/api/artikel-bestellungen', artikelBestellungenRoutes);
+  logger.success('Route geladen', { path: '/api/artikel-bestellungen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'artikel-bestellungen routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // Mitglieder-Detail und Mitglieder-Routen
 try {
   const mitgliedDetailRoutes = require('./routes/mitglieddetail');
