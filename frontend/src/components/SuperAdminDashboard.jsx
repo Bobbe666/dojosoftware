@@ -1647,7 +1647,8 @@ const DojoFormModal = ({ dojo, onClose, onSuccess, token }) => {
     hausnummer: dojo?.hausnummer || '',
     plz: dojo?.plz || '',
     ort: dojo?.ort || '',
-    land: dojo?.land || 'Deutschland'
+    land: dojo?.land || 'Deutschland',
+    ist_aktiv: dojo?.ist_aktiv !== undefined ? dojo.ist_aktiv : true
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -1812,6 +1813,28 @@ const DojoFormModal = ({ dojo, onClose, onSuccess, token }) => {
               />
             </div>
           </div>
+
+          {isEdit && (
+            <div className="form-group" style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              background: formData.ist_aktiv ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '8px',
+              border: `1px solid ${formData.ist_aktiv ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+            }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', margin: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={formData.ist_aktiv}
+                  onChange={(e) => setFormData(prev => ({ ...prev, ist_aktiv: e.target.checked }))}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <span style={{ fontWeight: 600, color: formData.ist_aktiv ? '#22c55e' : '#ef4444' }}>
+                  {formData.ist_aktiv ? '✓ Dojo ist aktiv' : '✗ Dojo ist inaktiv'}
+                </span>
+              </label>
+            </div>
+          )}
 
           {error && (
             <div className="error-message">
