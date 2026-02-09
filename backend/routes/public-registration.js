@@ -1110,6 +1110,21 @@ router.post('/mitglied-anlegen', async (req, res) => {
     const allColumns = await queryAsync('SHOW COLUMNS FROM mitglieder');
     const existingColumns = new Set(allColumns.map(c => c.Field));
 
+    // Geschlecht-Format anpassen (manche DBs haben ENUM mit m/w/d)
+    const geschlechtCol = allColumns.find(c => c.Field === 'geschlecht');
+    let geschlechtValue = geschlecht;
+    if (geschlechtCol && geschlechtCol.Type.includes('enum')) {
+      // Prüfen ob kurze Werte erwartet werden
+      if (geschlechtCol.Type.includes("'m'") || geschlechtCol.Type.includes("'w'")) {
+        const mapping = {
+          'männlich': 'm', 'maennlich': 'm', 'male': 'm', 'm': 'm',
+          'weiblich': 'w', 'female': 'w', 'w': 'w',
+          'divers': 'd', 'diverse': 'd', 'd': 'd'
+        };
+        geschlechtValue = mapping[(geschlecht || '').toLowerCase()] || geschlecht;
+      }
+    }
+
     // Mitgliedsnummer generieren falls Spalte existiert
     let mitgliedsnummer = null;
     if (existingColumns.has('mitgliedsnummer')) {
@@ -1141,7 +1156,7 @@ router.post('/mitglied-anlegen', async (req, res) => {
       vorname: vorname,
       nachname: nachname,
       geburtsdatum: geburtsdatum,
-      geschlecht: geschlecht,
+      geschlecht: geschlechtValue,
       strasse: strasse || '',
       hausnummer: hausnummer || '',
       plz: plz || '',
@@ -1151,15 +1166,36 @@ router.post('/mitglied-anlegen', async (req, res) => {
       email: email || '',
       iban: iban || '',
       bic: bic || '',
-      bank_name: bank_name || '',
+      bankname: bank_name || '',
       kontoinhaber: kontoinhaber || `${vorname} ${nachname}`,
-      status: 'Aktiv',
+      aktiv: 1,
       eintrittsdatum: vertragsbeginn || new Date().toISOString().split('T')[0],
       created_at: new Date(),
       mitgliedsnummer: mitgliedsnummer,
       familien_id: finalFamilienId,
       hauptmitglied_id: hauptmitglied_id || null,
-      registration_source: 'public_website'
+      registration_source: 'public_website',
+      // Erziehungsberechtigte als Vertreter
+      vertreter1_typ: req.body.verhaeltnis || null,
+      vertreter1_name: req.body.erziehungsberechtigt_vorname && req.body.erziehungsberechtigt_nachname
+        ? `${req.body.erziehungsberechtigt_vorname} ${req.body.erziehungsberechtigt_nachname}`
+        : null,
+      vertreter1_email: req.body.erziehungsberechtigt_email || null,
+      vertreter1_telefon: req.body.erziehungsberechtigt_telefon || null,
+      // Weitere optionale Felder
+      schueler_student: req.body.schueler_student ? 1 : 0,
+      notfallkontakt_name: gesundheitsfragen?.notfallkontakt_name || null,
+      notfallkontakt_telefon: gesundheitsfragen?.notfallkontakt_telefon || null,
+      notfallkontakt_verhaeltnis: req.body.notfallkontakt_verhaeltnis || null,
+      allergien: req.body.allergien || null,
+      medizinische_hinweise: req.body.medizinische_hinweise || null,
+      foto_einverstaendnis: req.body.foto_einverstaendnis ? 1 : 0,
+      gesundheitserklaerung: req.body.gesundheitserklaerung ? 1 : 0,
+      agb_akzeptiert: agb_accepted ? 1 : 0,
+      agb_akzeptiert_am: agb_accepted ? new Date() : null,
+      datenschutz_akzeptiert: dsgvo_accepted ? 1 : 0,
+      datenschutz_akzeptiert_am: dsgvo_accepted ? new Date() : null,
+      zahlungsmethode: 'Lastschrift'
     };
 
     // Nur Felder einfügen die in der Tabelle existieren
@@ -1187,15 +1223,18 @@ router.post('/mitglied-anlegen', async (req, res) => {
         const t = tarif[0];
         const startDate = vertragsbeginn || new Date().toISOString().split('T')[0];
 
+        // Monatsbeitrag in Euro umrechnen (aus Cents)
+        const monatsBeitrag = (t.price_cents || 0) / 100;
+
         await queryAsync(`
           INSERT INTO vertraege (
             mitglied_id, dojo_id, tarif_id, vertragsbeginn, status,
-            preis, aufnahmegebuehr, zahlungsintervall, created_at
-          ) VALUES (?, ?, ?, ?, 'aktiv', ?, ?, ?, NOW())
+            monatlicher_beitrag, monatsbeitrag, aufnahmegebuehr_cents, billing_cycle
+          ) VALUES (?, ?, ?, ?, 'aktiv', ?, ?, ?, ?)
         `, [
           newMitgliedId, dojo_id, tarif_id, startDate,
-          t.price_cents, t.aufnahmegebuehr_cents || 0,
-          t.billing_cycle === 'MONTHLY' ? 'monatlich' : t.billing_cycle === 'QUARTERLY' ? 'vierteljährlich' : 'jährlich'
+          monatsBeitrag, monatsBeitrag, t.aufnahmegebuehr_cents || 0,
+          t.billing_cycle || 'MONTHLY'
         ]);
       }
     }
