@@ -202,13 +202,23 @@ const VertragFormular = ({
         if (mitgliedId) {
           try {
             const mandateRes = await axios.get(`/mitglieder/${mitgliedId}/sepa-mandate`);
-            const allMandate = mandateRes.data || [];
-            const aktiv = allMandate.find(m => m.status === 'aktiv');
-            const archiviert = allMandate.filter(m => m.status === 'archiviert');
-            setSepaMandate(aktiv || null);
-            setArchivierteMandate(archiviert);
+            // Backend gibt einzelnes Objekt zurück, nicht Array
+            const mandateData = mandateRes.data;
+            if (mandateData && mandateData.mandat_id) {
+              setSepaMandate(mandateData);
+            } else {
+              setSepaMandate(null);
+            }
           } catch (err) {
             console.warn('Keine SEPA-Mandate gefunden:', err);
+            setSepaMandate(null);
+          }
+          // Archivierte Mandate separat laden
+          try {
+            const archivRes = await axios.get(`/mitglieder/${mitgliedId}/sepa-mandate/archiv`);
+            setArchivierteMandate(archivRes.data || []);
+          } catch {
+            setArchivierteMandate([]);
           }
         }
 
@@ -552,13 +562,13 @@ const VertragFormular = ({
             >
               <option value="">-- Bitte SEPA-Mandat auswählen --</option>
               {sepaMandate && (
-                <option value={sepaMandate.id}>
+                <option value={sepaMandate.mandat_id}>
                   ✓ Aktives Mandat: {sepaMandate.mandatsreferenz} - {sepaMandate.iban}
                 </option>
               )}
               {archivierteMandate.map(mandat => (
-                <option key={mandat.id} value={mandat.id}>
-                  📋 Archiviert: {mandat.mandatsreferenz} - {mandat.iban} (bis {new Date(mandat.gueltig_bis).toLocaleDateString('de-DE')})
+                <option key={mandat.mandat_id} value={mandat.mandat_id}>
+                  📋 Archiviert: {mandat.mandatsreferenz} - {mandat.iban} {mandat.widerruf_datum ? `(widerrufen ${new Date(mandat.widerruf_datum).toLocaleDateString('de-DE')})` : ''}
                 </option>
               ))}
             </select>

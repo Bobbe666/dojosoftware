@@ -435,10 +435,10 @@ const ArtikelFormular = ({ mode }) => {
   // Basis Input Style für gute Sichtbarkeit
   const basisInputStyle = {
     padding: '0.75rem 1rem',
-    background: '#ffffff',
-    border: '2px solid #dee2e6',
+    background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+    border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
     borderRadius: '8px',
-    color: '#2c3e50',
+    color: 'var(--text-primary, #ffffff)',
     fontSize: '1rem',
     width: '100%',
     boxSizing: 'border-box',
@@ -449,7 +449,7 @@ const ArtikelFormular = ({ mode }) => {
     display: 'block',
     marginBottom: '0.5rem',
     fontWeight: 600,
-    color: '#6B4423',
+    color: 'var(--gold, #ffd700)',
     fontSize: '0.95rem'
   };
 
@@ -626,7 +626,7 @@ const ArtikelFormular = ({ mode }) => {
         <div className="preiskalkulation-container" style={{height: '100%', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
 
           {/* Eingabebereich */}
-          <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'var(--glass-bg, #f8f9fa)', border: '2px solid var(--border-accent, #dee2e6)', borderRadius: '8px'}}>
+          <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'var(--glass-bg, var(--bg-hover, rgba(255, 255, 255, 0.12)))', border: '2px solid var(--border-accent, var(--border-secondary, rgba(255, 255, 255, 0.1)))', borderRadius: '8px'}}>
 
             {/* TAB-AUSWAHL */}
             <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '1rem', background: '#e5e7eb', padding: '0.25rem', borderRadius: '8px' }}>
@@ -636,8 +636,8 @@ const ArtikelFormular = ({ mode }) => {
                 style={{
                   flex: 1,
                   padding: '0.5rem 0.75rem',
-                  background: preisTab === 'einzelkalkulation' ? '#6B4423' : 'transparent',
-                  color: preisTab === 'einzelkalkulation' ? '#ffffff' : '#374151',
+                  background: preisTab === 'einzelkalkulation' ? 'var(--gold, #ffd700)' : 'transparent',
+                  color: preisTab === 'einzelkalkulation' ? '#ffffff' : 'var(--text-secondary, rgba(255, 255, 255, 0.7))',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '0.8rem',
@@ -654,8 +654,8 @@ const ArtikelFormular = ({ mode }) => {
                 style={{
                   flex: 1,
                   padding: '0.5rem 0.75rem',
-                  background: preisTab === 'groessenabhaengig' ? '#6B4423' : 'transparent',
-                  color: preisTab === 'groessenabhaengig' ? '#ffffff' : '#374151',
+                  background: preisTab === 'groessenabhaengig' ? 'var(--gold, #ffd700)' : 'transparent',
+                  color: preisTab === 'groessenabhaengig' ? '#ffffff' : 'var(--text-secondary, rgba(255, 255, 255, 0.7))',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '0.8rem',
@@ -672,8 +672,8 @@ const ArtikelFormular = ({ mode }) => {
                 style={{
                   flex: 1,
                   padding: '0.5rem 0.75rem',
-                  background: preisTab === 'uebersicht' ? '#047857' : 'transparent',
-                  color: preisTab === 'uebersicht' ? '#ffffff' : '#374151',
+                  background: preisTab === 'uebersicht' ? 'var(--gold, #ffd700)' : 'transparent',
+                  color: preisTab === 'uebersicht' ? '#ffffff' : 'var(--text-secondary, rgba(255, 255, 255, 0.7))',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '0.8rem',
@@ -689,30 +689,30 @@ const ArtikelFormular = ({ mode }) => {
             {/* GEMEINSAME HANDELSKALKULATION - NUR für Einzel Tab */}
             {preisTab === 'einzelkalkulation' && (
             <>
-            <h3 style={{marginBottom: '0.3rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)'}}>
+            <h3 style={{marginBottom: '0.3rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary, var(--text-primary, #ffffff))'}}>
               📝 Handelskalkulation
             </h3>
 
             {/* BEZUGSKALKULATION */}
             <div style={{marginBottom: '0.3rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
+              <h4 style={{color: 'var(--gold, #ffd700)', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
                 📦 Bezugskalkulation
               </h4>
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.4rem'}}>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Listeneinkaufspreis (€)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Listeneinkaufspreis (€)</label>
                   <input type="number" name="listeneinkaufspreis_euro" value={formData.listeneinkaufspreis_euro} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Lieferrabatt (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Lieferrabatt (%)</label>
                   <input type="number" name="lieferrabatt_prozent" value={formData.lieferrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Lieferskonto (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Lieferskonto (%)</label>
                   <input type="number" name="lieferskonto_prozent" value={formData.lieferskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Bezugskosten (€)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Bezugskosten (€)</label>
                   <input type="number" name="bezugskosten_euro" value={formData.bezugskosten_euro} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
               </div>
@@ -720,16 +720,16 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* SELBSTKOSTENKALKULATION */}
             <div style={{marginBottom: '0.3rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
+              <h4 style={{color: 'var(--gold, #ffd700)', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
                 🏭 Selbstkosten
               </h4>
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.4rem'}}>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Gemeinkosten (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Gemeinkosten (%)</label>
                   <input type="number" name="gemeinkosten_prozent" value={formData.gemeinkosten_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Gewinnzuschlag (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Gewinnzuschlag (%)</label>
                   <input type="number" name="gewinnzuschlag_prozent" value={formData.gewinnzuschlag_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
               </div>
@@ -737,20 +737,20 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* VERKAUFSKALKULATION */}
             <div style={{marginBottom: '0.3rem'}}>
-              <h4 style={{color: '#6B4423', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
+              <h4 style={{color: 'var(--gold, #ffd700)', fontSize: '0.75rem', marginBottom: '0.15rem', fontWeight: 600}}>
                 💰 Verkauf
               </h4>
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.2rem 0.4rem'}}>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Kundenskonto (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Kundenskonto (%)</label>
                   <input type="number" name="kundenskonto_prozent" value={formData.kundenskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>Kundenrabatt (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>Kundenrabatt (%)</label>
                   <input type="number" name="kundenrabatt_prozent" value={formData.kundenrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0.00" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}} />
                 </div>
                 <div>
-                  <label style={{fontSize: '0.65rem', color: '#6c757d', display: 'block'}}>MwSt. (%)</label>
+                  <label style={{fontSize: '0.65rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block'}}>MwSt. (%)</label>
                   <select name="mwst_prozent" value={formData.mwst_prozent} onChange={handleInputChange} className="form-select" style={{height: '28px', padding: '0.2rem 0.4rem', fontSize: '0.85rem'}}>
                     <option value="7.00">7%</option>
                     <option value="19.00">19%</option>
@@ -762,7 +762,7 @@ const ArtikelFormular = ({ mode }) => {
             {/* Button: Neuen Preis übernehmen - nur bei Einzelkalkulation */}
             {preisTab === 'einzelkalkulation' && listeneinkaufspreis > 0 && nettoverkaufspreis > 0 && (
               <div style={{marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '6px', border: '1px solid rgba(107, 68, 35, 0.3)'}}>
-                <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: '#6B4423'}}>
+                <div style={{marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--gold, #ffd700)'}}>
                   Kalkulierter Nettoverkaufspreis: <strong>{nettoverkaufspreis.toFixed(2)} €</strong>
                 </div>
                 <button
@@ -771,8 +771,8 @@ const ArtikelFormular = ({ mode }) => {
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: '#6B4423',
-                    color: '#ffffff',
+                    background: 'var(--gold, #ffd700)',
+                    color: 'var(--dark-bg, #0f0f23)',
                     border: 'none',
                     borderRadius: '8px',
                     fontSize: '0.95rem',
@@ -792,18 +792,18 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* GRÖSSENABHÄNGIGE EINKAUFSPREISE - nur wenn Tab aktiv */}
             {preisTab === 'groessenabhaengig' && (
-              <div style={{marginTop: '0.5rem', padding: '1rem', background: '#ffffff', border: '2px solid #6B4423', borderRadius: '12px'}}>
-                <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: '#6B4423', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+              <div style={{marginTop: '0.5rem', padding: '1rem', background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', border: '2px solid var(--gold, #ffd700)', borderRadius: '12px'}}>
+                <h4 style={{margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--gold, #ffd700)', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                   👶🧑 Größenabhängige Einkaufspreise
                 </h4>
-                <p style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', marginBottom: '1rem' }}>
                   Unterschiedliche EK-Preise für Kids und Erwachsene eingeben. Die Kalkulationsparameter unten gelten für beide.
                 </p>
 
                 {/* EK-Eingaben */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#166534', marginBottom: '0.5rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginBottom: '0.5rem' }}>
                       👶 Listeneinkaufspreis Kids (€)
                     </label>
                     <input
@@ -853,7 +853,7 @@ const ArtikelFormular = ({ mode }) => {
                 {/* Bezugskosten-Eingaben */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: '#166534', marginBottom: '0.3rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--gold, #ffd700)', marginBottom: '0.3rem' }}>
                       📦 Bezugskosten Kids (€)
                     </label>
                     <input
@@ -906,14 +906,14 @@ const ArtikelFormular = ({ mode }) => {
 
                   {/* Bezugskalkulation */}
                   <div style={{ marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.3rem' }}>📦 Bezugskalkulation</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginBottom: '0.3rem' }}>📦 Bezugskalkulation</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Lieferrabatt (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>Lieferrabatt (%)</label>
                         <input type="number" name="lieferrabatt_prozent" value={formData.lieferrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Lieferskonto (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>Lieferskonto (%)</label>
                         <input type="number" name="lieferskonto_prozent" value={formData.lieferskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
                       </div>
                     </div>
@@ -921,14 +921,14 @@ const ArtikelFormular = ({ mode }) => {
 
                   {/* Selbstkosten */}
                   <div style={{ marginBottom: '0.75rem' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.3rem' }}>🏭 Selbstkosten</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginBottom: '0.3rem' }}>🏭 Selbstkosten</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Gemeinkosten (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>Gemeinkosten (%)</label>
                         <input type="number" name="gemeinkosten_prozent" value={formData.gemeinkosten_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Gewinnzuschlag (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>Gewinnzuschlag (%)</label>
                         <input type="number" name="gewinnzuschlag_prozent" value={formData.gewinnzuschlag_prozent} onChange={handleInputChange} step="0.01" min="0" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
                       </div>
                     </div>
@@ -936,18 +936,18 @@ const ArtikelFormular = ({ mode }) => {
 
                   {/* Verkauf */}
                   <div>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.3rem' }}>💰 Verkauf</p>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginBottom: '0.3rem' }}>💰 Verkauf</p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Kundenskonto (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>Kundenskonto (%)</label>
                         <input type="number" name="kundenskonto_prozent" value={formData.kundenskonto_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>Kundenrabatt (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>Kundenrabatt (%)</label>
                         <input type="number" name="kundenrabatt_prozent" value={formData.kundenrabatt_prozent} onChange={handleInputChange} step="0.01" min="0" max="100" className="form-input" placeholder="0" style={{ height: '30px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.7rem', color: '#6c757d', display: 'block' }}>MwSt. (%)</label>
+                        <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', display: 'block' }}>MwSt. (%)</label>
                         <select name="mwst_prozent" value={formData.mwst_prozent} onChange={handleInputChange} className="form-select" style={{ height: '30px', padding: '0.2rem 0.4rem', fontSize: '0.85rem' }}>
                           <option value="7.00">7%</option>
                           <option value="19.00">19%</option>
@@ -959,21 +959,21 @@ const ArtikelFormular = ({ mode }) => {
 
                 {/* Hinweis zur Berechnung */}
                 {(parseFloat(formData.listeneinkaufspreis_kids_euro) > 0 || parseFloat(formData.listeneinkaufspreis_erwachsene_euro) > 0) && (
-                  <div style={{ padding: '0.5rem 0.75rem', marginBottom: '1rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', fontSize: '0.8rem', color: '#166534' }}>
+                  <div style={{ padding: '0.5rem 0.75rem', marginBottom: '1rem', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--gold, #ffd700)' }}>
                     ✓ Vollständige Kalkulation wird rechts angezeigt →
                   </div>
                 )}
 
                 {/* Größen-Zuordnung */}
                 {formData.hat_varianten && formData.varianten_groessen.length > 0 && (
-                  <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', marginTop: '1rem' }}>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6B4423', marginBottom: '0.75rem' }}>
+                  <div style={{ background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))', padding: '1rem', borderRadius: '8px', marginTop: '1rem' }}>
+                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginBottom: '0.75rem' }}>
                       📏 Größen-Zuordnung (klicken zum Ändern)
                     </p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       {/* Kids Spalte */}
                       <div>
-                        <p style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.5rem', fontWeight: 600 }}>👶 Kids-Größen:</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--gold, #ffd700)', marginBottom: '0.5rem', fontWeight: 600 }}>👶 Kids-Größen:</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                           {formData.varianten_groessen.map(g => {
                             const isKids = formData.groessen_kids.includes(g);
@@ -990,7 +990,7 @@ const ArtikelFormular = ({ mode }) => {
                                   borderRadius: '4px',
                                   fontSize: '0.8rem',
                                   cursor: 'pointer',
-                                  color: '#166534'
+                                  color: 'var(--gold, #ffd700)'
                                 }}
                                 title="Klicken um zu Erwachsene zu verschieben"
                               >
@@ -1051,11 +1051,11 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* ÜBERSICHT TAB - Preise übernehmen */}
             {preisTab === 'uebersicht' && (
-              <div style={{ padding: '1rem', background: '#ffffff', border: '2px solid #047857', borderRadius: '12px' }}>
-                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#047857', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ padding: '1rem', background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', border: '2px solid var(--gold, #ffd700)', borderRadius: '12px' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: 'var(--gold, #ffd700)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   ✓ Preise übernehmen
                 </h4>
-                <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1.5rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', marginBottom: '1.5rem' }}>
                   Übernehmen Sie die berechneten Preise für diesen Artikel.
                 </p>
 
@@ -1117,10 +1117,10 @@ const ArtikelFormular = ({ mode }) => {
                       {hasEinzel && (
                         <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f0fdf4', border: '2px solid #86efac', borderRadius: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                            <span style={{ fontWeight: 600, color: '#166534' }}>💰 Einzelpreis</span>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#166534' }}>{einzelBruttoVK.toFixed(2)} € Brutto</span>
+                            <span style={{ fontWeight: 600, color: 'var(--gold, #ffd700)' }}>💰 Einzelpreis</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--gold, #ffd700)' }}>{einzelBruttoVK.toFixed(2)} € Brutto</span>
                           </div>
-                          <div style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '0.75rem' }}>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', marginBottom: '0.75rem' }}>
                             Netto: {einzelNettoVK.toFixed(2)} € | Bezugspreis: {einzelBezug.toFixed(2)} €
                           </div>
                           <button
@@ -1136,8 +1136,8 @@ const ArtikelFormular = ({ mode }) => {
                             style={{
                               width: '100%',
                               padding: '0.75rem',
-                              background: '#047857',
-                              color: '#ffffff',
+                              background: 'var(--gold, #ffd700)',
+                              color: 'var(--dark-bg, #0f0f23)',
                               border: 'none',
                               borderRadius: '8px',
                               fontSize: '0.95rem',
@@ -1159,8 +1159,8 @@ const ArtikelFormular = ({ mode }) => {
 
                           {hasKids && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: '#dcfce7', borderRadius: '6px', marginBottom: '0.5rem' }}>
-                              <span style={{ color: '#166534' }}>👶 Kids</span>
-                              <span style={{ fontWeight: 700, color: '#166534' }}>{kidsBruttoVK.toFixed(2)} € Brutto</span>
+                              <span style={{ color: 'var(--gold, #ffd700)' }}>👶 Kids</span>
+                              <span style={{ fontWeight: 700, color: 'var(--gold, #ffd700)' }}>{kidsBruttoVK.toFixed(2)} € Brutto</span>
                             </div>
                           )}
 
@@ -1218,14 +1218,14 @@ const ArtikelFormular = ({ mode }) => {
 
           {/* Kalkulationsübersicht */}
           <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: preisTab === 'uebersicht' ? 'rgba(4, 120, 87, 0.05)' : 'rgba(107, 68, 35, 0.05)', border: preisTab === 'uebersicht' ? '2px solid rgba(4, 120, 87, 0.3)' : '2px solid rgba(107, 68, 35, 0.3)', borderRadius: '8px'}}>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: preisTab === 'uebersicht' ? '#047857' : 'var(--text-primary, #2c3e50)'}}>
+            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: preisTab === 'uebersicht' ? 'var(--gold, #ffd700)' : 'var(--text-primary, var(--text-primary, #ffffff))'}}>
               {preisTab === 'uebersicht' ? '✓ Aktuelle Artikelpreise' : preisTab === 'groessenabhaengig' ? '📊 Größenabhängige Kalkulation' : '📊 Handelskalkulation'}
             </h3>
 
             {/* ÜBERSICHT - Aktuelle gespeicherte Preise mit Varianten */}
             {preisTab === 'uebersicht' && (
               <div>
-                <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', marginBottom: '1rem' }}>
                   Artikelpreise nach Variante:
                 </p>
 
@@ -1272,7 +1272,7 @@ const ArtikelFormular = ({ mode }) => {
 
                   if (varianten.length === 0) {
                     return (
-                      <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                      <div style={{ padding: '1rem', background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', borderRadius: '8px', textAlign: 'center', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}>
                         <p style={{ marginBottom: '0.5rem' }}>Noch keine Preise gespeichert</p>
                         <p style={{ fontSize: '0.85rem' }}>Übernehmen Sie links die berechneten Preise</p>
                       </div>
@@ -1287,8 +1287,8 @@ const ArtikelFormular = ({ mode }) => {
                         gridTemplateColumns: '1fr 80px 70px 80px',
                         gap: '0.5rem',
                         padding: '0.5rem',
-                        background: '#047857',
-                        color: '#fff',
+                        background: 'var(--gold, #ffd700)',
+                        color: 'var(--dark-bg, #0f0f23)',
                         borderRadius: '6px 6px 0 0',
                         fontSize: '0.75rem',
                         fontWeight: 600
@@ -1313,11 +1313,11 @@ const ArtikelFormular = ({ mode }) => {
                             fontSize: '0.8rem'
                           }}
                         >
-                          <span style={{ fontWeight: 600, color: v.typ === 'kids' ? '#166534' : v.typ === 'erw' ? '#1e40af' : '#047857' }}>
+                          <span style={{ fontWeight: 600, color: v.typ === 'kids' ? 'var(--gold, #ffd700)' : v.typ === 'erw' ? '#1e40af' : 'var(--gold, #ffd700)' }}>
                             {v.typ === 'kids' ? '👶 ' : v.typ === 'erw' ? '🧑 ' : '💰 '}{v.artNr}
                           </span>
                           <span style={{ textAlign: 'right' }}>{v.netto.toFixed(2)} €</span>
-                          <span style={{ textAlign: 'right', color: '#6c757d' }}>{v.mwstBetrag.toFixed(2)} €</span>
+                          <span style={{ textAlign: 'right', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}>{v.mwstBetrag.toFixed(2)} €</span>
                           <span style={{ textAlign: 'right', fontWeight: 700 }}>{v.brutto.toFixed(2)} €</span>
                         </div>
                       ))}
@@ -1325,10 +1325,10 @@ const ArtikelFormular = ({ mode }) => {
                       {/* Zusammenfassung */}
                       <div style={{
                         padding: '0.75rem',
-                        background: '#f3f4f6',
+                        background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
                         borderRadius: '0 0 6px 6px',
                         fontSize: '0.8rem',
-                        color: '#6c757d'
+                        color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))'
                       }}>
                         {varianten.length} Artikel | MwSt: {mwst}%
                       </div>
@@ -1387,7 +1387,7 @@ const ArtikelFormular = ({ mode }) => {
                   <div>
                     {/* Hinweis wenn keine EK eingegeben */}
                     {!hasKids && !hasErw && (
-                      <div style={{ padding: '1rem', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center', color: '#6c757d' }}>
+                      <div style={{ padding: '1rem', background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', borderRadius: '8px', textAlign: 'center', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}>
                         <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Bitte links die Einkaufspreise eingeben</p>
                         <p style={{ fontSize: '0.8rem' }}>👶 Listeneinkaufspreis Kids</p>
                         <p style={{ fontSize: '0.8rem' }}>🧑 Listeneinkaufspreis Erwachsene</p>
@@ -1397,11 +1397,11 @@ const ArtikelFormular = ({ mode }) => {
                     {/* KIDS Vollständige Kalkulation */}
                     {hasKids && (
                       <div style={{ background: '#dcfce7', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', border: '2px solid #86efac' }}>
-                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.5rem', fontSize: '0.95rem', borderBottom: '1px solid #86efac', paddingBottom: '0.4rem' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--gold, #ffd700)', marginBottom: '0.5rem', fontSize: '0.95rem', borderBottom: '1px solid #86efac', paddingBottom: '0.4rem' }}>
                           👶 KIDS ({formData.varianten_groessen?.filter(g => formData.groessen_kids?.includes(g)).join(', ') || 'alle'})
                         </div>
                         {/* BEZUGSKALKULATION */}
-                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#166534', marginTop: '0.3rem' }}>📦 Bezugskalkulation</div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginTop: '0.3rem' }}>📦 Bezugskalkulation</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', padding: '0.1rem 0' }}>
                           <span>Listeneinkaufspreis</span>
                           <span>{kidsEK.toFixed(2)} €</span>
@@ -1414,7 +1414,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>− Lieferskonto ({lieferskonto}%)</span>
                           <span>−{(kidsZielEK * lieferskonto / 100).toFixed(2)} €</span>
                         </div>}
-                        {bezugskostenKids > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {bezugskostenKids > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Bezugskosten</span>
                           <span>+{bezugskostenKids.toFixed(2)} €</span>
                         </div>}
@@ -1423,8 +1423,8 @@ const ArtikelFormular = ({ mode }) => {
                           <span>{kidsBezug.toFixed(2)} €</span>
                         </div>
                         {/* SELBSTKOSTEN */}
-                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#166534', marginTop: '0.3rem' }}>🏭 Selbstkosten</div>
-                        {gemeinkosten > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginTop: '0.3rem' }}>🏭 Selbstkosten</div>
+                        {gemeinkosten > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Gemeinkosten ({gemeinkosten}%)</span>
                           <span>+{(kidsBezug * gemeinkosten / 100).toFixed(2)} €</span>
                         </div>}
@@ -1433,8 +1433,8 @@ const ArtikelFormular = ({ mode }) => {
                           <span>{kidsSelbstkosten.toFixed(2)} €</span>
                         </div>
                         {/* VERKAUFSKALKULATION */}
-                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#166534', marginTop: '0.3rem' }}>💰 Verkaufskalkulation</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--gold, #ffd700)', marginTop: '0.3rem' }}>💰 Verkaufskalkulation</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Gewinnzuschlag ({gewinnzuschlag}%)</span>
                           <span>+{(kidsSelbstkosten * gewinnzuschlag / 100).toFixed(2)} €</span>
                         </div>
@@ -1442,7 +1442,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= Barverkaufspreis</span>
                           <span>{kidsBarVK.toFixed(2)} €</span>
                         </div>
-                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Kundenskonto ({kundenskonto}%)</span>
                           <span>+{(kidsZielVK - kidsBarVK).toFixed(2)} €</span>
                         </div>}
@@ -1450,7 +1450,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= Zielverkaufspreis</span>
                           <span>{kidsZielVK.toFixed(2)} €</span>
                         </div>}
-                        {kundenrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {kundenrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Kundenrabatt ({kundenrabatt}%)</span>
                           <span>+{(kidsNettoVK - kidsZielVK).toFixed(2)} €</span>
                         </div>}
@@ -1458,15 +1458,15 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= Netto-VK</span>
                           <span>{kidsNettoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ MwSt ({mwst}%)</span>
                           <span>+{(kidsNettoVK * mwst / 100).toFixed(2)} €</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', padding: '0.4rem 0.3rem', borderTop: '2px solid #86efac', fontWeight: 700, marginTop: '0.2rem', background: 'rgba(22, 101, 52, 0.2)', borderRadius: '4px' }}>
                           <span>= BRUTTO-VK</span>
-                          <span style={{ color: '#166534', fontSize: '1.1rem' }}>{kidsBruttoVK.toFixed(2)} €</span>
+                          <span style={{ color: 'var(--gold, #ffd700)', fontSize: '1.1rem' }}>{kidsBruttoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #86efac', marginTop: '0.3rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.3rem 0', color: kidsGewinn >= 0 ? 'var(--gold, #ffd700)' : '#dc2626', borderTop: '1px dashed #86efac', marginTop: '0.3rem' }}>
                           <span>💰 Gewinn (Netto - Bezug)</span>
                           <span style={{ fontWeight: 700 }}>{kidsGewinn.toFixed(2)} € ({kidsGewinnProzent.toFixed(0)}%)</span>
                         </div>
@@ -1493,7 +1493,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>− Lieferskonto ({lieferskonto}%)</span>
                           <span>−{(erwZielEK * lieferskonto / 100).toFixed(2)} €</span>
                         </div>}
-                        {bezugskostenErw > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {bezugskostenErw > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Bezugskosten</span>
                           <span>+{bezugskostenErw.toFixed(2)} €</span>
                         </div>}
@@ -1503,7 +1503,7 @@ const ArtikelFormular = ({ mode }) => {
                         </div>
                         {/* SELBSTKOSTEN */}
                         <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#1e40af', marginTop: '0.3rem' }}>🏭 Selbstkosten</div>
-                        {gemeinkosten > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {gemeinkosten > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Gemeinkosten ({gemeinkosten}%)</span>
                           <span>+{(erwBezug * gemeinkosten / 100).toFixed(2)} €</span>
                         </div>}
@@ -1513,7 +1513,7 @@ const ArtikelFormular = ({ mode }) => {
                         </div>
                         {/* VERKAUFSKALKULATION */}
                         <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#1e40af', marginTop: '0.3rem' }}>💰 Verkaufskalkulation</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Gewinnzuschlag ({gewinnzuschlag}%)</span>
                           <span>+{(erwSelbstkosten * gewinnzuschlag / 100).toFixed(2)} €</span>
                         </div>
@@ -1521,7 +1521,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= Barverkaufspreis</span>
                           <span>{erwBarVK.toFixed(2)} €</span>
                         </div>
-                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {kundenskonto > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Kundenskonto ({kundenskonto}%)</span>
                           <span>+{(erwZielVK - erwBarVK).toFixed(2)} €</span>
                         </div>}
@@ -1529,7 +1529,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= Zielverkaufspreis</span>
                           <span>{erwZielVK.toFixed(2)} €</span>
                         </div>}
-                        {kundenrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        {kundenrabatt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ Kundenrabatt ({kundenrabatt}%)</span>
                           <span>+{(erwNettoVK - erwZielVK).toFixed(2)} €</span>
                         </div>}
@@ -1537,7 +1537,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= Netto-VK</span>
                           <span>{erwNettoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: '#047857' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', padding: '0.05rem 0', color: 'var(--gold, #ffd700)' }}>
                           <span>+ MwSt ({mwst}%)</span>
                           <span>+{(erwNettoVK * mwst / 100).toFixed(2)} €</span>
                         </div>
@@ -1545,7 +1545,7 @@ const ArtikelFormular = ({ mode }) => {
                           <span>= BRUTTO-VK</span>
                           <span style={{ color: '#1e40af', fontSize: '1.1rem' }}>{erwBruttoVK.toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: erwGewinn >= 0 ? '#047857' : '#dc2626', borderTop: '1px dashed #93c5fd' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.3rem 0', color: erwGewinn >= 0 ? 'var(--gold, #ffd700)' : '#dc2626', borderTop: '1px dashed #93c5fd' }}>
                           <span>💰 Gewinn</span>
                           <span style={{ fontWeight: 700 }}>{erwGewinn.toFixed(2)} € ({erwGewinnProzent.toFixed(0)}%)</span>
                         </div>
@@ -1554,12 +1554,12 @@ const ArtikelFormular = ({ mode }) => {
 
                     {/* Preisdifferenz */}
                     {hasKids && hasErw && (
-                      <div style={{ background: '#f3f4f6', borderRadius: '8px', padding: '0.6rem' }}>
+                      <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', borderRadius: '8px', padding: '0.6rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
                           <span>📊 Preisdifferenz (Brutto)</span>
                           <span style={{ fontWeight: 700 }}>{(erwBruttoVK - kidsBruttoVK).toFixed(2)} €</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6c757d' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))' }}>
                           <span>Kids ist günstiger um</span>
                           <span style={{ fontWeight: 600 }}>{erwBruttoVK > 0 ? ((erwBruttoVK - kidsBruttoVK) / erwBruttoVK * 100).toFixed(0) : 0}%</span>
                         </div>
@@ -1575,7 +1575,7 @@ const ArtikelFormular = ({ mode }) => {
             <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
               {/* BEZUGSKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>Bezugskalkulation</strong>
+                <strong style={{fontSize: '0.85rem', color: 'var(--gold, #ffd700)'}}>Bezugskalkulation</strong>
               </div>
 
               <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem'}}>
@@ -1603,7 +1603,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{bareinkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--gold, #ffd700)'}}>
                 <span>+ Bezugskosten</span>
                 <span>+{bezugskosten_wert.toFixed(2)} €</span>
               </div>
@@ -1617,10 +1617,10 @@ const ArtikelFormular = ({ mode }) => {
 
               {/* SELBSTKOSTENKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>Selbstkostenkalkulation</strong>
+                <strong style={{fontSize: '0.85rem', color: 'var(--gold, #ffd700)'}}>Selbstkostenkalkulation</strong>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--gold, #ffd700)'}}>
                 <span>+ Gemeinkosten ({gemeinkosten_prozent}%)</span>
                 <span>+{gemeinkosten_euro.toFixed(2)} €</span>
               </div>
@@ -1630,7 +1630,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{selbstkostenpreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--gold, #ffd700)'}}>
                 <span>+ Gewinnzuschlag ({gewinnzuschlag_prozent}%)</span>
                 <span>+{gewinnzuschlag_euro.toFixed(2)} €</span>
               </div>
@@ -1639,7 +1639,7 @@ const ArtikelFormular = ({ mode }) => {
 
               {/* VERKAUFSKALKULATION */}
               <div style={{marginBottom: '0.5rem', padding: '0.3rem', background: 'rgba(107, 68, 35, 0.1)', borderRadius: '4px'}}>
-                <strong style={{fontSize: '0.85rem', color: '#6B4423'}}>Verkaufskalkulation</strong>
+                <strong style={{fontSize: '0.85rem', color: 'var(--gold, #ffd700)'}}>Verkaufskalkulation</strong>
               </div>
 
               <div className="kalkulation-row total" style={{padding: '0.35rem 0.6rem', fontSize: '0.8rem', background: 'rgba(107, 68, 35, 0.05)'}}>
@@ -1647,7 +1647,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{barverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--gold, #ffd700)'}}>
                 <span>+ Kundenskonto ({kundenskonto_prozent}%)</span>
                 <span>+{kundenskonto_euro.toFixed(2)} €</span>
               </div>
@@ -1657,7 +1657,7 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{zielverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--gold, #ffd700)'}}>
                 <span>+ Kundenrabatt ({kundenrabatt_prozent}%)</span>
                 <span>+{kundenrabatt_euro.toFixed(2)} €</span>
               </div>
@@ -1667,14 +1667,14 @@ const ArtikelFormular = ({ mode }) => {
                 <span><strong>{nettoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#047857'}}>
+              <div className="kalkulation-row" style={{padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--gold, #ffd700)'}}>
                 <span>+ Umsatzsteuer ({mwst_prozent}%)</span>
                 <span>+{umsatzsteuer_euro.toFixed(2)} €</span>
               </div>
 
               <div className="kalkulation-row final" style={{padding: '0.5rem 0.6rem', fontSize: '0.9rem', background: 'rgba(107, 68, 35, 0.15)', borderRadius: '6px', marginTop: '0.5rem'}}>
                 <span><strong>= BRUTTOVERKAUFSPREIS</strong></span>
-                <span style={{color: '#6B4423'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
+                <span style={{color: 'var(--gold, #ffd700)'}}><strong>{bruttoverkaufspreis.toFixed(2)} €</strong></span>
               </div>
 
               <div style={{height: '8px', borderTop: '1px solid rgba(107, 68, 35, 0.3)', margin: '0.5rem 0'}}></div>
@@ -1682,14 +1682,14 @@ const ArtikelFormular = ({ mode }) => {
               {/* GEWINN */}
               <div className="kalkulation-row profit" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem'}}>
                 <span>💰 Gewinn gesamt</span>
-                <span style={{color: gewinn_gesamt >= 0 ? '#047857' : '#ef4444', fontWeight: 600}}>
+                <span style={{color: gewinn_gesamt >= 0 ? 'var(--gold, #ffd700)' : '#ef4444', fontWeight: 600}}>
                   {gewinn_gesamt.toFixed(2)} €
                 </span>
               </div>
 
               <div className="kalkulation-row profit" style={{padding: '0.4rem 0.6rem', fontSize: '0.85rem'}}>
                 <span>📈 Gewinnspanne</span>
-                <span style={{color: gewinnspanne_prozent >= 0 ? '#047857' : '#ef4444', fontWeight: 600}}>
+                <span style={{color: gewinnspanne_prozent >= 0 ? 'var(--gold, #ffd700)' : '#ef4444', fontWeight: 600}}>
                   {gewinnspanne_prozent.toFixed(1)} %
                 </span>
               </div>
@@ -1707,8 +1707,8 @@ const ArtikelFormular = ({ mode }) => {
     alignItems: 'center',
     gap: '0.75rem',
     padding: '1rem 1.25rem',
-    background: '#ffffff',
-    border: '2px solid #dee2e6',
+    background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+    border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
     borderRadius: '8px',
     cursor: 'pointer',
     transition: 'all 0.2s ease'
@@ -1717,7 +1717,7 @@ const ArtikelFormular = ({ mode }) => {
   const checkboxStyle = {
     width: '22px',
     height: '22px',
-    accentColor: '#6B4423',
+    accentColor: 'var(--gold, #ffd700)',
     cursor: 'pointer',
     appearance: 'auto',
     WebkitAppearance: 'checkbox',
@@ -1727,7 +1727,7 @@ const ArtikelFormular = ({ mode }) => {
   };
 
   const checkboxLabelTextStyle = {
-    color: '#2c3e50',
+    color: 'var(--text-primary, #ffffff)',
     fontSize: '1rem',
     fontWeight: 500
   };
@@ -1782,7 +1782,7 @@ const ArtikelFormular = ({ mode }) => {
           <label
             style={{
               ...checkboxContainerStyle,
-              borderColor: formData.lager_tracking ? '#6B4423' : '#dee2e6',
+              borderColor: formData.lager_tracking ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
               background: formData.lager_tracking ? 'rgba(107, 68, 35, 0.05)' : '#ffffff',
               maxWidth: '400px'
             }}
@@ -1839,7 +1839,7 @@ const ArtikelFormular = ({ mode }) => {
                       name="farbe_hex"
                       value={formData.farbe_hex}
                       onChange={handleInputChange}
-                      style={{ width: '60px', height: '46px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #dee2e6' }}
+                      style={{ width: '60px', height: '46px', cursor: 'pointer', borderRadius: '8px', border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))' }}
                     />
                     <input
                       type="text"
@@ -1866,21 +1866,21 @@ const ArtikelFormular = ({ mode }) => {
                   borderRadius: '8px'
                 }}>
                   <div>
-                    <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.1rem' }}>
+                    <h3 style={{ margin: 0, color: 'var(--gold, #ffd700)', fontSize: '1.1rem' }}>
                       📊 Varianten-Bestand ({kombinationen.length} Kombinationen)
                     </h3>
-                    <p style={{ margin: '0.25rem 0 0 0', color: '#6c757d', fontSize: '0.9rem' }}>
+                    <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.9rem' }}>
                       Erfassen Sie den Bestand für jede Variante
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <span style={{ padding: '0.5rem 1rem', background: '#6B4423', color: '#fff', borderRadius: '20px', fontSize: '0.85rem' }}>
+                    <span style={{ padding: '0.5rem 1rem', background: 'var(--gold, #ffd700)', color: 'var(--dark-bg, #0f0f23)', borderRadius: '20px', fontSize: '0.85rem' }}>
                       {formData.varianten_groessen.length} Größen
                     </span>
-                    <span style={{ padding: '0.5rem 1rem', background: '#6B4423', color: '#fff', borderRadius: '20px', fontSize: '0.85rem' }}>
+                    <span style={{ padding: '0.5rem 1rem', background: 'var(--gold, #ffd700)', color: 'var(--dark-bg, #0f0f23)', borderRadius: '20px', fontSize: '0.85rem' }}>
                       {formData.varianten_farben.length} Farben
                     </span>
-                    <span style={{ padding: '0.5rem 1rem', background: '#6B4423', color: '#fff', borderRadius: '20px', fontSize: '0.85rem' }}>
+                    <span style={{ padding: '0.5rem 1rem', background: 'var(--gold, #ffd700)', color: 'var(--dark-bg, #0f0f23)', borderRadius: '20px', fontSize: '0.85rem' }}>
                       {formData.varianten_material.length} Material
                     </span>
                   </div>
@@ -1893,11 +1893,11 @@ const ArtikelFormular = ({ mode }) => {
                   gap: '1rem',
                   marginBottom: '1rem',
                   padding: '1rem',
-                  background: '#ffffff',
-                  border: '2px solid #dee2e6',
+                  background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                  border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
                   borderRadius: '8px'
                 }}>
-                  <label style={{ color: '#6B4423', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <label style={{ color: 'var(--gold, #ffd700)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     Mindestbestand für alle:
                   </label>
                   <input
@@ -1926,8 +1926,8 @@ const ArtikelFormular = ({ mode }) => {
                     }}
                     style={{
                       padding: '0.75rem 1.5rem',
-                      background: '#6B4423',
-                      color: '#ffffff',
+                      background: 'var(--gold, #ffd700)',
+                      color: 'var(--dark-bg, #0f0f23)',
                       border: 'none',
                       borderRadius: '8px',
                       cursor: 'pointer',
@@ -1941,8 +1941,8 @@ const ArtikelFormular = ({ mode }) => {
 
                 {/* Bestandstabelle */}
                 <div style={{
-                  background: '#ffffff',
-                  border: '2px solid #dee2e6',
+                  background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                  border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
                   borderRadius: '12px',
                   overflow: 'hidden'
                 }}>
@@ -1952,10 +1952,10 @@ const ArtikelFormular = ({ mode }) => {
                     gridTemplateColumns: '2fr 1fr 1fr 120px',
                     gap: '1rem',
                     padding: '1rem 1.5rem',
-                    background: '#f8f9fa',
-                    borderBottom: '2px solid #dee2e6',
+                    background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))',
+                    borderBottom: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
                     fontWeight: 600,
-                    color: '#6B4423',
+                    color: 'var(--gold, #ffd700)',
                     fontSize: '0.9rem'
                   }}>
                     <span>Variante</span>
@@ -1992,12 +1992,12 @@ const ArtikelFormular = ({ mode }) => {
                                 height: '24px',
                                 borderRadius: '50%',
                                 background: kombi.farbe.hex,
-                                border: kombi.farbe.hex === '#FFFFFF' ? '1px solid #dee2e6' : 'none',
+                                border: kombi.farbe.hex === '#FFFFFF' ? '1px solid var(--border-secondary, rgba(255, 255, 255, 0.1))' : 'none',
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
                                 flexShrink: 0
                               }} />
                             )}
-                            <span style={{ color: '#2c3e50', fontWeight: 500 }}>
+                            <span style={{ color: 'var(--text-primary, #ffffff)', fontWeight: 500 }}>
                               {kombi.label}
                             </span>
                           </div>
@@ -2038,7 +2038,7 @@ const ArtikelFormular = ({ mode }) => {
                             fontWeight: 600,
                             textAlign: 'center',
                             background: istLeer ? '#fef2f2' : istKritisch ? '#fef3c7' : '#ecfdf5',
-                            color: istLeer ? '#dc2626' : istKritisch ? '#d97706' : '#047857',
+                            color: istLeer ? '#dc2626' : istKritisch ? '#d97706' : 'var(--gold, #ffd700)',
                             border: `1px solid ${istLeer ? '#fca5a5' : istKritisch ? '#fcd34d' : '#6ee7b7'}`
                           }}>
                             {istLeer ? '❌ Leer' : istKritisch ? '⚠️ Kritisch' : '✓ OK'}
@@ -2056,15 +2056,15 @@ const ArtikelFormular = ({ mode }) => {
                   gridTemplateColumns: 'repeat(4, 1fr)',
                   gap: '1rem'
                 }}>
-                  <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '8px', textAlign: 'center' }}>
-                    <p style={{ color: '#6c757d', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Gesamtbestand</p>
-                    <p style={{ color: '#6B4423', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+                  <div style={{ padding: '1rem', background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))', borderRadius: '8px', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Gesamtbestand</p>
+                    <p style={{ color: 'var(--gold, #ffd700)', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
                       {Object.values(formData.varianten_bestand).reduce((sum, v) => sum + (v.bestand || 0), 0)}
                     </p>
                   </div>
                   <div style={{ padding: '1rem', background: '#ecfdf5', borderRadius: '8px', textAlign: 'center' }}>
-                    <p style={{ color: '#047857', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Verfügbar</p>
-                    <p style={{ color: '#047857', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+                    <p style={{ color: 'var(--gold, #ffd700)', fontSize: '0.85rem', margin: '0 0 0.25rem 0' }}>Verfügbar</p>
+                    <p style={{ color: 'var(--gold, #ffd700)', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
                       {kombinationen.filter(k => {
                         const b = formData.varianten_bestand[k.key];
                         return b && b.bestand > b.mindestbestand;
@@ -2098,10 +2098,10 @@ const ArtikelFormular = ({ mode }) => {
         {!formData.lager_tracking && (
           <div style={{
             padding: '2rem',
-            background: '#f8f9fa',
+            background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))',
             borderRadius: '12px',
             textAlign: 'center',
-            color: '#6c757d'
+            color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))'
           }}>
             <p style={{ fontSize: '1.1rem', margin: 0 }}>
               📦 Aktivieren Sie die Lagerbestandsverfolgung, um den Bestand zu verwalten.
@@ -2118,7 +2118,7 @@ const ArtikelFormular = ({ mode }) => {
         <label
           style={{
             ...checkboxContainerStyle,
-            borderColor: formData.aktiv ? '#6B4423' : '#dee2e6',
+            borderColor: formData.aktiv ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
             background: formData.aktiv ? 'rgba(107, 68, 35, 0.05)' : '#ffffff'
           }}
         >
@@ -2137,7 +2137,7 @@ const ArtikelFormular = ({ mode }) => {
         <label
           style={{
             ...checkboxContainerStyle,
-            borderColor: formData.sichtbar_kasse ? '#6B4423' : '#dee2e6',
+            borderColor: formData.sichtbar_kasse ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
             background: formData.sichtbar_kasse ? 'rgba(107, 68, 35, 0.05)' : '#ffffff'
           }}
         >
@@ -2216,10 +2216,10 @@ const ArtikelFormular = ({ mode }) => {
   // Input Style für bessere Sichtbarkeit
   const inputStyle = {
     padding: '0.75rem 1rem',
-    background: '#ffffff',
-    border: '2px solid #dee2e6',
+    background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+    border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
     borderRadius: '8px',
-    color: '#2c3e50',
+    color: 'var(--text-primary, #ffffff)',
     fontSize: '1rem',
     width: '100%',
     boxSizing: 'border-box'
@@ -2234,12 +2234,12 @@ const ArtikelFormular = ({ mode }) => {
     <div className="tab-content-section" style={{ overflow: 'auto' }}>
       {/* Varianten aktivieren */}
       <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(107, 68, 35, 0.05)', borderRadius: '12px', border: '2px solid rgba(107, 68, 35, 0.2)' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, #2c3e50)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary, var(--text-primary, #ffffff))' }}>
           <input
             type="checkbox"
             checked={formData.hat_varianten}
             onChange={(e) => setFormData(prev => ({ ...prev, hat_varianten: e.target.checked }))}
-            style={{ width: '20px', height: '20px', accentColor: '#6B4423' }}
+            style={{ width: '20px', height: '20px', accentColor: 'var(--gold, #ffd700)' }}
           />
           🎨 Artikel hat Varianten (Größen, Farben, Material)
         </label>
@@ -2248,9 +2248,9 @@ const ArtikelFormular = ({ mode }) => {
       {formData.hat_varianten && (
         <div style={{ display: 'grid', gap: '2rem' }}>
           {/* GRÖSSEN */}
-          <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
+          <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))', borderRadius: '12px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--gold, #ffd700)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 📏 Größen
               </h3>
               <button
@@ -2267,7 +2267,7 @@ const ArtikelFormular = ({ mode }) => {
                   cursor: 'pointer',
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  color: '#166534'
+                  color: 'var(--gold, #ffd700)'
                 }}
               >
                 ✓ Alle auswählen
@@ -2277,7 +2277,7 @@ const ArtikelFormular = ({ mode }) => {
             {/* Standard Größen */}
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <p style={{ color: '#6c757d', fontSize: '0.9rem', margin: 0 }}>Konfektionsgrößen:</p>
+                <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.9rem', margin: 0 }}>Konfektionsgrößen:</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -2289,12 +2289,12 @@ const ArtikelFormular = ({ mode }) => {
                   }}
                   style={{
                     padding: '0.25rem 0.5rem',
-                    background: '#f3f4f6',
+                    background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
                     border: '1px solid #d1d5db',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     fontSize: '0.75rem',
-                    color: '#374151'
+                    color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))'
                   }}
                 >
                   Alle
@@ -2309,10 +2309,10 @@ const ArtikelFormular = ({ mode }) => {
                     style={{
                       padding: '0.5rem 1rem',
                       border: '2px solid',
-                      borderColor: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#dee2e6',
+                      borderColor: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                       borderRadius: '8px',
-                      background: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#ffffff',
-                      color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : '#2c3e50',
+                      background: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : '#ffffff',
+                      color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : 'var(--text-primary, #ffffff)',
                       cursor: 'pointer',
                       fontWeight: 600,
                       transition: 'all 0.2s ease'
@@ -2327,7 +2327,7 @@ const ArtikelFormular = ({ mode }) => {
             {/* Körpergrößen */}
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <p style={{ color: '#6c757d', fontSize: '0.9rem', margin: 0 }}>Körpergrößen (cm):</p>
+                <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.9rem', margin: 0 }}>Körpergrößen (cm):</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -2339,12 +2339,12 @@ const ArtikelFormular = ({ mode }) => {
                   }}
                   style={{
                     padding: '0.25rem 0.5rem',
-                    background: '#f3f4f6',
+                    background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
                     border: '1px solid #d1d5db',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     fontSize: '0.75rem',
-                    color: '#374151'
+                    color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))'
                   }}
                 >
                   Alle
@@ -2359,10 +2359,10 @@ const ArtikelFormular = ({ mode }) => {
                     style={{
                       padding: '0.5rem 0.75rem',
                       border: '2px solid',
-                      borderColor: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#dee2e6',
+                      borderColor: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                       borderRadius: '8px',
-                      background: formData.varianten_groessen.includes(groesse) ? '#6B4423' : '#ffffff',
-                      color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : '#2c3e50',
+                      background: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : '#ffffff',
+                      color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : 'var(--text-primary, #ffffff)',
                       cursor: 'pointer',
                       fontWeight: 600,
                       fontSize: '0.9rem',
@@ -2389,8 +2389,8 @@ const ArtikelFormular = ({ mode }) => {
                 onClick={addCustomGroesse}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  background: '#6B4423',
-                  color: '#ffffff',
+                  background: 'var(--gold, #ffd700)',
+                  color: 'var(--dark-bg, #0f0f23)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -2403,11 +2403,11 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* Ausgewählte Größen */}
             {formData.varianten_groessen.length > 0 && (
-              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_groessen.length}):</p>
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))', borderRadius: '8px' }}>
+                <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_groessen.length}):</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {formData.varianten_groessen.map(g => (
-                    <span key={g} style={{ padding: '0.25rem 0.75rem', background: '#6B4423', color: '#ffffff', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 500 }}>
+                    <span key={g} style={{ padding: '0.25rem 0.75rem', background: 'var(--gold, #ffd700)', color: 'var(--dark-bg, #0f0f23)', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 500 }}>
                       {g}
                     </span>
                   ))}
@@ -2417,9 +2417,9 @@ const ArtikelFormular = ({ mode }) => {
           </div>
 
           {/* FARBEN */}
-          <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
+          <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))', borderRadius: '12px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--gold, #ffd700)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 🎨 Farben
               </h3>
               <button
@@ -2435,7 +2435,7 @@ const ArtikelFormular = ({ mode }) => {
                   cursor: 'pointer',
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  color: '#166534'
+                  color: 'var(--gold, #ffd700)'
                 }}
               >
                 ✓ Alle auswählen
@@ -2455,7 +2455,7 @@ const ArtikelFormular = ({ mode }) => {
                     gap: '0.5rem',
                     padding: '0.5rem 1rem',
                     border: '2px solid',
-                    borderColor: formData.varianten_farben.some(f => f.name === farbe.name) ? '#6B4423' : '#dee2e6',
+                    borderColor: formData.varianten_farben.some(f => f.name === farbe.name) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                     borderRadius: '8px',
                     background: formData.varianten_farben.some(f => f.name === farbe.name) ? 'rgba(107, 68, 35, 0.1)' : '#ffffff',
                     cursor: 'pointer',
@@ -2467,10 +2467,10 @@ const ArtikelFormular = ({ mode }) => {
                     height: '20px',
                     borderRadius: '50%',
                     background: farbe.hex,
-                    border: farbe.hex === '#FFFFFF' ? '1px solid #dee2e6' : 'none',
+                    border: farbe.hex === '#FFFFFF' ? '1px solid var(--border-secondary, rgba(255, 255, 255, 0.1))' : 'none',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                   }} />
-                  <span style={{ color: '#2c3e50', fontWeight: 500 }}>{farbe.name}</span>
+                  <span style={{ color: 'var(--text-primary, #ffffff)', fontWeight: 500 }}>{farbe.name}</span>
                 </button>
               ))}
             </div>
@@ -2488,15 +2488,15 @@ const ArtikelFormular = ({ mode }) => {
                 type="color"
                 value={formData.custom_farbe_hex}
                 onChange={(e) => setFormData(prev => ({ ...prev, custom_farbe_hex: e.target.value }))}
-                style={{ width: '50px', height: '42px', cursor: 'pointer', borderRadius: '8px', border: '2px solid #dee2e6' }}
+                style={{ width: '50px', height: '42px', cursor: 'pointer', borderRadius: '8px', border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))' }}
               />
               <button
                 type="button"
                 onClick={addCustomFarbe}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  background: '#6B4423',
-                  color: '#ffffff',
+                  background: 'var(--gold, #ffd700)',
+                  color: 'var(--dark-bg, #0f0f23)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -2509,8 +2509,8 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* Ausgewählte Farben */}
             {formData.varianten_farben.length > 0 && (
-              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_farben.length}):</p>
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))', borderRadius: '8px' }}>
+                <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_farben.length}):</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {formData.varianten_farben.map(f => (
                     <span key={f.name} style={{
@@ -2518,12 +2518,12 @@ const ArtikelFormular = ({ mode }) => {
                       alignItems: 'center',
                       gap: '0.5rem',
                       padding: '0.25rem 0.75rem',
-                      background: '#ffffff',
-                      border: '1px solid #dee2e6',
+                      background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                      border: '1px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
                       borderRadius: '20px',
                       fontSize: '0.85rem'
                     }}>
-                      <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: f.hex, border: f.hex === '#FFFFFF' ? '1px solid #dee2e6' : 'none' }} />
+                      <span style={{ width: '14px', height: '14px', borderRadius: '50%', background: f.hex, border: f.hex === '#FFFFFF' ? '1px solid var(--border-secondary, rgba(255, 255, 255, 0.1))' : 'none' }} />
                       {f.name}
                     </span>
                   ))}
@@ -2533,9 +2533,9 @@ const ArtikelFormular = ({ mode }) => {
           </div>
 
           {/* MATERIAL */}
-          <div style={{ background: '#ffffff', border: '2px solid #dee2e6', borderRadius: '12px', padding: '1.5rem' }}>
+          <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))', borderRadius: '12px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#6B4423', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--gold, #ffd700)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 🧵 Material / Stoff
               </h3>
               <button
@@ -2552,7 +2552,7 @@ const ArtikelFormular = ({ mode }) => {
                   cursor: 'pointer',
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  color: '#166534'
+                  color: 'var(--gold, #ffd700)'
                 }}
               >
                 ✓ Alle auswählen
@@ -2573,10 +2573,10 @@ const ArtikelFormular = ({ mode }) => {
                   style={{
                     padding: '0.5rem 1rem',
                     border: '2px solid',
-                    borderColor: formData.varianten_material.includes(mat) ? '#6B4423' : '#dee2e6',
+                    borderColor: formData.varianten_material.includes(mat) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                     borderRadius: '8px',
-                    background: formData.varianten_material.includes(mat) ? '#6B4423' : '#ffffff',
-                    color: formData.varianten_material.includes(mat) ? '#ffffff' : '#2c3e50',
+                    background: formData.varianten_material.includes(mat) ? 'var(--gold, #ffd700)' : '#ffffff',
+                    color: formData.varianten_material.includes(mat) ? '#ffffff' : 'var(--text-primary, #ffffff)',
                     cursor: 'pointer',
                     fontWeight: 500,
                     transition: 'all 0.2s ease'
@@ -2601,8 +2601,8 @@ const ArtikelFormular = ({ mode }) => {
                 onClick={addCustomMaterial}
                 style={{
                   padding: '0.75rem 1.5rem',
-                  background: '#6B4423',
-                  color: '#ffffff',
+                  background: 'var(--gold, #ffd700)',
+                  color: 'var(--dark-bg, #0f0f23)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -2615,8 +2615,8 @@ const ArtikelFormular = ({ mode }) => {
 
             {/* Ausgewählte Materialien */}
             {formData.varianten_material.length > 0 && (
-              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_material.length}):</p>
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))', borderRadius: '8px' }}>
+                <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_material.length}):</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {formData.varianten_material.map(m => (
                     <span key={m} style={{
@@ -2624,8 +2624,8 @@ const ArtikelFormular = ({ mode }) => {
                       alignItems: 'center',
                       gap: '0.5rem',
                       padding: '0.25rem 0.75rem',
-                      background: '#6B4423',
-                      color: '#ffffff',
+                      background: 'var(--gold, #ffd700)',
+                      color: 'var(--dark-bg, #0f0f23)',
                       borderRadius: '20px',
                       fontSize: '0.85rem',
                       fontWeight: 500
@@ -2660,25 +2660,25 @@ const ArtikelFormular = ({ mode }) => {
           {/* ZUSAMMENFASSUNG */}
           {(formData.varianten_groessen.length > 0 || formData.varianten_farben.length > 0 || formData.varianten_material.length > 0) && (
             <div style={{ background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.2)', borderRadius: '12px', padding: '1.5rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#6B4423', fontSize: '1.2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: 'var(--gold, #ffd700)', fontSize: '1.2rem' }}>
                 📊 Varianten-Zusammenfassung
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
-                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Größen</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>{formData.varianten_groessen.length}</p>
+                <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Größen</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>{formData.varianten_groessen.length}</p>
                 </div>
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
-                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Farben</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>{formData.varianten_farben.length}</p>
+                <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Farben</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>{formData.varianten_farben.length}</p>
                 </div>
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
-                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Materialien</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>{formData.varianten_material.length}</p>
+                <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Materialien</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>{formData.varianten_material.length}</p>
                 </div>
-                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '8px' }}>
-                  <p style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Mögliche Kombinationen</p>
-                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: '#6B4423' }}>
+                <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Mögliche Kombinationen</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>
                     {Math.max(1, formData.varianten_groessen.length) * Math.max(1, formData.varianten_farben.length) * Math.max(1, formData.varianten_material.length)}
                   </p>
                 </div>
@@ -2718,19 +2718,19 @@ const ArtikelFormular = ({ mode }) => {
         alignItems: 'center',
         marginBottom: '2rem',
         paddingBottom: '1rem',
-        borderBottom: '2px solid var(--border-accent, #e9ecef)'
+        borderBottom: '2px solid var(--border-primary, rgba(255, 215, 0, 0.2))'
       }}>
         <div>
           <h1 style={{
             fontSize: '2rem',
             fontWeight: 700,
-            color: '#6B4423',
+            color: 'var(--gold, #ffd700)',
             marginBottom: '0.5rem'
           }}>
             {mode === 'create' ? '🆕 Neuen Artikel erstellen' : '✏️ Artikel bearbeiten'}
           </h1>
           {mode === 'edit' && formData.name && (
-            <p style={{fontSize: '1.1rem', color: 'var(--text-secondary, #6c757d)'}}>
+            <p style={{fontSize: '1.1rem', color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))'}}>
               {formData.name}
             </p>
           )}
@@ -2741,9 +2741,9 @@ const ArtikelFormular = ({ mode }) => {
             onClick={() => navigate('/dashboard/artikel')}
             style={{
               padding: '0.75rem 1.5rem',
-              background: 'var(--glass-bg, #f8f9fa)',
-              color: 'var(--text-primary, #2c3e50)',
-              border: '1px solid var(--border-color, #dee2e6)',
+              background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+              color: 'var(--text-primary, #ffffff)',
+              border: '1px solid var(--border-primary, rgba(255, 215, 0, 0.2))',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '1rem',
@@ -2758,8 +2758,8 @@ const ArtikelFormular = ({ mode }) => {
             disabled={loading || !formData.name || !formData.verkaufspreis_euro}
             style={{
               padding: '0.75rem 2rem',
-              background: '#6B4423',
-              color: '#ffffff',
+              background: 'var(--gold, #ffd700)',
+              color: 'var(--dark-bg, #0f0f23)',
               border: 'none',
               borderRadius: '8px',
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -2776,10 +2776,10 @@ const ArtikelFormular = ({ mode }) => {
       {error && (
         <div style={{
           padding: '1rem',
-          background: '#fef2f2',
+          background: 'rgba(239, 68, 68, 0.1)',
           border: '1px solid #ef4444',
           borderRadius: '8px',
-          color: '#dc2626',
+          color: '#ef4444',
           marginBottom: '1rem'
         }}>
           {error}
@@ -2792,9 +2792,9 @@ const ArtikelFormular = ({ mode }) => {
         gap: '0.5rem',
         marginBottom: '1.5rem',
         padding: '0.25rem',
-        background: 'var(--glass-bg, #f8f9fa)',
+        background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
         borderRadius: '12px',
-        border: '1px solid var(--border-color, #dee2e6)',
+        border: '1px solid var(--border-primary, rgba(255, 215, 0, 0.2))',
         flexWrap: 'wrap'
       }}>
         {tabs.map(tab => (
@@ -2805,9 +2805,9 @@ const ArtikelFormular = ({ mode }) => {
             style={{
               flex: 1,
               padding: '0.75rem 1.5rem',
-              background: activeTab === tab.id ? '#6B4423' : 'transparent',
-              color: activeTab === tab.id ? '#ffffff' : 'var(--text-secondary, #6c757d)',
-              border: activeTab === tab.id ? '1px solid #6B4423' : '1px solid var(--border-color, #dee2e6)',
+              background: activeTab === tab.id ? 'var(--gold, #ffd700)' : 'transparent',
+              color: activeTab === tab.id ? 'var(--dark-bg, #0f0f23)' : 'var(--text-secondary, rgba(255, 255, 255, 0.7))',
+              border: activeTab === tab.id ? '1px solid var(--gold, #ffd700)' : '1px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '1rem',
@@ -2828,8 +2828,8 @@ const ArtikelFormular = ({ mode }) => {
 
       {/* Tab Content */}
       <div style={{
-        background: 'var(--glass-bg, #ffffff)',
-        border: '2px solid var(--border-accent, #dee2e6)',
+        background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+        border: '2px solid var(--border-primary, rgba(255, 215, 0, 0.2))',
         borderRadius: '12px',
         padding: '2rem',
         minHeight: '600px'

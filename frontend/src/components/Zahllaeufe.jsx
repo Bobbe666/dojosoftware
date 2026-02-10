@@ -13,7 +13,12 @@ import {
   Clock,
   AlertCircle,
   Search,
-  Filter
+  Filter,
+  ChevronDown,
+  ChevronRight,
+  User,
+  CreditCard,
+  XCircle
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -29,6 +34,9 @@ const Zahllaeufe = ({ embedded = false }) => {
   const [filteredZahllaeufe, setFilteredZahllaeufe] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedRows, setExpandedRows] = useState({});
+  const [transaktionenCache, setTransaktionenCache] = useState({});
+  const [loadingTransaktionen, setLoadingTransaktionen] = useState({});
   const [stats, setStats] = useState({
     gesamt: 0,
     abgeschlossen: 0,
@@ -136,6 +144,71 @@ const Zahllaeufe = ({ embedded = false }) => {
     }
   };
 
+  const getTransaktionStatusBadge = (status) => {
+    switch (status) {
+      case 'succeeded':
+        return <span className="badge badge-success"><CheckCircle size={12} /> Erfolgreich</span>;
+      case 'processing':
+        return <span className="badge badge-warning"><Clock size={12} /> In Bearbeitung</span>;
+      case 'failed':
+        return <span className="badge badge-danger"><XCircle size={12} /> Fehlgeschlagen</span>;
+      case 'canceled':
+        return <span className="badge badge-neutral"><XCircle size={12} /> Abgebrochen</span>;
+      default:
+        return <span className="badge badge-neutral">{status}</span>;
+    }
+  };
+
+  const toggleRow = async (zahllauf) => {
+    const rowKey = `${zahllauf.quelle || 'sepa'}-${zahllauf.zahllauf_id}`;
+    const isExpanded = expandedRows[rowKey];
+
+    if (isExpanded) {
+      // Einklappen
+      setExpandedRows(prev => ({ ...prev, [rowKey]: false }));
+    } else {
+      // Ausklappen - Daten laden falls nicht im Cache
+      setExpandedRows(prev => ({ ...prev, [rowKey]: true }));
+
+      if (!transaktionenCache[rowKey]) {
+        await loadTransaktionen(zahllauf, rowKey);
+      }
+    }
+  };
+
+  const loadTransaktionen = async (zahllauf, rowKey) => {
+    setLoadingTransaktionen(prev => ({ ...prev, [rowKey]: true }));
+
+    try {
+      const quelle = zahllauf.quelle || 'sepa';
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/zahllaeufe/${quelle}/${zahllauf.zahllauf_id}/transaktionen`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setTransaktionenCache(prev => ({
+          ...prev,
+          [rowKey]: data
+        }));
+      } else {
+        console.error('Fehler beim Laden der Transaktionen');
+        setTransaktionenCache(prev => ({
+          ...prev,
+          [rowKey]: { transaktionen: [], error: 'Fehler beim Laden' }
+        }));
+      }
+    } catch (error) {
+      console.error('Fehler:', error);
+      setTransaktionenCache(prev => ({
+        ...prev,
+        [rowKey]: { transaktionen: [], error: error.message }
+      }));
+    } finally {
+      setLoadingTransaktionen(prev => ({ ...prev, [rowKey]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="zahllaeufe-container">
@@ -176,8 +249,8 @@ const Zahllaeufe = ({ embedded = false }) => {
         <div>
           <h3>Zahlläufe Verwaltung</h3>
           <p>
-            Hier sehen Sie alle durchgeführten SEPA-Lastschriftläufe mit Status, Buchungen und Beträgen.
-            Jeder Zahllauf enthält die Mandate-Informationen und kann heruntergeladen werden.
+            Hier sehen Sie alle durchgeführten Lastschriftläufe - sowohl klassische SEPA-Läufe als auch Stripe SEPA-Einzüge.
+            Jeder Zahllauf enthält Status, Buchungen und Beträge.
           </p>
         </div>
       </div>
@@ -277,6 +350,7 @@ const Zahllaeufe = ({ embedded = false }) => {
           <table className="zahllaeufe-table">
             <thead>
               <tr>
+                <th style={{ width: '40px' }}></th>
                 <th>Erstellt am</th>
                 <th>Forderungen bis einschl.</th>
                 <th>Geplanter Einzug</th>
@@ -290,57 +364,165 @@ const Zahllaeufe = ({ embedded = false }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredZahllaeufe.map(zahllauf => (
-                <tr key={zahllauf.zahllauf_id}>
-                  <td>
-                    {formatDateTime(zahllauf.erstellt_am)}
-                  </td>
-                  <td>
-                    {formatDate(zahllauf.forderungen_bis)}
-                  </td>
-                  <td>
-                    {formatDate(zahllauf.geplanter_einzug)}
-                  </td>
-                  <td>
-                    {zahllauf.zahlungsanbieter || '-'}
-                  </td>
-                  <td>
-                    {getStatusBadge(zahllauf.status)}
-                  </td>
-                  <td>
-                    <code>{zahllauf.buchungsnummer}</code>
-                  </td>
-                  <td>
-                    <strong>{zahllauf.anzahl_buchungen || 0}</strong>
-                  </td>
-                  <td>
-                    {zahllauf.ruecklastschrift_prozent
-                      ? `${zahllauf.ruecklastschrift_prozent}%`
-                      : '0%'}
-                  </td>
-                  <td>
-                    <strong>{formatCurrency(zahllauf.betrag)}</strong>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        className="btn-icon btn-info"
-                        onClick={() => alert('Details anzeigen')}
-                        title="Details anzeigen"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        className="btn-icon btn-secondary"
-                        onClick={() => alert('CSV herunterladen')}
-                        title="CSV herunterladen"
-                      >
-                        <Download size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredZahllaeufe.map(zahllauf => {
+                const rowKey = `${zahllauf.quelle || 'sepa'}-${zahllauf.zahllauf_id}`;
+                const isExpanded = expandedRows[rowKey];
+                const transaktionenData = transaktionenCache[rowKey];
+                const isLoadingTransaktionen = loadingTransaktionen[rowKey];
+
+                return (
+                  <React.Fragment key={rowKey}>
+                    <tr className={isExpanded ? 'row-expanded' : ''}>
+                      <td>
+                        <button
+                          className="btn-expand"
+                          onClick={() => toggleRow(zahllauf)}
+                          title={isExpanded ? 'Einklappen' : 'Details anzeigen'}
+                        >
+                          {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                        </button>
+                      </td>
+                      <td>
+                        {formatDateTime(zahllauf.erstellt_am)}
+                      </td>
+                      <td>
+                        {formatDate(zahllauf.forderungen_bis)}
+                      </td>
+                      <td>
+                        {zahllauf.quelle === 'stripe' ? '-' : formatDate(zahllauf.geplanter_einzug)}
+                      </td>
+                      <td>
+                        <span className={`provider-badge ${zahllauf.quelle === 'stripe' ? 'provider-stripe' : 'provider-sepa'}`}>
+                          {zahllauf.quelle === 'stripe' ? '💳 Stripe SEPA' : (zahllauf.zahlungsanbieter || 'SEPA')}
+                        </span>
+                      </td>
+                      <td>
+                        {getStatusBadge(zahllauf.status)}
+                      </td>
+                      <td>
+                        <code>{zahllauf.buchungsnummer}</code>
+                      </td>
+                      <td>
+                        <strong>{zahllauf.anzahl_buchungen || 0}</strong>
+                      </td>
+                      <td>
+                        {zahllauf.ruecklastschrift_prozent
+                          ? `${zahllauf.ruecklastschrift_prozent}%`
+                          : '0%'}
+                        {zahllauf.ruecklastschrift_anzahl > 0 && (
+                          <span className="rls-count"> ({zahllauf.ruecklastschrift_anzahl})</span>
+                        )}
+                      </td>
+                      <td>
+                        <strong>{formatCurrency(zahllauf.betrag)}</strong>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          {zahllauf.quelle !== 'stripe' && (
+                            <button
+                              className="btn-icon btn-secondary"
+                              onClick={() => alert('CSV herunterladen')}
+                              title="CSV herunterladen"
+                            >
+                              <Download size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Ausgeklappte Details */}
+                    {isExpanded && (
+                      <tr className="expanded-row">
+                        <td colSpan="11">
+                          <div className="transaktionen-container">
+                            {isLoadingTransaktionen ? (
+                              <div className="transaktionen-loading">
+                                <div className="loading-spinner-small"></div>
+                                <span>Lade Transaktionen...</span>
+                              </div>
+                            ) : transaktionenData?.hinweis ? (
+                              <div className="transaktionen-hinweis">
+                                <AlertCircle size={16} />
+                                <span>{transaktionenData.hinweis}</span>
+                              </div>
+                            ) : transaktionenData?.transaktionen?.length > 0 ? (
+                              <div className="transaktionen-liste">
+                                <div className="transaktionen-header">
+                                  <User size={16} />
+                                  <span>{transaktionenData.count} Mitglieder in diesem Zahllauf</span>
+                                </div>
+                                <table className="transaktionen-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Mitglied</th>
+                                      <th>Status</th>
+                                      <th>Betrag</th>
+                                      <th>Beiträge</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {transaktionenData.transaktionen.map((t, idx) => (
+                                      <tr key={t.transaktion_id || idx}>
+                                        <td>
+                                          <div className="mitglied-info">
+                                            <strong>{t.vorname} {t.nachname}</strong>
+                                            {t.mitgliedsnummer && (
+                                              <span className="mitgliedsnummer">#{t.mitgliedsnummer}</span>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td>
+                                          {getTransaktionStatusBadge(t.status)}
+                                          {t.error_message && (
+                                            <div className="error-message" title={t.error_message}>
+                                              {t.error_message.substring(0, 50)}...
+                                            </div>
+                                          )}
+                                        </td>
+                                        <td>
+                                          <strong>{formatCurrency(t.betrag)}</strong>
+                                        </td>
+                                        <td>
+                                          {t.beitraege && t.beitraege.length > 0 ? (
+                                            <div className="beitraege-liste">
+                                              {t.beitraege.map((b, bidx) => (
+                                                <div key={b.beitrag_id || bidx} className="beitrag-item">
+                                                  <span className="beitrag-datum">
+                                                    {formatDate(b.zahlungsdatum)}
+                                                  </span>
+                                                  <span className="beitrag-betrag">
+                                                    {formatCurrency(b.betrag)}
+                                                  </span>
+                                                  {b.magicline_description && (
+                                                    <span className="beitrag-beschreibung">
+                                                      {b.magicline_description}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <span className="keine-details">-</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <div className="transaktionen-leer">
+                                <span>Keine Transaktionsdetails verfügbar</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         )}

@@ -1044,6 +1044,34 @@ router.get('/tarife/:dojo_id', async (req, res) => {
   }
 });
 
+// GET /api/public/stundenplan/:dojo_id - Öffentlicher Stundenplan
+router.get('/stundenplan/:dojo_id', async (req, res) => {
+  try {
+    const { dojo_id } = req.params;
+
+    const stundenplan = await queryAsync(`
+      SELECT
+        s.stundenplan_id,
+        k.gruppenname as kursname,
+        s.tag,
+        s.uhrzeit_start,
+        s.uhrzeit_ende,
+        k.stil,
+        CONCAT(t.vorname, ' ', t.nachname) as trainer
+      FROM stundenplan s
+      LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+      LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
+      WHERE k.dojo_id = ?
+      ORDER BY FIELD(s.tag, 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'), s.uhrzeit_start
+    `, [dojo_id]);
+
+    res.json({ success: true, data: stundenplan });
+  } catch (err) {
+    logger.error('Fehler beim Abrufen des Stundenplans:', { error: err, dojo_id: req.params.dojo_id });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
 // GET /api/public/dojo/:subdomain - Dojo-Info anhand Subdomain
 router.get('/dojo/:subdomain', async (req, res) => {
   try {
@@ -1081,7 +1109,7 @@ router.post('/mitglied-anlegen', async (req, res) => {
       // Optional: Familien-Verknüpfung
       familien_id, hauptmitglied_id,
       // Einverständnisse
-      agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged
+      agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged, dojoregeln_accepted
     } = req.body;
 
     // Pflichtfeld-Validierung
@@ -1217,6 +1245,8 @@ router.post('/mitglied-anlegen', async (req, res) => {
     const newMitgliedId = insertResult.insertId;
 
     // Vertrag anlegen falls tarif_id angegeben
+    let vertragId = null;
+    let sepaMandatId = null;
     if (tarif_id) {
       const tarif = await queryAsync('SELECT * FROM tarife WHERE id = ?', [tarif_id]);
       if (tarif.length > 0) {
@@ -1226,16 +1256,128 @@ router.post('/mitglied-anlegen', async (req, res) => {
         // Monatsbeitrag in Euro umrechnen (aus Cents)
         const monatsBeitrag = (t.price_cents || 0) / 100;
 
-        await queryAsync(`
+        // Vertragsnummer generieren
+        const lastVertrag = await queryAsync(
+          'SELECT id FROM vertraege WHERE dojo_id = ? ORDER BY id DESC LIMIT 1',
+          [dojo_id]
+        );
+        const nextVertragNum = lastVertrag.length > 0 ? lastVertrag[0].id + 1 : 1;
+        const vertragsnummer = `V-${String(nextVertragNum).padStart(6, '0')}`;
+
+        // Vertragsende berechnen (Vertragsbeginn + Mindestlaufzeit)
+        const mindestlaufzeit = t.mindestlaufzeit_monate || 12;
+
+        const vertragResult = await queryAsync(`
           INSERT INTO vertraege (
-            mitglied_id, dojo_id, tarif_id, vertragsbeginn, status,
-            monatlicher_beitrag, monatsbeitrag, aufnahmegebuehr_cents, billing_cycle
-          ) VALUES (?, ?, ?, ?, 'aktiv', ?, ?, ?, ?)
+            mitglied_id, dojo_id, tarif_id, vertragsbeginn, vertragsende, status,
+            monatlicher_beitrag, monatsbeitrag, aufnahmegebuehr_cents, billing_cycle,
+            vertragsnummer, mindestlaufzeit_monate
+          ) VALUES (?, ?, ?, ?, DATE_ADD(?, INTERVAL ? MONTH), 'aktiv', ?, ?, ?, ?, ?, ?)
         `, [
-          newMitgliedId, dojo_id, tarif_id, startDate,
+          newMitgliedId, dojo_id, tarif_id, startDate, startDate, mindestlaufzeit,
           monatsBeitrag, monatsBeitrag, t.aufnahmegebuehr_cents || 0,
-          t.billing_cycle || 'MONTHLY'
+          t.billing_cycle || 'MONTHLY', vertragsnummer, mindestlaufzeit
         ]);
+        vertragId = vertragResult.insertId;
+
+        // SEPA-Mandat erstellen falls Bankdaten vorhanden
+        if (iban && kontoinhaber) {
+          const timestamp = Date.now();
+          const mandatsreferenz = `DOJO${dojo_id}-${newMitgliedId}-${timestamp}`;
+
+          const mandatResult = await queryAsync(`
+            INSERT INTO sepa_mandate (
+              mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz,
+              glaeubiger_id, status, erstellungsdatum, provider, mandat_typ
+            ) VALUES (?, ?, ?, ?, ?, ?, 'DE98ZZZ09999999999', 'aktiv', NOW(), 'manual_sepa', 'CORE')
+          `, [newMitgliedId, iban, bic || '', bank_name || '', kontoinhaber, mandatsreferenz]);
+          sepaMandatId = mandatResult.insertId;
+
+          // Vertrag mit SEPA-Mandat verknüpfen
+          await queryAsync('UPDATE vertraege SET sepa_mandat_id = ? WHERE id = ?', [sepaMandatId, vertragId]);
+
+          // Auto Stripe-Setup: Prüfe ob Dojo automatisches Stripe-Setup aktiviert hat
+          try {
+            const dojoSettings = await queryAsync(
+              'SELECT auto_stripe_setup, stripe_secret_key FROM dojo WHERE id = ?',
+              [dojo_id]
+            );
+
+            if (dojoSettings.length > 0 && dojoSettings[0].auto_stripe_setup && dojoSettings[0].stripe_secret_key) {
+              const PaymentProviderFactory = require('../services/PaymentProviderFactory');
+              const provider = await PaymentProviderFactory.getProvider(dojo_id);
+
+              if (provider && provider.createSepaCustomer) {
+                const mitgliedData = {
+                  mitglied_id: newMitgliedId,
+                  vorname: vorname,
+                  nachname: nachname,
+                  email: email
+                };
+
+                await provider.createSepaCustomer(mitgliedData, iban, kontoinhaber);
+                logger.info('Auto Stripe-Setup erfolgreich für neues Mitglied', {
+                  mitglied_id: newMitgliedId,
+                  dojo_id
+                });
+              }
+            }
+          } catch (stripeError) {
+            // Stripe-Fehler nur loggen, Registrierung nicht abbrechen
+            logger.warn('Auto Stripe-Setup fehlgeschlagen (Registrierung wird fortgesetzt)', {
+              mitglied_id: newMitgliedId,
+              error: stripeError.message
+            });
+          }
+        }
+
+        // Beiträge für gesamte Vertragslaufzeit generieren
+        const startDateObj = new Date(startDate);
+        const startDay = startDateObj.getDate();
+        const startMonth = startDateObj.getMonth();
+        const startYear = startDateObj.getFullYear();
+        const daysInStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
+        const remainingDays = daysInStartMonth - startDay + 1;
+        const proratedAmount = Math.round((monatsBeitrag / daysInStartMonth * remainingDays) * 100) / 100;
+
+        const monthNames = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+        const startMonthStr = monthNames[startMonth];
+        const startDayStr = String(startDay).padStart(2, '0');
+
+        // Erster Monat (anteilig oder voll)
+        if (startDay > 1) {
+          await queryAsync(`
+            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+            VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?)
+          `, [newMitgliedId, proratedAmount, startDate, dojo_id, `Beitrag ${startMonthStr}/${startYear} (anteilig ab ${startDayStr}.${startMonthStr}.)`]);
+        } else {
+          await queryAsync(`
+            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+            VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?)
+          `, [newMitgliedId, monatsBeitrag, startDate, dojo_id, `Beitrag ${startMonthStr}/${startYear}`]);
+        }
+
+        // Restliche Monate der Vertragslaufzeit (Monat 2 bis mindestlaufzeit)
+        for (let i = 1; i < mindestlaufzeit; i++) {
+          const beitragMonth = (startMonth + i) % 12;
+          const beitragYear = startYear + Math.floor((startMonth + i) / 12);
+          const beitragMonthStr = monthNames[beitragMonth];
+          const beitragDate = `${beitragYear}-${beitragMonthStr}-01`;
+
+          await queryAsync(`
+            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+            VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?)
+          `, [newMitgliedId, monatsBeitrag, beitragDate, dojo_id, `Beitrag ${beitragMonthStr}/${beitragYear}`]);
+        }
+
+        // Aufnahmegebühr falls vorhanden
+        if (t.aufnahmegebuehr_cents && t.aufnahmegebuehr_cents > 0) {
+          const aufnahmegebuehr = t.aufnahmegebuehr_cents / 100;
+          await queryAsync(`
+            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+            VALUES (?, ?, ?, 'Lastschrift', 0, ?, 'Aufnahmegebühr')
+          `, [newMitgliedId, aufnahmegebuehr, startDate, dojo_id]);
+        }
       }
     }
 

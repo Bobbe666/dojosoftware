@@ -181,7 +181,7 @@ async function createSepaMandate(mitgliedData, dojoData, dojoId) {
     const insertMandateQuery = `
       INSERT INTO sepa_mandate
       (mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz, glaeubiger_id, status, erstellungsdatum, provider, mandat_typ)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'aktiv', NOW(), 'manual', 'CORE')
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'aktiv', NOW(), 'manual_sepa', 'CORE')
     `;
 
     const mandateResult = await queryAsync(insertMandateQuery, [
@@ -242,6 +242,101 @@ async function createSepaMandate(mitgliedData, dojoData, dojoId) {
   }
 }
 
+/**
+ * Generiert initiale Beiträge bei Vertragsanlage
+ * - Anteiliger erster Monat (ab Vertragsbeginn)
+ * - Voller zweiter Monat
+ * - Aufnahmegebühr (falls vorhanden)
+ */
+async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, monatsbeitrag, aufnahmegebuehrCents = 0) {
+  try {
+    const startDate = new Date(vertragsbeginn);
+    const startDay = startDate.getDate();
+    const startMonth = startDate.getMonth(); // 0-indexed
+    const startYear = startDate.getFullYear();
+
+    // Tage im Startmonat
+    const daysInStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
+
+    // Verbleibende Tage im Startmonat (inkl. Starttag)
+    const remainingDays = daysInStartMonth - startDay + 1;
+
+    // Anteiliger Beitrag für ersten Monat
+    const proratedAmount = Math.round((monatsbeitrag / daysInStartMonth * remainingDays) * 100) / 100;
+
+    // Formatierung für Beschreibung
+    const monthNames = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+    const startMonthStr = monthNames[startMonth];
+    const startDayStr = String(startDay).padStart(2, '0');
+
+    // Nächster Monat
+    const nextMonth = (startMonth + 1) % 12;
+    const nextMonthYear = startMonth === 11 ? startYear + 1 : startYear;
+    const nextMonthStr = monthNames[nextMonth];
+
+    const beitraegeToInsert = [];
+
+    // 1. Anteiliger erster Monat (nur wenn nicht am 1. gestartet)
+    if (startDay > 1) {
+      beitraegeToInsert.push({
+        betrag: proratedAmount,
+        zahlungsdatum: vertragsbeginn,
+        beschreibung: `Beitrag ${startMonthStr}/${startYear} (anteilig ab ${startDayStr}.${startMonthStr}.)`
+      });
+    } else {
+      // Voller erster Monat wenn am 1. gestartet
+      beitraegeToInsert.push({
+        betrag: monatsbeitrag,
+        zahlungsdatum: vertragsbeginn,
+        beschreibung: `Beitrag ${startMonthStr}/${startYear}`
+      });
+    }
+
+    // 2. Voller zweiter Monat
+    const secondMonthDate = `${nextMonthYear}-${nextMonthStr}-01`;
+    beitraegeToInsert.push({
+      betrag: monatsbeitrag,
+      zahlungsdatum: secondMonthDate,
+      beschreibung: `Beitrag ${nextMonthStr}/${nextMonthYear}`
+    });
+
+    // 3. Aufnahmegebühr (falls vorhanden)
+    if (aufnahmegebuehrCents && aufnahmegebuehrCents > 0) {
+      const aufnahmegebuehr = aufnahmegebuehrCents / 100;
+      beitraegeToInsert.push({
+        betrag: aufnahmegebuehr,
+        zahlungsdatum: vertragsbeginn,
+        beschreibung: 'Aufnahmegebühr'
+      });
+    }
+
+    // In Datenbank einfügen
+    const insertedIds = [];
+    for (const beitrag of beitraegeToInsert) {
+      const result = await queryAsync(`
+        INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+        VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?)
+      `, [mitgliedId, beitrag.betrag, beitrag.zahlungsdatum, dojoId, beitrag.beschreibung]);
+      insertedIds.push(result.insertId);
+    }
+
+    logger.info('Initiale Beiträge erstellt:', {
+      mitglied_id: mitgliedId,
+      anzahl: beitraegeToInsert.length,
+      beitraege: beitraegeToInsert.map(b => ({ betrag: b.betrag, beschreibung: b.beschreibung }))
+    });
+
+    return {
+      success: true,
+      beitraege: beitraegeToInsert,
+      insertedIds
+    };
+  } catch (error) {
+    logger.error('Fehler beim Generieren der initialen Beiträge:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   queryAsync,
   recalculateFamilyPositions,
@@ -249,5 +344,6 @@ module.exports = {
   handleFamilyCancellation,
   ensureDocumentsDir,
   savePdfToMitgliedDokumente,
-  createSepaMandate
+  createSepaMandate,
+  generateInitialBeitraege
 };

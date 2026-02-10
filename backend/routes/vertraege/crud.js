@@ -11,7 +11,8 @@ const {
   queryAsync,
   handleFamilyCancellation,
   savePdfToMitgliedDokumente,
-  createSepaMandate
+  createSepaMandate,
+  generateInitialBeitraege
 } = require('./shared');
 
 // GET / - Alle Verträge abrufen (inkl. gelöschte)
@@ -245,6 +246,25 @@ router.post('/', async (req, res) => {
           }
         } catch (sepaError) {
           logger.error('Fehler beim Erstellen des SEPA-Mandats:', { error: sepaError.message });
+        }
+
+        // Initiale Beiträge generieren (anteiliger erster Monat + voller zweiter Monat + Aufnahmegebühr)
+        try {
+          const beitragAmount = monatsbeitrag || (tarif_id ? (await queryAsync('SELECT price_cents FROM tarife WHERE id = ?', [tarif_id]))[0]?.price_cents / 100 : 0);
+          const aufnahmegebuehr = aufnahmegebuehr_cents || (tarif_id ? (await queryAsync('SELECT aufnahmegebuehr_cents FROM tarife WHERE id = ?', [tarif_id]))[0]?.aufnahmegebuehr_cents : 0);
+
+          if (beitragAmount > 0) {
+            const beitraegeResult = await generateInitialBeitraege(
+              mitglied_id,
+              dojo_id,
+              vertragsbeginn || new Date().toISOString().split('T')[0],
+              beitragAmount,
+              aufnahmegebuehr || 0
+            );
+            logger.info('Initiale Beiträge für Vertrag erstellt:', { vertrag_id: result.insertId, beitraege: beitraegeResult.beitraege?.length || 0 });
+          }
+        } catch (beitraegeError) {
+          logger.error('Fehler beim Erstellen der initialen Beiträge:', { error: beitraegeError.message });
         }
       } catch (pdfError) {
         logger.error('Fehler bei PDF-Generierung oder E-Mail-Versand:', { error: pdfError });

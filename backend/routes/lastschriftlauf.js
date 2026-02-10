@@ -477,8 +477,8 @@ router.get("/preview", (req, res) => {
                 MIN(b.zahlungsdatum) as aeltester_beitrag,
                 MAX(b.zahlungsdatum) as neuester_beitrag,
                 GROUP_CONCAT(DISTINCT DATE_FORMAT(b.zahlungsdatum, '%m/%Y') ORDER BY b.zahlungsdatum SEPARATOR ', ') as offene_monate,
-                -- Details der einzelnen Beiträge (Format: betrag|datum|beitrag_id;...)
-                GROUP_CONCAT(CONCAT(b.betrag, '|', DATE_FORMAT(b.zahlungsdatum, '%Y-%m-%d'), '|', b.beitrag_id) ORDER BY b.zahlungsdatum SEPARATOR ';') as beitraege_details,
+                -- Details der einzelnen Beiträge (Format: betrag|datum|beitrag_id|beschreibung;...)
+                GROUP_CONCAT(CONCAT(b.betrag, '|', DATE_FORMAT(b.zahlungsdatum, '%Y-%m-%d'), '|', b.beitrag_id, '|', COALESCE(b.magicline_description, '')) ORDER BY b.zahlungsdatum SEPARATOR ';') as beitraege_details,
                 COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ', '), 'Kein Tarif') as tarif_name,
                 'monatlich' as zahlungszyklus
             FROM mitglieder m
@@ -521,14 +521,19 @@ router.get("/preview", (req, res) => {
                 const parseBeitraegeDetails = (detailsStr) => {
                     if (!detailsStr) return [];
                     return detailsStr.split(';').map(item => {
-                        const [betrag, datum, beitrag_id] = item.split('|');
+                        const [betrag, datum, beitrag_id, beschreibung] = item.split('|');
                         const dateParts = datum.split('-');
                         const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+                        // Beschreibung oder Standard-Monatstext
+                        const displayText = beschreibung && beschreibung.trim()
+                            ? beschreibung.trim()
+                            : `Beitrag ${dateParts[1]}/${dateParts[0]}`;
                         return {
                             beitrag_id: parseInt(beitrag_id),
                             betrag: parseFloat(betrag),
                             datum: formattedDate,
-                            monat: `${dateParts[1]}/${dateParts[0]}`
+                            monat: `${dateParts[1]}/${dateParts[0]}`,
+                            beschreibung: displayText
                         };
                     });
                 };

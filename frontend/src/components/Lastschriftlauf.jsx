@@ -405,9 +405,15 @@ const Lastschriftlauf = ({ embedded = false }) => {
                   <CreditCard size={16} />
                 </div>
                 <div className="stat-info">
-                  <h3>Bank / Anbieter</h3>
+                  <h3>Einzugsbank</h3>
                   <p className="stat-value">
-                    {preview.primary_bank || 'Gemischte Banken'}
+                    {(() => {
+                      const bank = availableBanks.find(b => b.id === selectedBank);
+                      if (bank) {
+                        return bank.bank_typ === 'stripe' ? 'Stripe SEPA' : bank.bank_name;
+                      }
+                      return 'Keine Bank gewählt';
+                    })()}
                   </p>
                   <span className="stat-trend">
                     {preview.count > 0 ? 'Export bereit' : 'Keine Mandate'}
@@ -727,7 +733,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
                             <table style={{ width: '100%', marginTop: '0.5rem' }}>
                               <thead>
                                 <tr style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-                                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Monat</th>
+                                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Beschreibung</th>
                                   <th style={{ textAlign: 'left', padding: '0.25rem' }}>Datum</th>
                                   <th style={{ textAlign: 'right', padding: '0.25rem' }}>Betrag</th>
                                 </tr>
@@ -735,7 +741,7 @@ const Lastschriftlauf = ({ embedded = false }) => {
                               <tbody>
                                 {item.beitraege.map((beitrag, bIdx) => (
                                   <tr key={bIdx} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <td style={{ padding: '0.25rem' }}>{beitrag.monat}</td>
+                                    <td style={{ padding: '0.25rem' }}>{beitrag.beschreibung || beitrag.monat}</td>
                                     <td style={{ padding: '0.25rem' }}>{beitrag.datum}</td>
                                     <td style={{ padding: '0.25rem', textAlign: 'right' }}>{formatCurrency(beitrag.betrag)}</td>
                                   </tr>

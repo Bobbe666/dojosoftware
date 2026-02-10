@@ -741,9 +741,9 @@ function Dashboard() {
     return <MemberDashboard />;
   }
 
-  // 🏆 Super-Admin Dashboard: Zeige erweiterte Ansicht für TDA Int'l Org
+  // 🏆 Super-Admin Dashboard: Zeige erweiterte Ansicht für TDA Int'l Org (NUR auf Hauptseite!)
   console.log('🔍 Super-Admin Dashboard Check:', { role, selectedDojo, isMainDashboard, pathname: location.pathname });
-  if (role === 'admin' && selectedDojo === 'super-admin') {
+  if (role === 'admin' && selectedDojo === 'super-admin' && isMainDashboard) {
     console.log('✅ Zeige Super-Admin Dashboard für TDA Int\'l Org');
     return (
       <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>

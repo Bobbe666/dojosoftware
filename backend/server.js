@@ -1281,6 +1281,19 @@ try {
     });
 }
 
+// LASTSCHRIFT-ZEITPLÄNE - Automatische Lastschriftläufe
+try {
+  const lastschriftZeitplaeneRouter = require(path.join(__dirname, "routes", "lastschrift-zeitplaene.js"));
+  app.use("/api/lastschrift-zeitplaene", lastschriftZeitplaeneRouter);
+  logger.success('Route gemountet', { path: '/api/lastschrift-zeitplaene' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'lastschrift-zeitplaene',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // STRIPE CONNECT - Multi-Dojo Payment Platform
 try {
   const stripeConnectRouter = require(path.join(__dirname, "routes", "stripe-connect.js"));

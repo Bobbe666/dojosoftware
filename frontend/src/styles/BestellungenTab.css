@@ -1,0 +1,829 @@
+/* =====================================================================================
+   BESTELLUNGEN TAB STYLES
+   ===================================================================================== */
+
+.bestellungen-tab {
+  padding: 1.5rem;
+  background: rgba(15, 15, 35, 0.95);
+  min-height: 100%;
+}
+
+/* =====================================================================================
+   LOW STOCK WARNING
+   ===================================================================================== */
+
+.low-stock-warning {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.4); }
+  50% { border-color: rgba(239, 68, 68, 0.8); }
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.warning-icon {
+  width: 36px;
+  height: 36px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.25rem;
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+.warning-header h3 {
+  flex: 1;
+  margin: 0;
+  color: #ef4444;
+  font-size: 1.1rem;
+}
+
+.warning-count {
+  background: #ef4444;
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.low-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.low-stock-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.low-stock-item:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.low-stock-item .item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.low-stock-item .item-name {
+  display: block;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.low-stock-item .item-number {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.low-stock-item .item-stock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.size-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.size-badge.critical {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.size-badge.more {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stock-count.critical {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.add-to-order-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-to-order-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.show-all-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.show-all-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* =====================================================================================
+   HEADER
+   ===================================================================================== */
+
+.bestellungen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.bestellungen-header h2 {
+  margin: 0;
+  color: #ffd700;
+  font-size: 1.5rem;
+}
+
+.new-order-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-order-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+/* =====================================================================================
+   BESTELLUNGEN TABLE
+   ===================================================================================== */
+
+.bestellungen-table-container {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.bestellungen-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bestellungen-table th {
+  background: rgba(255, 215, 0, 0.1);
+  padding: 1rem;
+  text-align: left;
+  color: #ffd700;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.bestellungen-table td {
+  padding: 1rem;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bestellungen-table tbody tr:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.bestellungen-table .order-number {
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.bestellungen-table .amount {
+  font-weight: 600;
+}
+
+.bestellungen-table .empty-row {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 3rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.bestellungen-table .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn.view {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.view:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.pdf {
+  background: rgba(139, 92, 246, 0.2);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.action-btn.pdf:hover {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =====================================================================================
+   MODALS
+   ===================================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 2rem;
+}
+
+.modal-content {
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #ffd700;
+  font-size: 1.25rem;
+}
+
+.modal-header .close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cancel-btn, .close-btn-footer {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cancel-btn:hover, .close-btn-footer:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.submit-btn, .pdf-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
+  color: #1a1a2e;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit-btn:hover, .pdf-btn:hover {
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.submit-btn:disabled, .pdf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =====================================================================================
+   FORM SECTIONS
+   ===================================================================================== */
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  color: #ffd700;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
+
+.form-group input,
+.form-section textarea {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.form-group input:focus,
+.form-section textarea:focus {
+  outline: none;
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.form-section textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+/* =====================================================================================
+   LOW STOCK SELECT
+   ===================================================================================== */
+
+.low-stock-select {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.selectable-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.selectable-item:hover:not(.selected) {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.selectable-item.selected {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.selectable-item .item-name {
+  flex: 1;
+  font-weight: 500;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.selectable-item .item-stock {
+  font-size: 0.8rem;
+  color: #ef4444;
+}
+
+.selectable-item .check-mark {
+  color: #10b981;
+  font-weight: bold;
+}
+
+/* =====================================================================================
+   POSITION CARD
+   ===================================================================================== */
+
+.position-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.position-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.position-name {
+  flex: 1;
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 1.05rem;
+}
+
+.position-number {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
+.position-header .remove-btn {
+  width: 28px;
+  height: 28px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.position-header .remove-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.size-quantity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.size-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.size-input-group label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  font-weight: 600;
+}
+
+.size-input-group input {
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.size-input-group input:focus {
+  outline: none;
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.position-price,
+.position-note {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.position-price label,
+.position-note label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.position-price input,
+.position-note input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.position-price input {
+  max-width: 120px;
+}
+
+/* =====================================================================================
+   DETAIL MODAL
+   ===================================================================================== */
+
+.detail-modal .detail-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-modal .detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-section h3 {
+  color: #ffd700;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+}
+
+.detail-section p {
+  margin: 0.35rem 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-actions button {
+  padding: 0.5rem 1rem;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.status-actions button:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.detail-table th {
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.75rem;
+  text-align: left;
+  color: #ffd700;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.detail-table td {
+  padding: 0.75rem;
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+}
+
+.detail-table .size-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.detail-table .size-badge {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.detail-table tfoot td {
+  font-weight: 600;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.detail-table .total-label {
+  text-align: right;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.detail-table .total-value {
+  color: #ffd700;
+  font-size: 1.1rem;
+}
+
+.detail-section.dates {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+.detail-section.dates div {
+  margin: 0.35rem 0;
+}
+
+/* =====================================================================================
+   ERROR MESSAGE
+   ===================================================================================== */
+
+.bestellungen-tab .error-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  color: #ef4444;
+}
+
+.bestellungen-tab .error-message button {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+/* =====================================================================================
+   LOADING
+   ===================================================================================== */
+
+.bestellungen-tab .loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.bestellungen-tab .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 215, 0, 0.2);
+  border-top-color: #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =====================================================================================
+   RESPONSIVE
+   ===================================================================================== */
+
+@media (max-width: 768px) {
+  .bestellungen-tab {
+    padding: 1rem;
+  }
+
+  .low-stock-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bestellungen-table-container {
+    overflow-x: auto;
+  }
+
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+
+  .size-quantity-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  }
+}

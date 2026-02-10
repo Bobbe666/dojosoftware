@@ -4,6 +4,16 @@ const logger = require('./utils/logger');
 const { pruefeDokumentenAufbewahrung } = require('./services/documentRetentionService');
 const { checkBirthdays } = require('./services/birthdayService');
 
+// Helper: Promise-basierte DB-Query
+function queryAsync(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+        });
+    });
+}
+
 /**
  * Auto-Checkout Cron-Job
  * Läuft täglich um 00:00:01 Uhr
@@ -130,6 +140,22 @@ function initCronJobs() {
     }
   });
 
+  /**
+   * Automatische Lastschriftläufe Cron-Job
+   * Läuft jede Minute und prüft ob ein Zeitplan ausgeführt werden soll
+   * Führt geplante Lastschriftläufe automatisch aus
+   */
+  cron.schedule('* * * * *', async () => {
+    try {
+      await checkAndExecuteScheduledPaymentRuns();
+    } catch (error) {
+      logger.error('❌ Lastschrift-Scheduler Cron-Job Fehler', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  });
+
   logger.info('✅ Cron-Jobs initialisiert', {
     jobs: [
       {
@@ -146,9 +172,167 @@ function initCronJobs() {
         name: 'Geburtstags-Check',
         schedule: '08:00:00 täglich',
         description: 'Sendet Geburtstagswünsche an Mitglieder und benachrichtigt Admins'
+      },
+      {
+        name: 'Lastschrift-Scheduler',
+        schedule: 'Jede Minute',
+        description: 'Prüft und führt geplante Lastschriftläufe aus'
       }
     ]
   });
 }
 
-module.exports = { initCronJobs };
+/**
+ * Prüft und führt geplante Lastschriftläufe aus
+ * Wird jede Minute aufgerufen und prüft ob ein Zeitplan fällig ist
+ */
+async function checkAndExecuteScheduledPaymentRuns() {
+  const now = new Date();
+  const currentDay = now.getDate();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  try {
+    // Finde alle aktiven Zeitpläne für heute + diese Uhrzeit
+    // Die letzte Ausführung muss NULL sein oder vor heute liegen
+    const query = `
+      SELECT z.*, d.dojoname
+      FROM lastschrift_zeitplaene z
+      JOIN dojo d ON z.dojo_id = d.id
+      WHERE z.aktiv = TRUE
+        AND z.ausfuehrungstag = ?
+        AND HOUR(z.ausfuehrungszeit) = ?
+        AND MINUTE(z.ausfuehrungszeit) = ?
+        AND (z.letzte_ausfuehrung IS NULL
+             OR DATE(z.letzte_ausfuehrung) < CURDATE())
+    `;
+
+    const zeitplaene = await queryAsync(query, [currentDay, currentHour, currentMinute]);
+
+    if (zeitplaene.length === 0) {
+      return; // Nichts zu tun
+    }
+
+    logger.info(`📅 ${zeitplaene.length} Lastschrift-Zeitpläne fällig`, {
+      tag: currentDay,
+      uhrzeit: `${currentHour}:${String(currentMinute).padStart(2, '0')}`
+    });
+
+    // Lade die Ausführungsfunktion aus der Route
+    let executeFunction;
+    try {
+      const lastschriftZeitplaeneRouter = require('./routes/lastschrift-zeitplaene');
+      executeFunction = lastschriftZeitplaeneRouter.executeScheduledPaymentRun;
+    } catch (routeError) {
+      logger.error('❌ Lastschrift-Zeitpläne Route nicht geladen', {
+        error: routeError.message
+      });
+      return;
+    }
+
+    // Führe jeden fälligen Zeitplan aus
+    for (const zeitplan of zeitplaene) {
+      try {
+        logger.info(`💳 Starte automatischen Lastschriftlauf: ${zeitplan.name}`, {
+          dojo: zeitplan.dojoname,
+          typ: zeitplan.typ,
+          zeitplan_id: zeitplan.zeitplan_id
+        });
+
+        const result = await executeFunction(zeitplan, zeitplan.dojo_id);
+
+        logger.success(`✅ Lastschriftlauf erfolgreich: ${zeitplan.name}`, {
+          dojo: zeitplan.dojoname,
+          verarbeitet: result.anzahl_verarbeitet,
+          erfolgreich: result.anzahl_erfolgreich,
+          betrag: result.gesamtbetrag
+        });
+
+        // Optional: E-Mail-Benachrichtigung senden
+        await sendPaymentRunNotification(zeitplan.dojo_id, zeitplan, result);
+
+      } catch (execError) {
+        logger.error(`❌ Lastschriftlauf fehlgeschlagen: ${zeitplan.name}`, {
+          dojo: zeitplan.dojoname,
+          error: execError.message
+        });
+
+        // Auch bei Fehlern Benachrichtigung senden
+        await sendPaymentRunNotification(zeitplan.dojo_id, zeitplan, {
+          status: 'fehler',
+          error: execError.message
+        });
+      }
+    }
+
+  } catch (error) {
+    logger.error('❌ Fehler beim Prüfen der Lastschrift-Zeitpläne', {
+      error: error.message,
+      stack: error.stack
+    });
+  }
+}
+
+/**
+ * Sendet eine E-Mail-Benachrichtigung nach einem automatischen Lastschriftlauf
+ */
+async function sendPaymentRunNotification(dojoId, zeitplan, result) {
+  try {
+    // Lade Dojo-Daten mit Benachrichtigungs-E-Mail
+    const dojoQuery = `
+      SELECT dojoname, email, lastschrift_benachrichtigung_email
+      FROM dojo WHERE id = ?
+    `;
+    const dojoResults = await queryAsync(dojoQuery, [dojoId]);
+
+    if (dojoResults.length === 0) {
+      return;
+    }
+
+    const dojo = dojoResults[0];
+    const targetEmail = dojo.lastschrift_benachrichtigung_email || dojo.email;
+
+    if (!targetEmail) {
+      return;
+    }
+
+    // Versuche E-Mail zu senden
+    try {
+      const emailService = require('./services/emailService');
+
+      const subject = result.status === 'fehler'
+        ? `❌ Lastschriftlauf fehlgeschlagen: ${zeitplan.name}`
+        : `✅ Lastschriftlauf abgeschlossen: ${zeitplan.name}`;
+
+      const body = result.status === 'fehler'
+        ? `Der automatische Lastschriftlauf "${zeitplan.name}" ist fehlgeschlagen.\n\nFehler: ${result.error}\n\nBitte prüfen Sie die Einstellungen im System.`
+        : `Der automatische Lastschriftlauf "${zeitplan.name}" wurde erfolgreich ausgeführt.\n\n` +
+          `Verarbeitet: ${result.anzahl_verarbeitet} Mitglieder\n` +
+          `Erfolgreich: ${result.anzahl_erfolgreich}\n` +
+          `Fehlgeschlagen: ${result.anzahl_fehlgeschlagen || 0}\n` +
+          `Gesamtbetrag: ${(result.gesamtbetrag || 0).toFixed(2)} €`;
+
+      await emailService.sendEmail({
+        to: targetEmail,
+        subject: subject,
+        text: body,
+        html: body.replace(/\n/g, '<br>')
+      });
+
+      logger.info(`📧 Lastschrift-Benachrichtigung gesendet an: ${targetEmail}`);
+    } catch (emailError) {
+      // E-Mail-Fehler nur loggen, nicht abbrechen
+      logger.warn('⚠️ Lastschrift-Benachrichtigung konnte nicht gesendet werden', {
+        email: targetEmail,
+        error: emailError.message
+      });
+    }
+
+  } catch (error) {
+    logger.error('❌ Fehler beim Senden der Lastschrift-Benachrichtigung', {
+      error: error.message
+    });
+  }
+}
+
+module.exports = { initCronJobs, checkAndExecuteScheduledPaymentRuns };

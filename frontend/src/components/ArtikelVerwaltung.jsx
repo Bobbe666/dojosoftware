@@ -5,13 +5,14 @@
 // Deutsche rechtliche Grundlagen beachtet (GoBD, KassenSichV)
 // =====================================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/components.css';
 import '../styles/ArtikelVerwaltung.css';
 import '../styles/ArtikelVerwaltungOverrides.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import BestellungenTab from './BestellungenTab';
 
 
 const ArtikelVerwaltung = () => {
@@ -20,13 +21,17 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   // STATE MANAGEMENT
   // =====================================================================================
-  
+
+  // Haupt-Tab Navigation (Artikel / Bestellungen)
+  const [mainTab, setMainTab] = useState('artikel'); // 'artikel', 'bestellungen'
+  const [lowStockCount, setLowStockCount] = useState(0);
+
   const [artikel, setArtikel] = useState([]);
   const [kategorien, setKategorien] = useState([]);
   const [artikelgruppen, setArtikelgruppen] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // UI States
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create', 'edit', 'lager'
@@ -277,12 +282,26 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   // EFFECTS
   // =====================================================================================
-  
+
+  // Low Stock Count laden
+  const loadLowStockCount = useCallback(async () => {
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/artikel-bestellungen/low-stock`);
+      const data = await response.json();
+      if (data.success) {
+        setLowStockCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden des Low-Stock-Counts:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadKategorien();
     loadArtikelgruppen();
     loadArtikel();
-  }, [selectedKategorie, showOnlyActive]);
+    loadLowStockCount();
+  }, [selectedKategorie, showOnlyActive, loadLowStockCount]);
   
   // =====================================================================================
   // RENDER FUNCTIONS
@@ -1012,8 +1031,8 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   // MAIN RENDER
   // =====================================================================================
-  
-  if (loading) {
+
+  if (loading && mainTab === 'artikel') {
     return (
       <div className="artikel-verwaltung">
         <div className="loading-container">
@@ -1023,18 +1042,45 @@ const ArtikelVerwaltung = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="artikel-verwaltung">
       <div className="page-header">
         <h1>Artikelverwaltung</h1>
         <p>Verwalten Sie Ihr Sortiment und Lagerbestände</p>
       </div>
-      
+
+      {/* Haupt-Tab Navigation */}
+      <div className="main-tabs-navigation">
+        <button
+          className={`main-tab-btn ${mainTab === 'artikel' ? 'active' : ''}`}
+          onClick={() => setMainTab('artikel')}
+        >
+          Artikel
+        </button>
+        <button
+          className={`main-tab-btn ${mainTab === 'bestellungen' ? 'active' : ''}`}
+          onClick={() => setMainTab('bestellungen')}
+        >
+          Bestellungen
+          {lowStockCount > 0 && (
+            <span className="low-stock-badge">{lowStockCount}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Bestellungen Tab */}
+      {mainTab === 'bestellungen' && (
+        <BestellungenTab />
+      )}
+
+      {/* Artikel Tab (bestehender Inhalt) */}
+      {mainTab === 'artikel' && (
+        <>
       {error && (
         <div className="error-message">
-          <span>⚠️ {error}</span>
-          <button onClick={() => setError(null)}>×</button>
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>x</button>
         </div>
       )}
       
@@ -1096,96 +1142,96 @@ const ArtikelVerwaltung = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredArtikel.map(artikel => (
-              <tr key={artikel.artikel_id} className={!artikel.aktiv ? 'artikel-archiviert' : ''}>
+            {filteredArtikel.map(item => (
+              <tr key={item.artikel_id} className={!item.aktiv ? 'artikel-archiviert' : ''}>
                 <td className="artikel-info">
-                  <div className="artikel-name">{artikel.name}</div>
+                  <div className="artikel-name">{item.name}</div>
                   <div className="artikel-details">
-                    {artikel.artikel_nummer && `#${artikel.artikel_nummer}`}
-                    {artikel.ean_code && ` • EAN: ${artikel.ean_code}`}
+                    {item.artikel_nummer && `#${item.artikel_nummer}`}
+                    {item.ean_code && ` • EAN: ${item.ean_code}`}
                   </div>
                 </td>
-                
+
                 <td>
                   <span className="artikelgruppe-badge">
-                    {artikel.artikelgruppe_name || 'Keine Gruppe'}
+                    {item.artikelgruppe_name || 'Keine Gruppe'}
                   </span>
                 </td>
 
                 <td>
                   <span className="kategorie-badge">
-                    {artikel.kategorie_name || '-'}
+                    {item.kategorie_name || '-'}
                   </span>
                 </td>
 
                 <td className="preis-cell">
-                  {artikel.hat_preiskategorien ? (
+                  {item.hat_preiskategorien ? (
                     <div className="preis-kategorien">
-                      <div className="preis-kids">Kids: {artikel.listeneinkaufspreis_kids_euro?.toFixed(2) || '-'}€</div>
-                      <div className="preis-erw">Erw: {artikel.listeneinkaufspreis_erwachsene_euro?.toFixed(2) || '-'}€</div>
+                      <div className="preis-kids">Kids: {item.listeneinkaufspreis_kids_euro?.toFixed(2) || '-'}€</div>
+                      <div className="preis-erw">Erw: {item.listeneinkaufspreis_erwachsene_euro?.toFixed(2) || '-'}€</div>
                     </div>
                   ) : (
-                    artikel.einkaufspreis_euro > 0 ? `${artikel.einkaufspreis_euro.toFixed(2)}€` : '-'
+                    item.einkaufspreis_euro > 0 ? `${item.einkaufspreis_euro.toFixed(2)}€` : '-'
                   )}
                 </td>
 
                 <td className="preis-cell">
-                  {artikel.hat_preiskategorien ? (
+                  {item.hat_preiskategorien ? (
                     <div className="preis-kategorien">
-                      <div className="preis-kids">Kids: {artikel.preis_kids_euro?.toFixed(2) || '-'}€</div>
-                      <div className="preis-erw">Erw: {artikel.preis_erwachsene_euro?.toFixed(2) || '-'}€</div>
+                      <div className="preis-kids">Kids: {item.preis_kids_euro?.toFixed(2) || '-'}€</div>
+                      <div className="preis-erw">Erw: {item.preis_erwachsene_euro?.toFixed(2) || '-'}€</div>
                     </div>
                   ) : (
-                    artikel.verkaufspreis_euro > 0 ? `${artikel.verkaufspreis_euro.toFixed(2)}€` : '-'
+                    item.verkaufspreis_euro > 0 ? `${item.verkaufspreis_euro.toFixed(2)}€` : '-'
                   )}
                 </td>
 
                 <td className="preis-cell">
-                  {artikel.hat_preiskategorien ? (
+                  {item.hat_preiskategorien ? (
                     <div className="preis-kategorien">
-                      <div className="preis-kids">Kids: {(artikel.preis_kids_euro * (1 + (artikel.mwst_satz || 19) / 100)).toFixed(2)}€</div>
-                      <div className="preis-erw">Erw: {(artikel.preis_erwachsene_euro * (1 + (artikel.mwst_satz || 19) / 100)).toFixed(2)}€</div>
+                      <div className="preis-kids">Kids: {(item.preis_kids_euro * (1 + (item.mwst_satz || 19) / 100)).toFixed(2)}€</div>
+                      <div className="preis-erw">Erw: {(item.preis_erwachsene_euro * (1 + (item.mwst_satz || 19) / 100)).toFixed(2)}€</div>
                     </div>
                   ) : (
-                    artikel.verkaufspreis_euro > 0
-                      ? `${(artikel.verkaufspreis_euro * (1 + (artikel.mwst_satz || 19) / 100)).toFixed(2)}€`
+                    item.verkaufspreis_euro > 0
+                      ? `${(item.verkaufspreis_euro * (1 + (item.mwst_satz || 19) / 100)).toFixed(2)}€`
                       : '-'
                   )}
                 </td>
 
                 <td className="preis-cell">
-                  {artikel.mwst_satz || 19}%
+                  {item.mwst_satz || 19}%
                 </td>
-                
+
                 <td className="lager-info">
                   <div className="lagerbestand">
-                    {artikel.lager_tracking ? artikel.lagerbestand : '∞'}
+                    {item.lager_tracking ? item.lagerbestand : '∞'}
                   </div>
-                  {artikel.lager_tracking && artikel.mindestbestand > 0 && (
+                  {item.lager_tracking && item.mindestbestand > 0 && (
                     <div className="mindestbestand">
-                      Min: {artikel.mindestbestand}
+                      Min: {item.mindestbestand}
                     </div>
                   )}
                 </td>
-                
+
                 <td>
-                  {renderLagerStatus(artikel)}
+                  {renderLagerStatus(item)}
                 </td>
-                
+
                 <td className="actions">
                   <button
                     className="sub-tab-btn"
-                    onClick={() => handleEdit(artikel)}
+                    onClick={() => handleEdit(item)}
                     title="Bearbeiten"
                     style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
                   >
                     ✏️
                   </button>
 
-                  {artikel.lager_tracking && (
+                  {item.lager_tracking && (
                     <button
                       className="sub-tab-btn"
-                      onClick={() => handleLager(artikel)}
+                      onClick={() => handleLager(item)}
                       title="Lagerbestand ändern"
                       style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
                     >
@@ -1195,7 +1241,7 @@ const ArtikelVerwaltung = () => {
 
                   <button
                     className="sub-tab-btn"
-                    onClick={() => deleteArtikel(artikel.artikel_id)}
+                    onClick={() => deleteArtikel(item.artikel_id)}
                     title="Deaktivieren"
                     style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
                   >
@@ -1216,8 +1262,11 @@ const ArtikelVerwaltung = () => {
           </div>
         )}
       </div>
-      
-      {/* Modal */}
+
+        </>
+      )}
+
+      {/* Modal - außerhalb der Tab-Bedingung */}
       {renderModal()}
     </div>
   );

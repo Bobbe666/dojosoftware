@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, CreditCard } from "lucide-react";
+import { ArrowLeft, FileText, CreditCard, Calendar } from "lucide-react";
 import Lastschriftlauf from "./Lastschriftlauf";
 import Zahllaeufe from "./Zahllaeufe";
+import AutoLastschriftTab from "./AutoLastschriftTab";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/LastschriftManagement.css";
@@ -10,7 +11,7 @@ import "../styles/MitgliedDetail.css";
 
 const LastschriftManagement = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('lastschriftlauf'); // 'lastschriftlauf' or 'zahllaeufe'
+  const [activeTab, setActiveTab] = useState('lastschriftlauf');
 
   return (
     <div className="lastschrift-management-container">
@@ -36,6 +37,13 @@ const LastschriftManagement = () => {
             <span className="tab-icon"><FileText size={20} /></span>
             <span className="tab-label">Zahlläufe-Übersicht</span>
           </button>
+          <button
+            className={`tab-vertical-btn ${activeTab === 'automatisch' ? 'active' : ''}`}
+            onClick={() => setActiveTab('automatisch')}
+          >
+            <span className="tab-icon"><Calendar size={20} /></span>
+            <span className="tab-label">Automatische Einzüge</span>
+          </button>
         </div>
       </div>
 
@@ -46,6 +54,9 @@ const LastschriftManagement = () => {
         )}
         {activeTab === 'zahllaeufe' && (
           <Zahllaeufe embedded={true} />
+        )}
+        {activeTab === 'automatisch' && (
+          <AutoLastschriftTab embedded={true} />
         )}
       </div>
     </div>

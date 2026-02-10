@@ -2407,10 +2407,10 @@ router.post("/",
                 // Beitrag erstellen, dann User-Account und Familienmitglieder
                 createFirstBeitrag(() => {
                     // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
-                    createUserAccountIfNeeded(memberData, newMemberId, () => {
+                    createUserAccountIfNeeded(memberData, newMemberId, (userErr, userResult) => {
                         // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
                         createFamilyMembers(memberData.family_members, memberData, memberData.dojo_id, (famErr, createdFamilyMembers) => {
-                            res.status(201).json({
+                            const response = {
                                 success: true,
                                 mitglied_id: newMemberId,
                                 vertrag_id: vertragId,
@@ -2422,7 +2422,12 @@ router.post("/",
                                     mitglied_id: newMemberId,
                                     vertrag_id: vertragId
                                 }
-                            });
+                            };
+                            // User-Account Info hinzufügen (falls vorhanden)
+                            if (userResult) {
+                                response.user_account = userResult;
+                            }
+                            res.status(201).json(response);
                         });
                     });
                 });
@@ -2430,10 +2435,10 @@ router.post("/",
         } else {
             // Kein Vertrag, nur Mitglied erstellt
             // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
-            createUserAccountIfNeeded(memberData, newMemberId, () => {
+            createUserAccountIfNeeded(memberData, newMemberId, (userErr, userResult) => {
                 // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
                 createFamilyMembers(memberData.family_members, memberData, memberData.dojo_id, (famErr, createdFamilyMembers) => {
-                    res.status(201).json({
+                    const response = {
                         success: true,
                         mitglied_id: newMemberId,
                         dojo_id: memberData.dojo_id,
@@ -2443,7 +2448,12 @@ router.post("/",
                             ...memberData,
                             mitglied_id: newMemberId
                         }
-                    });
+                    };
+                    // User-Account Info hinzufügen (falls vorhanden)
+                    if (userResult) {
+                        response.user_account = userResult;
+                    }
+                    res.status(201).json(response);
                 });
             });
         }
@@ -2639,40 +2649,91 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
             // ✅ SCHUTZ: "admin" Benutzername ist reserviert
             if (memberData.benutzername.trim().toLowerCase() === 'admin') {
                 logger.error('Versuch, reservierten Benutzernamen zu verwenden', { username: 'admin' });
-                // Callback mit Fehler - Mitglied wurde erstellt, aber kein User-Account
-                return callback();
+                return callback(null, { warning: 'Benutzername "admin" ist reserviert' });
             }
 
-            // Passwort hashen
-            const hashedPassword = await bcrypt.hash(memberData.passwort, 10);
+            const username = memberData.benutzername.trim();
+            const email = memberData.email || null;
 
-            // User in users-Tabelle erstellen
-            const userQuery = `
-                INSERT INTO users (username, email, password, role, mitglied_id, created_at)
-                VALUES (?, ?, ?, 'member', ?, NOW())
+            // 🔍 ERST PRÜFEN: Existiert Benutzername oder Email bereits?
+            const checkQuery = `
+                SELECT id, username, email, mitglied_id FROM users
+                WHERE username = ? OR (email = ? AND email IS NOT NULL)
             `;
 
-            const userValues = [
-                memberData.benutzername.trim(), // Leerzeichen entfernen
-                memberData.email || null,
-                hashedPassword,
-                mitgliedId
-            ];
-
-            db.query(userQuery, userValues, (userErr, userResult) => {
-                if (userErr) {
-                    logger.error('Fehler beim Erstellen des User-Accounts:', userErr);
-                    // Trotzdem fortfahren - Mitglied wurde erstellt
-                } else {
-                    logger.info('User-Account erstellt für Mitglied ${mitgliedId} (User-ID: ${userResult.insertId})');
+            db.query(checkQuery, [username, email], async (checkErr, existingUsers) => {
+                if (checkErr) {
+                    logger.error('Fehler bei User-Prüfung:', checkErr);
+                    return callback(null, { warning: 'Fehler bei User-Prüfung' });
                 }
 
-                // Callback ausführen (Response senden)
-                callback();
+                if (existingUsers.length > 0) {
+                    const existing = existingUsers[0];
+
+                    // Fall 1: User gehört bereits zu diesem Mitglied → alles OK
+                    if (existing.mitglied_id === mitgliedId) {
+                        logger.info(`✅ User-Account existiert bereits für Mitglied ${mitgliedId}`);
+                        return callback(null, { userId: existing.id, message: 'User existiert bereits' });
+                    }
+
+                    // Fall 2: User gehört zu anderem Mitglied → Warnung aber fortfahren
+                    if (existing.mitglied_id && existing.mitglied_id !== mitgliedId) {
+                        logger.warn(`⚠️ Benutzername/Email bereits für anderes Mitglied vergeben`, {
+                            username, email, existingMitgliedId: existing.mitglied_id, newMitgliedId: mitgliedId
+                        });
+                        return callback(null, {
+                            warning: 'Benutzername oder E-Mail bereits vergeben - kein Login-Account erstellt',
+                            existingUserId: existing.id
+                        });
+                    }
+
+                    // Fall 3: User existiert ohne Mitglied-Verknüpfung → verknüpfen
+                    if (!existing.mitglied_id) {
+                        logger.info(`🔗 Verknüpfe existierenden User mit Mitglied ${mitgliedId}`);
+                        const hashedPassword = await bcrypt.hash(memberData.passwort, 10);
+                        db.query(
+                            'UPDATE users SET mitglied_id = ?, password = ? WHERE id = ?',
+                            [mitgliedId, hashedPassword, existing.id],
+                            (updateErr) => {
+                                if (updateErr) {
+                                    logger.error('Fehler beim Verknüpfen des Users:', updateErr);
+                                    return callback(null, { warning: 'User-Verknüpfung fehlgeschlagen' });
+                                }
+                                logger.info(`✅ User ${existing.id} mit Mitglied ${mitgliedId} verknüpft`);
+                                return callback(null, { userId: existing.id, message: 'User verknüpft' });
+                            }
+                        );
+                        return;
+                    }
+                }
+
+                // Kein existierender User → NEU ERSTELLEN
+                const hashedPassword = await bcrypt.hash(memberData.passwort, 10);
+
+                const userQuery = `
+                    INSERT INTO users (username, email, password, role, mitglied_id, created_at)
+                    VALUES (?, ?, ?, 'member', ?, NOW())
+                `;
+
+                const userValues = [username, email, hashedPassword, mitgliedId];
+
+                db.query(userQuery, userValues, (userErr, userResult) => {
+                    if (userErr) {
+                        logger.error('Fehler beim Erstellen des User-Accounts:', userErr);
+                        // Bei Duplicate-Key trotzdem fortfahren (Race Condition möglich)
+                        if (userErr.code === 'ER_DUP_ENTRY') {
+                            return callback(null, { warning: 'Benutzername oder E-Mail bereits vergeben' });
+                        }
+                        return callback(null, { warning: 'User-Account konnte nicht erstellt werden' });
+                    }
+
+                    logger.info(`✅ User-Account erstellt für Mitglied ${mitgliedId} (User-ID: ${userResult.insertId})`);
+                    callback(null, { userId: userResult.insertId, message: 'User-Account erstellt' });
+                });
             });
         } catch (hashError) {
             logger.error('Fehler beim Hashen des Passworts:', hashError);
-            callback();
+            callback(null, { warning: 'Passwort-Verarbeitung fehlgeschlagen' });
         }
     } else {
         // Keine User-Account-Daten vorhanden (interne Admin-Erstellung)

@@ -72,6 +72,10 @@ const EinstellungenDojo = () => {
     sepa_glaeubiger_id: "",
     paypal_email: "",
     lastschrift_aktiv: false,
+
+    // Automatische Lastschrift
+    auto_stripe_setup: true,
+    lastschrift_benachrichtigung_email: "",
     
     // Versicherungen
     haftpflicht_versicherung: "",
@@ -763,6 +767,41 @@ const EinstellungenDojo = () => {
                   />
                   <small className="form-help">
                     📄 Benötigt für SEPA-Lastschriftmandate. Format: DE + 2 Stellen + ZZZ + 13 Stellen
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-section">
+              <h4>Automatische Lastschrift</h4>
+              <div className="form-grid">
+                <div className="form-group checkbox-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="auto_stripe_setup"
+                      checked={dojo.auto_stripe_setup !== false}
+                      onChange={(e) => handleChange({ target: { name: 'auto_stripe_setup', value: e.target.checked }})}
+                      disabled={!isEditing}
+                    />
+                    Automatisches Stripe-Setup bei Registrierung
+                  </label>
+                  <small className="form-help">
+                    Wenn aktiviert, werden neue Mitglieder bei der Registrierung automatisch für Stripe-Lastschriften eingerichtet.
+                  </small>
+                </div>
+                <div className="form-group">
+                  <label>E-Mail für Lastschrift-Benachrichtigungen</label>
+                  <input
+                    type="email"
+                    name="lastschrift_benachrichtigung_email"
+                    value={dojo.lastschrift_benachrichtigung_email || ""}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="buchhaltung@mein-dojo.de"
+                  />
+                  <small className="form-help">
+                    Erhält E-Mail nach automatischen Lastschriftläufen. Falls leer, wird die Dojo-E-Mail verwendet.
                   </small>
                 </div>
               </div>
