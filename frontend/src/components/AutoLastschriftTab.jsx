@@ -14,6 +14,7 @@ import {
   ChevronUp,
   RefreshCw
 } from "lucide-react";
+import { useDojoContext } from "../context/DojoContext";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/AutoLastschrift.css";
@@ -21,6 +22,7 @@ import "../styles/AutoLastschrift.css";
 const API_BASE = window.API_BASE || "/api";
 
 const AutoLastschriftTab = ({ embedded = false }) => {
+  const { dojos, activeDojo } = useDojoContext();
   const [zeitplaene, setZeitplaene] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +31,6 @@ const AutoLastschriftTab = ({ embedded = false }) => {
   const [expandedZeitplan, setExpandedZeitplan] = useState(null);
   const [ausfuehrungen, setAusfuehrungen] = useState({});
   const [executing, setExecuting] = useState(null);
-  const [dojos, setDojos] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -43,23 +44,8 @@ const AutoLastschriftTab = ({ embedded = false }) => {
     dojo_id: "" // Wird beim Öffnen des Modals gesetzt
   });
 
-  const currentDojoId = localStorage.getItem("dojo_id");
-
-  // Lade Dojo-Liste
-  useEffect(() => {
-    const loadDojos = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/dojos`);
-        const data = await response.json();
-        if (data.success || Array.isArray(data)) {
-          setDojos(Array.isArray(data) ? data : data.dojos || []);
-        }
-      } catch (err) {
-        console.error("Fehler beim Laden der Dojos:", err);
-      }
-    };
-    loadDojos();
-  }, []);
+  // Aktuelles Dojo aus Context oder localStorage
+  const currentDojoId = activeDojo?.id || localStorage.getItem("dojo_id");
 
   const loadZeitplaene = useCallback(async () => {
     try {
