@@ -29,6 +29,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
   const [expandedZeitplan, setExpandedZeitplan] = useState(null);
   const [ausfuehrungen, setAusfuehrungen] = useState({});
   const [executing, setExecuting] = useState(null);
+  const [dojos, setDojos] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -38,15 +39,34 @@ const AutoLastschriftTab = ({ embedded = false }) => {
     ausfuehrungszeit: "06:00",
     typen: ["beitraege"], // Array für Mehrfachauswahl
     nur_faellige_bis_tag: "",
-    aktiv: true
+    aktiv: true,
+    dojo_id: "" // Wird beim Öffnen des Modals gesetzt
   });
 
-  const dojoId = localStorage.getItem("dojo_id");
+  const currentDojoId = localStorage.getItem("dojo_id");
+
+  // Lade Dojo-Liste
+  useEffect(() => {
+    const loadDojos = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/dojos`);
+        const data = await response.json();
+        if (data.success || Array.isArray(data)) {
+          setDojos(Array.isArray(data) ? data : data.dojos || []);
+        }
+      } catch (err) {
+        console.error("Fehler beim Laden der Dojos:", err);
+      }
+    };
+    loadDojos();
+  }, []);
 
   const loadZeitplaene = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/lastschrift-zeitplaene?dojo_id=${dojoId}`);
+      // Wenn "all" oder kein Dojo ausgewählt, lade alle Zeitpläne
+      const queryDojoId = currentDojoId && currentDojoId !== "all" ? currentDojoId : "all";
+      const response = await fetch(`${API_BASE}/lastschrift-zeitplaene?dojo_id=${queryDojoId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -59,16 +79,16 @@ const AutoLastschriftTab = ({ embedded = false }) => {
     } finally {
       setLoading(false);
     }
-  }, [dojoId]);
+  }, [currentDojoId]);
 
   useEffect(() => {
     loadZeitplaene();
   }, [loadZeitplaene]);
 
-  const loadAusfuehrungen = async (zeitplanId) => {
+  const loadAusfuehrungen = async (zeitplanId, zeitplanDojoId) => {
     try {
       const response = await fetch(
-        `${API_BASE}/lastschrift-zeitplaene/${zeitplanId}/ausfuehrungen?dojo_id=${dojoId}&limit=10`
+        `${API_BASE}/lastschrift-zeitplaene/${zeitplanId}/ausfuehrungen?dojo_id=${zeitplanDojoId}&limit=10`
       );
       const data = await response.json();
 
@@ -83,13 +103,13 @@ const AutoLastschriftTab = ({ embedded = false }) => {
     }
   };
 
-  const toggleExpand = (zeitplanId) => {
-    if (expandedZeitplan === zeitplanId) {
+  const toggleExpand = (zeitplan) => {
+    if (expandedZeitplan === zeitplan.zeitplan_id) {
       setExpandedZeitplan(null);
     } else {
-      setExpandedZeitplan(zeitplanId);
-      if (!ausfuehrungen[zeitplanId]) {
-        loadAusfuehrungen(zeitplanId);
+      setExpandedZeitplan(zeitplan.zeitplan_id);
+      if (!ausfuehrungen[zeitplan.zeitplan_id]) {
+        loadAusfuehrungen(zeitplan.zeitplan_id, zeitplan.dojo_id);
       }
     }
   };
@@ -109,7 +129,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          dojo_id: dojoId,
+          dojo_id: formData.dojo_id, // Verwende ausgewähltes Dojo aus Formular
           ausfuehrungszeit: formData.ausfuehrungszeit + ":00",
           nur_faellige_bis_tag: formData.nur_faellige_bis_tag || null,
           typ: formData.typen.join(",") // Konvertiere Array zu Komma-getrenntem String
@@ -138,7 +158,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
 
     try {
       const response = await fetch(
-        `${API_BASE}/lastschrift-zeitplaene/${zeitplan.zeitplan_id}?dojo_id=${dojoId}`,
+        `${API_BASE}/lastschrift-zeitplaene/${zeitplan.zeitplan_id}?dojo_id=${zeitplan.dojo_id}`,
         { method: "DELETE" }
       );
 
@@ -162,7 +182,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            dojo_id: dojoId,
+            dojo_id: zeitplan.dojo_id,
             aktiv: !zeitplan.aktiv
           })
         }
@@ -193,7 +213,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dojo_id: dojoId })
+          body: JSON.stringify({ dojo_id: zeitplan.dojo_id })
         }
       );
 
@@ -208,7 +228,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
         );
         loadZeitplaene();
         if (expandedZeitplan === zeitplan.zeitplan_id) {
-          loadAusfuehrungen(zeitplan.zeitplan_id);
+          loadAusfuehrungen(zeitplan.zeitplan_id, zeitplan.dojo_id);
         }
       } else {
         alert(data.error || "Fehler bei der Ausführung");
@@ -238,12 +258,15 @@ const AutoLastschriftTab = ({ embedded = false }) => {
       ausfuehrungszeit: zeitplan.ausfuehrungszeit?.substring(0, 5) || "06:00",
       typen: typen,
       nur_faellige_bis_tag: zeitplan.nur_faellige_bis_tag || "",
-      aktiv: zeitplan.aktiv !== false
+      aktiv: zeitplan.aktiv !== false,
+      dojo_id: (zeitplan.dojo_id === null || zeitplan.dojo_id === 0) ? "all" : (zeitplan.dojo_id || "")
     });
     setShowModal(true);
   };
 
   const resetForm = () => {
+    // Setze Standard-Dojo auf aktuell ausgewähltes (wenn nicht "all")
+    const defaultDojoId = currentDojoId && currentDojoId !== "all" ? currentDojoId : (dojos.length > 0 ? dojos[0].id : "");
     setFormData({
       name: "",
       beschreibung: "",
@@ -251,8 +274,16 @@ const AutoLastschriftTab = ({ embedded = false }) => {
       ausfuehrungszeit: "06:00",
       typen: ["beitraege"],
       nur_faellige_bis_tag: "",
-      aktiv: true
+      aktiv: true,
+      dojo_id: defaultDojoId
     });
+  };
+
+  // Helper: Dojo-Name finden
+  const getDojoName = (dojoId) => {
+    if (dojoId === "all" || dojoId === null || dojoId === 0 || dojoId === "0") return "Alle Dojos";
+    const dojo = dojos.find(d => d.id == dojoId);
+    return dojo ? dojo.dojoname : `Dojo ${dojoId}`;
   };
 
   const getTypLabel = (typ) => {
@@ -379,6 +410,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
                       {zeitplan.ausfuehrungszeit?.substring(0, 5)} Uhr
                     </span>
                     <span className="badge badge-info">{getTypLabel(zeitplan.typ)}</span>
+                    <span className="badge badge-secondary">{getDojoName(zeitplan.dojo_id)}</span>
                   </div>
                 </div>
 
@@ -434,7 +466,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
               {/* Expand Button */}
               <button
                 className="expand-btn"
-                onClick={() => toggleExpand(zeitplan.zeitplan_id)}
+                onClick={() => toggleExpand(zeitplan)}
               >
                 {expandedZeitplan === zeitplan.zeitplan_id ? (
                   <>
@@ -501,6 +533,23 @@ const AutoLastschriftTab = ({ embedded = false }) => {
             </div>
 
             <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Dojo *</label>
+                <select
+                  value={formData.dojo_id}
+                  onChange={(e) => setFormData({ ...formData, dojo_id: e.target.value })}
+                  required
+                >
+                  <option value="">-- Dojo auswählen --</option>
+                  <option value="all">Alle Dojos</option>
+                  {dojos.map((dojo) => (
+                    <option key={dojo.id} value={dojo.id}>
+                      {dojo.dojoname}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-group">
                 <label>Name *</label>
                 <input

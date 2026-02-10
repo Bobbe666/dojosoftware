@@ -20,26 +20,43 @@ function queryAsync(sql, params = []) {
 
 /**
  * GET /api/lastschrift-zeitplaene
- * Liste aller Zeitpläne für ein Dojo
+ * Liste aller Zeitpläne für ein Dojo (oder alle Dojos)
  */
 router.get("/", async (req, res) => {
     try {
         const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
 
-        if (!dojoId) {
+        let query, params;
+
+        if (dojoId === "all") {
+            // Lade alle Zeitpläne (für Admins)
+            query = `
+                SELECT
+                    z.*,
+                    d.dojoname,
+                    (SELECT COUNT(*) FROM lastschrift_ausfuehrungen a WHERE a.zeitplan_id = z.zeitplan_id) as anzahl_ausfuehrungen
+                FROM lastschrift_zeitplaene z
+                LEFT JOIN dojo d ON z.dojo_id = d.id
+                ORDER BY z.dojo_id ASC, z.ausfuehrungstag ASC, z.ausfuehrungszeit ASC
+            `;
+            params = [];
+        } else if (dojoId) {
+            query = `
+                SELECT
+                    z.*,
+                    d.dojoname,
+                    (SELECT COUNT(*) FROM lastschrift_ausfuehrungen a WHERE a.zeitplan_id = z.zeitplan_id) as anzahl_ausfuehrungen
+                FROM lastschrift_zeitplaene z
+                LEFT JOIN dojo d ON z.dojo_id = d.id
+                WHERE z.dojo_id = ?
+                ORDER BY z.ausfuehrungstag ASC, z.ausfuehrungszeit ASC
+            `;
+            params = [dojoId];
+        } else {
             return res.status(400).json({ error: "Dojo ID erforderlich" });
         }
 
-        const query = `
-            SELECT
-                z.*,
-                (SELECT COUNT(*) FROM lastschrift_ausfuehrungen a WHERE a.zeitplan_id = z.zeitplan_id) as anzahl_ausfuehrungen
-            FROM lastschrift_zeitplaene z
-            WHERE z.dojo_id = ?
-            ORDER BY z.ausfuehrungstag ASC, z.ausfuehrungszeit ASC
-        `;
-
-        const zeitplaene = await queryAsync(query, [dojoId]);
+        const zeitplaene = await queryAsync(query, params);
 
         res.json({
             success: true,
@@ -90,10 +107,15 @@ router.get("/:id", async (req, res) => {
  */
 router.post("/", async (req, res) => {
     try {
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        let dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         if (!dojoId) {
             return res.status(400).json({ error: "Dojo ID erforderlich" });
+        }
+
+        // "all" wird als NULL gespeichert (für alle Dojos)
+        if (dojoId === "all") {
+            dojoId = null;
         }
 
         const {
@@ -135,7 +157,7 @@ router.post("/", async (req, res) => {
             aktiv !== false
         ]);
 
-        logger.info(`Zeitplan erstellt: ${name} für Dojo ${dojoId}`);
+        logger.info(`Zeitplan erstellt: ${name} für Dojo ${dojoId === 0 ? 'ALLE' : dojoId}`);
 
         res.json({
             success: true,
@@ -156,7 +178,12 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        let dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+
+        // "all" wird als NULL gespeichert
+        if (dojoId === "all") {
+            dojoId = null;
+        }
 
         const {
             name,
@@ -169,10 +196,10 @@ router.put("/:id", async (req, res) => {
             aktiv
         } = req.body;
 
-        // Prüfe ob Zeitplan existiert und zum Dojo gehört
+        // Prüfe ob Zeitplan existiert
         const existing = await queryAsync(
-            "SELECT zeitplan_id FROM lastschrift_zeitplaene WHERE zeitplan_id = ? AND dojo_id = ?",
-            [id, dojoId]
+            "SELECT zeitplan_id, dojo_id FROM lastschrift_zeitplaene WHERE zeitplan_id = ?",
+            [id]
         );
 
         if (existing.length === 0) {
@@ -190,7 +217,7 @@ router.put("/:id", async (req, res) => {
                 zahlungszyklus_filter = ?,
                 aktiv = COALESCE(?, aktiv),
                 aktualisiert_am = NOW()
-            WHERE zeitplan_id = ? AND dojo_id = ?
+            WHERE zeitplan_id = ?
         `;
 
         await queryAsync(updateQuery, [
@@ -202,8 +229,7 @@ router.put("/:id", async (req, res) => {
             nur_faellige_bis_tag,
             zahlungszyklus_filter ? JSON.stringify(zahlungszyklus_filter) : null,
             aktiv,
-            id,
-            dojoId
+            id
         ]);
 
         logger.info(`Zeitplan aktualisiert: ID ${id}`);
@@ -226,11 +252,10 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
 
         const result = await queryAsync(
-            "DELETE FROM lastschrift_zeitplaene WHERE zeitplan_id = ? AND dojo_id = ?",
-            [id, dojoId]
+            "DELETE FROM lastschrift_zeitplaene WHERE zeitplan_id = ?",
+            [id]
         );
 
         if (result.affectedRows === 0) {
