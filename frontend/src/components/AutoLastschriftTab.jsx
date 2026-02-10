@@ -36,7 +36,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
     beschreibung: "",
     ausfuehrungstag: 1,
     ausfuehrungszeit: "06:00",
-    typ: "beitraege",
+    typen: ["beitraege"], // Array für Mehrfachauswahl
     nur_faellige_bis_tag: "",
     aktiv: true
   });
@@ -111,7 +111,8 @@ const AutoLastschriftTab = ({ embedded = false }) => {
           ...formData,
           dojo_id: dojoId,
           ausfuehrungszeit: formData.ausfuehrungszeit + ":00",
-          nur_faellige_bis_tag: formData.nur_faellige_bis_tag || null
+          nur_faellige_bis_tag: formData.nur_faellige_bis_tag || null,
+          typ: formData.typen.join(",") // Konvertiere Array zu Komma-getrenntem String
         })
       });
 
@@ -221,12 +222,21 @@ const AutoLastschriftTab = ({ embedded = false }) => {
 
   const openEditModal = (zeitplan) => {
     setEditingZeitplan(zeitplan);
+    // Konvertiere typ String zu Array
+    let typen = ["beitraege"];
+    if (zeitplan.typ) {
+      if (zeitplan.typ === "alle") {
+        typen = ["beitraege", "rechnungen", "verkaeufe"];
+      } else {
+        typen = zeitplan.typ.split(",").filter(t => t);
+      }
+    }
     setFormData({
       name: zeitplan.name || "",
       beschreibung: zeitplan.beschreibung || "",
       ausfuehrungstag: zeitplan.ausfuehrungstag || 1,
       ausfuehrungszeit: zeitplan.ausfuehrungszeit?.substring(0, 5) || "06:00",
-      typ: zeitplan.typ || "beitraege",
+      typen: typen,
       nur_faellige_bis_tag: zeitplan.nur_faellige_bis_tag || "",
       aktiv: zeitplan.aktiv !== false
     });
@@ -239,7 +249,7 @@ const AutoLastschriftTab = ({ embedded = false }) => {
       beschreibung: "",
       ausfuehrungstag: 1,
       ausfuehrungszeit: "06:00",
-      typ: "beitraege",
+      typen: ["beitraege"],
       nur_faellige_bis_tag: "",
       aktiv: true
     });
@@ -252,6 +262,12 @@ const AutoLastschriftTab = ({ embedded = false }) => {
       verkaeufe: "Verkäufe",
       alle: "Alle"
     };
+    // Handle comma-separated types
+    if (typ && typ.includes(",")) {
+      const types = typ.split(",");
+      if (types.length === 3) return "Alle";
+      return types.map(t => labels[t] || t).join(", ");
+    }
     return labels[typ] || typ;
   };
 
@@ -537,23 +553,31 @@ const AutoLastschriftTab = ({ embedded = false }) => {
               </div>
 
               <div className="form-group">
-                <label>Einzugstyp *</label>
-                <div className="radio-group">
+                <label>Einzugstyp * (mehrere auswählbar)</label>
+                <div className="checkbox-group">
                   {[
                     { value: "beitraege", label: "Beiträge" },
                     { value: "rechnungen", label: "Rechnungen" },
-                    { value: "verkaeufe", label: "Verkäufe" },
-                    { value: "alle", label: "Alle" }
+                    { value: "verkaeufe", label: "Verkäufe" }
                   ].map((option) => (
-                    <label key={option.value} className="radio-label">
+                    <label key={option.value} className="checkbox-option">
                       <input
-                        type="radio"
-                        name="typ"
+                        type="checkbox"
                         value={option.value}
-                        checked={formData.typ === option.value}
-                        onChange={(e) => setFormData({ ...formData, typ: e.target.value })}
+                        checked={formData.typen.includes(option.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (e.target.checked) {
+                            setFormData({ ...formData, typen: [...formData.typen, value] });
+                          } else {
+                            // Mindestens ein Typ muss ausgewählt sein
+                            if (formData.typen.length > 1) {
+                              setFormData({ ...formData, typen: formData.typen.filter(t => t !== value) });
+                            }
+                          }
+                        }}
                       />
-                      {option.label}
+                      <span className="checkbox-text">{option.label}</span>
                     </label>
                   ))}
                 </div>

@@ -381,14 +381,19 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
         }
 
         // Lade Mitglieder mit offenen Beiträgen basierend auf Typ
+        // Unterstützt sowohl einzelne Typen als auch komma-getrennte Listen
         let mitglieder = [];
+        const typen = zeitplan.typ ? zeitplan.typ.split(',') : ['beitraege'];
+        const includeBeitraege = typen.includes('beitraege') || typen.includes('alle');
+        const includeRechnungen = typen.includes('rechnungen') || typen.includes('alle');
+        const includeVerkaeufe = typen.includes('verkaeufe') || typen.includes('alle');
 
-        if (zeitplan.typ === 'beitraege' || zeitplan.typ === 'alle') {
+        if (includeBeitraege) {
             const beitraegeMitglieder = await ladeBeitraegeMitglieder(dojoId, monatEnde, zeitplan.zahlungszyklus_filter);
             mitglieder = mitglieder.concat(beitraegeMitglieder);
         }
 
-        if (zeitplan.typ === 'rechnungen' || zeitplan.typ === 'alle') {
+        if (includeRechnungen) {
             const rechnungenMitglieder = await ladeRechnungenMitglieder(dojoId);
             // Kombiniere mit existierenden Mitgliedern (addiere Beträge)
             for (const rm of rechnungenMitglieder) {
@@ -402,7 +407,7 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
             }
         }
 
-        if (zeitplan.typ === 'verkaeufe' || zeitplan.typ === 'alle') {
+        if (includeVerkaeufe) {
             const verkaeufeMitglieder = await ladeVerkaeufeMitglieder(dojoId);
             for (const vm of verkaeufeMitglieder) {
                 const existing = mitglieder.find(m => m.mitglied_id === vm.mitglied_id);
