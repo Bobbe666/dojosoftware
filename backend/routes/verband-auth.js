@@ -974,9 +974,9 @@ router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
     const member = memberResult[0] || {};
 
     // Prüfen ob Mitglied Rabattberechtigung hat
-    // Vollmitglied: status='aktiv' (bezahlt oder beitragsfrei)
-    // Basic: hat Account aber status != 'aktiv'
-    const istVollmitglied = member.status === 'aktiv';
+    // Vollmitglied: status='aktiv' ODER 'vertragsfrei' ODER beitragsfrei=1
+    // Basic: hat Account aber kein Vollmitglied
+    const istVollmitglied = member.status === 'aktiv' || member.status === 'vertragsfrei' || member.beitragsfrei === 1;
     const istBasicMitglied = !istVollmitglied && member.id;
 
     // Globale Rabatt-Einstellungen laden
@@ -1216,8 +1216,8 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
 
     const member = members[0];
 
-    // Prüfen ob Mitglied Rabattberechtigung hat (status='aktiv')
-    const istVollmitglied = member.status === 'aktiv';
+    // Prüfen ob Mitglied Rabattberechtigung hat (status='aktiv' oder 'vertragsfrei' oder beitragsfrei)
+    const istVollmitglied = member.status === 'aktiv' || member.status === 'vertragsfrei' || member.beitragsfrei === 1;
 
     // Rabatt-Einstellungen laden
     let globalRabattSettings = { standard_rabatt_prozent: 0, rabatte_aktiv: false };
