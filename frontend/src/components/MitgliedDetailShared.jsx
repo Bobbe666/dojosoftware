@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext.jsx'; // For member ID
 import ReferralCodeVerwaltung from './ReferralCodeVerwaltung';
 import MitgliedsAusweis from './MitgliedsAusweis';
 import { QRCodeSVG } from 'qrcode.react';
-import html2canvas from 'html2canvas';
+// html2canvas wird dynamisch importiert bei Bedarf (ca. 200KB)
 import { createSafeHtml } from '../utils/sanitizer';
 import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
@@ -2775,6 +2775,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         wrapper.appendChild(clone);
                         document.body.appendChild(wrapper);
 
+                        // Dynamisch laden - html2canvas ist ca. 200KB
+                        const html2canvas = (await import('html2canvas')).default;
                         const canvas = await html2canvas(wrapper, {
                           backgroundColor: '#000000',
                           scale: 3,

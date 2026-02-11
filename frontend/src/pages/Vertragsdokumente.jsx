@@ -1,8 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import axios from 'axios';
-import TemplateEditor from '../components/TemplateEditor';
 import { useDojoContext } from '../context/DojoContext';
 import '../styles/Vertragsdokumente.css';
+
+// Lazy load TemplateEditor - GrapesJS ist 1.1MB und wird nur bei Bedarf geladen
+const TemplateEditor = lazy(() => import('../components/TemplateEditor'));
+
+// Loading Fallback für TemplateEditor
+const EditorLoadingFallback = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '400px',
+    color: '#666'
+  }}>
+    <div className="loading-spinner"></div>
+    <span style={{ marginLeft: '1rem' }}>Template-Editor wird geladen...</span>
+  </div>
+);
 
 const Vertragsdokumente = () => {
   const { activeDojo, filter, dojos } = useDojoContext();
@@ -158,12 +174,14 @@ const Vertragsdokumente = () => {
 
   if (showEditor) {
     return (
-      <TemplateEditor
-        templateId={selectedTemplate}
-        dojoId={dojoId}
-        onSave={handleCloseEditor}
-        onClose={handleCloseEditor}
-      />
+      <Suspense fallback={<EditorLoadingFallback />}>
+        <TemplateEditor
+          templateId={selectedTemplate}
+          dojoId={dojoId}
+          onSave={handleCloseEditor}
+          onClose={handleCloseEditor}
+        />
+      </Suspense>
     );
   }
 
@@ -320,17 +338,19 @@ const Vertragsdokumente = () => {
       )}
 
       {activeTab === 'editor' && (
-        <TemplateEditor
-          templateId={selectedTemplate}
-          dojoId={dojoId}
-          onSave={() => {
-            setActiveTab('dokumente');
-            loadVorlagen();
-          }}
-          onClose={() => {
-            setActiveTab('dokumente');
-          }}
-        />
+        <Suspense fallback={<EditorLoadingFallback />}>
+          <TemplateEditor
+            templateId={selectedTemplate}
+            dojoId={dojoId}
+            onSave={() => {
+              setActiveTab('dokumente');
+              loadVorlagen();
+            }}
+            onClose={() => {
+              setActiveTab('dokumente');
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Info Boxes - nur im Dokumente-Tab anzeigen */}

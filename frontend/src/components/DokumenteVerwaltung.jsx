@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext.jsx';
-import TemplateEditor from './TemplateEditor';
 import { createSafeHtml } from '../utils/sanitizer';
+
+// Lazy load TemplateEditor - GrapesJS ist 1.1MB und wird nur bei Bedarf geladen
+const TemplateEditor = lazy(() => import('./TemplateEditor'));
 import '../styles/Dashboard.css';
 
 /**
@@ -1692,19 +1694,32 @@ const DokumenteVerwaltung = () => {
         {activeTab === 'vorlagen' && (
           <div>
             {showTemplateEditor ? (
-              <TemplateEditor
-                templateId={selectedTemplate}
-                dojoId={activeDojo?.id}
-                onSave={() => {
-                  setShowTemplateEditor(false);
-                  setSelectedTemplate(null);
-                  loadVorlagen();
-                }}
-                onClose={() => {
-                  setShowTemplateEditor(false);
-                  setSelectedTemplate(null);
-                }}
-              />
+              <Suspense fallback={
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '400px',
+                  color: '#666'
+                }}>
+                  <div className="loading-spinner"></div>
+                  <span style={{ marginLeft: '1rem' }}>Template-Editor wird geladen...</span>
+                </div>
+              }>
+                <TemplateEditor
+                  templateId={selectedTemplate}
+                  dojoId={activeDojo?.id}
+                  onSave={() => {
+                    setShowTemplateEditor(false);
+                    setSelectedTemplate(null);
+                    loadVorlagen();
+                  }}
+                  onClose={() => {
+                    setShowTemplateEditor(false);
+                    setSelectedTemplate(null);
+                  }}
+                />
+              </Suspense>
             ) : (
               <div>
                 {/* Header mit Button */}

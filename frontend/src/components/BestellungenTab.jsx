@@ -315,13 +315,27 @@ const BestellungenTab = () => {
             {lowStockItems.slice(0, 6).map(item => (
               <div key={item.artikel_id} className="low-stock-item">
                 <div className="item-info">
-                  <span className="item-name">{item.artikel_name}</span>
+                  <span className="item-name" style={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: '#fff',
+                    display: 'block',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {item.artikel_name || 'Unbenannter Artikel'}
+                  </span>
                   {item.artikel_nummer && (
-                    <span className="item-number">#{item.artikel_nummer}</span>
+                    <span className="item-number" style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255,255,255,0.5)',
+                      display: 'block'
+                    }}>
+                      #{item.artikel_nummer}
+                    </span>
                   )}
                 </div>
 
-                <div className="item-stock">
+                <div className="item-stock" style={{ marginTop: '0.5rem' }}>
                   {item.hat_varianten && item.low_sizes ? (
                     <div className="size-stock">
                       {item.low_sizes.slice(0, 3).map(({ size, qty }) => (
@@ -334,7 +348,10 @@ const BestellungenTab = () => {
                       )}
                     </div>
                   ) : (
-                    <span className="stock-count critical">
+                    <span className="stock-count critical" style={{
+                      color: '#ef4444',
+                      fontWeight: 600
+                    }}>
                       Bestand: {item.lagerbestand}
                     </span>
                   )}

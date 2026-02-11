@@ -77,8 +77,8 @@
 
 .low-stock-item {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -92,28 +92,35 @@
 }
 
 .low-stock-item .item-info {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
 }
 
 .low-stock-item .item-name {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
   color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
+  word-wrap: break-word;
+  white-space: normal;
 }
 
 .low-stock-item .item-number {
-  font-size: 0.8rem;
+  display: block;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
+  word-break: break-all;
 }
 
 .low-stock-item .item-stock {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
+}
+
+.low-stock-item .add-to-order-btn {
+  align-self: flex-end;
 }
 
 .size-badge {
