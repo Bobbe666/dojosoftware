@@ -2095,19 +2095,30 @@ router.get('/artikel/:artikelId/rabatt', requireSuperAdmin, async (req, res) => 
 router.post('/artikel/:artikelId/rabatt', requireSuperAdmin, async (req, res) => {
   try {
     const { artikelId } = req.params;
-    const { rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, aktiv } = req.body;
+    const { rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, gilt_fuer_mitglieder, aktiv } = req.body;
+
+    // Sicherstellen dass gilt_fuer_mitglieder Spalte existiert
+    try {
+      await db.promise().query(`
+        ALTER TABLE verband_artikel_rabatte
+        ADD COLUMN IF NOT EXISTS gilt_fuer_mitglieder BOOLEAN DEFAULT TRUE
+      `);
+    } catch (e) {
+      // Spalte existiert bereits - ignorieren
+    }
 
     await db.promise().query(`
       INSERT INTO verband_artikel_rabatte
-        (artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, aktiv)
-      VALUES (?, ?, ?, ?, ?, ?)
+        (artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, gilt_fuer_mitglieder, aktiv)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         rabatt_typ = VALUES(rabatt_typ),
         rabatt_wert = VALUES(rabatt_wert),
         gilt_fuer_dojo = VALUES(gilt_fuer_dojo),
         gilt_fuer_einzelperson = VALUES(gilt_fuer_einzelperson),
+        gilt_fuer_mitglieder = VALUES(gilt_fuer_mitglieder),
         aktiv = VALUES(aktiv)
-    `, [artikelId, rabatt_typ || 'prozent', rabatt_wert || 0, gilt_fuer_dojo ?? true, gilt_fuer_einzelperson ?? true, aktiv ?? true]);
+    `, [artikelId, rabatt_typ || 'prozent', rabatt_wert || 0, gilt_fuer_dojo ?? true, gilt_fuer_einzelperson ?? true, gilt_fuer_mitglieder ?? true, aktiv ?? true]);
 
     res.json({ success: true, message: 'Rabatt gespeichert' });
   } catch (err) {

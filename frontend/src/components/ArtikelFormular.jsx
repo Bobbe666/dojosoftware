@@ -32,8 +32,9 @@ const ArtikelFormular = ({ mode }) => {
     hat_rabatt: false,
     rabatt_typ: 'prozent',
     rabatt_wert: '',
-    gilt_fuer_dojo: true,
-    gilt_fuer_einzelperson: true,
+    gilt_fuer_dojo: true,           // Verbandsmitglieder über Dojo
+    gilt_fuer_einzelperson: true,   // Verbandsmitglieder als Einzelperson
+    gilt_fuer_mitglieder: true,     // Normale Dojo-Mitglieder
     aktiv: true
   });
   const [rabattLoading, setRabattLoading] = useState(false);
@@ -285,6 +286,7 @@ const ArtikelFormular = ({ mode }) => {
           rabatt_wert: data.data.rabatt_wert || '',
           gilt_fuer_dojo: data.data.gilt_fuer_dojo ?? true,
           gilt_fuer_einzelperson: data.data.gilt_fuer_einzelperson ?? true,
+          gilt_fuer_mitglieder: data.data.gilt_fuer_mitglieder ?? true,
           aktiv: data.data.aktiv ?? true
         });
       } else {
@@ -295,6 +297,7 @@ const ArtikelFormular = ({ mode }) => {
           rabatt_wert: '',
           gilt_fuer_dojo: true,
           gilt_fuer_einzelperson: true,
+          gilt_fuer_mitglieder: true,
           aktiv: true
         });
       }
@@ -322,6 +325,7 @@ const ArtikelFormular = ({ mode }) => {
             rabatt_wert: parseFloat(rabattData.rabatt_wert),
             gilt_fuer_dojo: rabattData.gilt_fuer_dojo,
             gilt_fuer_einzelperson: rabattData.gilt_fuer_einzelperson,
+            gilt_fuer_mitglieder: rabattData.gilt_fuer_mitglieder,
             aktiv: rabattData.aktiv
           })
         });
@@ -2573,6 +2577,21 @@ const ArtikelFormular = ({ mode }) => {
                         style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
                       />
                       <span style={{ color: 'var(--text-primary, #ffffff)' }}>👤 Verbandsmitglieder (Einzelperson)</span>
+                    </label>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.75rem',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={rabattData.gilt_fuer_mitglieder}
+                        onChange={(e) => setRabattData(prev => ({ ...prev, gilt_fuer_mitglieder: e.target.checked }))}
+                        style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
+                      />
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>🏠 Dojo-Mitglieder</span>
                     </label>
                   </div>
                 </div>
