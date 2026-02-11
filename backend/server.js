@@ -91,6 +91,11 @@ app.use(cors({
       return callback(null, true);
     }
 
+    // Erlaube alle tda-*.de Domains (TDA-Webseiten wie tda-vib.de, tda-la.de, etc.)
+    if (origin.match(/^https:\/\/(www\.)?tda-[a-z0-9-]+\.de$/)) {
+      return callback(null, true);
+    }
+
     callback(new Error('CORS nicht erlaubt für Origin: ' + origin));
   },
   credentials: true,
