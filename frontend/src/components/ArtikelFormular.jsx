@@ -2557,7 +2557,7 @@ const ArtikelFormular = ({ mode }) => {
                         onChange={(e) => setRabattData(prev => ({ ...prev, gilt_fuer_dojo: e.target.checked }))}
                         style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
                       />
-                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>🥋 Dojo-Mitglieder</span>
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>🥋 Verbandsmitglieder (über Dojo)</span>
                     </label>
                     <label style={{
                       display: 'flex',
@@ -2572,7 +2572,7 @@ const ArtikelFormular = ({ mode }) => {
                         onChange={(e) => setRabattData(prev => ({ ...prev, gilt_fuer_einzelperson: e.target.checked }))}
                         style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
                       />
-                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>👤 Einzelpersonen</span>
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>👤 Verbandsmitglieder (Einzelperson)</span>
                     </label>
                   </div>
                 </div>
