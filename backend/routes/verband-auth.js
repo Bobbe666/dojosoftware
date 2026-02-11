@@ -968,16 +968,16 @@ router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
 
     // Mitgliedschaftsstatus laden
     const memberResult = await queryAsync(
-      `SELECT id, typ, status, zahlungsstatus, beitragsfrei FROM verbandsmitgliedschaften WHERE id = ?`,
+      `SELECT id, typ, status, beitragsfrei FROM verbandsmitgliedschaften WHERE id = ?`,
       [req.verbandUser.id]
     );
     const member = memberResult[0] || {};
 
     // Prüfen ob Mitglied Rabattberechtigung hat
-    // Rabattberechtigt: aktiv UND (zahlungsstatus='bezahlt' ODER beitragsfrei=true)
-    const istVollmitglied = member.status === 'aktiv' &&
-      (member.zahlungsstatus === 'bezahlt' || member.beitragsfrei === 1);
-    const istBasicMitglied = member.status === 'aktiv' && !istVollmitglied;
+    // Vollmitglied: status='aktiv' (bezahlt oder beitragsfrei)
+    // Basic: hat Account aber status != 'aktiv'
+    const istVollmitglied = member.status === 'aktiv';
+    const istBasicMitglied = !istVollmitglied && member.id;
 
     // Globale Rabatt-Einstellungen laden
     let globalRabattSettings = {
@@ -1165,22 +1165,20 @@ router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        artikel: formattedArtikel,
-        kategorien: Object.values(kategorien),
-        // Mitgliedschafts-Infos für Frontend
-        mitglied: {
-          ist_vollmitglied: istVollmitglied,
-          ist_basic_mitglied: istBasicMitglied,
-          typ: member.typ
-        },
-        // Rabatt-Hinweise
-        rabatt_hinweise: {
-          aktiv: globalRabattSettings.rabatte_aktiv,
-          hinweis_basic: globalRabattSettings.hinweis_basic_mitglied,
-          hinweis_nicht_mitglied: globalRabattSettings.hinweis_nicht_mitglied,
-          standard_rabatt: parseFloat(globalRabattSettings.standard_rabatt_prozent) || 0
-        }
+      artikel: formattedArtikel,
+      kategorien: Object.values(kategorien),
+      // Mitgliedschafts-Infos für Frontend
+      mitglied: {
+        ist_vollmitglied: istVollmitglied,
+        ist_basic_mitglied: istBasicMitglied,
+        typ: member.typ
+      },
+      // Rabatt-Hinweise
+      rabatt_hinweise: {
+        aktiv: globalRabattSettings.rabatte_aktiv,
+        hinweis_basic: globalRabattSettings.hinweis_basic_mitglied,
+        hinweis_nicht_mitglied: globalRabattSettings.hinweis_nicht_mitglied,
+        standard_rabatt: parseFloat(globalRabattSettings.standard_rabatt_prozent) || 0
       }
     });
 
@@ -1202,9 +1200,9 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
       return res.status(400).json({ error: 'Keine Artikel im Warenkorb' });
     }
 
-    // Mitgliedsdaten holen (inkl. Zahlungsstatus für Rabattberechtigung)
+    // Mitgliedsdaten holen (inkl. Status für Rabattberechtigung)
     const members = await queryAsync(
-      `SELECT id, typ, status, zahlungsstatus, beitragsfrei,
+      `SELECT id, typ, status, beitragsfrei,
               person_vorname, person_nachname, person_email, person_telefon,
               dojo_name, dojo_email, dojo_strasse, dojo_plz, dojo_ort, dojo_land,
               person_strasse, person_plz, person_ort, person_land
@@ -1218,9 +1216,8 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
 
     const member = members[0];
 
-    // Prüfen ob Mitglied Rabattberechtigung hat
-    const istVollmitglied = member.status === 'aktiv' &&
-      (member.zahlungsstatus === 'bezahlt' || member.beitragsfrei === 1);
+    // Prüfen ob Mitglied Rabattberechtigung hat (status='aktiv')
+    const istVollmitglied = member.status === 'aktiv';
 
     // Rabatt-Einstellungen laden
     let globalRabattSettings = { standard_rabatt_prozent: 0, rabatte_aktiv: false };

@@ -2071,7 +2071,66 @@ router.post('/artikel-rabatte', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// DELETE /admin/artikel-rabatte/:artikelId - Rabatt für Artikel entfernen
+// GET /admin/artikel/:artikelId/rabatt - Rabatt für einzelnen Artikel abrufen
+router.get('/artikel/:artikelId/rabatt', requireSuperAdmin, async (req, res) => {
+  try {
+    const { artikelId } = req.params;
+
+    const [rabatte] = await db.promise().query(`
+      SELECT * FROM verband_artikel_rabatte WHERE artikel_id = ?
+    `, [artikelId]);
+
+    if (rabatte.length > 0) {
+      res.json({ success: true, data: rabatte[0] });
+    } else {
+      res.json({ success: true, data: null });
+    }
+  } catch (err) {
+    console.error('❌ Fehler beim Laden des Rabatts:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /admin/artikel/:artikelId/rabatt - Rabatt für einzelnen Artikel setzen/aktualisieren
+router.post('/artikel/:artikelId/rabatt', requireSuperAdmin, async (req, res) => {
+  try {
+    const { artikelId } = req.params;
+    const { rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, aktiv } = req.body;
+
+    await db.promise().query(`
+      INSERT INTO verband_artikel_rabatte
+        (artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, aktiv)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        rabatt_typ = VALUES(rabatt_typ),
+        rabatt_wert = VALUES(rabatt_wert),
+        gilt_fuer_dojo = VALUES(gilt_fuer_dojo),
+        gilt_fuer_einzelperson = VALUES(gilt_fuer_einzelperson),
+        aktiv = VALUES(aktiv)
+    `, [artikelId, rabatt_typ || 'prozent', rabatt_wert || 0, gilt_fuer_dojo ?? true, gilt_fuer_einzelperson ?? true, aktiv ?? true]);
+
+    res.json({ success: true, message: 'Rabatt gespeichert' });
+  } catch (err) {
+    console.error('❌ Fehler beim Speichern des Rabatts:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /admin/artikel/:artikelId/rabatt - Rabatt für einzelnen Artikel löschen
+router.delete('/artikel/:artikelId/rabatt', requireSuperAdmin, async (req, res) => {
+  try {
+    const { artikelId } = req.params;
+
+    await db.promise().query('DELETE FROM verband_artikel_rabatte WHERE artikel_id = ?', [artikelId]);
+
+    res.json({ success: true, message: 'Rabatt entfernt' });
+  } catch (err) {
+    console.error('❌ Fehler beim Entfernen des Rabatts:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /admin/artikel-rabatte/:artikelId - Rabatt für Artikel entfernen (Legacy)
 router.delete('/artikel-rabatte/:artikelId', requireSuperAdmin, async (req, res) => {
   try {
     const { artikelId } = req.params;

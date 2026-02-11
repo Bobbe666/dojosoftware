@@ -257,13 +257,107 @@ const ArtikelFormular = ({ mode }) => {
     }
   };
 
+  // Load Rabatt Data for Artikel (nur für SuperAdmin)
+  const loadRabattData = async () => {
+    if (mode !== 'edit' || !id) return;
+
+    try {
+      setRabattLoading(true);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/artikel/${id}/rabatt`);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setRabattData({
+          hat_rabatt: true,
+          rabatt_typ: data.data.rabatt_typ || 'prozent',
+          rabatt_wert: data.data.rabatt_wert || '',
+          gilt_fuer_dojo: data.data.gilt_fuer_dojo ?? true,
+          gilt_fuer_einzelperson: data.data.gilt_fuer_einzelperson ?? true,
+          aktiv: data.data.aktiv ?? true
+        });
+      } else {
+        // Kein Rabatt vorhanden
+        setRabattData({
+          hat_rabatt: false,
+          rabatt_typ: 'prozent',
+          rabatt_wert: '',
+          gilt_fuer_dojo: true,
+          gilt_fuer_einzelperson: true,
+          aktiv: true
+        });
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Rabatt-Daten:', error);
+    } finally {
+      setRabattLoading(false);
+    }
+  };
+
+  // Save Rabatt Data
+  const saveRabattData = async () => {
+    if (mode !== 'edit' || !id) return;
+
+    try {
+      setRabattLoading(true);
+
+      if (rabattData.hat_rabatt && rabattData.rabatt_wert) {
+        // Rabatt speichern/aktualisieren
+        const response = await fetchWithAuth(`${config.apiBaseUrl}/admin/artikel/${id}/rabatt`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rabatt_typ: rabattData.rabatt_typ,
+            rabatt_wert: parseFloat(rabattData.rabatt_wert),
+            gilt_fuer_dojo: rabattData.gilt_fuer_dojo,
+            gilt_fuer_einzelperson: rabattData.gilt_fuer_einzelperson,
+            aktiv: rabattData.aktiv
+          })
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Fehler beim Speichern des Rabatts');
+        }
+      } else if (!rabattData.hat_rabatt) {
+        // Rabatt löschen wenn deaktiviert
+        await fetchWithAuth(`${config.apiBaseUrl}/admin/artikel/${id}/rabatt`, {
+          method: 'DELETE'
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error('Fehler beim Speichern der Rabatt-Daten:', error);
+      throw error;
+    } finally {
+      setRabattLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadKategorien();
     loadArtikelgruppen();
     if (mode === 'edit') {
       loadArtikel();
     }
+
+    // SuperAdmin Check (dojo_id === null bedeutet TDA-Ebene)
+    const storedUser = localStorage.getItem('dojo_user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        const isSuper = (user?.rolle === 'admin' || user?.role === 'admin') && user?.dojo_id === null;
+        setIsSuperAdmin(isSuper);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
   }, [mode, id]);
+
+  // Rabatt-Daten laden wenn SuperAdmin im Edit-Modus
+  useEffect(() => {
+    if (isSuperAdmin && mode === 'edit' && id) {
+      loadRabattData();
+    }
+  }, [isSuperAdmin, mode, id]);
 
   // Im Edit-Modus: Hauptkategorie setzen wenn Artikelgruppen und Artikel geladen sind
   useEffect(() => {
@@ -492,14 +586,31 @@ const ArtikelFormular = ({ mode }) => {
     }
   };
 
+  // Rabatt State (nur für SuperAdmin/TDA)
+  const [rabattData, setRabattData] = useState({
+    hat_rabatt: false,
+    rabatt_typ: 'prozent',
+    rabatt_wert: '',
+    gilt_fuer_dojo: true,
+    gilt_fuer_einzelperson: true,
+    aktiv: true
+  });
+  const [rabattLoading, setRabattLoading] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
   // Tab Navigation
-  const tabs = [
+  const baseTabs = [
     { id: 'basis', label: 'Basis', icon: '📋' },
     { id: 'varianten', label: 'Varianten', icon: '🎨' },
     { id: 'preise', label: 'Preiskalkulation', icon: '💶' },
     { id: 'lager', label: 'Lager', icon: '📦' },
     { id: 'einstellungen', label: 'Einstellungen', icon: '⚙️' }
   ];
+
+  // Rabatt-Tab nur für SuperAdmin anzeigen
+  const tabs = isSuperAdmin
+    ? [...baseTabs, { id: 'rabatt', label: 'Mitglieder-Rabatt', icon: '🏷️' }]
+    : baseTabs;
 
   // Basis Input Style für gute Sichtbarkeit
   const basisInputStyle = {
@@ -2278,6 +2389,272 @@ const ArtikelFormular = ({ mode }) => {
     </div>
   );
 
+  // Rabatt-Tab (nur für SuperAdmin)
+  const renderTabRabatt = () => {
+    // Beispielberechnung für Vorschau
+    const beispielPreis = parseFloat(formData.verkaufspreis_euro) || 100;
+    const rabattWert = parseFloat(rabattData.rabatt_wert) || 0;
+    let rabattierterPreis = beispielPreis;
+    let ersparnis = 0;
+
+    if (rabattData.hat_rabatt && rabattWert > 0) {
+      if (rabattData.rabatt_typ === 'prozent') {
+        ersparnis = (beispielPreis * rabattWert) / 100;
+        rabattierterPreis = beispielPreis - ersparnis;
+      } else {
+        ersparnis = rabattWert;
+        rabattierterPreis = beispielPreis - rabattWert;
+      }
+    }
+
+    return (
+      <div className="tab-content-section">
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+          border: '2px solid rgba(34, 197, 94, 0.3)',
+          borderRadius: '12px',
+          padding: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          <h3 style={{
+            margin: '0 0 1rem 0',
+            color: '#22c55e',
+            fontSize: '1.2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            🏷️ Mitglieder-Rabatt für Verbandsmitglieder
+          </h3>
+          <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem' }}>
+            Hier kannst du einen speziellen Rabatt für aktive Verbandsmitglieder (bezahlt oder beitragsfrei) festlegen.
+            Dieser Rabatt wird im TDA-Shop angezeigt.
+          </p>
+        </div>
+
+        {rabattLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+            Lädt Rabatt-Daten...
+          </div>
+        ) : (
+          <div style={{ maxWidth: '600px' }}>
+            {/* Rabatt aktivieren */}
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '1rem',
+                background: rabattData.hat_rabatt ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                border: `2px solid ${rabattData.hat_rabatt ? 'rgba(34, 197, 94, 0.5)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))'}`,
+                borderRadius: '10px',
+                cursor: 'pointer',
+                marginBottom: '1.5rem',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={rabattData.hat_rabatt}
+                onChange={(e) => setRabattData(prev => ({ ...prev, hat_rabatt: e.target.checked }))}
+                style={{ width: '22px', height: '22px', accentColor: '#22c55e' }}
+              />
+              <span style={{ color: 'var(--text-primary, #ffffff)', fontWeight: 600, fontSize: '1.05rem' }}>
+                Mitglieder-Rabatt aktivieren
+              </span>
+            </label>
+
+            {rabattData.hat_rabatt && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {/* Rabatt-Typ */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--gold, #ffd700)' }}>
+                    Rabatt-Typ
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <label style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem 1rem',
+                      background: rabattData.rabatt_typ === 'prozent' ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                      border: `2px solid ${rabattData.rabatt_typ === 'prozent' ? '#22c55e' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))'}`,
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="radio"
+                        checked={rabattData.rabatt_typ === 'prozent'}
+                        onChange={() => setRabattData(prev => ({ ...prev, rabatt_typ: 'prozent' }))}
+                        style={{ accentColor: '#22c55e' }}
+                      />
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>Prozent (%)</span>
+                    </label>
+                    <label style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.75rem 1rem',
+                      background: rabattData.rabatt_typ === 'festbetrag' ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                      border: `2px solid ${rabattData.rabatt_typ === 'festbetrag' ? '#22c55e' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))'}`,
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="radio"
+                        checked={rabattData.rabatt_typ === 'festbetrag'}
+                        onChange={() => setRabattData(prev => ({ ...prev, rabatt_typ: 'festbetrag' }))}
+                        style={{ accentColor: '#22c55e' }}
+                      />
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>Festbetrag (€)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Rabatt-Wert */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--gold, #ffd700)' }}>
+                    Rabatt-Wert {rabattData.rabatt_typ === 'prozent' ? '(%)' : '(€)'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={rabattData.rabatt_typ === 'prozent' ? '100' : undefined}
+                    value={rabattData.rabatt_wert}
+                    onChange={(e) => setRabattData(prev => ({ ...prev, rabatt_wert: e.target.value }))}
+                    placeholder={rabattData.rabatt_typ === 'prozent' ? 'z.B. 10' : 'z.B. 5.00'}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))',
+                      border: '2px solid var(--border-secondary, rgba(255, 255, 255, 0.1))',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary, #ffffff)',
+                      fontSize: '1.1rem',
+                      width: '200px'
+                    }}
+                  />
+                </div>
+
+                {/* Gilt für */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--gold, #ffd700)' }}>
+                    Gilt für
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.75rem',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={rabattData.gilt_fuer_dojo}
+                        onChange={(e) => setRabattData(prev => ({ ...prev, gilt_fuer_dojo: e.target.checked }))}
+                        style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
+                      />
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>🥋 Dojo-Mitglieder</span>
+                    </label>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.75rem',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={rabattData.gilt_fuer_einzelperson}
+                        onChange={(e) => setRabattData(prev => ({ ...prev, gilt_fuer_einzelperson: e.target.checked }))}
+                        style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
+                      />
+                      <span style={{ color: 'var(--text-primary, #ffffff)' }}>👤 Einzelpersonen</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Vorschau */}
+                {parseFloat(rabattData.rabatt_wert) > 0 && (
+                  <div style={{
+                    marginTop: '1rem',
+                    padding: '1.5rem',
+                    background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%)',
+                    border: '2px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: '12px'
+                  }}>
+                    <h4 style={{ margin: '0 0 1rem 0', color: '#22c55e', fontSize: '1rem' }}>
+                      📊 Vorschau (bei Artikelpreis {beispielPreis.toFixed(2)} €)
+                    </h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span style={{
+                        textDecoration: 'line-through',
+                        color: 'rgba(255, 255, 255, 0.4)',
+                        fontSize: '1.1rem'
+                      }}>
+                        {beispielPreis.toFixed(2)} €
+                      </span>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>→</span>
+                      <span style={{
+                        color: '#22c55e',
+                        fontWeight: 700,
+                        fontSize: '1.3rem'
+                      }}>
+                        {rabattierterPreis.toFixed(2)} €
+                      </span>
+                      <span style={{
+                        background: 'rgba(34, 197, 94, 0.2)',
+                        color: '#22c55e',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                        fontWeight: 600
+                      }}>
+                        -{ersparnis.toFixed(2)} € gespart
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Speichern-Button */}
+                <div style={{ marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await saveRabattData();
+                        alert('Rabatt erfolgreich gespeichert!');
+                      } catch (error) {
+                        alert('Fehler beim Speichern: ' + error.message);
+                      }
+                    }}
+                    disabled={rabattLoading}
+                    style={{
+                      padding: '0.75rem 2rem',
+                      background: '#22c55e',
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: rabattLoading ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      opacity: rabattLoading ? 0.5 : 1
+                    }}
+                  >
+                    {rabattLoading ? 'Speichert...' : '💾 Rabatt speichern'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Varianten Handlers
   const toggleGroesse = (groesse) => {
     setFormData(prev => ({
@@ -2937,6 +3314,7 @@ const ArtikelFormular = ({ mode }) => {
       case 'preise': return renderTabPreise();
       case 'lager': return renderTabLager();
       case 'einstellungen': return renderTabEinstellungen();
+      case 'rabatt': return renderTabRabatt();
       default: return null;
     }
   };
