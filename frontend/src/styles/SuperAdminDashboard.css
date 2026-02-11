@@ -2930,3 +2930,307 @@
   background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%);
   color: #1a1a1a;
 }
+
+/* =============================================
+   COMPACT STATS BAR - Oben kompakt
+   ============================================= */
+
+.compact-stats-bar {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.compact-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  min-width: 120px;
+}
+
+.compact-stat svg {
+  color: var(--primary, #ffd700);
+  opacity: 0.8;
+}
+
+.compact-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+
+.compact-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #a0a0b0);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Light Theme */
+[data-theme="tda-vib"] .compact-stats-bar .compact-stat {
+  background: rgba(139, 90, 43, 0.08);
+  border-color: rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="tda-vib"] .compact-stat svg {
+  color: #8B5A2B;
+}
+
+[data-theme="tda-vib"] .compact-stat-value {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .compact-stat-label {
+  color: #6B4423;
+}
+
+/* =============================================
+   DASHBOARD WIDGETS ROW
+   ============================================= */
+
+.dashboard-widgets-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-widgets-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-widget {
+  background: var(--bg-secondary, rgba(30, 30, 45, 0.8));
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.widget-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary, #fff);
+}
+
+.widget-refresh-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #a0a0b0);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.widget-refresh-btn:hover {
+  color: var(--primary, #ffd700);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.widget-action-btn {
+  background: var(--primary, #ffd700);
+  border: none;
+  color: #000;
+  padding: 0.35rem 0.7rem;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.widget-action-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.widget-content {
+  flex: 1;
+  min-height: 180px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.widget-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary, #a0a0b0);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Notification Badge */
+.notification-badge {
+  background: #ef4444;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 0.25rem;
+}
+
+/* Activity List */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  background: var(--bg-tertiary, rgba(20, 20, 30, 0.5));
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.activity-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary, #fff);
+  margin-bottom: 0.15rem;
+}
+
+.activity-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #a0a0b0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-time {
+  font-size: 0.65rem;
+  color: var(--text-tertiary, #666);
+  margin-top: 0.15rem;
+}
+
+/* Notification List */
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.notification-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary, #fff);
+  margin-bottom: 0.15rem;
+}
+
+.notification-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #a0a0b0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notification-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.notification-actions button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-secondary, #a0a0b0);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.notification-actions button:hover {
+  background: rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+/* Light Theme Widgets */
+[data-theme="tda-vib"] .dashboard-widget {
+  background: rgba(250, 247, 240, 0.95);
+  border-color: rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="tda-vib"] .widget-header {
+  border-bottom-color: rgba(139, 90, 43, 0.15);
+}
+
+[data-theme="tda-vib"] .widget-header h3 {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .activity-item {
+  background: rgba(232, 224, 208, 0.5);
+  border-color: rgba(139, 90, 43, 0.1);
+}
+
+[data-theme="tda-vib"] .activity-title,
+[data-theme="tda-vib"] .notification-title {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .notification-item {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.15);
+}

@@ -697,74 +697,116 @@ const SuperAdminDashboard = () => {
           <>
             {/* TDA International Statistiken */}
             <section className="stats-section">
-        <h2 className="section-title">
-          <Building2 size={20} />
-          TDA International Statistiken
-        </h2>
-        <div className="stats-grid">
-          <div className="stat-card primary">
-            <div className="stat-icon">
-              <Users size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{tdaStats?.members?.active_members || 0}</div>
-              <div className="stat-label">Aktive Mitglieder</div>
-              <div className="stat-sublabel">
-                von {tdaStats?.members?.total_members || 0} gesamt
-              </div>
-            </div>
+        {/* Kompakte Statistik-Leiste */}
+        <div className="compact-stats-bar">
+          <div className="compact-stat">
+            <Building2 size={18} />
+            <span className="compact-stat-value">{globalStats?.dojos?.active_dojos || 0}</span>
+            <span className="compact-stat-label">Dojos</span>
           </div>
-
-        </div>
-      </section>
-
-      {/* Globale Statistiken (Alle Dojos) */}
-      <section className="stats-section">
-        <h2 className="section-title">
-          <Globe size={20} />
-          Verbandsstatistiken (Alle Dojos)
-        </h2>
-        <div className="stats-grid">
-          <div className="stat-card global-primary">
-            <div className="stat-icon">
-              <Building2 size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{globalStats?.dojos?.active_dojos || 0}</div>
-              <div className="stat-label">Aktive Dojos</div>
-              <div className="stat-sublabel">
-                von {globalStats?.dojos?.total_dojos || 0} gesamt
-              </div>
-            </div>
+          <div className="compact-stat">
+            <Users size={18} />
+            <span className="compact-stat-value">{globalStats?.members?.active_members || 0}</span>
+            <span className="compact-stat-label">Mitglieder</span>
           </div>
-
-          <div className="stat-card global-success">
-            <div className="stat-icon">
-              <Users size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{globalStats?.members?.active_members || 0}</div>
-              <div className="stat-label">Mitglieder (Verband)</div>
-              <div className="stat-sublabel">
-                in {globalStats?.members?.dojos_with_members || 0} Dojos
-              </div>
-            </div>
+          <div className="compact-stat">
+            <Award size={18} />
+            <span className="compact-stat-value">{tdaStats?.members?.active_members || 0}</span>
+            <span className="compact-stat-label">TDA Mitglieder</span>
           </div>
-
-          <div className="stat-card global-warning">
-            <div className="stat-icon">
-              <HardDrive size={32} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{globalStats?.storage?.used_gb || '0'} / {globalStats?.storage?.total_gb || '0'} GB</div>
-              <div className="stat-label">Server-Speicher</div>
-              <div className="stat-sublabel">
-                {globalStats?.storage?.percent_used || 0}% belegt
-              </div>
-            </div>
+          <div className="compact-stat">
+            <HardDrive size={18} />
+            <span className="compact-stat-value">{globalStats?.storage?.percent_used || 0}%</span>
+            <span className="compact-stat-label">Speicher</span>
           </div>
         </div>
       </section>
+
+      {/* Letzte Aktivitäten & Benachrichtigungen Widget - NACH OBEN VERSCHOBEN */}
+      <div className="dashboard-widgets-row">
+        {/* Letzte Aktivitäten */}
+        <section className="dashboard-widget">
+          <div className="widget-header">
+            <h3>
+              <Activity size={18} />
+              Letzte Aktivitäten
+            </h3>
+            <button onClick={loadActivities} className="widget-refresh-btn" title="Aktualisieren">
+              <RefreshCw size={14} />
+            </button>
+          </div>
+          <div className="widget-content">
+            {activitiesLoading ? (
+              <div className="widget-empty">Lade Aktivitäten...</div>
+            ) : activities.length === 0 ? (
+              <div className="widget-empty">Keine aktuellen Aktivitäten</div>
+            ) : (
+              <div className="activity-list">
+                {activities.slice(0, 6).map((activity, index) => (
+                  <div key={activity.id || index} className="activity-item">
+                    <span className="activity-icon">{activity.icon || '📋'}</span>
+                    <div className="activity-content">
+                      <div className="activity-title">{activity.titel}</div>
+                      <div className="activity-desc">{activity.beschreibung}</div>
+                      <div className="activity-time">
+                        {activity.erstellt_am ? new Date(activity.erstellt_am).toLocaleString('de-DE') : ''}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Neue Benachrichtigungen Widget */}
+        <section className="dashboard-widget">
+          <div className="widget-header">
+            <h3>
+              <Bell size={18} />
+              Benachrichtigungen
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+            </h3>
+            <button onClick={() => setActiveTab('pushnachrichten')} className="widget-action-btn">
+              Alle anzeigen
+            </button>
+          </div>
+          <div className="widget-content">
+            {notificationsLoading ? (
+              <div className="widget-empty">Lade Benachrichtigungen...</div>
+            ) : notifications.filter(n => !n.gelesen).length === 0 ? (
+              <div className="widget-empty">
+                <CheckCircle size={24} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                <br />Keine ungelesenen Nachrichten
+              </div>
+            ) : (
+              <div className="notification-list">
+                {notifications.filter(n => !n.gelesen).slice(0, 5).map((notification) => (
+                  <div key={notification.id} className="notification-item">
+                    <span className="notification-icon">
+                      {notification.typ === 'mitglied_registriert' ? '👤' :
+                       notification.typ === 'dojo_registriert' ? '🏠' :
+                       notification.typ === 'verbandsmitglied_registriert' ? '🏆' : '🔔'}
+                    </span>
+                    <div className="notification-content">
+                      <div className="notification-title">{notification.titel}</div>
+                      <div className="notification-desc">{notification.nachricht}</div>
+                    </div>
+                    <div className="notification-actions">
+                      <button onClick={() => markNotificationAsRead(notification.id)} title="Gelesen">
+                        <Eye size={14} />
+                      </button>
+                      <button onClick={() => archiveNotification(notification.id)} title="Archivieren">
+                        <Archive size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
 
       {/* Dojo-Verwaltung */}
       <section className="dojos-section">
@@ -1054,185 +1096,6 @@ const SuperAdminDashboard = () => {
         </section>
       )}
 
-      {/* Letzte Aktivitäten & Benachrichtigungen Widget */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
-        {/* Letzte Aktivitäten */}
-        <section style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          border: '1px solid var(--border-default)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem' }}>
-              <Activity size={20} />
-              Letzte Aktivitäten
-            </h2>
-            <button
-              onClick={loadActivities}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                padding: '0.25rem'
-              }}
-              title="Aktualisieren"
-            >
-              <RefreshCw size={16} />
-            </button>
-          </div>
-
-          {activitiesLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-              Lade Aktivitäten...
-            </div>
-          ) : activities.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-              Keine aktuellen Aktivitäten
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
-              {activities.slice(0, 10).map((activity, index) => (
-                <div key={activity.id || index} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.75rem',
-                  padding: '0.75rem',
-                  background: 'var(--bg-tertiary)',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-default)'
-                }}>
-                  <span style={{ fontSize: '1.5rem' }}>{activity.icon || '📋'}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                      {activity.titel}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      {activity.beschreibung}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
-                      {activity.erstellt_am ? new Date(activity.erstellt_am).toLocaleString('de-DE') : ''}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Neue Benachrichtigungen Widget */}
-        <section style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          border: '1px solid var(--border-default)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem' }}>
-              <Bell size={20} />
-              Neue Benachrichtigungen
-              {unreadCount > 0 && (
-                <span style={{
-                  background: '#ef4444',
-                  color: '#fff',
-                  borderRadius: '12px',
-                  padding: '0.15rem 0.5rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold'
-                }}>
-                  {unreadCount}
-                </span>
-              )}
-            </h2>
-            <button
-              onClick={() => setActiveTab('pushnachrichten')}
-              style={{
-                background: 'var(--primary)',
-                border: 'none',
-                color: '#000',
-                cursor: 'pointer',
-                padding: '0.4rem 0.8rem',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                fontWeight: '600'
-              }}
-            >
-              Alle anzeigen
-            </button>
-          </div>
-
-          {notificationsLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-              Lade Benachrichtigungen...
-            </div>
-          ) : notifications.filter(n => !n.gelesen).length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-              <CheckCircle size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} /><br />
-              Keine ungelesenen Benachrichtigungen
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
-              {notifications.filter(n => !n.gelesen).slice(0, 5).map((notification) => (
-                <div key={notification.id} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.75rem',
-                  padding: '0.75rem',
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(59, 130, 246, 0.3)'
-                }}>
-                  <span style={{ fontSize: '1.5rem' }}>
-                    {notification.typ === 'mitglied_registriert' ? '👤' :
-                     notification.typ === 'dojo_registriert' ? '🏠' :
-                     notification.typ === 'verbandsmitglied_registriert' ? '🏆' : '🔔'}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                      {notification.titel}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      {notification.nachricht}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
-                      {notification.erstellt_am ? new Date(notification.erstellt_am).toLocaleString('de-DE') : ''}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    <button
-                      onClick={() => markNotificationAsRead(notification.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        padding: '0.25rem'
-                      }}
-                      title="Als gelesen markieren"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      onClick={() => archiveNotification(notification.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        padding: '0.25rem'
-                      }}
-                      title="Archivieren"
-                    >
-                      <Archive size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
           </>
         )}
 
