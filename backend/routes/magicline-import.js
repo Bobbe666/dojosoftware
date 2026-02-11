@@ -211,6 +211,37 @@ async function importMember(memberFolder, baseDir) {
       const telefon = contactData?.telPrivateMobile || contactData?.telPrivate ||
                      contactData?.telBusinessMobile || contactData?.telBusiness || null;
 
+      // Prüfe ob Mitglied aktiv ist:
+      // 1. Expliziter Status aus customerData (falls vorhanden)
+      // 2. Prüfe ob ALLE Verträge gekündigt/beendet sind -> ehemalig
+      // 3. Prüfe ob Vertragsende in der Vergangenheit liegt
+      let istAktiv = 1; // Standard: aktiv
+
+      // Prüfe customerData auf active/status Feld
+      if (customerData.active === false || customerData.status === 'INACTIVE' || customerData.status === 'FORMER') {
+        istAktiv = 0;
+      }
+
+      // Prüfe alle Verträge - wenn ALLE gekündigt oder beendet sind -> ehemalig
+      if (contractsData && contractsData.length > 0) {
+        const alleVertraegeBeendet = contractsData.every(contract => {
+          // Vertrag ist beendet wenn:
+          // 1. cancelledAt existiert
+          // 2. endDate in der Vergangenheit liegt
+          if (contract.cancelledAt) return true;
+          if (contract.endDate) {
+            const endDate = new Date(convertDate(contract.endDate));
+            if (endDate < new Date()) return true;
+          }
+          return false;
+        });
+
+        if (alleVertraegeBeendet) {
+          istAktiv = 0;
+          importLog.warnings.push('Alle Verträge beendet - Mitglied als ehemalig importiert');
+        }
+      }
+
       const memberInsertSQL = `
         INSERT INTO mitglieder (
           vorname, nachname, geburtsdatum, geschlecht,
@@ -219,7 +250,7 @@ async function importMember(memberFolder, baseDir) {
           iban, bic, bankname, kontoinhaber,
           magicline_customer_number, magicline_uuid,
           aktiv, eintrittsdatum
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURDATE())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURDATE())
       `;
 
       const memberValues = [
@@ -241,6 +272,7 @@ async function importMember(memberFolder, baseDir) {
         bankData?.accountHolder || null,
         contractsData[0]?.customerNumber || null,
         customerData.uuid,
+        istAktiv, // 1 = aktiv, 0 = ehemalig
       ];
 
       const memberResult = await queryPromise(memberInsertSQL, memberValues);
@@ -249,7 +281,8 @@ async function importMember(memberFolder, baseDir) {
 
       logger.info('Mitglied importiert', {
         mitgliedId,
-        name: `${customerData.firstName} ${customerData.lastName}`
+        name: `${customerData.firstName} ${customerData.lastName}`,
+        aktiv: istAktiv === 1 ? 'ja' : 'nein (ehemalig)'
       });
     }
 

@@ -14,6 +14,7 @@ import {
   ChevronDown, ChevronRight, Zap, Settings, Loader, ArrowLeft, Building2, Globe
 } from 'lucide-react';
 import SuperAdminFinanzen from './SuperAdminFinanzen';
+import AutoLastschriftTab from './AutoLastschriftTab';
 
 const FinanzenTab = ({ token }) => {
   const [activeSubTab, setActiveSubTab] = useState('uebersicht');
@@ -21,6 +22,7 @@ const FinanzenTab = ({ token }) => {
   const subTabs = [
     { id: 'uebersicht', label: 'Übersicht', icon: BarChart3 },
     { id: 'lastschrift', label: 'Lastschrift', icon: CreditCard },
+    { id: 'automatisch', label: 'Automatische Einzüge', icon: Calendar },
     { id: 'fehlende-mandate', label: 'Fehlende Mandate', icon: AlertCircle }
   ];
 
@@ -68,6 +70,10 @@ const FinanzenTab = ({ token }) => {
 
       {activeSubTab === 'lastschrift' && (
         <LastschriftTab token={token} />
+      )}
+
+      {activeSubTab === 'automatisch' && (
+        <AutoLastschriftTab embedded={true} dojoIdOverride={2} />
       )}
 
       {activeSubTab === 'fehlende-mandate' && (

@@ -715,3 +715,90 @@
     padding: 0.75rem;
   }
 }
+
+/* ============================================ */
+/* LASTSCHRIFT TAB STYLES                       */
+/* ============================================ */
+
+.verband-lastschrift {
+  padding: 0;
+}
+
+.sub-tabs-horizontal {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.sub-tabs-horizontal .sub-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sub-tabs-horizontal .sub-tab-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.sub-tabs-horizontal .sub-tab-btn.active {
+  background: linear-gradient(135deg, #c9a227 0%, #b8941f 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+}
+
+.sub-tabs-horizontal .sub-tab-btn svg {
+  opacity: 0.7;
+}
+
+.sub-tabs-horizontal .sub-tab-btn.active svg {
+  opacity: 1;
+}
+
+.verband-lastschrift .sub-tab-content {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  min-height: 400px;
+}
+
+/* Auto Lastschrift Tab innerhalb Verband */
+.verband-lastschrift .auto-lastschrift-container {
+  padding: 0;
+}
+
+.verband-lastschrift .auto-lastschrift-container.embedded {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Mobile Responsive für Lastschrift Sub-Tabs */
+@media (max-width: 768px) {
+  .sub-tabs-horizontal {
+    flex-direction: column;
+  }
+
+  .sub-tabs-horizontal .sub-tab-btn {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .verband-lastschrift .sub-tab-content {
+    padding: 1rem;
+  }
+}

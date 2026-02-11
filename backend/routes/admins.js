@@ -82,7 +82,7 @@ const getRollenBerechtigungen = (rolle) => {
 // 📋 GET /api/admins - Alle Admins abrufen
 // ===================================================================
 router.get('/', (req, res) => {
-  logger.debug('🔵 GET /api/admins aufgerufen');
+  console.log('🔵 GET /api/admins aufgerufen');
 
   const sql = `
     SELECT
@@ -106,7 +106,7 @@ router.get('/', (req, res) => {
 
   db.query(sql, (err, results) => {
     if (err) {
-      logger.error('Fehler beim Laden der Admins:', err);
+      console.error('❌ Fehler beim Laden der Admins:', err);
       return res.status(500).json({ error: 'Serverfehler beim Laden der Admins' });
     }
 
@@ -120,12 +120,12 @@ router.get('/', (req, res) => {
             : admin.berechtigungen
         };
       } catch (e) {
-        logger.warn('Fehler beim Parsen der Berechtigungen für Admin:', { details: admin.id });
+        console.warn('Fehler beim Parsen der Berechtigungen für Admin:', admin.id);
         return admin;
       }
     });
 
-    logger.info('${admins.length} Admins geladen');
+    console.log(`✅ ${admins.length} Admins geladen`);
     res.json(admins);
   });
 });
@@ -135,7 +135,7 @@ router.get('/', (req, res) => {
 // ===================================================================
 router.get('/:id', (req, res) => {
   const { id } = req.params;
-  logger.debug('🔵 GET /api/admins/${id} aufgerufen');
+  console.log(`🔵 GET /api/admins/${id} aufgerufen`);
 
   const sql = `
     SELECT
@@ -159,7 +159,7 @@ router.get('/:id', (req, res) => {
 
   db.query(sql, [id], (err, results) => {
     if (err) {
-      logger.error('Fehler beim Laden des Admins:', err);
+      console.error('❌ Fehler beim Laden des Admins:', err);
       return res.status(500).json({ error: 'Serverfehler beim Laden des Admins' });
     }
 
@@ -173,10 +173,10 @@ router.get('/:id', (req, res) => {
         ? JSON.parse(admin.berechtigungen)
         : admin.berechtigungen;
     } catch (e) {
-      logger.warn('Fehler beim Parsen der Berechtigungen');
+      console.warn('Fehler beim Parsen der Berechtigungen');
     }
 
-    logger.info('Admin ${admin.username} geladen');
+    console.log(`✅ Admin ${admin.username} geladen`);
     res.json(admin);
   });
 });
@@ -185,7 +185,7 @@ router.get('/:id', (req, res) => {
 // ✏️ POST /api/admins - Neuen Admin erstellen
 // ===================================================================
 router.post('/', async (req, res) => {
-  logger.debug('🟢 POST /api/admins aufgerufen');
+  console.log('🟢 POST /api/admins aufgerufen');
 
   const {
     username,
@@ -221,7 +221,7 @@ router.post('/', async (req, res) => {
 
     db.query(checkSql, [username, email], async (checkErr, checkResults) => {
       if (checkErr) {
-        logger.error('Fehler bei der Duplikat-Prüfung:', checkErr);
+        console.error('❌ Fehler bei der Duplikat-Prüfung:', checkErr);
         return res.status(500).json({ error: 'Serverfehler' });
       }
 
@@ -266,11 +266,11 @@ router.post('/', async (req, res) => {
 
       db.query(sql, values, (err, result) => {
         if (err) {
-          logger.error('Fehler beim Erstellen des Admins:', err);
+          console.error('❌ Fehler beim Erstellen des Admins:', err);
           return res.status(500).json({ error: 'Serverfehler beim Erstellen' });
         }
 
-        logger.info('Admin ${username} erfolgreich erstellt (ID: ${result.insertId})');
+        console.log(`✅ Admin ${username} erfolgreich erstellt (ID: ${result.insertId})`);
 
         // Neuen Admin zurückgeben (ohne Passwort)
         const selectSql = `
@@ -294,9 +294,7 @@ router.post('/', async (req, res) => {
             newAdmin.berechtigungen = typeof newAdmin.berechtigungen === 'string'
               ? JSON.parse(newAdmin.berechtigungen)
               : newAdmin.berechtigungen;
-          } catch (e) {
-            // Ungültiges JSON in berechtigungen - behalte String
-          }
+          } catch (e) {}
 
           res.status(201).json(newAdmin);
         });
@@ -304,7 +302,7 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Fehler beim Passwort-Hashing:', error);
+    console.error('❌ Fehler beim Passwort-Hashing:', error);
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -314,7 +312,7 @@ router.post('/', async (req, res) => {
 // ===================================================================
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  logger.debug('🟡 PUT /api/admins/${id} aufgerufen');
+  console.log(`🟡 PUT /api/admins/${id} aufgerufen`);
 
   const {
     username,
@@ -400,11 +398,11 @@ router.put('/:id', async (req, res) => {
 
       db.query(sql, values, (err, result) => {
         if (err) {
-          logger.error('Fehler beim Aktualisieren:', err);
+          console.error('❌ Fehler beim Aktualisieren:', err);
           return res.status(500).json({ error: 'Serverfehler beim Aktualisieren' });
         }
 
-        logger.info('Admin ${id} erfolgreich aktualisiert');
+        console.log(`✅ Admin ${id} erfolgreich aktualisiert`);
 
         // Aktualisierten Admin zurückgeben
         const selectSql = `
@@ -426,9 +424,7 @@ router.put('/:id', async (req, res) => {
             updatedAdmin.berechtigungen = typeof updatedAdmin.berechtigungen === 'string'
               ? JSON.parse(updatedAdmin.berechtigungen)
               : updatedAdmin.berechtigungen;
-          } catch (e) {
-            // Ungültiges JSON in berechtigungen - behalte String
-          }
+          } catch (e) {}
 
           res.json(updatedAdmin);
         });
@@ -436,7 +432,7 @@ router.put('/:id', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Fehler:', error);
+    console.error('❌ Fehler:', error);
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -446,7 +442,7 @@ router.put('/:id', async (req, res) => {
 // ===================================================================
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
-  logger.debug('🔴 DELETE /api/admins/${id} aufgerufen');
+  console.log(`🔴 DELETE /api/admins/${id} aufgerufen`);
 
   // Prüfen ob Admin existiert
   const checkSql = `SELECT username, rolle FROM admin_users WHERE id = ?`;
@@ -486,11 +482,11 @@ router.delete('/:id', (req, res) => {
 
       db.query(sql, [id], (err, result) => {
         if (err) {
-          logger.error('Fehler beim Löschen:', err);
+          console.error('❌ Fehler beim Löschen:', err);
           return res.status(500).json({ error: 'Serverfehler beim Löschen' });
         }
 
-        logger.info('Admin ${admin.username} erfolgreich gelöscht');
+        console.log(`✅ Admin ${admin.username} erfolgreich gelöscht`);
         res.json({
           success: true,
           message: `Admin ${admin.username} wurde gelöscht`
@@ -507,7 +503,7 @@ router.post('/:id/password', async (req, res) => {
   const { id } = req.params;
   const { newPassword, currentPassword } = req.body;
 
-  logger.debug('🟡 POST /api/admins/${id}/password aufgerufen');
+  console.log(`🟡 POST /api/admins/${id}/password aufgerufen`);
 
   if (!newPassword) {
     return res.status(400).json({ error: 'Neues Passwort erforderlich' });
@@ -541,17 +537,17 @@ router.post('/:id/password', async (req, res) => {
 
       db.query(updateSql, [hashedPassword, id], (updateErr) => {
         if (updateErr) {
-          logger.error('Fehler beim Aktualisieren des Passworts:', updateErr);
+          console.error('❌ Fehler beim Aktualisieren des Passworts:', updateErr);
           return res.status(500).json({ error: 'Serverfehler' });
         }
 
-        logger.info('Passwort für Admin ${id} erfolgreich geändert');
+        console.log(`✅ Passwort für Admin ${id} erfolgreich geändert`);
         res.json({ success: true, message: 'Passwort erfolgreich geändert' });
       });
     });
 
   } catch (error) {
-    logger.error('Fehler:', error);
+    console.error('❌ Fehler:', error);
     res.status(500).json({ error: 'Serverfehler' });
   }
 });
@@ -560,7 +556,7 @@ router.post('/:id/password', async (req, res) => {
 // 📊 GET /api/admins/activity-log - Activity Log abrufen
 // ===================================================================
 router.get('/activity/log', (req, res) => {
-  logger.debug('🔵 GET /api/admins/activity/log aufgerufen');
+  console.log('🔵 GET /api/admins/activity/log aufgerufen');
 
   const limit = parseInt(req.query.limit) || 100;
   const offset = parseInt(req.query.offset) || 0;
@@ -579,7 +575,7 @@ router.get('/activity/log', (req, res) => {
 
   db.query(sql, [limit, offset], (err, results) => {
     if (err) {
-      logger.error('Fehler beim Laden des Activity Logs:', err);
+      console.error('❌ Fehler beim Laden des Activity Logs:', err);
       return res.status(500).json({ error: 'Serverfehler' });
     }
 

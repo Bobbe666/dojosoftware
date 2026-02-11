@@ -485,6 +485,15 @@ router.post('/', (req, res) => {
     hat_preiskategorien, groessen_kids, groessen_erwachsene
   } = req.body;
 
+  // Fix: Leere Strings zu null konvertieren für Felder mit UNIQUE constraint
+  const artikelgruppe_id_clean = (artikelgruppe_id === "" || artikelgruppe_id === null || artikelgruppe_id === undefined) ? null : artikelgruppe_id;
+  const ean_code_clean = (ean_code === "" || ean_code === null || ean_code === undefined) ? null : ean_code;
+
+  // Auto-Generierung der Artikelnummer wenn leer
+  const artikel_nummer_clean = (artikel_nummer === "" || artikel_nummer === null || artikel_nummer === undefined)
+    ? `ART-${dojoId}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+    : artikel_nummer;
+
   // DEBUG: Log Handelskalkulation fields beim Erstellen
   logger.debug('POST /artikel - Handelskalkulation:', {
     listeneinkaufspreis_euro, bezugskosten_euro,
@@ -551,7 +560,7 @@ router.post('/', (req, res) => {
   `;
 
   const params = [
-    kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+    kategorie_id, artikelgruppe_id_clean, name, beschreibung, ean_code_clean, artikel_nummer_clean,
     einkaufspreis_cent, zusatzkosten_cent, marge_p, verkaufspreis_cent, mwst_prozent || 19.00,
     listeneinkaufspreis_cent, lieferrabatt_p, lieferskonto_p, bezugskosten_cent,
     gemeinkosten_p, gewinnzuschlag_p,
@@ -637,6 +646,11 @@ router.put('/:id', (req, res) => {
     hat_preiskategorien, groessen_kids, groessen_erwachsene
   } = req.body;
 
+  // Fix: Leere Strings zu null konvertieren für Felder mit UNIQUE constraint
+  const artikelgruppe_id_clean = (artikelgruppe_id === "" || artikelgruppe_id === null || artikelgruppe_id === undefined) ? null : artikelgruppe_id;
+  const artikel_nummer_clean = (artikel_nummer === "" || artikel_nummer === null || artikel_nummer === undefined) ? null : artikel_nummer;
+  const ean_code_clean = (ean_code === "" || ean_code === null || ean_code === undefined) ? null : ean_code;
+
   // DEBUG: Log Handelskalkulation fields
   logger.debug('PUT /artikel/:id - Handelskalkulation:', {
     listeneinkaufspreis_euro, bezugskosten_euro,
@@ -668,7 +682,7 @@ router.put('/:id', (req, res) => {
 
     // Dynamische Update-Felder
     const fields = {
-      kategorie_id, artikelgruppe_id, name, beschreibung, ean_code, artikel_nummer,
+      kategorie_id, artikelgruppe_id: artikelgruppe_id_clean, name, beschreibung, ean_code: ean_code_clean, artikel_nummer: artikel_nummer_clean,
       mwst_prozent, marge_prozent, mindestbestand, lager_tracking, farbe_hex, aktiv, sichtbar_kasse,
       // Handelskalkulation Prozentsätze
       lieferrabatt_prozent, lieferskonto_prozent, gemeinkosten_prozent, gewinnzuschlag_prozent,

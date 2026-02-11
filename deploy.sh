@@ -1,193 +1,270 @@
 #!/bin/bash
-# =====================================================
-# DojoSoftware - Automatisches Deployment-Script
-# =====================================================
-# Committed lokale Änderungen, pusht zu Git und deployed auf Server
+# ============================================================
+# SICHERES DEPLOYMENT SCRIPT - dojosoftware
+# ============================================================
+# WICHTIG: Dieses Script deployed NUR das Frontend!
+# Backend, .env und uploads werden NIEMALS angefasst!
 #
 # Verwendung:
-#   ./deploy.sh                    # Mit Commit-Message-Prompt
-#   ./deploy.sh "Meine Message"    # Mit eigener Message
-#   ./deploy.sh --skip-commit      # Nur Deploy (kein Commit)
+#   ./deploy.sh              # Normales Deployment
+#   ./deploy.sh --build      # Mit vorherigem Build
+#   ./deploy.sh --backend    # Auch Backend deployen (vorsichtig!)
+# ============================================================
 
-set -e  # Exit bei Fehler
+set -e  # Bei Fehler abbrechen
 
-# Farben für Output
+# Farben
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Server-Konfiguration
-SERVER_USER="root"
-SERVER_HOST="dojo.tda-intl.org"
-SERVER_PATH="/var/www/dojosoftware"
-PM2_APP_NAME="dojosoftware-backend"
+# Konfiguration
+SERVER="dojo.tda-intl.org"
+REMOTE_PATH="/var/www/dojosoftware"
+LOCAL_FRONTEND_DIST="./frontend/dist"
+LOCAL_BACKEND="./backend"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   DojoSoftware - Automatisches Deployment     ║${NC}"
-echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
+# Wechsle ins Script-Verzeichnis
+cd "$SCRIPT_DIR"
+
+echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║       DOJOSOFTWARE - SICHERES DEPLOYMENT                  ║${NC}"
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# =====================================================
-# 1. LOKALE ÄNDERUNGEN COMMITEN & PUSHEN
-# =====================================================
+# Parameter prüfen
+DO_BUILD=false
+DO_BACKEND=false
 
-if [ "$1" != "--skip-commit" ]; then
-    echo -e "${YELLOW}📋 Schritt 1: Lokale Änderungen prüfen...${NC}"
+for arg in "$@"; do
+    case $arg in
+        --build)
+            DO_BUILD=true
+            ;;
+        --backend)
+            DO_BACKEND=true
+            ;;
+    esac
+done
 
-    # Prüfe ob es Änderungen gibt
-    if [[ -n $(git status -s) ]]; then
-        echo -e "${GREEN}✓ Änderungen gefunden${NC}"
-        git status --short
-        echo ""
+# ============================================================
+# SCHRITT 1: Prüfungen
+# ============================================================
+echo -e "${CYAN}[1/6] Prüfe Voraussetzungen...${NC}"
 
-        # Commit-Message
-        if [ -z "$1" ]; then
-            echo -e "${YELLOW}💬 Commit-Message eingeben:${NC}"
-            read -p "> " COMMIT_MSG
-        else
-            COMMIT_MSG="$1"
-        fi
+# Prüfe SSH-Verbindung
+echo -e "   Teste SSH-Verbindung..."
+if ! ssh -o ConnectTimeout=5 "$SERVER" "echo 'OK'" > /dev/null 2>&1; then
+    echo -e "${RED}   ✗ FEHLER: Keine SSH-Verbindung zu $SERVER!${NC}"
+    exit 1
+fi
+echo -e "${GREEN}   ✓ SSH-Verbindung OK${NC}"
 
-        # Alle Änderungen stagen
-        echo -e "${YELLOW}📦 Stage alle Änderungen...${NC}"
-        git add -A
+# ============================================================
+# SCHRITT 2: Build (optional)
+# ============================================================
+if [ "$DO_BUILD" = true ]; then
+    echo ""
+    echo -e "${CYAN}[2/6] Erstelle Frontend-Build...${NC}"
+    cd frontend
+    npm run build
+    cd ..
+    echo -e "${GREEN}   ✓ Build erfolgreich${NC}"
+else
+    echo ""
+    echo -e "${YELLOW}[2/6] Build übersprungen (nutze --build für neuen Build)${NC}"
+fi
 
-        # Commit erstellen
-        echo -e "${YELLOW}💾 Erstelle Commit...${NC}"
-        git commit -m "$COMMIT_MSG
+# Prüfe ob dist existiert
+if [ ! -d "$LOCAL_FRONTEND_DIST" ]; then
+    echo -e "${RED}   ✗ FEHLER: $LOCAL_FRONTEND_DIST existiert nicht!${NC}"
+    echo -e "${YELLOW}   Führe './deploy.sh --build' aus.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}   ✓ Frontend dist vorhanden${NC}"
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+# ============================================================
+# SCHRITT 3: Remote-Backup erstellen
+# ============================================================
+echo ""
+echo -e "${CYAN}[3/6] Erstelle Remote-Backup kritischer Dateien...${NC}"
 
-        echo -e "${GREEN}✓ Commit erstellt${NC}"
+BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+ssh "$SERVER" "
+    mkdir -p /root/backups/dojosoftware
+
+    # Backup .env (WICHTIG!)
+    if [ -f $REMOTE_PATH/backend/.env ]; then
+        cp $REMOTE_PATH/backend/.env /root/backups/dojosoftware/.env.backup.$BACKUP_DATE
+        echo '   ✓ .env gesichert nach /root/backups/dojosoftware/.env.backup.$BACKUP_DATE'
     else
-        echo -e "${GREEN}✓ Keine lokalen Änderungen${NC}"
+        echo '   ⚠ WARNUNG: Keine .env gefunden!'
     fi
 
-    # Push to remote
+    # Prüfe kritische Ordner
+    if [ ! -d $REMOTE_PATH/backend ]; then
+        echo '   ✗ KRITISCH: Backend-Ordner fehlt auf Server!'
+        exit 1
+    fi
+    echo '   ✓ Backend-Ordner vorhanden'
+
+    if [ ! -d $REMOTE_PATH/uploads ]; then
+        echo '   ⚠ uploads-Ordner fehlt, wird erstellt...'
+        mkdir -p $REMOTE_PATH/uploads
+    fi
+    echo '   ✓ uploads-Ordner vorhanden'
+"
+
+# ============================================================
+# SCHRITT 4: Frontend deployen
+# ============================================================
+echo ""
+echo -e "${CYAN}[4/6] Deploye Frontend...${NC}"
+echo -e "   Quelle: $LOCAL_FRONTEND_DIST"
+echo -e "   Ziel:   $SERVER:$REMOTE_PATH"
+echo ""
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  WICHTIG: KEIN --delete FLAG!                             ║
+# ║  Explizite Excludes für maximale Sicherheit               ║
+# ╚═══════════════════════════════════════════════════════════╝
+rsync -avz --progress \
+    --exclude 'backend' \
+    --exclude 'backend/**' \
+    --exclude '.env' \
+    --exclude '.env.*' \
+    --exclude 'uploads' \
+    --exclude 'uploads/**' \
+    --exclude 'node_modules' \
+    --exclude 'node_modules/**' \
+    --exclude '.git' \
+    --exclude '.git/**' \
+    --exclude 'logs' \
+    --exclude 'logs/**' \
+    "$LOCAL_FRONTEND_DIST/" "$SERVER:$REMOTE_PATH/"
+
+echo ""
+echo -e "${GREEN}   ✓ Frontend deployed${NC}"
+
+# ============================================================
+# SCHRITT 5: Backend deployen (optional, mit Bestätigung)
+# ============================================================
+if [ "$DO_BACKEND" = true ]; then
     echo ""
-    echo -e "${YELLOW}🚀 Schritt 2: Push zu GitHub...${NC}"
-    git push origin main
-    echo -e "${GREEN}✓ Erfolgreich gepusht${NC}"
+    echo -e "${YELLOW}[5/6] Backend-Deployment angefordert...${NC}"
+    echo -e "${RED}   ⚠ WARNUNG: Dies überschreibt Backend-Dateien!${NC}"
+    echo -e "${RED}   ⚠ Die .env wird NICHT überschrieben.${NC}"
+    read -p "   Wirklich fortfahren? (j/n) " -n 1 -r
+    echo
+
+    if [[ $REPLY =~ ^[Jj]$ ]]; then
+        echo -e "   Deploye Backend (ohne .env, node_modules, logs)..."
+
+        rsync -avz --progress \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude 'node_modules' \
+            --exclude 'node_modules/**' \
+            --exclude 'logs' \
+            --exclude 'logs/**' \
+            --exclude 'uploads' \
+            --exclude 'uploads/**' \
+            "$LOCAL_BACKEND/" "$SERVER:$REMOTE_PATH/backend/"
+
+        echo ""
+        echo -e "   Installiere Backend Dependencies..."
+        ssh "$SERVER" "cd $REMOTE_PATH/backend && npm install --production"
+
+        echo -e "${GREEN}   ✓ Backend deployed${NC}"
+    else
+        echo -e "${YELLOW}   Backend-Deployment abgebrochen${NC}"
+    fi
 else
-    echo -e "${YELLOW}⏭️  Überspringe Commit (--skip-commit)${NC}"
+    echo ""
+    echo -e "${YELLOW}[5/6] Backend-Deployment übersprungen (nutze --backend falls nötig)${NC}"
 fi
 
-# =====================================================
-# 2. AUF SERVER DEPLOYEN
-# =====================================================
-
+# ============================================================
+# SCHRITT 6: Verifizierung und Neustart
+# ============================================================
 echo ""
-echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║        Deployment auf Production-Server        ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
-echo ""
+echo -e "${CYAN}[6/6] Verifiziere und starte Dienste neu...${NC}"
 
-echo -e "${YELLOW}🔗 Verbinde mit Server: ${SERVER_HOST}${NC}"
+ssh "$SERVER" "
+    ERRORS=0
 
-# SSH Deployment-Befehle
-ssh ${SERVER_USER}@${SERVER_HOST} << 'ENDSSH'
-set -e
+    # Prüfe kritische Dateien/Ordner
+    echo '   Prüfe Dateien...'
 
-# Farben für Server-Output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+    if [ ! -d $REMOTE_PATH/backend ]; then
+        echo '   ✗ FEHLER: Backend-Ordner fehlt!'
+        ERRORS=1
+    else
+        echo '   ✓ Backend-Ordner OK'
+    fi
 
-cd /var/www/dojosoftware
+    if [ ! -f $REMOTE_PATH/backend/.env ]; then
+        echo '   ✗ FEHLER: .env fehlt!'
+        ERRORS=1
+    else
+        echo '   ✓ .env OK'
+    fi
 
-echo -e "${YELLOW}📥 Schritt 3: Git Pull auf Server...${NC}"
-git pull origin main
-echo -e "${GREEN}✓ Code aktualisiert${NC}"
+    if [ ! -f $REMOTE_PATH/index.html ]; then
+        echo '   ✗ FEHLER: index.html fehlt!'
+        ERRORS=1
+    else
+        echo '   ✓ index.html OK'
+    fi
 
-echo ""
-echo -e "${YELLOW}📦 Schritt 4: Backend Dependencies...${NC}"
-cd backend
-if npm install --production; then
-    echo -e "${GREEN}✓ Backend Dependencies installiert${NC}"
-else
-    echo -e "${RED}✗ Backend Dependencies Fehler${NC}"
-fi
+    if [ \$ERRORS -eq 1 ]; then
+        echo ''
+        echo '   ✗ KRITISCHE FEHLER GEFUNDEN!'
+        echo '   Backup wiederherstellen: cp /root/backups/dojosoftware/.env.backup.* $REMOTE_PATH/backend/.env'
+        exit 1
+    fi
 
-echo ""
-echo -e "${YELLOW}📦 Schritt 5: Frontend Dependencies...${NC}"
-cd ../frontend
-if npm install; then
-    echo -e "${GREEN}✓ Frontend Dependencies installiert${NC}"
-else
-    echo -e "${RED}✗ Frontend Dependencies Fehler${NC}"
-fi
+    # Backend neustarten
+    echo ''
+    echo '   Starte Backend neu...'
+    pm2 restart dojosoftware-backend 2>/dev/null || pm2 start $REMOTE_PATH/backend/server.js --name dojosoftware-backend
+    pm2 save
 
-echo ""
-echo -e "${YELLOW}🏗️  Schritt 6: Frontend Build...${NC}"
-if NODE_ENV=production npm run build; then
-    echo -e "${GREEN}✓ Frontend Build erfolgreich${NC}"
-else
-    echo -e "${RED}✗ Frontend Build fehlgeschlagen${NC}"
+    # Kurz warten und Status prüfen
+    sleep 2
+
+    if pm2 list | grep -q 'dojosoftware-backend.*online'; then
+        echo '   ✓ Backend läuft'
+    else
+        echo '   ⚠ Backend Status prüfen mit: pm2 logs dojosoftware-backend'
+    fi
+
+    # Nginx reload
+    echo ''
+    echo '   Lade Nginx neu...'
+    systemctl reload nginx 2>/dev/null && echo '   ✓ Nginx neu geladen' || echo '   ⚠ Nginx Reload fehlgeschlagen'
+"
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}   ✗ FEHLER bei der Verifizierung!${NC}"
+    echo -e "${YELLOW}   Prüfe Server manuell oder stelle Backup wieder her.${NC}"
     exit 1
 fi
 
+# ============================================================
+# FERTIG
+# ============================================================
 echo ""
-echo -e "${YELLOW}🔄 Schritt 7: Backend neu starten...${NC}"
-cd ../backend
-
-# Prüfe ob PM2 läuft
-if command -v pm2 &> /dev/null; then
-    if pm2 list | grep -q dojosoftware-backend; then
-        echo "  → PM2 Restart..."
-        pm2 restart dojosoftware-backend
-    else
-        echo "  → PM2 Start..."
-        pm2 start server.js --name dojosoftware-backend
-    fi
-    pm2 save
-    echo -e "${GREEN}✓ Backend neu gestartet (PM2)${NC}"
-else
-    echo -e "${YELLOW}⚠️  PM2 nicht gefunden, starte mit node...${NC}"
-    pkill -f "node server.js" || true
-    nohup node server.js > /var/log/dojosoftware-backend.log 2>&1 &
-    echo -e "${GREEN}✓ Backend gestartet${NC}"
-fi
-
+echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║          ✓ DEPLOYMENT ERFOLGREICH!                        ║${NC}"
+echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${YELLOW}🔄 Schritt 8: Nginx Reload...${NC}"
-if command -v nginx &> /dev/null; then
-    sudo nginx -t && sudo systemctl reload nginx
-    echo -e "${GREEN}✓ Nginx neu geladen${NC}"
-else
-    echo -e "${YELLOW}⚠️  Nginx nicht gefunden${NC}"
-fi
-
+echo -e "   ${BLUE}Frontend:${NC}  https://dojo.tda-intl.org"
+echo -e "   ${BLUE}Backup:${NC}    /root/backups/dojosoftware/.env.backup.$BACKUP_DATE"
 echo ""
-echo -e "${GREEN}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║          ✓ DEPLOYMENT ERFOLGREICH!            ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "${BLUE}🌐 Produktiv-URL: https://dojo.tda-intl.org${NC}"
-echo ""
-
-# Status anzeigen
-echo -e "${YELLOW}📊 Server-Status:${NC}"
-if command -v pm2 &> /dev/null; then
-    pm2 list
-fi
-
-ENDSSH
-
-# =====================================================
-# 3. DEPLOYMENT ERFOLGREICH
-# =====================================================
-
-echo ""
-echo -e "${GREEN}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║     🎉 DEPLOYMENT ABGESCHLOSSEN! 🎉            ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "${BLUE}📍 Lokal:     http://localhost:5173${NC}"
-echo -e "${BLUE}🌐 Produktiv: https://dojo.tda-intl.org${NC}"
-echo ""
-echo -e "${YELLOW}💡 Tipp: Mache einen Hard-Refresh im Browser (Cmd+Shift+R)${NC}"
+echo -e "   ${YELLOW}Tipp:${NC} Browser-Cache leeren mit Cmd+Shift+R"
 echo ""

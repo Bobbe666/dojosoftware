@@ -16,12 +16,16 @@ import {
   Building2, Users, Trophy, Calendar, Euro, TrendingUp,
   Globe, Award, ChevronRight, Activity, BarChart3,
   CreditCard, FileText, PieChart, RefreshCw, AlertTriangle,
-  CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket
+  CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket,
+  Banknote
 } from 'lucide-react';
 import VerbandsMitglieder from './VerbandsMitglieder';
 import ArtikelVerwaltung from './ArtikelVerwaltung';
 import ZieleEntwicklung from './ZieleEntwicklung';
 import SupportTickets from './SupportTickets';
+import AutoLastschriftTab from './AutoLastschriftTab';
+import Lastschriftlauf from './Lastschriftlauf';
+import Zahllaeufe from './Zahllaeufe';
 import '../styles/VerbandDashboard.css';
 
 const VerbandDashboard = () => {
@@ -119,7 +123,8 @@ const VerbandDashboard = () => {
     { id: 'support', label: 'Support', icon: Ticket },
     { id: 'turniere', label: 'Turniere', icon: Trophy },
     { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'finanzen', label: 'Finanzen', icon: Euro }
+    { id: 'finanzen', label: 'Finanzen', icon: Euro },
+    { id: 'lastschrift', label: 'Lastschrift', icon: Banknote }
   ];
 
   // Status-Badge Component
@@ -464,6 +469,52 @@ const VerbandDashboard = () => {
     </div>
   );
 
+  // State für Lastschrift Sub-Tab
+  const [lastschriftSubTab, setLastschriftSubTab] = useState('automatisch');
+
+  // Lastschrift Tab Content
+  const LastschriftContent = () => (
+    <div className="verband-lastschrift">
+      {/* Sub-Tab Navigation */}
+      <div className="sub-tabs-horizontal" style={{ marginBottom: '1.5rem' }}>
+        <button
+          className={`sub-tab-btn ${lastschriftSubTab === 'lastschriftlauf' ? 'active' : ''}`}
+          onClick={() => setLastschriftSubTab('lastschriftlauf')}
+        >
+          <CreditCard size={18} />
+          <span>Neuer Lastschriftlauf</span>
+        </button>
+        <button
+          className={`sub-tab-btn ${lastschriftSubTab === 'zahllaeufe' ? 'active' : ''}`}
+          onClick={() => setLastschriftSubTab('zahllaeufe')}
+        >
+          <FileText size={18} />
+          <span>Zahlläufe-Übersicht</span>
+        </button>
+        <button
+          className={`sub-tab-btn ${lastschriftSubTab === 'automatisch' ? 'active' : ''}`}
+          onClick={() => setLastschriftSubTab('automatisch')}
+        >
+          <Calendar size={18} />
+          <span>Automatische Einzüge</span>
+        </button>
+      </div>
+
+      {/* Sub-Tab Content */}
+      <div className="sub-tab-content">
+        {lastschriftSubTab === 'lastschriftlauf' && (
+          <Lastschriftlauf embedded={true} dojoIdOverride={2} />
+        )}
+        {lastschriftSubTab === 'zahllaeufe' && (
+          <Zahllaeufe embedded={true} />
+        )}
+        {lastschriftSubTab === 'automatisch' && (
+          <AutoLastschriftTab embedded={true} dojoIdOverride={2} />
+        )}
+      </div>
+    </div>
+  );
+
   // Loading State
   if (loading) {
     return (
@@ -521,6 +572,7 @@ const VerbandDashboard = () => {
         {activeTab === 'turniere' && <TurniereContent />}
         {activeTab === 'events' && <EventsContent />}
         {activeTab === 'finanzen' && <FinanzenContent />}
+        {activeTab === 'lastschrift' && <LastschriftContent />}
       </div>
     </div>
   );

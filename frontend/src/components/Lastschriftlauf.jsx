@@ -26,10 +26,10 @@ import "../styles/Lastschriftlauf.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 
-const Lastschriftlauf = ({ embedded = false }) => {
+const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const navigate = useNavigate();
   const { activeDojo } = useDojoContext();
-  const dojoId = activeDojo?.id || activeDojo;
+  const dojoId = dojoIdOverride || activeDojo?.id || activeDojo;
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [missingMandates, setMissingMandates] = useState([]);

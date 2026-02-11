@@ -2,7 +2,7 @@
 .rechnung-erstellen-container {
   min-height: 100vh;
   background: #f8f9fa;
-  padding: 2rem;
+  padding: 0.5rem 0.25rem;
 }
 
 /* Dark Mode */
@@ -12,10 +12,11 @@
 
 .rechnung-editor {
   display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 2rem;
-  max-width: 1600px;
-  margin: 0 auto;
+  grid-template-columns: 480px 1fr;
+  gap: 0.5rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* Formular Bereich - IMMER DUNKEL */
@@ -200,16 +201,17 @@
   background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 0.5rem;
+  width: 100%;
 }
 
 /* Invoice Page - wie PDF */
 .invoice-page {
   background: white;
-  max-width: 210mm;
+  max-width: 100%;
   min-height: 297mm;
-  margin: 0 auto;
-  padding: 20mm;
+  margin: 0;
+  padding: 15mm;
   padding-bottom: 50mm; /* Platz für Fußzeile (15mm vom unteren Rand + 35mm für Inhalt) */
   position: relative; /* Für absolute Positionierung der Fußzeile */
   font-family: Arial, sans-serif;
@@ -293,7 +295,7 @@
   border-collapse: collapse;
   margin-bottom: 2rem;
   font-size: 9pt;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .invoice-table thead {
@@ -315,7 +317,12 @@
 .invoice-table td:nth-child(1) { width: 35px; text-align: center; }  /* Pos. */
 
 .invoice-table th:nth-child(2),
-.invoice-table td:nth-child(2) { width: auto; }  /* Bezeichnung - takes remaining space */
+.invoice-table td:nth-child(2) {
+  min-width: 150px;
+  max-width: 250px;
+  white-space: normal;
+  word-break: normal;
+}  /* Bezeichnung - takes remaining space */
 
 .invoice-table th:nth-child(3),
 .invoice-table td:nth-child(3) { width: 110px; text-align: left; font-size: 8pt; }  /* Artikelnummer */

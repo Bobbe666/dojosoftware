@@ -2835,3 +2835,98 @@
     width: 100%;
   }
 }
+
+/* ============================================= */
+/* LASTSCHRIFT TAB STYLES                        */
+/* ============================================= */
+
+.lastschrift-management {
+  padding: 0;
+}
+
+.super-admin-dashboard .sub-tabs-horizontal {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  flex-wrap: wrap;
+}
+
+.super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn:hover {
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #fff);
+}
+
+.super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn.active {
+  background: linear-gradient(135deg, #c9a227 0%, #b8941f 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+}
+
+.super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn svg {
+  opacity: 0.7;
+}
+
+.super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn.active svg {
+  opacity: 1;
+}
+
+/* Auto Lastschrift Tab innerhalb Super Admin */
+.super-admin-dashboard .auto-lastschrift-container {
+  padding: 0;
+}
+
+.super-admin-dashboard .auto-lastschrift-container.embedded {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Mobile Responsive für Lastschrift Sub-Tabs */
+@media (max-width: 768px) {
+  .super-admin-dashboard .sub-tabs-horizontal {
+    flex-direction: column;
+  }
+
+  .super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* TDA-VIB Theme Override für Lastschrift */
+[data-theme="tda-vib"] .super-admin-dashboard .sub-tabs-horizontal {
+  background: rgba(245, 240, 230, 0.8);
+  border-color: rgba(139, 90, 43, 0.2);
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn {
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn:hover {
+  background: rgba(139, 90, 43, 0.1);
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .super-admin-dashboard .sub-tabs-horizontal .sub-tab-btn.active {
+  background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%);
+  color: #1a1a1a;
+}

@@ -21,7 +21,7 @@ import "../styles/AutoLastschrift.css";
 
 const API_BASE = window.API_BASE || "/api";
 
-const AutoLastschriftTab = ({ embedded = false }) => {
+const AutoLastschriftTab = ({ embedded = false, dojoIdOverride = null }) => {
   const { dojos, activeDojo } = useDojoContext();
   const [zeitplaene, setZeitplaene] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,8 +44,8 @@ const AutoLastschriftTab = ({ embedded = false }) => {
     dojo_id: "" // Wird beim Öffnen des Modals gesetzt
   });
 
-  // Aktuelles Dojo aus Context oder localStorage
-  const currentDojoId = activeDojo?.id || localStorage.getItem("dojo_id");
+  // Aktuelles Dojo aus Context, localStorage oder Override (für Verband)
+  const currentDojoId = dojoIdOverride || activeDojo?.id || localStorage.getItem("dojo_id");
 
   const loadZeitplaene = useCallback(async () => {
     try {

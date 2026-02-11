@@ -242,6 +242,17 @@ router.post('/register-dojo', async (req, res) => {
     // ===== COMMIT =====
     await connection.commit();
 
+    // ===== Super-Admin Benachrichtigung =====
+    try {
+      await db.promise().query(`
+        INSERT INTO super_admin_notifications (typ, titel, nachricht, prioritaet, empfaenger_typ)
+        VALUES ('dojo_registriert', 'Neues Dojo registriert', ?, 'wichtig', 'admin')
+      `, [`${dojo_name} hat sich registriert (${subdomain}.dojo.tda-intl.org) - Inhaber: ${owner_name || owner_email}`]);
+      logger.info('📬 Super-Admin Benachrichtigung erstellt für neues Dojo');
+    } catch (notifErr) {
+      logger.warn('⚠️ Super-Admin Benachrichtigung konnte nicht erstellt werden:', notifErr.message);
+    }
+
     // ===== ERFOLG! =====
     res.status(201).json({
       success: true,

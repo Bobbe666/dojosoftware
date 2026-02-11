@@ -4,9 +4,35 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
-import { TrendingUp, Users, DollarSign, Target, Award, BarChart2 } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Target, Award, BarChart2, Building2, UserCheck, UserX, Clock } from 'lucide-react';
 
-const COLORS = ['#FFD700', '#FFA500', '#FF6B35', '#4ECDC4', '#45B7D1', '#96CEB4'];
+// Sanfte, professionelle Farbpalette
+const COLORS = {
+  primary: '#3B82F6',    // Blau
+  success: '#10B981',    // Grün
+  warning: '#F59E0B',    // Orange
+  danger: '#EF4444',     // Rot
+  purple: '#8B5CF6',     // Lila
+  teal: '#14B8A6',       // Türkis
+  slate: '#64748B',      // Grau
+  gold: '#D4AF37'        // Dezentes Gold
+};
+
+const STATUS_COLORS = {
+  'active': COLORS.success,
+  'trial': COLORS.primary,
+  'expired': COLORS.danger,
+  'cancelled': COLORS.slate,
+  'pending': COLORS.warning
+};
+
+const STATUS_LABELS = {
+  'active': 'Aktiv',
+  'trial': 'Testphase',
+  'expired': 'Abgelaufen',
+  'cancelled': 'Gekündigt',
+  'pending': 'Ausstehend'
+};
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
@@ -44,6 +70,106 @@ const EmptyState = ({ icon: Icon, title, subtitle }) => (
     <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>{subtitle}</div>
   </div>
 );
+
+// Status Badge Komponente
+const StatusBadge = ({ status, count }) => {
+  const color = STATUS_COLORS[status] || COLORS.slate;
+  const label = STATUS_LABELS[status] || status;
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '12px 16px',
+      background: `${color}15`,
+      borderLeft: `4px solid ${color}`,
+      borderRadius: '0 8px 8px 0',
+      marginBottom: '8px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          background: color
+        }} />
+        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+      </div>
+      <span style={{
+        color: color,
+        fontWeight: 700,
+        fontSize: '1.2rem'
+      }}>{count}</span>
+    </div>
+  );
+};
+
+// Top Dojo Card Komponente
+const TopDojoCard = ({ rank, dojo, maxMembers }) => {
+  const percentage = maxMembers > 0 ? (dojo.mitglieder / maxMembers) * 100 : 0;
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+      padding: '16px',
+      background: 'var(--bg-tertiary)',
+      borderRadius: '12px',
+      marginBottom: '10px',
+      border: '1px solid var(--border-default)'
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '10px',
+        background: rank <= 3
+          ? `linear-gradient(135deg, ${rank === 1 ? '#D4AF37' : rank === 2 ? '#C0C0C0' : '#CD7F32'}, ${rank === 1 ? '#B8860B' : rank === 2 ? '#A8A8A8' : '#8B4513'})`
+          : 'var(--bg-secondary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        fontSize: '1.1rem',
+        color: rank <= 3 ? '#fff' : 'var(--text-secondary)'
+      }}>
+        {rank}
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          marginBottom: '6px'
+        }}>
+          {dojo.dojoname}
+        </div>
+        <div style={{
+          height: '6px',
+          background: 'var(--bg-secondary)',
+          borderRadius: '3px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: `${percentage}%`,
+            height: '100%',
+            background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.teal})`,
+            borderRadius: '3px',
+            transition: 'width 0.5s ease'
+          }} />
+        </div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ fontWeight: 700, color: COLORS.primary, fontSize: '1.2rem' }}>
+          {formatNumber(dojo.mitglieder)}
+        </div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+          Mitglieder
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const StatisticsTab = ({ token }) => {
   const [loading, setLoading] = useState(true);
@@ -107,9 +233,11 @@ const StatisticsTab = ({ token }) => {
 
   // Sichere Defaults für fehlende Daten
   const memberStatus = statistics.memberStatus || { aktiv: 0, inaktiv: 0 };
-  const trialStats = statistics.trialStats || { trial: 0, active: 0 };
+  const trialStats = statistics.trialStats || { trial: 0, active: 0, expired: 0 };
   const revenuePerDojo = Array.isArray(statistics.revenuePerDojo) ? statistics.revenuePerDojo : [];
   const revenueTrend = Array.isArray(statistics.revenueTrend) ? statistics.revenueTrend : [];
+  const subscriptionDistribution = Array.isArray(statistics.subscriptionDistribution) ? statistics.subscriptionDistribution : [];
+  const topDojos = Array.isArray(statistics.topDojos) ? statistics.topDojos : [];
 
   // Prepare Revenue Trend Data with month names
   const revenueTrendData = revenueTrend.map(item => ({
@@ -119,14 +247,23 @@ const StatisticsTab = ({ token }) => {
 
   // Berechne Gesamtumsatz sicher
   const totalRevenue = safeSum(revenuePerDojo, 'umsatz');
+  const totalMembers = (memberStatus.aktiv || 0) + (memberStatus.inaktiv || 0);
   const hasRevenueData = totalRevenue > 0 || revenueTrendData.some(d => d.umsatz > 0);
+  const maxMembers = topDojos.length > 0 ? Math.max(...topDojos.map(d => d.mitglieder || 0)) : 0;
+
+  // Subscription Status für Pie Chart aufbereiten
+  const pieData = subscriptionDistribution.map(item => ({
+    name: STATUS_LABELS[item.status] || item.status,
+    value: item.anzahl,
+    color: STATUS_COLORS[item.status] || COLORS.slate
+  }));
 
   return (
     <div className="statistics-tab">
       {/* KPI Cards */}
       <div className="stats-kpi-grid">
         <div className="kpi-card">
-          <div className="kpi-icon success">
+          <div className="kpi-icon" style={{ background: `${COLORS.success}20`, color: COLORS.success }}>
             <Target size={24} />
           </div>
           <div className="kpi-content">
@@ -137,37 +274,37 @@ const StatisticsTab = ({ token }) => {
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon primary">
+          <div className="kpi-icon" style={{ background: `${COLORS.primary}20`, color: COLORS.primary }}>
             <Users size={24} />
           </div>
           <div className="kpi-content">
             <div className="kpi-label">Aktive Mitglieder</div>
             <div className="kpi-value">{formatNumber(memberStatus.aktiv)}</div>
-            <div className="kpi-sublabel">von {formatNumber((memberStatus.aktiv || 0) + (memberStatus.inaktiv || 0))} gesamt</div>
+            <div className="kpi-sublabel">von {formatNumber(totalMembers)} gesamt</div>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon warning">
-            <Award size={24} />
+          <div className="kpi-icon" style={{ background: `${COLORS.purple}20`, color: COLORS.purple }}>
+            <Building2 size={24} />
           </div>
           <div className="kpi-content">
-            <div className="kpi-label">Trial Dojos</div>
-            <div className="kpi-value">{formatNumber(trialStats.trial)}</div>
-            <div className="kpi-sublabel">{formatNumber(trialStats.active)} aktive Abos</div>
+            <div className="kpi-label">Dojos</div>
+            <div className="kpi-value">{formatNumber(trialStats.active + trialStats.trial)}</div>
+            <div className="kpi-sublabel">{formatNumber(trialStats.trial)} in Testphase</div>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon success">
+          <div className="kpi-icon" style={{ background: `${COLORS.teal}20`, color: COLORS.teal }}>
             <DollarSign size={24} />
           </div>
           <div className="kpi-content">
-            <div className="kpi-label">Gesamt-Umsatz {new Date().getFullYear()}</div>
+            <div className="kpi-label">Umsatz {new Date().getFullYear()}</div>
             <div className="kpi-value">
-              {totalRevenue > 0 ? `${formatNumber(totalRevenue, 2)} €` : 'Noch keine Umsätze'}
+              {totalRevenue > 0 ? `${formatNumber(totalRevenue, 2)} €` : '—'}
             </div>
-            <div className="kpi-sublabel">{revenuePerDojo.length > 0 ? `${revenuePerDojo.length} Dojos` : 'Keine Daten'}</div>
+            <div className="kpi-sublabel">{revenuePerDojo.length} Dojos aktiv</div>
           </div>
         </div>
       </div>
@@ -185,19 +322,19 @@ const StatisticsTab = ({ token }) => {
               <AreaChart data={revenueTrendData}>
                 <defs>
                   <linearGradient id="colorUmsatz" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FFD700" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#FFD700" stopOpacity={0}/>
+                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="monat" stroke="#fff" />
-                <YAxis stroke="#fff" />
+                <XAxis dataKey="monat" stroke="rgba(255,255,255,0.6)" />
+                <YAxis stroke="rgba(255,255,255,0.6)" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                  labelStyle={{ color: '#FFD700' }}
+                  labelStyle={{ color: COLORS.primary }}
                   formatter={(value) => [`${formatNumber(value, 2)} €`, 'Umsatz']}
                 />
-                <Area type="monotone" dataKey="umsatz" stroke="#FFD700" fillOpacity={1} fill="url(#colorUmsatz)" />
+                <Area type="monotone" dataKey="umsatz" stroke={COLORS.primary} strokeWidth={2} fillOpacity={1} fill="url(#colorUmsatz)" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -219,14 +356,14 @@ const StatisticsTab = ({ token }) => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={revenuePerDojo}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="dojoname" stroke="#fff" angle={-45} textAnchor="end" height={100} />
-                <YAxis stroke="#fff" />
+                <XAxis dataKey="dojoname" stroke="rgba(255,255,255,0.6)" angle={-45} textAnchor="end" height={100} />
+                <YAxis stroke="rgba(255,255,255,0.6)" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                  labelStyle={{ color: '#FFD700' }}
+                  labelStyle={{ color: COLORS.teal }}
                   formatter={(value) => [`${formatNumber(value, 2)} €`, 'Umsatz']}
                 />
-                <Bar dataKey="umsatz" fill="#FFD700" />
+                <Bar dataKey="umsatz" fill={COLORS.teal} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -238,70 +375,136 @@ const StatisticsTab = ({ token }) => {
           )}
         </div>
 
-        {/* Subscription Status Verteilung */}
+        {/* Subscription Status - Verbesserte Darstellung */}
         <div className="chart-card">
           <h3 className="chart-title">
             <Award size={18} />
-            Subscription Status
+            Abo-Status Übersicht
           </h3>
-          {Array.isArray(statistics.subscriptionDistribution) && statistics.subscriptionDistribution.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statistics.subscriptionDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ status, anzahl }) => `${status}: ${formatNumber(anzahl)}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="anzahl"
-                  nameKey="status"
-                >
-                  {statistics.subscriptionDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          {subscriptionDistribution.length > 0 ? (
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+              {/* Pie Chart */}
+              <div style={{ flex: '0 0 180px' }}>
+                <ResponsiveContainer width={180} height={180}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
+                      formatter={(value, name) => [value, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Status Liste */}
+              <div style={{ flex: 1 }}>
+                {subscriptionDistribution.map((item, index) => (
+                  <StatusBadge
+                    key={index}
+                    status={item.status}
+                    count={item.anzahl}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
             <EmptyState
               icon={Award}
-              title="Keine Abonnements"
+              title="Keine Abo-Daten"
               subtitle="Hier wird die Verteilung der Abo-Status angezeigt"
             />
           )}
         </div>
 
-        {/* Top Dojos nach Mitgliedern */}
+        {/* Top Dojos - Verbesserte Darstellung */}
         <div className="chart-card">
           <h3 className="chart-title">
             <Users size={18} />
-            Top Dojos nach Mitgliedern
+            Top 10 Dojos nach Mitgliedern
           </h3>
-          {Array.isArray(statistics.topDojos) && statistics.topDojos.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statistics.topDojos} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis type="number" stroke="#fff" />
-                <YAxis dataKey="dojoname" type="category" stroke="#fff" width={150} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                  labelStyle={{ color: '#FFD700' }}
+          {topDojos.length > 0 ? (
+            <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }}>
+              {topDojos.slice(0, 10).map((dojo, index) => (
+                <TopDojoCard
+                  key={index}
+                  rank={index + 1}
+                  dojo={dojo}
+                  maxMembers={maxMembers}
                 />
-                <Bar dataKey="mitglieder" fill="#4ECDC4" />
-              </BarChart>
-            </ResponsiveContainer>
+              ))}
+            </div>
           ) : (
             <EmptyState
               icon={Users}
-              title="Noch keine Dojos mit Mitgliedern"
+              title="Noch keine Dojos"
               subtitle="Top Dojos werden hier angezeigt, sobald Mitglieder registriert sind"
             />
           )}
+        </div>
+      </div>
+
+      {/* Mitglieder Status Übersicht */}
+      <div className="charts-grid" style={{ marginTop: '24px' }}>
+        <div className="chart-card">
+          <h3 className="chart-title">
+            <UserCheck size={18} />
+            Mitglieder-Status
+          </h3>
+          <div style={{ display: 'flex', gap: '16px', padding: '16px 0' }}>
+            <div style={{
+              flex: 1,
+              padding: '20px',
+              background: `${COLORS.success}15`,
+              borderRadius: '12px',
+              textAlign: 'center',
+              border: `1px solid ${COLORS.success}30`
+            }}>
+              <UserCheck size={32} style={{ color: COLORS.success, marginBottom: '8px' }} />
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: COLORS.success }}>
+                {formatNumber(memberStatus.aktiv)}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Aktive Mitglieder</div>
+            </div>
+            <div style={{
+              flex: 1,
+              padding: '20px',
+              background: `${COLORS.slate}15`,
+              borderRadius: '12px',
+              textAlign: 'center',
+              border: `1px solid ${COLORS.slate}30`
+            }}>
+              <UserX size={32} style={{ color: COLORS.slate, marginBottom: '8px' }} />
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: COLORS.slate }}>
+                {formatNumber(memberStatus.inaktiv)}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Inaktive Mitglieder</div>
+            </div>
+            <div style={{
+              flex: 1,
+              padding: '20px',
+              background: `${COLORS.primary}15`,
+              borderRadius: '12px',
+              textAlign: 'center',
+              border: `1px solid ${COLORS.primary}30`
+            }}>
+              <Clock size={32} style={{ color: COLORS.primary, marginBottom: '8px' }} />
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: COLORS.primary }}>
+                {formatNumber(trialStats.trial)}
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Trial Dojos</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

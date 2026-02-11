@@ -11,6 +11,37 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../db');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Logo Upload Konfiguration
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/verband-logos');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `verband-${req.user?.id || 'unknown'}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const logoUpload = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Nur Bildformate (JPEG, PNG, GIF, WebP) erlaubt'), false);
+    }
+  }
+});
 const {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
@@ -201,6 +232,23 @@ router.post('/register', async (req, res) => {
     // TODO: Verification-E-Mail senden
     logger.debug('📧 Verification-Token für ${email}: ${verification_token}');
 
+    // Super-Admin Benachrichtigung erstellen
+    try {
+      await queryAsync(`
+        INSERT INTO super_admin_notifications (typ, titel, nachricht, prioritaet, empfaenger_typ)
+        VALUES (?, ?, ?, 'normal', 'admin')
+      `, [
+        typ === 'dojo' ? 'dojo_registriert' : 'verbandsmitglied_registriert',
+        typ === 'dojo' ? 'Neues Dojo registriert' : 'Neues Verbandsmitglied',
+        typ === 'dojo'
+          ? `${dojo_name || 'Unbekanntes Dojo'} hat sich registriert (${vorname} ${nachname})`
+          : `${vorname} ${nachname} (${email}) hat sich als Verbandsmitglied registriert`
+      ]);
+      logger.debug('📬 Super-Admin Benachrichtigung erstellt');
+    } catch (notifErr) {
+      logger.warn('⚠️ Konnte Super-Admin Benachrichtigung nicht erstellen:', notifErr.message);
+    }
+
     res.json({
       success: true,
       message: SUCCESS_MESSAGES.REGISTRATION.SUCCESS,
@@ -239,7 +287,7 @@ router.post('/login', async (req, res) => {
         vm.zahlungsart, vm.beitragsfrei, vm.agb_akzeptiert, vm.dsgvo_akzeptiert,
         vm.widerrufsrecht_akzeptiert, vm.unterschrift_digital, vm.unterschrift_datum,
         vm.passwort_hash, vm.email_verified, vm.last_login, vm.notizen,
-        vm.created_at, vm.updated_at, vm.dojo_mitglieder_anzahl,
+        vm.created_at, vm.updated_at, vm.dojo_mitglieder_anzahl, vm.logo_url,
         COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
         COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
         COALESCE(d.email, vm.dojo_email) as dojo_email,
@@ -303,13 +351,14 @@ router.post('/login', async (req, res) => {
     delete member.reset_token;
     delete member.reset_token_expires;
 
-    // DEBUG: Log member data
+    // DEBUG: Log member data including logo_url
     logger.info('Login erfolgreich - Member Daten:', {
       id: member.id,
       typ: member.typ,
       dojo_name: member.dojo_name,
       dojo_id: member.dojo_id,
-      person_vorname: member.person_vorname
+      person_vorname: member.person_vorname,
+      logo_url: member.logo_url || 'NICHT GESETZT'
     });
 
     res.json({
@@ -485,7 +534,7 @@ router.get('/me', verifyVerbandToken, async (req, res) => {
         vm.zahlungsart, vm.beitragsfrei, vm.agb_akzeptiert, vm.dsgvo_akzeptiert,
         vm.widerrufsrecht_akzeptiert, vm.unterschrift_digital, vm.unterschrift_datum,
         vm.email_verified, vm.last_login, vm.notizen,
-        vm.created_at, vm.updated_at, vm.dojo_mitglieder_anzahl,
+        vm.created_at, vm.updated_at, vm.dojo_mitglieder_anzahl, vm.logo_url,
         COALESCE(d.dojoname, vm.dojo_name) as dojo_name,
         COALESCE(d.ort, vm.dojo_ort) as dojo_ort,
         COALESCE(d.email, vm.dojo_email) as dojo_email,
@@ -1385,6 +1434,170 @@ router.put('/admin/bestellungen/:id', verifyVerbandToken, verifySuperAdmin, asyn
   } catch (error) {
     logger.error('Admin-Bestellung-Update-Fehler:', error);
     res.status(500).json({ error: 'Fehler beim Aktualisieren der Bestellung' });
+  }
+});
+
+// ============================================================================
+// LOGO UPLOAD/MANAGEMENT
+// ============================================================================
+
+/**
+ * POST /api/verband-auth/logo
+ * Logo für Verbandsmitglied hochladen
+ */
+router.post('/logo', verifyVerbandToken, logoUpload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+    }
+
+    const memberId = req.user.id;
+    const logoUrl = `/api/verband-auth/logo/${path.basename(req.file.path)}`;
+
+    // Altes Logo löschen falls vorhanden
+    const existing = await queryAsync(
+      `SELECT logo_url FROM verbandsmitgliedschaften WHERE id = ?`,
+      [memberId]
+    );
+
+    if (existing[0]?.logo_url) {
+      const oldPath = path.join(__dirname, '../uploads/verband-logos', path.basename(existing[0].logo_url));
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // Neues Logo speichern
+    await queryAsync(
+      `UPDATE verbandsmitgliedschaften SET logo_url = ? WHERE id = ?`,
+      [logoUrl, memberId]
+    );
+
+    logger.info(`Logo hochgeladen für Verbandsmitglied ${memberId}`);
+
+    res.json({
+      success: true,
+      logo_url: logoUrl,
+      message: 'Logo erfolgreich hochgeladen'
+    });
+
+  } catch (error) {
+    logger.error('Logo-Upload-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Hochladen des Logos' });
+  }
+});
+
+/**
+ * GET /api/verband-auth/logo/:filename
+ * Logo-Datei abrufen
+ */
+router.get('/logo/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filepath = path.join(__dirname, '../uploads/verband-logos', filename);
+
+  if (!fs.existsSync(filepath)) {
+    return res.status(404).json({ error: 'Logo nicht gefunden' });
+  }
+
+  // Content-Type basierend auf Dateiendung setzen
+  const ext = path.extname(filename).toLowerCase();
+  const mimeTypes = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp'
+  };
+  const contentType = mimeTypes[ext] || 'application/octet-stream';
+  res.setHeader('Content-Type', contentType);
+  // Erlaube Cross-Origin Zugriff auf Logos
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
+  res.sendFile(filepath);
+});
+
+/**
+ * DELETE /api/verband-auth/logo
+ * Logo löschen
+ */
+router.delete('/logo', verifyVerbandToken, async (req, res) => {
+  try {
+    const memberId = req.user.id;
+
+    const existing = await queryAsync(
+      `SELECT logo_url FROM verbandsmitgliedschaften WHERE id = ?`,
+      [memberId]
+    );
+
+    if (existing[0]?.logo_url) {
+      const oldPath = path.join(__dirname, '../uploads/verband-logos', path.basename(existing[0].logo_url));
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    await queryAsync(
+      `UPDATE verbandsmitgliedschaften SET logo_url = NULL WHERE id = ?`,
+      [memberId]
+    );
+
+    logger.info(`Logo gelöscht für Verbandsmitglied ${memberId}`);
+
+    res.json({ success: true, message: 'Logo gelöscht' });
+
+  } catch (error) {
+    logger.error('Logo-Lösch-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Löschen des Logos' });
+  }
+});
+
+/**
+ * GET /api/verband-auth/member-logo/:id
+ * Logo eines Mitglieds abrufen (für Ausweis)
+ * Prüft zuerst verbandsmitgliedschaften.logo_url, dann dojo_logos
+ */
+router.get('/member-logo/:id', async (req, res) => {
+  try {
+    const memberId = req.params.id;
+
+    // Verbandsmitglied laden
+    const members = await queryAsync(
+      `SELECT vm.logo_url, vm.dojo_id, dl.file_path as dojo_logo_path
+       FROM verbandsmitgliedschaften vm
+       LEFT JOIN dojo_logos dl ON vm.dojo_id = dl.dojo_id AND dl.logo_type = 'haupt'
+       WHERE vm.id = ?`,
+      [memberId]
+    );
+
+    if (members.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    const member = members[0];
+
+    // Priorität: 1. Eigenes Logo, 2. Dojo-Logo
+    if (member.logo_url) {
+      const filepath = path.join(__dirname, '../uploads/verband-logos', path.basename(member.logo_url));
+      if (fs.existsSync(filepath)) {
+        return res.sendFile(filepath);
+      }
+    }
+
+    if (member.dojo_logo_path && fs.existsSync(member.dojo_logo_path)) {
+      return res.sendFile(member.dojo_logo_path);
+    }
+
+    // Fallback: TDA Logo
+    const tdaLogo = path.join(__dirname, '../uploads/verband-logos/tda-default.png');
+    if (fs.existsSync(tdaLogo)) {
+      return res.sendFile(tdaLogo);
+    }
+
+    res.status(404).json({ error: 'Kein Logo gefunden' });
+
+  } catch (error) {
+    logger.error('Member-Logo-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden des Logos' });
   }
 });
 

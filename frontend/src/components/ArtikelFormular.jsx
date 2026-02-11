@@ -21,6 +21,12 @@ const ArtikelFormular = ({ mode }) => {
   const [activeTab, setActiveTab] = useState('basis');
   const [preisTab, setPreisTab] = useState('einzelkalkulation'); // 'groessenabhaengig' | 'einzelkalkulation'
 
+  // Modal State für neue Artikelgruppe/Unterkategorie
+  const [showGruppeModal, setShowGruppeModal] = useState(false);
+  const [neueGruppeTyp, setNeueGruppeTyp] = useState('hauptkategorie'); // 'hauptkategorie' | 'unterkategorie'
+  const [neueGruppeName, setNeueGruppeName] = useState('');
+  const [neueGruppeLoading, setNeueGruppeLoading] = useState(false);
+
   // Verfügbare Größen
   const verfuegbareGroessen = [
     'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL',
@@ -39,6 +45,15 @@ const ArtikelFormular = ({ mode }) => {
     { name: 'Lila', hex: '#9333EA' },
     { name: 'Rosa', hex: '#EC4899' },
     { name: 'Grau', hex: '#6B7280' }
+  ];
+
+  // Verfügbare Laufzeiten
+  const verfuegbareLaufzeiten = [
+    { name: '1 Monat', monate: 1, rabatt: 0 },
+    { name: '3 Monate', monate: 3, rabatt: 0 },
+    { name: '6 Monate', monate: 6, rabatt: 0 },
+    { name: '12 Monate', monate: 12, rabatt: 0 },
+    { name: '5 Jahre (Vorauszahlung)', monate: 60, rabatt: 20 }
   ];
 
   // Form State
@@ -76,6 +91,7 @@ const ArtikelFormular = ({ mode }) => {
     varianten_groessen: [],
     varianten_farben: [],
     varianten_material: [],
+    varianten_laufzeit: [],
     varianten_custom: [],
     custom_groesse: '',
     custom_farbe_name: '',
@@ -144,6 +160,59 @@ const ArtikelFormular = ({ mode }) => {
       }
     } catch (error) {
       console.error('Fehler beim Laden der Artikelgruppen:', error);
+    }
+  };
+
+  // Neue Artikelgruppe oder Unterkategorie erstellen
+  const handleCreateGruppe = async () => {
+    if (!neueGruppeName.trim()) {
+      alert('Bitte geben Sie einen Namen ein');
+      return;
+    }
+
+    setNeueGruppeLoading(true);
+    try {
+      const payload = {
+        name: neueGruppeName.trim()
+      };
+
+      // Wenn Unterkategorie, dann parent_id setzen
+      if (neueGruppeTyp === 'unterkategorie' && selectedHauptkategorieId) {
+        payload.parent_id = selectedHauptkategorieId;
+      }
+
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/artikelgruppen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Artikelgruppen neu laden
+        await loadArtikelgruppen();
+
+        // Modal schließen und Reset
+        setShowGruppeModal(false);
+        setNeueGruppeName('');
+
+        // Wenn Hauptkategorie erstellt, diese auswählen
+        if (neueGruppeTyp === 'hauptkategorie' && data.id) {
+          setSelectedHauptkategorieId(data.id.toString());
+          setFormData(prev => ({ ...prev, kategorie_id: data.id.toString() }));
+        }
+        // Wenn Unterkategorie erstellt, diese auswählen
+        if (neueGruppeTyp === 'unterkategorie' && data.id) {
+          setFormData(prev => ({ ...prev, artikelgruppe_id: data.id.toString() }));
+        }
+      } else {
+        alert(data.error || 'Fehler beim Erstellen der Gruppe');
+      }
+    } catch (error) {
+      console.error('Fehler beim Erstellen der Artikelgruppe:', error);
+      alert('Fehler beim Erstellen der Artikelgruppe');
+    } finally {
+      setNeueGruppeLoading(false);
     }
   };
 
@@ -459,41 +528,94 @@ const ArtikelFormular = ({ mode }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={basisLabelStyle}>Artikelgruppe *</label>
-          <select
-            value={selectedHauptkategorieId}
-            onChange={(e) => {
-              setSelectedHauptkategorieId(e.target.value);
-              // Reset artikelgruppe_id und setze kategorie_id wenn Hauptkategorie wechselt
-              setFormData(prev => ({ ...prev, artikelgruppe_id: '', kategorie_id: e.target.value }));
-            }}
-            required
-            style={{ ...basisInputStyle, cursor: 'pointer' }}
-          >
-            <option value="">Wählen Sie eine Artikelgruppe...</option>
-            {artikelgruppen.map(gruppe => (
-              <option key={gruppe.id} value={gruppe.id}>
-                {gruppe.name}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <select
+              value={selectedHauptkategorieId}
+              onChange={(e) => {
+                setSelectedHauptkategorieId(e.target.value);
+                // Reset artikelgruppe_id und setze kategorie_id wenn Hauptkategorie wechselt
+                setFormData(prev => ({ ...prev, artikelgruppe_id: '', kategorie_id: e.target.value }));
+              }}
+              required
+              style={{ ...basisInputStyle, cursor: 'pointer', flex: 1 }}
+            >
+              <option value="">Wählen Sie eine Artikelgruppe...</option>
+              {artikelgruppen.map(gruppe => (
+                <option key={gruppe.id} value={gruppe.id}>
+                  {gruppe.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                setNeueGruppeTyp('hauptkategorie');
+                setNeueGruppeName('');
+                setShowGruppeModal(true);
+              }}
+              style={{
+                padding: '0.5rem 0.75rem',
+                background: 'var(--gold, #ffd700)',
+                color: '#000',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+              }}
+              title="Neue Artikelgruppe erstellen"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={basisLabelStyle}>Unterkategorie</label>
-          <select
-            name="artikelgruppe_id"
-            value={formData.artikelgruppe_id}
-            onChange={handleInputChange}
-            style={{ ...basisInputStyle, cursor: 'pointer' }}
-            disabled={!selectedHauptkategorieId || getUnterkategorien().length === 0}
-          >
-            <option value="">{!selectedHauptkategorieId ? 'Erst Artikelgruppe wählen...' : getUnterkategorien().length === 0 ? 'Keine Unterkategorien vorhanden' : 'Wählen Sie eine Unterkategorie...'}</option>
-            {getUnterkategorien().map(unter => (
-              <option key={unter.id} value={unter.id}>
-                {unter.name}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <select
+              name="artikelgruppe_id"
+              value={formData.artikelgruppe_id}
+              onChange={handleInputChange}
+              style={{ ...basisInputStyle, cursor: 'pointer', flex: 1 }}
+              disabled={!selectedHauptkategorieId}
+            >
+              <option value="">{!selectedHauptkategorieId ? 'Erst Artikelgruppe wählen...' : getUnterkategorien().length === 0 ? 'Keine Unterkategorien' : 'Wählen Sie eine Unterkategorie...'}</option>
+              {getUnterkategorien().map(unter => (
+                <option key={unter.id} value={unter.id}>
+                  {unter.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedHauptkategorieId) {
+                  alert('Bitte wählen Sie zuerst eine Artikelgruppe');
+                  return;
+                }
+                setNeueGruppeTyp('unterkategorie');
+                setNeueGruppeName('');
+                setShowGruppeModal(true);
+              }}
+              disabled={!selectedHauptkategorieId}
+              style={{
+                padding: '0.5rem 0.75rem',
+                background: selectedHauptkategorieId ? 'var(--gold, #ffd700)' : 'rgba(255,255,255,0.1)',
+                color: selectedHauptkategorieId ? '#000' : 'rgba(255,255,255,0.3)',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: selectedHauptkategorieId ? 'pointer' : 'not-allowed',
+                fontWeight: '600',
+                fontSize: '1rem',
+                whiteSpace: 'nowrap'
+              }}
+              title="Neue Unterkategorie erstellen"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gridColumn: '1 / -1' }}>
@@ -2311,7 +2433,7 @@ const ArtikelFormular = ({ mode }) => {
                       border: '2px solid',
                       borderColor: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                       borderRadius: '8px',
-                      background: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : '#ffffff',
+                      background: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : 'rgba(255, 255, 255, 0.08)',
                       color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : 'var(--text-primary, #ffffff)',
                       cursor: 'pointer',
                       fontWeight: 600,
@@ -2361,7 +2483,7 @@ const ArtikelFormular = ({ mode }) => {
                       border: '2px solid',
                       borderColor: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                       borderRadius: '8px',
-                      background: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : '#ffffff',
+                      background: formData.varianten_groessen.includes(groesse) ? 'var(--gold, #ffd700)' : 'rgba(255, 255, 255, 0.08)',
                       color: formData.varianten_groessen.includes(groesse) ? '#ffffff' : 'var(--text-primary, #ffffff)',
                       cursor: 'pointer',
                       fontWeight: 600,
@@ -2457,7 +2579,7 @@ const ArtikelFormular = ({ mode }) => {
                     border: '2px solid',
                     borderColor: formData.varianten_farben.some(f => f.name === farbe.name) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                     borderRadius: '8px',
-                    background: formData.varianten_farben.some(f => f.name === farbe.name) ? 'rgba(107, 68, 35, 0.1)' : '#ffffff',
+                    background: formData.varianten_farben.some(f => f.name === farbe.name) ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.08)',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                   }}
@@ -2575,7 +2697,7 @@ const ArtikelFormular = ({ mode }) => {
                     border: '2px solid',
                     borderColor: formData.varianten_material.includes(mat) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
                     borderRadius: '8px',
-                    background: formData.varianten_material.includes(mat) ? 'var(--gold, #ffd700)' : '#ffffff',
+                    background: formData.varianten_material.includes(mat) ? 'var(--gold, #ffd700)' : 'rgba(255, 255, 255, 0.08)',
                     color: formData.varianten_material.includes(mat) ? '#ffffff' : 'var(--text-primary, #ffffff)',
                     cursor: 'pointer',
                     fontWeight: 500,
@@ -2657,8 +2779,122 @@ const ArtikelFormular = ({ mode }) => {
             )}
           </div>
 
+          {/* LAUFZEIT */}
+          <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', border: '2px solid var(--border-primary, rgba(255, 215, 0, 0.2))', borderRadius: '12px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--gold, #ffd700)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                🕐 Laufzeit
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, varianten_laufzeit: [...verfuegbareLaufzeiten] }));
+                }}
+                style={{
+                  padding: '0.4rem 0.75rem',
+                  background: 'transparent',
+                  border: '1px solid var(--gold, #ffd700)',
+                  borderRadius: '6px',
+                  color: 'var(--gold, #ffd700)',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem'
+                }}
+              >
+                Alle auswählen
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+              {verfuegbareLaufzeiten.map(laufzeit => (
+                <button
+                  key={laufzeit.name}
+                  type="button"
+                  onClick={() => {
+                    if (!formData.varianten_laufzeit.some(l => l.name === laufzeit.name)) {
+                      setFormData(prev => ({ ...prev, varianten_laufzeit: [...prev.varianten_laufzeit, laufzeit] }));
+                    } else {
+                      setFormData(prev => ({ ...prev, varianten_laufzeit: prev.varianten_laufzeit.filter(l => l.name !== laufzeit.name) }));
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    border: '2px solid',
+                    borderColor: formData.varianten_laufzeit.some(l => l.name === laufzeit.name) ? 'var(--gold, #ffd700)' : 'var(--border-secondary, rgba(255, 255, 255, 0.1))',
+                    boxShadow: formData.varianten_laufzeit.some(l => l.name === laufzeit.name) ? '0 4px 12px rgba(107, 68, 35, 0.15)' : 'none',
+                    background: formData.varianten_laufzeit.some(l => l.name === laufzeit.name) ? 'var(--gold, #ffd700)' : 'rgba(255, 255, 255, 0.05)',
+                    color: formData.varianten_laufzeit.some(l => l.name === laufzeit.name) ? '#000' : 'var(--text-primary, #ffffff)',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}
+                >
+                  <span>{laufzeit.name}</span>
+                  {laufzeit.rabatt > 0 && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: formData.varianten_laufzeit.some(l => l.name === laufzeit.name) ? '#16A34A' : '#10B981',
+                      background: formData.varianten_laufzeit.some(l => l.name === laufzeit.name) ? 'rgba(0,0,0,0.1)' : 'rgba(16, 185, 129, 0.15)',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '4px'
+                    }}>
+                      -{laufzeit.rabatt}% Rabatt
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {formData.varianten_laufzeit.length > 0 && (
+              <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--bg-hover, rgba(255, 255, 255, 0.12))', borderRadius: '8px' }}>
+                <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Ausgewählt ({formData.varianten_laufzeit.length}):</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {formData.varianten_laufzeit.map(l => (
+                    <span key={l.name} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.25rem 0.75rem',
+                      background: 'var(--gold, #ffd700)',
+                      color: 'var(--dark-bg, #0f0f23)',
+                      borderRadius: '20px',
+                      fontSize: '0.85rem',
+                      fontWeight: 500
+                    }}>
+                      {l.name} {l.rabatt > 0 && `(-${l.rabatt}%)`}
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, varianten_laufzeit: prev.varianten_laufzeit.filter(lz => lz.name !== l.name) }))}
+                        style={{
+                          background: 'rgba(255,255,255,0.3)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '18px',
+                          height: '18px',
+                          cursor: 'pointer',
+                          color: '#ffffff',
+                          fontSize: '0.7rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* ZUSAMMENFASSUNG */}
-          {(formData.varianten_groessen.length > 0 || formData.varianten_farben.length > 0 || formData.varianten_material.length > 0) && (
+          {(formData.varianten_groessen.length > 0 || formData.varianten_farben.length > 0 || formData.varianten_material.length > 0 || formData.varianten_laufzeit.length > 0) && (
             <div style={{ background: 'rgba(107, 68, 35, 0.05)', border: '2px solid rgba(107, 68, 35, 0.2)', borderRadius: '12px', padding: '1.5rem' }}>
               <h3 style={{ margin: '0 0 1rem 0', color: 'var(--gold, #ffd700)', fontSize: '1.2rem' }}>
                 📊 Varianten-Zusammenfassung
@@ -2677,9 +2913,13 @@ const ArtikelFormular = ({ mode }) => {
                   <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>{formData.varianten_material.length}</p>
                 </div>
                 <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', padding: '1rem', borderRadius: '8px' }}>
+                  <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Laufzeiten</p>
+                  <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>{formData.varianten_laufzeit.length}</p>
+                </div>
+                <div style={{ background: 'var(--bg-glass, rgba(255, 255, 255, 0.08))', padding: '1rem', borderRadius: '8px' }}>
                   <p style={{ color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Mögliche Kombinationen</p>
                   <p style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--gold, #ffd700)' }}>
-                    {Math.max(1, formData.varianten_groessen.length) * Math.max(1, formData.varianten_farben.length) * Math.max(1, formData.varianten_material.length)}
+                    {Math.max(1, formData.varianten_groessen.length) * Math.max(1, formData.varianten_farben.length) * Math.max(1, formData.varianten_material.length) * Math.max(1, formData.varianten_laufzeit.length)}
                   </p>
                 </div>
               </div>
@@ -2836,6 +3076,120 @@ const ArtikelFormular = ({ mode }) => {
       }}>
         {renderTabContent()}
       </div>
+
+      {/* Modal: Neue Artikelgruppe/Unterkategorie erstellen */}
+      {showGruppeModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+          onClick={() => setShowGruppeModal(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-secondary, #1a1a2e)',
+              border: '2px solid var(--gold, #ffd700)',
+              borderRadius: '16px',
+              padding: '2rem',
+              minWidth: '400px',
+              maxWidth: '500px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{
+              color: 'var(--gold, #ffd700)',
+              marginBottom: '1.5rem',
+              fontSize: '1.25rem'
+            }}>
+              {neueGruppeTyp === 'hauptkategorie' ? 'Neue Artikelgruppe' : 'Neue Unterkategorie'}
+            </h3>
+
+            {neueGruppeTyp === 'unterkategorie' && (
+              <div style={{ marginBottom: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+                Wird erstellt unter: <strong style={{ color: '#fff' }}>
+                  {artikelgruppen.find(g => g.id == selectedHauptkategorieId)?.name || ''}
+                </strong>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                color: 'var(--gold, #ffd700)',
+                fontWeight: 600
+              }}>
+                Name *
+              </label>
+              <input
+                type="text"
+                value={neueGruppeName}
+                onChange={(e) => setNeueGruppeName(e.target.value)}
+                placeholder={neueGruppeTyp === 'hauptkategorie' ? 'z.B. Trainingsgeräte' : 'z.B. Pratzen'}
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 215, 0, 0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  boxSizing: 'border-box'
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') handleCreateGruppe();
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowGruppeModal(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem'
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateGruppe}
+                disabled={neueGruppeLoading || !neueGruppeName.trim()}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--gold, #ffd700)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#000',
+                  cursor: neueGruppeLoading || !neueGruppeName.trim() ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  opacity: neueGruppeLoading || !neueGruppeName.trim() ? 0.5 : 1
+                }}
+              >
+                {neueGruppeLoading ? 'Erstelle...' : 'Erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

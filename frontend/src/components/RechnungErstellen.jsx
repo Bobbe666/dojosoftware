@@ -1224,7 +1224,7 @@ const RechnungErstellen = () => {
             </div>
 
             {/* Rabattfähigkeit */}
-            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
@@ -1236,16 +1236,26 @@ const RechnungErstellen = () => {
               </label>
 
               {neuePosition.ist_rabattfaehig && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <label className="rabatt-label">Rabatt %:</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255, 215, 0, 0.1)', padding: '0.4rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '500', whiteSpace: 'nowrap' }}>Rabatt %:</label>
                   <input
                     type="number"
-                    className="rabatt-input"
                     value={neuePosition.rabatt_prozent}
                     onChange={(e) => setNeuePosition({...neuePosition, rabatt_prozent: parseFloat(e.target.value) || 0})}
                     min="0"
                     max="100"
                     step="0.01"
+                    style={{
+                      padding: '0.3rem 0.4rem',
+                      fontSize: '0.85rem',
+                      width: '70px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 215, 0, 0.4)',
+                      borderRadius: '4px',
+                      color: '#ffd700',
+                      textAlign: 'center',
+                      fontWeight: '600'
+                    }}
                   />
                 </div>
               )}
@@ -1253,65 +1263,39 @@ const RechnungErstellen = () => {
 
             {/* Hinzugefügte Positionen */}
             {positionen.length > 0 && (
-              <div style={{ marginTop: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
-                <h4 className="positionen-liste-header">Hinzugefügte Positionen:</h4>
+              <div style={{ marginTop: '1rem', maxHeight: '350px', overflowY: 'auto' }}>
                 {positionen.map((pos, index) => (
                   <div key={index} className="position-item" style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem'
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                    borderRadius: '8px',
+                    padding: '0.6rem 0.75rem',
+                    marginBottom: '0.5rem'
                   }}>
-                    {/* Erste Zeile: Produkt-Info und Entfernen-Button */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div className="position-item-text" style={{
-                        flex: 1,
-                        paddingRight: '0.5rem'
-                      }}>
+                    {/* Zeile 1: Artikelname + X-Button */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.95)' }}>
                         <strong>{pos.bezeichnung}</strong> - {pos.menge}x {Number(pos.einzelpreis).toFixed(2)} €
-                      </div>
-
-                      <button
-                        onClick={() => removePosition(index)}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.2)',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
-                          borderRadius: '4px',
-                          color: '#ef4444',
-                          width: '24px',
-                          height: '24px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          fontSize: '1.1rem',
-                          fontWeight: 'bold',
-                          padding: 0,
-                          flexShrink: 0,
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                        title="Position entfernen"
-                      >
-                        ×
-                      </button>
-                    </div>
-
-                    {/* Zweite Zeile: Rabatt-Einstellungen */}
-                    <div className="position-item-divider" style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.5rem',
-                      paddingTop: '0.25rem',
-                      alignItems: 'flex-start'
-                    }}>
-                      <label style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
+                        {pos.ist_rabattfaehig && pos.rabatt_prozent > 0 && (
+                          <span style={{ color: '#10B981', marginLeft: '0.5rem', fontWeight: 600 }}>(-{pos.rabatt_prozent}%)</span>
+                        )}
+                      </span>
+                      <button onClick={() => removePosition(index)} style={{
+                        background: 'rgba(239, 68, 68, 0.3)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        color: '#ff6b6b',
+                        width: '24px',
+                        height: '24px',
                         cursor: 'pointer',
-                        width: 'auto'
-                      }}>
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        lineHeight: '1'
+                      }}>×</button>
+                    </div>
+                    {/* Zeile 2: Rabatt-Checkbox + Eingabe */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255, 215, 0, 0.15)' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.8rem', color: '#ffd700' }}>
                         <input
                           type="checkbox"
                           checked={pos.ist_rabattfaehig || false}
@@ -1320,39 +1304,28 @@ const RechnungErstellen = () => {
                             updatedPositionen[index] = {
                               ...updatedPositionen[index],
                               ist_rabattfaehig: e.target.checked,
-                              rabatt_prozent: e.target.checked ? updatedPositionen[index].rabatt_prozent : 0
+                              rabatt_prozent: e.target.checked ? (updatedPositionen[index].rabatt_prozent || 0) : 0
                             };
                             setPositionen(updatedPositionen);
                           }}
-                          style={{ cursor: 'pointer', width: '12px', height: '12px', flexShrink: 0 }}
+                          style={{ width: '16px', height: '16px', accentColor: '#ffd700', cursor: 'pointer' }}
                         />
-                        <span className="checkbox-label" style={{ whiteSpace: 'nowrap' }}>Rabattfähig</span>
+                        Rabatt
                       </label>
-
                       {pos.ist_rabattfaehig && (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          paddingLeft: '1.25rem'
-                        }}>
-                          <label className="rabatt-label" style={{ minWidth: '60px' }}>Rabatt %:</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                           <input
                             type="number"
-                            className="rabatt-input"
                             value={pos.rabatt_prozent || 0}
                             onChange={(e) => {
                               const updatedPositionen = [...positionen];
-                              updatedPositionen[index] = {
-                                ...updatedPositionen[index],
-                                rabatt_prozent: parseFloat(e.target.value) || 0
-                              };
+                              updatedPositionen[index] = { ...updatedPositionen[index], rabatt_prozent: parseFloat(e.target.value) || 0 };
                               setPositionen(updatedPositionen);
                             }}
-                            min="0"
-                            max="100"
-                            step="0.01"
+                            min="0" max="100" step="0.5"
+                            style={{ width: '55px', padding: '0.2rem 0.3rem', background: 'rgba(0,0,0,0.4)', border: '1px solid #ffd700', borderRadius: '4px', color: '#ffd700', fontSize: '0.8rem', textAlign: 'center' }}
                           />
+                          <span style={{ fontSize: '0.8rem', color: '#ffd700' }}>%</span>
                         </div>
                       )}
                     </div>

@@ -226,7 +226,8 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   const calculateZwischensumme = () => {
     return positionen.reduce((sum, pos) => {
       const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
-      const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+      const rabattProzent = Number(pos.rabatt_prozent) || 0;
+      const rabattBetrag = bruttoPreis * rabattProzent / 100;
       return sum + (bruttoPreis - rabattBetrag);
     }, 0);
   };
@@ -323,9 +324,10 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
         empfaenger_name: empfaengerTyp === 'manuell' ? manuellName : selectedEmpfaenger?.name,
         empfaenger_adresse: empfaengerTyp === 'manuell' ? manuellAdresse : selectedEmpfaenger?.adresse,
         empfaenger_email: empfaengerTyp === 'manuell' ? manuellEmail : selectedEmpfaenger?.email,
+        rechnungsnummer: rechnungsDaten.rechnungsnummer,
         rechnungsdatum: rechnungsDaten.belegdatum,
         leistungsdatum: rechnungsDaten.leistungsdatum,
-        faelligkeitsdatum: rechnungsDaten.zahlungsfrist,
+        faellig_am: rechnungsDaten.zahlungsfrist,
         rabatt_prozent: rechnungsDaten.rabatt_prozent,
         skonto_prozent: rechnungsDaten.skonto_prozent,
         skonto_tage: rechnungsDaten.skonto_tage,
@@ -407,7 +409,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   // Rechnung in EÜR buchen (erstellt Beleg in buchhaltung_belege)
   const handleEuerZuordnen = async (rechnung) => {
     try {
-      const response = await getApi().post(`/verband-rechnungen/${rechnung.rechnung_id}/euer-buchen`);
+      const response = await getApi().post(`/verband-rechnungen/${rechnung.id}/euer-buchen`);
 
       if (response.data.success) {
         setSuccess(`Rechnung ${rechnung.rechnungsnummer} in EÜR gebucht (Beleg ${response.data.beleg_nummer})`);
@@ -528,7 +530,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                     {rechnungen.map((rechnung) => {
                       const statusColors = getStatusColor(rechnung.status);
                       return (
-                        <tr key={rechnung.rechnung_id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <tr key={rechnung.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                           <td style={{ padding: '0.75rem 1rem', color: '#fff', fontFamily: 'monospace' }}>
                             {rechnung.rechnungsnummer}
                           </td>
@@ -559,7 +561,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                           <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
                               <button
-                                onClick={() => handleViewRechnung(rechnung.rechnung_id)}
+                                onClick={() => handleViewRechnung(rechnung.id)}
                                 title="Ansehen"
                                 style={{
                                   padding: '0.4rem',
@@ -576,7 +578,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                                 <Eye size={16} />
                               </button>
                               <button
-                                onClick={() => handleDownloadRechnung(rechnung.rechnung_id)}
+                                onClick={() => handleDownloadRechnung(rechnung.id)}
                                 title="Drucken/PDF"
                                 style={{
                                   padding: '0.4rem',
@@ -594,7 +596,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                               </button>
                               {rechnung.status !== 'bezahlt' && (
                                 <button
-                                  onClick={() => handleMarkAsBezahlt(rechnung.rechnung_id)}
+                                  onClick={() => handleMarkAsBezahlt(rechnung.id)}
                                   title="Als bezahlt markieren"
                                   style={{
                                     padding: '0.4rem',
@@ -762,54 +764,55 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
               <button onClick={addPosition} className="btn-add">Hinzufügen</button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <input
-                type="checkbox"
-                id="rabattfaehig"
-                checked={neuePosition.ist_rabattfaehig}
-                onChange={(e) => setNeuePosition({ ...neuePosition, ist_rabattfaehig: e.target.checked })}
-                style={{ width: '14px', height: '14px' }}
-              />
-              <label htmlFor="rabattfaehig" className="checkbox-label">Rabattfähig</label>
-            </div>
-
             {/* Hinzugefügte Positionen */}
             {positionen.length > 0 && (
-              <div style={{ marginTop: '0.75rem', maxHeight: '150px', overflowY: 'auto' }}>
+              <div style={{ marginTop: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
                 {positionen.map((pos, index) => (
-                  <div key={index} className="position-item">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="position-item-text">
-                        <strong>{pos.bezeichnung}</strong> - {pos.menge}x {pos.einzelpreis.toFixed(2)} €
-                        {pos.ist_rabattfaehig && pos.rabatt_prozent > 0 && (
-                          <span style={{ color: '#ffd700', marginLeft: '0.5rem' }}>(-{pos.rabatt_prozent}%)</span>
-                        )}
-                      </div>
+                  <div key={index} className="position-item" style={{ padding: '0.35rem 0.5rem', marginBottom: '0.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    {/* Zeile 1: Bezeichnung + Löschen */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: '500' }}>{pos.bezeichnung}</span>
                       <button
                         onClick={() => removePosition(index)}
-                        style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '4px', color: '#ef4444', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', padding: 0 }}
-                      >
-                        ×
-                      </button>
+                        style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '3px', color: '#ef4444', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', padding: 0, lineHeight: 1 }}
+                      >×</button>
                     </div>
-                    {pos.ist_rabattfaehig && (
-                      <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <label className="rabatt-label">Rabatt %:</label>
-                        <input
-                          type="number"
-                          className="rabatt-input"
-                          value={pos.rabatt_prozent}
-                          onChange={(e) => {
-                            const updatedPositionen = [...positionen];
-                            updatedPositionen[index] = { ...pos, rabatt_prozent: parseFloat(e.target.value) || 0 };
-                            setPositionen(updatedPositionen);
-                          }}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                        />
-                      </div>
-                    )}
+                    {/* Zeile 2: Menge, Preis, Rabatt, Summe - alles in einer Zeile */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <input
+                        type="number"
+                        value={pos.menge}
+                        onChange={(e) => {
+                          const updatedPositionen = [...positionen];
+                          updatedPositionen[index] = { ...pos, menge: parseInt(e.target.value) || 1 };
+                          setPositionen(updatedPositionen);
+                        }}
+                        min="1"
+                        style={{ width: '32px', padding: '1px 2px', fontSize: '0.65rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '2px', color: '#fff', textAlign: 'center' }}
+                      />
+                      <span style={{ color: '#666', fontSize: '0.6rem' }}>×</span>
+                      <span style={{ color: '#aaa', fontSize: '0.65rem' }}>{pos.einzelpreis.toFixed(2)}€</span>
+                      <span style={{ color: '#444' }}>|</span>
+                      <span style={{ color: '#888', fontSize: '0.6rem' }}>Rabatt</span>
+                      <input
+                        type="number"
+                        value={pos.rabatt_prozent || 0}
+                        onChange={(e) => {
+                          const updatedPositionen = [...positionen];
+                          const rabattVal = parseFloat(e.target.value) || 0;
+                          updatedPositionen[index] = { ...pos, rabatt_prozent: rabattVal, ist_rabattfaehig: rabattVal > 0 };
+                          setPositionen(updatedPositionen);
+                        }}
+                        min="0"
+                        max="100"
+                        step="1"
+                        style={{ width: '32px', padding: '1px 2px', fontSize: '0.65rem', background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '2px', color: '#ffd700', textAlign: 'center' }}
+                      />
+                      <span style={{ color: '#888', fontSize: '0.6rem' }}>%</span>
+                      <span style={{ marginLeft: 'auto', color: '#ffd700', fontSize: '0.7rem', fontWeight: '500' }}>
+                        = {((pos.menge * pos.einzelpreis) * (1 - (pos.rabatt_prozent || 0) / 100)).toFixed(2)} €
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -951,16 +954,16 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                     <>
                       <div>Herrn/Frau</div>
                       <div>{selectedEmpfaenger.name}</div>
-                      {selectedEmpfaenger.adresse && selectedEmpfaenger.adresse.split('\n').map((line, i) => (
-                        <div key={i}>{line}</div>
+                      {selectedEmpfaenger.adresse && selectedEmpfaenger.adresse.split(',').map((line, i) => (
+                        <div key={i}>{line.trim()}</div>
                       ))}
                     </>
                   ) : empfaengerTyp === 'manuell' && manuellName ? (
                     <>
                       <div>Herrn/Frau</div>
                       <div>{manuellName}</div>
-                      {manuellAdresse && manuellAdresse.split('\n').map((line, i) => (
-                        <div key={i}>{line}</div>
+                      {manuellAdresse && manuellAdresse.split(',').map((line, i) => (
+                        <div key={i}>{line.trim()}</div>
                       ))}
                     </>
                   ) : (
@@ -969,7 +972,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 </div>
               </div>
               <div className="invoice-meta">
-                <div className="logo-placeholder">TDA</div>
+                <img src="/public/tda-logo.png" alt="TDA Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', marginLeft: 'auto', display: 'block', marginBottom: '0.5rem' }} onError={(e) => { e.target.style.display = 'none'; }} />
                 <div className="invoice-numbers">
                   <div>Rechnungs-Nr.: {rechnungsDaten.rechnungsnummer}</div>
                   <div>Kundennummer: {rechnungsDaten.kundennummer || '-'}</div>
@@ -1003,7 +1006,8 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
               <tbody>
                 {positionen.map((pos, index) => {
                   const bruttoPreis = Number(pos.einzelpreis) * Number(pos.menge);
-                  const rabattBetrag = pos.ist_rabattfaehig ? (bruttoPreis * Number(pos.rabatt_prozent) / 100) : 0;
+                  const rabattProzent = Number(pos.rabatt_prozent) || 0;
+                  const rabattBetrag = bruttoPreis * rabattProzent / 100;
                   const nettoPreis = bruttoPreis - rabattBetrag;
 
                   return (
@@ -1014,7 +1018,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                       <td>{pos.menge}</td>
                       <td>Stk.</td>
                       <td>{Number(pos.einzelpreis).toFixed(2)}</td>
-                      <td>{pos.ist_rabattfaehig ? `${Number(pos.rabatt_prozent).toFixed(2)} %` : '-'}</td>
+                      <td>{rabattProzent > 0 ? `${rabattProzent.toFixed(2)} %` : '-'}</td>
                       <td>{Number(pos.ust_prozent).toFixed(2)} %</td>
                       <td>{nettoPreis.toFixed(2)}</td>
                     </tr>
