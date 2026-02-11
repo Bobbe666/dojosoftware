@@ -27,6 +27,18 @@ const ArtikelFormular = ({ mode }) => {
   const [neueGruppeName, setNeueGruppeName] = useState('');
   const [neueGruppeLoading, setNeueGruppeLoading] = useState(false);
 
+  // Rabatt State (nur für SuperAdmin/TDA)
+  const [rabattData, setRabattData] = useState({
+    hat_rabatt: false,
+    rabatt_typ: 'prozent',
+    rabatt_wert: '',
+    gilt_fuer_dojo: true,
+    gilt_fuer_einzelperson: true,
+    aktiv: true
+  });
+  const [rabattLoading, setRabattLoading] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
   // Verfügbare Größen
   const verfuegbareGroessen = [
     'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL',
@@ -585,18 +597,6 @@ const ArtikelFormular = ({ mode }) => {
       setLoading(false);
     }
   };
-
-  // Rabatt State (nur für SuperAdmin/TDA)
-  const [rabattData, setRabattData] = useState({
-    hat_rabatt: false,
-    rabatt_typ: 'prozent',
-    rabatt_wert: '',
-    gilt_fuer_dojo: true,
-    gilt_fuer_einzelperson: true,
-    aktiv: true
-  });
-  const [rabattLoading, setRabattLoading] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Tab Navigation
   const baseTabs = [
