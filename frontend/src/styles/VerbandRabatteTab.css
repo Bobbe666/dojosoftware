@@ -1,0 +1,871 @@
+/* =====================================================================================
+   VERBAND RABATTE TAB - Styling
+   ===================================================================================== */
+
+.verband-rabatte-tab {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.rabatte-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.rabatte-header-info h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.5rem;
+  color: #ffd700;
+}
+
+.rabatte-header-info p {
+  margin: 0;
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.inactive {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Messages */
+.rabatte-message {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rabatte-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.rabatte-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.rabatte-message button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Sub Tabs */
+.rabatte-subtabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.subtab-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: transparent;
+  color: #a0a0a0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subtab-btn:hover {
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
+}
+
+.subtab-btn.active {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+
+.subtab-badge {
+  background: rgba(255, 215, 0, 0.3);
+  color: #ffd700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+/* Content */
+.rabatte-content {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  padding: 1.5rem;
+}
+
+/* Global Settings */
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section h3 {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.1rem;
+  color: #ffd700;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.setting-row.vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label-text {
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.label-hint {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: 0.3s;
+  border-radius: 26px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #ffd700;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* Input Group */
+.setting-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.setting-input {
+  width: 100px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 1rem;
+  text-align: right;
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.input-suffix {
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.setting-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.setting-textarea:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.save-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  border: none;
+  border-radius: 8px;
+  color: #1a1a2e;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Preview Section */
+.preview-section {
+  background: rgba(255, 215, 0, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.preview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.preview-card {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-card.member {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.preview-card.basic {
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.preview-card.guest {
+  border-color: rgba(156, 163, 175, 0.3);
+}
+
+.preview-header {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-price {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.discounted-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.regular-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.discount-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.preview-label {
+  font-size: 0.85rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.preview-hint {
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+.preview-potential {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(255, 215, 0, 0.2);
+  font-size: 0.85rem;
+  color: #ffd700;
+}
+
+/* Artikel Rabatte Tab */
+.artikel-rabatte-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.artikel-rabatte-controls .search-box {
+  position: relative;
+  flex: 1;
+  max-width: 350px;
+}
+
+.artikel-rabatte-controls .search-box input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.artikel-rabatte-controls .search-box input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.artikel-rabatte-controls .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+}
+
+.bulk-btn {
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  border: none;
+  border-radius: 8px;
+  color: #1a1a2e;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.info-box {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-box p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #a0a0a0;
+}
+
+.info-box strong {
+  color: #ffd700;
+}
+
+/* Table */
+.artikel-rabatte-table-container {
+  overflow-x: auto;
+}
+
+.artikel-rabatte-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.artikel-rabatte-table th,
+.artikel-rabatte-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.artikel-rabatte-table th {
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffd700;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.artikel-rabatte-table tr:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.artikel-rabatte-table tr.has-individual {
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.checkbox-col {
+  width: 40px;
+}
+
+.artikel-info {
+  min-width: 180px;
+}
+
+.artikel-name {
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.artikel-nummer {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.preis-cell {
+  white-space: nowrap;
+}
+
+.mitglieder-preis {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.ersparnis {
+  display: block;
+  font-size: 0.75rem;
+  color: #10b981;
+  opacity: 0.8;
+}
+
+.rabatt-select {
+  padding: 0.4rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+.rabatt-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rabatt-input {
+  width: 70px;
+  padding: 0.4rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.rabatt-input:focus {
+  outline: none;
+  border-color: #ffd700;
+}
+
+.gilt-fuer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mini-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  cursor: pointer;
+}
+
+.mini-checkbox input {
+  width: 14px;
+  height: 14px;
+}
+
+.status-individual {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-standard {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+}
+
+.action-btn.save {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.action-btn.save:hover {
+  background: rgba(16, 185, 129, 0.4);
+}
+
+.action-btn.delete {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.4);
+}
+
+/* Bulk Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.bulk-modal {
+  background: #1a1a2e;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.bulk-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.bulk-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffd700;
+}
+
+.bulk-modal .close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #888;
+  cursor: pointer;
+}
+
+.bulk-modal .modal-body {
+  padding: 1.25rem;
+}
+
+.bulk-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.bulk-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #a0a0a0;
+}
+
+.bulk-modal select,
+.bulk-modal input[type="number"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.bulk-modal .input-with-suffix {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bulk-modal .input-with-suffix input {
+  flex: 1;
+}
+
+.bulk-modal .input-with-suffix span {
+  color: #a0a0a0;
+}
+
+.bulk-modal .checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bulk-modal .checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.bulk-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.cancel-btn {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* Loading */
+.rabatte-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #a0a0a0;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 215, 0, 0.2);
+  border-top-color: #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Light Theme Support */
+[data-theme="light"] .verband-rabatte-tab {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .rabatte-header-info h2 {
+  color: #d4a017;
+}
+
+[data-theme="light"] .rabatte-content {
+  background: #ffffff;
+  border-color: #dee2e6;
+}
+
+[data-theme="light"] .settings-section h3 {
+  color: #d4a017;
+}
+
+[data-theme="light"] .setting-row {
+  background: #f8f9fa;
+}
+
+[data-theme="light"] .label-text {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .setting-input,
+[data-theme="light"] .setting-textarea {
+  background: #ffffff;
+  border-color: #dee2e6;
+  color: #2c3e50;
+}
+
+[data-theme="light"] .preview-card {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+[data-theme="light"] .regular-price {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .artikel-rabatte-table th {
+  background: #f8f9fa;
+  color: #d4a017;
+}
+
+[data-theme="light"] .artikel-rabatte-table td {
+  border-color: #dee2e6;
+}
+
+[data-theme="light"] .artikel-rabatte-table tr:hover {
+  background: rgba(212, 160, 23, 0.05);
+}
+
+[data-theme="light"] .artikel-name {
+  color: #2c3e50;
+}
+
+[data-theme="light"] .rabatt-select,
+[data-theme="light"] .rabatt-input {
+  background: #ffffff;
+  border-color: #dee2e6;
+  color: #2c3e50;
+}
+
+[data-theme="light"] .bulk-modal {
+  background: #ffffff;
+  border-color: #dee2e6;
+}
+
+[data-theme="light"] .bulk-modal select,
+[data-theme="light"] .bulk-modal input {
+  background: #ffffff;
+  border-color: #dee2e6;
+  color: #2c3e50;
+}
+
+[data-theme="light"] .subtab-btn {
+  color: #6c757d;
+}
+
+[data-theme="light"] .subtab-btn:hover,
+[data-theme="light"] .subtab-btn.active {
+  color: #d4a017;
+  background: rgba(212, 160, 23, 0.1);
+}
+
+[data-theme="light"] .rabatte-subtabs {
+  background: #f8f9fa;
+}
+
+[data-theme="light"] .info-box {
+  background: rgba(212, 160, 23, 0.1);
+  border-color: rgba(212, 160, 23, 0.2);
+}
+
+[data-theme="light"] .artikel-rabatte-controls .search-box input {
+  background: #ffffff;
+  border-color: #dee2e6;
+  color: #2c3e50;
+}

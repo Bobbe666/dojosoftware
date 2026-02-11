@@ -1931,4 +1931,185 @@ router.post('/push-notifications/send', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// =============================================
+// VERBANDSMITGLIEDER-RABATTE
+// =============================================
+
+// GET /admin/rabatt-einstellungen - Globale Rabatt-Einstellungen abrufen
+router.get('/rabatt-einstellungen', requireSuperAdmin, async (req, res) => {
+  try {
+    // Stelle sicher, dass die Tabelle existiert
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS verband_rabatt_einstellungen (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        standard_rabatt_prozent DECIMAL(5,2) DEFAULT 0,
+        rabatte_aktiv BOOLEAN DEFAULT TRUE,
+        hinweis_nicht_mitglied TEXT,
+        hinweis_basic_mitglied TEXT,
+        aktualisiert_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    const [settings] = await db.promise().query('SELECT * FROM verband_rabatt_einstellungen LIMIT 1');
+
+    if (settings.length === 0) {
+      // Standard-Einstellungen einfügen
+      await db.promise().query(`
+        INSERT INTO verband_rabatt_einstellungen (standard_rabatt_prozent, rabatte_aktiv, hinweis_nicht_mitglied, hinweis_basic_mitglied)
+        VALUES (10.00, TRUE, 'Als Verbandsmitglied erhältst du exklusive Rabatte auf alle Artikel!', 'Aktiviere deine Mitgliedschaft um von Mitgliederrabatten zu profitieren.')
+      `);
+      const [newSettings] = await db.promise().query('SELECT * FROM verband_rabatt_einstellungen LIMIT 1');
+      return res.json({ success: true, einstellungen: newSettings[0] });
+    }
+
+    res.json({ success: true, einstellungen: settings[0] });
+  } catch (err) {
+    console.error('❌ Fehler beim Laden der Rabatt-Einstellungen:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PUT /admin/rabatt-einstellungen - Globale Rabatt-Einstellungen aktualisieren
+router.put('/rabatt-einstellungen', requireSuperAdmin, async (req, res) => {
+  try {
+    const { standard_rabatt_prozent, rabatte_aktiv, hinweis_nicht_mitglied, hinweis_basic_mitglied } = req.body;
+
+    await db.promise().query(`
+      UPDATE verband_rabatt_einstellungen SET
+        standard_rabatt_prozent = ?,
+        rabatte_aktiv = ?,
+        hinweis_nicht_mitglied = ?,
+        hinweis_basic_mitglied = ?
+      WHERE id = 1
+    `, [standard_rabatt_prozent, rabatte_aktiv, hinweis_nicht_mitglied, hinweis_basic_mitglied]);
+
+    res.json({ success: true, message: 'Einstellungen gespeichert' });
+  } catch (err) {
+    console.error('❌ Fehler beim Speichern der Rabatt-Einstellungen:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /admin/artikel-rabatte - Alle Artikel mit Rabatt-Konfiguration abrufen
+router.get('/artikel-rabatte', requireSuperAdmin, async (req, res) => {
+  try {
+    // Stelle sicher, dass die Tabelle existiert
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS verband_artikel_rabatte (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        artikel_id INT NOT NULL,
+        rabatt_typ ENUM('prozent', 'festbetrag') DEFAULT 'prozent',
+        rabatt_wert DECIMAL(10,2) NOT NULL DEFAULT 0,
+        gilt_fuer_dojo BOOLEAN DEFAULT TRUE,
+        gilt_fuer_einzelperson BOOLEAN DEFAULT TRUE,
+        mindestmenge INT DEFAULT 1,
+        max_rabatt_cent INT DEFAULT 0,
+        aktiv BOOLEAN DEFAULT TRUE,
+        erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        aktualisiert_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_artikel (artikel_id)
+      )
+    `);
+
+    // Alle Artikel von TDA (dojo_id = 2) mit Rabatt-Info laden
+    const [artikel] = await db.promise().query(`
+      SELECT
+        a.artikel_id, a.name, a.beschreibung, a.verkaufspreis_cent, a.bild_url,
+        a.aktiv as artikel_aktiv, a.kategorie_id,
+        k.name as kategorie_name,
+        r.id as rabatt_id, r.rabatt_typ, r.rabatt_wert, r.gilt_fuer_dojo,
+        r.gilt_fuer_einzelperson, r.mindestmenge, r.max_rabatt_cent, r.aktiv as rabatt_aktiv
+      FROM artikel a
+      LEFT JOIN artikelkategorien k ON a.kategorie_id = k.kategorie_id
+      LEFT JOIN verband_artikel_rabatte r ON a.artikel_id = r.artikel_id
+      WHERE a.dojo_id = 2 AND a.aktiv = 1
+      ORDER BY k.name, a.name
+    `);
+
+    // Globale Einstellungen laden
+    const [settings] = await db.promise().query('SELECT * FROM verband_rabatt_einstellungen LIMIT 1');
+
+    res.json({
+      success: true,
+      artikel,
+      einstellungen: settings[0] || { standard_rabatt_prozent: 10, rabatte_aktiv: true }
+    });
+  } catch (err) {
+    console.error('❌ Fehler beim Laden der Artikel-Rabatte:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /admin/artikel-rabatte - Rabatt für Artikel erstellen/aktualisieren
+router.post('/artikel-rabatte', requireSuperAdmin, async (req, res) => {
+  try {
+    const { artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, mindestmenge, max_rabatt_cent, aktiv } = req.body;
+
+    if (!artikel_id) {
+      return res.status(400).json({ success: false, error: 'artikel_id ist erforderlich' });
+    }
+
+    // Upsert (INSERT ... ON DUPLICATE KEY UPDATE)
+    await db.promise().query(`
+      INSERT INTO verband_artikel_rabatte
+        (artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, mindestmenge, max_rabatt_cent, aktiv)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        rabatt_typ = VALUES(rabatt_typ),
+        rabatt_wert = VALUES(rabatt_wert),
+        gilt_fuer_dojo = VALUES(gilt_fuer_dojo),
+        gilt_fuer_einzelperson = VALUES(gilt_fuer_einzelperson),
+        mindestmenge = VALUES(mindestmenge),
+        max_rabatt_cent = VALUES(max_rabatt_cent),
+        aktiv = VALUES(aktiv)
+    `, [artikel_id, rabatt_typ || 'prozent', rabatt_wert || 0, gilt_fuer_dojo ?? true, gilt_fuer_einzelperson ?? true, mindestmenge || 1, max_rabatt_cent || 0, aktiv ?? true]);
+
+    res.json({ success: true, message: 'Rabatt gespeichert' });
+  } catch (err) {
+    console.error('❌ Fehler beim Speichern des Rabatts:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /admin/artikel-rabatte/:artikelId - Rabatt für Artikel entfernen
+router.delete('/artikel-rabatte/:artikelId', requireSuperAdmin, async (req, res) => {
+  try {
+    const { artikelId } = req.params;
+
+    await db.promise().query('DELETE FROM verband_artikel_rabatte WHERE artikel_id = ?', [artikelId]);
+
+    res.json({ success: true, message: 'Rabatt entfernt' });
+  } catch (err) {
+    console.error('❌ Fehler beim Entfernen des Rabatts:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /admin/artikel-rabatte/bulk - Mehrere Rabatte auf einmal setzen
+router.post('/artikel-rabatte/bulk', requireSuperAdmin, async (req, res) => {
+  try {
+    const { artikel_ids, rabatt_typ, rabatt_wert, aktiv } = req.body;
+
+    if (!artikel_ids || !Array.isArray(artikel_ids) || artikel_ids.length === 0) {
+      return res.status(400).json({ success: false, error: 'artikel_ids Array ist erforderlich' });
+    }
+
+    for (const artikel_id of artikel_ids) {
+      await db.promise().query(`
+        INSERT INTO verband_artikel_rabatte (artikel_id, rabatt_typ, rabatt_wert, aktiv)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          rabatt_typ = VALUES(rabatt_typ),
+          rabatt_wert = VALUES(rabatt_wert),
+          aktiv = VALUES(aktiv)
+      `, [artikel_id, rabatt_typ || 'prozent', rabatt_wert || 0, aktiv ?? true]);
+    }
+
+    res.json({ success: true, message: `${artikel_ids.length} Rabatte gespeichert` });
+  } catch (err) {
+    console.error('❌ Fehler beim Bulk-Speichern der Rabatte:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

@@ -13,6 +13,7 @@ import '../styles/ArtikelVerwaltungOverrides.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import BestellungenTab from './BestellungenTab';
+import VerbandRabatteTab from './VerbandRabatteTab';
 
 
 const ArtikelVerwaltung = () => {
@@ -1067,11 +1068,22 @@ const ArtikelVerwaltung = () => {
             <span className="low-stock-badge">{lowStockCount}</span>
           )}
         </button>
+        <button
+          className={`main-tab-btn ${mainTab === 'rabatte' ? 'active' : ''}`}
+          onClick={() => setMainTab('rabatte')}
+        >
+          Mitglieder-Rabatte
+        </button>
       </div>
 
       {/* Bestellungen Tab */}
       {mainTab === 'bestellungen' && (
         <BestellungenTab />
+      )}
+
+      {/* Mitglieder-Rabatte Tab */}
+      {mainTab === 'rabatte' && (
+        <VerbandRabatteTab />
       )}
 
       {/* Artikel Tab (bestehender Inhalt) */}

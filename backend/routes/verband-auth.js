@@ -959,11 +959,59 @@ router.get('/turniere', async (req, res) => {
 /**
  * GET /api/verband-auth/shop/artikel
  * Holt TDA-Artikel für den Mitglieder-Shop (nur aktive, sichtbare Artikel)
+ * Inkl. Mitglieder-Rabatte für zahlende/beitragsfreie Mitglieder
  */
 router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
   try {
     // TDA Verband Dojo-ID = 2
     const TDA_DOJO_ID = 2;
+
+    // Mitgliedschaftsstatus laden
+    const memberResult = await queryAsync(
+      `SELECT id, typ, status, zahlungsstatus, beitragsfrei FROM verbandsmitgliedschaften WHERE id = ?`,
+      [req.verbandUser.id]
+    );
+    const member = memberResult[0] || {};
+
+    // Prüfen ob Mitglied Rabattberechtigung hat
+    // Rabattberechtigt: aktiv UND (zahlungsstatus='bezahlt' ODER beitragsfrei=true)
+    const istVollmitglied = member.status === 'aktiv' &&
+      (member.zahlungsstatus === 'bezahlt' || member.beitragsfrei === 1);
+    const istBasicMitglied = member.status === 'aktiv' && !istVollmitglied;
+
+    // Globale Rabatt-Einstellungen laden
+    let globalRabattSettings = {
+      standard_rabatt_prozent: 0,
+      rabatte_aktiv: false,
+      hinweis_nicht_mitglied: '',
+      hinweis_basic_mitglied: ''
+    };
+
+    try {
+      const rabattSettingsResult = await queryAsync(
+        `SELECT * FROM verband_rabatt_einstellungen LIMIT 1`
+      );
+      if (rabattSettingsResult.length > 0) {
+        globalRabattSettings = rabattSettingsResult[0];
+      }
+    } catch (e) {
+      // Tabelle existiert möglicherweise noch nicht
+      logger.warn('verband_rabatt_einstellungen nicht gefunden:', e.message);
+    }
+
+    // Individuelle Artikel-Rabatte laden
+    let artikelRabatte = {};
+    try {
+      const rabatteResult = await queryAsync(
+        `SELECT artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson, aktiv
+         FROM verband_artikel_rabatte WHERE aktiv = TRUE`
+      );
+      rabatteResult.forEach(r => {
+        artikelRabatte[r.artikel_id] = r;
+      });
+    } catch (e) {
+      logger.warn('verband_artikel_rabatte nicht gefunden:', e.message);
+    }
 
     const artikel = await queryAsync(
       `SELECT
@@ -1005,12 +1053,73 @@ router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
         catch { return null; }
       };
 
+      // Rabatt berechnen
+      let rabattProzent = 0;
+      let rabattCent = 0;
+      let hatRabatt = false;
+      let rabattInfo = null;
+
+      if (globalRabattSettings.rabatte_aktiv) {
+        // Individueller Rabatt für diesen Artikel?
+        const indRabatt = artikelRabatte[art.artikel_id];
+        if (indRabatt) {
+          // Prüfen ob Rabatt für Mitgliedstyp gilt
+          const giltFuerTyp = member.typ === 'dojo' ? indRabatt.gilt_fuer_dojo : indRabatt.gilt_fuer_einzelperson;
+          if (giltFuerTyp) {
+            if (indRabatt.rabatt_typ === 'prozent') {
+              rabattProzent = parseFloat(indRabatt.rabatt_wert) || 0;
+            } else {
+              rabattCent = parseFloat(indRabatt.rabatt_wert) || 0;
+            }
+            hatRabatt = true;
+          }
+        } else {
+          // Standard-Rabatt verwenden
+          rabattProzent = parseFloat(globalRabattSettings.standard_rabatt_prozent) || 0;
+          hatRabatt = rabattProzent > 0;
+        }
+      }
+
+      // Preise berechnen
+      const bruttoMultiplier = 1 + (art.mwst_prozent || 19) / 100;
+      const originalPreisCent = art.verkaufspreis_cent;
+      const originalPreisBruttoCent = Math.round(originalPreisCent * bruttoMultiplier);
+
+      let rabattierterPreisCent = originalPreisCent;
+      let rabattierterPreisBruttoCent = originalPreisBruttoCent;
+
+      if (hatRabatt) {
+        if (rabattProzent > 0) {
+          rabattierterPreisCent = Math.round(originalPreisCent * (1 - rabattProzent / 100));
+          rabattierterPreisBruttoCent = Math.round(rabattierterPreisCent * bruttoMultiplier);
+          rabattInfo = { typ: 'prozent', wert: rabattProzent };
+        } else if (rabattCent > 0) {
+          rabattierterPreisCent = Math.max(0, originalPreisCent - rabattCent);
+          rabattierterPreisBruttoCent = Math.round(rabattierterPreisCent * bruttoMultiplier);
+          rabattInfo = { typ: 'festbetrag', wert: rabattCent / 100 };
+        }
+      }
+
+      const ersparnisCent = originalPreisBruttoCent - rabattierterPreisBruttoCent;
+
       return {
         artikel_id: art.artikel_id,
         name: art.name,
         beschreibung: art.beschreibung,
         verkaufspreis_cent: art.verkaufspreis_cent,
         verkaufspreis_euro: art.verkaufspreis_cent / 100,
+        // Brutto-Preise (was der Kunde zahlt)
+        originalpreis_brutto_cent: originalPreisBruttoCent,
+        originalpreis_brutto_euro: originalPreisBruttoCent / 100,
+        // Rabattierter Preis (nur für Vollmitglieder)
+        rabattierter_preis_cent: rabattierterPreisCent,
+        rabattierter_preis_brutto_cent: rabattierterPreisBruttoCent,
+        rabattierter_preis_brutto_euro: rabattierterPreisBruttoCent / 100,
+        ersparnis_cent: ersparnisCent,
+        ersparnis_euro: ersparnisCent / 100,
+        // Rabatt-Infos
+        hat_rabatt: hatRabatt,
+        rabatt_info: rabattInfo,
         mwst_prozent: art.mwst_prozent,
         lagerbestand: art.lagerbestand,
         lager_tracking: art.lager_tracking,
@@ -1056,8 +1165,23 @@ router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
 
     res.json({
       success: true,
-      artikel: formattedArtikel,
-      kategorien: Object.values(kategorien)
+      data: {
+        artikel: formattedArtikel,
+        kategorien: Object.values(kategorien),
+        // Mitgliedschafts-Infos für Frontend
+        mitglied: {
+          ist_vollmitglied: istVollmitglied,
+          ist_basic_mitglied: istBasicMitglied,
+          typ: member.typ
+        },
+        // Rabatt-Hinweise
+        rabatt_hinweise: {
+          aktiv: globalRabattSettings.rabatte_aktiv,
+          hinweis_basic: globalRabattSettings.hinweis_basic_mitglied,
+          hinweis_nicht_mitglied: globalRabattSettings.hinweis_nicht_mitglied,
+          standard_rabatt: parseFloat(globalRabattSettings.standard_rabatt_prozent) || 0
+        }
+      }
     });
 
   } catch (error) {
@@ -1068,7 +1192,7 @@ router.get('/shop/artikel', verifyVerbandToken, async (req, res) => {
 
 /**
  * POST /api/verband-auth/shop/bestellung
- * Erstellt eine neue Bestellung
+ * Erstellt eine neue Bestellung (mit Mitglieder-Rabatt falls berechtigt)
  */
 router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
   try {
@@ -1078,9 +1202,10 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
       return res.status(400).json({ error: 'Keine Artikel im Warenkorb' });
     }
 
-    // Mitgliedsdaten holen
+    // Mitgliedsdaten holen (inkl. Zahlungsstatus für Rabattberechtigung)
     const members = await queryAsync(
-      `SELECT id, typ, person_vorname, person_nachname, person_email, person_telefon,
+      `SELECT id, typ, status, zahlungsstatus, beitragsfrei,
+              person_vorname, person_nachname, person_email, person_telefon,
               dojo_name, dojo_email, dojo_strasse, dojo_plz, dojo_ort, dojo_land,
               person_strasse, person_plz, person_ort, person_land
        FROM verbandsmitgliedschaften WHERE id = ?`,
@@ -1092,6 +1217,29 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
     }
 
     const member = members[0];
+
+    // Prüfen ob Mitglied Rabattberechtigung hat
+    const istVollmitglied = member.status === 'aktiv' &&
+      (member.zahlungsstatus === 'bezahlt' || member.beitragsfrei === 1);
+
+    // Rabatt-Einstellungen laden
+    let globalRabattSettings = { standard_rabatt_prozent: 0, rabatte_aktiv: false };
+    let artikelRabatte = {};
+
+    try {
+      const rabattSettingsResult = await queryAsync(`SELECT * FROM verband_rabatt_einstellungen LIMIT 1`);
+      if (rabattSettingsResult.length > 0) {
+        globalRabattSettings = rabattSettingsResult[0];
+      }
+
+      const rabatteResult = await queryAsync(
+        `SELECT artikel_id, rabatt_typ, rabatt_wert, gilt_fuer_dojo, gilt_fuer_einzelperson
+         FROM verband_artikel_rabatte WHERE aktiv = TRUE`
+      );
+      rabatteResult.forEach(r => { artikelRabatte[r.artikel_id] = r; });
+    } catch (e) {
+      logger.warn('Rabatt-Tabellen nicht gefunden:', e.message);
+    }
 
     // Bestellnummer generieren
     const year = new Date().getFullYear();
@@ -1115,8 +1263,9 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
     const liefOrt = lieferadresse?.ort || (member.typ === 'dojo' ? member.dojo_ort : member.person_ort);
     const liefLand = lieferadresse?.land || (member.typ === 'dojo' ? member.dojo_land : member.person_land) || 'Deutschland';
 
-    // Artikel validieren und Preise berechnen
+    // Artikel validieren und Preise berechnen (mit Rabatt falls berechtigt)
     let zwischensumme = 0;
+    let gesamtRabatt = 0;
     const validatedPositionen = [];
 
     for (const pos of positionen) {
@@ -1137,9 +1286,40 @@ router.post('/shop/bestellung', verifyVerbandToken, async (req, res) => {
         return res.status(400).json({ error: `Artikel "${artikel.name}" nicht ausreichend auf Lager` });
       }
 
-      const einzelpreis = artikel.verkaufspreis_cent;
+      // Rabatt berechnen (nur für Vollmitglieder)
+      let einzelpreis = artikel.verkaufspreis_cent;
+      let rabattBetrag = 0;
+
+      if (istVollmitglied && globalRabattSettings.rabatte_aktiv) {
+        const indRabatt = artikelRabatte[artikel.artikel_id];
+        let rabattProzent = 0;
+        let rabattCent = 0;
+
+        if (indRabatt) {
+          const giltFuerTyp = member.typ === 'dojo' ? indRabatt.gilt_fuer_dojo : indRabatt.gilt_fuer_einzelperson;
+          if (giltFuerTyp) {
+            if (indRabatt.rabatt_typ === 'prozent') {
+              rabattProzent = parseFloat(indRabatt.rabatt_wert) || 0;
+            } else {
+              rabattCent = parseFloat(indRabatt.rabatt_wert) || 0;
+            }
+          }
+        } else {
+          rabattProzent = parseFloat(globalRabattSettings.standard_rabatt_prozent) || 0;
+        }
+
+        if (rabattProzent > 0) {
+          rabattBetrag = Math.round(einzelpreis * rabattProzent / 100);
+          einzelpreis = einzelpreis - rabattBetrag;
+        } else if (rabattCent > 0) {
+          rabattBetrag = Math.min(rabattCent, einzelpreis);
+          einzelpreis = einzelpreis - rabattBetrag;
+        }
+      }
+
       const gesamtpreis = einzelpreis * pos.menge;
       zwischensumme += gesamtpreis;
+      gesamtRabatt += rabattBetrag * pos.menge;
 
       validatedPositionen.push({
         artikel_id: artikel.artikel_id,
