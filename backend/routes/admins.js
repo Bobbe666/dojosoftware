@@ -583,4 +583,120 @@ router.get('/activity/log', (req, res) => {
   });
 });
 
+// ===================================================================
+// 🔐 PASSWORT-VERWALTUNG (Super Admin)
+// ===================================================================
+
+// GET alle Software-Benutzer (admin_users)
+router.get('/password-management/software', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT id, username, email, vorname, nachname, rolle, aktiv, erstellt_am
+      FROM admin_users
+      ORDER BY username
+    `);
+    res.json({ success: true, users: rows });
+  } catch (error) {
+    console.error('Fehler beim Laden der Software-Benutzer:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Benutzer' });
+  }
+});
+
+// GET alle Verbandsmitglieder
+router.get('/password-management/verband', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT id, benutzername, person_email as email,
+             COALESCE(dojo_name, CONCAT(person_vorname, ' ', person_nachname)) as name,
+             typ, status, created_at,
+             passwort_hash IS NOT NULL as has_password
+      FROM verbandsmitgliedschaften
+      ORDER BY COALESCE(dojo_name, person_nachname)
+    `);
+    res.json({ success: true, users: rows });
+  } catch (error) {
+    console.error('Fehler beim Laden der Verbandsmitglieder:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Benutzer' });
+  }
+});
+
+// GET alle Dojo-Benutzer (users)
+router.get('/password-management/dojo', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT u.id, u.username, u.email, u.role, u.created_at,
+             m.vorname, m.nachname,
+             d.dojoname as dojo_name
+      FROM users u
+      LEFT JOIN mitglieder m ON u.mitglied_id = m.id
+      LEFT JOIN dojo d ON m.dojo_id = d.id
+      ORDER BY u.username
+    `);
+    res.json({ success: true, users: rows });
+  } catch (error) {
+    console.error('Fehler beim Laden der Dojo-Benutzer:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Benutzer' });
+  }
+});
+
+// POST Passwort zurücksetzen - Software
+router.post('/password-management/software/:id/reset', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.promise().query('UPDATE admin_users SET password = ? WHERE id = ?', [hashedPassword, id]);
+
+    res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
+  } catch (error) {
+    console.error('Fehler beim Zurücksetzen des Passworts:', error);
+    res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
+  }
+});
+
+// POST Passwort zurücksetzen - Verband
+router.post('/password-management/verband/:id/reset', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await db.promise().query('UPDATE verbandsmitgliedschaften SET passwort_hash = ? WHERE id = ?', [hashedPassword, id]);
+
+    res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
+  } catch (error) {
+    console.error('Fehler beim Zurücksetzen des Passworts:', error);
+    res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
+  }
+});
+
+// POST Passwort zurücksetzen - Dojo
+router.post('/password-management/dojo/:id/reset', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.promise().query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id]);
+
+    res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
+  } catch (error) {
+    console.error('Fehler beim Zurücksetzen des Passworts:', error);
+    res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
+  }
+});
+
 module.exports = router;

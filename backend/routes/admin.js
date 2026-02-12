@@ -1630,10 +1630,10 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
 
     // 1. Neue Dojos (letzte 30 Tage)
     const [newDojos] = await db.promise().query(`
-      SELECT id, dojoname, inhaber, erstellt_am
+      SELECT id, dojoname, inhaber, created_at as erstellt_am
       FROM dojo
-      WHERE erstellt_am >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-      ORDER BY erstellt_am DESC
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      ORDER BY created_at DESC
       LIMIT 10
     `);
 
@@ -2137,6 +2137,93 @@ router.delete('/artikel/:artikelId/rabatt', requireSuperAdmin, async (req, res) 
     res.json({ success: true, message: 'Rabatt entfernt' });
   } catch (err) {
     console.error('❌ Fehler beim Entfernen des Rabatts:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =============================================
+// SUBSCRIPTION PLANS MANAGEMENT
+// =============================================
+
+// GET /admin/subscription-plans - Alle Pläne abrufen
+router.get('/subscription-plans', requireSuperAdmin, async (req, res) => {
+  try {
+    // Prüfe ob subscription_plans Tabelle existiert, wenn nicht erstellen
+    await db.promise().query(`
+      CREATE TABLE IF NOT EXISTS subscription_plans (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        plan_name VARCHAR(50) NOT NULL UNIQUE,
+        display_name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price_monthly DECIMAL(10,2) DEFAULT 0,
+        price_yearly DECIMAL(10,2) DEFAULT 0,
+        max_members INT DEFAULT 50,
+        max_dojos INT DEFAULT 1,
+        storage_limit_mb INT DEFAULT 500,
+        feature_verkauf BOOLEAN DEFAULT FALSE,
+        feature_buchfuehrung BOOLEAN DEFAULT FALSE,
+        feature_events BOOLEAN DEFAULT FALSE,
+        feature_multidojo BOOLEAN DEFAULT FALSE,
+        feature_api BOOLEAN DEFAULT FALSE,
+        is_visible BOOLEAN DEFAULT TRUE,
+        is_deprecated BOOLEAN DEFAULT FALSE,
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    const [plans] = await db.promise().query(`
+      SELECT * FROM subscription_plans ORDER BY sort_order ASC, plan_name ASC
+    `);
+
+    // Falls keine Pläne existieren, Standard-Pläne erstellen
+    if (plans.length === 0) {
+      await db.promise().query(`
+        INSERT INTO subscription_plans (plan_name, display_name, description, price_monthly, price_yearly, max_members, max_dojos, storage_limit_mb, feature_verkauf, feature_buchfuehrung, feature_events, feature_multidojo, feature_api, is_visible, sort_order)
+        VALUES
+          ('starter', 'Starter', 'Für kleine Dojos', 29.00, 290.00, 50, 1, 500, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, 1),
+          ('professional', 'Professional', 'Für wachsende Dojos', 49.00, 490.00, 150, 1, 2000, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, 2),
+          ('premium', 'Premium', 'Für große Dojos', 79.00, 790.00, 500, 3, 10000, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, 3),
+          ('enterprise', 'Enterprise', 'Für Verbände und Multi-Dojo', 149.00, 1490.00, 9999, 99, 50000, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, 4)
+      `);
+
+      const [newPlans] = await db.promise().query(`SELECT * FROM subscription_plans ORDER BY sort_order ASC`);
+      return res.json({ success: true, plans: newPlans });
+    }
+
+    res.json({ success: true, plans });
+  } catch (err) {
+    console.error('❌ Fehler beim Laden der Subscription-Pläne:', err.message);
+    res.status(500).json({ success: false, error: 'Fehler beim Laden der Pläne' });
+  }
+});
+
+// PUT /admin/subscription-plans/:id - Plan aktualisieren
+router.put('/subscription-plans/:id', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Entferne nicht-editierbare Felder
+    delete updates.id;
+    delete updates.created_at;
+    delete updates.updated_at;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'Keine Änderungen angegeben' });
+    }
+
+    const fields = Object.keys(updates);
+    const setClause = fields.map(field => `${field} = ?`).join(', ');
+    const values = fields.map(field => updates[field]);
+    values.push(id);
+
+    await db.promise().query(`UPDATE subscription_plans SET ${setClause} WHERE id = ?`, values);
+
+    res.json({ success: true, message: 'Plan erfolgreich aktualisiert' });
+  } catch (err) {
+    console.error('❌ Fehler beim Aktualisieren des Plans:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });

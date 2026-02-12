@@ -10,12 +10,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Upload-Konfiguration
-const uploadDir = '/var/www/dojosoftware/uploads/support';
+// Upload-Konfiguration - relativer Pfad für lokale und Server-Umgebung
+const uploadDir = path.join(__dirname, '..', 'uploads', 'support');
 
 // Sicherstellen, dass Upload-Verzeichnis existiert
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn('⚠️ Konnte Support-Upload-Verzeichnis nicht erstellen:', err.message);
 }
 
 const storage = multer.diskStorage({
