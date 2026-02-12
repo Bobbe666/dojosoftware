@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const iconv = require('iconv-lite');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -280,17 +280,28 @@ const getBankName = (format) => {
 };
 
 // ===================================================================
-// 🏦 EXCEL PARSER (XLS/XLSX)
+// 🏦 EXCEL PARSER (XLS/XLSX) - using ExcelJS
 // ===================================================================
 
-const parseExcelContent = (filePath) => {
+const parseExcelContent = async (filePath) => {
   try {
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
+    const sheet = workbook.worksheets[0];
 
-    // Konvertiere zu JSON (mit Header-Zeile)
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    if (!sheet) {
+      return { error: 'Excel-Datei enthält keine Arbeitsblätter', transaktionen: [] };
+    }
+
+    // Konvertiere zu Array (mit Header-Zeile)
+    const jsonData = [];
+    sheet.eachRow((row, rowNumber) => {
+      const rowValues = [];
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        rowValues[colNumber - 1] = cell.value;
+      });
+      jsonData.push(rowValues);
+    });
 
     if (jsonData.length < 2) {
       return { error: 'Excel-Datei enthält keine Daten', transaktionen: [] };
@@ -337,6 +348,8 @@ const parseExcelContent = (filePath) => {
           row[header] = '';
         } else if (typeof val === 'number') {
           row[header] = val; // Numerische Werte direkt übernehmen
+        } else if (val instanceof Date) {
+          row[header] = val; // Date-Objekte direkt übernehmen
         } else {
           row[header] = String(val).trim();
         }
@@ -1630,7 +1643,7 @@ router.post('/bank-import/upload', requireSuperAdmin, bankUpload.single('datei')
     const isMT940 = ext === '.sta' || ext === '.mt940' || (content && content.includes(':20:') && content.includes(':61:'));
 
     if (isExcel) {
-      parseResult = parseExcelContent(req.file.path);
+      parseResult = await parseExcelContent(req.file.path);
     } else if (isMT940 || requestedFormat === 'mt940') {
       parseResult = parseMT940Content(content);
     } else {

@@ -1650,33 +1650,37 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
     });
 
     // 2. Neue Verbandsmitglieder (letzte 30 Tage)
-    const [newVerbandsmitglieder] = await db.promise().query(`
-      SELECT vm.id, vm.vorname, vm.nachname, vm.email, vm.created_at
-      FROM verband_mitglieder vm
-      WHERE vm.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-      ORDER BY vm.created_at DESC
-      LIMIT 10
-    `);
+    try {
+      const [newVerbandsmitglieder] = await db.promise().query(`
+        SELECT id, person_vorname as vorname, person_nachname as nachname, person_email as email, created_at
+        FROM verbandsmitgliedschaften
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        ORDER BY created_at DESC
+        LIMIT 10
+      `);
 
-    newVerbandsmitglieder.forEach(mitglied => {
-      activities.push({
-        id: `vm-${mitglied.id}`,
-        typ: 'verbandsmitglied_registriert',
-        titel: 'Neues Verbandsmitglied',
-        beschreibung: `${mitglied.vorname} ${mitglied.nachname}`,
-        details: mitglied,
-        erstellt_am: mitglied.created_at,
-        icon: '🏆'
+      newVerbandsmitglieder.forEach(mitglied => {
+        activities.push({
+          id: `vm-${mitglied.id}`,
+          typ: 'verbandsmitglied_registriert',
+          titel: 'Neues Verbandsmitglied',
+          beschreibung: `${mitglied.vorname} ${mitglied.nachname}`,
+          details: mitglied,
+          erstellt_am: mitglied.created_at,
+          icon: '🏆'
+        });
       });
-    });
+    } catch (e) {
+      console.log('⚠️ Keine Verbandsmitglieder-Tabelle gefunden');
+    }
 
     // 3. Neue Bestellungen (letzte 7 Tage)
     try {
       const [newBestellungen] = await db.promise().query(`
         SELECT b.id, b.bestellnummer, b.gesamtbetrag_cent, b.bestellt_am,
-               CONCAT(vm.vorname, ' ', vm.nachname) as kunde_name
+               CONCAT(vm.person_vorname, ' ', vm.person_nachname) as kunde_name
         FROM shop_bestellungen b
-        LEFT JOIN verband_mitglieder vm ON b.verband_mitglied_id = vm.id
+        LEFT JOIN verbandsmitgliedschaften vm ON b.verband_mitglied_id = vm.id
         WHERE b.bestellt_am >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         ORDER BY b.bestellt_am DESC
         LIMIT 5

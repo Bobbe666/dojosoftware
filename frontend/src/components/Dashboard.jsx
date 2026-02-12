@@ -532,6 +532,13 @@ function Dashboard() {
       path: '/dashboard/kalender-sync',
       badge: 'NEU',
       featured: true
+    },
+    {
+      icon: '🔑',
+      title: 'Passwörter',
+      description: 'Passwörter für Dojo-Mitglieder zurücksetzen',
+      path: '/dashboard/passwoerter',
+      featured: false
     }
   ];
 

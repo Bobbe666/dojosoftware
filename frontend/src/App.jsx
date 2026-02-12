@@ -124,6 +124,7 @@ const NotificationSystem = lazy(() => import(/* webpackChunkName: "notifications
 const PruefungsVerwaltung = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungsVerwaltung"));
 const PruefungDurchfuehren = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungDurchfuehren"));
 const BadgeAdminOverview = lazy(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
+const PasswortVerwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/PasswortVerwaltung"));
 
 // ============================================================================
 // LAZY LOADED - Support-Ticketsystem & Feature Board
@@ -652,6 +653,9 @@ const App = () => {
               <Route path="integrationen" element={<Suspense fallback={<LazyLoadFallback />}><IntegrationsEinstellungen /></Suspense>} />
               <Route path="datev-export" element={<Suspense fallback={<LazyLoadFallback />}><DatevExport /></Suspense>} />
               <Route path="kalender-sync" element={<Suspense fallback={<LazyLoadFallback />}><KalenderAbo /></Suspense>} />
+
+              {/* ======== SUPER ADMIN ======== */}
+              <Route path="passwoerter" element={<Suspense fallback={<LazyLoadFallback />}><PasswortVerwaltung dojoOnly={true} /></Suspense>} />
 
               {/* Fehlerseite f�r ung�ltige Dashboard-Unterrouten */}
               <Route 

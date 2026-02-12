@@ -232,14 +232,8 @@ const Login = () => {
                 <div className="form-group">
                   <label className="form-label">
                     <div className="label-content">
-                      {loginType === 'email' ? (
-                        <Mail size={16} className="label-icon" />
-                      ) : (
-                        <User size={16} className="label-icon" />
-                      )}
-                      <span>
-                        {loginType === 'email' ? t('login.email') : t('login.email')}
-                      </span>
+                      <User size={16} className="label-icon" />
+                      <span>E-Mail oder Benutzername</span>
                     </div>
                   </label>
                   <input
@@ -248,7 +242,7 @@ const Login = () => {
                     value={formData.loginField}
                     onChange={handleInputChange}
                     className={`form-input ${loginType === 'email' ? 'input-email' : 'input-username'}`}
-                    placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'ihr-benutzername'}
+                    placeholder="E-Mail oder Benutzername"
                     required
                     autoComplete="username"
                     disabled={loading}

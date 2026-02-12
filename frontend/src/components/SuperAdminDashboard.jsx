@@ -25,6 +25,7 @@ import ArtikelVerwaltung from './ArtikelVerwaltung';
 import AutoLastschriftTab from './AutoLastschriftTab';
 import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
+import PasswortVerwaltung from './PasswortVerwaltung';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -652,7 +653,8 @@ const SuperAdminDashboard = () => {
     { id: 'contracts', label: 'Verträge', icon: '📄' },
     { id: 'users', label: 'Benutzer', icon: '👤' },
     { id: 'plans', label: 'Pläne & Preise', icon: '💳' },
-    { id: 'email', label: 'E-Mail', icon: '✉️' }
+    { id: 'email', label: 'E-Mail', icon: '✉️' },
+    { id: 'passwoerter', label: 'Passwörter', icon: '🔑' }
   ];
 
   return (
@@ -2068,6 +2070,10 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'passwoerter' && (
+          <PasswortVerwaltung />
         )}
       </div>
 

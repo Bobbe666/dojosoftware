@@ -295,6 +295,19 @@ try {
     });
 }
 
+// ADMINS ROUTES (Admin-Benutzerverwaltung & Passwort-Management)
+try {
+  const adminsRoutes = require('./routes/admins');
+  app.use('/api/admins', authenticateToken, adminsRoutes);
+  logger.success('Route gemountet', { path: '/api/admins' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'admins routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // AUDIT-LOG ROUTES (Protokollierung aller Änderungen)
 try {
   const auditLogRoutes = require('./routes/audit-log');
