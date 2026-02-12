@@ -628,7 +628,7 @@ router.get('/password-management/dojo', async (req, res) => {
              m.vorname, m.nachname,
              d.dojoname as dojo_name
       FROM users u
-      LEFT JOIN mitglieder m ON u.mitglied_id = m.id
+      LEFT JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
       LEFT JOIN dojo d ON m.dojo_id = d.id
       ORDER BY u.username
     `);

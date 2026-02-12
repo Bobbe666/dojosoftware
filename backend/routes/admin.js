@@ -1703,11 +1703,11 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
 
     // 4. Abo-Aktivierungen (letzte 30 Tage)
     const [aboAktivierungen] = await db.promise().query(`
-      SELECT id, dojoname, subscription_starts_at, subscription_plan
+      SELECT id, dojoname, subscription_started_at, subscription_plan
       FROM dojo
-      WHERE subscription_starts_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      WHERE subscription_started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         AND subscription_status = 'active'
-      ORDER BY subscription_starts_at DESC
+      ORDER BY subscription_started_at DESC
       LIMIT 5
     `);
 
@@ -1718,7 +1718,7 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
         titel: 'Abonnement aktiviert',
         beschreibung: `${dojo.dojoname} - Plan: ${dojo.subscription_plan || 'Standard'}`,
         details: dojo,
-        erstellt_am: dojo.subscription_starts_at,
+        erstellt_am: dojo.subscription_started_at,
         icon: '💳'
       });
     });
