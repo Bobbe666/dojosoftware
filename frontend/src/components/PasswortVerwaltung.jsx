@@ -34,7 +34,7 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
     setLoading(true);
     setMessage({ text: '', type: '' });
     try {
-      const response = await fetch(`${config.apiBaseUrl}/admin/password-management/${activeTab}`, {
+      const response = await fetch(`${config.apiBaseUrl}/admins/password-management/${activeTab}`, {
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       });
       if (!response.ok) throw new Error('Fehler beim Laden');
@@ -74,7 +74,7 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
     setResetting(true);
     try {
       const response = await fetch(
-        `${config.apiBaseUrl}/admin/password-management/${activeTab}/${selectedUser.id}/reset`,
+        `${config.apiBaseUrl}/admins/password-management/${activeTab}/${selectedUser.id}/reset`,
         {
           method: 'POST',
           headers: {
