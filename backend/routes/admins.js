@@ -649,7 +649,7 @@ router.get('/password-management/dojo-ohne-login', async (req, res) => {
       LEFT JOIN dojo d ON m.dojo_id = d.id
       LEFT JOIN users u ON m.mitglied_id = u.mitglied_id
       WHERE u.id IS NULL
-        AND m.status = 'aktiv'
+        AND m.aktiv = 1
       ORDER BY d.dojoname, m.nachname, m.vorname
     `);
     res.json({ success: true, members: rows });
