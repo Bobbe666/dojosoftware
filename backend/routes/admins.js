@@ -639,6 +639,103 @@ router.get('/password-management/dojo', async (req, res) => {
   }
 });
 
+// GET Mitglieder ohne Login-Account
+router.get('/password-management/dojo-ohne-login', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT m.mitglied_id, m.vorname, m.nachname, m.email,
+             d.dojoname as dojo_name, d.id as dojo_id
+      FROM mitglieder m
+      LEFT JOIN dojo d ON m.dojo_id = d.id
+      LEFT JOIN users u ON m.mitglied_id = u.mitglied_id
+      WHERE u.id IS NULL
+        AND m.status = 'aktiv'
+      ORDER BY d.dojoname, m.nachname, m.vorname
+    `);
+    res.json({ success: true, members: rows });
+  } catch (error) {
+    console.error('Fehler beim Laden der Mitglieder ohne Login:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Mitglieder' });
+  }
+});
+
+// POST Login-Account für Mitglied erstellen
+router.post('/password-management/dojo/create', async (req, res) => {
+  try {
+    const { mitglied_id, password } = req.body;
+
+    if (!mitglied_id) {
+      return res.status(400).json({ error: 'Mitglied-ID erforderlich' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben' });
+    }
+
+    // Prüfe ob Mitglied existiert
+    const [mitglied] = await db.promise().query(
+      'SELECT mitglied_id, vorname, nachname, email, dojo_id FROM mitglieder WHERE mitglied_id = ?',
+      [mitglied_id]
+    );
+
+    if (mitglied.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    // Prüfe ob bereits ein Account existiert
+    const [existing] = await db.promise().query(
+      'SELECT id FROM users WHERE mitglied_id = ?',
+      [mitglied_id]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Mitglied hat bereits einen Login-Account' });
+    }
+
+    const member = mitglied[0];
+
+    // Generiere Username aus Vorname.Nachname
+    let baseUsername = `${member.vorname.toLowerCase()}.${member.nachname.toLowerCase()}`
+      .replace(/[äÄ]/g, 'ae')
+      .replace(/[öÖ]/g, 'oe')
+      .replace(/[üÜ]/g, 'ue')
+      .replace(/[ß]/g, 'ss')
+      .replace(/[^a-z0-9.]/g, '');
+
+    // Prüfe ob Username bereits existiert
+    let username = baseUsername;
+    let counter = 1;
+    while (true) {
+      const [existingUser] = await db.promise().query(
+        'SELECT id FROM users WHERE username = ?',
+        [username]
+      );
+      if (existingUser.length === 0) break;
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Erstelle den Account
+    const [result] = await db.promise().query(
+      `INSERT INTO users (username, email, password, mitglied_id, dojo_id, role, created_at)
+       VALUES (?, ?, ?, ?, ?, 'member', NOW())`,
+      [username, member.email || '', hashedPassword, mitglied_id, member.dojo_id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Login-Account erfolgreich erstellt',
+      username: username,
+      user_id: result.insertId
+    });
+  } catch (error) {
+    console.error('Fehler beim Erstellen des Login-Accounts:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen des Accounts: ' + error.message });
+  }
+});
+
 // POST Passwort zurücksetzen - Software
 router.post('/password-management/software/:id/reset', async (req, res) => {
   try {

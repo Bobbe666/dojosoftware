@@ -117,6 +117,161 @@
   margin-bottom: 20px;
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toggle-without-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 20px;
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-without-login:hover {
+  background: rgba(234, 179, 8, 0.25);
+  border-color: rgba(234, 179, 8, 0.5);
+}
+
+.toggle-without-login.active {
+  background: rgba(234, 179, 8, 0.3);
+  border-color: #fbbf24;
+}
+
+/* Without Login Section */
+.without-login-section {
+  background: rgba(234, 179, 8, 0.05);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.without-login-section h3 {
+  margin: 0 0 16px 0;
+  color: #fbbf24;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.without-login-section .users-table {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+/* Create Button */
+.btn-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-create:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Account Created Success */
+.account-created-success {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.account-created-success .success-icon {
+  color: #10b981;
+  margin-bottom: 16px;
+}
+
+.account-created-success h3 {
+  margin: 0 0 24px 0;
+  color: #10b981;
+  font-size: 18px;
+}
+
+.credentials-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--gold-rgb), 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.credentials-box p {
+  margin: 0 0 8px 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.credentials-box code {
+  display: block;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 18px;
+  color: var(--gold);
+  padding: 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.credentials-box .btn-copy {
+  padding: 6px 14px;
+  background: rgba(var(--gold-rgb), 0.2);
+  border: 1px solid rgba(var(--gold-rgb), 0.3);
+  border-radius: 4px;
+  color: var(--gold);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.credentials-box .btn-copy:hover {
+  background: rgba(var(--gold-rgb), 0.3);
+}
+
+.btn-copy-all {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--gold), #b8860b);
+  border: none;
+  border-radius: 8px;
+  color: var(--dark-bg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.btn-copy-all:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--gold-rgb), 0.4);
+}
+
+.btn-create-account {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.btn-create-account:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 /* Toolbar */
