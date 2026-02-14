@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus, LogIn, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,7 @@ const dojoLogo = '/dojo-logo.png';
 
 const Login = () => {
   const { t } = useTranslation('auth');
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     loginField: '',  // Kann Email oder Username sein
     password: ''
@@ -29,6 +30,18 @@ const Login = () => {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { refreshDojos } = useDojoContext();
   const navigate = useNavigate();
+
+  // Prüfe URL-Parameter für Fehlermeldungen (z.B. nach Auto-Logout)
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    const expiredParam = searchParams.get('expired');
+
+    if (errorParam === 'wrong_dojo') {
+      setError(t('errors.accessDenied'));
+    } else if (expiredParam === '1') {
+      setError(t('errors.sessionExpired'));
+    }
+  }, [searchParams, t]);
 
   // Redirect wenn bereits eingeloggt - basierend auf Rolle
   const { user } = useAuth();
@@ -134,10 +147,18 @@ const Login = () => {
       }
 
     } catch (err) {
-      console.error('? Login-Fehler:', err);
+      console.error('Login-Fehler:', err);
 
       if (err.response?.status === 401) {
         setError(t('errors.invalidCredentials'));
+      } else if (err.response?.status === 403) {
+        // Kein Zugriff auf dieses Dojo
+        const errorMsg = err.response?.data?.message || '';
+        if (errorMsg.includes('keinen Zugriff') || errorMsg.includes('Zugriff verweigert')) {
+          setError(t('errors.accessDenied'));
+        } else {
+          setError(t('errors.wrongDojo'));
+        }
       } else if (err.response?.status === 400) {
         setError(t('errors.requiredField'));
       } else if (err.response?.status === 500) {

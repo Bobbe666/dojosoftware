@@ -128,16 +128,16 @@ logger.info('Swagger UI available at /api-docs');
 // =============================================
 // MUSS VOR allen Routen definiert werden!
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   // Debug: Log für Badges-Route
-  if (req.path.includes('badges') || req.originalUrl.includes('badges')) {
-    console.log('🔐 Auth Debug (badges):', {
+  if (req.path.includes("badges") || req.originalUrl.includes("badges")) {
+    console.log("🔐 Auth Debug (badges):", {
       path: req.path,
       originalUrl: req.originalUrl,
       hasToken: !!token,
-      tokenStart: token ? token.substring(0, 20) + '...' : 'none'
+      tokenStart: token ? token.substring(0, 20) + "..." : "none"
     });
   }
 
@@ -145,15 +145,65 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ message: "Kein Token vorhanden" });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) {
       // Debug: Log für fehlgeschlagene Token-Verifikation
-      if (req.path.includes('badges') || req.originalUrl.includes('badges')) {
-        console.log('❌ Token-Fehler (badges):', { error: err.message, tokenStart: token.substring(0, 20) });
+      if (req.path.includes("badges") || req.originalUrl.includes("badges")) {
+        console.log("❌ Token-Fehler (badges):", { error: err.message, tokenStart: token.substring(0, 20) });
       }
       return res.status(403).json({ message: "Token ungültig oder abgelaufen" });
     }
     req.user = decoded;
+    
+    // ========== INLINE TENANT ISOLATION CHECK ==========
+    const subdomain = req.headers["x-tenant-subdomain"];
+    
+    if (subdomain && subdomain !== "") {
+      try {
+        const [dojos] = await db.promise().query(
+          "SELECT id, dojoname, subdomain FROM dojo WHERE subdomain = ? AND ist_aktiv = TRUE LIMIT 1",
+          [subdomain]
+        );
+        
+        if (dojos.length > 0) {
+          const dojo = dojos[0];
+          const userDojoId = decoded.dojo_id;
+          const userRole = decoded.role || decoded.rolle;
+          
+          // Super-Admin (role=super_admin ODER admin mit dojo_id=null) darf alles
+          const isSuperAdmin = (userRole === "super_admin") || 
+                               (userRole === "admin" && userDojoId === null);
+          
+          // SICHERHEITSCHECK: User muss zum Dojo der Subdomain gehören!
+          if (!isSuperAdmin && userDojoId !== null && userDojoId !== dojo.id) {
+            logger.error("SICHERHEIT: User versucht fremde Subdomain!", {
+              user_dojo_id: userDojoId,
+              subdomain: subdomain,
+              subdomain_dojo_id: dojo.id,
+              user_email: decoded.email
+            });
+            return res.status(403).json({
+              error: "Zugriff verweigert",
+              message: "Sie haben keinen Zugriff auf dieses Dojo"
+            });
+          }
+          
+          // Tenant-Kontext setzen für nachfolgende Middleware/Routes
+          req.tenant = {
+            dojo_id: dojo.id,
+            subdomain: dojo.subdomain,
+            dojoname: dojo.dojoname
+          };
+          req.query.dojo_id = dojo.id.toString();
+        }
+      } catch (dbError) {
+        logger.error("Tenant-Isolation DB-Fehler:", { error: dbError.message });
+        // Bei DB-Fehler: Sicherer Abbruch
+        return res.status(500).json({ error: "Interner Serverfehler" });
+      }
+    }
+    // ========== ENDE TENANT ISOLATION CHECK ==========
+    
     next();
   });
 };
@@ -233,6 +283,21 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
     route: 'subscription',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
+// 1.2b SAAS STRIPE (Plan-Upgrades via Stripe)
+try {
+  const saasStripeRoutes = require('./routes/saas-stripe');
+  // Webhook braucht raw body, daher spezielles Handling
+  app.use('/api/saas-stripe/webhook', express.raw({ type: 'application/json' }), saasStripeRoutes);
+  app.use('/api/saas-stripe', saasStripeRoutes);
+  logger.success('Route geladen', { path: '/api/saas-stripe' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'saas-stripe',
     error: error.message,
     stack: error.stack
   });
@@ -976,28 +1041,24 @@ try {
 // =============================================
 // Subdomains → strikte Dojo-Zuordnung
 // Hauptdomain → freie Dojo-Wahl via Switcher
+// TENANT ISOLATION MIDDLEWARE - MIT SICHERHEITS-CHECK
+// =============================================
+// Subdomains → strikte Dojo-Zuordnung mit User-Validierung
+// Hauptdomain → freie Dojo-Wahl via Switcher (nur für Super-Admin)
 const tenantIsolationMiddleware = async (req, res, next) => {
   const subdomain = req.headers['x-tenant-subdomain'];
 
   // Hauptdomain (kein Subdomain-Header)
   if (!subdomain || subdomain === '') {
-    // Prüfe ob User eine dojo_id hat (aus JWT Token)
     const userDojoId = req.user?.dojo_id;
     const userRole = req.user?.role || req.user?.rolle;
 
     if (userDojoId && userRole !== 'super_admin') {
-      // User mit dojo_id → erzwinge seine dojo_id auch bei Hauptdomain
       req.query.dojo_id = userDojoId.toString();
       logger.debug('Hauptdomain-Request - User dojo_id erzwungen', {
         url: req.url,
         user_dojo_id: userDojoId,
         forced_dojo_id: req.query.dojo_id
-      });
-    } else {
-      logger.debug('Hauptdomain-Request - Multi-Dojo erlaubt', {
-        url: req.url,
-        dojo_id: req.query.dojo_id,
-        user_role: userRole
       });
     }
     return next();
@@ -1019,13 +1080,36 @@ const tenantIsolationMiddleware = async (req, res, next) => {
     }
 
     const dojo = dojos[0];
+
+    // ========== SICHERHEITS-CHECK ==========
+    // Prüfe ob User zum Dojo der Subdomain gehört!
+    const userDojoId = req.user?.dojo_id;
+    const userRole = req.user?.role || req.user?.rolle;
+    
+    // Super-Admin (role=admin mit dojo_id=null) darf alles
+    const isSuperAdmin = (userRole === 'super_admin') || 
+                         (userRole === 'admin' && userDojoId === null);
+    
+    if (!isSuperAdmin && userDojoId !== null && userDojoId !== dojo.id) {
+      logger.error('SICHERHEIT: User versucht fremde Subdomain!', {
+        user_dojo_id: userDojoId,
+        subdomain: subdomain,
+        subdomain_dojo_id: dojo.id,
+        user_email: req.user?.email
+      });
+      return res.status(403).json({
+        error: 'Zugriff verweigert',
+        message: 'Sie haben keinen Zugriff auf dieses Dojo'
+      });
+    }
+    // ========== ENDE SICHERHEITS-CHECK ==========
+
     req.tenant = {
       dojo_id: dojo.id,
       subdomain: dojo.subdomain,
       dojoname: dojo.dojoname
     };
 
-    // Query-Parameter überschreiben für Tenant-Isolation
     req.query.dojo_id = dojo.id.toString();
 
     logger.debug('Tenant-Isolation aktiv', {
@@ -1037,9 +1121,10 @@ const tenantIsolationMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     logger.error('Fehler bei Tenant-Lookup', { error: error.message, subdomain });
-    return res.status(500).json({ error: 'Interner Fehler bei Tenant-Validierung' });
+    return res.status(500).json({ error: 'Interner Fehler' });
   }
 };
+
 
 // Tenant-Isolation global für alle /api/* Routes aktivieren (außer /api/auth)
 app.use('/api', (req, res, next) => {
@@ -1373,8 +1458,7 @@ const skipFiles = [
   "standorte.js",
   "stundenplan.js",
   "badges.js",
-  // Keine Router-Module (exportieren nur Funktionen oder sind Notizen):
-  "stileguertel_stats_fixed.js",
+  // Keine Router-Module (exportieren nur Funktionen):
   "templatePdfGenerator.js",
   "vertragPdfGeneratorExtended.js",
   "ManualSepaProvider.js",
@@ -1635,4 +1719,17 @@ app.listen(PORT, HOST, () => {
     stile: `http://localhost:${PORT}/api/stile`,
     frontend: 'http://localhost:5173/dashboard/stile'
   });
+
+  // SaaS Scheduled Jobs starten (Trial-Erinnerungen, etc.)
+  try {
+    const saasScheduler = require('./jobs/saasScheduler');
+    if (process.env.ENABLE_SAAS_SCHEDULER !== 'false') {
+      saasScheduler.startAllJobs();
+      logger.info('SaaS Scheduler gestartet');
+    } else {
+      logger.info('SaaS Scheduler deaktiviert (ENABLE_SAAS_SCHEDULER=false)');
+    }
+  } catch (error) {
+    logger.warn('SaaS Scheduler konnte nicht gestartet werden:', error.message);
+  }
 });

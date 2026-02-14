@@ -206,6 +206,31 @@ export const fetchWithAuth = async (url, options = {}) => {
     throw new Error('Sitzung abgelaufen. Sie werden zur Anmeldung weitergeleitet.');
   }
 
+  // 403 Forbidden - Falsches Dojo / Kein Zugriff
+  if (response.status === 403) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('❌ [Auth] 403 Forbidden - Kein Zugriff auf dieses Dojo');
+
+    // Prüfe ob es ein Dojo-Zugriffsproblem ist
+    if (errorData.error === 'Zugriff verweigert' ||
+        errorData.message?.includes('keinen Zugriff')) {
+      // Alle Auth-Daten entfernen
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('dojo_user');
+      localStorage.removeItem('dojo_id');
+      localStorage.removeItem('user_role');
+
+      // Event dispatchen
+      window.dispatchEvent(new CustomEvent('auth:logout', {
+        detail: { reason: 'wrong_dojo' }
+      }));
+
+      // Zur Login-Seite mit Fehlermeldung
+      window.location.href = '/login?error=wrong_dojo';
+      throw new Error('Sie haben keinen Zugriff auf dieses Dojo.');
+    }
+  }
+
   return response;
 };
 
