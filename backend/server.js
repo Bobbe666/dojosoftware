@@ -14,6 +14,12 @@ require("dotenv").config();
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('./middleware/auth');
 
+// Session-basierte Authentifizierung (Phase 2 Security Upgrade)
+const { createSessionMiddleware } = require('./config/session');
+
+// Security Configuration (Helmet, Rate Limiting, CSRF)
+const { loginLimiter, passwordResetLimiter } = require('./config/security');
+
 // Strukturierter Logger
 const logger = require("./utils/logger");
 
@@ -100,13 +106,29 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Content-Length'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-XSRF-Token', 'X-Tenant-Subdomain'],
+  exposedHeaders: ['Content-Type', 'Content-Length', 'X-CSRF-Token'],
 }));
 
 // Body-Parser mit expliziter UTF-8 Konfiguration und 10MB Limit für PDF-HTML
 app.use(express.json({ charset: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8', limit: '10mb' }));
+
+// =============================================
+// SESSION MIDDLEWARE (Phase 2 Security Upgrade)
+// =============================================
+// Session-basierte Authentifizierung mit MySQL-Store
+// HttpOnly Cookies für XSS-Schutz
+try {
+  const sessionMiddleware = createSessionMiddleware(db);
+  app.use(sessionMiddleware);
+  logger.success('Session-Middleware aktiviert', { store: 'MySQL', cookie: 'HttpOnly' });
+} catch (error) {
+  logger.error('Session-Middleware konnte nicht initialisiert werden', {
+    error: error.message,
+    hint: 'Stelle sicher, dass die sessions-Tabelle existiert (Migration 104)'
+  });
+}
 
 // API Documentation mit Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -335,10 +357,11 @@ try {
 // }
 
 // AUTH ROUTES (Login, Token, Passwortänderung/Reset) - mit strenger Rate Limiting
+// Verwendet loginLimiter aus config/security.js (IP+Username Kombination)
 try {
   const authRoutes = require('./routes/auth');
-  app.use('/api/auth', authLimiter, authRoutes);
-  logger.success('Route gemountet', { path: '/api/auth (mit Rate Limiting)' });
+  app.use('/api/auth', loginLimiter, authRoutes);
+  logger.success('Route gemountet', { path: '/api/auth (mit Enhanced Rate Limiting)' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'auth routes',
