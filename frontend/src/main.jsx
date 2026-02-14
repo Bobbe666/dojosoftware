@@ -22,20 +22,41 @@ import './styles/Dashboard-TdaVib.css';
 import { DatenProvider } from '@shared/DatenContext.jsx';
 import axios from 'axios';
 import config from './config/config.js';
+import { fetchCsrfToken, getCsrfToken } from './services/api.js';
 
 // Axios-Basis-URL konfigurieren
 // WICHTIG: Alle axios-Aufrufe sollten relative Pfade verwenden (z.B. '/events'),
 // NICHT ${config.apiBaseUrl}/events - das führt zu doppelten /api/api/ Pfaden!
 axios.defaults.baseURL = config.apiBaseUrl;
 
-// Globaler Request Interceptor - fügt Auth-Token automatisch hinzu
+// Phase 3 Security: Cookies automatisch mitsenden (Session-Auth)
+axios.defaults.withCredentials = true;
+
+// CSRF-Token beim App-Start holen
+fetchCsrfToken().then(() => {
+  console.log('🔐 [Security] CSRF-Schutz initialisiert');
+}).catch(err => {
+  console.warn('⚠️ [Security] CSRF-Token konnte nicht geladen werden:', err.message);
+});
+
+// Globaler Request Interceptor - Session-Auth mit JWT-Fallback
 axios.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  (reqConfig) => {
+    // CSRF-Token für state-changing Requests
+    const stateChangingMethods = ['post', 'put', 'delete', 'patch'];
+    if (stateChangingMethods.includes(reqConfig.method?.toLowerCase())) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        reqConfig.headers['X-CSRF-Token'] = csrfToken;
+      }
     }
-    return config;
+
+    // JWT-Fallback für Übergangsphase (wird später entfernt)
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    if (token) {
+      reqConfig.headers.Authorization = `Bearer ${token}`;
+    }
+    return reqConfig;
   },
   (error) => {
     return Promise.reject(error);

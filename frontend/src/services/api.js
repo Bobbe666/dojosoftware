@@ -1,10 +1,41 @@
 /**
  * Zentrale API-Service-Schicht
  * Alle Backend-Kommunikation sollte durch diesen Service laufen
+ *
+ * Phase 3 Security: Session-basierte Authentifizierung
+ * - HttpOnly Cookies werden automatisch gesendet (withCredentials: true)
+ * - CSRF-Token wird bei state-changing Requests mitgesendet
+ * - JWT-Fallback für Übergangsphase (wird später entfernt)
  */
 
 import axios from 'axios';
 import config from '../config/config';
+
+// CSRF Token Storage (nicht im localStorage - wird vom Backend geholt)
+let csrfToken = null;
+
+/**
+ * Holt CSRF-Token vom Backend
+ * Wird einmal beim App-Start aufgerufen
+ */
+export const fetchCsrfToken = async () => {
+  try {
+    const response = await axios.get(`${config.apiBaseUrl}/auth/csrf-token`, {
+      withCredentials: true
+    });
+    csrfToken = response.data.csrfToken;
+    console.log('🔐 [Security] CSRF-Token erhalten');
+    return csrfToken;
+  } catch (error) {
+    console.warn('⚠️ [Security] CSRF-Token konnte nicht geholt werden:', error.message);
+    return null;
+  }
+};
+
+/**
+ * Gibt das aktuelle CSRF-Token zurück
+ */
+export const getCsrfToken = () => csrfToken;
 
 // Erstelle Axios-Instance mit Default-Config
 const apiClient = axios.create({
@@ -13,16 +44,26 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // WICHTIG: Cookies automatisch mitsenden (Session-Auth)
+  withCredentials: true,
 });
 
-// Request Interceptor - fügt Auth-Token automatisch hinzu
+// Request Interceptor - Session-Auth mit CSRF + JWT-Fallback
 apiClient.interceptors.request.use(
   (requestConfig) => {
-    // Verwende dojo_auth_token (wie in AuthContext) mit fallback zu authToken
+    // CSRF-Token für state-changing Requests (POST, PUT, DELETE, PATCH)
+    const stateChangingMethods = ['post', 'put', 'delete', 'patch'];
+    if (stateChangingMethods.includes(requestConfig.method?.toLowerCase()) && csrfToken) {
+      requestConfig.headers['X-CSRF-Token'] = csrfToken;
+    }
+
+    // JWT-Fallback für Übergangsphase (Backend akzeptiert beides)
+    // TODO: Nach vollständiger Migration zu Session-only entfernen
     const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
     if (token && requestConfig.headers) {
       requestConfig.headers['Authorization'] = `Bearer ${token}`;
     }
+
     return requestConfig;
   },
   (error) => {

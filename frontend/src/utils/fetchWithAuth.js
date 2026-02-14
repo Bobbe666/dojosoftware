@@ -2,6 +2,11 @@
  * Fetch-Wrapper mit automatischer Authorization-Header-Injection
  * ERWEITERT: Auto-Logout bei 401 & Token-Refresh bei Aktivität
  *
+ * Phase 3 Security:
+ * - Session-basierte Auth mit HttpOnly Cookies (credentials: 'include')
+ * - CSRF-Token für state-changing Requests
+ * - JWT als Fallback während Übergangsphase
+ *
  * Verwendung: Ersetze fetch() mit fetchWithAuth() in allen Komponenten
  *
  * Beispiel:
@@ -13,6 +18,7 @@
  */
 
 import config from '../config';
+import { getCsrfToken } from '../services/api';
 
 // Konfiguration
 const TOKEN_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 Minuten vor Ablauf refreshen
@@ -188,15 +194,25 @@ export const fetchWithAuth = async (url, options = {}) => {
     ...options.headers,
   };
 
-  // Füge Authorization-Header hinzu, falls Token vorhanden
+  // JWT-Fallback für Übergangsphase (wird später entfernt)
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // Führe fetch aus
+  // CSRF-Token für state-changing Requests (POST, PUT, DELETE, PATCH)
+  const method = (options.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+
+  // Führe fetch aus mit credentials: 'include' (Session-Cookies)
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: 'include', // WICHTIG: Session-Cookies automatisch senden
   });
 
   // 401 Unauthorized - Automatischer Logout

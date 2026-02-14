@@ -29,7 +29,8 @@ const {
   getClientInfo,
   isAccountLocked,
   recordFailedLogin,
-  recordSuccessfulLogin
+  recordSuccessfulLogin,
+  generateCsrfToken
 } = require('../config/security');
 
 const {
@@ -53,8 +54,10 @@ router.get('/health', (req, res) => {
     routes: {
       'POST /api/auth/login': 'Login with username or email (JWT + Session)',
       'POST /api/auth/logout': 'Logout (destroys session)',
+      'GET /api/auth/session': 'Check session status (Phase 3)',
       'GET /api/auth/me': 'Get current user',
       'POST /api/auth/refresh': 'Refresh JWT token',
+      'GET /api/auth/csrf-token': 'Get CSRF token for state-changing requests',
       'GET /api/auth/health': 'Health check'
     }
   });
@@ -66,6 +69,64 @@ router.get('/test', (req, res) => {
     timestamp: new Date().toISOString(),
     sessionEnabled: !!req.session,
     dbSystem: 'Using existing db.js connection'
+  });
+});
+
+// ===================================================================
+// 🔐 CSRF-TOKEN ENDPOINT (Phase 3 Security)
+// ===================================================================
+// Frontend holt CSRF-Token beim App-Start
+// Token wird bei state-changing Requests (POST/PUT/DELETE) mitgesendet
+
+router.get('/csrf-token', (req, res) => {
+  try {
+    const token = generateCsrfToken(req, res);
+    res.json({
+      success: true,
+      csrfToken: token
+    });
+  } catch (error) {
+    logger.warn('CSRF-Token-Generierung fehlgeschlagen:', error.message);
+    // Fallback: Generiere einfachen Token basierend auf Session
+    const fallbackToken = req.session?.id
+      ? Buffer.from(req.session.id).toString('base64').substring(0, 32)
+      : 'csrf-fallback-' + Date.now();
+    res.json({
+      success: true,
+      csrfToken: fallbackToken
+    });
+  }
+});
+
+// ===================================================================
+// 🔐 SESSION-CHECK ENDPOINT (Phase 3 Security)
+// ===================================================================
+// Frontend kann Session-Status prüfen ohne JWT
+// Gibt User-Info zurück wenn Session gültig ist
+
+router.get('/session', (req, res) => {
+  // Prüfe ob Session existiert und User eingeloggt ist
+  if (req.session && req.session.userId) {
+    return res.json({
+      success: true,
+      authenticated: true,
+      user: {
+        id: req.session.userId,
+        email: req.session.email,
+        username: req.session.username,
+        role: req.session.role,
+        dojo_id: req.session.dojoId,
+        dojoName: req.session.dojoName
+      },
+      authMethod: 'session'
+    });
+  }
+
+  // Keine gültige Session
+  return res.json({
+    success: true,
+    authenticated: false,
+    user: null
   });
 });
 
