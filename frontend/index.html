@@ -180,16 +180,16 @@
     </style>
   </head>
   <body>
-    <!-- TDA Intro Popup -->
-    <div class="tda-intro-overlay" id="introOverlay">
+    <!-- TDA Intro Popup - Nur auf Startseite -->
+    <div class="tda-intro-overlay" id="introOverlay" style="display: none;">
       <div class="tda-intro-content">
         <div class="tda-intro-glow"></div>
         <img src="/tda-systems-logo.png" alt="TDA Systems" class="tda-intro-logo" />
       </div>
     </div>
 
-    <!-- TDA Systems Logo oben rechts -->
-    <div class="tda-corner-badge">
+    <!-- TDA Systems Logo oben rechts - Nur auf Startseite -->
+    <div class="tda-corner-badge" id="cornerBadge" style="display: none;">
       <img src="/tda-systems-logo.png" alt="TDA Systems" />
     </div>
     
@@ -197,18 +197,43 @@
     <script type="module" src="/src/main.jsx"></script>
     
     <script>
-      // TDA Intro Animation
+      // TDA Intro Animation - NUR auf Startseite "/"
+      const currentPath = window.location.pathname;
       const intro = document.getElementById('introOverlay');
+      const cornerBadge = document.getElementById('cornerBadge');
+      
+      // Nur auf der Startseite (/) anzeigen
+      if (currentPath === '/' || currentPath === '/index.html') {
+        // Corner Badge anzeigen
+        cornerBadge.style.display = 'block';
+        
+        // Intro Animation
+        const introShown = sessionStorage.getItem('tdaIntroShown');
+        
+        if (!introShown) {
+          intro.style.display = 'flex';
+          
+          // Nach 1.5s Einblendung - kurz zeigen
+          setTimeout(() => {
+            intro.classList.add('exiting');
+          }, 2500);
 
-      // Nach 1.5s Einblendung - kurz zeigen
-      setTimeout(() => {
-        intro.classList.add('exiting');
-      }, 2500);
-
-      // Nach Animation komplett ausblenden
-      setTimeout(() => {
-        intro.classList.add('hidden');
-      }, 3500);
+          // Nach Animation komplett ausblenden
+          setTimeout(() => {
+            intro.classList.add('hidden');
+            intro.style.display = 'none';
+          }, 3500);
+          
+          // Markieren dass Intro gezeigt wurde (nur für diese Session)
+          sessionStorage.setItem('tdaIntroShown', 'true');
+        } else {
+          intro.style.display = 'none';
+        }
+      } else {
+        // Auf allen anderen Seiten (/dashboard, /login, etc.) verstecken
+        intro.style.display = 'none';
+        cornerBadge.style.display = 'none';
+      }
     </script>
   </body>
 </html>
