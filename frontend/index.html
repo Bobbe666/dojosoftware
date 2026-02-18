@@ -22,9 +22,193 @@
     <link rel="manifest" href="/manifest.json" />
 
     <title>Dojosoftware</title>
+    
+    <style>
+      /* TDA Systems Intro Overlay */
+      .tda-intro-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+        opacity: 0;
+        animation: introFadeIn 0.8s ease-out forwards;
+      }
+
+      .tda-intro-overlay.exiting {
+        animation: introFadeOut 1s ease-in-out forwards;
+      }
+
+      .tda-intro-overlay.hidden {
+        display: none;
+      }
+
+      @keyframes introFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes introFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+
+      .tda-intro-content {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .tda-intro-glow {
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(
+          ellipse 40% 35% at center,
+          rgba(255, 180, 50, 0.08) 0%,
+          rgba(255, 150, 0, 0.03) 50%,
+          transparent 80%
+        );
+        opacity: 0;
+        animation: glowIn 1.2s ease-out forwards;
+        animation-delay: 0.3s;
+      }
+
+      .tda-intro-overlay.exiting .tda-intro-glow {
+        animation: glowOut 0.8s ease-out forwards;
+      }
+
+      @keyframes glowIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes glowOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+
+      .tda-intro-logo {
+        max-width: 550px;
+        width: 75vw;
+        height: auto;
+        z-index: 2;
+        -webkit-mask-image: radial-gradient(
+          ellipse 55% 50% at center,
+          black 0%,
+          black 25%,
+          rgba(0,0,0,0.7) 45%,
+          rgba(0,0,0,0.3) 60%,
+          rgba(0,0,0,0.1) 75%,
+          transparent 90%
+        );
+        mask-image: radial-gradient(
+          ellipse 55% 50% at center,
+          black 0%,
+          black 25%,
+          rgba(0,0,0,0.7) 45%,
+          rgba(0,0,0,0.3) 60%,
+          rgba(0,0,0,0.1) 75%,
+          transparent 90%
+        );
+        opacity: 0;
+        animation: logoFadeIn 1.5s ease-out forwards;
+        animation-delay: 0.5s;
+      }
+
+      .tda-intro-overlay.exiting .tda-intro-logo {
+        animation: logoFadeOut 0.8s ease-out forwards;
+      }
+
+      @keyframes logoFadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes logoFadeOut {
+        from {
+          opacity: 1;
+          transform: scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: scale(1.05);
+        }
+      }
+
+      /* TDA Corner Badge */
+      .tda-corner-badge {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        z-index: 999;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: linear-gradient(145deg, rgba(20,20,25,0.95), rgba(10,10,12,0.98));
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        box-shadow:
+          0 0 20px rgba(255, 107, 53, 0.15),
+          0 0 30px rgba(255, 215, 0, 0.08);
+      }
+
+      .tda-corner-badge img {
+        width: 110%;
+        height: 110%;
+        object-fit: cover;
+        margin: -5%;
+      }
+
+      @media (max-width: 768px) {
+        .tda-corner-badge {
+          top: 80px;
+          right: 15px;
+          width: 55px;
+          height: 55px;
+        }
+      }
+    </style>
   </head>
   <body>
+    <!-- TDA Intro Popup -->
+    <div class="tda-intro-overlay" id="introOverlay">
+      <div class="tda-intro-content">
+        <div class="tda-intro-glow"></div>
+        <img src="/tda-systems-logo.png" alt="TDA Systems" class="tda-intro-logo" />
+      </div>
+    </div>
+
+    <!-- TDA Systems Logo oben rechts -->
+    <div class="tda-corner-badge">
+      <img src="/tda-systems-logo.png" alt="TDA Systems" />
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <script>
+      // TDA Intro Animation
+      const intro = document.getElementById('introOverlay');
+
+      // Nach 1.5s Einblendung - kurz zeigen
+      setTimeout(() => {
+        intro.classList.add('exiting');
+      }, 2500);
+
+      // Nach Animation komplett ausblenden
+      setTimeout(() => {
+        intro.classList.add('hidden');
+      }, 3500);
+    </script>
   </body>
 </html>
