@@ -347,8 +347,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9000;
   padding: 1rem;
+}
+
+/* Modal Inputs müssen klickbar sein */
+.modal-content input,
+.modal-content select,
+.modal-content textarea,
+.modal-content button,
+.modal-content .btn,
+.modal-content label {
+  position: relative !important;
+  z-index: 9001 !important;
+  pointer-events: auto !important;
+}
+
+.modal-content .toggle-label {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.modal-content .toggle-label input[type="checkbox"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 9002 !important;
 }
 
 .modal-content {
@@ -753,4 +776,1223 @@
     background: var(--background-color);
     border-color: var(--border-dark);
   }
+}
+
+/* =============================================================================
+   MARKETING-JAHRESPLAN STYLES
+   ============================================================================= */
+
+.marketing-jahresplan {
+  padding: 1rem 0;
+}
+
+/* Message Banner */
+.jahresplan-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  animation: slideIn 0.3s ease;
+}
+
+.jahresplan-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  color: #10b981;
+}
+
+.jahresplan-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+/* Header */
+.jahresplan-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.jahresplan-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  color: #FFD700;
+  margin: 0;
+}
+
+/* Stats */
+.jahresplan-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.jahresplan-stats .stat-item {
+  text-align: center;
+}
+
+.jahresplan-stats .stat-number {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+.jahresplan-stats .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Kalender-Grid */
+.jahresplan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1200px) {
+  .jahresplan-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .jahresplan-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .jahresplan-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Monat-Card */
+.monat-card {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.monat-card:hover {
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.monat-card.current-month {
+  border-color: #FFD700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.monat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.monat-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #FFD700;
+}
+
+.monat-content {
+  padding: 0.75rem;
+  min-height: 120px;
+}
+
+.monat-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.monat-empty p {
+  margin: 0 0 0.5rem 0;
+}
+
+/* Vorschläge */
+.vorschlaege {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.vorschlaege-label {
+  width: 100%;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.vorschlag-chip {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: var(--text-secondary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vorschlag-chip:hover {
+  background: rgba(255, 215, 0, 0.2);
+  color: #FFD700;
+}
+
+/* Aktionen Liste */
+.aktionen-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.aktion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border-left: 3px solid;
+}
+
+.aktion-icon {
+  flex-shrink: 0;
+  padding: 0.25rem;
+}
+
+.aktion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.aktion-info strong {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aktion-datum {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0.15rem 0;
+}
+
+.aktion-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Status Badges */
+.jahresplan-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+.jahresplan-status-badge.status-planned {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.jahresplan-status-badge.status-preparing {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.jahresplan-status-badge.status-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.jahresplan-status-badge.status-completed {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.jahresplan-status-badge.status-cancelled {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* Legende */
+.jahresplan-legende {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.jahresplan-legende h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.legende-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.legende-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+/* Modal */
+.jahresplan-modal {
+  max-width: 600px;
+  width: 95%;
+}
+
+.jahresplan-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .jahresplan-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Button Styles */
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #FFD700;
+  color: #FFD700;
+}
+
+.btn-icon.btn-sm {
+  padding: 0.35rem;
+}
+
+.btn-icon.btn-xs {
+  padding: 0.25rem;
+}
+
+.btn-icon.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+/* =============================================================================
+   FREUNDE WERBEN FREUNDE STYLES
+   ============================================================================= */
+
+.freunde-werben-freunde {
+  padding: 1rem 0;
+}
+
+/* Message */
+.referral-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  animation: slideIn 0.3s ease;
+}
+
+.referral-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  color: #10b981;
+}
+
+.referral-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+/* Header */
+.referral-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.referral-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.referral-title h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #FFD700;
+}
+
+.status-indicator {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-indicator.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status-indicator.inactive {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+/* Tabs */
+.referral-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.referral-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.referral-tab:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.referral-tab.active {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: #FFD700;
+  color: #FFD700;
+}
+
+/* Stats Grid */
+.referral-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .referral-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .referral-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.referral-stat-card {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.referral-stat-card .stat-icon {
+  color: #FFD700;
+  margin-bottom: 0.5rem;
+}
+
+.referral-stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.referral-stat-card .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.referral-stat-card.success .stat-icon { color: #10b981; }
+.referral-stat-card.warning .stat-icon { color: #f59e0b; }
+.referral-stat-card.info .stat-icon { color: #3b82f6; }
+
+/* Prämien Summen */
+.referral-praemien-summen {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.praemien-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  color: #10b981;
+}
+
+.praemien-card.pending {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.praemien-card .amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.praemien-card .label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Top Werber */
+.top-werber-section {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.freunde-werben-freunde .top-werber-section h3,
+.freunde-werben-freunde .referral-werbungen .section-header h3,
+.freunde-werben-freunde .referral-praemien .section-header h3,
+.freunde-werben-freunde .referral-codes .section-header h3,
+body .top-werber-section h3,
+body .referral-werbungen .section-header h3,
+body .referral-praemien .section-header h3,
+body .referral-codes .section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  color: #FFD700 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.top-werber-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.top-werber-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.top-werber-item .rang {
+  font-weight: 700;
+  color: #FFD700;
+  width: 30px;
+}
+
+.top-werber-item .name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.top-werber-item .count {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.top-werber-item .erfolg {
+  color: #10b981;
+  font-size: 0.85rem;
+}
+
+/* Status Badges */
+.referral-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.referral-status-badge.status-pending {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.referral-status-badge.status-info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.referral-status-badge.status-success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.referral-status-badge.status-completed {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.referral-status-badge.status-cancelled {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* Werbungen Table */
+.werbungen-table {
+  overflow-x: auto;
+}
+
+.werbungen-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.werbungen-table th,
+.werbungen-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.werbungen-table th {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.werbungen-table code {
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #FFD700;
+}
+
+/* Prämien List */
+.praemien-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.praemie-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.praemie-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.praemie-info strong {
+  color: var(--text-primary);
+}
+
+.praemie-info span {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.praemie-amount {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #10b981;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.praemie-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Codes Grid */
+.codes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.code-card {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.code-card.inactive {
+  opacity: 0.5;
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.code-header .mitglied-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.code-header .aktion {
+  font-size: 0.75rem;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: #FFD700;
+}
+
+.code-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.code-value code {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 1.1rem;
+  color: #FFD700;
+  letter-spacing: 1px;
+}
+
+.code-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Einstellungen - Override global designsystem styles */
+.freunde-werben-freunde h3,
+.freunde-werben-freunde h4,
+.freunde-werben-freunde .section-header h3,
+.freunde-werben-freunde .einstellungen-section h3,
+.freunde-werben-freunde .einstellungen-section h4,
+.freunde-werben-freunde .bonus-system-info h4,
+.freunde-werben-freunde .info-section h3,
+.referral-einstellungen .section-header h3,
+.einstellungen-section > h3,
+.einstellungen-section .section-header h3,
+.einstellungen-section h4,
+body .freunde-werben-freunde h3,
+body .freunde-werben-freunde h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  color: #FFD700 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  -webkit-text-stroke: 0 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  /* WICHTIG: Reset background-clip text effect */
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #FFD700 !important;
+}
+
+/* BUTTONS - Sichtbarer Text auf goldenem Hintergrund */
+.freunde-werben-freunde .btn,
+.freunde-werben-freunde button,
+.freunde-werben-freunde .btn-primary,
+.freunde-werben-freunde .btn-secondary,
+.freunde-werben-freunde .btn-sm,
+body .freunde-werben-freunde .btn,
+body .freunde-werben-freunde button {
+  color: #1a1a2e !important;
+  -webkit-text-fill-color: #1a1a2e !important;
+  background: linear-gradient(135deg, #ffd700, #ffed4a) !important;
+  border: none !important;
+  font-weight: 600 !important;
+}
+
+.freunde-werben-freunde .btn:hover,
+.freunde-werben-freunde button:hover,
+body .freunde-werben-freunde .btn:hover {
+  background: linear-gradient(135deg, #ffed4a, #fff176) !important;
+  color: #1a1a2e !important;
+  -webkit-text-fill-color: #1a1a2e !important;
+}
+
+/* Secondary Buttons - transparent mit goldenem Text */
+.freunde-werben-freunde .btn-secondary,
+body .freunde-werben-freunde .btn-secondary {
+  background: transparent !important;
+  border: 1px solid rgba(255, 215, 0, 0.4) !important;
+  color: #ffd700 !important;
+  -webkit-text-fill-color: #ffd700 !important;
+}
+
+.freunde-werben-freunde .btn-secondary:hover {
+  background: rgba(255, 215, 0, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.6) !important;
+}
+
+/* Danger Buttons */
+.freunde-werben-freunde .btn-danger,
+body .freunde-werben-freunde .btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: none !important;
+}
+
+.einstellungen-section {
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.einstellungen-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.einstellungen-section .section-header h3 {
+  margin: 0;
+}
+
+.staffel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.staffel-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.staffel-info strong {
+  display: block;
+  color: var(--text-primary);
+}
+
+.staffel-info .praemie {
+  display: block;
+  color: #10b981;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.staffel-info p {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.staffel-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.settings-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.setting-item .label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.setting-item .value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.setting-item .value.active {
+  color: #10b981;
+}
+
+/* Neue Einstellungen Cards */
+.settings-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.settings-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.settings-card.highlight {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.settings-card-icon {
+  color: #FFD700;
+  display: flex;
+}
+
+.settings-card-title {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-card-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.settings-card-value.success {
+  color: #10b981;
+}
+
+.settings-card-value.muted {
+  color: var(--text-secondary);
+}
+
+.settings-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Bonus System Info */
+.bonus-system-info {
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+body .bonus-system-info h4,
+.freunde-werben-freunde .bonus-system-info h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem 0;
+  color: #FFD700 !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.bonus-system-info p {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+}
+
+.bonus-system-info strong {
+  color: #FFD700;
+}
+
+.bonus-scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bonus-item {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.bonus-item.highlight {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Section Description */
+.section-description {
+  color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+/* Empty Staffel */
+.empty-staffel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  color: var(--text-muted);
+}
+
+.empty-staffel svg {
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.empty-staffel p {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.empty-staffel span {
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.staffel-desc {
+  font-style: italic;
+}
+
+/* Process Steps */
+.info-section {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+body .info-section h3,
+.freunde-werben-freunde .info-section h3 {
+  color: #60a5fa !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.process-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.process-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  border-left: 3px solid var(--border-color);
+}
+
+.process-step.success {
+  background: rgba(16, 185, 129, 0.1);
+  border-left-color: #10b981;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  background: rgba(255, 215, 0, 0.2);
+  border-radius: 50%;
+  color: #FFD700;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.process-step.success .step-number {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.step-content strong {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.step-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Modal */
+.referral-modal {
+  max-width: 550px;
+  width: 95%;
+}
+
+.referral-modal.small {
+  max-width: 400px;
+}
+
+.referral-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .referral-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #FFD700;
+}
+
+.info-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.empty-state svg {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: var(--text-primary);
 }

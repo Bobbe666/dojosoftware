@@ -670,10 +670,578 @@
   border-top-color: #6B4423;
 }
 
-/* Responsive */
+/* =============================================================================
+   TAB NAVIGATION
+   ============================================================================= */
+
+.marketing-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--primary-alpha-10);
+  overflow-x: auto;
+}
+
+.marketing-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.marketing-tab:hover {
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
+  color: var(--text-primary);
+}
+
+.marketing-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text-inverse);
+}
+
+.marketing-tab svg {
+  flex-shrink: 0;
+}
+
+.marketing-tab-content {
+  min-height: 300px;
+}
+
+/* =============================================================================
+   STATS GRID
+   ============================================================================= */
+
+.marketing-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.marketing-stats-grid.stats-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--primary-alpha-10);
+  border-radius: 8px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-alpha-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   REFERRAL / EMPFEHLUNGEN
+   ============================================================================= */
+
+.referral-info-card {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--primary-alpha-05);
+  border-radius: 12px;
+  border: 1px solid var(--primary-alpha-10);
+}
+
+.referral-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-inverse);
+  flex-shrink: 0;
+}
+
+.referral-content h4 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.referral-content p {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.referral-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* =============================================================================
+   TOP REFERRERS LIST
+   ============================================================================= */
+
+.top-referrers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.referrer-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--primary-alpha-10);
+}
+
+.referrer-rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-alpha-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+.referrer-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.referrer-info strong {
+  color: var(--text-primary);
+}
+
+.referrer-info span {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.referrer-badge .gold {
+  color: #fbbf24;
+}
+
+.referrer-badge .silver {
+  color: #9ca3af;
+}
+
+.referrer-badge .bronze {
+  color: #d97706;
+}
+
+/* =============================================================================
+   BUDDY INFO CARD
+   ============================================================================= */
+
+.buddy-info-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--primary-alpha-10);
+}
+
+.buddy-info-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+/* =============================================================================
+   EMPTY STATE
+   ============================================================================= */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+}
+
+.empty-state svg {
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.empty-state span {
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.empty-activity {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   E-MAIL CAMPAIGNS
+   ============================================================================= */
+
+.campaigns-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.campaign-card {
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--primary-alpha-10);
+  transition: border-color 0.2s ease;
+}
+
+.campaign-card:hover {
+  border-color: var(--primary-alpha-30);
+}
+
+.campaign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.campaign-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.campaign-status {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.campaign-status.status-draft {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.campaign-status.status-scheduled {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.campaign-status.status-sent {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.campaign-subject {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.campaign-footer {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.campaign-footer span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* =============================================================================
+   TEMPLATES GRID
+   ============================================================================= */
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--primary-alpha-10);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.template-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.template-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-alpha-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.template-card h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.template-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   STATISTICS TAB
+   ============================================================================= */
+
+.stats-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.stats-placeholder svg {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+.stats-placeholder h4 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.stats-placeholder p {
+  margin: 0;
+  max-width: 400px;
+}
+
+/* =============================================================================
+   ACTIVITY LIST
+   ============================================================================= */
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--primary-alpha-10);
+}
+
+.activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--primary-alpha-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-title {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.activity-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.activity-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* =============================================================================
+   LIGHT MODE (Washi Theme) - New Components
+   ============================================================================= */
+
+[data-theme="tda-vib"] .marketing-tab {
+  border-color: rgba(26, 26, 26, 0.2);
+  color: #666666;
+}
+
+[data-theme="tda-vib"] .marketing-tab:hover {
+  background: rgba(107, 68, 35, 0.1);
+  border-color: #6B4423;
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .marketing-tab.active {
+  background: #6B4423;
+  border-color: #6B4423;
+  color: #ffffff;
+}
+
+[data-theme="tda-vib"] .stat-card {
+  background: #ffffff;
+  border-color: rgba(26, 26, 26, 0.1);
+}
+
+[data-theme="tda-vib"] .stat-icon {
+  background: rgba(107, 68, 35, 0.1);
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .stat-value {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .referral-info-card {
+  background: rgba(107, 68, 35, 0.05);
+  border-color: rgba(107, 68, 35, 0.1);
+}
+
+[data-theme="tda-vib"] .referral-icon {
+  background: #6B4423;
+}
+
+[data-theme="tda-vib"] .referrer-card,
+[data-theme="tda-vib"] .buddy-info-card,
+[data-theme="tda-vib"] .campaign-card,
+[data-theme="tda-vib"] .template-card,
+[data-theme="tda-vib"] .activity-item {
+  background: #f5f0e6;
+  border-color: rgba(26, 26, 26, 0.1);
+}
+
+[data-theme="tda-vib"] .referrer-rank {
+  background: rgba(107, 68, 35, 0.1);
+  color: #6B4423;
+}
+
+[data-theme="tda-vib"] .template-card:hover {
+  border-color: #6B4423;
+}
+
+[data-theme="tda-vib"] .template-icon,
+[data-theme="tda-vib"] .activity-icon {
+  background: rgba(107, 68, 35, 0.1);
+  color: #6B4423;
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 1024px) {
+  .marketing-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .marketing-stats-grid.stats-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .marketing-aktionen {
     padding: 1rem;
+  }
+
+  .marketing-tabs {
+    gap: 0.25rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .marketing-tab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .marketing-tab span {
+    display: none;
+  }
+
+  .marketing-stats-grid,
+  .marketing-stats-grid.stats-4 {
+    grid-template-columns: 1fr;
   }
 
   .section-header {
@@ -702,5 +1270,20 @@
   .post-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .referral-info-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .buddy-info-card {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .templates-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

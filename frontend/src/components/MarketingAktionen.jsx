@@ -55,19 +55,24 @@ const MarketingAktionen = () => {
   }, [activeDojo]);
 
   const loadData = async () => {
+    if (!activeDojo) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
 
       // API Status prüfen
-      const statusRes = await axios.get('/marketing-aktionen/status');
+      const statusRes = await axios.get(`/marketing-aktionen/status?dojo_id=${activeDojo}`);
       setApiConfigured(statusRes.data.configured);
 
       // Accounts laden
-      const accountsRes = await axios.get('/marketing-aktionen/accounts');
+      const accountsRes = await axios.get(`/marketing-aktionen/accounts?dojo_id=${activeDojo}`);
       setAccounts(accountsRes.data);
 
       // Posts laden
-      const postsRes = await axios.get('/marketing-aktionen/posts');
+      const postsRes = await axios.get(`/marketing-aktionen/posts?dojo_id=${activeDojo}`);
       setPosts(postsRes.data);
 
     } catch (error) {
@@ -85,8 +90,13 @@ const MarketingAktionen = () => {
   // ==========================================================================
 
   const connectAccount = async () => {
+    if (!activeDojo) {
+      showMessage('error', 'Kein Dojo ausgewählt');
+      return;
+    }
+
     try {
-      const response = await axios.get('/marketing-aktionen/accounts/connect');
+      const response = await axios.get(`/marketing-aktionen/accounts/connect?dojo_id=${activeDojo}`);
       if (response.data.authUrl) {
         window.location.href = response.data.authUrl;
       }
@@ -98,9 +108,10 @@ const MarketingAktionen = () => {
 
   const disconnectAccount = async (accountId) => {
     if (!window.confirm('Möchtest du diesen Account wirklich trennen?')) return;
+    if (!activeDojo) return;
 
     try {
-      await axios.delete(`/marketing-aktionen/accounts/${accountId}`);
+      await axios.delete(`/marketing-aktionen/accounts/${accountId}?dojo_id=${activeDojo}`);
       showMessage('success', 'Account erfolgreich getrennt');
       loadData();
     } catch (error) {
@@ -144,12 +155,18 @@ const MarketingAktionen = () => {
       return;
     }
 
+    if (!activeDojo) {
+      showMessage('error', 'Kein Dojo ausgewählt');
+      return;
+    }
+
     try {
       setPublishing(true);
 
       const formData = new FormData();
       formData.append('content', postContent);
       formData.append('social_account_id', selectedAccount);
+      formData.append('dojo_id', activeDojo);
 
       if (scheduledDate) {
         formData.append('scheduled_at', scheduledDate);
@@ -161,13 +178,13 @@ const MarketingAktionen = () => {
 
       formData.append('post_type', selectedMedia.length > 0 ? 'image' : 'text');
 
-      const response = await axios.post('/marketing-aktionen/posts', formData, {
+      const response = await axios.post(`/marketing-aktionen/posts?dojo_id=${activeDojo}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       // Sofort veröffentlichen wenn gewünscht
       if (publishNow) {
-        await axios.post(`/marketing-aktionen/posts/${response.data.postId}/publish`);
+        await axios.post(`/marketing-aktionen/posts/${response.data.postId}/publish?dojo_id=${activeDojo}`);
         showMessage('success', 'Post erfolgreich veröffentlicht!');
       } else {
         showMessage('success', scheduledDate ? 'Post geplant!' : 'Post als Entwurf gespeichert');
@@ -190,9 +207,11 @@ const MarketingAktionen = () => {
   };
 
   const publishPost = async (postId) => {
+    if (!activeDojo) return;
+
     try {
       setPublishing(true);
-      await axios.post(`/marketing-aktionen/posts/${postId}/publish`);
+      await axios.post(`/marketing-aktionen/posts/${postId}/publish?dojo_id=${activeDojo}`);
       showMessage('success', 'Post erfolgreich veröffentlicht!');
       loadData();
     } catch (error) {
@@ -205,9 +224,10 @@ const MarketingAktionen = () => {
 
   const deletePost = async (postId) => {
     if (!window.confirm('Post wirklich löschen?')) return;
+    if (!activeDojo) return;
 
     try {
-      await axios.delete(`/marketing-aktionen/posts/${postId}`);
+      await axios.delete(`/marketing-aktionen/posts/${postId}?dojo_id=${activeDojo}`);
       showMessage('success', 'Post gelöscht');
       loadData();
     } catch (error) {
