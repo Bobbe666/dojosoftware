@@ -9,6 +9,7 @@ const AdmZip = require('adm-zip');
 const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../middleware/auth');
+const auditLog = require('../services/auditLogService');
 
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
@@ -635,6 +636,15 @@ router.post('/upload', authenticateToken, upload.single('zipFile'), async (req, 
 
     logger.info('MagicLine Import gestartet', { file: req.file.originalname });
 
+    // Audit Log: Import gestartet
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.IMPORT_GESTARTET,
+      kategorie: auditLog.KATEGORIE.IMPORT,
+      entityType: 'magicline_import',
+      beschreibung: `MagicLine ZIP-Import gestartet: ${req.file.originalname} (${(req.file.size / 1024 / 1024).toFixed(2)} MB)`
+    });
+
     // 1. ZIP extrahieren
     const zip = new AdmZip(req.file.path);
     const extractPath = path.join(__dirname, '../uploads/temp/magicline_extract_' + Date.now());
@@ -682,6 +692,22 @@ router.post('/upload', authenticateToken, upload.single('zipFile'), async (req, 
       failed: importResults.failed
     });
 
+    // Audit Log: Import erfolgreich abgeschlossen
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.IMPORT_ABGESCHLOSSEN,
+      kategorie: auditLog.KATEGORIE.IMPORT,
+      entityType: 'magicline_import',
+      beschreibung: `MagicLine ZIP-Import abgeschlossen: ${importResults.successful}/${importResults.totalMembers} Mitglieder erfolgreich importiert (${importResults.duration.toFixed(2)}s)`,
+      neueWerte: {
+        datei: req.file.originalname,
+        gesamt: importResults.totalMembers,
+        erfolgreich: importResults.successful,
+        fehlgeschlagen: importResults.failed,
+        dauer_sekunden: importResults.duration
+      }
+    });
+
     res.json({
       success: true,
       message: `Import abgeschlossen: ${importResults.successful}/${importResults.totalMembers} erfolgreich`,
@@ -690,6 +716,23 @@ router.post('/upload', authenticateToken, upload.single('zipFile'), async (req, 
 
   } catch (error) {
     logger.error('MagicLine Import Fehler', { error: error.message, stack: error.stack });
+
+    // Audit Log: Import fehlgeschlagen
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.IMPORT_FEHLGESCHLAGEN,
+      kategorie: auditLog.KATEGORIE.IMPORT,
+      entityType: 'magicline_import',
+      beschreibung: `MagicLine ZIP-Import fehlgeschlagen: ${error.message}`,
+      neueWerte: {
+        datei: req.file?.originalname,
+        fehler: error.message,
+        verarbeitet: importResults.successful + importResults.failed,
+        erfolgreich: importResults.successful,
+        fehlgeschlagen: importResults.failed
+      }
+    });
+
     res.status(500).json({
       error: 'Import fehlgeschlagen',
       details: error.message,
@@ -764,6 +807,16 @@ router.post('/upload-folder', authenticateToken, uploadFolder.array('files', 100
       files: req.files.slice(0, 5).map(f => f.originalname) // Zeige erste 5 Dateien
     });
 
+    // Audit Log: Import gestartet
+    const totalSize = req.files.reduce((sum, file) => sum + file.size, 0);
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.IMPORT_GESTARTET,
+      kategorie: auditLog.KATEGORIE.IMPORT,
+      entityType: 'magicline_import',
+      beschreibung: `MagicLine Ordner-Import gestartet: ${req.files.length} Dateien (${(totalSize / 1024 / 1024).toFixed(2)} MB)`
+    });
+
     // 1. Organisiere hochgeladene Dateien in Ordnerstruktur
     // Dateien kommen mit relativem Pfad, z.B. "1-2_Sam Schreiner/customer.json"
     extractPath = path.join(__dirname, '../uploads/temp/magicline_folder_' + Date.now());
@@ -825,6 +878,22 @@ router.post('/upload-folder', authenticateToken, uploadFolder.array('files', 100
       duration: importResults.duration
     });
 
+    // Audit Log: Import erfolgreich
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.IMPORT_ABGESCHLOSSEN,
+      kategorie: auditLog.KATEGORIE.IMPORT,
+      entityType: 'magicline_import',
+      beschreibung: `MagicLine Ordner-Import abgeschlossen: ${importResults.successful}/${importResults.totalMembers} Mitglieder erfolgreich importiert (${importResults.duration.toFixed(2)}s)`,
+      neueWerte: {
+        dateien: req.files.length,
+        gesamt: importResults.totalMembers,
+        erfolgreich: importResults.successful,
+        fehlgeschlagen: importResults.failed,
+        dauer_sekunden: importResults.duration
+      }
+    });
+
     res.json({
       success: true,
       message: `Ordner-Import abgeschlossen: ${importResults.successful}/${importResults.totalMembers} erfolgreich`,
@@ -833,6 +902,22 @@ router.post('/upload-folder', authenticateToken, uploadFolder.array('files', 100
 
   } catch (error) {
     logger.error('MagicLine Ordner-Import Fehler', { error: error.message, stack: error.stack });
+
+    // Audit Log: Import fehlgeschlagen
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.IMPORT_FEHLGESCHLAGEN,
+      kategorie: auditLog.KATEGORIE.IMPORT,
+      entityType: 'magicline_import',
+      beschreibung: `MagicLine Ordner-Import fehlgeschlagen: ${error.message}`,
+      neueWerte: {
+        dateien: req.files?.length || 0,
+        fehler: error.message,
+        verarbeitet: importResults.successful + importResults.failed,
+        erfolgreich: importResults.successful,
+        fehlgeschlagen: importResults.failed
+      }
+    });
 
     // Cleanup bei Fehler
     if (extractPath) {
