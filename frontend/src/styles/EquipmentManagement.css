@@ -222,18 +222,20 @@
 }
 
 .equipment-management .modal-header {
-  background: var(--gradient-gold);
-  color: #000;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #ffffff;
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
 }
 
 .equipment-management .modal-header h3 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
+  color: #ffffff;
 }
 
 .equipment-management .close-button {
