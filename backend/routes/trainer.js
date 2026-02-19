@@ -5,7 +5,7 @@ const router = express.Router();
 
 // Alle Trainer abrufen (inkl. Mehrfachzuordnung der Stile)
 router.get("/", (req, res) => {
-    const dojoId = req.tenant?.dojo_id || req.dojo_id;
+    const dojoId = req.user?.dojo_id || req.dojo_id;
 
     // Super-Admin (dojo_id = null): Kann Trainer aller zentral verwalteten Dojos sehen
     // Normaler Admin: Muss dojo_id haben
