@@ -35,11 +35,11 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Multer Setup für ZIP-Upload
-// SECURITY: Dateigröße auf 50MB begrenzt, nur ZIP-Dateien erlaubt
+// SECURITY: Dateigröße auf 200MB begrenzt, nur ZIP-Dateien erlaubt
 const upload = multer({
   dest: 'uploads/temp/',
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max (vorher 500MB - zu groß!)
+    fileSize: 200 * 1024 * 1024, // 200MB max für große MagicLine Exports
     files: 1 // Nur eine Datei pro Request
   },
   fileFilter: (req, file, cb) => {
