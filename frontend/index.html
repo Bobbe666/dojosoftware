@@ -194,8 +194,29 @@
     </div>
     
     <div id="root"></div>
+
+    <!-- Deregistriere alle alten Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service Worker deregistriert:', registration);
+          }
+        });
+        // Lösche auch alle Caches
+        if ('caches' in window) {
+          caches.keys().then(function(cacheNames) {
+            cacheNames.forEach(function(cacheName) {
+              caches.delete(cacheName);
+              console.log('Cache gelöscht:', cacheName);
+            });
+          });
+        }
+      }
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
-    <script type="module" src="/registerSW.js"></script>
 
     <script>
       // TDA Intro Animation - NUR auf Startseite "/"

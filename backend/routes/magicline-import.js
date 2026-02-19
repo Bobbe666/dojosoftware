@@ -61,6 +61,38 @@ const upload = multer({
   }
 });
 
+// Multer Setup für Ordner-Upload (neues MagicLine Format)
+// Erlaubt mehrere Dateien mit Ordnerstruktur
+const uploadFolder = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const baseDir = path.join(__dirname, '../uploads/temp/magicline_folder_' + Date.now());
+      cb(null, baseDir);
+    },
+    filename: (req, file, cb) => {
+      // Behalte den relativen Pfad bei (aus originalname)
+      // Browser senden bei Ordner-Upload: "ordner/unterordner/datei.json"
+      const relativePath = file.originalname.replace(/\\/g, '/');
+      cb(null, relativePath);
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB pro Datei
+    files: 10000 // Max 10.000 Dateien (für ~100 Mitglieder)
+  },
+  fileFilter: (req, file, cb) => {
+    // Erlaubte Dateitypen für MagicLine Export
+    const allowedExtensions = ['.json', '.xlsx', '.pdf', '.png', '.jpg', '.jpeg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    if (allowedExtensions.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(null, false); // Ignoriere andere Dateitypen (z.B. .DS_Store)
+    }
+  }
+});
+
 /**
  * MagicLine Import Router
  * Importiert Mitglieder, Verträge, SEPA-Mandate und Dokumente aus MagicLine-Exporten
@@ -703,6 +735,119 @@ router.get('/status', async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/magicline-import/upload-folder
+ * Akzeptiert MagicLine Ordner-Export (neues Format ab 2026)
+ * Erlaubt Upload mehrerer Dateien mit Ordnerstruktur
+ */
+router.post('/upload-folder', authenticateToken, uploadFolder.array('files', 10000), async (req, res) => {
+  const importResults = {
+    startTime: new Date(),
+    totalMembers: 0,
+    successful: 0,
+    failed: 0,
+    logs: []
+  };
+
+  let extractPath = null;
+
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
+    }
+
+    logger.info('MagicLine Ordner-Import gestartet', {
+      fileCount: req.files.length,
+      files: req.files.slice(0, 5).map(f => f.originalname) // Zeige erste 5 Dateien
+    });
+
+    // 1. Organisiere hochgeladene Dateien in Ordnerstruktur
+    // Dateien kommen mit relativem Pfad, z.B. "1-2_Sam Schreiner/customer.json"
+    extractPath = path.join(__dirname, '../uploads/temp/magicline_folder_' + Date.now());
+    await fs.mkdir(extractPath, { recursive: true });
+
+    // Kopiere Dateien in richtige Struktur
+    for (const file of req.files) {
+      const relativePath = file.originalname.replace(/\\/g, '/');
+      const targetPath = path.join(extractPath, relativePath);
+      const targetDir = path.dirname(targetPath);
+
+      // Erstelle Zielverzeichnis falls nicht vorhanden
+      await fs.mkdir(targetDir, { recursive: true });
+
+      // Verschiebe Datei an richtigen Ort
+      await fs.rename(file.path, targetPath);
+    }
+
+    // 2. Finde alle Mitglieder-Ordner (gleiche Logik wie bei ZIP)
+    const entries = await fs.readdir(extractPath);
+    const memberFolders = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(extractPath, entry);
+      const stat = await fs.stat(fullPath);
+
+      // MagicLine Ordner beginnen mit Mitgliedsnummer, z.B. "1-80_Name"
+      if (stat.isDirectory() && (entry.match(/^\d+-/) || entry.startsWith('M-'))) {
+        memberFolders.push(fullPath);
+      }
+    }
+
+    importResults.totalMembers = memberFolders.length;
+
+    logger.info('Gefundene Mitglieder-Ordner', { count: memberFolders.length });
+
+    // 3. Importiere jeden Mitglieder-Ordner
+    for (const folder of memberFolders) {
+      const log = await importMember(folder, extractPath);
+      importResults.logs.push(log);
+
+      if (log.success) {
+        importResults.successful++;
+      } else {
+        importResults.failed++;
+      }
+    }
+
+    // 4. Cleanup (optional - behalte für Debugging)
+    // await fs.rm(extractPath, { recursive: true });
+
+    importResults.endTime = new Date();
+    importResults.duration = (importResults.endTime - importResults.startTime) / 1000;
+
+    logger.success('MagicLine Ordner-Import abgeschlossen', {
+      total: importResults.totalMembers,
+      successful: importResults.successful,
+      failed: importResults.failed,
+      duration: importResults.duration
+    });
+
+    res.json({
+      success: true,
+      message: `Ordner-Import abgeschlossen: ${importResults.successful}/${importResults.totalMembers} erfolgreich`,
+      results: importResults
+    });
+
+  } catch (error) {
+    logger.error('MagicLine Ordner-Import Fehler', { error: error.message, stack: error.stack });
+
+    // Cleanup bei Fehler
+    if (extractPath) {
+      try {
+        await fs.rm(extractPath, { recursive: true });
+      } catch (cleanupErr) {
+        logger.warn('Cleanup fehlgeschlagen', { error: cleanupErr.message });
+      }
+    }
+
+    res.status(500).json({
+      error: 'Ordner-Import fehlgeschlagen',
+      details: error.message,
+      results: importResults
+    });
   }
 });
 

@@ -3,6 +3,8 @@ import { Upload, FileText, CheckCircle, AlertCircle, Users, FileCheck, CreditCar
 
 const MagicLineImport = () => {
   const [file, setFile] = useState(null);
+  const [files, setFiles] = useState(null); // Für Ordner-Upload
+  const [uploadType, setUploadType] = useState('zip'); // 'zip' oder 'folder'
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
   const [error, setError] = useState(null);
@@ -11,6 +13,7 @@ const MagicLineImport = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.name.endsWith('.zip')) {
       setFile(selectedFile);
+      setFiles(null);
       setError(null);
     } else {
       setError('Bitte wähle eine ZIP-Datei aus');
@@ -18,29 +21,70 @@ const MagicLineImport = () => {
     }
   };
 
+  const handleFolderChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length > 0) {
+      // Filtere .DS_Store und andere System-Dateien
+      const validFiles = selectedFiles.filter(file =>
+        !file.name.startsWith('.') &&
+        !file.name.includes('DS_Store')
+      );
+      setFiles(validFiles);
+      setFile(null);
+      setError(null);
+      console.log('📁 Ordner ausgewählt:', {
+        totalFiles: selectedFiles.length,
+        validFiles: validFiles.length,
+        samples: validFiles.slice(0, 5).map(f => f.webkitRelativePath || f.name)
+      });
+    } else {
+      setError('Bitte wähle einen Ordner aus');
+      setFiles(null);
+    }
+  };
+
   const handleImport = async () => {
-    if (!file) {
-      setError('Bitte wähle zuerst eine Datei aus');
+    if (!file && !files) {
+      setError('Bitte wähle zuerst eine Datei oder einen Ordner aus');
       return;
     }
-
-    console.log('🚀 Starting import...', {
-      fileName: file.name,
-      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-      fileType: file.type
-    });
 
     setImporting(true);
     setError(null);
 
     const formData = new FormData();
-    formData.append('zipFile', file);
+    const isZipUpload = uploadType === 'zip' && file;
+    const isFolderUpload = uploadType === 'folder' && files;
+
+    if (isZipUpload) {
+      console.log('🚀 Starting ZIP import...', {
+        fileName: file.name,
+        fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        fileType: file.type
+      });
+      formData.append('zipFile', file);
+    } else if (isFolderUpload) {
+      console.log('🚀 Starting folder import...', {
+        fileCount: files.length,
+        totalSize: `${(files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB`
+      });
+      // Füge alle Dateien mit ihrem relativen Pfad hinzu
+      files.forEach((file) => {
+        // webkitRelativePath enthält den vollständigen Pfad inkl. Ordnername
+        formData.append('files', file, file.webkitRelativePath || file.name);
+      });
+    } else {
+      setError('Ungültige Upload-Konfiguration');
+      setImporting(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem('dojo_auth_token');
-      console.log('📤 Uploading to /api/magicline-import/upload...');
+      const endpoint = isZipUpload ? '/api/magicline-import/upload' : '/api/magicline-import/upload-folder';
+      console.log(`📤 Uploading to ${endpoint}...`);
 
-      const response = await fetch('/api/magicline-import/upload', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -71,6 +115,7 @@ const MagicLineImport = () => {
 
       setImportResults(data.results);
       setFile(null);
+      setFiles(null);
 
     } catch (err) {
       console.error('❌ Import error:', err);
@@ -99,8 +144,13 @@ const MagicLineImport = () => {
             <div className="text-sm text-blue-800">
               <p className="font-semibold mb-2">So funktioniert der Import:</p>
               <ol className="list-decimal list-inside space-y-1">
-                <li>Exportiere deine Daten aus MagicLine als ZIP-Datei</li>
-                <li>Lade die ZIP-Datei hier hoch</li>
+                <li>Exportiere deine Daten aus MagicLine</li>
+                <li>Wähle das Format:
+                  <ul className="list-disc list-inside ml-6 mt-1">
+                    <li><strong>ZIP-Datei</strong> (älteres MagicLine-Format oder manuell gezippt)</li>
+                    <li><strong>Ordner</strong> (neues MagicLine-Format ab 2026)</li>
+                  </ul>
+                </li>
                 <li>Das System importiert automatisch:
                   <ul className="list-disc list-inside ml-6 mt-1">
                     <li>Mitgliederdaten (Name, Adresse, Geburtsdatum, etc.)</li>
@@ -114,32 +164,112 @@ const MagicLineImport = () => {
           </div>
         </div>
 
+        {/* Upload Type Selection */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Export-Format
+          </label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="uploadType"
+                value="zip"
+                checked={uploadType === 'zip'}
+                onChange={(e) => {
+                  setUploadType(e.target.value);
+                  setFile(null);
+                  setFiles(null);
+                  setError(null);
+                }}
+                disabled={importing}
+                className="w-4 h-4 text-blue-600"
+              />
+              <Upload className="w-5 h-5 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">ZIP-Datei</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="uploadType"
+                value="folder"
+                checked={uploadType === 'folder'}
+                onChange={(e) => {
+                  setUploadType(e.target.value);
+                  setFile(null);
+                  setFiles(null);
+                  setError(null);
+                }}
+                disabled={importing}
+                className="w-4 h-4 text-blue-600"
+              />
+              <FolderOpen className="w-5 h-5 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Ordner (neu)</span>
+            </label>
+          </div>
+        </div>
+
         {/* Upload Section */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            MagicLine Export (ZIP-Datei)
-          </label>
+          {uploadType === 'zip' ? (
+            <>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                MagicLine Export (ZIP-Datei)
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept=".zip"
+                    onChange={handleFileChange}
+                    disabled={importing}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                MagicLine Export (Ordner)
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    webkitdirectory=""
+                    directory=""
+                    multiple
+                    onChange={handleFolderChange}
+                    disabled={importing}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-green-50 file:text-green-700
+                      hover:file:bg-green-100
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  {files && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      {files.length} Dateien ausgewählt
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <input
-                type="file"
-                accept=".zip"
-                onChange={handleFileChange}
-                disabled={importing}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100
-                  disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-
+          <div className="flex items-center gap-4 mt-4">
             <button
               onClick={handleImport}
-              disabled={!file || importing}
+              disabled={(!file && !files) || importing}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold
                 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed
                 flex items-center gap-2 transition-colors"
