@@ -1,0 +1,237 @@
+/* ===== LEGAL PAGES (Datenschutz, Impressum, AGB) ===== */
+
+.legal-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+}
+
+/* Header */
+.legal-header {
+  padding: 1rem 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.legal-header .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.legal-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffd700;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.legal-logo:hover {
+  color: #ffed4a;
+}
+
+/* Hero */
+.legal-hero {
+  padding: 4rem 0 3rem;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.05) 0%, transparent 100%);
+}
+
+.legal-hero .container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.legal-label {
+  display: inline-block;
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.legal-hero h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.legal-hero p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Content */
+.legal-content {
+  padding: 3rem 0 5rem;
+}
+
+.legal-content .container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.legal-article {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 2.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.legal-block {
+  margin-bottom: 2.5rem;
+}
+
+.legal-block:last-child {
+  margin-bottom: 0;
+}
+
+.legal-article h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+.legal-article h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.legal-article h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.legal-article p {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.7;
+  margin: 0 0 1rem;
+}
+
+.legal-article ul {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+
+.legal-article li {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.legal-article li strong {
+  color: #fff;
+}
+
+.legal-article address {
+  font-style: normal;
+  background: rgba(255, 215, 0, 0.05);
+  padding: 1.25rem;
+  border-radius: 8px;
+  border-left: 3px solid #ffd700;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.8;
+  margin: 1rem 0;
+}
+
+.legal-article address strong {
+  color: #ffd700;
+}
+
+.legal-article a {
+  color: #ffd700;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.legal-article a:hover {
+  color: #ffed4a;
+  text-decoration: underline;
+}
+
+.legal-article em {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Footer */
+.legal-footer {
+  padding: 2rem 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  text-align: center;
+}
+
+.legal-footer .container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.legal-footer p {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.legal-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.legal-footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.legal-footer-links a:hover {
+  color: #ffd700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .legal-hero {
+    padding: 3rem 0 2rem;
+  }
+
+  .legal-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .legal-article {
+    padding: 1.5rem;
+  }
+
+  .legal-article h2 {
+    font-size: 1.2rem;
+  }
+
+  .legal-article h3 {
+    font-size: 1rem;
+  }
+
+  .legal-footer-links {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

@@ -1,0 +1,264 @@
+/**
+ * TDA Systems Intro - Elegant Minimalist Style
+ * Inspiriert von Premium-Marken wie Apple, Rolex
+ */
+
+.tda-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.tda-intro-overlay.entering {
+  animation: overlayFadeIn 0.8s ease-out forwards;
+}
+
+.tda-intro-overlay.exiting {
+  animation: overlayFadeOut 1.2s ease-in-out forwards;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlayFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.tda-intro-backdrop {
+  display: none;
+}
+
+.tda-intro-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sanfter goldener Schein - sehr dezent */
+.tda-intro-glow {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(
+    ellipse 40% 35% at center,
+    rgba(255, 180, 50, 0.08) 0%,
+    rgba(255, 150, 0, 0.03) 50%,
+    transparent 80%
+  );
+  pointer-events: none;
+  opacity: 0;
+}
+
+.tda-intro-overlay.entering .tda-intro-glow {
+  animation: glowIn 1.5s ease-out 0.3s forwards;
+}
+
+.tda-intro-overlay.visible .tda-intro-glow {
+  opacity: 1;
+  animation: glowBreath 4s ease-in-out infinite;
+}
+
+.tda-intro-overlay.exiting .tda-intro-glow {
+  animation: glowOut 0.8s ease-out forwards;
+}
+
+@keyframes glowIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes glowBreath {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+@keyframes glowOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Logo - Weiche Vignette-Maske für nahtlose Kanten */
+.tda-intro-logo {
+  position: relative;
+  max-width: 550px;
+  width: 75vw;
+  height: auto;
+  z-index: 2;
+  /* Sehr weiche Vignette - Zentrum scharf, Ränder verschwinden sanft */
+  -webkit-mask-image: radial-gradient(
+    ellipse 55% 50% at center,
+    black 0%,
+    black 25%,
+    rgba(0,0,0,0.7) 45%,
+    rgba(0,0,0,0.3) 60%,
+    rgba(0,0,0,0.1) 75%,
+    transparent 90%
+  );
+  mask-image: radial-gradient(
+    ellipse 55% 50% at center,
+    black 0%,
+    black 25%,
+    rgba(0,0,0,0.7) 45%,
+    rgba(0,0,0,0.3) 60%,
+    rgba(0,0,0,0.1) 75%,
+    transparent 90%
+  );
+}
+
+/* EINFLUG: Elegantes Fade-In mit sanftem Scale */
+.tda-intro-overlay.entering .tda-intro-logo {
+  animation: elegantReveal 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes elegantReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(8px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.01);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* SICHTBAR: Sehr subtiles Atmen */
+.tda-intro-overlay.visible .tda-intro-logo {
+  animation: subtleBreath 3.5s ease-in-out infinite;
+}
+
+@keyframes subtleBreath {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 20px rgba(255, 180, 50, 0.15));
+  }
+  50% {
+    filter: brightness(1.05) drop-shadow(0 0 35px rgba(255, 180, 50, 0.25));
+  }
+}
+
+/* AUSFLUG: Sanftes Fade-Out */
+.tda-intro-overlay.exiting .tda-intro-logo {
+  animation: elegantExit 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes elegantExit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+    filter: blur(6px);
+  }
+}
+
+/* Lens Flare - dezenter */
+.tda-intro-content::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 200, 100, 0.6) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  z-index: 10;
+}
+
+.tda-intro-overlay.exiting .tda-intro-content::before {
+  animation: subtleLensFlare 0.8s ease-out 0.2s forwards;
+}
+
+@keyframes subtleLensFlare {
+  0% {
+    opacity: 0;
+    width: 0;
+  }
+  40% {
+    opacity: 0.6;
+    width: 80vw;
+  }
+  100% {
+    opacity: 0;
+    width: 100vw;
+  }
+}
+
+/* Partikel - wie feiner Goldstaub, sehr dezent */
+.tda-intro-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255, 200, 100, 0.8);
+  border-radius: 50%;
+  left: var(--x);
+  top: var(--y);
+  opacity: 0;
+}
+
+.tda-intro-overlay.entering .particle {
+  animation: particleFadeIn var(--duration) var(--delay) ease-out forwards;
+}
+
+.tda-intro-overlay.visible .particle {
+  animation: particleFloat var(--duration) var(--delay) ease-in-out infinite;
+}
+
+.tda-intro-overlay.exiting .particle {
+  animation: particleFadeOut 0.6s ease-out forwards;
+}
+
+@keyframes particleFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(calc(var(--dx) * 0.2px), calc(var(--dy) * 0.2px));
+  }
+}
+
+@keyframes particleFadeOut {
+  0% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .tda-intro-logo {
+    max-width: 90vw;
+    width: 90vw;
+  }
+}

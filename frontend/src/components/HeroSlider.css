@@ -1,0 +1,74 @@
+/* HeroSlider.css - Carousel mit 3 sichtbaren Bildern */
+
+.hero-carousel {
+  width: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  overflow: hidden;
+  padding: 40px 0;
+}
+
+.carousel-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: 0 20px;
+}
+
+.carousel-track {
+  display: flex;
+  will-change: transform;
+}
+
+.carousel-track.smooth {
+  transition: transform 0.6s ease-in-out;
+}
+
+.carousel-item {
+  flex: 0 0 calc(100% / 3);
+  padding: 0 10px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.carousel-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.carousel-item:hover img {
+  transform: scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive - 2 Bilder auf Tablets */
+@media (max-width: 1024px) {
+  .carousel-item {
+    flex: 0 0 50%;
+  }
+}
+
+/* Responsive - 1 Bild auf Mobile */
+@media (max-width: 640px) {
+  .hero-carousel {
+    padding: 20px 0;
+  }
+
+  .carousel-viewport {
+    padding: 0 10px;
+  }
+
+  .carousel-item {
+    flex: 0 0 100%;
+    padding: 0 5px;
+  }
+
+  .carousel-item img {
+    border-radius: 8px;
+  }
+}
