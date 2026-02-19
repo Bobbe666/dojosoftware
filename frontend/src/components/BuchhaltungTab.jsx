@@ -32,6 +32,10 @@ const BuchhaltungTab = ({ token }) => {
   const [abschlussData, setAbschlussData] = useState(null);
   const [kategorien, setKategorien] = useState([]);
 
+  // GuV und Bilanz States
+  const [guvDetails, setGuvDetails] = useState(null);
+  const [bilanzData, setBilanzData] = useState(null);
+
   // UI States
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,6 +48,7 @@ const BuchhaltungTab = ({ token }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadBelegId, setUploadBelegId] = useState(null);
   const [showAbschlussModal, setShowAbschlussModal] = useState(false);
+  const [showBilanzStammdatenModal, setShowBilanzStammdatenModal] = useState(false);
 
   // Bank-Import States
   const [bankTransaktionen, setBankTransaktionen] = useState([]);
@@ -565,6 +570,53 @@ const BuchhaltungTab = ({ token }) => {
     }
   };
 
+  // ===================================================================
+  // 📊 GuV DATA FETCHING
+  // ===================================================================
+  const fetchGuvData = useCallback(() => {
+    setLoading(true);
+    axios.get('/api/buchhaltung/guv/details', {
+      params: {
+        organisation: selectedOrg,
+        jahr: selectedJahr,
+        quartal: selectedQuartal
+      },
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(response => {
+      setGuvDetails(response.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error('GuV-Fehler:', err);
+      setError('Fehler beim Laden der GuV-Daten');
+      setLoading(false);
+    });
+  }, [token, selectedOrg, selectedJahr, selectedQuartal]);
+
+  // ===================================================================
+  // 📊 BILANZ DATA FETCHING
+  // ===================================================================
+  const fetchBilanzData = useCallback(() => {
+    setLoading(true);
+    axios.get('/api/buchhaltung/bilanz', {
+      params: {
+        organisation: selectedOrg,
+        jahr: selectedJahr
+      },
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(response => {
+      setBilanzData(response.data);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error('Bilanz-Fehler:', err);
+      setError('Fehler beim Laden der Bilanz-Daten');
+      setLoading(false);
+    });
+  }, [token, selectedOrg, selectedJahr]);
+
   // Initial Load
   useEffect(() => {
     loadKategorien();
@@ -575,6 +627,10 @@ const BuchhaltungTab = ({ token }) => {
     if (activeSubTab === 'euer') {
       loadDashboard();
       loadEuer();
+    } else if (activeSubTab === 'guv') {
+      fetchGuvData();
+    } else if (activeSubTab === 'bilanz') {
+      fetchBilanzData();
     } else if (activeSubTab === 'belege') {
       loadBelege();
     } else if (activeSubTab === 'auto') {
@@ -585,7 +641,7 @@ const BuchhaltungTab = ({ token }) => {
     } else if (activeSubTab === 'abschluss') {
       loadAbschluss();
     }
-  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadAbschluss]);
+  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadAbschluss, fetchGuvData, fetchBilanzData]);
 
   // Beleg speichern
   const saveBeleg = async () => {
@@ -794,6 +850,8 @@ const BuchhaltungTab = ({ token }) => {
   // Sub-Tabs
   const subTabs = [
     { id: 'euer', label: 'EÜR Übersicht', icon: <PieChart size={16} /> },
+    { id: 'guv', label: 'GuV', icon: <TrendingUp size={16} /> },
+    { id: 'bilanz', label: 'Bilanz', icon: <Building2 size={16} /> },
     { id: 'belege', label: 'Belegerfassung', icon: <Receipt size={16} /> },
     { id: 'rechnungen', label: 'Rechnungen', icon: <FileText size={16} /> },
     { id: 'auto', label: 'Auto. Buchungen', icon: <RefreshCw size={16} /> },
@@ -1072,6 +1130,282 @@ const BuchhaltungTab = ({ token }) => {
                   <span>Ergebnis (Gewinn/Verlust):</span>
                   <span className="ergebnis-wert">{formatCurrency(euerData.gewinnVerlust)}</span>
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== GuV TAB ==================== */}
+        {activeSubTab === 'guv' && (
+          <div className="guv-content">
+            <div className="section-header">
+              <h3>Gewinn- und Verlustrechnung</h3>
+              <div className="header-actions">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => window.open(`/api/buchhaltung/guv/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv&quartal=${selectedQuartal}`, '_blank')}
+                >
+                  <Download size={16} />
+                  CSV Export
+                </button>
+              </div>
+            </div>
+
+            {loading && <div className="loading">Lade GuV-Daten...</div>}
+
+            {guvDetails && (
+              <div className="guv-details">
+                <table className="guv-table">
+                  <thead>
+                    <tr>
+                      <th>Position</th>
+                      <th className="right">Betrag</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Revenue Section */}
+                    <tr className="section-header-row">
+                      <td colSpan="2"><strong>1. Umsatzerlöse</strong></td>
+                    </tr>
+                    <tr
+                      className="clickable"
+                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_umsatz': !prev['guv_umsatz'] }))}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td style={{ paddingLeft: '2rem' }}>
+                        {expandedKategorien['guv_umsatz'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        {' '}Umsatzerlöse
+                      </td>
+                      <td className="right">{formatCurrency(guvDetails.umsatzerloese.gesamt)}</td>
+                    </tr>
+                    {expandedKategorien['guv_umsatz'] && guvDetails.umsatzerloese.details.map((detail, idx) => (
+                      <tr key={idx} className="detail-row">
+                        <td style={{ paddingLeft: '4rem' }}>{detail.quelle}</td>
+                        <td className="right">{formatCurrency(detail.betrag)}</td>
+                      </tr>
+                    ))}
+
+                    {/* Material Costs */}
+                    <tr className="section-header-row">
+                      <td colSpan="2"><strong>2. Materialaufwand</strong></td>
+                    </tr>
+                    <tr
+                      className="clickable"
+                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_material': !prev['guv_material'] }))}
+                      style={{ cursor: guvDetails.materialaufwand.details.length > 0 ? 'pointer' : 'default' }}
+                    >
+                      <td style={{ paddingLeft: '2rem' }}>
+                        {guvDetails.materialaufwand.details.length > 0 && (expandedKategorien['guv_material'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
+                        {' '}Materialaufwand
+                      </td>
+                      <td className="right negative">-{formatCurrency(guvDetails.materialaufwand.gesamt)}</td>
+                    </tr>
+                    {expandedKategorien['guv_material'] && guvDetails.materialaufwand.details.map((detail, idx) => (
+                      <tr key={idx} className="detail-row">
+                        <td style={{ paddingLeft: '4rem' }}>{detail.quelle}</td>
+                        <td className="right negative">-{formatCurrency(detail.betrag)}</td>
+                      </tr>
+                    ))}
+
+                    {/* Personnel Costs */}
+                    <tr className="section-header-row">
+                      <td colSpan="2"><strong>3. Personalaufwand</strong></td>
+                    </tr>
+                    <tr
+                      className="clickable"
+                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_personal': !prev['guv_personal'] }))}
+                      style={{ cursor: guvDetails.personalaufwand.details.length > 0 ? 'pointer' : 'default' }}
+                    >
+                      <td style={{ paddingLeft: '2rem' }}>
+                        {guvDetails.personalaufwand.details.length > 0 && (expandedKategorien['guv_personal'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
+                        {' '}Personalaufwand
+                      </td>
+                      <td className="right negative">-{formatCurrency(guvDetails.personalaufwand.gesamt)}</td>
+                    </tr>
+                    {expandedKategorien['guv_personal'] && guvDetails.personalaufwand.details.map((detail, idx) => (
+                      <tr key={idx} className="detail-row">
+                        <td style={{ paddingLeft: '4rem' }}>{detail.quelle}</td>
+                        <td className="right negative">-{formatCurrency(detail.betrag)}</td>
+                      </tr>
+                    ))}
+
+                    {/* Depreciation */}
+                    <tr className="section-header-row">
+                      <td colSpan="2"><strong>4. Abschreibungen</strong></td>
+                    </tr>
+                    <tr>
+                      <td style={{ paddingLeft: '2rem' }}>Abschreibungen auf Sachanlagen</td>
+                      <td className="right negative">-{formatCurrency(guvDetails.abschreibungen.gesamt)}</td>
+                    </tr>
+
+                    {/* Other Operating Expenses */}
+                    <tr className="section-header-row">
+                      <td colSpan="2"><strong>5. Sonstige betriebliche Aufwendungen</strong></td>
+                    </tr>
+                    <tr
+                      className="clickable"
+                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_sonstige': !prev['guv_sonstige'] }))}
+                      style={{ cursor: guvDetails.sonstige_aufwendungen.details.length > 0 ? 'pointer' : 'default' }}
+                    >
+                      <td style={{ paddingLeft: '2rem' }}>
+                        {guvDetails.sonstige_aufwendungen.details.length > 0 && (expandedKategorien['guv_sonstige'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
+                        {' '}Sonstige Aufwendungen
+                      </td>
+                      <td className="right negative">-{formatCurrency(guvDetails.sonstige_aufwendungen.gesamt)}</td>
+                    </tr>
+                    {expandedKategorien['guv_sonstige'] && guvDetails.sonstige_aufwendungen.details.map((detail, idx) => (
+                      <tr key={idx} className="detail-row">
+                        <td style={{ paddingLeft: '4rem' }}>{detail.kategorie} ({detail.quelle})</td>
+                        <td className="right negative">-{formatCurrency(detail.betrag)}</td>
+                      </tr>
+                    ))}
+
+                    {/* Result */}
+                    <tr className="total-row">
+                      <td><strong>Jahresüberschuss / Jahresfehlbetrag</strong></td>
+                      <td className={`right ${guvDetails.jahresueberschuss >= 0 ? 'positive' : 'negative'}`}>
+                        <strong>{formatCurrency(guvDetails.jahresueberschuss)}</strong>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== BILANZ TAB ==================== */}
+        {activeSubTab === 'bilanz' && (
+          <div className="bilanz-content">
+            <div className="section-header">
+              <h3>Bilanz zum 31.12.{selectedJahr}</h3>
+              <div className="header-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowBilanzStammdatenModal(true)}
+                >
+                  <Edit size={16} />
+                  Stammdaten bearbeiten
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => window.open(`/api/buchhaltung/bilanz/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv`, '_blank')}
+                >
+                  <Download size={16} />
+                  CSV Export
+                </button>
+              </div>
+            </div>
+
+            {loading && <div className="loading">Lade Bilanz-Daten...</div>}
+
+            {bilanzData && (
+              <div className="bilanz-layout">
+                <div className="bilanz-columns">
+                  {/* AKTIVA (Left) */}
+                  <div className="bilanz-column">
+                    <h4>AKTIVA</h4>
+                    <table className="bilanz-table">
+                      <tbody>
+                        <tr className="section-header-row">
+                          <td><strong>A. Anlagevermögen</strong></td>
+                          <td className="right"></td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Sachanlagen</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.sachanlagen)}</td>
+                        </tr>
+                        <tr className="subtotal-row">
+                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Anlagevermögen</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.aktiva.anlagevermoegen.gesamt)}</strong></td>
+                        </tr>
+
+                        <tr className="section-header-row">
+                          <td><strong>B. Umlaufvermögen</strong></td>
+                          <td className="right"></td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Bankguthaben</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.bank_guthaben)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Kassenbestand</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.kassenbestand)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Forderungen</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.forderungen)}</td>
+                        </tr>
+                        <tr className="subtotal-row">
+                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Umlaufvermögen</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.aktiva.umlaufvermoegen.gesamt)}</strong></td>
+                        </tr>
+
+                        <tr className="total-row">
+                          <td><strong>SUMME AKTIVA</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.aktiva.gesamt)}</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* PASSIVA (Right) */}
+                  <div className="bilanz-column">
+                    <h4>PASSIVA</h4>
+                    <table className="bilanz-table">
+                      <tbody>
+                        <tr className="section-header-row">
+                          <td><strong>A. Eigenkapital</strong></td>
+                          <td className="right"></td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Anfangsbestand</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.eigenkapital.anfangsbestand)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Kumulierter Gewinn</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.eigenkapital.kumulierter_gewinn)}</td>
+                        </tr>
+                        <tr className="subtotal-row">
+                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Eigenkapital</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.passiva.eigenkapital.gesamt)}</strong></td>
+                        </tr>
+
+                        <tr className="section-header-row">
+                          <td><strong>B. Verbindlichkeiten</strong></td>
+                          <td className="right"></td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingLeft: '2rem' }}>Darlehen</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.darlehen)}</td>
+                        </tr>
+                        <tr className="subtotal-row">
+                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Verbindlichkeiten</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.passiva.verbindlichkeiten.gesamt)}</strong></td>
+                        </tr>
+
+                        <tr className="total-row">
+                          <td><strong>SUMME PASSIVA</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.passiva.gesamt)}</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Balance Check */}
+                {!bilanzData.bilanz_ausgeglichen && (
+                  <div className="message warning">
+                    <AlertCircle size={16} />
+                    Achtung: Bilanz ist nicht ausgeglichen! Aktiva und Passiva müssen übereinstimmen.
+                  </div>
+                )}
+                {bilanzData.bilanz_ausgeglichen && (
+                  <div className="message success">
+                    <CheckCircle size={16} />
+                    Bilanz ist ausgeglichen.
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2258,6 +2592,120 @@ const BuchhaltungTab = ({ token }) => {
                 Abbrechen
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== BILANZ STAMMDATEN MODAL ==================== */}
+      {showBilanzStammdatenModal && (
+        <div className="modal-overlay" onClick={() => setShowBilanzStammdatenModal(false)}>
+          <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Bilanz-Stammdaten bearbeiten</h3>
+              <button className="close-btn" onClick={() => setShowBilanzStammdatenModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const data = {
+                organisation: selectedOrg,
+                jahr: selectedJahr,
+                bank_anfangsbestand: parseFloat(formData.get('bank_anfangsbestand')) || 0,
+                kasse_anfangsbestand: parseFloat(formData.get('kasse_anfangsbestand')) || 0,
+                sachanlagen: parseFloat(formData.get('sachanlagen')) || 0,
+                sachanlagen_beschreibung: formData.get('sachanlagen_beschreibung'),
+                eigenkapital_anfang: parseFloat(formData.get('eigenkapital_anfang')) || 0,
+                darlehen: parseFloat(formData.get('darlehen')) || 0,
+                darlehen_beschreibung: formData.get('darlehen_beschreibung')
+              };
+
+              axios.post('/api/buchhaltung/bilanz/stammdaten', data, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              .then(() => {
+                setSuccess('Stammdaten erfolgreich gespeichert');
+                setShowBilanzStammdatenModal(false);
+                fetchBilanzData();
+              })
+              .catch(err => {
+                setError('Fehler beim Speichern der Stammdaten');
+                console.error(err);
+              });
+            }}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Bank-Anfangsbestand (EUR)</label>
+                  <input
+                    type="number"
+                    name="bank_anfangsbestand"
+                    step="0.01"
+                    defaultValue={0}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Kasse-Anfangsbestand (EUR)</label>
+                  <input
+                    type="number"
+                    name="kasse_anfangsbestand"
+                    step="0.01"
+                    defaultValue={0}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Sachanlagen (EUR)</label>
+                  <input
+                    type="number"
+                    name="sachanlagen"
+                    step="0.01"
+                    defaultValue={0}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Sachanlagen-Beschreibung</label>
+                  <textarea name="sachanlagen_beschreibung" rows="2"></textarea>
+                </div>
+
+                <div className="form-group">
+                  <label>Eigenkapital-Anfangsbestand (EUR)</label>
+                  <input
+                    type="number"
+                    name="eigenkapital_anfang"
+                    step="0.01"
+                    defaultValue={0}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Darlehen (EUR)</label>
+                  <input
+                    type="number"
+                    name="darlehen"
+                    step="0.01"
+                    defaultValue={0}
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Darlehen-Beschreibung</label>
+                  <textarea name="darlehen_beschreibung" rows="2"></textarea>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setShowBilanzStammdatenModal(false)}>
+                  Abbrechen
+                </button>
+                <button type="submit" className="btn-primary">
+                  Speichern
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

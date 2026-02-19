@@ -11,6 +11,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const iconv = require('iconv-lite');
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -2286,7 +2287,7 @@ router.post('/bank-import/rechnung-verknuepfen/:id', requireSuperAdmin, async (r
       });
     });
 
-    console.log(`Bank-Transaktion ${transaktionId} mit Verbandsrechnung ${rechnung.rechnungsnummer} verknüpft (ohne EÜR-Buchung)`);
+    logger.info(`Bank-Transaktion ${transaktionId} mit Verbandsrechnung ${rechnung.rechnungsnummer} verknüpft (ohne EÜR-Buchung)`);
 
     res.json({
       success: true,
@@ -2690,6 +2691,499 @@ router.get('/bank-import/historie', requireSuperAdmin, (req, res) => {
     }
 
     res.json(results);
+  });
+});
+
+// ===================================================================
+// 📊 GET /api/buchhaltung/guv - GuV (Gewinn- und Verlustrechnung)
+// ===================================================================
+router.get('/guv', requireSuperAdmin, (req, res) => {
+  const { organisation, jahr, quartal } = req.query;
+  const currentYear = jahr || new Date().getFullYear();
+
+  let dateFilter = `jahr = ${db.escape(currentYear)}`;
+  if (quartal) {
+    const q = parseInt(quartal);
+    const startMonth = (q - 1) * 3 + 1;
+    const endMonth = q * 3;
+    dateFilter += ` AND monat BETWEEN ${startMonth} AND ${endMonth}`;
+  }
+
+  const orgFilter = organisation && organisation !== 'alle'
+    ? `AND organisation_name = ${db.escape(organisation)}`
+    : '';
+
+  // Fetch GuV structured data
+  const guvSql = `
+    SELECT
+      SUM(umsatzerloese) as umsatzerloese,
+      SUM(materialaufwand) as materialaufwand,
+      SUM(personalaufwand) as personalaufwand,
+      SUM(abschreibungen) as abschreibungen,
+      SUM(sonstige_aufwendungen) as sonstige_aufwendungen
+    FROM v_guv_daten
+    WHERE ${dateFilter} ${orgFilter}
+  `;
+
+  db.query(guvSql, (err, results) => {
+    if (err) {
+      console.error('GuV-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Laden der GuV-Daten', error: err.message });
+    }
+
+    const data = results[0] || {};
+    const umsatzerloese = parseFloat(data.umsatzerloese || 0);
+    const materialaufwand = parseFloat(data.materialaufwand || 0);
+    const personalaufwand = parseFloat(data.personalaufwand || 0);
+    const abschreibungen = parseFloat(data.abschreibungen || 0);
+    const sonstigeAufwendungen = parseFloat(data.sonstige_aufwendungen || 0);
+
+    const gesamtaufwand = materialaufwand + personalaufwand + abschreibungen + sonstigeAufwendungen;
+    const jahresueberschuss = umsatzerloese - gesamtaufwand;
+
+    res.json({
+      jahr: currentYear,
+      quartal: quartal || null,
+      organisation: organisation || 'alle',
+      guv: {
+        umsatzerloese,
+        materialaufwand,
+        personalaufwand,
+        abschreibungen,
+        sonstige_aufwendungen: sonstigeAufwendungen,
+        gesamtaufwand,
+        jahresueberschuss
+      }
+    });
+  });
+});
+
+// ===================================================================
+// 📊 GET /api/buchhaltung/guv/details - GuV with detailed breakdowns
+// ===================================================================
+router.get('/guv/details', requireSuperAdmin, (req, res) => {
+  const { organisation, jahr, quartal } = req.query;
+  const currentYear = jahr || new Date().getFullYear();
+
+  let dateFilter = `jahr = ${db.escape(currentYear)}`;
+  if (quartal) {
+    const q = parseInt(quartal);
+    const startMonth = (q - 1) * 3 + 1;
+    const endMonth = q * 3;
+    dateFilter += ` AND monat BETWEEN ${startMonth} AND ${endMonth}`;
+  }
+
+  const orgFilter = organisation && organisation !== 'alle'
+    ? `AND organisation_name = ${db.escape(organisation)}`
+    : '';
+
+  // Detailed revenue breakdown
+  const einnahmenDetailsSql = `
+    SELECT kategorie, quelle, SUM(betrag_brutto) as summe
+    FROM v_euer_einnahmen
+    WHERE ${dateFilter} ${orgFilter}
+    GROUP BY kategorie, quelle
+  `;
+
+  // Detailed expense breakdown by category
+  const ausgabenDetailsSql = `
+    SELECT kategorie, quelle, SUM(betrag_brutto) as summe
+    FROM v_euer_ausgaben
+    WHERE ${dateFilter} ${orgFilter}
+    GROUP BY kategorie, quelle
+  `;
+
+  Promise.all([
+    new Promise((resolve, reject) => {
+      db.query(einnahmenDetailsSql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(ausgabenDetailsSql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    })
+  ])
+  .then(([einnahmenDetails, ausgabenDetails]) => {
+    // Structure according to GuV format
+    const guvDetails = {
+      umsatzerloese: {
+        gesamt: 0,
+        details: []
+      },
+      materialaufwand: {
+        gesamt: 0,
+        details: []
+      },
+      personalaufwand: {
+        gesamt: 0,
+        details: []
+      },
+      abschreibungen: {
+        gesamt: 0,
+        details: []
+      },
+      sonstige_aufwendungen: {
+        gesamt: 0,
+        details: []
+      }
+    };
+
+    // Process revenues
+    einnahmenDetails.forEach(row => {
+      const betrag = parseFloat(row.summe || 0);
+      guvDetails.umsatzerloese.gesamt += betrag;
+      guvDetails.umsatzerloese.details.push({
+        quelle: row.quelle,
+        betrag
+      });
+    });
+
+    // Process expenses by category
+    ausgabenDetails.forEach(row => {
+      const betrag = parseFloat(row.summe || 0);
+
+      if (row.kategorie === 'wareneingang') {
+        guvDetails.materialaufwand.gesamt += betrag;
+        guvDetails.materialaufwand.details.push({ quelle: row.quelle, betrag });
+      } else if (row.kategorie === 'personalkosten') {
+        guvDetails.personalaufwand.gesamt += betrag;
+        guvDetails.personalaufwand.details.push({ quelle: row.quelle, betrag });
+      } else if (row.kategorie === 'abschreibungen') {
+        guvDetails.abschreibungen.gesamt += betrag;
+        guvDetails.abschreibungen.details.push({ quelle: row.quelle, betrag });
+      } else {
+        guvDetails.sonstige_aufwendungen.gesamt += betrag;
+        guvDetails.sonstige_aufwendungen.details.push({
+          kategorie: row.kategorie,
+          quelle: row.quelle,
+          betrag
+        });
+      }
+    });
+
+    const gesamtaufwand = guvDetails.materialaufwand.gesamt +
+                          guvDetails.personalaufwand.gesamt +
+                          guvDetails.abschreibungen.gesamt +
+                          guvDetails.sonstige_aufwendungen.gesamt;
+
+    res.json({
+      jahr: currentYear,
+      quartal: quartal || null,
+      organisation: organisation || 'alle',
+      ...guvDetails,
+      gesamtaufwand,
+      jahresueberschuss: guvDetails.umsatzerloese.gesamt - gesamtaufwand
+    });
+  })
+  .catch(err => {
+    console.error('GuV-Details-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Laden der GuV-Details', error: err.message });
+  });
+});
+
+// ===================================================================
+// 📊 GET /api/buchhaltung/bilanz - Balance Sheet
+// ===================================================================
+router.get('/bilanz', requireSuperAdmin, (req, res) => {
+  const { organisation, jahr } = req.query;
+  const currentYear = jahr || new Date().getFullYear();
+
+  const orgFilter = organisation && organisation !== 'alle'
+    ? `AND organisation_name = ${db.escape(organisation)}`
+    : '';
+
+  const dojoFilter = organisation && organisation !== 'alle'
+    ? `AND dojo_id = ${organisation === 'TDA International' ? 2 : 1}`
+    : '';
+
+  // Fetch initial balance data
+  const stammdatenSql = `
+    SELECT * FROM bilanz_stammdaten
+    WHERE jahr = ? ${dojoFilter}
+    LIMIT 1
+  `;
+
+  // Fetch bank balance
+  const bankBestandSql = `
+    SELECT COALESCE(SUM(bank_saldo), 0) as bank_saldo
+    FROM v_bilanz_bank_bestand
+    WHERE jahr <= ? ${orgFilter}
+  `;
+
+  // Fetch receivables
+  const forderungenSql = `
+    SELECT COALESCE(SUM(forderungen), 0) as forderungen
+    FROM v_bilanz_forderungen
+    WHERE jahr = ? ${dojoFilter}
+  `;
+
+  // Fetch cumulative profit/equity
+  const eigenkapitalSql = `
+    SELECT COALESCE(SUM(jahresueberschuss), 0) as kumulierter_gewinn
+    FROM v_bilanz_eigenkapital
+    WHERE jahr <= ? ${orgFilter}
+  `;
+
+  Promise.all([
+    new Promise((resolve, reject) => {
+      db.query(stammdatenSql, [currentYear], (err, results) => {
+        if (err) reject(err);
+        else resolve(results[0] || {});
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(bankBestandSql, [currentYear], (err, results) => {
+        if (err) reject(err);
+        else resolve(results[0] || {});
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(forderungenSql, [currentYear], (err, results) => {
+        if (err) reject(err);
+        else resolve(results[0] || {});
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(eigenkapitalSql, [currentYear], (err, results) => {
+        if (err) reject(err);
+        else resolve(results[0] || {});
+      });
+    })
+  ])
+  .then(([stammdaten, bankBestand, forderungen, eigenkapital]) => {
+    // Calculate Assets (Aktiva)
+    const bankGuthaben = parseFloat(stammdaten.bank_anfangsbestand || 0) + parseFloat(bankBestand.bank_saldo || 0);
+    const kassenbestand = parseFloat(stammdaten.kasse_anfangsbestand || 0);
+    const forderungenBetrag = parseFloat(forderungen.forderungen || 0);
+    const sachanlagen = parseFloat(stammdaten.sachanlagen || 0);
+
+    const umlaufvermoegen = bankGuthaben + kassenbestand + forderungenBetrag;
+    const anlagevermoegen = sachanlagen;
+    const gesamtAktiva = umlaufvermoegen + anlagevermoegen;
+
+    // Calculate Liabilities & Equity (Passiva)
+    const eigenkapitalAnfang = parseFloat(stammdaten.eigenkapital_anfang || 0);
+    const kumulierterGewinn = parseFloat(eigenkapital.kumulierter_gewinn || 0);
+    const eigenkapitalGesamt = eigenkapitalAnfang + kumulierterGewinn;
+
+    const verbindlichkeiten = parseFloat(stammdaten.darlehen || 0);
+
+    const gesamtPassiva = eigenkapitalGesamt + verbindlichkeiten;
+
+    res.json({
+      jahr: currentYear,
+      organisation: organisation || 'alle',
+      aktiva: {
+        anlagevermoegen: {
+          sachanlagen,
+          gesamt: anlagevermoegen
+        },
+        umlaufvermoegen: {
+          bank_guthaben: bankGuthaben,
+          kassenbestand,
+          forderungen: forderungenBetrag,
+          gesamt: umlaufvermoegen
+        },
+        gesamt: gesamtAktiva
+      },
+      passiva: {
+        eigenkapital: {
+          anfangsbestand: eigenkapitalAnfang,
+          kumulierter_gewinn: kumulierterGewinn,
+          gesamt: eigenkapitalGesamt
+        },
+        verbindlichkeiten: {
+          darlehen: verbindlichkeiten,
+          gesamt: verbindlichkeiten
+        },
+        gesamt: gesamtPassiva
+      },
+      bilanz_ausgeglichen: Math.abs(gesamtAktiva - gesamtPassiva) < 0.01
+    });
+  })
+  .catch(err => {
+    console.error('Bilanz-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Laden der Bilanz-Daten', error: err.message });
+  });
+});
+
+// ===================================================================
+// 📝 POST /api/buchhaltung/bilanz/stammdaten - Update opening balances
+// ===================================================================
+router.post('/bilanz/stammdaten', requireSuperAdmin, (req, res) => {
+  const {
+    organisation,
+    jahr,
+    bank_anfangsbestand,
+    kasse_anfangsbestand,
+    sachanlagen,
+    sachanlagen_beschreibung,
+    eigenkapital_anfang,
+    darlehen,
+    darlehen_beschreibung
+  } = req.body;
+
+  const dojoId = organisation === 'TDA International' ? 2 : 1;
+  const userId = req.user?.user_id || req.user?.id || 1;
+
+  const sql = `
+    INSERT INTO bilanz_stammdaten (
+      dojo_id, organisation_name, jahr,
+      bank_anfangsbestand, kasse_anfangsbestand,
+      sachanlagen, sachanlagen_beschreibung,
+      eigenkapital_anfang,
+      darlehen, darlehen_beschreibung,
+      erstellt_von
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      bank_anfangsbestand = VALUES(bank_anfangsbestand),
+      kasse_anfangsbestand = VALUES(kasse_anfangsbestand),
+      sachanlagen = VALUES(sachanlagen),
+      sachanlagen_beschreibung = VALUES(sachanlagen_beschreibung),
+      eigenkapital_anfang = VALUES(eigenkapital_anfang),
+      darlehen = VALUES(darlehen),
+      darlehen_beschreibung = VALUES(darlehen_beschreibung),
+      geaendert_von = VALUES(erstellt_von),
+      geaendert_am = CURRENT_TIMESTAMP
+  `;
+
+  db.query(sql, [
+    dojoId, organisation, jahr,
+    bank_anfangsbestand || 0, kasse_anfangsbestand || 0,
+    sachanlagen || 0, sachanlagen_beschreibung || '',
+    eigenkapital_anfang || 0,
+    darlehen || 0, darlehen_beschreibung || '',
+    userId
+  ], (err, result) => {
+    if (err) {
+      console.error('Stammdaten-Fehler:', err);
+      return res.status(500).json({ message: 'Fehler beim Speichern der Stammdaten', error: err.message });
+    }
+
+    res.json({
+      message: 'Bilanz-Stammdaten erfolgreich gespeichert',
+      stammdaten_id: result.insertId || result.affectedRows
+    });
+  });
+});
+
+// ===================================================================
+// 📤 GET /api/buchhaltung/guv/export - GuV Export (PDF/CSV)
+// ===================================================================
+router.get('/guv/export', requireSuperAdmin, (req, res) => {
+  const { organisation, jahr, format = 'csv' } = req.query;
+  const currentYear = jahr || new Date().getFullYear();
+
+  let dateFilter = `jahr = ${db.escape(currentYear)}`;
+  const orgFilter = organisation && organisation !== 'alle'
+    ? `AND organisation_name = ${db.escape(organisation)}`
+    : '';
+
+  // Fetch GuV data
+  const einnahmenSql = `SELECT kategorie, quelle, SUM(betrag_brutto) as summe FROM v_euer_einnahmen WHERE ${dateFilter} ${orgFilter} GROUP BY kategorie, quelle`;
+  const ausgabenSql = `SELECT kategorie, quelle, SUM(betrag_brutto) as summe FROM v_euer_ausgaben WHERE ${dateFilter} ${orgFilter} GROUP BY kategorie, quelle`;
+
+  Promise.all([
+    new Promise((resolve, reject) => {
+      db.query(einnahmenSql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(ausgabenSql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    })
+  ])
+  .then(([einnahmen, ausgaben]) => {
+    const umsatzerloese = einnahmen.reduce((sum, row) => sum + parseFloat(row.summe || 0), 0);
+    const materialaufwand = ausgaben.filter(r => r.kategorie === 'wareneingang').reduce((sum, r) => sum + parseFloat(r.summe || 0), 0);
+    const personalaufwand = ausgaben.filter(r => r.kategorie === 'personalkosten').reduce((sum, r) => sum + parseFloat(r.summe || 0), 0);
+    const abschreibungen = ausgaben.filter(r => r.kategorie === 'abschreibungen').reduce((sum, r) => sum + parseFloat(r.summe || 0), 0);
+    const sonstigeAufwendungen = ausgaben.filter(r => !['wareneingang', 'personalkosten', 'abschreibungen'].includes(r.kategorie)).reduce((sum, r) => sum + parseFloat(r.summe || 0), 0);
+    const jahresueberschuss = umsatzerloese - (materialaufwand + personalaufwand + abschreibungen + sonstigeAufwendungen);
+
+    if (format === 'csv') {
+      let csv = 'Position;Betrag\n';
+      csv += `Umsatzerlöse;${umsatzerloese.toFixed(2)}\n`;
+      csv += `Materialaufwand;-${materialaufwand.toFixed(2)}\n`;
+      csv += `Personalaufwand;-${personalaufwand.toFixed(2)}\n`;
+      csv += `Abschreibungen;-${abschreibungen.toFixed(2)}\n`;
+      csv += `Sonstige Aufwendungen;-${sonstigeAufwendungen.toFixed(2)}\n`;
+      csv += `;\n`;
+      csv += `Jahresüberschuss;${jahresueberschuss.toFixed(2)}\n`;
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="GuV_${jahr}_${organisation || 'alle'}.csv"`);
+      res.send('\ufeff' + csv);
+    } else {
+      res.status(400).json({ message: 'Nur CSV-Export wird derzeit unterstützt' });
+    }
+  })
+  .catch(err => {
+    console.error('GuV-Export-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Export der GuV', error: err.message });
+  });
+});
+
+// ===================================================================
+// 📤 GET /api/buchhaltung/bilanz/export - Bilanz Export (CSV)
+// ===================================================================
+router.get('/bilanz/export', requireSuperAdmin, (req, res) => {
+  const { organisation, jahr, format = 'csv' } = req.query;
+  const currentYear = jahr || new Date().getFullYear();
+
+  const orgFilter = organisation && organisation !== 'alle' ? `AND organisation_name = ${db.escape(organisation)}` : '';
+  const dojoFilter = organisation && organisation !== 'alle' ? `AND dojo_id = ${organisation === 'TDA International' ? 2 : 1}` : '';
+
+  const stammdatenSql = `SELECT * FROM bilanz_stammdaten WHERE jahr = ? ${dojoFilter} LIMIT 1`;
+  const bankBestandSql = `SELECT COALESCE(SUM(bank_saldo), 0) as bank_saldo FROM v_bilanz_bank_bestand WHERE jahr <= ? ${orgFilter}`;
+  const forderungenSql = `SELECT COALESCE(SUM(forderungen), 0) as forderungen FROM v_bilanz_forderungen WHERE jahr = ? ${dojoFilter}`;
+  const eigenkapitalSql = `SELECT COALESCE(SUM(jahresueberschuss), 0) as kumulierter_gewinn FROM v_bilanz_eigenkapital WHERE jahr <= ? ${orgFilter}`;
+
+  Promise.all([
+    new Promise((resolve, reject) => db.query(stammdatenSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
+    new Promise((resolve, reject) => db.query(bankBestandSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
+    new Promise((resolve, reject) => db.query(forderungenSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
+    new Promise((resolve, reject) => db.query(eigenkapitalSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {})))
+  ])
+  .then(([stammdaten, bankBestand, forderungen, eigenkapital]) => {
+    const bankGuthaben = parseFloat(stammdaten.bank_anfangsbestand || 0) + parseFloat(bankBestand.bank_saldo || 0);
+    const kassenbestand = parseFloat(stammdaten.kasse_anfangsbestand || 0);
+    const forderungenBetrag = parseFloat(forderungen.forderungen || 0);
+    const sachanlagen = parseFloat(stammdaten.sachanlagen || 0);
+    const eigenkapitalAnfang = parseFloat(stammdaten.eigenkapital_anfang || 0);
+    const kumulierterGewinn = parseFloat(eigenkapital.kumulierter_gewinn || 0);
+    const darlehen = parseFloat(stammdaten.darlehen || 0);
+
+    const umlaufvermoegen = bankGuthaben + kassenbestand + forderungenBetrag;
+    const eigenkapitalGesamt = eigenkapitalAnfang + kumulierterGewinn;
+    const gesamtAktiva = sachanlagen + umlaufvermoegen;
+    const gesamtPassiva = eigenkapitalGesamt + darlehen;
+
+    if (format === 'csv') {
+      let csv = 'AKTIVA;Betrag;PASSIVA;Betrag\n';
+      csv += `Anlagevermögen;${sachanlagen.toFixed(2)};Eigenkapital;${eigenkapitalGesamt.toFixed(2)}\n`;
+      csv += `Umlaufvermögen;${umlaufvermoegen.toFixed(2)};Verbindlichkeiten;${darlehen.toFixed(2)}\n`;
+      csv += `;;;\n`;
+      csv += `Summe Aktiva;${gesamtAktiva.toFixed(2)};Summe Passiva;${gesamtPassiva.toFixed(2)}\n`;
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="Bilanz_${jahr}_${organisation || 'alle'}.csv"`);
+      res.send('\ufeff' + csv);
+    } else {
+      res.status(400).json({ message: 'Nur CSV-Export wird derzeit unterstützt' });
+    }
+  })
+  .catch(err => {
+    console.error('Bilanz-Export-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Export der Bilanz', error: err.message });
   });
 });
 
