@@ -35,7 +35,8 @@ const ApiHealthCheck = ({ children }) => {
     try {
       // Schneller Health-Check mit kurzem Timeout + Cache-Busting
       // Umgeht Service Worker Cache durch Cache-Control Header und Timestamp
-      const response = await axios.get(`${config.apiBaseUrl}/test`, {
+      // WICHTIG: Relative URL verwenden, da axios.defaults.baseURL bereits gesetzt ist
+      const response = await axios.get('/test', {
         timeout: 5000,
         validateStatus: (status) => status < 500,
         headers: {
