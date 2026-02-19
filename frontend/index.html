@@ -18,9 +18,6 @@
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
-
     <title>Dojosoftware</title>
     
     <style>
@@ -195,24 +192,28 @@
     
     <div id="root"></div>
 
-    <!-- Deregistriere alle alten Service Worker -->
+    <!-- Deregistriere alte Service Worker (einmalig) -->
     <script>
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleaned')) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-            console.log('Service Worker deregistriert:', registration);
+          if (registrations.length > 0) {
+            for(let registration of registrations) {
+              registration.unregister();
+              console.log('✓ Service Worker deregistriert');
+            }
+            // Lösche auch alle Caches
+            if ('caches' in window) {
+              caches.keys().then(function(cacheNames) {
+                cacheNames.forEach(function(cacheName) {
+                  caches.delete(cacheName);
+                  console.log('✓ Cache gelöscht:', cacheName);
+                });
+              });
+            }
+            sessionStorage.setItem('sw_cleaned', 'true');
+            console.log('✓ Service Worker Cleanup abgeschlossen');
           }
         });
-        // Lösche auch alle Caches
-        if ('caches' in window) {
-          caches.keys().then(function(cacheNames) {
-            cacheNames.forEach(function(cacheName) {
-              caches.delete(cacheName);
-              console.log('Cache gelöscht:', cacheName);
-            });
-          });
-        }
       }
     </script>
 
