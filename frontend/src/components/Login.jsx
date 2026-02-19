@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import LanguageSwitcher from './LanguageSwitcher';
+import { CURRENT_VERSION } from './SystemChangelog';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
@@ -199,7 +200,6 @@ const Login = () => {
             <a href="/galerie">Galerie</a>
             <a href="/pricing">Preise</a>
             <a href="/#testimonials">Referenzen</a>
-            <a href="/probetraining" onClick={(e) => { e.preventDefault(); navigate('/probetraining'); }} className="nav-link-highlight">Probetraining</a>
             <LanguageSwitcher compact={true} />
           </div>
         </div>
@@ -406,7 +406,7 @@ const Login = () => {
           {/* Footer */}
           <div className="login-footer">
             <p className="version-info">
-              DojoSoftware v2.0 | © 2024-2025
+              DojoSoftware v{CURRENT_VERSION} | © 2024-{new Date().getFullYear()}
             </p>
             <div className="security-info">
               <Shield size={12} />

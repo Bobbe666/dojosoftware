@@ -26,6 +26,8 @@ import AutoLastschriftTab from './AutoLastschriftTab';
 import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
 import PasswortVerwaltung from './PasswortVerwaltung';
+import DojoLizenzverwaltung from './DojoLizenzverwaltung';
+import SecurityDashboard from './SecurityDashboard';
 import '../styles/SuperAdminDashboard.css';
 
 const SuperAdminDashboard = () => {
@@ -640,6 +642,7 @@ const SuperAdminDashboard = () => {
   // Verbandsmitglieder wurden ins separate Verband-Dashboard verschoben
   const tabs = [
     { id: 'overview', label: 'Übersicht', icon: '📊' },
+    { id: 'lizenzen', label: 'Lizenzen', icon: '📜' },
     { id: 'pushnachrichten', label: 'Pushnachrichten', icon: '🔔', badge: unreadCount > 0 ? unreadCount : null },
     { id: 'verbandsmitglieder', label: 'Verbandsmitglieder', icon: '🏆' },
     { id: 'shop', label: 'Artikel/Shop', icon: '🛒' },
@@ -650,11 +653,10 @@ const SuperAdminDashboard = () => {
     { id: 'finanzen', label: 'Finanzen', icon: '💰' },
     { id: 'lastschrift', label: 'Lastschrift', icon: '🏦' },
     { id: 'buchhaltung', label: 'Buchhaltung', icon: '📒' },
-    { id: 'contracts', label: 'Verträge', icon: '📄' },
     { id: 'users', label: 'Benutzer', icon: '👤' },
-    { id: 'plans', label: 'Pläne & Preise', icon: '💳' },
     { id: 'email', label: 'E-Mail', icon: '✉️' },
-    { id: 'passwoerter', label: 'Passwörter', icon: '🔑' }
+    { id: 'passwoerter', label: 'Passwörter', icon: '🔑' },
+    { id: 'security', label: 'Security', icon: '🛡️' }
   ];
 
   return (
@@ -1387,173 +1389,6 @@ const SuperAdminDashboard = () => {
           <BuchhaltungTab token={token} />
         )}
 
-        {/* Verträge Tab */}
-        {activeTab === 'contracts' && (
-          <ContractsTab token={token} />
-        )}
-
-        {/* Benutzer Tab */}
-        {activeTab === 'plans' && (
-          <div className="plans-management">
-            <h2 className="section-title" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CreditCard size={24} /> Pläne & Preise verwalten
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-              Änderungen hier werden automatisch auf der Pricing-Seite und im Vertragsmodul übernommen.
-            </p>
-
-            {plansLoading ? (
-              <p>Lade Pläne...</p>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                {subscriptionPlans.map(plan => (
-                  <div key={plan.plan_id} className="plan-card" style={{
-                    background: 'var(--bg-secondary)',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                    border: '1px solid var(--border-default)',
-                    opacity: plan.is_visible ? 1 : 0.6
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <h3 style={{ margin: 0, color: 'var(--primary)' }}>{plan.display_name}</h3>
-                      <button
-                        onClick={() => setEditingPlan(editingPlan === plan.plan_id ? null : plan.plan_id)}
-                        style={{
-                          background: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border-default)',
-                          borderRadius: '6px',
-                          padding: '0.4rem 0.8rem',
-                          cursor: 'pointer',
-                          color: 'var(--text-primary)'
-                        }}
-                      >
-                        <Edit size={14} /> {editingPlan === plan.plan_id ? 'Abbrechen' : 'Bearbeiten'}
-                      </button>
-                    </div>
-
-                    {editingPlan === plan.plan_id ? (
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        const formData = new FormData(e.target);
-                        updatePlan(plan.plan_id, {
-                          display_name: formData.get('display_name'),
-                          description: formData.get('description'),
-                          price_monthly: parseFloat(formData.get('price_monthly')),
-                          price_yearly: parseFloat(formData.get('price_yearly')),
-                          max_members: parseInt(formData.get('max_members')),
-                          max_dojos: parseInt(formData.get('max_dojos')),
-                          storage_limit_mb: parseInt(formData.get('storage_limit_mb')),
-                          feature_verkauf: formData.get('feature_verkauf') === 'on',
-                          feature_buchfuehrung: formData.get('feature_buchfuehrung') === 'on',
-                          feature_events: formData.get('feature_events') === 'on',
-                          feature_multidojo: formData.get('feature_multidojo') === 'on',
-                          feature_api: formData.get('feature_api') === 'on',
-                          is_visible: formData.get('is_visible') === 'on'
-                        });
-                      }}>
-                        <div style={{ display: 'grid', gap: '0.75rem' }}>
-                          <div>
-                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Anzeigename</label>
-                            <input name="display_name" defaultValue={plan.display_name} className="form-control" style={{ width: '100%', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }} />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Beschreibung</label>
-                            <input name="description" defaultValue={plan.description} className="form-control" style={{ width: '100%', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }} />
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                            <div>
-                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Preis/Monat</label>
-                              <input name="price_monthly" type="number" step="0.01" defaultValue={plan.price_monthly} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Preis/Jahr</label>
-                              <input name="price_yearly" type="number" step="0.01" defaultValue={plan.price_yearly} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
-                            </div>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                            <div>
-                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Mitglieder</label>
-                              <input name="max_members" type="number" defaultValue={plan.max_members} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Max Dojos</label>
-                              <input name="max_dojos" type="number" defaultValue={plan.max_dojos} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Speicher MB</label>
-                              <input name="storage_limit_mb" type="number" defaultValue={plan.storage_limit_mb} className="form-control" style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border-default)" }} />
-                            </div>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                              <input name="feature_verkauf" type="checkbox" defaultChecked={plan.feature_verkauf} /> Verkauf
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                              <input name="feature_buchfuehrung" type="checkbox" defaultChecked={plan.feature_buchfuehrung} /> Buchführung
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                              <input name="feature_events" type="checkbox" defaultChecked={plan.feature_events} /> Events
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                              <input name="feature_multidojo" type="checkbox" defaultChecked={plan.feature_multidojo} /> Multi-Dojo
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                              <input name="feature_api" type="checkbox" defaultChecked={plan.feature_api} /> API
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                              <input name="is_visible" type="checkbox" defaultChecked={plan.is_visible} /> Sichtbar
-                            </label>
-                          </div>
-                          <button type="submit" style={{
-                            marginTop: '1rem',
-                            background: 'var(--primary)',
-                            color: '#000',
-                            border: 'none',
-                            borderRadius: '6px',
-                            padding: '0.6rem 1rem',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            justifyContent: 'center'
-                          }}>
-                            <Save size={16} /> Speichern
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>{plan.description}</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-                          <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Monatlich</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary)' }}>{plan.price_monthly}€</div>
-                          </div>
-                          <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Jährlich</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary)' }}>{plan.price_yearly}€</div>
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                          <div>Max. {plan.max_members >= 999999 ? 'Unbegrenzt' : plan.max_members} Mitglieder</div>
-                          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {plan.feature_verkauf ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Verkauf</span> : null}
-                            {plan.feature_buchfuehrung ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Buchführung</span> : null}
-                            {plan.feature_events ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Events</span> : null}
-                            {plan.feature_multidojo ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>Multi-Dojo</span> : null}
-                            {plan.feature_api ? <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>API</span> : null}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === 'users' && (
           <UsersTab token={token} />
         )}
@@ -2074,6 +1909,14 @@ const SuperAdminDashboard = () => {
 
         {activeTab === 'passwoerter' && (
           <PasswortVerwaltung />
+        )}
+
+        {activeTab === 'lizenzen' && (
+          <DojoLizenzverwaltung />
+        )}
+
+        {activeTab === 'security' && (
+          <SecurityDashboard />
         )}
       </div>
 

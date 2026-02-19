@@ -1089,7 +1089,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                     <div className="avatar">
                       {person.foto_pfad ? (
                         <img
-                          src={`http://localhost:3000/${person.foto_pfad}`}
+                          src={`${config.imageBaseUrl}/${person.foto_pfad}`}
                           alt={name}
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';

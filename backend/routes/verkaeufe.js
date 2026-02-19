@@ -12,6 +12,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/featureAccess');
 const { generateKassenbon, generateStornoBon } = require('../templates/kassenbon_template');
 const { createRechnungForVerkauf } = require('../utils/rechnungAutomation');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // =====================================================================================
 // FEATURE PROTECTION: Verkauf & Kassensystem
@@ -127,12 +128,11 @@ router.post('/', async (req, res) => {
     gegeben_cent,
     bemerkung,
     verkauft_von_name,
-    dojo_id,
     checkin_id // Optional: Verknüpfung zur Anwesenheit
   } = req.body;
 
-  // Dojo-ID aus verschiedenen Quellen ermitteln
-  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+  const effectiveDojoId = getSecureDojoId(req);
 
   // Validierung
   if (!artikel || artikel.length === 0) {
@@ -377,12 +377,12 @@ router.post('/', async (req, res) => {
 // GET /api/verkaeufe - Alle Verkäufe abrufen (mit Filterung)
 router.get('/', (req, res) => {
   const {
-    datum_von, datum_bis, mitglied_id, zahlungsart, dojo_id,
+    datum_von, datum_bis, mitglied_id, zahlungsart,
     limit = 50, offset = 0
   } = req.query;
 
-  // Dojo-ID aus verschiedenen Quellen ermitteln
-  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+  const effectiveDojoId = getSecureDojoId(req);
 
   let query = `
     SELECT
@@ -626,10 +626,10 @@ router.post('/:id/storno', (req, res) => {
 
 // GET /api/verkaeufe/stats/tagesumsatz - Tagesumsatz-Statistiken
 router.get('/stats/tagesumsatz', (req, res) => {
-  const { datum = new Date().toISOString().slice(0, 10), dojo_id } = req.query;
+  const { datum = new Date().toISOString().slice(0, 10) } = req.query;
 
-  // Dojo-ID aus verschiedenen Quellen ermitteln
-  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+  const effectiveDojoId = getSecureDojoId(req);
 
   let query = `
     SELECT
@@ -672,8 +672,8 @@ router.get('/stats/tagesumsatz', (req, res) => {
 
 // GET /api/verkaeufe/stats/kassenstand - Aktueller Kassenstand
 router.get('/stats/kassenstand', (req, res) => {
-  const { dojo_id } = req.query;
-  const effectiveDojoId = dojo_id || req.tenant?.dojo_id || req.user?.dojo_id || null;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+  const effectiveDojoId = getSecureDojoId(req);
 
   // Kassenstand mit optionalem Dojo-Filter
   let query = `

@@ -4,6 +4,423 @@
    Diese Datei wird NACH components.css geladen um Styles zu überschreiben
    ===================================================================================== */
 
+/* =====================================================================================
+   PAGE HEADER - Eleganter gestalten
+   ===================================================================================== */
+
+.artikel-verwaltung .page-header {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 107, 53, 0.05) 100%) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 16px !important;
+  padding: 2rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.artikel-verwaltung .page-header h1 {
+  font-size: 2rem !important;
+  letter-spacing: 3px !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.artikel-verwaltung .page-header p {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-size: 1rem !important;
+}
+
+/* =====================================================================================
+   MAIN TABS - Komplett überarbeitet
+   ===================================================================================== */
+
+.main-tabs-navigation {
+  display: flex !important;
+  gap: 0 !important;
+  margin-bottom: 1.5rem !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 6px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.main-tab-btn {
+  flex: 1 !important;
+  padding: 0.875rem 1.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  position: relative !important;
+}
+
+.main-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.main-tab-btn.active {
+  background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%) !important;
+  color: #1a1a2e !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+  transform: none !important;
+}
+
+.main-tab-btn.active::after {
+  display: none !important;
+}
+
+/* Badge im Tab */
+.main-tab-btn .low-stock-badge,
+.main-tab-btn .order-badge {
+  background: #ef4444 !important;
+  color: white !important;
+  padding: 0.15rem 0.5rem !important;
+  border-radius: 10px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  min-width: 20px !important;
+  text-align: center !important;
+}
+
+.main-tab-btn.active .low-stock-badge,
+.main-tab-btn.active .order-badge {
+  background: #1a1a2e !important;
+  color: #ffd700 !important;
+}
+
+/* =====================================================================================
+   CONTROLS / FILTER SECTION - Aufgeräumter
+   ===================================================================================== */
+
+.artikel-verwaltung .controls-section {
+  background: rgba(0, 0, 0, 0.2) !important;
+  padding: 1rem 1.25rem !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.artikel-verwaltung .search-box input {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  padding: 0.65rem 1rem !important;
+  font-size: 0.9rem !important;
+}
+
+.artikel-verwaltung .search-box input:focus {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.artikel-verwaltung .search-filters select {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  padding: 0.65rem 1rem !important;
+  font-size: 0.9rem !important;
+}
+
+.artikel-verwaltung .search-filters select:focus {
+  border-color: #ffd700 !important;
+  outline: none !important;
+}
+
+.artikel-verwaltung .checkbox-label {
+  background: rgba(0, 0, 0, 0.3) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 0.85rem !important;
+}
+
+/* Neuer Artikel Button */
+.artikel-verwaltung .btn-primary {
+  background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%) !important;
+  color: #1a1a2e !important;
+  border: none !important;
+  padding: 0.65rem 1.25rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+}
+
+.artikel-verwaltung .btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* =====================================================================================
+   TABELLE - Komplett neu gestylt
+   ===================================================================================== */
+
+.artikel-table-container {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 215, 0, 0.12) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.artikel-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.artikel-table thead {
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, rgba(255, 215, 0, 0.05) 100%) !important;
+}
+
+.artikel-table th {
+  padding: 1rem 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  color: #ffd700 !important;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2) !important;
+  background: transparent !important;
+}
+
+.artikel-table td {
+  padding: 0.875rem 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  vertical-align: middle !important;
+  font-size: 0.9rem !important;
+}
+
+.artikel-table tbody tr {
+  transition: all 0.2s ease !important;
+}
+
+.artikel-table tbody tr:hover {
+  background: rgba(255, 215, 0, 0.06) !important;
+}
+
+.artikel-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* Artikel Name & SKU */
+.artikel-info .artikel-name {
+  font-weight: 600 !important;
+  color: #fff !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.artikel-info .artikel-details {
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 0.75rem !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+/* =====================================================================================
+   BADGES - Neu mit besserer Lesbarkeit
+   ===================================================================================== */
+
+/* Artikelgruppe Badge - Warmes Braun/Orange */
+.artikelgruppe-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 6px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.4) 0%, rgba(146, 64, 14, 0.4) 100%) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  text-shadow: none !important;
+  white-space: nowrap !important;
+}
+
+/* Kategorie Badge - Kühles Blau/Cyan */
+.kategorie-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 6px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, rgba(6, 95, 70, 0.4) 0%, rgba(4, 120, 87, 0.4) 100%) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.3) !important;
+  text-shadow: none !important;
+  white-space: nowrap !important;
+}
+
+/* =====================================================================================
+   PREIS-SPALTEN - Klarer
+   ===================================================================================== */
+
+.preis-cell {
+  font-family: 'Courier New', monospace !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-align: right !important;
+}
+
+/* Preiskategorien Kids/Erw */
+.preis-kategorien {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  font-size: 0.8rem !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.preis-kategorien .preis-kids {
+  color: #60a5fa !important;
+}
+
+.preis-kategorien .preis-erw {
+  color: #4ade80 !important;
+}
+
+/* =====================================================================================
+   STATUS BADGES - Überarbeitet
+   ===================================================================================== */
+
+.lager-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.4rem 0.75rem !important;
+  border-radius: 6px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  min-width: 90px !important;
+}
+
+.lager-status.in-stock {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(74, 222, 128, 0.3) !important;
+}
+
+.lager-status.low-stock {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+}
+
+.lager-status.out-of-stock {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(248, 113, 113, 0.3) !important;
+}
+
+.lager-status.unlimited {
+  background: rgba(96, 165, 250, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(96, 165, 250, 0.3) !important;
+}
+
+/* =====================================================================================
+   AKTIONEN - Kompakter und eleganter
+   ===================================================================================== */
+
+.artikel-table .actions {
+  display: flex !important;
+  gap: 0.5rem !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.artikel-table .actions .btn,
+.artikel-table .actions button {
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.artikel-table .actions .btn:hover,
+.artikel-table .actions button:hover {
+  background: rgba(255, 215, 0, 0.15) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  color: #ffd700 !important;
+  transform: scale(1.1) !important;
+}
+
+.artikel-table .actions .btn-danger:hover,
+.artikel-table .actions button.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+
+/* Lager-Icon Button */
+.artikel-table .actions .btn-info,
+.artikel-table .actions button.btn-info {
+  background: rgba(96, 165, 250, 0.1) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+  color: #60a5fa !important;
+}
+
+.artikel-table .actions .btn-info:hover {
+  background: rgba(96, 165, 250, 0.2) !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+/* =====================================================================================
+   LAGER INFO SPALTE
+   ===================================================================================== */
+
+.lager-info {
+  text-align: center !important;
+}
+
+.lager-info .lagerbestand {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+}
+
+.lager-info .mindestbestand {
+  font-size: 0.75rem !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  margin-top: 0.15rem !important;
+}
+
+/* =====================================================================================
+   EMPTY STATE
+   ===================================================================================== */
+
+.empty-state {
+  text-align: center !important;
+  padding: 4rem 2rem !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.empty-state p {
+  font-size: 1.1rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
 /* Modal Header - Icons nicht von Gradient überlagern */
 .artikel-modal .modal-header h2 {
   color: var(--primary) !important;

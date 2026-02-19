@@ -9,6 +9,7 @@ const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/featureAccess');
+const { sendEventRegistrationEmail, sendPaymentReminderEmail } = require('../services/emailTemplates');
 
 // ============================================================================
 // FEATURE PROTECTION: Events-Verwaltung
@@ -1097,20 +1098,20 @@ router.post('/:id/admin-anmelden', async (req, res) => {
 
     logger.info('Admin hat Mitglied ${mitglied_id} zu Event ${eventId} hinzugefügt');
 
-    // 5. Benachrichtigung an Mitglied senden (Optional: Email)
-    // TODO: Email-Service implementieren wenn verfügbar
-    try {
-      // Einfache Konsolen-Notification für jetzt
-      logger.debug('📧 Benachrichtigung an ${member.email}:');
-      logger.debug('   Event: ${event.titel}');
-      logger.debug(`   Datum: ${new Date(event.datum).toLocaleDateString('de-DE')}`);
-      logger.debug(`   Status: Bestätigt - Zahlung: ${bezahlt ? 'Bezahlt' : 'Offen'}`);
-
-      // Falls Email-Service existiert, hier aufrufen:
-      // await sendEventNotification(member.email, event, 'admin-added');
-    } catch (notifError) {
-      logger.error('⚠️ Fehler beim Senden der Benachrichtigung:', { error: notifError });
-      // Fehler bei Benachrichtigung soll Anmeldung nicht verhindern
+    // 5. Benachrichtigung an Mitglied senden
+    if (member.email) {
+      try {
+        const dojoId = req.tenant?.dojo_id || event.dojo_id;
+        await sendEventRegistrationEmail(dojoId, member.email, {
+          memberName: `${member.vorname} ${member.nachname}`,
+          eventName: event.titel,
+          eventDate: event.datum,
+          eventLocation: event.ort
+        });
+        logger.info(`Event-Anmeldebestätigung gesendet an ${member.email}`);
+      } catch (emailErr) {
+        logger.warn(`Event-Email konnte nicht gesendet werden: ${emailErr.message}`);
+      }
     }
 
     res.json({
@@ -1995,19 +1996,43 @@ router.post('/:id/send-reminder', requireFeature('events'), async (req, res) => 
   const eventId = parseInt(req.params.id);
 
   try {
+    // Event-Details laden
+    const [events] = await db.promise().query(
+      `SELECT * FROM events WHERE id = ?`,
+      [eventId]
+    );
+    if (events.length === 0) {
+      return res.status(404).json({ error: 'Event nicht gefunden' });
+    }
+    const event = events[0];
+
+    // Unbezahlte Teilnehmer laden
     const [rows] = await db.promise().query(
-      `SELECT ea.mitglied_id, m.email, m.vorname
+      `SELECT ea.mitglied_id, m.email, m.vorname, m.nachname
        FROM event_anmeldungen ea
        JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
        WHERE ea.event_id = ? AND ea.bezahlt = 0 AND ea.status IN ('angemeldet', 'bestaetigt')`,
       [eventId]
     );
 
+    const dojoId = req.tenant?.dojo_id || event.dojo_id;
     let sent = 0;
+
     for (const row of rows) {
-      // TODO: Zahlungserinnerungs-Email implementieren
-      // await eventEmailService.sendPaymentReminderEmail(eventId, row.mitglied_id);
-      sent++;
+      if (row.email) {
+        try {
+          await sendPaymentReminderEmail(dojoId, row.email, {
+            memberName: `${row.vorname} ${row.nachname}`,
+            amount: event.preis || 0,
+            dueDate: event.datum,
+            invoiceNumber: `EVENT-${eventId}-${row.mitglied_id}`,
+            reminderLevel: 1
+          });
+          sent++;
+        } catch (emailErr) {
+          logger.warn(`Zahlungserinnerung an ${row.email} fehlgeschlagen: ${emailErr.message}`);
+        }
+      }
     }
 
     res.json({ success: true, sent: sent, message: `${sent} Erinnerungen versendet` });

@@ -4,6 +4,7 @@ import {
   Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText, QrCode, UserPlus
 } from 'lucide-react';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import VerkaufKasse from './VerkaufKasse';
 import QRScanner from './QRScanner';
 import config from '../config/config.js';
@@ -46,6 +47,7 @@ const aggregateCheckinsByMember = (checkins = []) => {
     const aggregiert = map.get(key);
     aggregiert.kurse.push({
       kurs_name: entry.kurs_name,
+      stil: entry.stil,
       stundenplan_id: entry.stundenplan_id,
       checkin_id: entry.checkin_id,
       checkin_time: entry.checkin_time,
@@ -75,6 +77,7 @@ const CheckinSystem = () => {
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
+  const { token } = useAuth(); // 🔐 Authentication token for API calls
 
   // 🔍 BARCODE SCANNER SUPPORT
   const lastInputTimeRef = useRef(0);
@@ -170,6 +173,18 @@ const CheckinSystem = () => {
     // 2. Nach ID suchen (falls numerisch)
     if (!member && /^\d+$/.test(scannedValue)) {
       member = members.find(m => m.mitglied_id === parseInt(scannedValue));
+    }
+
+    // 2.5 Nach DOJO_MEMBER QR-Code Format suchen (DOJO_MEMBER:ID:Name:Email)
+    if (!member && scannedValue.startsWith('DOJO_MEMBER:')) {
+      const parts = scannedValue.split(':');
+      if (parts.length >= 2) {
+        const memberId = parseInt(parts[1]);
+        if (!isNaN(memberId)) {
+          member = members.find(m => m.mitglied_id === memberId);
+          console.log('🔍 DOJO_MEMBER QR erkannt, ID:', memberId);
+        }
+      }
     }
 
     // 3. Nach QR-Code Format suchen (z.B. JSON oder spezielle Formate)
@@ -305,7 +320,11 @@ const CheckinSystem = () => {
 
   const loadMembers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/mitglieder`);
+      const response = await fetch(`${API_BASE}/mitglieder`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -327,7 +346,11 @@ const CheckinSystem = () => {
 
   const loadCoursesToday = async () => {
     try {
-      const response = await fetch(`${API_BASE}/checkin/courses-today`);
+      const response = await fetch(`${API_BASE}/checkin/courses-today`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -345,7 +368,11 @@ const CheckinSystem = () => {
 
   const loadTodayCheckins = async () => {
     try {
-      const response = await fetch(`${API_BASE}/checkin/today`);
+      const response = await fetch(`${API_BASE}/checkin/today`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -367,7 +394,11 @@ const CheckinSystem = () => {
 
   const loadMemberCheckins = async (mitgliedId) => {
     try {
-      const response = await fetch(`${API_BASE}/checkin/today-member/${mitgliedId}`);
+      const response = await fetch(`${API_BASE}/checkin/today-member/${mitgliedId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -503,7 +534,8 @@ const CheckinSystem = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           gast_vorname: guestData.gast_vorname.trim(),
@@ -600,9 +632,10 @@ const CheckinSystem = () => {
       const checkoutPromises = todayCheckins.map(checkin =>
         fetch(`${API_BASE}/checkin/checkout`, {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ checkin_id: checkin.checkin_id })
         })
@@ -647,7 +680,8 @@ const CheckinSystem = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ checkin_id: checkinId })
       });
@@ -704,7 +738,8 @@ const CheckinSystem = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestBody)
       });
@@ -988,7 +1023,7 @@ const CheckinSystem = () => {
                       {/* Avatar: Foto oder Initialen */}
                       {member.foto_pfad ? (
                         <img
-                          src={`http://localhost:3000${member.foto_pfad}`}
+                          src={`${config.imageBaseUrl}${member.foto_pfad}`}
                           alt={`${member.vorname} ${member.nachname}`}
                           className="dropdown-avatar"
                         />
@@ -1093,7 +1128,7 @@ const CheckinSystem = () => {
                           {/* Avatar: Foto oder Initialen */}
                           {checkin.foto_pfad ? (
                             <img
-                              src={checkin.foto_pfad.startsWith('http') ? checkin.foto_pfad : `http://localhost:3000/${checkin.foto_pfad.startsWith('/') ? checkin.foto_pfad.slice(1) : checkin.foto_pfad}`}
+                              src={checkin.foto_pfad.startsWith('http') ? checkin.foto_pfad : `${config.imageBaseUrl}${checkin.foto_pfad.startsWith('/') ? checkin.foto_pfad : '/' + checkin.foto_pfad}`}
                               alt={`${checkin.vorname} ${checkin.nachname}`}
                               className="member-avatar-checkin"
                               onError={(e) => {
@@ -1120,7 +1155,7 @@ const CheckinSystem = () => {
                               </span>
                             )}
                           </div>
-                          
+
                           {/* Auschecken Button */}
                           <button
                             onClick={(e) => {
@@ -1210,14 +1245,13 @@ const CheckinSystem = () => {
                             >
                               <div className="course-card-header">
                                 <div className="course-info">
-                                  <h4 className="course-name">{course.kurs_name}</h4>
+                                  <h4 className="course-name-primary">{course.stil || course.kurs_name}</h4>
+                                  <div className="course-style-secondary">{course.kurs_name}</div>
                                   <div className="course-details">
                                     <span className="course-time">
                                       <Clock size={14} />
                                       {course.zeit}
                                     </span>
-                                    <span>•</span>
-                                    <span>{course.stil}</span>
                                   </div>
                                 </div>
 

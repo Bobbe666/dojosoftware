@@ -3,13 +3,20 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { promisify } = require('util');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { authenticateToken } = require('../middleware/auth');
 
 const queryAsync = promisify(db.query).bind(db);
+
+// Alle Routes in dieser Datei erfordern Authentifizierung
+router.use(authenticateToken);
 
 // GET /api/ehemalige - Alle ehemaligen Mitglieder abrufen (mit Pagination)
 router.get('/', async (req, res) => {
   try {
-    const { dojo_id, page = 1, limit = 50, search } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    const { page = 1, limit = 50, search } = req.query;
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 50;
     const offset = (pageNum - 1) * limitNum;
@@ -17,9 +24,9 @@ router.get('/', async (req, res) => {
     let baseWhere = `WHERE e.archiviert = FALSE`;
     const params = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       baseWhere += ` AND e.dojo_id = ?`;
-      params.push(dojo_id);
+      params.push(secureDojoId);
     }
 
     // Suchfunktion
@@ -63,14 +70,15 @@ router.get('/', async (req, res) => {
 // GET /api/ehemalige/count - Anzahl ehemalige Mitglieder
 router.get('/count', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     let query = `SELECT COUNT(*) as count FROM ehemalige WHERE archiviert = FALSE`;
     const params = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       query += ` AND dojo_id = ?`;
-      params.push(dojo_id);
+      params.push(secureDojoId);
     }
 
     const result = await queryAsync(query, params);

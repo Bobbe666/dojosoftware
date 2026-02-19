@@ -30,7 +30,31 @@ function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [registeredData, setRegisteredData] = useState(null);
 
+  // Early Bird Promo State
+  const [promoData, setPromoData] = useState(null);
+  const [promoLoading, setPromoLoading] = useState(true);
+
   let subdomainCheckTimeout = null;
+
+  // Early Bird Promo laden
+  useEffect(() => {
+    const loadPromoData = async () => {
+      try {
+        setPromoLoading(true);
+        const res = await axios.get(`${config.apiBaseUrl}/promo/early-bird`);
+
+        if (res.data.success && res.data.promo && res.data.promo.active) {
+          setPromoData(res.data.promo);
+        }
+      } catch (err) {
+        console.error('Fehler beim Laden der Promo-Daten:', err);
+      } finally {
+        setPromoLoading(false);
+      }
+    };
+
+    loadPromoData();
+  }, []);
 
   // Subdomain-Check mit Debounce
   useEffect(() => {
@@ -154,6 +178,9 @@ function RegisterPage() {
     setErrors({});
 
     try {
+      // Prüfe ob Early Bird Promo aktiv ist
+      const hasEarlyBirdPromo = promoData && promoData.active && promoData.spotsRemaining > 0;
+
       const payload = {
         dojo_name: formData.dojoName,
         subdomain: formData.subdomain,
@@ -161,7 +188,12 @@ function RegisterPage() {
         owner_email: formData.ownerEmail,
         phone: formData.phone,
         password: formData.password,
-        selected_plan: formData.selectedPlan
+        selected_plan: formData.selectedPlan,
+        // Early Bird Promo Daten
+        has_early_bird_promo: hasEarlyBirdPromo,
+        promo_discount_percent: hasEarlyBirdPromo ? promoData.discountPercent : null,
+        promo_discount_months: hasEarlyBirdPromo ? promoData.discountMonths : null,
+        promo_free_months: hasEarlyBirdPromo ? promoData.freeMonths : null
       };
       console.log('📤 Payload:', payload);
 
@@ -170,7 +202,20 @@ function RegisterPage() {
 
       if (response.data.success) {
         console.log('✅ Registrierung erfolgreich!');
-        setRegisteredData(response.data);
+
+        // Bei Early Bird Promo: Dojo für Promo registrieren
+        if (hasEarlyBirdPromo && response.data.dojo_id) {
+          try {
+            await axios.post(`${config.apiBaseUrl}/promo/early-bird/register`, {
+              dojo_id: response.data.dojo_id
+            });
+            console.log('✅ Early Bird Promo registriert!');
+          } catch (promoErr) {
+            console.error('Fehler beim Registrieren der Promo:', promoErr);
+          }
+        }
+
+        setRegisteredData({ ...response.data, hasPromo: hasEarlyBirdPromo, promoData });
         setSuccess(true);
       }
 
@@ -229,9 +274,22 @@ function RegisterPage() {
               </div>
 
               <div className="info-box">
-                <h3><span className="section-icon">⏱️</span> Trial-Phase</h3>
-                <p>Du hast <strong>14 Tage</strong> kostenlosen Zugriff auf alle Features.</p>
-                <p className="trial-date">Endet am: {new Date(registeredData.trial_ends_at).toLocaleDateString('de-DE')}</p>
+                <h3><span className="section-icon">⏱️</span> {registeredData.hasPromo ? 'Early Bird Vorteile' : 'Trial-Phase'}</h3>
+                {registeredData.hasPromo && registeredData.promoData ? (
+                  <>
+                    <p className="promo-success-highlight">
+                      <strong>{registeredData.promoData.freeMonths} Monate GRATIS</strong> zum Testen!
+                    </p>
+                    <p>
+                      Danach <strong>{registeredData.promoData.discountPercent}% Rabatt</strong> für {registeredData.promoData.discountMonths} Monate.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>Du hast <strong>14 Tage</strong> kostenlosen Zugriff auf alle Features.</p>
+                    <p className="trial-date">Endet am: {new Date(registeredData.trial_ends_at).toLocaleDateString('de-DE')}</p>
+                  </>
+                )}
               </div>
             </div>
 
@@ -281,10 +339,64 @@ function RegisterPage() {
       </nav>
 
       <div className="register-container">
+        {/* Early Bird Promo Banner */}
+        {promoData && promoData.active && promoData.spotsRemaining > 0 && (
+          <div className="promo-banner">
+            <div className="promo-badge">
+              <span className="badge-icon">⭐</span>
+              <span>EARLY BIRD SPECIAL</span>
+            </div>
+            <div className="promo-content">
+              <div className="promo-main-info">
+                <div className="promo-discount-box">
+                  <span className="discount-value">{promoData.discountPercent}%</span>
+                  <span className="discount-label">RABATT</span>
+                </div>
+                <div className="promo-details">
+                  <h3>Für die ersten <span className="highlight">{promoData.maxDojos} Dojos</span></h3>
+                  <ul className="promo-benefits">
+                    <li>✓ <strong>{promoData.discountPercent}% Rabatt</strong> für {promoData.discountMonths} Monate</li>
+                    <li>✓ <strong>{promoData.freeMonths} Monate GRATIS</strong> zum Testen</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="promo-counter">
+                <div className="counter-visual">
+                  <svg width="80" height="80" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
+                    <circle
+                      cx="50" cy="50" r="45"
+                      fill="none"
+                      stroke="#ffd700"
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeDasharray={`${(promoData.currentCount / promoData.maxDojos) * 283} 283`}
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                  <div className="counter-numbers">
+                    <span className="counter-current">{promoData.currentCount}</span>
+                    <span className="counter-sep">/</span>
+                    <span className="counter-max">{promoData.maxDojos}</span>
+                  </div>
+                </div>
+                <span className="spots-left">
+                  Noch <strong>{promoData.spotsRemaining}</strong> Plätze!
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="register-header">
           <h1>Registriere dein Dojo</h1>
-          <p>14 Tage kostenlos testen - keine Kreditkarte erforderlich</p>
+          <p>
+            {promoData && promoData.active && promoData.spotsRemaining > 0
+              ? `${promoData.freeMonths} Monate GRATIS + ${promoData.discountPercent}% Rabatt für ${promoData.discountMonths} Monate!`
+              : '14 Tage kostenlos testen - keine Kreditkarte erforderlich'
+            }
+          </p>
         </div>
 
         {/* Plan Selection Pills */}

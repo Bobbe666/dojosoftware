@@ -122,6 +122,7 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false, // Disable IPv6 validation warning
   keyGenerator: (req) => {
     // Use X-Forwarded-For if behind proxy, otherwise remote IP
     return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
@@ -142,6 +143,7 @@ const loginLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false, // Disable IPv6 validation warning
   keyGenerator: (req) => {
     // Combine IP + username/email for more precise limiting
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
@@ -168,8 +170,10 @@ const passwordResetLimiter = rateLimit({
     message: 'Bitte warten Sie eine Stunde bevor Sie erneut ein Passwort-Reset anfordern.',
     code: 'PASSWORD_RESET_LIMIT'
   },
+  validate: false, // Disable IPv6 validation warning
   keyGenerator: (req) => {
-    return req.body?.email || req.ip;
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+    return req.body?.email || ip;
   }
 });
 
@@ -184,7 +188,8 @@ const registrationLimiter = rateLimit({
     error: 'Zu viele Registrierungen',
     message: 'Bitte warten Sie eine Stunde bevor Sie sich erneut registrieren.',
     code: 'REGISTRATION_LIMIT'
-  }
+  },
+  validate: false // Disable IPv6 validation warning
 });
 
 // =============================================================================

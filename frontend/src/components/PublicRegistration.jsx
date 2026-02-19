@@ -29,10 +29,15 @@ const PublicRegistration = ({ onClose }) => {
     passwordConfirm: ""
   });
 
+  // Promo-Code Validierung State
+  const [promoCodeStatus, setPromoCodeStatus] = useState(null); // 'valid', 'invalid', 'checking', null
+  const [promoCodeInfo, setPromoCodeInfo] = useState(null);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     passwordConfirm: "",
+    promo_code: "",
     vorname: "",
     nachname: "",
     geburtsdatum: "",
@@ -94,6 +99,34 @@ const PublicRegistration = ({ onClose }) => {
       }
     } catch (err) {
       console.error('Fehler beim Laden der Tarife:', err);
+    }
+  };
+
+  // Promo-Code validieren
+  const validatePromoCode = async (code) => {
+    if (!code || code.trim().length < 6) {
+      setPromoCodeStatus(null);
+      setPromoCodeInfo(null);
+      return;
+    }
+
+    setPromoCodeStatus('checking');
+
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/referral/codes/validate/${code.trim().toUpperCase()}`);
+      const data = await response.json();
+
+      if (data.valid) {
+        setPromoCodeStatus('valid');
+        setPromoCodeInfo(data);
+      } else {
+        setPromoCodeStatus('invalid');
+        setPromoCodeInfo(null);
+      }
+    } catch (err) {
+      console.error('Fehler bei der Promo-Code Validierung:', err);
+      setPromoCodeStatus('invalid');
+      setPromoCodeInfo(null);
     }
   };
 
@@ -274,7 +307,11 @@ const PublicRegistration = ({ onClose }) => {
       switch (currentStep) {
         case 1:
           endpoint = "/public/register/step1";
-          payload = { email: formData.email, password: formData.password };
+          payload = {
+            email: formData.email,
+            password: formData.password,
+            promo_code: formData.promo_code || null
+          };
           break;
         case 2:
           endpoint = "/public/register/step2";
@@ -446,6 +483,72 @@ const PublicRegistration = ({ onClose }) => {
           placeholder="Passwort wiederholen"
           required
         />
+      </div>
+
+      {/* Promo-Code / Empfehlungscode */}
+      <div className="form-group promo-code-group">
+        <label>Empfehlungscode (optional)</label>
+        <div className="promo-code-input-wrapper" style={{ position: 'relative' }}>
+          <input
+            type="text"
+            value={formData.promo_code}
+            onChange={(e) => {
+              const code = e.target.value.toUpperCase();
+              handleInputChange("promo_code", code);
+              validatePromoCode(code);
+            }}
+            placeholder="z.B. ABC123XY"
+            maxLength={12}
+            style={{
+              textTransform: 'uppercase',
+              paddingRight: promoCodeStatus ? '40px' : '0.8rem'
+            }}
+          />
+          {promoCodeStatus && (
+            <span style={{
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '1.2rem'
+            }}>
+              {promoCodeStatus === 'checking' && '...'}
+              {promoCodeStatus === 'valid' && '✅'}
+              {promoCodeStatus === 'invalid' && '❌'}
+            </span>
+          )}
+        </div>
+        {promoCodeStatus === 'valid' && promoCodeInfo && (
+          <div className="promo-code-valid-info" style={{
+            marginTop: '0.5rem',
+            padding: '0.75rem',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid #10b981',
+            borderRadius: '6px',
+            color: '#10b981'
+          }}>
+            <strong>Code gültig!</strong>
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem' }}>
+              Empfohlen von: {promoCodeInfo.werber_name}
+            </p>
+          </div>
+        )}
+        {promoCodeStatus === 'invalid' && formData.promo_code.length >= 6 && (
+          <div className="promo-code-invalid-info" style={{
+            marginTop: '0.5rem',
+            padding: '0.5rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid #ef4444',
+            borderRadius: '6px',
+            color: '#ef4444',
+            fontSize: '0.9rem'
+          }}>
+            Dieser Code ist ungültig oder abgelaufen.
+          </div>
+        )}
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+          Wurden Sie von einem Mitglied empfohlen? Geben Sie hier den Empfehlungscode ein.
+        </p>
       </div>
     </div>
   );

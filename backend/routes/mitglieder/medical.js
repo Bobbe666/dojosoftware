@@ -1,15 +1,19 @@
 /**
  * Medical Routes für Mitglieder
  * Extrahiert aus mitglieder.js - enthält medizinische, Prüfungs- und Compliance-Endpoints
+ *
+ * 🔒 SICHERHEIT: Alle Routes verwenden getSecureDojoId() für Multi-Tenancy Isolation
  */
 const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 const router = express.Router();
 
 // GET /compliance/missing - Mitglieder mit fehlenden Dokumenten (MUSS VOR /:id!)
 router.get('/compliance/missing', (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = [
     'aktiv = 1',
@@ -17,9 +21,9 @@ router.get('/compliance/missing', (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -42,7 +46,8 @@ router.get('/compliance/missing', (req, res) => {
 
 // GET /pruefung/kandidaten - Prüfungskandidaten (nächste 30 Tage) (MUSS VOR /:id!)
 router.get('/pruefung/kandidaten', (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = [
     'aktiv = 1',
@@ -51,9 +56,9 @@ router.get('/pruefung/kandidaten', (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -77,7 +82,8 @@ router.get('/pruefung/kandidaten', (req, res) => {
 // GET /:id/medizinisch - Medizinische Informationen abrufen
 router.get('/:id/medizinisch', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -86,9 +92,9 @@ router.get('/:id/medizinisch', (req, res) => {
   let whereConditions = ['mitglied_id = ?'];
   let queryParams = [id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -113,7 +119,8 @@ router.get('/:id/medizinisch', (req, res) => {
 // PUT /:id/medizinisch - Medizinische Daten aktualisieren
 router.put('/:id/medizinisch', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -127,9 +134,9 @@ router.put('/:id/medizinisch', (req, res) => {
     notfallkontakt_telefon || null, notfallkontakt_verhaeltnis || null, id
   ];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -156,7 +163,8 @@ router.put('/:id/medizinisch', (req, res) => {
 // GET /:id/pruefung - Prüfungsstatus abrufen
 router.get('/:id/pruefung', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -165,9 +173,9 @@ router.get('/:id/pruefung', (req, res) => {
   let whereConditions = ['mitglied_id = ?'];
   let queryParams = [id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -192,7 +200,8 @@ router.get('/:id/pruefung', (req, res) => {
 // PUT /:id/pruefung - Prüfungsdaten aktualisieren
 router.put('/:id/pruefung', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -203,9 +212,9 @@ router.put('/:id/pruefung', (req, res) => {
   let whereConditions = ['mitglied_id = ?'];
   let queryParams = [naechste_pruefung_datum || null, pruefungsgebuehr_bezahlt || false, trainer_empfehlung || null, id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -231,7 +240,8 @@ router.put('/:id/pruefung', (req, res) => {
 // GET /:id/compliance - Compliance-Status abrufen
 router.get('/:id/compliance', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -240,9 +250,9 @@ router.get('/:id/compliance', (req, res) => {
   let whereConditions = ['mitglied_id = ?'];
   let queryParams = [id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -267,7 +277,8 @@ router.get('/:id/compliance', (req, res) => {
 // PUT /:id/compliance - Compliance-Status aktualisieren
 router.put('/:id/compliance', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -278,9 +289,9 @@ router.put('/:id/compliance', (req, res) => {
   let whereConditions = ['mitglied_id = ?'];
   let queryParams = [hausordnung_akzeptiert || false, datenschutz_akzeptiert || false, foto_einverstaendnis || false, vereinsordnung_datum || null, id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `

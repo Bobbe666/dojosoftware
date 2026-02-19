@@ -2772,6 +2772,73 @@
 }
 
 /* =====================================================
+   FREUNDE WERBEN FREUNDE - TDA-VIB THEME
+   Überschriften in lesbarer Farbe für hellen Hintergrund
+   ===================================================== */
+
+[data-theme="tda-vib"] .freunde-werben-freunde h3,
+[data-theme="tda-vib"] .freunde-werben-freunde h4,
+[data-theme="tda-vib"] .freunde-werben-freunde .einstellungen-section h3,
+[data-theme="tda-vib"] .freunde-werben-freunde .einstellungen-section h4,
+[data-theme="tda-vib"] .freunde-werben-freunde .section-header h3,
+[data-theme="tda-vib"] .freunde-werben-freunde .info-section h3 {
+  color: var(--tda-earth, #5c4033) !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde .bonus-system-info h4 {
+  color: var(--tda-earth, #5c4033) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde .info-section h3 {
+  color: #2563eb !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde p,
+[data-theme="tda-vib"] .freunde-werben-freunde span,
+[data-theme="tda-vib"] .freunde-werben-freunde label {
+  color: var(--tda-sumi, #1a1a1a) !important;
+}
+
+/* BUTTONS - TDA-VIB Theme (Erdbraun statt Gold) */
+[data-theme="tda-vib"] .freunde-werben-freunde .btn,
+[data-theme="tda-vib"] .freunde-werben-freunde button,
+[data-theme="tda-vib"] .freunde-werben-freunde .btn-primary,
+[data-theme="tda-vib"] .freunde-werben-freunde .btn-sm {
+  background: var(--tda-earth, #5c4033) !important;
+  color: var(--tda-washi, #f5f0e6) !important;
+  -webkit-text-fill-color: var(--tda-washi, #f5f0e6) !important;
+  border: none !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde .btn:hover,
+[data-theme="tda-vib"] .freunde-werben-freunde button:hover {
+  background: #6B4423 !important;
+  color: var(--tda-washi, #f5f0e6) !important;
+  -webkit-text-fill-color: var(--tda-washi, #f5f0e6) !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde .btn-secondary {
+  background: transparent !important;
+  border: 1px solid rgba(92, 64, 51, 0.4) !important;
+  color: var(--tda-earth, #5c4033) !important;
+  -webkit-text-fill-color: var(--tda-earth, #5c4033) !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde .btn-secondary:hover {
+  background: rgba(92, 64, 51, 0.1) !important;
+  border-color: var(--tda-earth, #5c4033) !important;
+}
+
+[data-theme="tda-vib"] .freunde-werben-freunde .btn-danger {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* =====================================================
    GLOBAL TABS - TDA-VIB THEME
    ===================================================== */
 

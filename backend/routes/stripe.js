@@ -8,6 +8,7 @@ const Stripe = require("stripe");
 const db = require("../db");
 const logger = require("../utils/logger");
 const { authenticateToken } = require("../middleware/auth");
+const { getSecureDojoId } = require("../middleware/tenantSecurity");
 
 // Helper: Get Stripe instance for dojo
 const getStripeForDojo = async (dojoId) => {
@@ -32,7 +33,8 @@ const getStripeForDojo = async (dojoId) => {
 // GET /stripe/config - Stripe Public Key für Frontend
 router.get("/config", authenticateToken, async (req, res) => {
   try {
-    const dojoId = req.user.dojo_id || req.query.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
     if (!dojoId) {
       return res.status(400).json({ error: "Dojo ID erforderlich" });
     }
@@ -446,7 +448,8 @@ router.post("/cancel-subscription", authenticateToken, async (req, res) => {
 router.get("/subscription/:mitgliedId", authenticateToken, async (req, res) => {
   try {
     const { mitgliedId } = req.params;
-    const dojoId = req.user.dojo_id || req.query.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     if (!dojoId) {
       return res.status(400).json({ error: "Dojo ID erforderlich" });
@@ -492,7 +495,8 @@ router.get("/subscription/:mitgliedId", authenticateToken, async (req, res) => {
 router.get("/payment/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const dojoId = req.user.dojo_id || req.query.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     if (!dojoId) {
       return res.status(400).json({ error: "Dojo ID erforderlich" });
@@ -522,15 +526,32 @@ router.get("/payment/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// POST /stripe/webhook - Stripe Webhook (OHNE Auth!)
+// POST /stripe/webhook - Stripe Webhook (OHNE Auth - wird über Signatur validiert!)
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  // Für jeden Dojo den Webhook prüfen (Multi-Tenant)
-  // TODO: Webhook Secret pro Dojo speichern
+  // SECURITY: Webhook-Signatur validieren
+  if (!webhookSecret) {
+    logger.error("KRITISCH: STRIPE_WEBHOOK_SECRET nicht konfiguriert! Webhook-Validierung nicht möglich.");
+    // In Produktion MUSS das Secret gesetzt sein
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ error: "Webhook nicht konfiguriert" });
+    }
+  }
+
+  let event;
   try {
-    const event = JSON.parse(req.body);
-    logger.info("Stripe Webhook empfangen:", event.type);
+    if (webhookSecret && sig) {
+      // SECURITY: Signatur mit Stripe SDK validieren
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'dummy');
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      logger.info("Stripe Webhook validiert:", event.type);
+    } else {
+      // Fallback für Development ohne Secret (NICHT in Produktion verwenden!)
+      event = JSON.parse(req.body);
+      logger.warn("Stripe Webhook OHNE Signatur-Validierung empfangen (nur Development!):", event.type);
+    }
 
     // Event in DB speichern
     await new Promise((resolve, reject) => {
@@ -545,7 +566,12 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     // Event verarbeiten
     switch (event.type) {
       case "checkout.session.completed":
-        await handleCheckoutComplete(event.data.object);
+        // Prüfe ob es ein Plan-Upgrade ist
+        if (event.data.object.metadata?.new_plan && event.data.object.metadata?.dojo_id) {
+          await handlePlanUpgradeComplete(event.data.object);
+        } else {
+          await handleCheckoutComplete(event.data.object);
+        }
         break;
       case "payment_intent.succeeded":
         await handlePaymentSucceeded(event.data.object);
@@ -668,6 +694,158 @@ async function handleSubscriptionDeleted(subscription) {
      WHERE mitglied_id = ?`,
     [mitgliedId]
   );
+}
+
+// Handler für Plan-Upgrades (DojoSoftware Subscriptions)
+async function handlePlanUpgradeComplete(session) {
+  const dojoId = session.metadata?.dojo_id;
+  const oldPlan = session.metadata?.old_plan;
+  const newPlan = session.metadata?.new_plan;
+  const dojoName = session.metadata?.dojoname;
+  const billingInterval = session.metadata?.billing_interval || 'monthly';
+
+  if (!dojoId || !newPlan) {
+    logger.warn('Plan-Upgrade ohne dojo_id oder new_plan:', session.id);
+    return;
+  }
+
+  logger.info('Plan-Upgrade abgeschlossen:', {
+    session_id: session.id,
+    dojo_id: dojoId,
+    old_plan: oldPlan,
+    new_plan: newPlan
+  });
+
+  try {
+    // Plan-Details laden
+    const [planDetails] = await db.promise().query(
+      'SELECT * FROM subscription_plans WHERE plan_name = ?',
+      [newPlan]
+    );
+
+    if (planDetails.length === 0) {
+      logger.error('Plan nicht gefunden:', newPlan);
+      return;
+    }
+
+    const plan = planDetails[0];
+    const price = billingInterval === 'yearly' ? plan.price_yearly : plan.price_monthly;
+
+    // Subscription aktualisieren
+    await db.promise().query(
+      `UPDATE dojo_subscriptions SET
+         plan_type = ?,
+         status = 'active',
+         feature_verkauf = ?,
+         feature_buchfuehrung = ?,
+         feature_events = ?,
+         feature_multidojo = ?,
+         feature_api = ?,
+         max_members = ?,
+         max_dojos = ?,
+         storage_limit_mb = ?,
+         monthly_price = ?,
+         billing_interval = ?,
+         subscription_starts_at = NOW(),
+         trial_ends_at = NULL,
+         cancelled_at = NULL,
+         stripe_subscription_id = ?
+       WHERE dojo_id = ?`,
+      [
+        newPlan,
+        plan.feature_verkauf,
+        plan.feature_buchfuehrung,
+        plan.feature_events,
+        plan.feature_multidojo,
+        plan.feature_api,
+        plan.max_members,
+        plan.max_dojos,
+        plan.storage_limit_mb,
+        price,
+        billingInterval,
+        session.subscription,
+        dojoId
+      ]
+    );
+
+    // Update dojo table
+    await db.promise().query(
+      `UPDATE dojo SET
+         subscription_plan = ?,
+         subscription_status = 'active',
+         subscription_started_at = NOW(),
+         payment_interval = ?
+       WHERE id = ?`,
+      [newPlan, billingInterval, dojoId]
+    );
+
+    // Hole subscription_id für Audit-Log
+    const [subId] = await db.promise().query(
+      'SELECT subscription_id FROM dojo_subscriptions WHERE dojo_id = ?',
+      [dojoId]
+    );
+
+    // Audit-Log erstellen
+    await db.promise().query(
+      `INSERT INTO subscription_audit_log
+       (subscription_id, dojo_id, action, old_plan, new_plan, reason, created_at)
+       VALUES (?, ?, 'self_service_upgrade', ?, ?, ?, NOW())`,
+      [
+        subId[0]?.subscription_id || null,
+        dojoId,
+        oldPlan,
+        newPlan,
+        `Self-Service Upgrade via Stripe: ${oldPlan} -> ${newPlan} (${billingInterval})`
+      ]
+    );
+
+    // ========================================
+    // PUSH-NOTIFICATION an TDA-Admin senden
+    // ========================================
+    const formattedPrice = new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(price);
+
+    const notificationMessage = `
+      <strong>${dojoName || 'Ein Dojo'}</strong> hat auf <strong>${newPlan.toUpperCase()}</strong> upgegradet!<br><br>
+      <ul style="margin: 10px 0;">
+        <li>Vorheriger Plan: ${oldPlan || 'Trial'}</li>
+        <li>Neuer Plan: ${newPlan}</li>
+        <li>Preis: ${formattedPrice}/${billingInterval === 'yearly' ? 'Jahr' : 'Monat'}</li>
+        <li>Zahlungsart: Stripe (${session.payment_method_types?.[0] || 'card'})</li>
+      </ul>
+    `.trim();
+
+    await db.promise().query(
+      `INSERT INTO notifications
+       (type, recipient, subject, message, status, metadata, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        'admin_alert',
+        'admin',
+        `Plan-Upgrade: ${dojoName || 'Dojo #' + dojoId}`,
+        notificationMessage,
+        'unread',
+        JSON.stringify({
+          dojo_id: dojoId,
+          old_plan: oldPlan,
+          new_plan: newPlan,
+          amount: price,
+          billing_interval: billingInterval,
+          stripe_session_id: session.id
+        })
+      ]
+    );
+
+    logger.info('Push-Notification für Plan-Upgrade erstellt:', {
+      dojo_id: dojoId,
+      new_plan: newPlan
+    });
+
+  } catch (error) {
+    logger.error('Fehler beim Verarbeiten des Plan-Upgrades:', error);
+  }
 }
 
 module.exports = router;

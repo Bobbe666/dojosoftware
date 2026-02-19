@@ -287,6 +287,12 @@
   border: 1px solid rgba(255, 107, 53, 0.3);
 }
 
+.item-badge.purple {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
 .item-badge.primary {
   background: rgba(255, 215, 0, 0.15);
   color: #ffd700;

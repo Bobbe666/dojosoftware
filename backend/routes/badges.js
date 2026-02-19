@@ -9,11 +9,67 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { sendBadgeEmail } = require('../services/emailService');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Debug: Log alle Badges-Requests
 router.use((req, res, next) => {
   logger.debug('🏅 Badges Route:', req.method, req.path, { user: req.user?.id, role: req.user?.role });
   next();
+});
+
+// ============================================================================
+// ADMIN ROUTES (MUSS VOR /:badge_id KOMMEN!)
+// ============================================================================
+
+/**
+ * GET /api/badges/admin/awarded
+ * Alle verliehenen Badges abrufen (fuer "Verliehen" Tab)
+ */
+router.get('/admin/awarded', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
+  const validDojoId = secureDojoId ? true : false;
+
+  logger.debug('📊 Badge Admin Awarded aufgerufen', { user: req.user, secureDojoId, validDojoId });
+
+  let query = `
+    SELECT
+      mb.mitglied_id,
+      mb.badge_id,
+      mb.verliehen_am,
+      mb.verliehen_von_name,
+      mb.kommentar,
+      m.vorname,
+      m.nachname,
+      m.email,
+      b.name as badge_name,
+      b.beschreibung as badge_beschreibung,
+      b.icon as badge_icon,
+      b.farbe as badge_farbe,
+      b.kategorie as badge_kategorie
+    FROM mitglieder_badges mb
+    JOIN mitglieder m ON mb.mitglied_id = m.mitglied_id
+    JOIN badges b ON mb.badge_id = b.badge_id
+    WHERE 1=1
+  `;
+
+  if (validDojoId) {
+    query += ` AND m.dojo_id = ${secureDojoId}`;
+  }
+
+  query += ` ORDER BY mb.verliehen_am DESC`;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      logger.error('Fehler beim Laden der verliehenen Badges:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
+    res.json({
+      success: true,
+      awarded: results,
+      total: results.length
+    });
+  });
 });
 
 // ============================================================================
@@ -357,11 +413,12 @@ router.delete('/mitglied/:mitglied_id/:badge_id', (req, res) => {
  */
 router.get('/admin/overview', (req, res) => {
   logger.debug('📊 Badge Admin Overview aufgerufen', { user: req.user, query: req.query });
-  const { dojo_id } = req.query;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+  const secureDojoId = getSecureDojoId(req);
 
   // Debug: Prüfe ob dojo_id gültig ist
-  const validDojoId = dojo_id && dojo_id !== 'all' && dojo_id !== 'undefined' && !isNaN(parseInt(dojo_id));
-  logger.debug('📊 dojo_id Filter:', { dojo_id, validDojoId });
+  const validDojoId = secureDojoId ? true : false;
+  logger.debug('📊 dojo_id Filter:', { dojo_id: secureDojoId, validDojoId });
 
   // Hole alle Mitglieder mit ihren Statistiken
   let memberQuery = `
@@ -402,12 +459,12 @@ router.get('/admin/overview', (req, res) => {
   `;
 
   if (validDojoId) {
-    memberQuery += ` AND m.dojo_id = ${parseInt(dojo_id)}`;
+    memberQuery += ` AND m.dojo_id = ${secureDojoId}`;
   }
 
   memberQuery += ` ORDER BY total_trainings DESC`;
 
-  logger.debug('📊 Member Query (Dojo-Filter):', validDojoId ? `dojo_id=${dojo_id}` : 'ALLE DOJOS');
+  logger.debug('📊 Member Query (Dojo-Filter):', validDojoId ? `dojo_id=${secureDojoId}` : 'ALLE DOJOS');
 
   db.query(memberQuery, (err, members) => {
     logger.debug('📊 Members gefunden:', members?.length || 0);

@@ -10,6 +10,7 @@ const db = require('../db');
 const crypto = require('crypto');
 const axios = require('axios');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // ============================================================================
 // WEBHOOK EVENTS - Verfügbare Trigger
@@ -179,7 +180,8 @@ router.get('/events', (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const dojoId = req.query.dojo_id || req.user.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     const [webhooks] = await db.promise().query(`
       SELECT
@@ -269,7 +271,8 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, url, events, active } = req.body;
-    const dojoId = req.query.dojo_id || req.user.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     // Prüfen ob Webhook existiert und zum Dojo gehört
     const [existing] = await db.promise().query(
@@ -323,7 +326,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const dojoId = req.query.dojo_id || req.user.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     const [result] = await db.promise().query(
       'DELETE FROM webhooks WHERE id = ? AND dojo_id = ?',
@@ -352,7 +356,8 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/regenerate-secret', async (req, res) => {
   try {
     const { id } = req.params;
-    const dojoId = req.query.dojo_id || req.user.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     const newSecret = generateWebhookSecret();
 
@@ -384,7 +389,8 @@ router.post('/:id/regenerate-secret', async (req, res) => {
 router.post('/:id/test', async (req, res) => {
   try {
     const { id } = req.params;
-    const dojoId = req.query.dojo_id || req.user.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     const [webhooks] = await db.promise().query(
       'SELECT * FROM webhooks WHERE id = ? AND dojo_id = ?',
@@ -426,7 +432,8 @@ router.get('/:id/deliveries', async (req, res) => {
   try {
     const { id } = req.params;
     const { limit = 50, offset = 0 } = req.query;
-    const dojoId = req.query.dojo_id || req.user.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     // Prüfen ob Webhook zum Dojo gehört
     const [webhooks] = await db.promise().query(

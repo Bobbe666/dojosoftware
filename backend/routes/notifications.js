@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const router = express.Router();
 
 // ===================================================================
@@ -20,6 +21,10 @@ const initEmailTransporter = async () => {
     if (settings.email_enabled && settings.email_config) {
       const emailConfig = JSON.parse(settings.email_config);
       
+      // TLS-Zertifikatsvalidierung: In Produktion streng, in Development optional deaktivierbar
+      const isProduction = process.env.NODE_ENV === 'production';
+      const skipTlsVerify = process.env.SMTP_SKIP_TLS_VERIFY === 'true';
+
       emailTransporter = nodemailer.createTransport({
         host: emailConfig.smtp_host,
         port: emailConfig.smtp_port,
@@ -29,9 +34,14 @@ const initEmailTransporter = async () => {
           pass: emailConfig.smtp_password
         },
         tls: {
-          rejectUnauthorized: false
+          // In Produktion immer TLS validieren, außer explizit deaktiviert
+          rejectUnauthorized: isProduction ? !skipTlsVerify : !skipTlsVerify
         }
       });
+
+      if (!isProduction || skipTlsVerify) {
+        logger.warn('⚠️ SMTP TLS-Zertifikatsvalidierung ist deaktiviert - nur für Development verwenden!');
+      }
 
     }
   } catch (error) {
@@ -597,7 +607,8 @@ router.delete('/history/bulk/:id', authenticateToken, async (req, res) => {
 
 router.get('/recipients', authenticateToken, async (req, res) => {
   try {
-    const { dojo_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     // Hole verschiedene Empfängergruppen - prüfe zuerst welche Tabellen existieren
     let memberEmails = [];
@@ -606,8 +617,8 @@ router.get('/recipients', authenticateToken, async (req, res) => {
     let adminEmails = [];
 
     // Erstelle WHERE clause für dojo_id Filter
-    const dojoFilter = dojo_id && dojo_id !== 'all' ? 'AND dojo_id = ?' : '';
-    const dojoParams = dojo_id && dojo_id !== 'all' ? [parseInt(dojo_id)] : [];
+    const dojoFilter = secureDojoId ? 'AND dojo_id = ?' : '';
+    const dojoParams = secureDojoId ? [secureDojoId] : [];
 
     // Prüfe ob mitglieder Tabelle existiert und hole Daten
     try {

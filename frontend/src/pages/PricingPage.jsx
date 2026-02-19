@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import config from '../config';
+import config from '../config/config.js';
 import '../styles/themes.css';
 import './PricingPage.css';
 import PublicFooter from '../components/PublicFooter';
@@ -12,6 +11,7 @@ function PricingPage() {
   const navigate = useNavigate();
   const [billingInterval, setBillingInterval] = useState('monthly');
   const [plans, setPlans] = useState([]);
+  const [allFeatures, setAllFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,8 +20,20 @@ function PricingPage() {
 
   const loadPlans = async () => {
     try {
-      const response = await axios.get(`/onboarding/plans`);
-      setPlans(response.data.plans || []);
+      // Lade Pläne mit Features aus der Datenbank
+      const response = await fetch(`${config.apiBaseUrl}/subscription/plans-with-features`);
+      if (response.ok) {
+        const data = await response.json();
+        setPlans(data.plans || []);
+        setAllFeatures(data.all_features || []);
+      } else {
+        // Fallback auf alten Endpoint
+        const fallbackResponse = await fetch(`${config.apiBaseUrl}/onboarding/plans`);
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          setPlans(fallbackData.plans || []);
+        }
+      }
     } catch (error) {
       console.error('Fehler beim Laden der Pläne:', error);
     } finally {
@@ -43,57 +55,30 @@ function PricingPage() {
     navigate('/register', { state: { selectedPlan: planName, billingInterval } });
   };
 
-  const planFeatures = {
-    starter: [
-      'Bis 100 aktive Mitglieder',
-      'Mitgliederverwaltung',
-      'Vertragsverwaltung',
-      'SEPA-Lastschrift',
-      'Anwesenheit & Check-In',
-      'Prüfungsverwaltung',
-      'Zehnerkarten',
-      'Stundenplan & Kurse',
-      'Basis-Statistiken',
-      'Dokumentenverwaltung (1 GB)',
-      'Email-Support (48h)'
-    ],
-    professional: [
-      'Alles aus Starter +',
-      'Bis 300 aktive Mitglieder',
-      '✨ Verkauf & Lagerhaltung',
-      '✨ Kassenmodul',
-      '✨ Events-Verwaltung',
-      'Erweiterte Reports',
-      'Export-Funktionen',
-      'Dokumentenspeicher (5 GB)',
-      'Priority Support (24h)'
-    ],
-    premium: [
-      'Alles aus Professional +',
-      '⭐ Unbegrenzt Mitglieder',
-      '⭐ Vollständige Buchführung',
-      '⭐ Rechnungserstellung',
-      '⭐ Mahnwesen',
-      '⭐ Finanzcockpit',
-      '⭐ API-Zugang',
-      'DATEV-Export',
-      'Dokumentenspeicher (20 GB)',
-      'Premium Support (12h)',
-      'Kostenlose Schulung',
-      '⭐ Gratis TDA-Verbandsmitgliedschaft'
-    ],
-    enterprise: [
-      'Alles aus Premium +',
-      '🚀 Bis zu 3 Dojos',
-      '🚀 Multi-Dojo-Verwaltung',
-      '🚀 Übergreifende Auswertungen',
-      '🚀 White-Label-Option',
-      'Unbegrenzte Mitglieder',
-      'Dokumentenspeicher (50 GB)',
-      'VIP-Support (4h)',
-      'Dedizierter Ansprechpartner',
-      'Strategy-Calls'
-    ]
+  // Dynamische Feature-Liste für jeden Plan erstellen
+  const getPlanFeatures = (plan) => {
+    if (!plan.features) return [];
+
+    const includedFeatures = plan.features
+      .filter(f => f.included)
+      .map(f => `${f.feature_icon} ${f.feature_name}`);
+
+    // Zusätzliche Plan-spezifische Infos
+    const extras = [];
+    if (plan.max_members >= 999999) {
+      extras.push('⭐ Unbegrenzt Mitglieder');
+    } else {
+      extras.push(`Bis ${plan.max_members} aktive Mitglieder`);
+    }
+
+    if (plan.max_dojos > 1) {
+      extras.push(`🏢 Bis zu ${plan.max_dojos} Dojos`);
+    }
+
+    const storageGB = Math.round(plan.storage_limit_mb / 1000);
+    extras.push(`📁 ${storageGB} GB Speicherplatz`);
+
+    return [...extras, ...includedFeatures.slice(0, 8)]; // Max 8 Features + Extras
   };
 
   if (loading) {
@@ -189,7 +174,7 @@ function PricingPage() {
 
                 <div className="card-features">
                   <ul>
-                    {planFeatures[plan.plan_name]?.map((feature, index) => (
+                    {getPlanFeatures(plan).map((feature, index) => (
                       <li key={index}>
                         <span className="feature-check">✓</span>
                         {feature}
@@ -203,7 +188,7 @@ function PricingPage() {
         </div>
       </section>
 
-      {/* Feature Comparison Table */}
+      {/* Feature Comparison Table - Dynamisch aus Datenbank */}
       <section className="feature-comparison">
         <div className="container">
           <h2>Detaillierter Feature-Vergleich</h2>
@@ -212,104 +197,57 @@ function PricingPage() {
               <thead>
                 <tr>
                   <th>Feature</th>
-                  <th>Starter</th>
-                  <th>Professional</th>
-                  <th>Premium</th>
-                  <th>Enterprise</th>
+                  {plans.map(plan => (
+                    <th key={plan.plan_name}>{plan.display_name}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
+                {/* Maximale Mitglieder */}
                 <tr>
                   <td>Maximale Mitglieder</td>
-                  <td>100</td>
-                  <td>300</td>
-                  <td>Unbegrenzt</td>
-                  <td>Unbegrenzt</td>
+                  {plans.map(plan => (
+                    <td key={plan.plan_name}>
+                      {plan.max_members >= 999999 ? 'Unbegrenzt' : plan.max_members}
+                    </td>
+                  ))}
                 </tr>
+                {/* Anzahl Dojos */}
                 <tr>
                   <td>Anzahl Dojos</td>
-                  <td>1</td>
-                  <td>1</td>
-                  <td>1</td>
-                  <td>3</td>
+                  {plans.map(plan => (
+                    <td key={plan.plan_name}>{plan.max_dojos || 1}</td>
+                  ))}
                 </tr>
-                <tr>
-                  <td>Mitgliederverwaltung</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>SEPA-Lastschrift</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>Check-In System</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>Verkauf & Lager</td>
-                  <td>—</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>Events-Verwaltung</td>
-                  <td>—</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>Rechnungserstellung</td>
-                  <td>—</td>
-                  <td>—</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>Buchführung & Mahnwesen</td>
-                  <td>—</td>
-                  <td>—</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>API-Zugang</td>
-                  <td>—</td>
-                  <td>—</td>
-                  <td>✓</td>
-                  <td>✓</td>
-                </tr>
-                <tr>
-                  <td>Multi-Dojo-Verwaltung</td>
-                  <td>—</td>
-                  <td>—</td>
-                  <td>—</td>
-                  <td>✓</td>
-                </tr>
+                {/* Dokumentenspeicher */}
                 <tr>
                   <td>Dokumentenspeicher</td>
-                  <td>1 GB</td>
-                  <td>5 GB</td>
-                  <td>20 GB</td>
-                  <td>50 GB</td>
+                  {plans.map(plan => (
+                    <td key={plan.plan_name}>
+                      {plan.storage_limit_mb >= 1000
+                        ? `${Math.round(plan.storage_limit_mb / 1000)} GB`
+                        : `${plan.storage_limit_mb} MB`}
+                    </td>
+                  ))}
                 </tr>
-                <tr>
-                  <td>Support</td>
-                  <td>Email (48h)</td>
-                  <td>Priority (24h)</td>
-                  <td>Premium (12h)</td>
-                  <td>VIP (4h)</td>
-                </tr>
+                {/* Dynamische Features aus Datenbank */}
+                {allFeatures.map(feature => (
+                  <tr key={feature.feature_id}>
+                    <td>
+                      <span className="feature-icon">{feature.feature_icon}</span>
+                      {feature.feature_name}
+                    </td>
+                    {plans.map(plan => {
+                      const planFeature = plan.features?.find(f => f.feature_id === feature.feature_id);
+                      const isIncluded = planFeature?.included;
+                      return (
+                        <td key={plan.plan_name} className={isIncluded ? 'included' : 'not-included'}>
+                          {isIncluded ? '✓' : '—'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

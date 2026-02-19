@@ -6,17 +6,19 @@ const express = require('express');
 const logger = require('../../utils/logger');
 const router = express.Router();
 const { queryAsync } = require('./shared');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // GET /:id/historie - Historie eines Vertrags abrufen
 router.get('/:id/historie', async (req, res) => {
   try {
     const { id } = req.params;
-    const { dojo_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       const vertragCheck = await queryAsync(`SELECT id, dojo_id FROM vertraege WHERE id = ?`, [id]);
       if (vertragCheck.length === 0) return res.status(404).json({ error: 'Vertrag nicht gefunden' });
-      if (vertragCheck[0].dojo_id !== parseInt(dojo_id)) {
+      if (vertragCheck[0].dojo_id !== secureDojoId) {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
     }
@@ -39,12 +41,14 @@ router.get('/:id/historie', async (req, res) => {
 router.post('/:id/historie', async (req, res) => {
   try {
     const { id } = req.params;
-    const { aenderung_typ, aenderung_beschreibung, aenderung_details, geaendert_von, ip_adresse, dojo_id } = req.body;
+    const { aenderung_typ, aenderung_beschreibung, aenderung_details, geaendert_von, ip_adresse } = req.body;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       const vertragCheck = await queryAsync(`SELECT id, dojo_id FROM vertraege WHERE id = ?`, [id]);
       if (vertragCheck.length === 0) return res.status(404).json({ error: 'Vertrag nicht gefunden' });
-      if (vertragCheck[0].dojo_id !== parseInt(dojo_id)) {
+      if (vertragCheck[0].dojo_id !== secureDojoId) {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
     }

@@ -12,7 +12,7 @@ set -e  # Bei Fehlern sofort abbrechen
 
 # Konfiguration
 SERVER="dojo.tda-intl.org"
-REMOTE_PATH="/var/www/dojosoftware"
+REMOTE_PATH="/var/www/dojosoftware/frontend/dist"
 BACKUP_PATH="/var/www/backups/dojosoftware"
 LOCAL_DIST="frontend/dist"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -78,7 +78,7 @@ echo "----------------------------------------------"
 log_info "SCHRITT 2: Prüfe Backend-Integrität..."
 echo "----------------------------------------------"
 
-BACKEND_CHECK=$(ssh $SERVER "ls -la $REMOTE_PATH/backend/server.js 2>/dev/null && echo 'OK' || echo 'MISSING'")
+BACKEND_CHECK=$(ssh $SERVER "ls -la /var/www/dojo-backend/server.js 2>/dev/null && echo 'OK' || echo 'MISSING'")
 if [[ "$BACKEND_CHECK" == *"MISSING"* ]]; then
     log_error "Backend server.js nicht gefunden! Bitte manuell prüfen."
     exit 1
@@ -116,7 +116,7 @@ echo "----------------------------------------------"
 log_info "SCHRITT 4: Verifiziere Backend nach Deployment..."
 echo "----------------------------------------------"
 
-BACKEND_VERIFY=$(ssh $SERVER "ls -la $REMOTE_PATH/backend/server.js 2>/dev/null && echo 'OK' || echo 'MISSING'")
+BACKEND_VERIFY=$(ssh $SERVER "ls -la /var/www/dojo-backend/server.js 2>/dev/null && echo 'OK' || echo 'MISSING'")
 if [[ "$BACKEND_VERIFY" == *"MISSING"* ]]; then
     log_error "KRITISCH: Backend wurde beschädigt!"
     log_warning "Stelle Backup wieder her..."

@@ -22,10 +22,12 @@ const BankTabs = ({ dojoId }) => {
     sepa_glaeubiger_id: '',
     stripe_publishable_key: '',
     stripe_secret_key: '',
+    stripe_secret_configured: false,  // Boolean-Flag vom Backend
     stripe_account_id: '',
     paypal_email: '',
     paypal_client_id: '',
     paypal_client_secret: '',
+    paypal_secret_configured: false,  // Boolean-Flag vom Backend
     notizen: ''
   });
 
@@ -80,11 +82,15 @@ const BankTabs = ({ dojoId }) => {
       kontoinhaber: bank.kontoinhaber || '',
       sepa_glaeubiger_id: bank.sepa_glaeubiger_id || '',
       stripe_publishable_key: bank.stripe_publishable_key || '',
-      stripe_secret_key: bank.stripe_secret_key || '',
+      // SECURITY: Secret Keys werden NICHT vom Server geladen - nur write-only
+      stripe_secret_key: '',
+      stripe_secret_configured: bank.stripe_secret_configured || false,
       stripe_account_id: bank.stripe_account_id || '',
       paypal_email: bank.paypal_email || '',
       paypal_client_id: bank.paypal_client_id || '',
-      paypal_client_secret: bank.paypal_client_secret || '',
+      // SECURITY: Secret Keys werden NICHT vom Server geladen - nur write-only
+      paypal_client_secret: '',
+      paypal_secret_configured: bank.paypal_secret_configured || false,
       notizen: bank.notizen || ''
     });
   };
@@ -383,12 +389,19 @@ const BankTabs = ({ dojoId }) => {
                 </div>
 
                 <div className="form-group">
-                  <label>Secret Key</label>
+                  <label>
+                    Secret Key
+                    {formData.stripe_secret_configured && (
+                      <span style={{ color: '#22c55e', marginLeft: '8px', fontSize: '12px' }}>
+                        <Check size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> Konfiguriert
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="password"
                     value={formData.stripe_secret_key}
                     onChange={(e) => setFormData({ ...formData, stripe_secret_key: e.target.value })}
-                    placeholder="sk_live_..."
+                    placeholder={formData.stripe_secret_configured ? "Neuen Key eingeben zum Überschreiben..." : "sk_live_..."}
                   />
                 </div>
               </div>
@@ -455,12 +468,19 @@ const BankTabs = ({ dojoId }) => {
 
               <div className="form-row-compact">
                 <div className="form-group">
-                  <label>Client Secret</label>
+                  <label>
+                    Client Secret
+                    {formData.paypal_secret_configured && (
+                      <span style={{ color: '#22c55e', marginLeft: '8px', fontSize: '12px' }}>
+                        <Check size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> Konfiguriert
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="password"
                     value={formData.paypal_client_secret}
                     onChange={(e) => setFormData({ ...formData, paypal_client_secret: e.target.value })}
-                    placeholder="PayPal Client Secret"
+                    placeholder={formData.paypal_secret_configured ? "Neuen Secret eingeben zum Überschreiben..." : "PayPal Client Secret"}
                   />
                 </div>
               </div>

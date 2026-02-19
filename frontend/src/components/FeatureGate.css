@@ -136,6 +136,338 @@
   transform: translateY(-1px);
 }
 
+/* Loading State */
+.feature-gate-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.fg-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Trial Wrapper & Badge */
+.feature-gate-trial-wrapper {
+  position: relative;
+}
+
+.trial-badge {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.trial-badge.expiring {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  animation: pulse-warning 1.5s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5); }
+}
+
+.trial-badge .trial-icon {
+  font-size: 1rem;
+}
+
+.trial-upgrade-btn {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.trial-upgrade-btn:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* Addon Wrapper & Badge */
+.feature-gate-addon-wrapper {
+  position: relative;
+}
+
+.addon-badge {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Locked Preview */
+.locked-preview-blur {
+  filter: blur(8px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Gate Actions */
+.feature-gate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.trial-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.trial-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+}
+
+.addon-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.trial-used-hint {
+  color: #d97706;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.5rem;
+  background: #fef3c7;
+  border-radius: 8px;
+}
+
+.feature-gate-hint {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+
+/* Upgrade Modal */
+.upgrade-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.upgrade-modal {
+  background: white;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-header {
+  text-align: center;
+  padding: 2rem 2rem 1rem;
+}
+
+.modal-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.modal-header p {
+  color: #64748b;
+}
+
+.modal-options {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 2rem 2rem;
+}
+
+.option-card {
+  position: relative;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.option-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.option-card.highlighted {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #fffbeb, white);
+}
+
+.option-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+}
+
+.option-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.option-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.option-card p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.option-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 1rem;
+}
+
+.option-price span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.plan-list {
+  margin-bottom: 1rem;
+}
+
+.plan-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.option-btn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
+  color: #374151;
+}
+
+.option-btn:hover {
+  background: #e5e7eb;
+}
+
+.option-btn.primary {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: white;
+}
+
+.option-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.option-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .feature-gate-card {
@@ -159,5 +491,22 @@
   .info-value {
     align-self: stretch;
     text-align: center;
+  }
+
+  .trial-badge,
+  .addon-badge {
+    top: auto;
+    bottom: 20px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .upgrade-modal {
+    margin: 1rem;
+    border-radius: 16px;
+  }
+
+  .modal-options {
+    padding: 1rem;
   }
 }

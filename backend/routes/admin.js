@@ -8,6 +8,7 @@ const router = express.Router();
 const db = require('../db');
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../utils/logger');
 
 // =============================================
 // MIDDLEWARE: Super-Admin Access Check
@@ -28,14 +29,14 @@ const requireSuperAdmin = (req, res, next) => {
   const isTDAAdmin = user.dojo_id === 2 && (user.rolle === 'admin' || user.role === 'admin');
 
   if (isSuperAdmin || isAdminWithNullDojo || isTDAAdmin) {
-    console.log('✅ Super-Admin Zugriff gewährt:', {
+    logger.info(' Super-Admin Zugriff gewährt:', {
       username: user.username,
       role: user.role || user.rolle,
       dojo_id: user.dojo_id
     });
     next();
   } else {
-    console.log('❌ Super-Admin Zugriff verweigert:', {
+    logger.warn(' Super-Admin Zugriff verweigert:', {
       username: user.username,
       role: user.role || user.rolle,
       dojo_id: user.dojo_id
@@ -115,11 +116,12 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
   try {
     const { filter } = req.query;
 
-    // WHERE-Klausel nur für "managed" Filter: Dojos ohne eigene Admins
+    // WHERE-Klausel nur für "managed" Filter: TDA (id=2) + Dojos ohne eigene Admins
+    // TDA selbst wird immer angezeigt, da es das Haupt-Dojo ist
     const whereClause = filter === 'managed'
-      ? `WHERE d.id NOT IN (
-          SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
-        )`
+      ? `WHERE d.ist_aktiv = TRUE AND (d.id = 2 OR d.id NOT IN (
+          SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2
+        ))`
       : '';
 
     const query = `
@@ -173,7 +175,7 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
       })
     );
 
-    console.log(`✅ Admin: ${dojos.length} Dojos abgerufen (mit Speicherplatz)`);
+    logger.info(` Admin: ${dojos.length} Dojos abgerufen (mit Speicherplatz)`);
     res.json({
       success: true,
       count: dojosWithStorage.length,
@@ -277,7 +279,7 @@ router.post('/dojos', requireSuperAdmin, async (req, res) => {
       strasse, hausnummer, plz, ort, land
     ]);
 
-    console.log(`✅ Neues Dojo angelegt: ${dojoname} (ID: ${result.insertId})`);
+    logger.info(` Neues Dojo angelegt: ${dojoname} (ID: ${result.insertId})`);
 
     res.status(201).json({
       success: true,
@@ -345,7 +347,7 @@ router.put('/dojos/:id', requireSuperAdmin, async (req, res) => {
 
     await db.promise().query(updateQuery, values);
 
-    console.log(`✅ Dojo aktualisiert: ID ${id}`);
+    logger.info(` Dojo aktualisiert: ID ${id}`);
 
     res.json({
       success: true,
@@ -389,7 +391,7 @@ router.delete('/dojos/:id', requireSuperAdmin, async (req, res) => {
       [id]
     );
 
-    console.log(`✅ Dojo deaktiviert: ${existing[0].dojoname} (ID: ${id})`);
+    logger.info(` Dojo deaktiviert: ${existing[0].dojoname} (ID: ${id})`);
 
     res.json({
       success: true,
@@ -501,7 +503,7 @@ router.get('/global-stats', requireSuperAdmin, async (req, res) => {
       percent_used: diskUsage.percentUsed
     };
 
-    console.log('✅ Admin: Globale Statistiken abgerufen (mit Speicherplatz)');
+    logger.info(' Admin: Globale Statistiken abgerufen (mit Speicherplatz)');
     res.json({
       success: true,
       stats,
@@ -569,7 +571,7 @@ router.get('/tda-stats', requireSuperAdmin, async (req, res) => {
     `, [TDA_DOJO_ID]);
     stats.payments = beitraegeStats[0];
 
-    console.log('✅ Admin: TDA International Statistiken abgerufen');
+    logger.info(' Admin: TDA International Statistiken abgerufen');
     res.json({
       success: true,
       dojo_id: TDA_DOJO_ID,
@@ -627,7 +629,7 @@ router.put('/dojos/:id/extend-trial', requireSuperAdmin, async (req, res) => {
       [newTrialEndDate, id]
     );
 
-    console.log(`✅ Admin: Trial verlängert für Dojo ${dojo.dojoname} um ${days} Tage`);
+    logger.info(` Admin: Trial verlängert für Dojo ${dojo.dojoname} um ${days} Tage`);
 
     res.json({
       success: true,
@@ -642,6 +644,96 @@ router.put('/dojos/:id/extend-trial', requireSuperAdmin, async (req, res) => {
     console.error('❌ Fehler beim Verlängern des Trials:', error);
     res.status(500).json({
       error: 'Fehler beim Verlängern des Trials',
+      details: error.message
+    });
+  }
+});
+
+// PUT /api/admin/dojos/:id/features - Feature-Overrides setzen
+router.put('/dojos/:id/features', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const featureData = req.body;
+
+    // Validiere Dojo existiert
+    const [dojos] = await db.promise().query(
+      'SELECT id, dojoname FROM dojo WHERE id = ?',
+      [id]
+    );
+
+    if (dojos.length === 0) {
+      return res.status(404).json({ error: 'Dojo nicht gefunden' });
+    }
+
+    const dojo = dojos[0];
+
+    // Erlaubte Feature-Keys
+    const allowedFeatures = [
+      'feature_mitgliederverwaltung',
+      'feature_sepa',
+      'feature_checkin',
+      'feature_pruefungen',
+      'feature_verkauf',
+      'feature_events',
+      'feature_buchfuehrung',
+      'feature_api',
+      'feature_multidojo'
+    ];
+
+    // Filtere nur erlaubte Features
+    const updates = {};
+    for (const key of allowedFeatures) {
+      if (featureData[key] !== undefined) {
+        updates[key] = featureData[key] ? 1 : 0;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        error: 'Keine gültigen Features angegeben',
+        allowed: allowedFeatures
+      });
+    }
+
+    // Prüfe ob Feature-Spalten existieren, sonst erstellen
+    const [columns] = await db.promise().query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dojo' AND COLUMN_NAME LIKE 'feature_%'`
+    );
+    const existingColumns = columns.map(c => c.COLUMN_NAME);
+
+    for (const featureKey of allowedFeatures) {
+      if (!existingColumns.includes(featureKey)) {
+        await db.promise().query(
+          `ALTER TABLE dojo ADD COLUMN ${featureKey} TINYINT(1) DEFAULT NULL`
+        );
+        logger.info(`Feature-Spalte ${featureKey} zur Dojo-Tabelle hinzugefügt`);
+      }
+    }
+
+    // Update Features
+    const setClauses = Object.keys(updates).map(key => `${key} = ?`).join(', ');
+    const values = [...Object.values(updates), id];
+
+    await db.promise().query(
+      `UPDATE dojo SET ${setClauses} WHERE id = ?`,
+      values
+    );
+
+    logger.info(`Admin: Features aktualisiert für Dojo ${dojo.dojoname}`, { updates });
+
+    res.json({
+      success: true,
+      message: 'Features erfolgreich aktualisiert',
+      dojo_id: id,
+      dojoname: dojo.dojoname,
+      updated_features: updates
+    });
+
+  } catch (error) {
+    console.error('❌ Fehler beim Aktualisieren der Features:', error);
+    res.status(500).json({
+      error: 'Fehler beim Aktualisieren der Features',
       details: error.message
     });
   }
@@ -689,7 +781,7 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
         [id]
       );
 
-      console.log(`✅ Admin: KOSTENLOSER Account aktiviert für Dojo ${dojo.dojoname}`);
+      logger.info(` Admin: KOSTENLOSER Account aktiviert für Dojo ${dojo.dojoname}`);
 
       return res.json({
         success: true,
@@ -752,7 +844,7 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
       ? `✅ Admin: CUSTOM Abonnement aktiviert für Dojo ${dojo.dojoname} - Preis: ${custom_price}€, ${months} Monate, Notizen: ${custom_notes || 'keine'}`
       : `✅ Admin: Abonnement aktiviert für Dojo ${dojo.dojoname} - Plan: ${plan}, ${months} Monate`;
 
-    console.log(logMessage);
+    logger.info(logMessage);
 
     res.json({
       success: true,
@@ -809,7 +901,7 @@ router.put('/dojos/:id/subscription-status', requireSuperAdmin, async (req, res)
       [status, id]
     );
 
-    console.log(`✅ Admin: Status geändert für Dojo ${dojo.dojoname}: ${dojo.subscription_status} → ${status}`);
+    logger.info(` Admin: Status geändert für Dojo ${dojo.dojoname}: ${dojo.subscription_status} → ${status}`);
 
     res.json({
       success: true,
@@ -834,7 +926,7 @@ router.put('/dojos/:id/subscription-status', requireSuperAdmin, async (req, res)
 // =============================================
 router.get('/statistics', requireSuperAdmin, async (req, res) => {
   try {
-    console.log('📊 Lade erweiterte Statistiken...');
+    logger.info(' Lade erweiterte Statistiken...');
 
     // 1. Mitglieder-Entwicklung (letzte 12 Monate)
     const [memberTrend] = await db.promise().query(`
@@ -958,7 +1050,7 @@ router.get('/statistics', requireSuperAdmin, async (req, res) => {
       }
     });
 
-    console.log('✅ Statistiken erfolgreich geladen');
+    logger.info(' Statistiken erfolgreich geladen');
 
   } catch (error) {
     console.error('❌ Fehler beim Laden der Statistiken:', error);
@@ -974,7 +1066,7 @@ router.get('/statistics', requireSuperAdmin, async (req, res) => {
 // =============================================
 router.get('/finance', requireSuperAdmin, async (req, res) => {
   try {
-    console.log('💰 Lade Finanzdaten...');
+    logger.info(' Lade Finanzdaten...');
 
     const currentYear = new Date().getFullYear();
 
@@ -1180,7 +1272,7 @@ router.get('/finance', requireSuperAdmin, async (req, res) => {
       }
     });
 
-    console.log('✅ Finanzdaten erfolgreich geladen');
+    logger.info(' Finanzdaten erfolgreich geladen');
 
   } catch (error) {
     console.error('❌ Fehler beim Laden der Finanzdaten:', error);
@@ -1404,7 +1496,7 @@ router.get('/contracts', requireSuperAdmin, async (req, res) => {
       renewalRate: renewalRate
     };
 
-    console.log('✅ Vertragsdaten geladen', {
+    logger.info(' Vertragsdaten geladen', {
       activeContracts: contracts.activeContracts.length,
       upcomingRenewals: contracts.upcomingRenewals.next30Days.length,
       expiredContracts: contracts.expiredContracts.length
@@ -1453,7 +1545,8 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
           letzter_login,
           login_versuche,
           gesperrt_bis,
-          erstellt_am
+          erstellt_am,
+          CASE WHEN password IS NOT NULL AND password != '' THEN 1 ELSE 0 END as has_password
         FROM admin_users
         ORDER BY erstellt_am DESC
       `);
@@ -1462,6 +1555,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         ...u,
         aktiv: Boolean(u.aktiv),
         email_verifiziert: Boolean(u.email_verifiziert),
+        has_password: Boolean(u.has_password),
         letzter_login: u.letzter_login,
         gesperrt_bis: u.gesperrt_bis,
         erstellt_am: u.erstellt_am
@@ -1480,7 +1574,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         userStats.byRole[u.rolle]++;
       });
     } catch (err) {
-      console.log('⚠️ admin_users Tabelle nicht gefunden, nutze Fallback');
+      logger.warn(' admin_users Tabelle nicht gefunden, nutze Fallback');
     }
 
     // 2. Dojo-Admin Benutzer (aus users Tabelle)
@@ -1489,6 +1583,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         u.id as benutzer_id,
         u.username as benutzername,
         u.email,
+        CASE WHEN u.password IS NOT NULL AND u.password != '' THEN 1 ELSE 0 END as has_password,
         m.dojo_id,
         d.dojoname,
         u.created_at,
@@ -1525,7 +1620,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         erstellt_am: a.erstellt_am
       }));
     } catch (err) {
-      console.log('⚠️ admin_activity_log Tabelle nicht gefunden');
+      logger.warn(' admin_activity_log Tabelle nicht gefunden');
     }
 
     // 4. Login-Statistiken (letzte 30 Tage)
@@ -1551,12 +1646,16 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         loginStats.avg_per_day = Math.round(loginStats.total_logins / 30);
       }
     } catch (err) {
-      console.log('⚠️ Keine Login-Statistiken verfügbar');
+      logger.warn(' Keine Login-Statistiken verfügbar');
     }
 
     // 5. Benutzer nach Dojo (Gruppierung)
     const usersByDojo = {};
-    dojoUsers.forEach(user => {
+    const mappedDojoUsers = dojoUsers.map(user => ({
+      ...user,
+      has_password: Boolean(user.has_password)
+    }));
+    mappedDojoUsers.forEach(user => {
       const dojoName = user.dojoname || 'Unzugeordnet';
       if (!usersByDojo[dojoName]) {
         usersByDojo[dojoName] = [];
@@ -1585,13 +1684,13 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
         letzter_login: u.letzter_login
       }));
     } catch (err) {
-      console.log('⚠️ Keine aktiven Benutzer-Daten verfügbar');
+      logger.warn(' Keine aktiven Benutzer-Daten verfügbar');
     }
 
     // Response zusammenstellen
     const users = {
       adminUsers: adminUsers,
-      dojoUsers: dojoUsers,
+      dojoUsers: mappedDojoUsers,
       usersByDojo: usersByDojo,
       userStats: userStats,
       recentActivity: recentActivity,
@@ -1599,7 +1698,7 @@ router.get('/users', requireSuperAdmin, async (req, res) => {
       activeUsers: activeUsers
     };
 
-    console.log('✅ Benutzerdaten geladen', {
+    logger.info(' Benutzerdaten geladen', {
       adminUsers: users.adminUsers.length,
       dojoUsers: users.dojoUsers.length,
       recentActivity: users.recentActivity.length
@@ -1671,7 +1770,7 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
         });
       });
     } catch (e) {
-      console.log('⚠️ Keine Verbandsmitglieder-Tabelle gefunden');
+      logger.warn(' Keine Verbandsmitglieder-Tabelle gefunden');
     }
 
     // 3. Neue Bestellungen (letzte 7 Tage)
@@ -1698,7 +1797,7 @@ router.get('/activities', requireSuperAdmin, async (req, res) => {
         });
       });
     } catch (e) {
-      console.log('⚠️ Keine Bestellungs-Tabelle gefunden');
+      logger.warn(' Keine Bestellungs-Tabelle gefunden');
     }
 
     // 4. Abo-Aktivierungen (letzte 30 Tage)
@@ -1916,10 +2015,10 @@ router.post('/push-notifications/send', requireSuperAdmin, async (req, res) => {
         `, [titel, nachricht, prioritaet]);
       }
     } catch (insertErr) {
-      console.log('⚠️ Konnte Empfänger-Benachrichtigungen nicht speichern:', insertErr.message);
+      logger.warn(' Konnte Empfänger-Benachrichtigungen nicht speichern:', insertErr.message);
     }
 
-    console.log(`✅ Push-Nachricht gesendet: "${titel}" an ${empfaenger_typ} (${recipientCount} Empfänger)`);
+    logger.info(` Push-Nachricht gesendet: "${titel}" an ${empfaenger_typ} (${recipientCount} Empfänger)`);
 
     res.json({
       success: true,
@@ -2223,7 +2322,7 @@ router.put('/subscription-plans/:id', requireSuperAdmin, async (req, res) => {
     const values = fields.map(field => updates[field]);
     values.push(id);
 
-    await db.promise().query(`UPDATE subscription_plans SET ${setClause} WHERE id = ?`, values);
+    await db.promise().query(`UPDATE subscription_plans SET ${setClause} WHERE plan_id = ?`, values);
 
     res.json({ success: true, message: 'Plan erfolgreich aktualisiert' });
   } catch (err) {

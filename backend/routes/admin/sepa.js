@@ -7,6 +7,7 @@ const logger = require('../../utils/logger');
 const db = require('../../db');
 const router = express.Router();
 const { requireSuperAdmin } = require('./shared');
+const { sendPaymentReminderEmail } = require('../../services/emailTemplates');
 
 // SEPA Return Reason Codes
 const SEPA_RETURN_CODES = {
@@ -650,14 +651,53 @@ router.get('/mitglieder-mit-zahlungsproblemen', requireSuperAdmin, async (req, r
 // POST /offene-zahlungen/:id/mahnung - Mahnung senden
 router.post('/offene-zahlungen/:id/mahnung', requireSuperAdmin, async (req, res) => {
   try {
-    // Mahnung senden (TODO: Email-Integration)
+    const id = req.params.id;
+
+    // Lade Zahlungsdetails mit Mitgliederdaten
+    const [payments] = await db.promise().query(`
+      SELECT oz.*, m.vorname, m.nachname, m.email, m.dojo_id
+      FROM offene_zahlungen oz
+      LEFT JOIN mitglieder m ON oz.mitglied_id = m.mitglied_id
+      WHERE oz.id = ?
+    `, [id]);
+
+    if (payments.length === 0) {
+      return res.status(404).json({ error: 'Zahlung nicht gefunden' });
+    }
+
+    const payment = payments[0];
+    const reminderLevel = (payment.mahnungen_gesendet || 0) + 1;
+
+    // Mahnung per Email senden
+    let emailSent = false;
+    if (payment.email) {
+      try {
+        await sendPaymentReminderEmail(payment.dojo_id, payment.email, {
+          memberName: `${payment.vorname} ${payment.nachname}`,
+          amount: payment.betrag || 0,
+          dueDate: payment.faellig_am || payment.created_at,
+          invoiceNumber: payment.rechnungsnummer || `SEPA-${id}`,
+          reminderLevel: Math.min(reminderLevel, 3)
+        });
+        emailSent = true;
+        logger.info(`Mahnung ${reminderLevel} gesendet an ${payment.email}`);
+      } catch (emailErr) {
+        logger.warn(`Mahnung Email fehlgeschlagen: ${emailErr.message}`);
+      }
+    }
+
+    // Update in DB
     await db.promise().query(`
       UPDATE offene_zahlungen
       SET mahnungen_gesendet = mahnungen_gesendet + 1, letzte_mahnung = NOW()
       WHERE id = ?
-    `, [req.params.id]);
+    `, [id]);
 
-    res.json({ success: true, message: 'Mahnung vermerkt' });
+    res.json({
+      success: true,
+      message: emailSent ? `Mahnung ${reminderLevel} versendet` : 'Mahnung vermerkt (keine Email)',
+      emailSent
+    });
 
   } catch (error) {
     logger.error('Fehler:', error);

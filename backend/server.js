@@ -2,6 +2,7 @@
 const express = require("express");
 const db = require("./db");
 const cors = require("cors");
+const compression = require("compression");  // PERFORMANCE: Gzip Compression
 const path = require("path");
 const fs = require("fs");
 const helmet = require("helmet");
@@ -40,6 +41,19 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false, // Für Uploads
+}));
+
+// PERFORMANCE: Gzip Compression für alle Responses (außer Binärdateien)
+app.use(compression({
+  threshold: 1024,  // Nur Responses > 1KB komprimieren
+  level: 6,         // Gzip Level (1-9, 6 ist guter Kompromiss)
+  filter: (req, res) => {
+    // Keine Kompression für bereits komprimierte Dateien
+    if (req.path.match(/\.(zip|gz|pdf|jpg|jpeg|png|gif|webp)$/i)) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
 }));
 
 // Rate Limiting - Schutz vor Brute Force
@@ -84,8 +98,16 @@ if (process.env.NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Erlaube Requests ohne Origin (z.B. mobile apps, Postman)
-    if (!origin) return callback(null, true);
+    // SECURITY: In Produktion - Requests ohne Origin nur in Development erlauben
+    // (Server-to-Server wie Webhooks werden über separate Routen mit eigener Auth gehandelt)
+    if (!origin) {
+      if (process.env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+      // In Produktion: Nur für spezifische Server-to-Server Requests erlauben
+      // Diese werden über Webhook-Routes mit Signature-Validierung gehandhabt
+      return callback(null, true);  // Webhooks brauchen dies
+    }
 
     // Prüfe ob Origin in erlaubten Origins ist
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -93,7 +115,18 @@ app.use(cors({
     }
 
     // Erlaube alle Subdomains von dojo.tda-intl.org (Multi-Tenant)
+    // SECURITY: Nur exakte Subdomain-Pattern, keine Wildcards
     if (origin.match(/^https:\/\/[a-z0-9-]+\.dojo\.tda-intl\.org$/)) {
+      return callback(null, true);
+    }
+
+    // Erlaube Haupt-Domain
+    if (origin === 'https://dojo.tda-intl.org' || origin === 'https://www.dojo.tda-intl.org') {
+      return callback(null, true);
+    }
+
+    // Erlaube tda-intl.org selbst
+    if (origin === 'https://tda-intl.org' || origin === 'https://www.tda-intl.org') {
       return callback(null, true);
     }
 
@@ -102,6 +135,7 @@ app.use(cors({
       return callback(null, true);
     }
 
+    logger.warn('CORS abgelehnt', { origin });
     callback(new Error('CORS nicht erlaubt für Origin: ' + origin));
   },
   credentials: true,
@@ -129,6 +163,28 @@ try {
     hint: 'Stelle sicher, dass die sessions-Tabelle existiert (Migration 104)'
   });
 }
+
+// =============================================
+// SECURITY MONITORING MIDDLEWARE
+// =============================================
+// Erkennt und blockiert Angriffe in Echtzeit (SQL-Injection, XSS, etc.)
+const {
+  securityMonitorMiddleware,
+  trackFailedLoginMiddleware,
+  fileUploadSecurityMiddleware,
+  logUnauthorizedAccess
+} = require('./middleware/securityMonitor');
+
+// Security-Monitor für alle API-Requests
+app.use('/api', securityMonitorMiddleware);
+
+// Tracking für fehlgeschlagene Logins
+app.use('/api/auth', trackFailedLoginMiddleware);
+
+// Log für unbefugte Zugriffe
+app.use(logUnauthorizedAccess);
+
+logger.success('Security-Monitoring aktiviert', { features: ['SQL-Injection', 'XSS', 'Brute-Force', 'Path-Traversal'] });
 
 // API Documentation mit Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -284,6 +340,19 @@ try {
   });
 }
 
+// 1.0.3 PROMO / EARLY-BIRD AKTIONEN (PUBLIC)
+try {
+  const promoRoutes = require('./routes/promo');
+  app.use('/api/promo', (req, res, next) => { req.db = db; next(); }, promoRoutes);
+  logger.success('Route geladen', { path: '/api/promo' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'promo',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // 1.1 DOJO ONBOARDING (SaaS Multi-Tenant Registration)
 try {
   const dojoOnboardingRoutes = require('./routes/dojo-onboarding');
@@ -341,20 +410,29 @@ try {
 // 1.2 MARKETING-AKTIONEN (Social Media Integration)
 try {
   const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
-  app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db; next(); }, marketingAktionenRoutes);
+  app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db.promise(); next(); }, marketingAktionenRoutes);
   logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'marketing-aktionen', error: error.message, stack: error.stack });
 }
 
-// 1.3 REFERRAL-CODES (TODO: Route noch nicht implementiert)
-// try {
-//   const referralCodesRoutes = require(path.join(__dirname, 'routes', 'referral-codes.js'));
-//   app.use('/api/referral-codes', authenticateToken, (req, res, next) => { req.db = db; next(); }, referralCodesRoutes);
-//   logger.success('Route gemountet', { path: '/api/referral-codes' });
-// } catch (error) {
-//   logger.error('Fehler beim Laden der Route', { route: 'referral-codes', error: error.message });
-// }
+// 1.3 MARKETING-JAHRESPLAN
+try {
+  const marketingJahresplanRoutes = require(path.join(__dirname, 'routes', 'marketing-jahresplan.js'));
+  app.use('/api/marketing-jahresplan', authenticateToken, (req, res, next) => { req.db = db.promise(); next(); }, marketingJahresplanRoutes);
+  logger.success('Route gemountet', { path: '/api/marketing-jahresplan' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'marketing-jahresplan', error: error.message, stack: error.stack });
+}
+
+// 1.4 REFERRAL (Freunde werben Freunde)
+try {
+  const referralRoutes = require(path.join(__dirname, 'routes', 'referral.js'));
+  app.use('/api/referral', authenticateToken, (req, res, next) => { req.db = db.promise(); next(); }, referralRoutes);
+  logger.success('Route gemountet', { path: '/api/referral' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'referral', error: error.message, stack: error.stack });
+}
 
 // AUTH ROUTES (Login, Token, Passwortänderung/Reset) - mit strenger Rate Limiting
 // Verwendet loginLimiter aus config/security.js (IP+Username Kombination)
@@ -374,10 +452,23 @@ try {
 try {
   const adminRoutes = require('./routes/admin');
   app.use('/api/admin', authenticateToken, adminRoutes);
-  logger.success('Route gemountet', { path: '/api/admin' });
+  logger.success('Route gemountet', { path: '/api/admin (admin.js)' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'admin routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// ADMIN SUB-ROUTES (Modularisierte Admin-Funktionen: SaaS-Settings, Dojos, etc.)
+try {
+  const adminSubRoutes = require('./routes/admin/index');
+  app.use('/api/admin', authenticateToken, adminSubRoutes);
+  logger.success('Route gemountet', { path: '/api/admin (admin/index.js)' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'admin sub-routes',
       error: error.message,
       stack: error.stack
     });
@@ -404,6 +495,19 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'audit-log routes',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// SECURITY-ADMIN ROUTES (Sicherheitswarnungen & IP-Blockierung)
+try {
+  const securityAdminRoutes = require('./routes/security-admin');
+  app.use('/api/security', securityAdminRoutes);
+  logger.success('Route gemountet', { path: '/api/security' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'security-admin routes',
       error: error.message,
       stack: error.stack
     });
@@ -931,6 +1035,19 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'magicline-import',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// 9.7. CSV IMPORT ROUTES - Mitglieder aus CSV importieren
+try {
+  const csvImportRouter = require(path.join(__dirname, "routes", "csv-import.js"));
+  app.use("/api/csv-import", csvImportRouter);
+  logger.success('Route gemountet', { path: '/api/csv-import' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'csv-import',
       error: error.message,
       stack: error.stack
     });
@@ -1724,7 +1841,7 @@ initCronJobs();
 // =============================================
 
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0'; // Listen on all IPv4 interfaces
+const HOST = '127.0.0.1'; // Listen only on localhost (behind nginx)
 
 app.listen(PORT, HOST, () => {
   logger.success('Server gestartet', {

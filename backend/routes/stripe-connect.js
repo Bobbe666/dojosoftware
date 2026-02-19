@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const db = require('../db');
 const logger = require('../utils/logger');
 const { encrypt } = require('../utils/encryption');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Platform Stripe Client
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -25,7 +26,8 @@ const queryAsync = (sql, params) => {
  */
 router.get('/authorize', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!dojoId) {
             return res.status(400).json({ error: 'dojo_id erforderlich' });
@@ -185,7 +187,8 @@ router.get('/callback', async (req, res) => {
  */
 router.post('/disconnect', async (req, res) => {
     try {
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!dojoId) {
             return res.status(400).json({ error: 'dojo_id erforderlich' });
@@ -243,7 +246,8 @@ router.post('/disconnect', async (req, res) => {
  */
 router.get('/status', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!dojoId) {
             return res.status(400).json({ error: 'dojo_id erforderlich' });
@@ -321,7 +325,8 @@ router.get('/status', async (req, res) => {
  */
 router.get('/dashboard-link', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!dojoId) {
             return res.status(400).json({ error: 'dojo_id erforderlich' });
@@ -357,8 +362,9 @@ router.get('/dashboard-link', async (req, res) => {
  */
 router.post('/update-fees', async (req, res) => {
     try {
-        const { dojo_id, fee_percent, fee_fixed_cents } = req.body;
-        const dojoId = dojo_id || req.dojo_id || req.user?.dojo_id;
+        const { fee_percent, fee_fixed_cents } = req.body;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!dojoId) {
             return res.status(400).json({ error: 'dojo_id erforderlich' });
@@ -387,7 +393,8 @@ router.post('/update-fees', async (req, res) => {
  */
 router.get('/balance', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!dojoId) {
             return res.status(400).json({ error: 'dojo_id erforderlich' });

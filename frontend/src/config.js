@@ -3,9 +3,14 @@
 // =====================================================================================
 // Zentrale Konfiguration für DojoSoftware Frontend
 
+// Umgebung bestimmen
+const isProduction = import.meta.env.MODE === 'production';
+
 const config = {
   // API Base URL - automatisch basierend auf Umgebung
-  apiBaseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  apiBaseUrl: isProduction ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5001/api'),
+  // Bild-URL für Uploads (ohne /api)
+  imageBaseUrl: isProduction ? '' : 'http://localhost:5001',
 
   // Feature Flags
   features: {

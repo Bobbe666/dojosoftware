@@ -14,17 +14,20 @@ const {
   createSepaMandate,
   generateInitialBeitraege
 } = require('./shared');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // GET / - Alle Verträge abrufen (inkl. gelöschte)
 router.get('/', async (req, res) => {
   try {
-    const { dojo_id, mitglied_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    const { mitglied_id } = req.query;
     let whereConditions = [];
     let queryParams = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       whereConditions.push('v.dojo_id = ?');
-      queryParams.push(parseInt(dojo_id));
+      queryParams.push(secureDojoId);
     }
 
     if (mitglied_id) {
@@ -48,9 +51,9 @@ router.get('/', async (req, res) => {
       const whereConditionsArchive = ['vg.mitglied_id = ?'];
       const queryParamsArchive = [parseInt(mitglied_id)];
 
-      if (dojo_id && dojo_id !== 'all') {
+      if (secureDojoId) {
         whereConditionsArchive.push('vg.dojo_id = ?');
-        queryParamsArchive.push(parseInt(dojo_id));
+        queryParamsArchive.push(secureDojoId);
       }
 
       geloeschteVertraege = await queryAsync(`
@@ -74,13 +77,14 @@ router.get('/', async (req, res) => {
 // GET /stats - Statistiken für Beitragsverwaltung
 router.get('/stats', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
     let whereConditions = ['status = ?'];
     let queryParams = ['aktiv'];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       whereConditions.push('dojo_id = ?');
-      queryParams.push(parseInt(dojo_id));
+      queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -248,7 +252,7 @@ router.post('/', async (req, res) => {
           logger.error('Fehler beim Erstellen des SEPA-Mandats:', { error: sepaError.message });
         }
 
-        // Initiale Beiträge generieren (anteiliger erster Monat + voller zweiter Monat + Aufnahmegebühr)
+        // Beiträge für gesamte Vertragslaufzeit generieren
         try {
           const beitragAmount = monatsbeitrag || (tarif_id ? (await queryAsync('SELECT price_cents FROM tarife WHERE id = ?', [tarif_id]))[0]?.price_cents / 100 : 0);
           const aufnahmegebuehr = aufnahmegebuehr_cents || (tarif_id ? (await queryAsync('SELECT aufnahmegebuehr_cents FROM tarife WHERE id = ?', [tarif_id]))[0]?.aufnahmegebuehr_cents : 0);
@@ -259,12 +263,18 @@ router.post('/', async (req, res) => {
               dojo_id,
               vertragsbeginn || new Date().toISOString().split('T')[0],
               beitragAmount,
-              aufnahmegebuehr || 0
+              aufnahmegebuehr || 0,
+              vertragsende || null,
+              mindestlaufzeit_monate || 12
             );
-            logger.info('Initiale Beiträge für Vertrag erstellt:', { vertrag_id: result.insertId, beitraege: beitraegeResult.beitraege?.length || 0 });
+            logger.info('Beiträge für Vertragslaufzeit erstellt:', {
+              vertrag_id: result.insertId,
+              eingefuegt: beitraegeResult.insertedIds?.length || 0,
+              uebersprungen: beitraegeResult.skippedCount || 0
+            });
           }
         } catch (beitraegeError) {
-          logger.error('Fehler beim Erstellen der initialen Beiträge:', { error: beitraegeError.message });
+          logger.error('Fehler beim Erstellen der Beiträge:', { error: beitraegeError.message });
         }
       } catch (pdfError) {
         logger.error('Fehler bei PDF-Generierung oder E-Mail-Versand:', { error: pdfError });
@@ -299,7 +309,9 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, dojo_id, kuendigung_eingegangen, kuendigungsgrund, kuendigungsdatum, ruhepause_von, ruhepause_bis, ruhepause_dauer_monate } = req.body;
+    const { status, kuendigung_eingegangen, kuendigungsgrund, kuendigungsdatum, ruhepause_von, ruhepause_bis, ruhepause_dauer_monate } = req.body;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     let updateFields = [];
     let queryParams = [];
@@ -317,9 +329,9 @@ router.put('/:id', async (req, res) => {
     let whereConditions = ['id = ?'];
     queryParams.push(id);
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       whereConditions.push('dojo_id = ?');
-      queryParams.push(parseInt(dojo_id));
+      queryParams.push(secureDojoId);
     }
 
     const result = await queryAsync(`UPDATE vertraege SET ${updateFields.join(', ')} WHERE ${whereConditions.join(' AND ')}`, queryParams);
@@ -348,14 +360,16 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { dojo_id, geloescht_von, geloescht_grund } = req.body;
+    const { geloescht_von, geloescht_grund } = req.body;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     let whereConditions = ['id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       whereConditions.push('dojo_id = ?');
-      queryParams.push(parseInt(dojo_id));
+      queryParams.push(secureDojoId);
     }
 
     const vertrag = await queryAsync(`SELECT * FROM vertraege WHERE ${whereConditions.join(' AND ')}`, queryParams);

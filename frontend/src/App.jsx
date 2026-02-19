@@ -14,6 +14,9 @@ import { ThemeProvider } from "./context/ThemeContext.jsx";
 // AGB-Bestaetigung Wrapper
 import AgbConfirmationWrapper from "./components/AgbConfirmationWrapper";
 
+// API Health Check - Zeigt Wartungsmeldung wenn Backend nicht erreichbar
+import ApiHealthCheck from "./components/ApiHealthCheck";
+
 // ============================================================================
 // SOFORT GELADEN - Kritisch für Initial Load
 // ============================================================================
@@ -114,6 +117,7 @@ const CourseRatingAdmin = lazy(() => import(/* webpackChunkName: "trainer" */ ".
 const Personal = lazy(() => import(/* webpackChunkName: "admin" */ "./components/Personal"));
 const EinstellungenDojo = lazy(() => import(/* webpackChunkName: "admin" */ "./components/EinstellungenDojo"));
 const AuditLog = lazy(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
+const SecurityDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
 const BuddyVerwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/BuddyVerwaltung"));
 const Auswertungen = lazy(() => import(/* webpackChunkName: "admin" */ "./components/Auswertungen"));
 const BerichteDokumente = lazy(() => import(/* webpackChunkName: "admin" */ "./components/BerichteDokumente"));
@@ -125,6 +129,7 @@ const PruefungsVerwaltung = lazy(() => import(/* webpackChunkName: "exams" */ ".
 const PruefungDurchfuehren = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungDurchfuehren"));
 const BadgeAdminOverview = lazy(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
 const PasswortVerwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/PasswortVerwaltung"));
+const DojoLizenzverwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/DojoLizenzverwaltung"));
 
 // ============================================================================
 // LAZY LOADED - Support-Ticketsystem & Feature Board
@@ -169,6 +174,7 @@ const BuddyInviteRegistration = lazy(() => import(/* webpackChunkName: "public" 
 const VerbandMitgliedWerden = lazy(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
 const ProbetrainingBuchung = lazy(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
 const MagicLineImport = lazy(() => import(/* webpackChunkName: "import" */ "./pages/MagicLineImport"));
+const CSVImport = lazy(() => import(/* webpackChunkName: "import" */ "./pages/CSVImport"));
 
 // ============================================================================
 // LAZY LOADED - Marketing Pages
@@ -290,14 +296,15 @@ const RootRedirect = () => {
 const App = () => {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <DojoProvider>
-            <StandortProvider>
-              <KursProvider>
-                <MitgliederUpdateProvider>
-                  <BrowserRouter>
-                    <AgbConfirmationWrapper>
+      <ApiHealthCheck>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <DojoProvider>
+              <StandortProvider>
+                <KursProvider>
+                  <MitgliederUpdateProvider>
+                    <BrowserRouter>
+                      <AgbConfirmationWrapper>
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}
               <Route path="/login" element={<Login />} />
@@ -625,6 +632,9 @@ const App = () => {
               {/* MagicLine Import */}
               <Route path="magicline-import" element={<Suspense fallback={<LazyLoadFallback />}><MagicLineImport /></Suspense>} />
 
+              {/* CSV Import */}
+              <Route path="csv-import" element={<Suspense fallback={<LazyLoadFallback />}><CSVImport /></Suspense>} />
+
               {/* Berichte & Dokumente (PDF Management) */}
               <Route path="berichte" element={<Suspense fallback={<LazyLoadFallback />}><BerichteDokumente /></Suspense>} />
 
@@ -648,6 +658,9 @@ const App = () => {
               {/* Audit-Log (Änderungsprotokoll) */}
               <Route path="audit-log" element={<Suspense fallback={<LazyLoadFallback />}><AuditLog /></Suspense>} />
 
+              {/* Security Dashboard (Angriffserkennung & Monitoring) */}
+              <Route path="security" element={<Suspense fallback={<LazyLoadFallback />}><SecurityDashboard /></Suspense>} />
+
               {/* Integrations (Webhooks, PayPal, LexOffice, DATEV, Kalender) */}
               <Route path="webhooks" element={<Suspense fallback={<LazyLoadFallback />}><WebhookVerwaltung /></Suspense>} />
               <Route path="integrationen" element={<Suspense fallback={<LazyLoadFallback />}><IntegrationsEinstellungen /></Suspense>} />
@@ -656,6 +669,7 @@ const App = () => {
 
               {/* ======== SUPER ADMIN ======== */}
               <Route path="passwoerter" element={<Suspense fallback={<LazyLoadFallback />}><PasswortVerwaltung dojoOnly={true} /></Suspense>} />
+              <Route path="lizenzen" element={<Suspense fallback={<LazyLoadFallback />}><DojoLizenzverwaltung /></Suspense>} />
 
               {/* Fehlerseite f�r ung�ltige Dashboard-Unterrouten */}
               <Route 
@@ -721,15 +735,16 @@ const App = () => {
                 </div>
               } 
             />
-              </Routes>
-                    </AgbConfirmationWrapper>
-              </BrowserRouter>
-              </MitgliederUpdateProvider>
-            </KursProvider>
-          </StandortProvider>
-        </DojoProvider>
-      </SubscriptionProvider>
-    </AuthProvider>
+                </Routes>
+                      </AgbConfirmationWrapper>
+                </BrowserRouter>
+                </MitgliederUpdateProvider>
+              </KursProvider>
+            </StandortProvider>
+          </DojoProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </ApiHealthCheck>
   </ThemeProvider>
 );
 };

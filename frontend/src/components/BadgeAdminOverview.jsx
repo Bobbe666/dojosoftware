@@ -64,19 +64,32 @@ const farbeOptions = [
 const BadgeAdminOverview = () => {
   const { activeDojo } = useDojoContext();
   const [data, setData] = useState({ members: [], badges: [], pendingAwards: [], summary: {} });
+  const [awardedBadges, setAwardedBadges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAwarded, setLoadingAwarded] = useState(false);
   const [selectedPending, setSelectedPending] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [awardedSearchTerm, setAwardedSearchTerm] = useState('');
+  const [awardedFilterKategorie, setAwardedFilterKategorie] = useState('');
+  const [awardedFilterBadge, setAwardedFilterBadge] = useState('');
+  const [awardedFilterZeitraum, setAwardedFilterZeitraum] = useState('');
   const [showManualModal, setShowManualModal] = useState(false);
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   const [manualBadge, setManualBadge] = useState({ mitglied_id: null, badge_id: null });
   const [editingBadge, setEditingBadge] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('vergeben'); // 'vergeben' oder 'verwalten'
+  const [activeTab, setActiveTab] = useState('vergeben'); // 'vergeben', 'verliehen' oder 'verwalten'
 
   useEffect(() => {
     loadData();
+    loadAwardedBadges(); // Auch beim Start laden fuer die Stat-Card
   }, [activeDojo]);
+
+  useEffect(() => {
+    if (activeTab === 'verliehen') {
+      loadAwardedBadges();
+    }
+  }, [activeTab]);
 
   const loadData = async () => {
     const token = getAuthToken();
@@ -109,6 +122,40 @@ const BadgeAdminOverview = () => {
       setError(`Netzwerkfehler: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAwardedBadges = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('loadAwardedBadges: Kein Token');
+      return;
+    }
+
+    setLoadingAwarded(true);
+    try {
+      const isAllDojos = !activeDojo || activeDojo === 'super-admin' || activeDojo === 'all' || activeDojo?.id === 'all';
+      const dojoParam = !isAllDojos && activeDojo?.id ? `dojo_id=${activeDojo.id}` : '';
+      console.log('loadAwardedBadges:', { isAllDojos, dojoParam, activeDojo });
+
+      const response = await fetch(`/api/badges/admin/awarded?${dojoParam}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      console.log('loadAwardedBadges response status:', response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('loadAwardedBadges result:', result);
+        setAwardedBadges(result.awarded || []);
+      } else {
+        const errorText = await response.text();
+        console.error('loadAwardedBadges error response:', response.status, errorText);
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden der verliehenen Badges:', err);
+    } finally {
+      setLoadingAwarded(false);
     }
   };
 
@@ -146,6 +193,7 @@ const BadgeAdminOverview = () => {
       if (response.ok) {
         setSelectedPending([]);
         loadData();
+        loadAwardedBadges(); // Auch verliehene Badges aktualisieren
       }
     } catch (err) {
       console.error('Fehler beim Verleihen:', err);
@@ -167,6 +215,7 @@ const BadgeAdminOverview = () => {
         setShowManualModal(false);
         setManualBadge({ mitglied_id: null, badge_id: null });
         loadData();
+        loadAwardedBadges(); // Auch verliehene Badges aktualisieren
       }
     } catch (err) {
       console.error('Fehler beim manuellen Verleihen:', err);
@@ -265,6 +314,16 @@ const BadgeAdminOverview = () => {
             <Award size={16} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
             Vergeben
           </button>
+          <button onClick={() => setActiveTab('verliehen')}
+            style={{
+              background: activeTab === 'verliehen' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.1)',
+              border: `1px solid ${activeTab === 'verliehen' ? 'rgba(34, 197, 94, 0.5)' : 'rgba(255,255,255,0.2)'}`,
+              color: activeTab === 'verliehen' ? '#22c55e' : 'rgba(255,255,255,0.7)',
+              padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500
+            }}>
+            <Check size={16} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            Verliehen
+          </button>
           <button onClick={() => setActiveTab('verwalten')}
             style={{
               background: activeTab === 'verwalten' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255,255,255,0.1)',
@@ -279,18 +338,22 @@ const BadgeAdminOverview = () => {
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(255, 215, 0, 0.2)', textAlign: 'center' }}>
           <div style={{ color: '#ffd700', fontSize: '2rem', fontWeight: 700 }}>{data.summary.total_members || 0}</div>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Aktive Mitglieder</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(34, 197, 94, 0.3)', textAlign: 'center' }}>
-          <div style={{ color: '#22c55e', fontSize: '2rem', fontWeight: 700 }}>{data.badges.length}</div>
+        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(59, 130, 246, 0.3)', textAlign: 'center' }}>
+          <div style={{ color: '#3b82f6', fontSize: '2rem', fontWeight: 700 }}>{data.badges.length}</div>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Verfuegbare Badges</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05))', borderRadius: '10px', padding: '1rem', border: '2px solid rgba(249, 115, 22, 0.4)', textAlign: 'center' }}>
           <div style={{ color: '#f97316', fontSize: '2rem', fontWeight: 700 }}>{data.summary.pending_awards || 0}</div>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600 }}>Ausstehende Badges</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(34, 197, 94, 0.3)', textAlign: 'center' }}>
+          <div style={{ color: '#22c55e', fontSize: '2rem', fontWeight: 700 }}>{awardedBadges.length}</div>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Verliehene Badges</div>
         </div>
       </div>
 
@@ -354,6 +417,108 @@ const BadgeAdminOverview = () => {
             </div>
           )}
         </>
+      )}
+
+      {/* TAB: VERLIEHEN */}
+      {activeTab === 'verliehen' && (
+        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <h3 style={{ color: '#22c55e', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Check size={18} /> Verliehene Badges
+              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>({awardedBadges.length} gesamt)</span>
+            </h3>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Namenssuche */}
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+                <input type="text" placeholder="Name suchen..." value={awardedSearchTerm} onChange={(e) => setAwardedSearchTerm(e.target.value)}
+                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.75rem 0.4rem 2rem', color: 'white', fontSize: '0.85rem', width: '150px' }} />
+              </div>
+              {/* Kategorie Filter */}
+              <select value={awardedFilterKategorie} onChange={(e) => setAwardedFilterKategorie(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.5rem', color: 'white', fontSize: '0.85rem', cursor: 'pointer' }}>
+                <option value="">Alle Kategorien</option>
+                <option value="training">Training</option>
+                <option value="pruefung">Pruefung</option>
+                <option value="skill">Skill</option>
+                <option value="special">Spezial</option>
+              </select>
+              {/* Badge Filter */}
+              <select value={awardedFilterBadge} onChange={(e) => setAwardedFilterBadge(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.5rem', color: 'white', fontSize: '0.85rem', cursor: 'pointer', maxWidth: '150px' }}>
+                <option value="">Alle Badges</option>
+                {data.badges?.map(b => <option key={b.badge_id} value={b.badge_id}>{b.name}</option>)}
+              </select>
+              {/* Zeitraum Filter */}
+              <select value={awardedFilterZeitraum} onChange={(e) => setAwardedFilterZeitraum(e.target.value)}
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.5rem', color: 'white', fontSize: '0.85rem', cursor: 'pointer' }}>
+                <option value="">Alle Zeitraeume</option>
+                <option value="7">Letzte 7 Tage</option>
+                <option value="30">Letzte 30 Tage</option>
+                <option value="90">Letzte 3 Monate</option>
+                <option value="365">Letztes Jahr</option>
+              </select>
+              {/* Reset Filter */}
+              {(awardedSearchTerm || awardedFilterKategorie || awardedFilterBadge || awardedFilterZeitraum) && (
+                <button onClick={() => { setAwardedSearchTerm(''); setAwardedFilterKategorie(''); setAwardedFilterBadge(''); setAwardedFilterZeitraum(''); }}
+                  style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444', padding: '0.4rem 0.6rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loadingAwarded ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,255,255,0.5)' }}>Lade verliehene Badges...</div>
+          ) : awardedBadges.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,255,255,0.5)' }}>Noch keine Badges verliehen</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.75rem', maxHeight: '500px', overflowY: 'auto' }}>
+              {awardedBadges
+                .filter(a => {
+                  // Namenssuche
+                  const matchesSearch = !awardedSearchTerm ||
+                    `${a.vorname} ${a.nachname}`.toLowerCase().includes(awardedSearchTerm.toLowerCase()) ||
+                    a.badge_name.toLowerCase().includes(awardedSearchTerm.toLowerCase());
+                  // Kategorie
+                  const matchesKategorie = !awardedFilterKategorie || a.badge_kategorie === awardedFilterKategorie;
+                  // Badge
+                  const matchesBadge = !awardedFilterBadge || a.badge_id === parseInt(awardedFilterBadge);
+                  // Zeitraum
+                  let matchesZeitraum = true;
+                  if (awardedFilterZeitraum) {
+                    const days = parseInt(awardedFilterZeitraum);
+                    const cutoff = new Date();
+                    cutoff.setDate(cutoff.getDate() - days);
+                    matchesZeitraum = new Date(a.verliehen_am) >= cutoff;
+                  }
+                  return matchesSearch && matchesKategorie && matchesBadge && matchesZeitraum;
+                })
+                .map((award, idx) => {
+                  const Icon = getIcon(award.badge_icon);
+                  return (
+                    <div key={idx}
+                      style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.75rem', border: '1px solid rgba(34, 197, 94, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: `linear-gradient(135deg, ${award.badge_farbe}40, ${award.badge_farbe}20)`, border: `2px solid ${award.badge_farbe}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Icon size={22} color={award.badge_farbe} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)', fontSize: '0.9rem' }}>{award.vorname} {award.nachname}</div>
+                        <div style={{ color: award.badge_farbe, fontSize: '0.8rem', fontWeight: 500 }}>{award.badge_name}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span>{new Date(award.verliehen_am).toLocaleDateString('de-DE')}</span>
+                          {award.verliehen_von_name && <span>von {award.verliehen_von_name}</span>}
+                        </div>
+                      </div>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.2)', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Check size={14} color="#22c55e" />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* TAB: VERWALTEN */}

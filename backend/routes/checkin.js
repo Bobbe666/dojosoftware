@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const QRCode = require('qrcode');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // ============================================
 // HELPER FUNCTIONS
@@ -262,11 +263,11 @@ router.get('/courses-today', async (req, res) => {
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     const todayName = dayNames[today.getDay()];
 
-    // 🔒 TAX COMPLIANCE: Dojo-Filter aus Query-Parameter
-    const { dojo_id } = req.query;
-    const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND s.dojo_id = ${parseInt(dojo_id)}` : '';
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilter = secureDojoId ? ` AND s.dojo_id = ${secureDojoId}` : '';
 
-    logger.debug('Lade Kurse', { tag: todayName, dojo_id: dojo_id || 'all' });
+    logger.debug('Lade Kurse', { tag: todayName, dojo_id: secureDojoId || 'all' });
 
     // Datenbank verwenden
     const query = `
@@ -536,6 +537,7 @@ router.get('/today', async (req, res) => {
         c.status,
         TIMESTAMPDIFF(MINUTE, c.checkin_time, NOW()) as minutes_since_checkin,
         COALESCE(k.gruppenname, 'Freies Training') as kurs_name,
+        COALESCE(k.stil, '') as stil,
         c.ist_gast,
         c.gast_vorname,
         c.gast_nachname,
@@ -639,6 +641,7 @@ router.get('/tresen/:datum', async (req, res) => {
                 COALESCE(m.nachname, c.gast_nachname) as nachname,
                 COALESCE(CONCAT(m.vorname, ' ', m.nachname), CONCAT(c.gast_vorname, ' ', c.gast_nachname)) as full_name,
                 COALESCE(m.gurtfarbe, 'weiss') as gurtfarbe,
+                COALESCE(k.stil, '') as stil,
                 COALESCE(k.gruppenname, 'Freies Training') as kurs_name,
                 CASE
                     WHEN s.uhrzeit_start IS NOT NULL AND s.uhrzeit_ende IS NOT NULL

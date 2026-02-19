@@ -6,6 +6,7 @@ const express = require("express");
 const db = require("../db");
 const logger = require("../utils/logger");
 const PaymentProviderFactory = require("../services/PaymentProviderFactory");
+const { getSecureDojoId, isSuperAdmin } = require("../middleware/tenantSecurity");
 const router = express.Router();
 
 // Helper: Promise-basierte DB-Query
@@ -24,12 +25,14 @@ function queryAsync(sql, params = []) {
  */
 router.get("/", async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
+        const userIsSuperAdmin = isSuperAdmin(req);
 
         let query, params;
 
-        if (dojoId === "all") {
-            // Lade alle Zeitpläne (für Admins)
+        if (userIsSuperAdmin && dojoId === null) {
+            // Super-Admin: Lade alle Zeitpläne
             query = `
                 SELECT
                     z.*,
@@ -77,7 +80,8 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         const query = `
             SELECT * FROM lastschrift_zeitplaene
@@ -317,7 +321,8 @@ router.post("/:id/execute", async (req, res) => {
 router.get("/:id/ausfuehrungen", async (req, res) => {
     try {
         const { id } = req.params;
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const limit = parseInt(req.query.limit) || 20;
 
         const query = `
@@ -349,7 +354,8 @@ router.get("/:id/ausfuehrungen", async (req, res) => {
 router.get("/ausfuehrung/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         const query = `
             SELECT a.*, z.name as zeitplan_name

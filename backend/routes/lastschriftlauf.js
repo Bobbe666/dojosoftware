@@ -3,6 +3,7 @@ const db = require("../db");
 const logger = require("../utils/logger");
 const SepaXmlGenerator = require("../utils/sepaXmlGenerator");
 const PaymentProviderFactory = require("../services/PaymentProviderFactory");
+const { getSecureDojoId } = require("../middleware/tenantSecurity");
 const router = express.Router();
 
 /**
@@ -10,7 +11,8 @@ const router = express.Router();
  * GET /api/lastschriftlauf/banken
  */
 router.get("/banken", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     let query = `
         SELECT
@@ -23,9 +25,9 @@ router.get("/banken", (req, res) => {
     `;
     const params = [];
 
-    if (dojo_id) {
+    if (secureDojoId) {
         query += ' AND dojo_id = ?';
-        params.push(parseInt(dojo_id));
+        params.push(secureDojoId);
     }
 
     query += ' ORDER BY ist_standard DESC, bank_name ASC';
@@ -396,7 +398,15 @@ router.get("/diagnose", (req, res) => {
 });
 
 router.get("/missing-mandates", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
+
+    let whereClause = '';
+    const params = [];
+    if (secureDojoId) {
+        whereClause = 'AND m.dojo_id = ?';
+        params.push(secureDojoId);
+    }
 
     const query = `
         SELECT DISTINCT
@@ -415,17 +425,19 @@ router.get("/missing-mandates", (req, res) => {
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND sm.mandat_id IS NULL
           AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
-          ${dojo_id ? `AND m.dojo_id = ${parseInt(dojo_id)}` : ''}
-        GROUP BY m.mitglied_id
+          ${whereClause}
+        GROUP BY m.mitglied_id, m.vorname, m.nachname, m.email, m.telefon, m.zahlungsmethode
         ORDER BY m.nachname, m.vorname
     `;
 
-    db.query(query, (err, results) => {
+    db.query(query, params, (err, results) => {
         if (err) {
-            logger.error('Database error:', err);
+            logger.error('Database error in missing-mandates:', err);
+            logger.error('Query params:', params);
             return res.status(500).json({
                 error: 'Datenbankfehler',
-                details: err.message
+                details: err.message,
+                sqlMessage: err.sqlMessage || null
             });
         }
 
@@ -449,6 +461,9 @@ router.get("/missing-mandates", (req, res) => {
  */
 router.get("/preview", (req, res) => {
     try {
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const secureDojoId = getSecureDojoId(req);
+
         // Monat und Jahr aus Query-Parametern oder aktuelle Werte
         const now = new Date();
         const monat = parseInt(req.query.monat) || (now.getMonth() + 1);
@@ -457,7 +472,15 @@ router.get("/preview", (req, res) => {
         // Enddatum des ausgewählten Monats (alle offenen Beiträge BIS zu diesem Datum)
         const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-31`;
 
-        logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatEnde });
+        logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatEnde, dojoId: secureDojoId });
+
+        // Dojo-Filter wenn vorhanden
+        let dojoFilter = '';
+        const params = [monatEnde];
+        if (secureDojoId) {
+            dojoFilter = 'AND m.dojo_id = ?';
+            params.push(secureDojoId);
+        }
 
         const query = `
             SELECT
@@ -495,12 +518,13 @@ router.get("/preview", (req, res) => {
             ) sm ON m.mitglied_id = sm.mitglied_id
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+              ${dojoFilter}
             GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
                      m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id
             ORDER BY m.nachname, m.vorname
         `;
 
-        db.query(query, [monatEnde], (err, results) => {
+        db.query(query, params, (err, results) => {
             if (err) {
                 logger.error('Database error in /preview:', err);
                 logger.error('SQL Query:', query);
@@ -743,8 +767,8 @@ function getMostCommonBank(contracts) {
  */
 router.get("/stripe/status", async (req, res) => {
     try {
-        // Priorität: Query > User > Request (Query ist explizit vom Frontend)
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         // Prüfe Stripe-Konfiguration
         const dojoQuery = 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?';
@@ -789,8 +813,8 @@ router.get("/stripe/status", async (req, res) => {
 router.post("/stripe/setup-customer", async (req, res) => {
     try {
         const { mitglied_id } = req.body;
-        // Priorität: Body > User > Request (Body ist explizit vom Frontend)
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!mitglied_id) {
             return res.status(400).json({ error: 'mitglied_id erforderlich' });
@@ -850,8 +874,8 @@ router.post("/stripe/setup-customer", async (req, res) => {
  */
 router.post("/stripe/setup-all", async (req, res) => {
     try {
-        // Priorität: Body > User > Request (Body ist explizit vom Frontend)
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         // Finde alle Mitglieder die Setup benötigen
         const mitgliederQuery = `
@@ -933,8 +957,8 @@ router.post("/stripe/setup-all", async (req, res) => {
 router.post("/stripe/execute", async (req, res) => {
     try {
         const { monat, jahr, mitglieder } = req.body;
-        // Priorität: Body > User > Request (Body ist explizit vom Frontend)
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         if (!monat || !jahr) {
             return res.status(400).json({ error: 'Monat und Jahr erforderlich' });
@@ -1024,8 +1048,8 @@ router.post("/stripe/execute", async (req, res) => {
 router.get("/stripe/batch/:batchId", async (req, res) => {
     try {
         const { batchId } = req.params;
-        // Priorität: Query > User > Request (Query ist explizit vom Frontend)
-        const dojoId = req.query.dojo_id || req.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         const provider = await PaymentProviderFactory.getProvider(dojoId);
 

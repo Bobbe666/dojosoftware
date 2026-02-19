@@ -13,7 +13,7 @@ set -e
 
 # Konfiguration
 SERVER="dojo.tda-intl.org"
-REMOTE_PATH="/var/www/dojosoftware/backend"
+REMOTE_PATH="/var/www/dojo-backend"
 BACKUP_PATH="/var/www/backups/dojosoftware"
 LOCAL_BACKEND="backend"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

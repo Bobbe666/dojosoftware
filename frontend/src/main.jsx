@@ -87,7 +87,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Service Worker Registration (PWA)
+// Service Worker Registration (PWA) - MIT AUTO-UPDATE
 // WICHTIG: NUR im Browser registrieren, NICHT in installierter App (verhindert Flacker-Loop)
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                      window.navigator.standalone === true;
@@ -99,10 +99,37 @@ if ('serviceWorker' in navigator && !isStandalone) {
       .then((registration) => {
         console.log('✅ Service Worker registriert:', registration.scope);
 
-        // Update-Check jede Stunde
+        // SOFORT nach neuen Updates suchen
+        registration.update();
+
+        // Bei neuem Service Worker: SOFORT aktivieren (skipWaiting)
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('🔄 Neuer Service Worker gefunden, warte auf Installation...');
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Neuer SW installiert - SOFORT aktivieren ohne Nachfrage
+              console.log('✅ Neuer Service Worker installiert - Aktiviere sofort...');
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+
+        // Bei Controller-Wechsel: Seite neu laden für neuen SW
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('🔄 Service Worker aktualisiert - Lade Seite neu...');
+            window.location.reload();
+          }
+        });
+
+        // Update-Check alle 5 Minuten (statt 1 Stunde)
         setInterval(() => {
           registration.update();
-        }, 60 * 60 * 1000);
+        }, 5 * 60 * 1000);
       })
       .catch((error) => {
         console.warn('⚠️ Service Worker Registrierung fehlgeschlagen:', error);

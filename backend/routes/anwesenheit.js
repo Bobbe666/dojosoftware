@@ -1,13 +1,15 @@
 const express = require("express");
 const logger = require('../utils/logger');
 const db = require("../db");
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 const router = express.Router();
 
 // Alle Anwesenheiten abrufen (unverändert)
 router.get("/", (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
-    const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
     const showAll = !dojoId || dojoId === 'all' || dojoId === 'null';
 
     let query;
@@ -53,7 +55,8 @@ router.get("/", (req, res) => {
 // FIXED: UNION-basierte Query für Kurs-Mitglieder
 router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
-    const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     // Für Super-Admin ohne spezifisches Dojo: Hole dojo_id aus dem Kurs
     const allowWithoutDojo = !dojoId || dojoId === 'all' || dojoId === 'null';
@@ -406,7 +409,8 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
 // 🆕 NEU: Kursliste für Datum abrufen (für Frontend Dropdown)
 router.get("/kurse/:datum", (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
-    const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
     const userRole = req.user?.role || req.user?.rolle;
     const isSuperAdmin = userRole === 'super_admin' || userRole === 'admin';
 
@@ -561,7 +565,8 @@ router.get("/:mitglied_id", (req, res) => {
 // Anwesenheit eintragen (erweitert für stundenplan_id)
 router.post("/", (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
-    const dojoId = req.tenant?.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
     // Für POST: dojo_id ist optional, da die Mitglied-ID die Zuordnung bestimmt
 
     const { mitglied_id, stundenplan_id, datum, anwesend, bemerkung } = req.body;

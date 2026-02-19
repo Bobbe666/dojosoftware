@@ -125,10 +125,10 @@ async function handleTurnierCreated(turnier) {
   const [result] = await db.promise().query(`
     INSERT INTO tda_turniere (
       tda_turnier_id, name, datum, datum_ende, ort, adresse, disziplin,
-      anmeldeschluss, status, beschreibung, max_teilnehmer, teilnahmegebuehr,
+      anmeldeschluss, status, veroeffentlicht, beschreibung, max_teilnehmer, teilnahmegebuehr,
       tda_registration_url, veranstalter, kontakt_email, kontakt_telefon,
       altersklassen, gewichtsklassen, bild_url, synced_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ON DUPLICATE KEY UPDATE
       name = VALUES(name),
       datum = VALUES(datum),
@@ -138,6 +138,7 @@ async function handleTurnierCreated(turnier) {
       disziplin = VALUES(disziplin),
       anmeldeschluss = VALUES(anmeldeschluss),
       status = VALUES(status),
+      veroeffentlicht = VALUES(veroeffentlicht),
       beschreibung = VALUES(beschreibung),
       max_teilnehmer = VALUES(max_teilnehmer),
       teilnahmegebuehr = VALUES(teilnahmegebuehr),
@@ -159,6 +160,7 @@ async function handleTurnierCreated(turnier) {
     turnier.disziplin || null,
     anmeldeschluss,
     turnier.status || 'Aktiv',
+    turnier.veroeffentlicht !== undefined ? turnier.veroeffentlicht : 1,
     turnier.beschreibung || null,
     turnier.max_teilnehmer || null,
     turnier.teilnahmegebuehr || null,
@@ -196,6 +198,7 @@ async function handleTurnierUpdated(turnier) {
       disziplin = ?,
       anmeldeschluss = ?,
       status = ?,
+      veroeffentlicht = ?,
       beschreibung = ?,
       max_teilnehmer = ?,
       teilnahmegebuehr = ?,
@@ -217,6 +220,7 @@ async function handleTurnierUpdated(turnier) {
     turnier.disziplin || null,
     anmeldeschluss,
     turnier.status || 'Aktiv',
+    turnier.veroeffentlicht !== undefined ? turnier.veroeffentlicht : 1,
     turnier.beschreibung || null,
     turnier.max_teilnehmer || null,
     turnier.teilnahmegebuehr || null,
@@ -407,6 +411,7 @@ router.get('/', authenticateToken, async (req, res) => {
         disziplin,
         anmeldeschluss,
         status,
+        veroeffentlicht,
         beschreibung,
         max_teilnehmer,
         teilnahmegebuehr,
@@ -420,7 +425,7 @@ router.get('/', authenticateToken, async (req, res) => {
         synced_at,
         created_at
       FROM tda_turniere
-      WHERE 1=1
+      WHERE (veroeffentlicht = 1 OR veroeffentlicht IS NULL)
     `;
 
     const params = [];

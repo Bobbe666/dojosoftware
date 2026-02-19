@@ -3,17 +3,19 @@ const db = require("../db");
 const router = express.Router();
 const { generateMahnungPDF, replacePlaceholders, formatCurrency, formatDate } = require('../utils/mahnungPdfGenerator');
 const nodemailer = require('nodemailer');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // API: Alle offenen Beiträge abrufen (nicht bezahlt)
 router.get("/offene-beitraege", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     let whereConditions = ['b.bezahlt = 0'];
     let queryParams = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('b.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -186,10 +188,11 @@ router.put("/mahnungen/:mahnung_id/versandt", (req, res) => {
 
 // API: Statistiken für Mahnwesen
 router.get("/statistiken", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    let whereCondition = dojo_id && dojo_id !== 'all' ? 'WHERE b.dojo_id = ?' : '';
-    let queryParams = dojo_id && dojo_id !== 'all' ? [parseInt(dojo_id)] : [];
+    let whereCondition = secureDojoId ? 'WHERE b.dojo_id = ?' : '';
+    let queryParams = secureDojoId ? [secureDojoId] : [];
 
     const query = `
         SELECT
@@ -245,10 +248,11 @@ router.put("/beitraege/:beitrag_id/bezahlt", (req, res) => {
 
 // API: Mahnstufen-Einstellungen abrufen
 router.get("/mahnstufen-einstellungen", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    let whereCondition = dojo_id && dojo_id !== 'all' ? 'WHERE dojo_id = ?' : '';
-    let queryParams = dojo_id && dojo_id !== 'all' ? [parseInt(dojo_id)] : [];
+    let whereCondition = secureDojoId ? 'WHERE dojo_id = ?' : '';
+    let queryParams = secureDojoId ? [secureDojoId] : [];
 
     const query = `
         SELECT *

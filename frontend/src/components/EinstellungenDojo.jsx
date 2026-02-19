@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Save, X, Edit3, Building, CreditCard, Shield, Globe, Settings, Award, Clock, FileText, FileSignature, Palette, MapPin, BookOpen, UserCog } from "lucide-react";
+import { Save, X, Edit3, Building, CreditCard, Shield, Globe, Settings, Award, Clock, FileText, FileSignature, Palette, MapPin, BookOpen, UserCog, Zap } from "lucide-react";
 import RaumVerwaltung from "./RaumVerwaltung";
 import FinanzamtSelector from "./FinanzamtSelector";
 import AdminVerwaltung from "./AdminVerwaltung";
+import PlanUpgradeSection from "./PlanUpgradeSection";
 import "../styles/EinstellungenDojo.css";
 import "../styles/designsystem.css";
 import "../styles/themes.css";
@@ -197,6 +198,7 @@ const EinstellungenDojo = () => {
     { id: "rechtliches", label: "Rechtliches & Regeln", icon: BookOpen, color: "#DC2626" },
     { id: "zeiten", label: "Öffnungszeiten", icon: Clock, color: "#84CC16" },
     { id: "admins", label: "Admin-Accounts", icon: UserCog, color: "#DC2626" },
+    { id: "subscription", label: "Plan & Abo", icon: Zap, color: "#8B5CF6" },
     { id: "system", label: "System", icon: Settings, color: "#6B7280" }
   ];
 
@@ -1304,6 +1306,9 @@ const EinstellungenDojo = () => {
       case "admins":
         return <AdminVerwaltung />;
 
+      case "subscription":
+        return <PlanUpgradeSection />;
+
       case "system":
         return (
           <div className="tab-content">
@@ -1493,7 +1498,7 @@ const EinstellungenDojo = () => {
           {renderTabContent()}
 
           {/* Action Buttons - Nur anzeigen wenn nicht Admin oder Räume Tab */}
-          {activeTab !== 'admins' && activeTab !== 'raeume' && (
+          {activeTab !== 'admins' && activeTab !== 'raeume' && activeTab !== 'subscription' && (
             <div className="form-actions">
               {!isEditing ? (
                 <button

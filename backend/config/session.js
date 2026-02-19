@@ -44,12 +44,31 @@ const createSessionStore = (dbPool) => {
  */
 const createSessionMiddleware = (dbPool) => {
   const store = createSessionStore(dbPool);
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // Generate secure session secret if not provided
-  const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+  // Validate SESSION_SECRET
+  let sessionSecret = process.env.SESSION_SECRET;
 
-  if (!process.env.SESSION_SECRET) {
-    console.warn('⚠️ [Security] SESSION_SECRET not set in .env - using random secret (sessions will not persist across restarts)');
+  if (!sessionSecret) {
+    if (isProduction) {
+      // 🚨 In Produktion: KRITISCHER FEHLER - SESSION_SECRET ist erforderlich!
+      console.error('🚨 CRITICAL: SESSION_SECRET ist in Produktion erforderlich!');
+      console.error('Setzen Sie SESSION_SECRET in Ihrer .env Datei mit mindestens 32 Zeichen.');
+      console.error('Beispiel: SESSION_SECRET=$(openssl rand -hex 32)');
+      // Fallback für Übergang, aber mit dringendem Warning
+      sessionSecret = crypto.randomBytes(32).toString('hex');
+      console.error('⚠️ WARNUNG: Temporäres Secret generiert - Sessions gehen bei Restart verloren!');
+    } else {
+      // Development: Warning aber kein Fehler
+      sessionSecret = crypto.randomBytes(32).toString('hex');
+      console.warn('⚠️ [Security] SESSION_SECRET not set - using random secret (sessions will not persist across restarts)');
+    }
+  } else if (sessionSecret.length < 32) {
+    // SESSION_SECRET zu kurz
+    console.error('🚨 SECURITY: SESSION_SECRET ist zu kurz! Mindestens 32 Zeichen erforderlich.');
+    if (isProduction) {
+      console.error('Aktualisieren Sie SESSION_SECRET mit: openssl rand -hex 32');
+    }
   }
 
   return session({

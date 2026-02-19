@@ -13,14 +13,7 @@ const { requireFeature } = require('../middleware/featureAccess');
 // const multer = require('multer'); // TODO: Später für Bild-Uploads hinzufügen
 // const path = require('path');
 // const fs = require('fs');
-
-// Logger
-const logger = {
-  info: (...args) => console.log('[Artikel]', ...args),
-  error: (...args) => console.error('[Artikel ERROR]', ...args),
-  debug: (...args) => console.log('[Artikel DEBUG]', ...args),
-  warn: (...args) => console.warn('[Artikel WARN]', ...args)
-};
+const logger = require('../utils/logger');
 
 // =====================================================================================
 // FEATURE PROTECTION: Verkauf & Lagerhaltung

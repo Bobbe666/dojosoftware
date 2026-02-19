@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const archiver = require('archiver');
+const { JWT_SECRET } = require('../middleware/auth');
 
 /**
  * Wallet Pass Generator für Apple Wallet und Google Wallet
@@ -271,7 +272,7 @@ router.get('/mobile/:mitglied_id', async (req, res) => {
     // Token für sichere Mobile-Ansicht generieren
     const token = crypto
       .createHash('sha256')
-      .update(`${mitglied_id}-${process.env.JWT_SECRET || 'dojo-secret'}`)
+      .update(`${mitglied_id}-${JWT_SECRET}`)
       .digest('hex')
       .substring(0, 16);
 

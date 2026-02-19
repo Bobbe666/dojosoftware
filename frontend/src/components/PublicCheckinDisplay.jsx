@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import config from '../config/config.js';
 import '../styles/PublicCheckinDisplay.css';
 
 const PublicCheckinDisplay = () => {
@@ -167,7 +168,7 @@ const PublicCheckinDisplay = () => {
                   {(checkin.foto_pfad || checkin.profilbild) ? (
                     <img 
                       key={`img-${checkin.mitglied_id}-${checkin.checkin_id || checkin.checkin_time}`}
-                      src={`http://localhost:3000/${(checkin.foto_pfad || checkin.profilbild).startsWith('/') ? (checkin.foto_pfad || checkin.profilbild).slice(1) : (checkin.foto_pfad || checkin.profilbild)}`}
+                      src={`${config.imageBaseUrl}${(checkin.foto_pfad || checkin.profilbild).startsWith('/') ? (checkin.foto_pfad || checkin.profilbild) : '/' + (checkin.foto_pfad || checkin.profilbild)}`}
                       alt={`${checkin.vorname} ${checkin.nachname}`}
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';

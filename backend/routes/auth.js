@@ -168,7 +168,7 @@ router.post('/login',
   try {
     // Zuerst in users Tabelle suchen (Mitglieder)
     const userQuery = `
-      SELECT id, username, email, password, role, mitglied_id, created_at
+      SELECT id, username, email, password, role, dojo_id, mitglied_id, created_at
       FROM users
       WHERE email = ? OR username = ?
       LIMIT 1
@@ -207,15 +207,16 @@ router.post('/login',
           }
 
           if (adminResults.length === 0) {
-            // Log failed attempt (user not found)
+            // Log failed attempt (user not found) - aber generische Meldung zurückgeben
             logSecurityEvent(db, 'login_failed', {
               ...clientInfo,
               extra: { reason: 'user_not_found', loginField }
             });
 
+            // Sicherheit: Gleiche Meldung wie bei falschem Passwort (verhindert User-Enumeration)
             return res.status(HTTP_STATUS.UNAUTHORIZED).json({
               login: false,
-              message: ERROR_MESSAGES.RESOURCE.USER_NOT_FOUND
+              message: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS
             });
           }
 
@@ -742,17 +743,19 @@ router.post('/reset-password', passwordResetLimiter, async (req, res) => {
     );
 
     if (!results.length) {
-      return res.status(404).json({ message: 'Benutzer nicht gefunden' });
+      // Sicherheit: Generische Meldung (verhindert User-Enumeration)
+      return res.status(401).json({ message: 'Ungültige Angaben' });
     }
 
     const user = results[0];
 
     if (!user.security_question || !user.security_answer_hash) {
-      return res.status(400).json({ message: 'Keine Sicherheitsfrage hinterlegt' });
+      // Sicherheit: Generische Meldung
+      return res.status(401).json({ message: 'Ungültige Angaben' });
     }
 
     if (user.security_question !== securityQuestion) {
-      return res.status(401).json({ message: 'Sicherheitsfrage stimmt nicht' });
+      return res.status(401).json({ message: 'Ungültige Angaben' });
     }
 
     const { valid } = await verifyPassword(securityAnswer.trim().toLowerCase(), user.security_answer_hash);
@@ -1141,19 +1144,7 @@ router.post('/sso-login', async (req, res) => {
 
 router.use('*', (req, res) => {
   res.status(404).json({
-    error: 'Auth route not found',
-    method: req.method,
-    url: req.originalUrl,
-    availableRoutes: [
-      'GET /api/auth/health',
-      'POST /api/auth/login',
-      'POST /api/auth/logout',
-      'GET /api/auth/me',
-      'POST /api/auth/refresh',
-      'POST /api/auth/change-password',
-      'POST /api/auth/reset-password',
-      'GET /api/auth/stats'
-    ]
+    error: 'Nicht gefunden'
   });
 });
 

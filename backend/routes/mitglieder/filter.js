@@ -5,6 +5,7 @@
 const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 const router = express.Router();
 
 // Alle verfügbaren Stile abrufen
@@ -49,7 +50,8 @@ router.get('/filter-options/gurte', (req, res) => {
 
 // Mitglieder ohne SEPA-Mandat
 router.get('/filter/ohne-sepa', (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = [
     "m.zahlungsmethode IN ('SEPA-Lastschrift', 'Lastschrift')",
@@ -58,9 +60,9 @@ router.get('/filter/ohne-sepa', (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -87,14 +89,15 @@ router.get('/filter/ohne-sepa', (req, res) => {
 
 // Mitglieder ohne Vertrag
 router.get('/filter/ohne-vertrag', (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = ['m.aktiv = 1', 'v.vertrag_id IS NULL'];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -120,7 +123,8 @@ router.get('/filter/ohne-vertrag', (req, res) => {
 
 // Mitglieder mit Tarif-Abweichungen
 router.get('/filter/tarif-abweichung', (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = [
     "v.status = 'aktiv'",
@@ -143,9 +147,9 @@ router.get('/filter/tarif-abweichung', (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -226,9 +230,9 @@ router.get('/filter/zahlungsweisen', (req, res) => {
     }
   }
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';

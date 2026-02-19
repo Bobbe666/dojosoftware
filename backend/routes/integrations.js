@@ -13,6 +13,7 @@ const SumUpProvider = require('../services/SumUpProvider');
 const LexOfficeProvider = require('../services/LexOfficeProvider');
 const DatevExportService = require('../services/DatevExportService');
 const logger = require('../utils/logger');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 router.use(authenticateToken);
 
@@ -59,7 +60,8 @@ async function getDojoConfig(dojoId) {
 
 router.get('/status', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
 
         const paypal = new PayPalProvider(config);
@@ -144,7 +146,8 @@ router.post('/paypal/create-order', async (req, res) => {
  */
 router.post('/paypal/capture-order/:orderId', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const paypal = new PayPalProvider(config);
 
@@ -182,7 +185,8 @@ router.post('/paypal/create-subscription', async (req, res) => {
  */
 router.post('/paypal/cancel-subscription/:subscriptionId', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const paypal = new PayPalProvider(config);
 
@@ -236,7 +240,8 @@ router.post('/paypal/webhook', express.raw({ type: 'application/json' }), async 
  */
 router.post('/paypal/test', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const paypal = new PayPalProvider(config);
 
@@ -262,7 +267,8 @@ router.post('/paypal/test', async (req, res) => {
  */
 router.post('/sumup/test', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
 
         if (!config.sumup_api_key && (!config.sumup_client_id || !config.sumup_client_secret)) {
@@ -298,7 +304,8 @@ router.post('/sumup/test', async (req, res) => {
  */
 router.get('/lexoffice/status', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const lexoffice = new LexOfficeProvider(config);
 
@@ -316,7 +323,8 @@ router.get('/lexoffice/status', async (req, res) => {
  */
 router.post('/lexoffice/sync-contact/:mitgliedId', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const lexoffice = new LexOfficeProvider(config);
 
@@ -383,7 +391,8 @@ router.post('/lexoffice/create-invoice', async (req, res) => {
  */
 router.get('/lexoffice/invoice/:invoiceId/pdf', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const lexoffice = new LexOfficeProvider(config);
 
@@ -413,7 +422,8 @@ router.get('/lexoffice/invoice/:invoiceId/pdf', async (req, res) => {
  */
 router.get('/datev/status', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const datev = new DatevExportService(config);
 
@@ -430,7 +440,8 @@ router.get('/datev/status', async (req, res) => {
  */
 router.get('/datev/export/invoices', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const { start_date, end_date } = req.query;
 
         if (!start_date || !end_date) {
@@ -466,7 +477,8 @@ router.get('/datev/export/invoices', async (req, res) => {
  */
 router.get('/datev/export/payments', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const { start_date, end_date } = req.query;
 
         if (!start_date || !end_date) {
@@ -502,7 +514,8 @@ router.get('/datev/export/payments', async (req, res) => {
  */
 router.get('/datev/export/debitoren', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
         const datev = new DatevExportService(config);
 
@@ -532,7 +545,8 @@ router.get('/datev/export/debitoren', async (req, res) => {
  */
 router.get('/datev/exports', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const { limit = 50 } = req.query;
 
         const [exports] = await db.promise().query(`
@@ -559,7 +573,8 @@ router.get('/datev/exports', async (req, res) => {
  */
 router.get('/config', async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const config = await getDojoConfig(dojoId);
 
         // Maskiere sensible Daten

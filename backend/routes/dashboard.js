@@ -3,6 +3,7 @@ const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // GET /api/dashboard/batch - Optimized batch endpoint for all dashboard data
 router.get('/batch', async (req, res) => {
@@ -148,11 +149,12 @@ async function getZahlungszyklen() {
 // GET /api/dashboard - Hauptstatistiken mit korrigierten Queries
 router.get('/', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
-    logger.debug(`📊 Dashboard-Statistiken werden geladen (dojo_id=${dojo_id || 'all'})...`);
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    logger.debug(`📊 Dashboard-Statistiken werden geladen (dojo_id=${secureDojoId || 'all'})...`);
 
     // 🔒 KRITISCHER DOJO-FILTER: Baue WHERE-Clause
-    const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND dojo_id = ${parseInt(dojo_id)}` : '';
+    const dojoFilter = secureDojoId ? ` AND dojo_id = ${secureDojoId}` : '';
 
     const stats = {
       mitglieder: 0,
@@ -350,13 +352,14 @@ router.get('/', async (req, res) => {
 // GET /api/dashboard/recent - Recent Activities mit echten Check-ins
 router.get('/recent', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
-    logger.debug(`📋 Recent Activities werden geladen (dojo_id=${dojo_id || 'all'})...`);
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    logger.debug(`📋 Recent Activities werden geladen (dojo_id=${secureDojoId || 'all'})...`);
 
     const activities = [];
 
     // 🔒 KRITISCHER DOJO-FILTER
-    const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
+    const dojoFilter = secureDojoId ? ` AND m.dojo_id = ${secureDojoId}` : '';
 
     // 1. Echte Check-ins von heute laden - GEÄNDERT: Alle Check-ins anzeigen (aktiv + completed) + dojo_id Filter
     try {
@@ -482,11 +485,12 @@ router.get('/recent', async (req, res) => {
 // GET /api/dashboard/checkin/today - GEÄNDERT: Nur aktive Check-ins + dojo_id Filter
 router.get('/checkin/today', async (req, res) => {
   try {
-    const { dojo_id } = req.query;
-    logger.debug('Check-in Daten werden geladen', { dojo_id: dojo_id || 'all' });
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+    logger.debug('Check-in Daten werden geladen', { dojo_id: secureDojoId || 'all' });
 
     // 🔒 KRITISCHER DOJO-FILTER
-    const dojoFilter = (dojo_id && dojo_id !== 'all') ? ` AND m.dojo_id = ${parseInt(dojo_id)}` : '';
+    const dojoFilter = secureDojoId ? ` AND m.dojo_id = ${secureDojoId}` : '';
 
     // GEÄNDERT: Nur aktive Check-ins laden + dojo_id Filter
     const [checkins] = await db.promise().query(`

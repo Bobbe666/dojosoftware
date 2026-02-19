@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
 
 // Promise-wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -25,7 +26,7 @@ const authenticateMember = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {

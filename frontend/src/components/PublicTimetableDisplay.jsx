@@ -3,6 +3,10 @@ import axios from 'axios';
 import '../styles/PublicTimetableDisplay.css';
 
 const PublicTimetableDisplay = () => {
+  // Hole dojo_id aus URL-Parameter: /public-timetable?dojo=3
+  const urlParams = new URLSearchParams(window.location.search);
+  const dojoId = urlParams.get('dojo') || '3'; // Default zu 3 (Hauptdojo)
+
   const [timetableData, setTimetableData] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentView, setCurrentView] = useState(0); // 0 = heute, 1 = nächste Stunde, 2 = Wochenübersicht
@@ -15,14 +19,28 @@ const PublicTimetableDisplay = () => {
   // Automatisches Refresh alle 30 Sekunden für Live-Updates
   useEffect(() => {
     const fetchTimetable = async () => {
+      if (!dojoId) {
+        console.log('⏳ Keine Dojo-ID in URL gefunden. Verwende ?dojo=1');
+        return;
+      }
+
       try {
         setLoading(true);
-        const response = await axios.get('/stundenplan');
+        console.log('📡 Lade Stundenplan für Dojo:', dojoId);
+        const response = await axios.get(`/public/stundenplan/${dojoId}`);
         const data = response.data;
+        console.log('📦 Rohe API Response:', data);
+
         // Handle both array and object responses
-        setTimetableData(Array.isArray(data) ? data : (data.stundenplan || []));
+        const extractedData = Array.isArray(data) ? data : (data.data || data.stundenplan || []);
+        console.log('📊 Extrahierte Daten:', extractedData);
+        console.log('📋 Anzahl Kurse:', extractedData.length);
+
+        setTimetableData(extractedData);
+        console.log('✅ Stundenplan geladen und gesetzt');
       } catch (error) {
         console.error('❌ Fehler beim Laden des Stundenplans:', error);
+        console.error('❌ Error Details:', error.response || error.message);
         setTimetableData([]);
       } finally {
         setLoading(false);
@@ -50,7 +68,7 @@ const PublicTimetableDisplay = () => {
       clearInterval(timeInterval);
       clearInterval(viewInterval);
     };
-  }, []);
+  }, [dojoId]);
 
   // Separater useEffect für Countdown-Update
   useEffect(() => {
@@ -227,9 +245,11 @@ const PublicTimetableDisplay = () => {
                 <div className="class-info">
                   <div className="class-name">{item.kursname}</div>
                   <div className="class-style">🥋 {item.stil}</div>
-                  <div className="class-trainer">
-                    👨‍🏫 {item.trainer_vorname} {item.trainer_nachname}
-                  </div>
+                  {item.trainer && (
+                    <div className="class-trainer">
+                      👨‍🏫 {item.trainer}
+                    </div>
+                  )}
                 </div>
                 <div className="class-status">
                   <div className="status-indicator"></div>
@@ -310,9 +330,11 @@ const PublicTimetableDisplay = () => {
             <div className="next-class-details">
               <div className="next-class-name">{nextClass.kursname}</div>
               <div className="next-class-style">🥋 {nextClass.stil}</div>
-              <div className="next-class-trainer">
-                👨‍🏫 {nextClass.trainer_vorname} {nextClass.trainer_nachname}
-              </div>
+              {nextClass.trainer && (
+                <div className="next-class-trainer">
+                  👨‍🏫 {nextClass.trainer}
+                </div>
+              )}
             </div>
             
             <div className="countdown-section">

@@ -17,10 +17,12 @@ let csrfToken = null;
 /**
  * Holt CSRF-Token vom Backend
  * Wird einmal beim App-Start aufgerufen
+ * WICHTIG: Verwendet relativen Pfad da axios.defaults.baseURL bereits /api ist
  */
 export const fetchCsrfToken = async () => {
   try {
-    const response = await axios.get(`${config.apiBaseUrl}/auth/csrf-token`, {
+    // Relativer Pfad - baseURL ist bereits /api
+    const response = await axios.get('/auth/csrf-token', {
       withCredentials: true
     });
     csrfToken = response.data.csrfToken;

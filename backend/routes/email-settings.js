@@ -9,6 +9,7 @@ const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
+const { encrypt, decrypt, isEncrypted } = require('../utils/encryption');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -123,7 +124,15 @@ router.put('/global', async (req, res) => {
 
     if (smtp_password && smtp_password !== '********') {
       passwordUpdate = ', smtp_password = ?';
-      params.push(smtp_password);
+      // SECURITY: Passwort verschlüsseln vor dem Speichern
+      try {
+        const encryptedPassword = encrypt(smtp_password);
+        params.push(encryptedPassword);
+        logger.info('SMTP Passwort verschlüsselt gespeichert');
+      } catch (encError) {
+        logger.warn('SMTP Passwort konnte nicht verschlüsselt werden (ENCRYPTION_KEY fehlt?), speichere unverschlüsselt');
+        params.push(smtp_password);
+      }
     }
 
     params.push(1); // WHERE id = 1

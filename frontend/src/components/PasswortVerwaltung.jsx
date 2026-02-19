@@ -1,3 +1,4 @@
+// Build: 2026-02-16-v3 - Passwort column fix
 import React, { useState, useEffect } from 'react';
 import { Key, Search, RefreshCw, Eye, EyeOff, CheckCircle, AlertCircle, Users, Building2, Shield, UserPlus } from 'lucide-react';
 import config from '../config/config.js';
@@ -211,22 +212,22 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
         <td>{displayEmail}</td>
         <td>{displayDojo}</td>
         <td>
+          {user.has_password ? (
+            <span className="badge badge-success">Ja</span>
+          ) : (
+            <span className="badge badge-warning">Nein</span>
+          )}
+        </td>
+        <td>
           {activeTab === 'software' && (
             <span className={`badge badge-${user.rolle === 'super_admin' ? 'danger' : user.rolle === 'admin' ? 'warning' : 'info'}`}>
               {user.rolle || 'user'}
             </span>
           )}
           {activeTab === 'verband' && (
-            <>
-              <span className={`badge badge-${user.typ === 'dojo' ? 'primary' : 'secondary'}`}>
-                {user.typ || '-'}
-              </span>
-              {user.has_password ? (
-                <span className="badge badge-success" title="Hat Passwort">PW</span>
-              ) : (
-                <span className="badge badge-warning" title="Kein Passwort">Kein PW</span>
-              )}
-            </>
+            <span className={`badge badge-${user.typ === 'dojo' ? 'primary' : 'secondary'}`}>
+              {user.typ || '-'}
+            </span>
           )}
           {activeTab === 'dojo' && (
             <span className="badge badge-info">{user.role || 'user'}</span>
@@ -254,6 +255,9 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
         </td>
         <td>{member.email || '-'}</td>
         <td>{member.dojo_name || '-'}</td>
+        <td>
+          <span className="badge badge-warning">Nein</span>
+        </td>
         <td>
           <span className="badge badge-warning">Kein Login</span>
         </td>
@@ -341,6 +345,7 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
                 <th>Name</th>
                 <th>E-Mail</th>
                 <th>Dojo</th>
+                <th>Passwort</th>
                 <th>Status</th>
                 <th>Aktion</th>
               </tr>
@@ -371,6 +376,7 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
                 <th>Benutzer</th>
                 <th>E-Mail</th>
                 <th>Dojo</th>
+                <th>Passwort</th>
                 <th>Status</th>
                 <th>Aktion</th>
               </tr>

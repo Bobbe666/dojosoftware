@@ -23,7 +23,8 @@ NC='\033[0m' # No Color
 
 # Konfiguration
 SERVER="dojo.tda-intl.org"
-REMOTE_PATH="/var/www/dojosoftware"
+REMOTE_FRONTEND="/var/www/dojosoftware/frontend/dist"
+REMOTE_BACKEND="/var/www/dojo-backend"
 LOCAL_FRONTEND_DIST="./frontend/dist"
 LOCAL_BACKEND="./backend"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -98,23 +99,23 @@ ssh "$SERVER" "
     mkdir -p /root/backups/dojosoftware
 
     # Backup .env (WICHTIG!)
-    if [ -f $REMOTE_PATH/backend/.env ]; then
-        cp $REMOTE_PATH/backend/.env /root/backups/dojosoftware/.env.backup.$BACKUP_DATE
+    if [ -f $REMOTE_BACKEND/.env ]; then
+        cp $REMOTE_BACKEND/.env /root/backups/dojosoftware/.env.backup.$BACKUP_DATE
         echo '   ✓ .env gesichert nach /root/backups/dojosoftware/.env.backup.$BACKUP_DATE'
     else
         echo '   ⚠ WARNUNG: Keine .env gefunden!'
     fi
 
     # Prüfe kritische Ordner
-    if [ ! -d $REMOTE_PATH/backend ]; then
+    if [ ! -d $REMOTE_BACKEND ]; then
         echo '   ✗ KRITISCH: Backend-Ordner fehlt auf Server!'
         exit 1
     fi
     echo '   ✓ Backend-Ordner vorhanden'
 
-    if [ ! -d $REMOTE_PATH/uploads ]; then
+    if [ ! -d $REMOTE_BACKEND/uploads ]; then
         echo '   ⚠ uploads-Ordner fehlt, wird erstellt...'
-        mkdir -p $REMOTE_PATH/uploads
+        mkdir -p $REMOTE_BACKEND/uploads
     fi
     echo '   ✓ uploads-Ordner vorhanden'
 "
@@ -125,7 +126,7 @@ ssh "$SERVER" "
 echo ""
 echo -e "${CYAN}[4/6] Deploye Frontend...${NC}"
 echo -e "   Quelle: $LOCAL_FRONTEND_DIST"
-echo -e "   Ziel:   $SERVER:$REMOTE_PATH"
+echo -e "   Ziel:   $SERVER:$REMOTE_FRONTEND"
 echo ""
 
 # ╔═══════════════════════════════════════════════════════════╗
@@ -145,7 +146,7 @@ rsync -avz --progress \
     --exclude '.git/**' \
     --exclude 'logs' \
     --exclude 'logs/**' \
-    "$LOCAL_FRONTEND_DIST/" "$SERVER:$REMOTE_PATH/"
+    "$LOCAL_FRONTEND_DIST/" "$SERVER:$REMOTE_FRONTEND/"
 
 echo ""
 echo -e "${GREEN}   ✓ Frontend deployed${NC}"
@@ -173,11 +174,11 @@ if [ "$DO_BACKEND" = true ]; then
             --exclude 'logs/**' \
             --exclude 'uploads' \
             --exclude 'uploads/**' \
-            "$LOCAL_BACKEND/" "$SERVER:$REMOTE_PATH/backend/"
+            "$LOCAL_BACKEND/" "$SERVER:$REMOTE_BACKEND/"
 
         echo ""
         echo -e "   Installiere Backend Dependencies..."
-        ssh "$SERVER" "cd $REMOTE_PATH/backend && npm install --production"
+        ssh "$SERVER" "cd $REMOTE_BACKEND && npm install --production"
 
         echo -e "${GREEN}   ✓ Backend deployed${NC}"
     else
@@ -200,21 +201,30 @@ ssh "$SERVER" "
     # Prüfe kritische Dateien/Ordner
     echo '   Prüfe Dateien...'
 
-    if [ ! -d $REMOTE_PATH/backend ]; then
+    if [ ! -d $REMOTE_BACKEND ]; then
         echo '   ✗ FEHLER: Backend-Ordner fehlt!'
         ERRORS=1
     else
         echo '   ✓ Backend-Ordner OK'
     fi
 
-    if [ ! -f $REMOTE_PATH/backend/.env ]; then
-        echo '   ✗ FEHLER: .env fehlt!'
-        ERRORS=1
+    if [ ! -f $REMOTE_BACKEND/.env ]; then
+        echo '   ✗ KRITISCH: .env fehlt!'
+        # Versuche aus Backup wiederherzustellen
+        LATEST_BACKUP=\$(ls -t /root/backups/dojosoftware/.env.backup.* 2>/dev/null | head -1)
+        if [ -n \"\$LATEST_BACKUP\" ]; then
+            echo \"   ⚠ Stelle .env aus Backup wieder her: \$LATEST_BACKUP\"
+            cp \"\$LATEST_BACKUP\" $REMOTE_BACKEND/.env
+            echo '   ✓ .env aus Backup wiederhergestellt'
+        else
+            echo '   ✗ FEHLER: Kein Backup gefunden! Manuell .env erstellen!'
+            ERRORS=1
+        fi
     else
         echo '   ✓ .env OK'
     fi
 
-    if [ ! -f $REMOTE_PATH/index.html ]; then
+    if [ ! -f $REMOTE_FRONTEND/index.html ]; then
         echo '   ✗ FEHLER: index.html fehlt!'
         ERRORS=1
     else
@@ -224,21 +234,29 @@ ssh "$SERVER" "
     if [ \$ERRORS -eq 1 ]; then
         echo ''
         echo '   ✗ KRITISCHE FEHLER GEFUNDEN!'
-        echo '   Backup wiederherstellen: cp /root/backups/dojosoftware/.env.backup.* $REMOTE_PATH/backend/.env'
+        echo '   Backup wiederherstellen: cp /root/backups/dojosoftware/.env.backup.* $REMOTE_BACKEND/.env'
         exit 1
     fi
 
     # Backend neustarten
     echo ''
     echo '   Starte Backend neu...'
-    pm2 restart dojosoftware-backend 2>/dev/null || pm2 start $REMOTE_PATH/backend/server.js --name dojosoftware-backend
+    pm2 restart dojosoftware-backend 2>/dev/null || pm2 start $REMOTE_BACKEND/server.js --name dojosoftware-backend
     pm2 save
 
     # Kurz warten und Status prüfen
     sleep 2
 
     if pm2 list | grep -q 'dojosoftware-backend.*online'; then
-        echo '   ✓ Backend läuft'
+        echo '   ✓ Backend PM2-Status: online'
+        # API Health Check
+        sleep 2
+        API_RESPONSE=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5001/api/test 2>/dev/null)
+        if [ \"\$API_RESPONSE\" = \"200\" ]; then
+            echo '   ✓ API antwortet (HTTP 200)'
+        else
+            echo \"   ⚠ API Status: HTTP \$API_RESPONSE - prüfe Logs: pm2 logs dojosoftware-backend\"
+        fi
     else
         echo '   ⚠ Backend Status prüfen mit: pm2 logs dojosoftware-backend'
     fi

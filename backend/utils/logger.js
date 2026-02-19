@@ -51,6 +51,58 @@ const EMOJI_MAP = {
 };
 
 /**
+ * SECURITY: Liste sensibler Felder die maskiert werden sollen
+ */
+const SENSITIVE_FIELDS = [
+    'password', 'passwort', 'passwort_hash', 'password_hash',
+    'token', 'jwt', 'secret', 'api_key', 'apikey', 'api_secret',
+    'stripe_secret', 'paypal_secret', 'client_secret',
+    'authorization', 'auth', 'bearer',
+    'iban', 'bic', 'kreditkarte', 'credit_card', 'cvv', 'cvc',
+    'smtp_password', 'email_password',
+    'session', 'cookie', 'csrf'
+];
+
+/**
+ * SECURITY: Maskiert sensible Daten in Objekten
+ */
+function sanitizeObject(obj, depth = 0) {
+    if (depth > 5) return '[MAX_DEPTH]';  // Prevent infinite recursion
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj !== 'object') return obj;
+
+    // Arrays durchlaufen
+    if (Array.isArray(obj)) {
+        return obj.map(item => sanitizeObject(item, depth + 1));
+    }
+
+    // Objekte durchlaufen
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+        const lowerKey = key.toLowerCase();
+
+        // Prüfe ob Key sensibel ist
+        const isSensitive = SENSITIVE_FIELDS.some(field =>
+            lowerKey.includes(field.toLowerCase())
+        );
+
+        if (isSensitive && value) {
+            // Zeige nur Länge und letzte 4 Zeichen für Debugging
+            if (typeof value === 'string' && value.length > 4) {
+                sanitized[key] = `[REDACTED:${value.length}chars]`;
+            } else {
+                sanitized[key] = '[REDACTED]';
+            }
+        } else if (typeof value === 'object') {
+            sanitized[key] = sanitizeObject(value, depth + 1);
+        } else {
+            sanitized[key] = value;
+        }
+    }
+    return sanitized;
+}
+
+/**
  * Formatiert Timestamp
  */
 function formatTimestamp() {
@@ -107,9 +159,12 @@ function log(level, message, meta = {}) {
         return;
     }
 
+    // SECURITY: Sensible Daten maskieren bevor sie geloggt werden
+    const safeMeta = sanitizeObject(meta);
+
     // Console-Output (Development) oder strukturiert (Production)
     if (NODE_ENV === 'development') {
-        const consoleMsg = formatConsoleMessage(level, message, meta);
+        const consoleMsg = formatConsoleMessage(level, message, safeMeta);
 
         switch (level) {
             case 'error':
@@ -128,7 +183,7 @@ function log(level, message, meta = {}) {
 
     // Immer in File schreiben (außer in Tests)
     if (NODE_ENV !== 'test') {
-        writeToFile(level, message, meta);
+        writeToFile(level, message, safeMeta);
     }
 }
 

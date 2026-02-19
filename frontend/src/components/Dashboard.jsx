@@ -30,6 +30,7 @@ import TrialBanner from './TrialBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
 import SystemChangelog from './SystemChangelog';
+import HilfeCenter from './HilfeCenter';
 
 // Zentrale Überschriften-Styles (Gold-Gradient wie Header)
 const headingStyle = {
@@ -247,7 +248,8 @@ function Dashboard() {
     { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
     { id: 'support', label: t('tabs.support'), icon: '🎫' },
     { id: 'wunschliste', label: t('tabs.wunschliste'), icon: '💡' },
-    { id: 'info', label: t('tabs.info'), icon: 'ℹ️' }
+    { id: 'info', label: t('tabs.info'), icon: 'ℹ️' },
+    { id: 'hilfe', label: 'Hilfe', icon: '📚' }
   ];
 
   const tabs = baseTabs;
@@ -502,12 +504,28 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '📊',
+      title: 'CSV Import',
+      description: 'Mitglieder aus CSV/Excel importieren',
+      path: '/dashboard/csv-import',
+      badge: 'IMPORT',
+      featured: true
+    },
+    {
       icon: '📋',
       title: 'Audit-Log',
       description: 'Alle Änderungen nachverfolgen - Wer hat wann was geändert?',
       path: '/dashboard/audit-log',
       badge: 'NEU',
       featured: false
+    },
+    {
+      icon: '🛡️',
+      title: 'Sicherheit',
+      description: 'Angriffserkennung, IP-Blockierung & Security-Alerts',
+      path: '/dashboard/security',
+      badge: 'NEU',
+      featured: true
     },
     {
       icon: '🔗',
@@ -1873,6 +1891,13 @@ function Dashboard() {
                             </div>
 
                           </div>
+                        </div>
+                      )}
+
+                      {/* 📚 Hilfe Tab 📚 */}
+                      {activeTab === 'hilfe' && (
+                        <div className="nav-section">
+                          <HilfeCenter />
                         </div>
                       )}
 

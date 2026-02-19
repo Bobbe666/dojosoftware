@@ -9,6 +9,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // WICHTIG: Browser soll SW nicht cachen
+      injectRegister: false, // Wir registrieren manuell in index.html
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-*.png'],
       manifest: {
         name: 'Dojosoftware - Mitgliederbereich',
@@ -41,6 +43,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,png,jpg,jpeg,svg,gif,woff,woff2}'],
         // API-Calls NICHT cachen
         navigateFallbackDenylist: [/^\/api/],
+        // AUTO-UPDATE: Sofort neue Version aktivieren
+        skipWaiting: true,
+        clientsClaim: true,
+        // Alte Caches automatisch löschen
+        cleanupOutdatedCaches: true,
+        // WICHTIG: Source Map für SW generieren (Debugging)
+        sourcemap: false,
         runtimeCaching: [
           {
             // Bilder cachen

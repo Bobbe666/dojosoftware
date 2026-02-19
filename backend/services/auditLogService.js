@@ -15,7 +15,8 @@ const KATEGORIE = {
   SEPA: 'SEPA',
   DOKUMENT: 'DOKUMENT',
   SYSTEM: 'SYSTEM',
-  AUTH: 'AUTH'
+  AUTH: 'AUTH',
+  SECURITY: 'SECURITY'  // Sicherheitskritische Events
 };
 
 // Vordefinierte Aktionen
@@ -70,7 +71,16 @@ const AKTION = {
   LOGIN_FEHLGESCHLAGEN: 'LOGIN_FEHLGESCHLAGEN',
   LOGOUT: 'LOGOUT',
   PASSWORT_GEAENDERT: 'PASSWORT_GEAENDERT',
-  PASSWORT_RESET: 'PASSWORT_RESET'
+  PASSWORT_RESET: 'PASSWORT_RESET',
+
+  // Security Events
+  CROSS_TENANT_ACCESS_ATTEMPT: 'CROSS_TENANT_ACCESS_ATTEMPT',  // Versuch auf fremde Dojo-Daten zuzugreifen
+  BRUTEFORCE_DETECTED: 'BRUTEFORCE_DETECTED',  // Zu viele Login-Versuche
+  INVALID_TOKEN: 'INVALID_TOKEN',  // Ungültiger/Abgelaufener Token
+  SUSPICIOUS_REQUEST: 'SUSPICIOUS_REQUEST',  // Verdächtige Anfrage (SQL Injection Versuch etc.)
+  PERMISSION_DENIED: 'PERMISSION_DENIED',  // Zugriffsversuch ohne Berechtigung
+  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',  // Rate Limit überschritten
+  SESSION_HIJACK_ATTEMPT: 'SESSION_HIJACK_ATTEMPT'  // Versuch Session zu übernehmen
 };
 
 /**

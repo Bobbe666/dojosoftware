@@ -243,17 +243,34 @@ async function createSepaMandate(mitgliedData, dojoData, dojoId) {
 }
 
 /**
- * Generiert initiale Beiträge bei Vertragsanlage
+ * Generiert Beiträge für die GESAMTE Vertragslaufzeit
  * - Anteiliger erster Monat (ab Vertragsbeginn)
- * - Voller zweiter Monat
+ * - Alle Monate bis Vertragsende (oder mindestlaufzeit_monate wenn kein Ende)
  * - Aufnahmegebühr (falls vorhanden)
+ *
+ * @param {number} mitgliedId - Mitglieds-ID
+ * @param {number} dojoId - Dojo-ID
+ * @param {string} vertragsbeginn - Startdatum (YYYY-MM-DD)
+ * @param {number} monatsbeitrag - Monatlicher Beitrag in Euro
+ * @param {number} aufnahmegebuehrCents - Aufnahmegebühr in Cents (optional)
+ * @param {string|null} vertragsende - Enddatum (YYYY-MM-DD) oder null
+ * @param {number} mindestlaufzeitMonate - Mindestlaufzeit in Monaten (default 12)
  */
-async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, monatsbeitrag, aufnahmegebuehrCents = 0) {
+async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, monatsbeitrag, aufnahmegebuehrCents = 0, vertragsende = null, mindestlaufzeitMonate = 12) {
   try {
     const startDate = new Date(vertragsbeginn);
     const startDay = startDate.getDate();
     const startMonth = startDate.getMonth(); // 0-indexed
     const startYear = startDate.getFullYear();
+
+    // Berechne Enddatum: vertragsende oder mindestlaufzeit_monate ab Start
+    let endDate;
+    if (vertragsende) {
+      endDate = new Date(vertragsende);
+    } else {
+      // Kein Vertragsende: Generiere für mindestlaufzeit_monate
+      endDate = new Date(startYear, startMonth + mindestlaufzeitMonate, 0); // Letzter Tag des Endmonats
+    }
 
     // Tage im Startmonat
     const daysInStartMonth = new Date(startYear, startMonth + 1, 0).getDate();
@@ -264,19 +281,12 @@ async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, mona
     // Anteiliger Beitrag für ersten Monat
     const proratedAmount = Math.round((monatsbeitrag / daysInStartMonth * remainingDays) * 100) / 100;
 
-    // Formatierung für Beschreibung
-    const monthNames = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-    const startMonthStr = monthNames[startMonth];
-    const startDayStr = String(startDay).padStart(2, '0');
-
-    // Nächster Monat
-    const nextMonth = (startMonth + 1) % 12;
-    const nextMonthYear = startMonth === 11 ? startYear + 1 : startYear;
-    const nextMonthStr = monthNames[nextMonth];
-
     const beitraegeToInsert = [];
 
-    // 1. Anteiliger erster Monat (nur wenn nicht am 1. gestartet)
+    // 1. Erster Monat (anteilig oder voll)
+    const startMonthStr = String(startMonth + 1).padStart(2, '0');
+    const startDayStr = String(startDay).padStart(2, '0');
+
     if (startDay > 1) {
       beitraegeToInsert.push({
         betrag: proratedAmount,
@@ -284,7 +294,6 @@ async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, mona
         beschreibung: `Beitrag ${startMonthStr}/${startYear} (anteilig ab ${startDayStr}.${startMonthStr}.)`
       });
     } else {
-      // Voller erster Monat wenn am 1. gestartet
       beitraegeToInsert.push({
         betrag: monatsbeitrag,
         zahlungsdatum: vertragsbeginn,
@@ -292,13 +301,46 @@ async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, mona
       });
     }
 
-    // 2. Voller zweiter Monat
-    const secondMonthDate = `${nextMonthYear}-${nextMonthStr}-01`;
-    beitraegeToInsert.push({
-      betrag: monatsbeitrag,
-      zahlungsdatum: secondMonthDate,
-      beschreibung: `Beitrag ${nextMonthStr}/${nextMonthYear}`
-    });
+    // 2. Alle weiteren Monate bis Enddatum
+    let currentMonth = startMonth + 1;
+    let currentYear = startYear;
+
+    // Wenn im Dezember gestartet, nächster Monat ist Januar des nächsten Jahres
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+
+    while (true) {
+      const currentDate = new Date(currentYear, currentMonth, 1);
+
+      // Prüfe ob wir das Enddatum überschritten haben
+      if (currentDate > endDate) {
+        break;
+      }
+
+      const monthStr = String(currentMonth + 1).padStart(2, '0');
+      const zahlungsdatum = `${currentYear}-${monthStr}-01`;
+
+      beitraegeToInsert.push({
+        betrag: monatsbeitrag,
+        zahlungsdatum: zahlungsdatum,
+        beschreibung: `Beitrag ${monthStr}/${currentYear}`
+      });
+
+      // Nächster Monat
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+
+      // Sicherheit: Maximal 120 Monate (10 Jahre) generieren
+      if (beitraegeToInsert.length > 120) {
+        logger.warn('Beitrags-Generierung bei 120 Monaten gestoppt', { mitglied_id: mitgliedId });
+        break;
+      }
+    }
 
     // 3. Aufnahmegebühr (falls vorhanden)
     if (aufnahmegebuehrCents && aufnahmegebuehrCents > 0) {
@@ -310,29 +352,91 @@ async function generateInitialBeitraege(mitgliedId, dojoId, vertragsbeginn, mona
       });
     }
 
-    // In Datenbank einfügen
+    // In Datenbank einfügen (mit Duplikat-Prüfung)
     const insertedIds = [];
+    let skippedCount = 0;
+
     for (const beitrag of beitraegeToInsert) {
-      const result = await queryAsync(`
-        INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
-        VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?)
-      `, [mitgliedId, beitrag.betrag, beitrag.zahlungsdatum, dojoId, beitrag.beschreibung]);
-      insertedIds.push(result.insertId);
+      // Prüfe ob bereits ein Beitrag für diesen Monat existiert
+      const existing = await queryAsync(`
+        SELECT beitrag_id FROM beitraege
+        WHERE mitglied_id = ?
+          AND DATE_FORMAT(zahlungsdatum, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+          AND (magicline_description LIKE 'Beitrag%' OR magicline_description LIKE 'Aufnahme%' OR magicline_description IS NULL)
+        LIMIT 1
+      `, [mitgliedId, beitrag.zahlungsdatum]);
+
+      if (existing.length === 0) {
+        const result = await queryAsync(`
+          INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
+          VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?)
+        `, [mitgliedId, beitrag.betrag, beitrag.zahlungsdatum, dojoId, beitrag.beschreibung]);
+        insertedIds.push(result.insertId);
+      } else {
+        skippedCount++;
+      }
     }
 
-    logger.info('Initiale Beiträge erstellt:', {
+    logger.info('Beiträge für Vertragslaufzeit erstellt:', {
       mitglied_id: mitgliedId,
-      anzahl: beitraegeToInsert.length,
-      beitraege: beitraegeToInsert.map(b => ({ betrag: b.betrag, beschreibung: b.beschreibung }))
+      gesamt: beitraegeToInsert.length,
+      eingefuegt: insertedIds.length,
+      uebersprungen: skippedCount,
+      zeitraum: `${vertragsbeginn} bis ${endDate.toISOString().split('T')[0]}`
     });
 
     return {
       success: true,
       beitraege: beitraegeToInsert,
-      insertedIds
+      insertedIds,
+      skippedCount
     };
   } catch (error) {
-    logger.error('Fehler beim Generieren der initialen Beiträge:', error);
+    logger.error('Fehler beim Generieren der Beiträge:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generiert fehlende Beiträge für einen bestehenden Vertrag
+ * Nützlich für Nachgenerierung bei bestehenden Verträgen
+ */
+async function generateMissingBeitraege(vertragId) {
+  try {
+    // Hole Vertragsdaten
+    const vertraege = await queryAsync(`
+      SELECT v.*, m.dojo_id, t.price_cents, t.aufnahmegebuehr_cents
+      FROM vertraege v
+      JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+      LEFT JOIN tarife t ON v.tarif_id = t.id
+      WHERE v.id = ? AND v.status = 'aktiv'
+    `, [vertragId]);
+
+    if (vertraege.length === 0) {
+      return { success: false, error: 'Vertrag nicht gefunden oder nicht aktiv' };
+    }
+
+    const vertrag = vertraege[0];
+    const monatsbeitrag = vertrag.monatsbeitrag || (vertrag.price_cents ? vertrag.price_cents / 100 : 0);
+
+    if (monatsbeitrag <= 0) {
+      return { success: false, error: 'Kein Monatsbeitrag definiert' };
+    }
+
+    // Generiere fehlende Beiträge (ohne Aufnahmegebühr, die sollte schon existieren)
+    const result = await generateInitialBeitraege(
+      vertrag.mitglied_id,
+      vertrag.dojo_id,
+      vertrag.vertragsbeginn,
+      monatsbeitrag,
+      0, // Keine Aufnahmegebühr bei Nachgenerierung
+      vertrag.vertragsende,
+      vertrag.mindestlaufzeit_monate || 12
+    );
+
+    return result;
+  } catch (error) {
+    logger.error('Fehler beim Generieren fehlender Beiträge:', error);
     throw error;
   }
 }
@@ -345,5 +449,6 @@ module.exports = {
   ensureDocumentsDir,
   savePdfToMitgliedDokumente,
   createSepaMandate,
-  generateInitialBeitraege
+  generateInitialBeitraege,
+  generateMissingBeitraege
 };

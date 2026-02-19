@@ -6,6 +6,7 @@ const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // E-Mail Transporter
 const createTransporter = () => {
@@ -60,8 +61,9 @@ router.get('/:dojoId', (req, res) => {
 
 // =====================================================
 // PUT /api/agb/:dojoId/update - Dokumente aktualisieren
+// GESCHÜTZT: Nur Admins können Dokumente aktualisieren
 // =====================================================
-router.put('/:dojoId/update', async (req, res) => {
+router.put('/:dojoId/update', authenticateToken, requireAdmin, async (req, res) => {
   const { dojoId } = req.params;
   const {
     agb_text, agb_version,
@@ -179,8 +181,9 @@ router.put('/:dojoId/update', async (req, res) => {
 
 // =====================================================
 // GET /api/agb/:dojoId/members-need-acceptance - Mitglieder ohne Akzeptanz
+// GESCHÜTZT: Nur Admins können diese Liste sehen
 // =====================================================
-router.get("/:dojoId/members-need-acceptance", (req, res) => {
+router.get("/:dojoId/members-need-acceptance", authenticateToken, requireAdmin, (req, res) => {
   const { dojoId } = req.params;
 
   // Bei "all" oder "null" alle Dojos prüfen

@@ -8,6 +8,7 @@ const multer = require('multer');
 const AdmZip = require('adm-zip');
 const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
 
 // Auth Middleware
 const authenticateToken = (req, res, next) => {
@@ -19,14 +20,11 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Zugriff verweigert: Kein Token' });
   }
 
-  const secret = process.env.JWT_SECRET || 'your_jwt_secret_key';
-
-  jwt.verify(token, secret, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       logger.error('MagicLine Import: Token-Verifizierung fehlgeschlagen', {
         error: err.message,
-        tokenStart: token.substring(0, 20) + '...',
-        secretUsed: secret === 'your_jwt_secret_key' ? 'fallback' : 'env'
+        tokenStart: token.substring(0, 20) + '...'
       });
       return res.status(403).json({ error: 'Zugriff verweigert: Ungültiger Token', details: err.message });
     }
@@ -37,9 +35,30 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Multer Setup für ZIP-Upload
+// SECURITY: Dateigröße auf 50MB begrenzt, nur ZIP-Dateien erlaubt
 const upload = multer({
   dest: 'uploads/temp/',
-  limits: { fileSize: 500 * 1024 * 1024 } // 500MB
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB max (vorher 500MB - zu groß!)
+    files: 1 // Nur eine Datei pro Request
+  },
+  fileFilter: (req, file, cb) => {
+    // Erlaubte MIME-Types für ZIP-Dateien
+    const allowedMimes = [
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-zip',
+      'multipart/x-zip'
+    ];
+    // Prüfe auch Dateiendung
+    const isZipExtension = file.originalname.toLowerCase().endsWith('.zip');
+
+    if (allowedMimes.includes(file.mimetype) || isZipExtension) {
+      cb(null, true);
+    } else {
+      cb(new Error('Nur ZIP-Dateien sind erlaubt. Erkannter Typ: ' + file.mimetype), false);
+    }
+  }
 });
 
 /**

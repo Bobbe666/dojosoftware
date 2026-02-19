@@ -611,6 +611,336 @@ const getZahlungsartText = (zahlungsart) => {
   return arten[zahlungsart] || zahlungsart;
 };
 
+// ============================================================================
+// RECHNUNGS-PDF-GENERATOR - TDA International Design
+// ============================================================================
+
+// Hilfsfunktion: Config aus Key-Value Store laden
+const loadVerbandConfig = async () => {
+  const rows = await queryAsync('SELECT einstellung_key, einstellung_value FROM verband_einstellungen');
+  const config = {};
+  rows.forEach(row => {
+    config[row.einstellung_key] = row.einstellung_value;
+  });
+  return config;
+};
+
+const generateVerbandRechnungPdf = async (zahlungsId, res, typ = 'beitrag') => {
+  try {
+    let zahlung;
+
+    if (typ === 'beitrag') {
+      // Beitragsrechnung aus verbandsmitgliedschaft_zahlungen
+      [zahlung] = await queryAsync(`
+        SELECT z.*, vm.typ as mitglied_typ, vm.id as mitglied_id, vm.mitgliedsnummer,
+               vm.dojo_name, vm.person_vorname, vm.person_nachname,
+               vm.dojo_strasse, vm.dojo_plz, vm.dojo_ort, vm.dojo_land,
+               vm.person_strasse, vm.person_plz, vm.person_ort, vm.person_land
+        FROM verbandsmitgliedschaft_zahlungen z
+        JOIN verbandsmitgliedschaften vm ON z.verbandsmitgliedschaft_id = vm.id
+        WHERE z.id = ?
+      `, [zahlungsId]);
+    } else {
+      // Sonstige Rechnung aus verband_rechnungen
+      [zahlung] = await queryAsync(`
+        SELECT r.*, vm.typ as mitglied_typ, vm.id as mitglied_id, vm.mitgliedsnummer,
+               vm.dojo_name, vm.person_vorname, vm.person_nachname,
+               vm.dojo_strasse, vm.dojo_plz, vm.dojo_ort, vm.dojo_land,
+               vm.person_strasse, vm.person_plz, vm.person_ort, vm.person_land,
+               r.empfaenger_name, r.empfaenger_adresse
+        FROM verband_rechnungen r
+        LEFT JOIN verbandsmitgliedschaften vm ON r.empfaenger_id = vm.id AND r.empfaenger_typ = 'verbandsmitglied'
+        WHERE r.id = ?
+      `, [zahlungsId]);
+    }
+
+    if (!zahlung) {
+      throw new Error('Rechnung nicht gefunden');
+    }
+
+    // Verband-Einstellungen laden (Key-Value Store)
+    const config = await loadVerbandConfig();
+
+    // Verband-Daten
+    const verbandName = config.verband_name || 'Tiger & Dragon Association International';
+    const verbandKurzname = config.verband_kurzname || 'TDA Int\'l';
+    const verbandStrasse = config.verband_strasse || 'Ohmstr. 14';
+    const verbandPlz = config.verband_plz || '84137';
+    const verbandOrt = config.verband_ort || 'Vilsbiburg';
+    const verbandEmail = config.verband_email || 'info@tda-intl.com';
+    const verbandTelefon = config.verband_telefon || '';
+    const verbandWebsite = config.verband_website || 'www.tda-intl.com';
+    const verbandSteuernummer = config.verband_steuernummer || '';
+    const verbandUstId = config.verband_ustid || '';
+
+    // Bank-Daten
+    const bankName = config.sepa_bankname || 'Fyrst Bank';
+    const iban = config.sepa_iban || '';
+    const bic = config.sepa_bic || '';
+    const kontoinhaber = config.sepa_kontoinhaber || verbandName;
+
+    // Empfänger-Daten
+    let empfaengerName = '';
+    let empfaengerStrasse = '';
+    let empfaengerOrt = '';
+
+    if (zahlung.mitglied_typ === 'dojo') {
+      empfaengerName = zahlung.dojo_name || zahlung.empfaenger_name || '';
+      empfaengerStrasse = zahlung.dojo_strasse || '';
+      empfaengerOrt = `${zahlung.dojo_plz || ''} ${zahlung.dojo_ort || ''}`.trim();
+    } else {
+      empfaengerName = `${zahlung.person_vorname || ''} ${zahlung.person_nachname || ''}`.trim() || zahlung.empfaenger_name || '';
+      empfaengerStrasse = zahlung.person_strasse || '';
+      empfaengerOrt = `${zahlung.person_plz || ''} ${zahlung.person_ort || ''}`.trim();
+    }
+
+    // Mitgliedsnummer
+    const mitgliedsnummer = zahlung.mitgliedsnummer ||
+      (zahlung.mitglied_typ === 'dojo' ? `TDA-D-${String(zahlung.mitglied_id).padStart(5, '0')}` : `TDA-E-${String(zahlung.mitglied_id).padStart(5, '0')}`);
+
+    // Leistungsbeschreibung
+    const leistung = zahlung.mitglied_typ === 'dojo'
+      ? 'TDA Verbandsmitgliedschaft - Dojo'
+      : 'TDA Verbandsmitgliedschaft - Einzelperson';
+
+    // Beträge
+    const nettoPreis = Number(typ === 'beitrag' ? zahlung.betrag_netto : zahlung.summe_netto) || 0;
+    const mwstSatz = Number(zahlung.mwst_satz) || 19;
+    const mwstBetrag = Number(typ === 'beitrag' ? zahlung.mwst_betrag : zahlung.summe_mwst) || (nettoPreis * mwstSatz / 100);
+    const bruttoBetrag = Number(typ === 'beitrag' ? zahlung.betrag_brutto : zahlung.summe_brutto) || (nettoPreis + mwstBetrag);
+
+    // PDF erstellen
+    const doc = new PDFDocument({
+      size: 'A4',
+      margins: { top: 40, bottom: 40, left: 50, right: 50 },
+      info: {
+        Title: `Rechnung ${zahlung.rechnungsnummer}`,
+        Author: verbandName,
+        Subject: 'Rechnung',
+        Creator: 'TDA International'
+      }
+    });
+
+    // Response-Header setzen
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Rechnung-${zahlung.rechnungsnummer}.pdf"`);
+    doc.pipe(res);
+
+    const pageWidth = 595.28;
+    const pageHeight = 841.89;
+    const leftMargin = 50;
+    const rightMargin = 545;
+
+    // === ABSENDERZEILE (klein, oben) ===
+    doc.fontSize(7).fillColor('#666');
+    const absenderzeile = [verbandName, verbandStrasse, `${verbandPlz} ${verbandOrt}`].filter(Boolean).join(' | ');
+    doc.text(absenderzeile, leftMargin, 45, { width: 300 });
+    doc.moveTo(leftMargin, 58).lineTo(leftMargin + 300, 58).strokeColor('#000').lineWidth(0.5).stroke();
+
+    // === LOGO (rechts oben) ===
+    const logoPath = path.join(__dirname, '../assets/tda-logo.png');
+    const logoPathAlt = '/var/www/tda-intl/tda-logo.png';
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 480, 40, { width: 60 });
+    } else if (fs.existsSync(logoPathAlt)) {
+      doc.image(logoPathAlt, 480, 40, { width: 60 });
+    } else {
+      // Platzhalter-Logo
+      doc.circle(510, 70, 25).lineWidth(2).strokeColor('#000').stroke();
+      doc.fontSize(10).fillColor('#000').text('TDA', 497, 65);
+    }
+
+    // === EMPFÄNGERADRESSE ===
+    doc.fontSize(10).fillColor('#000');
+    let addrY = 70;
+    doc.text(empfaengerName, leftMargin, addrY);
+    if (empfaengerStrasse) doc.text(empfaengerStrasse, leftMargin, addrY + 14);
+    if (empfaengerOrt) doc.text(empfaengerOrt, leftMargin, addrY + 28);
+
+    // === RECHNUNGSDETAILS (rechts) ===
+    doc.fontSize(8).fillColor('#000');
+    let metaY = 105;
+    doc.text(`Rechnungs-Nr.: ${zahlung.rechnungsnummer || ''}`, 380, metaY);
+    doc.text(`Mitgliedsnummer: ${mitgliedsnummer}`, 380, metaY + 12);
+    doc.text(`Belegdatum: ${formatDate(zahlung.rechnungsdatum)}`, 380, metaY + 24);
+    if (typ === 'beitrag' && zahlung.zeitraum_von && zahlung.zeitraum_bis) {
+      doc.text(`Leistungszeitraum: ${formatDate(zahlung.zeitraum_von)} - ${formatDate(zahlung.zeitraum_bis)}`, 380, metaY + 36);
+    }
+
+    // === TITEL ===
+    doc.font('Helvetica-Bold').fontSize(16).fillColor('#000');
+    doc.text('RECHNUNG', leftMargin, 165);
+    doc.fontSize(8).font('Helvetica').fillColor('#666');
+    doc.text('Seite 1 von 1', rightMargin - 60, 168);
+    doc.moveTo(leftMargin, 185).lineTo(rightMargin, 185).strokeColor('#000').lineWidth(1.5).stroke();
+
+    // === POSITIONSTABELLE ===
+    let tableY = 200;
+
+    // Tabellenkopf
+    doc.rect(leftMargin, tableY, rightMargin - leftMargin, 18).fill('#f3f4f6');
+    doc.moveTo(leftMargin, tableY).lineTo(rightMargin, tableY).strokeColor('#000').lineWidth(0.5).stroke();
+    doc.moveTo(leftMargin, tableY + 18).lineTo(rightMargin, tableY + 18).stroke();
+
+    doc.font('Helvetica-Bold').fontSize(7).fillColor('#000');
+    doc.text('Pos.', leftMargin + 5, tableY + 5);
+    doc.text('Bezeichnung', leftMargin + 35, tableY + 5);
+    doc.text('Art.-Nr.', 200, tableY + 5);
+    doc.text('Menge', 260, tableY + 5);
+    doc.text('Einheit', 300, tableY + 5);
+    doc.text('Preis', 350, tableY + 5);
+    doc.text('USt %', 410, tableY + 5);
+    doc.text('Betrag EUR', 470, tableY + 5, { width: 70, align: 'right' });
+
+    // Tabelleninhalt
+    tableY += 22;
+    doc.font('Helvetica').fontSize(8);
+
+    if (typ === 'beitrag') {
+      // Beitragsrechnung - eine Position
+      const zeitraum = zahlung.zeitraum_von && zahlung.zeitraum_bis
+        ? `Zeitraum: ${formatDate(zahlung.zeitraum_von)} - ${formatDate(zahlung.zeitraum_bis)}`
+        : '';
+
+      doc.text('1', leftMargin + 5, tableY);
+      doc.text(leistung, leftMargin + 35, tableY, { width: 155 });
+      if (zeitraum) {
+        doc.fontSize(6).fillColor('#666').text(zeitraum, leftMargin + 35, tableY + 10);
+        doc.fontSize(8).fillColor('#000');
+      }
+      doc.text(zahlung.mitglied_typ === 'dojo' ? 'TDA-VM-DOJO' : 'TDA-VM-EINZEL', 200, tableY);
+      doc.text('1', 260, tableY);
+      doc.text('Jahr', 300, tableY);
+      doc.text(formatCurrency(nettoPreis), 350, tableY);
+      doc.text(`${mwstSatz.toFixed(0)}%`, 410, tableY);
+      doc.text(formatCurrency(nettoPreis), 470, tableY, { width: 70, align: 'right' });
+      tableY += 30;
+    } else {
+      // Sonstige Rechnung - Positionen laden
+      const positionen = await queryAsync(
+        'SELECT * FROM verband_rechnungspositionen WHERE rechnung_id = ?',
+        [zahlungsId]
+      );
+
+      if (positionen.length > 0) {
+        let posNr = 1;
+        for (const pos of positionen) {
+          doc.text(String(posNr), leftMargin + 5, tableY);
+          doc.text(pos.beschreibung || pos.artikel_name || 'Position', leftMargin + 35, tableY, { width: 155 });
+          doc.text(pos.artikelnummer || '-', 200, tableY);
+          doc.text(String(pos.menge || 1), 260, tableY);
+          doc.text(pos.einheit || 'Stk', 300, tableY);
+          doc.text(formatCurrency(pos.einzelpreis || 0), 350, tableY);
+          doc.text(`${(pos.mwst_satz || mwstSatz).toFixed(0)}%`, 410, tableY);
+          doc.text(formatCurrency(pos.gesamt_netto || pos.einzelpreis * (pos.menge || 1)), 470, tableY, { width: 70, align: 'right' });
+          tableY += 18;
+          posNr++;
+        }
+      } else {
+        doc.text('1', leftMargin + 5, tableY);
+        doc.text('Gemäß Bestellung', leftMargin + 35, tableY);
+        doc.text('-', 200, tableY);
+        doc.text('1', 260, tableY);
+        doc.text('Stk', 300, tableY);
+        doc.text(formatCurrency(nettoPreis), 350, tableY);
+        doc.text(`${mwstSatz.toFixed(0)}%`, 410, tableY);
+        doc.text(formatCurrency(nettoPreis), 470, tableY, { width: 70, align: 'right' });
+        tableY += 18;
+      }
+    }
+
+    // Trennlinie unter Positionen
+    doc.moveTo(leftMargin, tableY).lineTo(rightMargin, tableY).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
+
+    // === SUMMENBEREICH (rechts) ===
+    let sumY = tableY + 15;
+    const sumLeft = 350;
+    const sumRight = rightMargin;
+
+    doc.font('Helvetica').fontSize(8).fillColor('#000');
+
+    // Zwischensumme
+    doc.text('Zwischensumme:', sumLeft, sumY);
+    doc.text(formatCurrency(nettoPreis), sumRight - 75, sumY, { width: 70, align: 'right' });
+    sumY += 14;
+
+    // Summe Netto
+    doc.text('Summe:', sumLeft, sumY);
+    doc.text(formatCurrency(nettoPreis), sumRight - 75, sumY, { width: 70, align: 'right' });
+    sumY += 14;
+
+    // MwSt
+    doc.text(`${mwstSatz.toFixed(0)}% USt. auf EUR ${formatCurrency(nettoPreis)}:`, sumLeft, sumY);
+    doc.text(formatCurrency(mwstBetrag), sumRight - 75, sumY, { width: 70, align: 'right' });
+    sumY += 5;
+
+    // Endbetrag (fett, mit Rahmen)
+    sumY += 8;
+    doc.moveTo(sumLeft, sumY).lineTo(sumRight, sumY).strokeColor('#000').lineWidth(1.5).stroke();
+    sumY += 5;
+    doc.font('Helvetica-Bold').fontSize(10);
+    doc.text('Endbetrag:', sumLeft, sumY);
+    doc.text(formatCurrency(bruttoBetrag), sumRight - 75, sumY, { width: 70, align: 'right' });
+    sumY += 12;
+    doc.moveTo(sumLeft, sumY).lineTo(sumRight, sumY).strokeColor('#000').lineWidth(1.5).stroke();
+
+    // === ZAHLUNGSBEDINGUNGEN ===
+    let payY = sumY + 30;
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#000');
+    doc.text('Bitte beachten Sie unsere Zahlungsbedingung:', leftMargin, payY);
+    payY += 14;
+    doc.font('Helvetica').fontSize(9);
+    doc.text(`Ohne Abzug bis zum ${formatDate(zahlung.faellig_am)}.`, leftMargin, payY);
+
+    // Bankverbindung
+    if (iban) {
+      payY += 20;
+      doc.font('Helvetica-Bold').text('Bankverbindung:', leftMargin, payY);
+      payY += 14;
+      doc.font('Helvetica');
+      doc.text(`Empfänger: ${kontoinhaber}`, leftMargin, payY);
+      payY += 12;
+      if (bankName) {
+        doc.text(`Bank: ${bankName}`, leftMargin, payY);
+        payY += 12;
+      }
+      doc.text(`IBAN: ${iban}`, leftMargin, payY);
+      payY += 12;
+      if (bic) {
+        doc.text(`BIC: ${bic}`, leftMargin, payY);
+        payY += 12;
+      }
+      doc.text(`Verwendungszweck: ${zahlung.rechnungsnummer}`, leftMargin, payY);
+    }
+
+    // === FOOTER ===
+    const footerY = pageHeight - 60;
+    doc.moveTo(leftMargin, footerY).lineTo(rightMargin, footerY).strokeColor('#ccc').lineWidth(0.5).stroke();
+
+    doc.font('Helvetica').fontSize(7).fillColor('#666');
+    const footerLine1 = [verbandName, verbandStrasse, `${verbandPlz} ${verbandOrt}`, verbandEmail, verbandTelefon].filter(Boolean).join(' | ');
+    doc.text(footerLine1, leftMargin, footerY + 8, { align: 'center', width: rightMargin - leftMargin });
+
+    if (iban) {
+      const footerLine2 = [bankName, kontoinhaber, iban, bic].filter(Boolean).join(' | ');
+      doc.text(footerLine2, leftMargin, footerY + 20, { align: 'center', width: rightMargin - leftMargin });
+    }
+
+    if (verbandWebsite) {
+      doc.text(`Web: ${verbandWebsite}`, leftMargin, footerY + 32, { align: 'center', width: rightMargin - leftMargin });
+    }
+
+    doc.end();
+
+  } catch (error) {
+    logger.error('Rechnungs-PDF-Generierung fehlgeschlagen:', { error: error.message, stack: error.stack, zahlungsId, typ });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'PDF konnte nicht erstellt werden' });
+    }
+  }
+};
+
 module.exports = {
-  generateVerbandVertragPdf
+  generateVerbandVertragPdf,
+  generateVerbandRechnungPdf
 };

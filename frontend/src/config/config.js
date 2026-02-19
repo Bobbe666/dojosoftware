@@ -17,10 +17,18 @@ const API_URLS = {
   testing: 'http://localhost:5001/api'
 };
 
+// Bild-URLs (ohne /api) für Uploads und statische Dateien
+const IMAGE_BASE_URLS = {
+  development: 'http://localhost:5001',
+  production: '',  // Leer = relativ zur aktuellen Domain
+  testing: 'http://localhost:5001'
+};
+
 // Basis-Konfiguration
 const config = {
   // API-Einstellungen
   apiBaseUrl: API_URLS[import.meta.env.MODE] || API_URLS.development,
+  imageBaseUrl: IMAGE_BASE_URLS[import.meta.env.MODE] || IMAGE_BASE_URLS.development,
   apiTimeout: 10000, // 10 Sekunden
   
   // Authentifizierung

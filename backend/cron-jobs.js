@@ -3,6 +3,7 @@ const db = require('./db');
 const logger = require('./utils/logger');
 const { pruefeDokumentenAufbewahrung } = require('./services/documentRetentionService');
 const { checkBirthdays } = require('./services/birthdayService');
+const { processExpiredTrials, sendTrialReminders } = require('./services/featureAccessService');
 
 // Helper: Promise-basierte DB-Query
 function queryAsync(sql, params = []) {
@@ -141,6 +142,72 @@ function initCronJobs() {
   });
 
   /**
+   * Feature-Trials: Abgelaufene Trials deaktivieren
+   * Läuft täglich um 00:30 Uhr
+   * Setzt Status von abgelaufenen Trials auf 'expired' und loggt Zugriffsentzug
+   */
+  cron.schedule('30 0 * * *', async () => {
+    try {
+      logger.info('⏱️ Feature-Trials Ablauf-Check Cron-Job gestartet');
+
+      const result = await processExpiredTrials();
+
+      if (result.processed > 0) {
+        logger.success(`✅ Feature-Trials Ablauf-Check erfolgreich: ${result.processed} Trials abgelaufen`, {
+          processed: result.processed,
+          trials: result.trials
+        });
+      } else {
+        logger.info('ℹ️ Feature-Trials Ablauf-Check: Keine abgelaufenen Trials', {
+          zeitpunkt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      logger.error('❌ Feature-Trials Ablauf-Check Cron-Job Fehler', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  });
+
+  /**
+   * Feature-Trials: Erinnerungen senden
+   * Läuft täglich um 09:00 Uhr
+   * Sendet Erinnerungen an Nutzer deren Trial bald abläuft (7 Tage, 3 Tage, 1 Tag vorher)
+   */
+  cron.schedule('0 9 * * *', async () => {
+    try {
+      logger.info('📧 Feature-Trials Erinnerungs-Cron-Job gestartet');
+
+      const result = await sendTrialReminders();
+
+      if (result.error) {
+        logger.error('❌ Feature-Trials Erinnerungen Fehler', { error: result.error });
+        return;
+      }
+
+      const totalSent = (result.reminders7d || 0) + (result.reminders3d || 0) + (result.reminders1d || 0);
+
+      if (totalSent > 0) {
+        logger.success(`✅ Feature-Trials Erinnerungen gesendet: ${totalSent} Benachrichtigungen`, {
+          reminders7d: result.reminders7d,
+          reminders3d: result.reminders3d,
+          reminders1d: result.reminders1d
+        });
+      } else {
+        logger.info('ℹ️ Feature-Trials Erinnerungen: Keine Erinnerungen zu senden', {
+          zeitpunkt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      logger.error('❌ Feature-Trials Erinnerungs-Cron-Job Fehler', {
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  });
+
+  /**
    * Automatische Lastschriftläufe Cron-Job
    * Läuft jede Minute und prüft ob ein Zeitplan ausgeführt werden soll
    * Führt geplante Lastschriftläufe automatisch aus
@@ -164,6 +231,11 @@ function initCronJobs() {
         description: 'Checkt Mitglieder vom Vortag automatisch aus'
       },
       {
+        name: 'Feature-Trials Ablauf-Check',
+        schedule: '00:30:00 täglich',
+        description: 'Deaktiviert abgelaufene Feature-Trials automatisch'
+      },
+      {
         name: 'Aufbewahrungsfristen-Prüfung',
         schedule: '02:00:00 täglich',
         description: 'Löscht Dokumente/Rechnungen nach 10 Jahren (§ 147 AO)'
@@ -172,6 +244,11 @@ function initCronJobs() {
         name: 'Geburtstags-Check',
         schedule: '08:00:00 täglich',
         description: 'Sendet Geburtstagswünsche an Mitglieder und benachrichtigt Admins'
+      },
+      {
+        name: 'Feature-Trials Erinnerungen',
+        schedule: '09:00:00 täglich',
+        description: 'Sendet Erinnerungen wenn Trials bald ablaufen (3 Tage, 1 Tag)'
       },
       {
         name: 'Lastschrift-Scheduler',

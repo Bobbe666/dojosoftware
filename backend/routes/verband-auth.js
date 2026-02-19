@@ -14,6 +14,7 @@ const db = require('../db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailTemplates');
 
 // Logo Upload Konfiguration
 const logoStorage = multer.diskStorage({
@@ -49,7 +50,8 @@ const {
   LIMITS
 } = require('../utils/constants');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dojo-secret-key-2024';
+// JWT_SECRET wird aus der zentralen auth.js importiert (hat Startup-Check)
+const { JWT_SECRET } = require('../middleware/auth');
 
 // Debug-Logging
 router.use((req, res, next) => {
@@ -229,8 +231,17 @@ router.post('/register', async (req, res) => {
       values
     );
 
-    // TODO: Verification-E-Mail senden
-    logger.debug('📧 Verification-Token für ${email}: ${verification_token}');
+    // Verification-E-Mail senden
+    try {
+      await sendVerificationEmail(email, {
+        name: `${vorname} ${nachname}`,
+        verificationToken: verification_token,
+        verificationUrl: `https://tda-intl.com/verify?token=${verification_token}`
+      });
+      logger.info(`Verification-Email gesendet an ${email}`);
+    } catch (emailErr) {
+      logger.warn(`Verification-Email konnte nicht gesendet werden: ${emailErr.message}`);
+    }
 
     // Super-Admin Benachrichtigung erstellen
     try {
@@ -264,19 +275,21 @@ router.post('/register', async (req, res) => {
 
 /**
  * POST /api/verband-auth/login
- * Login für Verbandsmitglieder
+ * Login für Verbandsmitglieder (E-Mail oder Benutzername/Mitgliedsnummer)
  */
 router.post('/login', async (req, res) => {
-  console.log('>>> LOGIN AUFGERUFEN <<<', req.body?.email);
   try {
-    const { email, passwort } = req.body;
+    const { email, benutzername, passwort } = req.body;
+    const loginIdentifier = email || benutzername;
 
-    if (!email || !passwort) {
+    if (!loginIdentifier || !passwort) {
       return res.status(400).json({ error: ERROR_MESSAGES.AUTH.EMAIL_PASSWORD_REQUIRED });
     }
 
+    logger.info('Login-Versuch:', { loginIdentifier, isEmail: loginIdentifier.includes('@') });
+
     // Mitglied suchen - COALESCE für verknüpfte Dojos
-    // Explizite Feldliste um Überschreibung durch vm.* zu vermeiden
+    // Suche nach E-Mail ODER Mitgliedsnummer (Benutzername)
     const members = await queryAsync(
       `SELECT
         vm.id, vm.typ, vm.dojo_id, vm.mitglied_id, vm.mitgliedsnummer,
@@ -299,13 +312,13 @@ router.post('/login', async (req, res) => {
         COALESCE(d.land, vm.dojo_land) as dojo_land
       FROM verbandsmitgliedschaften vm
       LEFT JOIN dojo d ON vm.dojo_id = d.id
-      WHERE vm.person_email = ? OR vm.dojo_email = ? OR d.email = ?`,
-      [email, email, email]
+      WHERE vm.person_email = ? OR vm.dojo_email = ? OR d.email = ? OR vm.mitgliedsnummer = ?`,
+      [loginIdentifier, loginIdentifier, loginIdentifier, loginIdentifier]
     );
 
     // DEBUG
     logger.info('Login Query Result:', {
-      email,
+      loginIdentifier,
       foundMembers: members.length,
       firstMember: members[0] ? { id: members[0].id, dojo_name: members[0].dojo_name, typ: members[0].typ } : null
     });
@@ -374,6 +387,64 @@ router.post('/login', async (req, res) => {
 });
 
 /**
+ * POST /api/verband-auth/admin-login
+ * Admin-Login für TDA-INTL Website
+ * SECURITY: Credentials aus Environment Variables, nicht hardcoded
+ */
+router.post('/admin-login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Benutzername und Passwort erforderlich' });
+    }
+
+    // SECURITY: Admin-Credentials aus Umgebungsvariablen
+    const adminUsername = process.env.TDA_ADMIN_USERNAME;
+    const adminPasswordHash = process.env.TDA_ADMIN_PASSWORD_HASH;
+
+    if (!adminUsername || !adminPasswordHash) {
+      logger.error('KRITISCH: TDA_ADMIN_USERNAME oder TDA_ADMIN_PASSWORD_HASH nicht konfiguriert!');
+      return res.status(500).json({ error: 'Admin-Login nicht konfiguriert' });
+    }
+
+    // Benutzername prüfen (case-insensitive)
+    if (username.toLowerCase() !== adminUsername.toLowerCase()) {
+      logger.warn('Admin-Login fehlgeschlagen: Ungültiger Benutzername', { username });
+      return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+    }
+
+    // Passwort mit bcrypt prüfen
+    const isValid = await bcrypt.compare(password, adminPasswordHash);
+    if (!isValid) {
+      logger.warn('Admin-Login fehlgeschlagen: Ungültiges Passwort', { username });
+      return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
+    }
+
+    // JWT Token für Admin erstellen
+    const token = jwt.sign(
+      {
+        role: 'tda_admin',
+        username: adminUsername
+      },
+      JWT_SECRET,
+      { expiresIn: '8h' }  // Kürzere Gültigkeit für Admin-Token
+    );
+
+    logger.info('Admin-Login erfolgreich', { username });
+
+    res.json({
+      success: true,
+      token
+    });
+
+  } catch (error) {
+    logger.error('Admin-Login-Fehler:', error);
+    res.status(500).json({ error: 'Login fehlgeschlagen' });
+  }
+});
+
+/**
  * POST /api/verband-auth/verify-email
  * E-Mail-Adresse verifizieren
  */
@@ -438,8 +509,16 @@ router.post('/forgot-password', async (req, res) => {
       [reset_token, reset_expires, members[0].id]
     );
 
-    // TODO: Reset-E-Mail senden
-    logger.debug('📧 Reset-Token für ${email}: ${reset_token}');
+    // Reset-E-Mail senden
+    try {
+      await sendPasswordResetEmail(email, {
+        resetToken: reset_token,
+        resetUrl: `https://tda-intl.com/reset-password?token=${reset_token}`
+      });
+      logger.info(`Password-Reset-Email gesendet an ${email}`);
+    } catch (emailErr) {
+      logger.warn(`Password-Reset-Email konnte nicht gesendet werden: ${emailErr.message}`);
+    }
 
     res.json({ success: true, message: 'Falls die E-Mail existiert, wurde ein Reset-Link gesendet.' });
 
@@ -660,16 +739,31 @@ router.put('/change-password', verifyVerbandToken, async (req, res) => {
 
 /**
  * GET /api/verband-auth/invoices
- * Eigene Rechnungen abrufen
+ * Eigene Rechnungen abrufen (aus beiden Rechnungstabellen)
  */
 router.get('/invoices', verifyVerbandToken, async (req, res) => {
   try {
-    const invoices = await queryAsync(
-      `SELECT * FROM verbandsmitgliedschaft_zahlungen
-       WHERE verbandsmitgliedschaft_id = ?
-       ORDER BY rechnungsdatum DESC`,
+    // Rechnungen aus verbandsmitgliedschaft_zahlungen (Beitragsrechnungen)
+    const beitragsRechnungen = await queryAsync(
+      `SELECT id, rechnungsnummer, rechnungsdatum, faellig_am, betrag_brutto as betrag,
+              status, bezahlt_am, 'beitrag' as typ
+       FROM verbandsmitgliedschaft_zahlungen
+       WHERE verbandsmitgliedschaft_id = ?`,
       [req.verbandUser.id]
     );
+
+    // Rechnungen aus verband_rechnungen (Shop, Sonstiges)
+    const sonstigeRechnungen = await queryAsync(
+      `SELECT id, rechnungsnummer, rechnungsdatum, faellig_am, summe_brutto as betrag,
+              status, bezahlt_am, 'sonstig' as typ
+       FROM verband_rechnungen
+       WHERE empfaenger_typ = 'verbandsmitglied' AND empfaenger_id = ?`,
+      [req.verbandUser.id]
+    );
+
+    // Kombinieren und nach Datum sortieren
+    const invoices = [...beitragsRechnungen, ...sonstigeRechnungen]
+      .sort((a, b) => new Date(b.rechnungsdatum) - new Date(a.rechnungsdatum));
 
     res.json({ success: true, invoices });
 
@@ -685,12 +779,24 @@ router.get('/invoices', verifyVerbandToken, async (req, res) => {
  */
 router.get('/invoices/:id/pdf', verifyVerbandToken, async (req, res) => {
   try {
-    // Prüfen ob die Rechnung zum eingeloggten Nutzer gehört
-    const invoice = await queryAsync(
-      `SELECT * FROM verbandsmitgliedschaft_zahlungen
-       WHERE id = ? AND verbandsmitgliedschaft_id = ?`,
-      [req.params.id, req.verbandUser.id]
-    );
+    const typ = req.query.typ || 'beitrag';
+    let invoice;
+
+    if (typ === 'beitrag') {
+      // Beitragsrechnung aus verbandsmitgliedschaft_zahlungen
+      invoice = await queryAsync(
+        `SELECT * FROM verbandsmitgliedschaft_zahlungen
+         WHERE id = ? AND verbandsmitgliedschaft_id = ?`,
+        [req.params.id, req.verbandUser.id]
+      );
+    } else {
+      // Sonstige Rechnung aus verband_rechnungen
+      invoice = await queryAsync(
+        `SELECT * FROM verband_rechnungen
+         WHERE id = ? AND empfaenger_typ = 'verbandsmitglied' AND empfaenger_id = ?`,
+        [req.params.id, req.verbandUser.id]
+      );
+    }
 
     if (invoice.length === 0) {
       return res.status(404).json({ error: 'Rechnung nicht gefunden oder kein Zugriff' });
@@ -698,7 +804,7 @@ router.get('/invoices/:id/pdf', verifyVerbandToken, async (req, res) => {
 
     // PDF generieren
     const { generateVerbandRechnungPdf } = require('../utils/verbandVertragPdfGenerator');
-    await generateVerbandRechnungPdf(req.params.id, res);
+    await generateVerbandRechnungPdf(req.params.id, res, typ);
 
   } catch (error) {
     logger.error('Invoice PDF-Fehler:', error);
@@ -1628,7 +1734,7 @@ router.post('/logo', verifyVerbandToken, logoUpload.single('logo'), async (req, 
       return res.status(400).json({ error: 'Keine Datei hochgeladen' });
     }
 
-    const memberId = req.user.id;
+    const memberId = req.verbandUser.id;
     const logoUrl = `/api/verband-auth/logo/${path.basename(req.file.path)}`;
 
     // Altes Logo löschen falls vorhanden
@@ -1669,7 +1775,8 @@ router.post('/logo', verifyVerbandToken, logoUpload.single('logo'), async (req, 
  * Logo-Datei abrufen
  */
 router.get('/logo/:filename', (req, res) => {
-  const filename = req.params.filename;
+  // SECURITY: path.basename() verhindert Path Traversal Attacken (../../../etc/passwd)
+  const filename = path.basename(req.params.filename);
   const filepath = path.join(__dirname, '../uploads/verband-logos', filename);
 
   if (!fs.existsSync(filepath)) {
@@ -1699,7 +1806,7 @@ router.get('/logo/:filename', (req, res) => {
  */
 router.delete('/logo', verifyVerbandToken, async (req, res) => {
   try {
-    const memberId = req.user.id;
+    const memberId = req.verbandUser.id;
 
     const existing = await queryAsync(
       `SELECT logo_url FROM verbandsmitgliedschaften WHERE id = ?`,

@@ -8,6 +8,7 @@ const db = require('../../db');
 const bcrypt = require('bcryptjs');
 const auditLog = require('../../services/auditLogService');
 const { requireFields, validateId, sanitizeStrings } = require('../../middleware/validation');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 const router = express.Router();
 
 // GET / - Mitglieder mit optionalem Stil-Filter
@@ -157,7 +158,8 @@ router.get('/by-email/:email', (req, res) => {
 // GET /:id - Einzelnes Mitglied Vollprofil
 router.get('/:id', (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   if (isNaN(id)) {
     return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
@@ -166,9 +168,9 @@ router.get('/:id', (req, res) => {
   let whereConditions = ['m.mitglied_id = ?'];
   let queryParams = [id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -210,7 +212,8 @@ router.put('/:id',
   sanitizeStrings(['vorname', 'nachname', 'email', 'strasse', 'ort', 'bemerkungen']),
   (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
     const updateFields = req.body;
 
     const allowedFields = ['stil_id', 'gurtfarbe', 'letzte_pruefung', 'vorname', 'nachname', 'email', 'telefon', 'telefon_mobil', 'strasse', 'hausnummer', 'plz', 'ort', 'gewicht', 'vertreter1_typ', 'vertreter1_name', 'vertreter1_telefon', 'vertreter1_email', 'vertreter2_typ', 'vertreter2_name', 'vertreter2_telefon', 'vertreter2_email'];
@@ -231,9 +234,9 @@ router.put('/:id',
     let whereConditions = ['mitglied_id = ?'];
     values.push(id);
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       whereConditions.push('dojo_id = ?');
-      values.push(parseInt(dojo_id));
+      values.push(secureDojoId);
     }
 
     const query = `

@@ -16,6 +16,36 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '2.7.0',
+    date: '2026-02-17',
+    type: 'feature',
+    title: 'Freunde werben Freunde & Systemstabilität',
+    highlights: [
+      'Freunde werben Freunde - Empfehlungssystem',
+      'Promo-Codes für Neuanmeldungen',
+      'Prämien-Staffelung nach Vertragslaufzeit',
+      'Automatische Wartungsmeldung bei Server-Ausfall',
+      'Service Worker Auto-Update ohne Cache-Probleme'
+    ],
+    details: 'Neues Empfehlungssystem unter Buddy-Gruppen → Freunde werben. Mitglieder können Promo-Codes teilen und erhalten Prämien wenn geworbene Mitglieder Verträge abschließen. Außerdem: Bei Server-Wartung erscheint jetzt automatisch eine Hinweismeldung mit Countdown. Service Worker aktualisiert sich automatisch - kein manuelles Cache-Leeren mehr nötig.',
+    files: ['FreundeWerbenFreunde.jsx', 'ApiHealthCheck.jsx', 'main.jsx', 'referral.js']
+  },
+  {
+    version: '2.6.0',
+    date: '2026-02-16',
+    type: 'feature',
+    title: 'Integriertes Hilfesystem',
+    highlights: [
+      'Neuer Hilfe-Tab im Dashboard',
+      '15 Kategorien mit 30+ Artikeln',
+      'Suchfunktion in der Hilfe',
+      'Anleitungen zu allen Funktionsbereichen',
+      'Tipps & Tricks für den Alltag'
+    ],
+    details: 'Umfangreiche Hilfe direkt in der Software. Zu finden unter dem neuen Tab "Hilfe" im Dashboard. Kategorien: Erste Schritte, Mitglieder, Check-In, Finanzen, Kurse, Events, Personal, Berichte, 10er-Karten, Buddy-System und mehr.',
+    files: ['HilfeCenter.jsx', 'HilfeCenter.css', 'Dashboard.jsx']
+  },
+  {
     version: '2.5.0',
     date: '2026-01-28',
     type: 'feature',

@@ -3,11 +3,13 @@ const router = express.Router();
 const PaymentProviderFactory = require('../services/PaymentProviderFactory');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Get current payment provider status
 router.get('/status', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.user?.dojo_id || req.query.dojo_id || 1;
+        // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+        const dojoId = getSecureDojoId(req) || 1;
         const status = await PaymentProviderFactory.getProviderStatus(dojoId);
         res.json(status);
 
@@ -23,7 +25,8 @@ router.get('/status', authenticateToken, async (req, res) => {
 // Configure payment provider
 router.post('/configure', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.user?.dojo_id || req.body.dojo_id;
+        // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+        const dojoId = getSecureDojoId(req);
         const {
             payment_provider,
             stripe_secret_key,
@@ -71,7 +74,8 @@ router.post('/configure', authenticateToken, async (req, res) => {
 // Test payment provider configuration
 router.post('/test', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.user?.dojo_id || req.body.dojo_id;
+        // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+        const dojoId = getSecureDojoId(req);
         const provider = await PaymentProviderFactory.getProvider(dojoId);
         const isConfigured = await provider.isConfigured();
         const configStatus = await provider.getConfigurationStatus();
@@ -126,7 +130,8 @@ router.get('/logs', authenticateToken, async (req, res) => {
 // Create payment intent (Stripe)
 router.post('/payment-intent', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.user?.dojo_id || req.body.dojo_id;
+        // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+        const dojoId = getSecureDojoId(req);
         const { mitglied_id, amount, description, currency = 'eur', rechnung_id, reference, referenceType } = req.body;
 
         if (!amount) {

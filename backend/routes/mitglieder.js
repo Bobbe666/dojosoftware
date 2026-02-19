@@ -8,17 +8,51 @@ const auditLog = require("../services/auditLogService");
 const { requireFields, validateEmail, validateDate, validateId, sanitizeStrings } = require('../middleware/validation');
 const router = express.Router();
 
+/**
+ * 🔒 SICHERHEIT: Extrahiert die gültige dojo_id aus dem Request
+ * - Für normale User: Erzwingt req.user.dojo_id (ignoriert Query-Parameter)
+ * - Für Super-Admins: Erlaubt alle Dojos
+ * @returns {number|null} dojo_id oder null für Super-Admin
+ */
+function getSecureDojoId(req) {
+  const userDojoId = req.user?.dojo_id;
+  const userRole = req.user?.rolle;
+
+  // Super-Admin (role=super_admin ODER admin mit dojo_id=null) darf alles
+  const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !userDojoId);
+
+  if (isSuperAdmin) {
+    // Super-Admin darf optional ein Dojo aus Query wählen, oder alle sehen
+    const queryDojoId = req.query.dojo_id;
+    if (queryDojoId && queryDojoId !== 'all') {
+      return parseInt(queryDojoId, 10);
+    }
+    return null; // null = alle Dojos
+  }
+
+  // Normale User: IMMER ihr eigenes Dojo
+  return userDojoId ? parseInt(userDojoId, 10) : null;
+}
+
+/**
+ * 🔒 SICHERHEIT: Prüft ob User auf ein bestimmtes Dojo zugreifen darf
+ */
+function canAccessDojo(req, targetDojoId) {
+  const userDojoId = req.user?.dojo_id;
+  const userRole = req.user?.rolle;
+  const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !userDojoId);
+
+  return isSuperAdmin || userDojoId === targetDojoId;
+}
+
 // Mock-Daten wurden entfernt - verwende immer echte Datenbank
 
 // ✅ NEU: API für Anwesenheit – aktive Mitglieder nach Stil filtern + DOJO-FILTER
 router.get("/", (req, res) => {
-    let { stil, dojo_id } = req.query;
+    const { stil } = req.query;
 
-    // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
-    if (req.user && req.user.dojo_id) {
-        dojo_id = req.user.dojo_id.toString();
-        logger.debug('🔒 Tenant-Filter erzwungen:', { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
-    }
+    // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token (nicht aus Query!)
+    const secureDojoId = getSecureDojoId(req);
 
     // 🔒 DOJO-FILTER: Baue WHERE-Bedingungen
     let whereConditions = ['m.aktiv = 1'];
@@ -30,10 +64,10 @@ router.get("/", (req, res) => {
         queryParams.push(stil);
     }
 
-    // 🔒 Dojo-Filter
-    if (dojo_id && dojo_id !== 'all') {
+    // 🔒 Dojo-Filter (erzwungen für normale User)
+    if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -77,21 +111,16 @@ router.get("/", (req, res) => {
 
 // ✅ API: Alle Mitglieder abrufen (inkl. Stile) - ERWEITERT + DOJO-FILTER
 router.get("/all", (req, res) => {
-    let { dojo_id } = req.query;
-
-    // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
-    if (req.user && req.user.dojo_id) {
-        dojo_id = req.user.dojo_id.toString();
-        logger.debug('🔒 Mitglieder /all Tenant-Filter erzwungen:', { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
-    }
+    // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+    const secureDojoId = getSecureDojoId(req);
 
     // 🔒 DOJO-FILTER: Baue WHERE-Clause
     let whereClause = '';
     let queryParams = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereClause = 'WHERE m.dojo_id = ?';
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -284,7 +313,8 @@ router.get("/filter-options/gurte", (req, res) => {
 
 // ✅ API: Mitglieder ohne SEPA-Mandat (MUSS VOR /:id Route stehen!)
 router.get("/filter/ohne-sepa", (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+  const secureDojoId = getSecureDojoId(req);
 
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
@@ -294,9 +324,9 @@ router.get("/filter/ohne-sepa", (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -329,7 +359,8 @@ router.get("/filter/ohne-sepa", (req, res) => {
 
 // ✅ API: Mitglieder ohne Vertrag (MUSS VOR /:id Route stehen!)
 router.get("/filter/ohne-vertrag", (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+  const secureDojoId = getSecureDojoId(req);
 
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
@@ -338,9 +369,9 @@ router.get("/filter/ohne-vertrag", (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -372,7 +403,8 @@ router.get("/filter/ohne-vertrag", (req, res) => {
 
 // ✅ API: Mitglieder mit Tarif-Abweichungen (MUSS VOR /:id Route stehen!)
 router.get("/filter/tarif-abweichung", (req, res) => {
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+  const secureDojoId = getSecureDojoId(req);
 
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
@@ -400,9 +432,9 @@ router.get("/filter/tarif-abweichung", (req, res) => {
   ];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -480,7 +512,9 @@ router.get("/filter/tarif-abweichung", (req, res) => {
 
 // ✅ API: Mitglieder nach Zahlungsweise filtern (MUSS VOR /:id Route stehen!)
 router.get("/filter/zahlungsweisen", (req, res) => {
-  const { payment_method, dojo_id } = req.query;
+  const { payment_method } = req.query;
+  // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+  const secureDojoId = getSecureDojoId(req);
 
   // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [];
@@ -496,9 +530,9 @@ router.get("/filter/zahlungsweisen", (req, res) => {
     }
   }
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -534,7 +568,8 @@ router.get("/filter/zahlungsweisen", (req, res) => {
  */
 router.get("/print", async (req, res) => {
   const PDFDocument = require('pdfkit');
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+  const secureDojoId = getSecureDojoId(req);
 
   try {
     // Mitglieder mit Stil und Vertrag abrufen
@@ -556,9 +591,9 @@ router.get("/print", async (req, res) => {
     `;
 
     const params = [];
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       query += ` AND m.dojo_id = ?`;
-      params.push(dojo_id);
+      params.push(secureDojoId);
     }
 
     query += ` GROUP BY m.mitglied_id ORDER BY m.nachname, m.vorname`;
@@ -697,23 +732,26 @@ router.get("/print", async (req, res) => {
   }
 });
 
-// ✅ API: Einzelnes Mitglied VOLLPROFIL abrufen - KORRIGIERT + DOJO-FILTER
+// ✅ API: Einzelnes Mitglied VOLLPROFIL abrufen - SICHERHEITSFIX: Dojo-Isolation
 router.get("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+
+    // 🔒 SICHERHEIT: Hole dojo_id aus Token, NICHT aus Query!
+    const userDojoId = req.user?.dojo_id;
+    const userRole = req.user?.rolle;
+    const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !userDojoId);
 
     if (isNaN(id)) {
-
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
-    // 🔒 DOJO-FILTER: Baue WHERE-Clause
+    // 🔒 DOJO-FILTER: Erzwinge Dojo-Isolation außer für Super-Admin
     let whereConditions = ['m.mitglied_id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (!isSuperAdmin && userDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(userDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -800,7 +838,8 @@ router.get("/:id", (req, res) => {
 // 🆕 API: Medizinische Informationen abrufen + DOJO-FILTER
 router.get("/:id/medizinisch", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
@@ -810,9 +849,9 @@ router.get("/:id/medizinisch", (req, res) => {
     let whereConditions = ['mitglied_id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -849,19 +888,20 @@ router.get("/:id/medizinisch", (req, res) => {
 // 🆕 API: Prüfungsstatus abrufen + DOJO-FILTER
 router.get("/:id/pruefung", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
-    // 🔒 DOJO-FILTER
+    // 🔒 DOJO-FILTER (Multi-Tenancy)
     let whereConditions = ['mitglied_id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -896,19 +936,20 @@ router.get("/:id/pruefung", (req, res) => {
 // 🆕 API: Compliance-Status abrufen + DOJO-FILTER
 router.get("/:id/compliance", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
     }
 
-    // 🔒 DOJO-FILTER
+    // 🔒 DOJO-FILTER (Multi-Tenancy)
     let whereConditions = ['mitglied_id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -942,7 +983,8 @@ router.get("/:id/compliance", (req, res) => {
 // 🆕 API: Medizinische Daten aktualisieren + DOJO-FILTER (KRITISCH!)
 router.put("/:id/medizinisch", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
@@ -956,7 +998,7 @@ router.put("/:id/medizinisch", (req, res) => {
         notfallkontakt_verhaeltnis
     } = req.body;
 
-    // 🔒 KRITISCHER DOJO-FILTER: Baue WHERE-Clause
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['mitglied_id = ?'];
     let queryParams = [
         allergien || null,
@@ -967,9 +1009,9 @@ router.put("/:id/medizinisch", (req, res) => {
         id
     ];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1004,7 +1046,8 @@ router.put("/:id/medizinisch", (req, res) => {
 // 🆕 API: Prüfungsdaten aktualisieren + DOJO-FILTER (KRITISCH!)
 router.put("/:id/pruefung", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
@@ -1016,7 +1059,7 @@ router.put("/:id/pruefung", (req, res) => {
         trainer_empfehlung
     } = req.body;
 
-    // 🔒 KRITISCHER DOJO-FILTER
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['mitglied_id = ?'];
     let queryParams = [
         naechste_pruefung_datum || null,
@@ -1025,9 +1068,9 @@ router.put("/:id/pruefung", (req, res) => {
         id
     ];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1060,7 +1103,8 @@ router.put("/:id/pruefung", (req, res) => {
 // 🆕 API: Compliance-Status aktualisieren + DOJO-FILTER (KRITISCH!)
 router.put("/:id/compliance", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
@@ -1073,7 +1117,7 @@ router.put("/:id/compliance", (req, res) => {
         vereinsordnung_datum
     } = req.body;
 
-    // 🔒 KRITISCHER DOJO-FILTER
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['mitglied_id = ?'];
     let queryParams = [
         hausordnung_akzeptiert || false,
@@ -1083,9 +1127,9 @@ router.put("/:id/compliance", (req, res) => {
         id
     ];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1118,18 +1162,19 @@ router.put("/:id/compliance", (req, res) => {
 
 // 🆕 API: Alle Mitglieder mit ausstehenden Dokumenten + DOJO-FILTER
 router.get("/compliance/missing", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    // 🔒 DOJO-FILTER
+    // 🔒 DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = [
         'aktiv = 1',
         '(hausordnung_akzeptiert = FALSE OR datenschutz_akzeptiert = FALSE OR foto_einverstaendnis = FALSE OR vereinsordnung_datum IS NULL)'
     ];
     let queryParams = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1165,9 +1210,10 @@ router.get("/compliance/missing", (req, res) => {
 
 // 🆕 API: Prüfungskandidaten (nächste 30 Tage) + DOJO-FILTER
 router.get("/pruefung/kandidaten", (req, res) => {
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    // 🔒 DOJO-FILTER
+    // 🔒 DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = [
         'aktiv = 1',
         'naechste_pruefung_datum IS NOT NULL',
@@ -1175,9 +1221,9 @@ router.get("/pruefung/kandidaten", (req, res) => {
     ];
     let queryParams = [];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1217,7 +1263,8 @@ router.put("/:id",
     sanitizeStrings(['vorname', 'nachname', 'email', 'strasse', 'ort', 'bemerkungen']),
     (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
     const updateFields = req.body;
 
@@ -1237,13 +1284,13 @@ router.put("/:id",
         return res.status(400).json({ error: "Keine gültigen Felder zum Update gefunden" });
     }
 
-    // 🔒 KRITISCHER DOJO-FILTER: Baue WHERE-Clause
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['mitglied_id = ?'];
     values.push(id);
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('dojo_id = ?');
-        values.push(parseInt(dojo_id));
+        values.push(secureDojoId);
     }
 
     const query = `
@@ -1774,23 +1821,23 @@ router.get("/:id/stil/:stil_id/training-analysis", (req, res) => {
 // ✅ SEPA-Mandat abrufen + DOJO-FILTER (KRITISCH - Bankdaten!)
 router.get("/:id/sepa-mandate", (req, res) => {
     const { id } = req.params;
-    const dojoIdFromQuery = req.query.dojo_id;
-    const dojoId = req.dojo_id || dojoIdFromQuery;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    // 🔒 KRITISCHER DOJO-FILTER: SEPA-Mandate nur für berechtigte Dojos!
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['sm.mitglied_id = ?', 'sm.status = \'aktiv\''];
     let queryParams = [id];
 
-    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
-    if (dojoId === null || dojoId === undefined || dojoIdFromQuery === 'all') {
+    // Dojo-Filter: Super-Admin (secureDojoId === null) kann alle sehen
+    if (secureDojoId === null) {
         // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
         whereConditions.push(`m.dojo_id NOT IN (
             SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
         )`);
-    } else if (dojoId && dojoId !== 'all') {
+    } else {
         // Normaler Admin: Nur eigenes Dojo
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojoId));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1822,7 +1869,8 @@ router.post("/:id/sepa-mandate",
     requireFields(['iban', 'bic', 'kontoinhaber']),
     (req, res) => {
     const { id } = req.params;
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
     let { iban, bic, kontoinhaber, bankname } = req.body;
 
     // IBAN normalisieren (Leerzeichen entfernen, Großbuchstaben)
@@ -1842,9 +1890,9 @@ router.post("/:id/sepa-mandate",
     let checkConditions = ['mitglied_id = ?'];
     let checkParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         checkConditions.push('dojo_id = ?');
-        checkParams.push(parseInt(dojo_id));
+        checkParams.push(secureDojoId);
     }
 
     const checkQuery = `SELECT mitglied_id, dojo_id FROM mitglieder WHERE ${checkConditions.join(' AND ')}`;
@@ -1930,18 +1978,19 @@ router.post("/:id/sepa-mandate",
 // ✅ SEPA-Mandat widerrufen + DOJO-FILTER (KRITISCH!)
 router.delete("/:id/sepa-mandate", (req, res) => {
     const { id } = req.params;
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
     const { grund } = req.body; // Optional: Grund für Archivierung
 
-    // 🔒 KRITISCHER DOJO-FILTER: Nur Mandate des eigenen Dojos widerrufen!
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['sm.mitglied_id = ?', 'sm.status = \'aktiv\''];
     let queryParams = [grund || 'Widerrufen durch Benutzer', id];
 
     let joinClause = '';
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         joinClause = 'JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id';
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `
@@ -1972,15 +2021,16 @@ router.delete("/:id/sepa-mandate", (req, res) => {
 // ✅ Archivierte SEPA-Mandate abrufen + DOJO-FILTER (KRITISCH!)
 router.get("/:id/sepa-mandate/archiv", (req, res) => {
     const { id } = req.params;
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    // 🔒 KRITISCHER DOJO-FILTER: Nur archivierte Mandate des eigenen Dojos!
+    // 🔒 KRITISCHER DOJO-FILTER: Multi-Tenancy Isolation
     let whereConditions = ['sm.mitglied_id = ?', '(sm.archiviert = 1 OR sm.status = \'widerrufen\')'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const query = `

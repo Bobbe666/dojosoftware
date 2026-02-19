@@ -11,6 +11,7 @@ const logger = require('../utils/logger');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // =============================================================================
 // MULTER CONFIGURATION für Media Uploads
@@ -48,7 +49,8 @@ const upload = multer({
 // =============================================================================
 
 const getDojoId = (req) => {
-  return req.user?.dojo_id || req.body?.dojo_id || req.query?.dojo_id;
+  // Nutze sichere Methode aus tenantSecurity, fallback auf alte Methode
+  return getSecureDojoId(req) || req.user?.dojo_id || req.body?.dojo_id || req.query?.dojo_id;
 };
 
 // =============================================================================

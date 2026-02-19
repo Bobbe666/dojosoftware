@@ -10,6 +10,7 @@ const db = require('../db');
 const logger = require('../utils/logger');
 const { authenticateToken } = require('../middleware/auth');
 const SumUpProvider = require('../services/SumUpProvider');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -61,7 +62,8 @@ const createProvider = async (dojoId) => {
  */
 router.get('/status', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -108,7 +110,8 @@ router.get('/status', authenticateToken, async (req, res) => {
  */
 router.post('/test-connection', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.body.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -138,7 +141,8 @@ router.post('/test-connection', authenticateToken, async (req, res) => {
  */
 router.post('/checkout', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.body.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -193,7 +197,8 @@ router.post('/checkout', authenticateToken, async (req, res) => {
  */
 router.get('/checkout/:checkoutId', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -217,7 +222,8 @@ router.get('/checkout/:checkoutId', authenticateToken, async (req, res) => {
  */
 router.delete('/checkout/:checkoutId', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -245,7 +251,8 @@ router.delete('/checkout/:checkoutId', authenticateToken, async (req, res) => {
  */
 router.get('/transactions', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -273,7 +280,8 @@ router.get('/transactions', authenticateToken, async (req, res) => {
  */
 router.get('/transactions/:transactionId', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -297,7 +305,8 @@ router.get('/transactions/:transactionId', authenticateToken, async (req, res) =
  */
 router.get('/transactions/:transactionId/receipt', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -325,7 +334,8 @@ router.get('/transactions/:transactionId/receipt', authenticateToken, async (req
  */
 router.post('/refund/:transactionId', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.body.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -358,7 +368,8 @@ router.post('/refund/:transactionId', authenticateToken, async (req, res) => {
  */
 router.get('/payments', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }
@@ -485,7 +496,8 @@ router.post('/webhook', async (req, res) => {
  */
 router.get('/merchant', authenticateToken, async (req, res) => {
     try {
-        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(400).json({ error: 'Dojo ID erforderlich' });
         }

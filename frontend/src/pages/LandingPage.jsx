@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import config from '../config/config.js';
+import HeroSlider from '../components/HeroSlider';
+import TDAIntroPopup from '../components/TDAIntroPopup';
 import '../styles/themes.css';
 import './LandingPage.css';
 const dojoLogo = '/dojo-logo.png';
@@ -7,88 +10,141 @@ const dojoLogo = '/dojo-logo.png';
 function LandingPage() {
   const navigate = useNavigate();
 
-  const features = [
-    {
-      icon: '👥',
-      title: 'Mitgliederverwaltung',
-      description: 'Verträge, Kündigungen, Dokumente, Familienverbund - alles an einem Ort'
-    },
-    {
-      icon: '🌐',
-      title: 'Online-Registrierung',
-      description: 'Selbstständige Anmeldung mit automatischer Vertragserstellung'
-    },
-    {
-      icon: '📱',
-      title: 'Mitglieder-Portal',
-      description: 'Self-Service: Adressänderung, Kündigung, Ruhepause - ohne deinen Aufwand'
-    },
-    {
-      icon: '✅',
-      title: 'Check-In System',
-      description: 'QR-Code basiertes Check-In mit Live-Display für dein Dojo'
-    },
-    {
-      icon: '💶',
-      title: 'SEPA & Finanzen',
-      description: 'Automatische Lastschriften, Rabattsystem, Mahnwesen, Buchführung'
-    },
-    {
-      icon: '🥋',
-      title: 'Prüfungswesen',
-      description: 'Gürtelprüfungen, historische Prüfungen, Lehrgänge & Ehrungen'
-    },
-    {
-      icon: '📄',
-      title: 'Vertragsverwaltung',
-      description: 'Automatische Verlängerung, Tarifwechsel, Rabatte, PDF-Export'
-    },
-    {
-      icon: '👨‍👩‍👧‍👦',
-      title: 'Familienverwaltung',
-      description: 'Familienrabatte, Erziehungsberechtigte, verknüpfte Konten'
-    },
-    {
-      icon: '🛒',
-      title: 'Verkauf & Lager',
-      description: 'Artikel, Kassensystem, Bestandsverwaltung, Verkaufsstatistik'
-    },
-    {
-      icon: '📊',
-      title: 'Dashboard & Statistiken',
-      description: 'Echtzeit-Auswertungen, Einnahmen, Austritte, Anwesenheit'
-    },
-    {
-      icon: '📅',
-      title: 'Stundenplan & Events',
-      description: 'Trainingszeiten, Turniere, Seminare, Veranstaltungen'
-    },
-    {
-      icon: '📧',
-      title: 'Kommunikation',
-      description: 'E-Mail-Versand, Newsletter, Benachrichtigungen'
-    },
-    {
-      icon: '🔔',
-      title: 'Benachrichtigungen',
-      description: 'Automatische Erinnerungen, Zahlungseingänge, Kündigungen'
-    },
-    {
-      icon: '🏢',
-      title: 'Multi-Dojo',
-      description: 'Mehrere Standorte zentral verwalten mit einem Account'
-    },
-    {
-      icon: '📁',
-      title: 'Dokumentenverwaltung',
-      description: 'Upload, Speicherung und Verwaltung aller Dokumente'
-    },
-    {
-      icon: '🔒',
-      title: 'Sicherheit & DSGVO',
-      description: 'Verschlüsselte Daten, deutsche Server, 100% DSGVO-konform'
-    }
+  // Intro Popup State - TEMPORÄR: immer zeigen zum Testen
+  const [showIntro, setShowIntro] = useState(true);
+  // const [showIntro, setShowIntro] = useState(() => {
+  //   return !sessionStorage.getItem('tda-intro-shown');
+  // });
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('tda-intro-shown', 'true');
+    setShowIntro(false);
+  };
+
+  // Early Bird Promo State
+  const [promoData, setPromoData] = useState(null);
+
+  // Dynamische Features und Pricing aus der Datenbank
+  const [features, setFeatures] = useState([]);
+  const [pricingPlans, setPricingPlans] = useState([]);
+  const [comparisonData, setComparisonData] = useState({ competitors: [], categories: [] });
+  const [loading, setLoading] = useState(true);
+
+  // Fallback-Features falls API nicht erreichbar
+  const fallbackFeatures = [
+    { feature_icon: '👥', feature_name: 'Mitgliederverwaltung', feature_description: 'Verträge, Kündigungen, Dokumente, Familienverbund - alles an einem Ort' },
+    { feature_icon: '🌐', feature_name: 'Online-Registrierung', feature_description: 'Selbstständige Anmeldung mit automatischer Vertragserstellung' },
+    { feature_icon: '📱', feature_name: 'Mitglieder-Portal', feature_description: 'Self-Service: Adressänderung, Kündigung, Ruhepause - ohne deinen Aufwand' },
+    { feature_icon: '✅', feature_name: 'Check-In System', feature_description: 'QR-Code basiertes Check-In mit Live-Display für dein Dojo' },
+    { feature_icon: '💶', feature_name: 'SEPA & Finanzen', feature_description: 'Automatische Lastschriften, Rabattsystem, Mahnwesen' },
+    { feature_icon: '🥋', feature_name: 'Prüfungswesen', feature_description: 'Gürtelprüfungen, historische Prüfungen, Lehrgänge & Ehrungen' },
+    { feature_icon: '📄', feature_name: 'Vertragsverwaltung', feature_description: 'Automatische Verlängerung, Tarifwechsel, Rabatte, PDF-Export' },
+    { feature_icon: '👨‍👩‍👧‍👦', feature_name: 'Familienverwaltung', feature_description: 'Familienrabatte, Erziehungsberechtigte, verknüpfte Konten' },
+    { feature_icon: '📊', feature_name: 'Dashboard & Statistiken', feature_description: 'Echtzeit-Auswertungen, Einnahmen, Austritte, Anwesenheit' },
+    { feature_icon: '📧', feature_name: 'Kommunikation', feature_description: 'E-Mail-Versand, Newsletter, Benachrichtigungen' },
+    { feature_icon: '🔔', feature_name: 'Benachrichtigungen', feature_description: 'Automatische Erinnerungen, Zahlungseingänge, Kündigungen' },
+    { feature_icon: '📁', feature_name: 'Dokumentenverwaltung', feature_description: 'Upload, Speicherung und Verwaltung aller Dokumente' },
+    { feature_icon: '🔒', feature_name: 'Sicherheit & DSGVO', feature_description: 'Verschlüsselte Daten, deutsche Server, 100% DSGVO-konform' }
   ];
+
+  const fallbackPricing = [
+    { plan_name: 'basic', display_name: 'Basic', price_monthly: '29.00', max_members: 50, features: { mitgliederverwaltung: true, checkin: true, online_registration: true, member_portal: false, sepa: false, pruefungen: false, verkauf: false, events: false, buchfuehrung: false, api: false, multidojo: false, priority_support: false } },
+    { plan_name: 'starter', display_name: 'Starter', price_monthly: '49.00', max_members: 100, features: { mitgliederverwaltung: true, checkin: true, online_registration: true, member_portal: true, sepa: true, pruefungen: true, verkauf: false, events: false, buchfuehrung: false, api: false, multidojo: false, priority_support: false } },
+    { plan_name: 'professional', display_name: 'Professional', price_monthly: '89.00', max_members: 300, features: { mitgliederverwaltung: true, checkin: true, online_registration: true, member_portal: true, sepa: true, pruefungen: true, verkauf: true, events: true, buchfuehrung: false, api: false, multidojo: false, priority_support: false } },
+    { plan_name: 'premium', display_name: 'Premium', price_monthly: '149.00', max_members: 999999, features: { mitgliederverwaltung: true, checkin: true, online_registration: true, member_portal: true, sepa: true, pruefungen: true, verkauf: true, events: true, buchfuehrung: true, api: true, multidojo: false, priority_support: true } },
+    { plan_name: 'enterprise', display_name: 'Enterprise', price_monthly: '249.00', max_members: 999999, features: { mitgliederverwaltung: true, checkin: true, online_registration: true, member_portal: true, sepa: true, pruefungen: true, verkauf: true, events: true, buchfuehrung: true, api: true, multidojo: true, priority_support: true } }
+  ];
+
+  // Feature-Matrix Labels (wird dynamisch aus API geladen oder Fallback verwendet)
+  const fallbackFeatureMatrix = [
+    { key: 'mitgliederverwaltung', label: 'Mitgliederverwaltung' },
+    { key: 'checkin', label: 'Check-In System' },
+    { key: 'online_registration', label: 'Online-Registrierung' },
+    { key: 'member_portal', label: 'Mitglieder-Portal' },
+    { key: 'sepa', label: 'SEPA-Lastschriften' },
+    { key: 'pruefungen', label: 'Prüfungswesen' },
+    { key: 'verkauf', label: 'Verkauf & Kasse' },
+    { key: 'events', label: 'Events & Turniere' },
+    { key: 'buchfuehrung', label: 'Buchführung & EÜR' },
+    { key: 'api', label: 'API-Zugang' },
+    { key: 'multidojo', label: 'Multi-Dojo' },
+    { key: 'priority_support', label: 'Prioritäts-Support' }
+  ];
+
+  const [featureMatrix, setFeatureMatrix] = useState(fallbackFeatureMatrix);
+
+  // Early Bird Promo laden
+  useEffect(() => {
+    const loadPromoData = async () => {
+      try {
+        const res = await fetch(`${config.apiBaseUrl}/promo/early-bird`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.promo && data.promo.active) {
+            setPromoData(data.promo);
+          }
+        }
+      } catch (err) {
+        console.error('Fehler beim Laden der Promo-Daten:', err);
+      }
+    };
+    loadPromoData();
+  }, []);
+
+  useEffect(() => {
+    const loadDynamicData = async () => {
+      try {
+        // Features, Pricing und Comparison parallel laden
+        const [featuresRes, pricingRes, comparisonRes] = await Promise.all([
+          fetch(`${config.apiBaseUrl}/subscription/landing-features`),
+          fetch(`${config.apiBaseUrl}/subscription/pricing-preview`),
+          fetch(`${config.apiBaseUrl}/subscription/comparison`)
+        ]);
+
+        if (featuresRes.ok) {
+          const featuresData = await featuresRes.json();
+          setFeatures(featuresData.features || fallbackFeatures);
+        } else {
+          setFeatures(fallbackFeatures);
+        }
+
+        if (pricingRes.ok) {
+          const pricingData = await pricingRes.json();
+          setPricingPlans(pricingData.plans || fallbackPricing);
+          if (pricingData.featureMatrix) {
+            setFeatureMatrix(pricingData.featureMatrix);
+          }
+        } else {
+          setPricingPlans(fallbackPricing);
+        }
+
+        if (comparisonRes.ok) {
+          const comparisonDataJson = await comparisonRes.json();
+          setComparisonData({
+            competitors: comparisonDataJson.competitors || [],
+            categories: comparisonDataJson.categories || []
+          });
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden der dynamischen Daten:', error);
+        setFeatures(fallbackFeatures);
+        setPricingPlans(fallbackPricing);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDynamicData();
+  }, []);
+
+  // Helper function für Rating-Emojis
+  const getRatingEmoji = (rating) => {
+    switch (rating) {
+      case 'full': return '✅';
+      case 'partial': return '⚠️';
+      default: return '❌';
+    }
+  };
 
   const testimonials = [
     {
@@ -131,6 +187,27 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
+      {/* TDA Systems Intro Animation */}
+      {showIntro && <TDAIntroPopup onComplete={handleIntroComplete} />}
+
+      {/* Early Bird Promo Banner - VOR der Navigation */}
+      {promoData && promoData.active && promoData.spotsRemaining > 0 && (
+        <div className="landing-promo-banner" onClick={() => navigate('/register')}>
+          <div className="promo-banner-content">
+            <div className="promo-badge-small">
+              <span>⭐</span> EARLY BIRD
+            </div>
+            <div className="promo-text">
+              <strong>{promoData.freeMonths} Monate GRATIS</strong> + <strong>{promoData.discountPercent}% Rabatt</strong> für {promoData.discountMonths} Monate
+              <span className="promo-spots">• Noch <strong>{promoData.spotsRemaining}</strong> von {promoData.maxDojos} Plätzen!</span>
+            </div>
+            <div className="promo-cta-small">
+              Jetzt sichern →
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="landing-nav">
         <div className="nav-container">
@@ -163,7 +240,7 @@ function LandingPage() {
               Mitgliederverwaltung • Check-In • SEPA • Verkauf • Buchführung • Online-Registrierung für Neumitglieder • Prüfungswesen • uvm.
             </p>
             <div className="hero-cta">
-              <button className="cta-primary" onClick={() => navigate('/register')}>
+              <button className="cta-primary cta-pulse" onClick={() => navigate('/register')}>
                 <span className="cta-icon">🚀</span>
                 Jetzt kostenlos testen (14 Tage)
               </button>
@@ -183,7 +260,120 @@ function LandingPage() {
             </div>
           </div>
         </div>
+
+        {/* Trust Badges */}
+        <div className="trust-badges-bar">
+          <div className="trust-badge-item">
+            <span className="trust-icon">🔒</span>
+            <span className="trust-text">SSL-verschlüsselt</span>
+          </div>
+          <div className="trust-badge-item">
+            <span className="trust-icon">🇩🇪</span>
+            <span className="trust-text">Deutsche Server</span>
+          </div>
+          <div className="trust-badge-item">
+            <span className="trust-icon">✓</span>
+            <span className="trust-text">DSGVO-konform</span>
+          </div>
+          <div className="trust-badge-item">
+            <span className="trust-icon">🛡️</span>
+            <span className="trust-text">Made in Germany</span>
+          </div>
+          <div className="trust-badge-item">
+            <span className="trust-icon">💳</span>
+            <span className="trust-text">Keine Kreditkarte</span>
+          </div>
+        </div>
       </section>
+
+      {/* Premium Early Bird Section */}
+      {promoData && promoData.active && promoData.spotsRemaining > 0 && (
+        <section className="early-bird-section">
+          <div className="early-bird-container">
+            {/* Badge */}
+            <div className="eb-badge">
+              <span className="eb-badge-icon">☆</span>
+              <span>EARLY BIRD SPECIAL</span>
+            </div>
+
+            {/* Main Content */}
+            <div className="eb-content">
+              {/* Left - Rabatt Box */}
+              <div className="eb-discount-box">
+                <div className="eb-discount-value">{promoData.discountPercent}%</div>
+                <div className="eb-discount-label">RABATT</div>
+              </div>
+
+              {/* Center - Text */}
+              <div className="eb-text">
+                <h2 className="eb-headline">
+                  Für die ersten <span className="eb-gold">{promoData.maxDojos} Dojos</span>
+                </h2>
+                <ul className="eb-benefits">
+                  <li>
+                    <span className="eb-check">✓</span>
+                    <span><strong className="eb-gold">{promoData.discountPercent}% Rabatt</strong> für {promoData.discountMonths} Monate</span>
+                  </li>
+                  <li>
+                    <span className="eb-check">✓</span>
+                    <span><strong className="eb-gold">{promoData.freeMonths} Monate GRATIS</strong> zum Testen</span>
+                  </li>
+                  <li>
+                    <span className="eb-check">✓</span>
+                    <span>Voller Zugang zur Dojo-Software</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Right - Counter */}
+              <div className="eb-counter">
+                <svg className="eb-progress-ring" viewBox="0 0 120 120">
+                  <circle className="eb-progress-bg" cx="60" cy="60" r="52" />
+                  <circle
+                    className="eb-progress-bar"
+                    cx="60"
+                    cy="60"
+                    r="52"
+                    style={{
+                      strokeDasharray: `${2 * Math.PI * 52}`,
+                      strokeDashoffset: `${2 * Math.PI * 52 * (1 - (promoData.maxDojos - promoData.spotsRemaining) / promoData.maxDojos)}`
+                    }}
+                  />
+                </svg>
+                <div className="eb-counter-text">
+                  <span className="eb-counter-current">{promoData.maxDojos - promoData.spotsRemaining}</span>
+                  <span className="eb-counter-divider">/</span>
+                  <span className="eb-counter-max">{promoData.maxDojos}</span>
+                </div>
+                <div className="eb-spots-remaining">
+                  Noch <strong>{promoData.spotsRemaining}</strong> Plätze!
+                </div>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <button className="eb-cta" onClick={() => navigate('/register')}>
+              Jetzt DojoSoftware testen
+              <span className="eb-cta-arrow">→</span>
+            </button>
+
+            <p className="eb-disclaimer">
+              Nur für begrenzte Zeit - Aktion endet bei {promoData.maxDojos} Anmeldungen!
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* Carousel Headline */}
+      <section className="carousel-headline-section">
+        <div className="container">
+          <h2 className="carousel-headline">Die All-in-One Lösung für dein Dojo</h2>
+          <p className="carousel-subline">by <strong>TDA Systems</strong></p>
+        </div>
+      </section>
+
+      {/* Banner Slider - Werbebanner */}
+      <HeroSlider />
 
       {/* Dashboard Mockup Section - Full Width */}
       <section className="mockup-section">
@@ -262,12 +452,88 @@ function LandingPage() {
           </p>
           <div className="features-grid">
             {features.map((feature, index) => (
-              <div key={index} className="feature-card">
-                <div className="feature-icon">{feature.icon}</div>
-                <h3 className="feature-title">{feature.title}</h3>
-                <p className="feature-description">{feature.description}</p>
+              <div key={feature.feature_key || index} className="feature-card">
+                <div className="feature-icon">{feature.feature_icon}</div>
+                <h3 className="feature-title">{feature.feature_name}</h3>
+                <p className="feature-description">{feature.feature_description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Competitor Comparison */}
+      <section className="comparison-section" id="comparison">
+        <div className="container">
+          <h2 className="section-title">Der ehrliche Vergleich</h2>
+          <p className="section-subtitle">
+            DojoSoftware vs. {comparisonData.competitors.map(c => c.name).join(' vs. ') || 'Konkurrenz'}
+          </p>
+
+          {/* Compact Comparison Cards - Dynamisch */}
+          <div className="comparison-cards">
+            {comparisonData.categories.map((category) => (
+              <div key={category.id} className={`comparison-card ${category.is_highlight ? 'highlight-card' : ''}`}>
+                <div className="card-header">
+                  <span className="card-icon">{category.icon}</span>
+                  <h3>{category.name}</h3>
+                  {category.is_highlight && category.highlight_note && category.highlight_note !== '0' && category.highlight_note !== 0 && (
+                    <span className="card-badge">{category.highlight_note}</span>
+                  )}
+                </div>
+                <div className="card-content">
+                  <div className={`mini-table ${category.is_highlight ? 'highlight-table' : ''}`}>
+                    <div className="mini-header five-cols">
+                      <span></span>
+                      <span className="highlight-col">Wir</span>
+                      {comparisonData.competitors.map(comp => (
+                        <span key={comp.id}>{comp.short_name || comp.name}</span>
+                      ))}
+                    </div>
+                    {category.items && category.items.map((item, idx) => (
+                      <div key={idx} className="mini-row five-cols">
+                        <span>{item.name}</span>
+                        <span className="highlight-col">{getRatingEmoji(item.ours)}</span>
+                        {comparisonData.competitors.map(comp => (
+                          <span key={comp.id}>{getRatingEmoji(item.competitors[comp.id])}</span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  {category.is_highlight && category.highlight_note && category.highlight_note !== '0' && category.highlight_note !== 0 && (
+                    <p className="card-note">{category.highlight_note}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Legende */}
+          <div className="comparison-legend">
+            <span>✅ Vollständig</span>
+            <span>⚠️ Eingeschränkt</span>
+            <span>❌ Nicht vorhanden</span>
+          </div>
+
+          <div className="comparison-summary">
+            <div className="summary-item">
+              <span className="summary-icon">💰</span>
+              <span><strong>Ab 29€/Monat</strong> vs. 70€+ bei der Konkurrenz</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-icon">🏆</span>
+              <span><strong>Einzige</strong> Lösung mit echtem Wettbewerbssystem</span>
+            </div>
+            <div className="summary-item">
+              <span className="summary-icon">🇩🇪</span>
+              <span><strong>100%</strong> DSGVO-konform auf deutschen Servern</span>
+            </div>
+          </div>
+
+          <div className="comparison-cta">
+            <button className="cta-primary" onClick={() => navigate('/register')}>
+              Jetzt 14 Tage kostenlos testen
+            </button>
           </div>
         </div>
       </section>
@@ -324,23 +590,56 @@ function LandingPage() {
             Wähle den Plan der zu deinem Dojo passt
           </p>
           <div className="pricing-cards-preview">
-            <div className="pricing-card-preview">
-              <h3>Starter</h3>
-              <div className="price">€49<span>/Monat</span></div>
-              <p>Bis 100 Mitglieder</p>
-            </div>
-            <div className="pricing-card-preview featured">
-              <div className="popular-badge">Beliebt</div>
-              <h3>Professional</h3>
-              <div className="price">€89<span>/Monat</span></div>
-              <p>Bis 300 Mitglieder</p>
-            </div>
-            <div className="pricing-card-preview">
-              <h3>Premium</h3>
-              <div className="price">€149<span>/Monat</span></div>
-              <p>Unbegrenzt Mitglieder</p>
-            </div>
+            {pricingPlans.map((plan, index) => (
+              <div
+                key={plan.plan_name}
+                className={`pricing-card-preview ${plan.plan_name === 'professional' ? 'featured' : ''}`}
+              >
+                {plan.plan_name === 'professional' && <div className="popular-badge">Beliebt</div>}
+                <h3>{plan.display_name}</h3>
+                <div className="price">€{parseInt(plan.price_monthly)}<span>/Monat</span></div>
+                <p>{plan.max_members >= 999999 ? 'Unbegrenzt Mitglieder' : `Bis ${plan.max_members} Mitglieder`}</p>
+              </div>
+            ))}
           </div>
+
+          {/* Feature-Vergleichstabelle - Dynamisch */}
+          <div className="feature-comparison-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  {pricingPlans.map((plan) => (
+                    <th key={plan.plan_name} className={plan.plan_name === 'professional' ? 'highlight-col' : ''}>
+                      {plan.display_name}<br/>
+                      <span className="th-price">€{parseInt(plan.price_monthly)}</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {featureMatrix.map((feature, idx) => (
+                  <tr key={idx}>
+                    <td>{feature.label}</td>
+                    {pricingPlans.map((plan) => (
+                      <td key={plan.plan_name} className={plan.plan_name === 'professional' ? 'highlight-col' : ''}>
+                        {plan.features && plan.features[feature.key] ? '✅' : '—'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                <tr className="members-row">
+                  <td><strong>Max. Mitglieder</strong></td>
+                  {pricingPlans.map((plan) => (
+                    <td key={plan.plan_name} className={plan.plan_name === 'professional' ? 'highlight-col' : ''}>
+                      {plan.max_members >= 999999 ? 'Unbegrenzt' : plan.max_members}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           <button className="cta-secondary" onClick={() => navigate('/pricing')}>
             Alle Preise & Features ansehen
           </button>

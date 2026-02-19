@@ -937,3 +937,201 @@
     font-size: 0.95rem;
   }
 }
+
+/* ===== EARLY BIRD PROMO BANNER ===== */
+.promo-banner {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.1));
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  animation: promo-glow 3s ease-in-out infinite;
+}
+
+@keyframes promo-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); }
+}
+
+.promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #000;
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.badge-icon {
+  font-size: 1rem;
+}
+
+.promo-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.promo-main-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.promo-discount-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.promo-discount-box .discount-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ffd700;
+  line-height: 1;
+}
+
+.promo-discount-box .discount-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.1em;
+}
+
+.promo-details {
+  flex: 1;
+}
+
+.promo-details h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: #fff;
+}
+
+.promo-details .highlight {
+  color: #ffd700;
+}
+
+.promo-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.promo-benefits li {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.promo-benefits li strong {
+  color: #ffd700;
+}
+
+.promo-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.counter-visual {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.counter-numbers {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.counter-current {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffd700;
+}
+
+.counter-sep {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0.1rem;
+}
+
+.counter-max {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.spots-left {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.spots-left strong {
+  color: #ffd700;
+}
+
+/* Promo Success Highlight */
+.promo-success-highlight {
+  color: #22c55e;
+  font-size: 1.1rem;
+}
+
+/* Responsive Promo Banner */
+@media (max-width: 768px) {
+  .promo-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .promo-main-info {
+    flex-direction: column;
+  }
+
+  .promo-details h3 {
+    text-align: center;
+  }
+
+  .promo-benefits {
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .promo-banner {
+    padding: 1rem;
+  }
+
+  .promo-discount-box .discount-value {
+    font-size: 2rem;
+  }
+
+  .counter-visual {
+    width: 70px;
+    height: 70px;
+  }
+
+  .counter-current {
+    font-size: 1.25rem;
+  }
+}

@@ -2138,7 +2138,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const removeAllergie = async (id) => {
     try {
       // Archiviere die Allergie über API
-      const response = await fetch(`http://localhost:3000/api/mitglieddetail/${mitglied.id}/archive-allergie`, {
+      const response = await fetch(`${config.apiBaseUrl}/mitglieddetail/${mitglied.id}/archive-allergie`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allergieId: id })
@@ -2481,7 +2481,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             <div className={`mitglied-avatar ${!avatarLoaded ? 'avatar-loading' : ''}`} style={{ position: 'relative' }}>
               <img
                 key={mitglied?.mitglied_id}
-                src={mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
+                src={mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                 alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                 className="avatar-image"
                 style={{
@@ -2817,7 +2817,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     {(mitglied?.foto_pfad || photoPreview) ? (
                       <div className="foto-preview">
                         <img
-                          src={photoPreview || (mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}
+                          src={photoPreview || (mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}
                           alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
                           className="mitglied-foto-small"
                           onClick={() => {
@@ -2826,7 +2826,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               <html>
                                 <head><title>${mitglied?.vorname} ${mitglied?.nachname}</title></head>
                                 <body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-                                  <img src="${photoPreview || (mitglied?.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}"
+                                  <img src="${photoPreview || (mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}"
                                        style="max-width:90vw; max-height:90vh; object-fit:contain;" />
                                 </body>
                               </html>

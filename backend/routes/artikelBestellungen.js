@@ -14,16 +14,11 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
 
+const logger = require('../utils/logger');
+
 // Feature Protection
 router.use(authenticateToken);
 router.use(requireFeature('verkauf'));
-
-// Logging
-const logger = {
-  info: (...args) => console.log('[ArtikelBestellungen]', ...args),
-  error: (...args) => console.error('[ArtikelBestellungen ERROR]', ...args),
-  debug: (...args) => console.log('[ArtikelBestellungen DEBUG]', ...args)
-};
 
 // =====================================================================================
 // HILFSFUNKTIONEN

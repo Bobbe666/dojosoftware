@@ -5,6 +5,22 @@ const nodemailer = require('nodemailer');
 const validator = require('validator');
 const db = require('../db');
 const logger = require('../utils/logger');
+const { decrypt, isEncrypted } = require('../utils/encryption');
+
+/**
+ * SECURITY: Entschlüsselt Passwort wenn nötig
+ */
+const decryptPassword = (password) => {
+  if (!password) return password;
+  try {
+    if (isEncrypted(password)) {
+      return decrypt(password);
+    }
+  } catch (error) {
+    logger.warn('Passwort-Entschlüsselung fehlgeschlagen, verwende Originalwert');
+  }
+  return password;
+};
 
 /**
  * Hole E-Mail-Einstellungen aus der Datenbank oder verwende Fallback
@@ -94,7 +110,7 @@ const getEmailSettingsForDojo = async (dojoId) => {
             smtp_port: dojo.smtp_port || 587,
             smtp_secure: !!dojo.smtp_secure,
             smtp_user: dojo.smtp_user,
-            smtp_password: dojo.smtp_password,
+            smtp_password: decryptPassword(dojo.smtp_password),  // SECURITY: Entschlüsseln
             default_from_email: dojo.email || dojo.smtp_user,
             default_from_name: dojo.dojoname,
             reply_to: dojo.email,
@@ -111,7 +127,7 @@ const getEmailSettingsForDojo = async (dojoId) => {
             smtp_port: dojo.global_smtp_port || 587,
             smtp_secure: !!dojo.global_smtp_secure,
             smtp_user: dojo.tda_email,
-            smtp_password: dojo.tda_email_password,
+            smtp_password: decryptPassword(dojo.tda_email_password),  // SECURITY: Entschlüsseln
             default_from_email: dojo.tda_email,
             default_from_name: dojo.dojoname,
             reply_to: dojo.email,
@@ -128,7 +144,7 @@ const getEmailSettingsForDojo = async (dojoId) => {
             smtp_port: dojo.global_smtp_port || 587,
             smtp_secure: !!dojo.global_smtp_secure,
             smtp_user: dojo.global_smtp_user,
-            smtp_password: dojo.global_smtp_password,
+            smtp_password: decryptPassword(dojo.global_smtp_password),  // SECURITY: Entschlüsseln
             default_from_email: dojo.global_from_email,
             default_from_name: `${dojo.dojoname} via ${dojo.global_from_name || 'DojoSoftware'}`,
             reply_to: dojo.email,
@@ -184,7 +200,7 @@ const getGlobalEmailSettings = async () => {
             smtp_port: s.smtp_port || 587,
             smtp_secure: !!s.smtp_secure,
             smtp_user: s.smtp_user,
-            smtp_password: s.smtp_password,
+            smtp_password: decryptPassword(s.smtp_password),  // SECURITY: Entschlüsseln
             default_from_email: s.default_from_email,
             default_from_name: s.default_from_name,
             mode: 'global'

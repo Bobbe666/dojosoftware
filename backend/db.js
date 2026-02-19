@@ -13,14 +13,18 @@ function connectDatabase() {
     }
 
     db = mysql.createPool({
-        connectionLimit: 10,
+        // PERFORMANCE: Connection Pool erhöht für bessere Skalierbarkeit
+        connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 50,
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
         waitForConnections: true,
         queueLimit: 0,
-        charset: 'utf8mb4'
+        charset: 'utf8mb4',
+        // PERFORMANCE: Keep-Alive für stabile Verbindungen
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000
     });
 
     // Teste die Verbindung beim Start

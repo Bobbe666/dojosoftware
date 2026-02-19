@@ -75,16 +75,28 @@ const initializeDojoBankenTable = async () => {
 initializeDojoBankenTable();
 
 // GET /api/dojo-banken/:dojoId - Alle Banken eines Dojos
+// SECURITY: Secret Keys werden NICHT zurückgegeben, nur ob sie konfiguriert sind
 router.get('/:dojoId', async (req, res) => {
   try {
     const { dojoId } = req.params;
-    
+
     const banken = await queryAsync(`
-      SELECT * FROM dojo_banken 
-      WHERE dojo_id = ? 
+      SELECT
+        id, dojo_id, bank_name, bank_typ, ist_aktiv, ist_standard,
+        iban, bic, kontoinhaber, sepa_glaeubiger_id,
+        stripe_publishable_key, stripe_account_id,
+        paypal_email, paypal_client_id,
+        merchant_id, notizen, sortierung, created_at, updated_at,
+        -- SECURITY: Nur Boolean-Flags für Secret Keys
+        (stripe_secret_key IS NOT NULL AND stripe_secret_key != '') AS stripe_secret_configured,
+        (paypal_client_secret IS NOT NULL AND paypal_client_secret != '') AS paypal_secret_configured,
+        (api_secret IS NOT NULL AND api_secret != '') AS api_secret_configured,
+        (api_key IS NOT NULL AND api_key != '') AS api_key_configured
+      FROM dojo_banken
+      WHERE dojo_id = ?
       ORDER BY sortierung ASC, created_at ASC
     `, [dojoId]);
-    
+
     res.json(banken);
   } catch (error) {
     logger.error('Fehler beim Laden der Banken:', { error: error });
@@ -93,19 +105,30 @@ router.get('/:dojoId', async (req, res) => {
 });
 
 // GET /api/dojo-banken/:dojoId/:id - Einzelne Bank
+// SECURITY: Secret Keys werden NICHT zurückgegeben
 router.get('/:dojoId/:id', async (req, res) => {
   try {
     const { dojoId, id } = req.params;
-    
+
     const banken = await queryAsync(`
-      SELECT * FROM dojo_banken 
+      SELECT
+        id, dojo_id, bank_name, bank_typ, ist_aktiv, ist_standard,
+        iban, bic, kontoinhaber, sepa_glaeubiger_id,
+        stripe_publishable_key, stripe_account_id,
+        paypal_email, paypal_client_id,
+        merchant_id, notizen, sortierung, created_at, updated_at,
+        (stripe_secret_key IS NOT NULL AND stripe_secret_key != '') AS stripe_secret_configured,
+        (paypal_client_secret IS NOT NULL AND paypal_client_secret != '') AS paypal_secret_configured,
+        (api_secret IS NOT NULL AND api_secret != '') AS api_secret_configured,
+        (api_key IS NOT NULL AND api_key != '') AS api_key_configured
+      FROM dojo_banken
       WHERE id = ? AND dojo_id = ?
     `, [id, dojoId]);
-    
+
     if (banken.length === 0) {
       return res.status(404).json({ error: 'Bank nicht gefunden' });
     }
-    
+
     res.json(banken[0]);
   } catch (error) {
     logger.error('Fehler beim Laden der Bank:', { error: error });

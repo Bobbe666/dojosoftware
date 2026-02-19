@@ -2,10 +2,11 @@ const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
-// Helper function to get dojo_id from multiple sources
+// Secure helper - now uses getSecureDojoId from middleware
 const getDojoId = (req) => {
-  return req.tenant?.dojo_id || req.user?.dojo_id || req.query.dojo_id;
+  return getSecureDojoId(req);
 };
 
 // ===================================================================

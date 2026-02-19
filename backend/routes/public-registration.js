@@ -5,6 +5,7 @@ const db = require('../db');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
+const { sendVerificationEmail } = require('../services/emailTemplates');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -31,7 +32,7 @@ const generateToken = () => {
 // POST /api/public/register/step1 - Schritt 1: Grundregistrierung mit Email
 router.post('/register/step1', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, promo_code } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -52,6 +53,26 @@ router.post('/register/step1', async (req, res) => {
       });
     }
 
+    // Promo-Code validieren falls angegeben
+    let promoCodeId = null;
+    let werberId = null;
+    if (promo_code && promo_code.trim()) {
+      const codeResult = await queryAsync(`
+        SELECT rc.id, rc.mitglied_id, rc.dojo_id
+        FROM referral_codes rc
+        WHERE rc.code = ?
+          AND rc.status = 'aktiv'
+          AND (rc.gueltig_bis IS NULL OR rc.gueltig_bis >= CURDATE())
+          AND (rc.max_verwendungen IS NULL OR rc.verwendet_count < rc.max_verwendungen)
+      `, [promo_code.trim().toUpperCase()]);
+
+      if (codeResult.length > 0) {
+        promoCodeId = codeResult[0].id;
+        werberId = codeResult[0].mitglied_id;
+        logger.info('Gültiger Promo-Code verwendet', { code: promo_code, werber_id: werberId });
+      }
+    }
+
     // Verification Token generieren
     const verificationToken = generateToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 Stunden
@@ -59,22 +80,34 @@ router.post('/register/step1', async (req, res) => {
     // SECURITY: Passwort hashen (12 Rounds für Sicherheit)
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // In Registrierungs-Tabelle einfügen
+    // In Registrierungs-Tabelle einfügen (mit Promo-Code falls vorhanden)
     await queryAsync(`
       INSERT INTO registrierungen (
-        email, password_hash, verification_token, token_expires_at, status, created_at
-      ) VALUES (?, ?, ?, ?, 'email_pending', NOW())
-    `, [email, passwordHash, verificationToken, expiresAt]);
+        email, password_hash, verification_token, token_expires_at, status, created_at,
+        promo_code, promo_code_id, werber_mitglied_id
+      ) VALUES (?, ?, ?, ?, 'email_pending', NOW(), ?, ?, ?)
+    `, [email, passwordHash, verificationToken, expiresAt, promo_code || null, promoCodeId, werberId]);
 
-    logger.info('Neue Registrierung gestartet', { email });
+    logger.info('Neue Registrierung gestartet', { email, promo_code: promo_code || 'keiner' });
 
-    // TODO: Email mit Verifizierungslink senden
+    // Verification-Email senden
+    try {
+      await sendVerificationEmail(email, {
+        verificationToken: verificationToken,
+        verificationUrl: `https://dojo.tda-intl.org/verify-registration?token=${verificationToken}`
+      });
+      logger.info(`Verification-Email gesendet an ${email}`);
+    } catch (emailErr) {
+      logger.warn(`Verification-Email konnte nicht gesendet werden: ${emailErr.message}`);
+    }
+
     res.json({
       success: true,
       message: 'Registrierung gestartet. Bitte prüfen Sie Ihre E-Mails.',
       data: {
         email,
-        nextStep: 'email_verification'
+        nextStep: 'email_verification',
+        promoCodeValid: !!promoCodeId
       }
     });
 
@@ -343,6 +376,44 @@ router.post('/register/step6', async (req, res) => {
         status = 'registration_complete', completed_at = NOW()
       WHERE id = ?
     `, [true, true, true, true, registration[0].id]);
+
+    // Wenn Promo-Code verwendet wurde, Werbung erfassen
+    if (registration[0].promo_code_id && registration[0].werber_mitglied_id) {
+      try {
+        // Referral-Eintrag erstellen
+        await queryAsync(`
+          INSERT INTO referrals (
+            dojo_id, werber_id, geworbener_name, geworbener_email,
+            code_id, status, erstellt_am
+          ) VALUES (
+            (SELECT dojo_id FROM referral_codes WHERE id = ?),
+            ?, ?, ?, ?, 'registriert', NOW()
+          )
+        `, [
+          registration[0].promo_code_id,
+          registration[0].werber_mitglied_id,
+          `${registration[0].vorname} ${registration[0].nachname}`,
+          registration[0].email,
+          registration[0].promo_code_id
+        ]);
+
+        // Code-Verwendungszähler erhöhen
+        await queryAsync(`
+          UPDATE referral_codes
+          SET verwendet_count = verwendet_count + 1
+          WHERE id = ?
+        `, [registration[0].promo_code_id]);
+
+        logger.info('Werbung erfasst', {
+          werber_id: registration[0].werber_mitglied_id,
+          geworbener: registration[0].email,
+          code_id: registration[0].promo_code_id
+        });
+      } catch (refErr) {
+        // Fehler bei Referral-Erfassung nur loggen, Registrierung nicht abbrechen
+        logger.error('Fehler bei Referral-Erfassung:', { error: refErr });
+      }
+    }
 
     // Hole Tarif-Details für die Benachrichtigung
     let tarifDetails = '';

@@ -3,6 +3,8 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const db = require('../db');
+const { sendWelcomeEmail } = require('../services/emailTemplates');
+const saasSettings = require('../services/saasSettingsService');
 
 /**
  * Dojo Onboarding Routes (SaaS Multi-Tenant Registration)
@@ -160,8 +162,9 @@ router.post('/register-dojo', async (req, res) => {
     logger.info('Dojo erstellt: ${dojo_name} (ID: ${dojo_id})');
 
     // ===== 2. ERSTELLE SUBSCRIPTION (Trial-Phase) =====
+    const trialDurationDays = await saasSettings.getTrialDurationDays();
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14); // 14 Tage Trial
+    trialEndsAt.setDate(trialEndsAt.getDate() + trialDurationDays);
 
     await connection.query(
       `INSERT INTO dojo_subscriptions
@@ -253,6 +256,19 @@ router.post('/register-dojo', async (req, res) => {
       logger.warn('⚠️ Super-Admin Benachrichtigung konnte nicht erstellt werden:', notifErr.message);
     }
 
+    // Willkommens-Email senden
+    try {
+      await sendWelcomeEmail(owner_email, {
+        dojoName: dojo_name,
+        adminName: owner_name,
+        subdomain: subdomain,
+        loginUrl: `https://${subdomain}.dojo.tda-intl.org/login`
+      });
+      logger.info(`Willkommens-Email gesendet an ${owner_email}`);
+    } catch (emailErr) {
+      logger.warn(`Willkommens-Email konnte nicht gesendet werden: ${emailErr.message}`);
+    }
+
     // ===== ERFOLG! =====
     res.status(201).json({
       success: true,
@@ -262,9 +278,6 @@ router.post('/register-dojo', async (req, res) => {
       message: 'Dojo erfolgreich registriert! Willkommens-Email wurde versendet.',
       trial_ends_at: trialEndsAt.toISOString().split('T')[0]
     });
-
-    // TODO: Sende Willkommens-Email
-    // sendWelcomeEmail(owner_email, subdomain, dojo_name, trialEndsAt);
 
   } catch (error) {
     await connection.rollback();

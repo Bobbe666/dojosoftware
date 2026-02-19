@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -34,7 +35,8 @@ const parseDate = (dateValue) => {
 router.get('/', async (req, res) => {
     try {
         // dojo_id aus verschiedenen Quellen extrahieren
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
 
         logger.debug('📊 Tarife GET Request:', {
             tenant_dojo_id: req.tenant?.dojo_id,
@@ -94,7 +96,8 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -158,7 +161,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -182,7 +186,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -204,7 +209,8 @@ router.delete('/:id', async (req, res) => {
 router.patch('/:id/archivieren', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -244,7 +250,8 @@ router.patch('/:id/archivieren', async (req, res) => {
 router.get('/rabatte', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         const parsedDojoId = dojoId ? parseInt(dojoId, 10) : null;
 
         // User mit dojo_id=null gilt als Super-Admin (kann alle Dojos sehen)
@@ -282,7 +289,8 @@ router.get('/rabatte', async (req, res) => {
 router.post('/rabatte', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -336,7 +344,8 @@ router.post('/rabatte', async (req, res) => {
 router.put('/rabatte/:id', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
@@ -377,7 +386,8 @@ router.put('/rabatte/:id', async (req, res) => {
 router.delete('/rabatte/:id', async (req, res) => {
     try {
         // Tenant check - dojo_id aus verschiedenen Quellen
-        const dojoId = req.tenant?.dojo_id || req.dojo_id || req.query.dojo_id || req.user?.dojo_id;
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const dojoId = getSecureDojoId(req);
         if (!dojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }

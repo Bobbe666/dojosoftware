@@ -1,11 +1,14 @@
 const express = require("express");
 const db = require("../db");
 const router = express.Router();
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // API: Transaktionen für ein Mitglied abrufen
 router.get("/", (req, res) => {
-    const { mitglied_id, dojo_id } = req.query;
-    
+    const { mitglied_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
+
     if (!mitglied_id) {
         return res.status(400).json({ error: "Mitglied-ID ist erforderlich" });
     }
@@ -13,9 +16,9 @@ router.get("/", (req, res) => {
     let whereConditions = ['t.mitglied_id = ?'];
     let queryParams = [mitglied_id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -51,17 +54,19 @@ router.get("/", (req, res) => {
 
 // API: Neue Transaktion erstellen
 router.post("/", (req, res) => {
-    const { mitglied_id, typ, betrag, status, faellig_am, bezahlt_am, zahlungsart, dojo_id } = req.body;
+    const { mitglied_id, typ, betrag, status, faellig_am, bezahlt_am, zahlungsart } = req.body;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     if (!mitglied_id || !typ || !betrag) {
         return res.status(400).json({ error: "Mitglied-ID, Typ und Betrag sind erforderlich" });
     }
     // 🔒 SICHERHEIT: Prüfe ob Mitglied existiert und zu welchem Dojo es gehört
     const checkMemberQuery = "SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?";
-    
+
     db.query(checkMemberQuery, [mitglied_id], (checkErr, checkResults) => {
         if (checkErr) {
-            logger.error('Fehler beim Prüfen des Mitglieds:', { error: checkErr });
+            console.error('Fehler beim Prüfen des Mitglieds:', checkErr);
             return res.status(500).json({ error: "Fehler beim Prüfen des Mitglieds" });
         }
 
@@ -70,14 +75,14 @@ router.post("/", (req, res) => {
         }
 
         const memberDojoId = checkResults[0].dojo_id;
-        
-        // 🔒 SICHERHEIT: Prüfe dojo_id Berechtigung
-        if (dojo_id && parseInt(dojo_id) !== memberDojoId) {
-            logger.error('SICHERHEITSVERLETZUNG: Versuch Transaktion für falsches Dojo zu erstellen!');
+
+        // 🔒 SICHERHEIT: Prüfe ob User Berechtigung für dieses Dojo hat
+        if (secureDojoId && secureDojoId !== memberDojoId) {
+            console.error('SICHERHEITSVERLETZUNG: Versuch Transaktion für falsches Dojo zu erstellen!');
             return res.status(403).json({
                 error: "Keine Berechtigung - Mitglied gehört zu anderem Dojo",
                 member_dojo: memberDojoId,
-                requested_dojo: dojo_id
+                user_dojo: secureDojoId
             });
         }
 
@@ -118,7 +123,9 @@ router.post("/", (req, res) => {
 // API: Transaktion aktualisieren
 router.put("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { status, bezahlt_am, zahlungsart, mahnstufe, letzte_mahnung, dojo_id } = req.body;
+    const { status, bezahlt_am, zahlungsart, mahnstufe, letzte_mahnung } = req.body;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Transaktions-ID" });
@@ -127,9 +134,9 @@ router.put("/:id", (req, res) => {
     let whereConditions = ['t.id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -188,7 +195,8 @@ router.put("/:id", (req, res) => {
 // API: Transaktion löschen
 router.delete("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { dojo_id } = req.query;
+    // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+    const secureDojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Transaktions-ID" });
@@ -197,9 +205,9 @@ router.delete("/:id", (req, res) => {
     let whereConditions = ['t.id = ?'];
     let queryParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;

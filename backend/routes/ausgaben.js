@@ -9,6 +9,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 router.use(authenticateToken);
 
@@ -29,13 +30,14 @@ const queryAsync = (sql, params = []) => {
  * Liste aller Ausgaben für ein Dojo
  */
 router.get('/', async (req, res) => {
-  const dojo_id = req.query.dojo_id || req.user?.dojo_id;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+  const secureDojoId = getSecureDojoId(req);
   const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
   const monat = req.query.monat ? parseInt(req.query.monat) : null;
   const kategorie = req.query.kategorie || null;
 
-  if (!dojo_id) {
-    return res.status(400).json({ error: 'dojo_id erforderlich' });
+  if (!secureDojoId) {
+    return res.status(400).json({ error: 'Keine Berechtigung - dojo_id nicht verfügbar' });
   }
 
   try {
@@ -54,7 +56,7 @@ router.get('/', async (req, res) => {
         AND bewegungsart = 'Ausgabe'
         AND YEAR(geschaeft_datum) = ?
     `;
-    const params = [dojo_id, jahr];
+    const params = [secureDojoId, jahr];
 
     if (monat) {
       query += ' AND MONTH(geschaeft_datum) = ?';
@@ -81,7 +83,7 @@ router.get('/', async (req, res) => {
         AND YEAR(geschaeft_datum) = ?
         ${monat ? 'AND MONTH(geschaeft_datum) = ?' : ''}
     `;
-    const summenParams = monat ? [dojo_id, jahr, monat] : [dojo_id, jahr];
+    const summenParams = monat ? [secureDojoId, jahr, monat] : [secureDojoId, jahr];
     const [summen] = await queryAsync(summenQuery, summenParams);
 
     res.json({
@@ -130,7 +132,6 @@ router.get('/kategorien', (req, res) => {
  */
 router.post('/', async (req, res) => {
   const {
-    dojo_id,
     datum,
     betrag,
     beschreibung,
@@ -138,11 +139,12 @@ router.post('/', async (req, res) => {
     kategorie
   } = req.body;
 
-  const finalDojoId = dojo_id || req.user?.dojo_id;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
+  const secureDojoId = getSecureDojoId(req);
 
-  if (!finalDojoId || !datum || !betrag || !beschreibung) {
+  if (!secureDojoId || !datum || !betrag || !beschreibung) {
     return res.status(400).json({
-      error: 'Pflichtfelder: dojo_id, datum, betrag, beschreibung'
+      error: 'Pflichtfelder: datum, betrag, beschreibung (dojo_id wird automatisch ermittelt)'
     });
   }
 
@@ -155,7 +157,7 @@ router.post('/', async (req, res) => {
       ORDER BY eintrag_id DESC
       LIMIT 1
     `;
-    const [letzterEintrag] = await queryAsync(kassenstandQuery, [finalDojoId]);
+    const [letzterEintrag] = await queryAsync(kassenstandQuery, [secureDojoId]);
     const kassenstandVorher = letzterEintrag?.kassenstand_nachher_cent || 0;
     const betragCent = Math.round(parseFloat(betrag) * 100);
     const kassenstandNachher = kassenstandVorher - betragCent;
@@ -178,7 +180,7 @@ router.post('/', async (req, res) => {
     `;
 
     const result = await queryAsync(insertQuery, [
-      finalDojoId,
+      secureDojoId,
       datum,
       betragCent,
       beschreibung,
@@ -303,11 +305,12 @@ router.delete('/:id', async (req, res) => {
  * Ausgaben-Summen nach Kategorie
  */
 router.get('/summen', async (req, res) => {
-  const dojo_id = req.query.dojo_id || req.user?.dojo_id;
+  // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
+  const secureDojoId = getSecureDojoId(req);
   const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
 
-  if (!dojo_id) {
-    return res.status(400).json({ error: 'dojo_id erforderlich' });
+  if (!secureDojoId) {
+    return res.status(400).json({ error: 'Keine Berechtigung - dojo_id nicht verfügbar' });
   }
 
   try {
@@ -324,7 +327,7 @@ router.get('/summen', async (req, res) => {
       ORDER BY summe DESC
     `;
 
-    const summen = await queryAsync(query, [dojo_id, jahr]);
+    const summen = await queryAsync(query, [secureDojoId, jahr]);
 
     // Monatliche Entwicklung
     const monatlichQuery = `
@@ -339,7 +342,7 @@ router.get('/summen', async (req, res) => {
       ORDER BY monat
     `;
 
-    const monatlich = await queryAsync(monatlichQuery, [dojo_id, jahr]);
+    const monatlich = await queryAsync(monatlichQuery, [secureDojoId, jahr]);
 
     res.json({
       success: true,

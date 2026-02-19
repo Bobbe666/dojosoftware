@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const router = express.Router();
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
+// JWT Secret aus zentraler auth.js (hat Startup-Check)
+const { JWT_SECRET } = require('../middleware/auth');
 
 // ===================================================================
 // MIDDLEWARE: JWT Authentication

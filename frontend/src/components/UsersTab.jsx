@@ -129,6 +129,7 @@ const UsersTab = ({ token }) => {
                   <th>Benutzername</th>
                   <th>Name</th>
                   <th>Email</th>
+                  <th>Passwort</th>
                   <th>Rolle</th>
                   <th>Status</th>
                   <th>Letzter Login</th>
@@ -141,6 +142,13 @@ const UsersTab = ({ token }) => {
                     <td className="username">{user.username}</td>
                     <td>{user.vorname} {user.nachname}</td>
                     <td className="email-cell">{user.email}</td>
+                    <td>
+                      {user.has_password ? (
+                        <span className="status-badge success">Ja</span>
+                      ) : (
+                        <span className="status-badge warning">Nein</span>
+                      )}
+                    </td>
                     <td>
                       <span className={`role-badge ${user.rolle}`}>
                         {roleTranslations[user.rolle] || user.rolle}
@@ -224,6 +232,7 @@ const UsersTab = ({ token }) => {
                       <tr>
                         <th>Benutzername</th>
                         <th>Email</th>
+                        <th>Passwort</th>
                         <th>Aktivität (30 Tage)</th>
                         <th>Erstellt</th>
                       </tr>
@@ -233,6 +242,13 @@ const UsersTab = ({ token }) => {
                         <tr key={userIdx}>
                           <td className="username">{dojoUser.benutzername}</td>
                           <td className="email-cell">{dojoUser.email}</td>
+                          <td>
+                            {dojoUser.has_password ? (
+                              <span className="status-badge success">Ja</span>
+                            ) : (
+                              <span className="status-badge warning">Nein</span>
+                            )}
+                          </td>
                           <td className="activity-cell">
                             {dojoUser.activity_last_30_days > 0 ? (
                               <span className="activity-badge active">

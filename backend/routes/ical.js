@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const crypto = require('crypto');
+const { JWT_SECRET } = require('../middleware/auth');
 
 // ============================================================================
 // HILFSFUNKTIONEN
@@ -193,7 +194,7 @@ END:VEVENT
  * Generiert einen sicheren Token für Kalender-Abos
  */
 function generateCalendarToken(mitgliedId, dojoId) {
-  const data = `${mitgliedId}-${dojoId}-${process.env.JWT_SECRET || 'dojo-secret'}`;
+  const data = `${mitgliedId}-${dojoId}-${JWT_SECRET}`;
   return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32);
 }
 

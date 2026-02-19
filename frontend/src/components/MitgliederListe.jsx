@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useTranslation } from 'react-i18next';
+import config from '../config/config.js';
 // Grid von react-window temporär deaktiviert wegen Object.values Bug
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
@@ -104,7 +105,7 @@ const MemberCard = React.memo(({
           marginBottom: '0.3rem'
         }}>
           <img
-            src={mitglied.foto_pfad ? `http://localhost:3000/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
+            src={mitglied.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
             alt={`${mitglied.vorname} ${mitglied.nachname}`}
             style={{
               width: '40px',

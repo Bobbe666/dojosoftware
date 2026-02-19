@@ -8,15 +8,18 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import config from '../config/config.js';
 import MarketingAktionen from './MarketingAktionen';
-import { Users, Calendar } from 'lucide-react';
+import MarketingJahresplan from './MarketingJahresplan';
+import FreundeWerbenFreunde from './FreundeWerbenFreunde';
+import { Users, Calendar, CalendarDays, Gift } from 'lucide-react';
 import '../styles/Dashboard.css';
 import '../styles/MarketingAktionen.css';
+import '../styles/BuddyVerwaltung.css';
 
 const BuddyVerwaltung = () => {
     const { token } = useAuth();
 
-    // Tab State
-    const [activeTab, setActiveTab] = useState('gruppen');
+    // Tab State - Jahresplan ist der erste Tab
+    const [activeTab, setActiveTab] = useState('jahresplan');
 
     // State Management
     const [groups, setGroups] = useState([]);
@@ -299,8 +302,29 @@ const BuddyVerwaltung = () => {
                 <p>Verwalte Freunde-Gruppen, Einladungen und Marketing-Aktionen</p>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs - Jahresplan zuerst */}
             <div className="buddy-tabs">
+                <button
+                    className={`buddy-tab ${activeTab === 'jahresplan' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('jahresplan')}
+                >
+                    <CalendarDays size={18} />
+                    Jahresplan
+                </button>
+                <button
+                    className={`buddy-tab ${activeTab === 'referral' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('referral')}
+                >
+                    <Gift size={18} />
+                    Freunde werben
+                </button>
+                <button
+                    className={`buddy-tab ${activeTab === 'aktionen' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('aktionen')}
+                >
+                    <Calendar size={18} />
+                    Social Media
+                </button>
                 <button
                     className={`buddy-tab ${activeTab === 'gruppen' ? 'active' : ''}`}
                     onClick={() => setActiveTab('gruppen')}
@@ -308,17 +332,14 @@ const BuddyVerwaltung = () => {
                     <Users size={18} />
                     Buddy-Gruppen
                 </button>
-                <button
-                    className={`buddy-tab ${activeTab === 'aktionen' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('aktionen')}
-                >
-                    <Calendar size={18} />
-                    Marketing-Aktionen
-                </button>
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'aktionen' ? (
+            {activeTab === 'jahresplan' ? (
+                <MarketingJahresplan />
+            ) : activeTab === 'referral' ? (
+                <FreundeWerbenFreunde />
+            ) : activeTab === 'aktionen' ? (
                 <MarketingAktionen />
             ) : (
                 <>

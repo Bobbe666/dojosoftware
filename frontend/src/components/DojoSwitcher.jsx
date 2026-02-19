@@ -114,6 +114,7 @@ const DojoSwitcher = () => {
   const isInSuperAdminMode = activeDojo === 'super-admin';
   const isInVerbandMode = activeDojo === 'verband';
   const isInSupportMode = activeDojo === 'support';
+  const isInLizenzenMode = window.location.pathname === '/dashboard/lizenzen';
 
   // Filter dojos by search query
   const filteredDojos = Array.isArray(dojos)
@@ -139,6 +140,7 @@ const DojoSwitcher = () => {
 
   // Get current mode display info
   const getCurrentModeInfo = () => {
+    if (isInLizenzenMode) return { icon: '📋', label: 'Lizenzverwaltung', color: '#8B5CF6' };
     if (isInSupportMode) return { icon: '🎫', label: 'Support Center', color: '#10b981' };
     if (isInVerbandMode) return { icon: '🌐', label: 'TDA Verband', color: '#3B82F6' };
     if (isInSuperAdminMode) return { icon: '🏢', label: 'TDA Int\'l Org', color: '#DAA520' };
@@ -236,6 +238,18 @@ const DojoSwitcher = () => {
                     <span className="item-icon">🏢</span>
                     <span className="item-name">TDA Int'l Org</span>
                     <span className="item-badge gold">Admin</span>
+                  </button>
+
+                  {/* Lizenzverwaltung */}
+                  <button
+                    type="button"
+                    className={`dropdown-item compact ${window.location.pathname === '/dashboard/lizenzen' ? 'active' : ''}`}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); navigate('/dashboard/lizenzen'); }}
+                    style={{ '--accent-color': '#8B5CF6' }}
+                  >
+                    <span className="item-icon">📋</span>
+                    <span className="item-name">Lizenzverwaltung</span>
+                    <span className="item-badge purple">SaaS</span>
                   </button>
 
                   {/* TDA Verband */}

@@ -1,30 +1,36 @@
 /**
  * SEPA Routes für Mitglieder
  * Extrahiert aus mitglieder.js - enthält alle SEPA-Mandat Endpoints
+ *
+ * 🔒 SICHERHEIT: Alle Routes verwenden getSecureDojoId() für Multi-Tenancy Isolation
  */
 const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
 const SepaPdfGenerator = require('../../utils/sepaPdfGenerator');
 const { validateId, requireFields } = require('../../middleware/validation');
+const { getSecureDojoId, isSuperAdmin } = require('../../middleware/tenantSecurity');
 const router = express.Router();
 
 // SEPA-Mandat abrufen
 router.get('/:id/sepa-mandate', (req, res) => {
   const { id } = req.params;
-  const dojoIdFromQuery = req.query.dojo_id;
-  const dojoId = req.dojo_id || dojoIdFromQuery;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
+  const userIsSuperAdmin = isSuperAdmin(req);
 
   let whereConditions = ['sm.mitglied_id = ?', "sm.status = 'aktiv'"];
   let queryParams = [id];
 
-  if (dojoId === null || dojoId === undefined || dojoIdFromQuery === 'all') {
+  if (userIsSuperAdmin && secureDojoId === null) {
+    // Super-Admin ohne spezifisches Dojo: Nur zentral verwaltete Dojos
     whereConditions.push(`m.dojo_id NOT IN (
       SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
     )`);
-  } else if (dojoId && dojoId !== 'all') {
+  } else if (secureDojoId) {
+    // Normaler Admin oder Super-Admin mit spezifischem Dojo
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojoId));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -56,7 +62,8 @@ router.post('/:id/sepa-mandate',
   requireFields(['iban', 'bic', 'kontoinhaber']),
   (req, res) => {
     const { id } = req.params;
-    const { dojo_id } = req.query;
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
     let { iban, bic, kontoinhaber, bankname } = req.body;
 
     iban = iban.replace(/\s/g, '').toUpperCase();
@@ -73,9 +80,9 @@ router.post('/:id/sepa-mandate',
     let checkConditions = ['mitglied_id = ?'];
     let checkParams = [id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
       checkConditions.push('dojo_id = ?');
-      checkParams.push(parseInt(dojo_id));
+      checkParams.push(secureDojoId);
     }
 
     const checkQuery = `SELECT mitglied_id, dojo_id FROM mitglieder WHERE ${checkConditions.join(' AND ')}`;
@@ -148,17 +155,18 @@ router.post('/:id/sepa-mandate',
 // SEPA-Mandat widerrufen
 router.delete('/:id/sepa-mandate', (req, res) => {
   const { id } = req.params;
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { grund } = req.body;
 
   let whereConditions = ['sm.mitglied_id = ?', "sm.status = 'aktiv'"];
   let queryParams = [grund || 'Widerrufen durch Benutzer', id];
 
   let joinClause = '';
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     joinClause = 'JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id';
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -189,14 +197,15 @@ router.delete('/:id/sepa-mandate', (req, res) => {
 // Archivierte SEPA-Mandate abrufen
 router.get('/:id/sepa-mandate/archiv', (req, res) => {
   const { id } = req.params;
-  const { dojo_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = ['sm.mitglied_id = ?', "(sm.archiviert = 1 OR sm.status = 'widerrufen')"];
   let queryParams = [id];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
   }
 
   const query = `
@@ -220,7 +229,9 @@ router.get('/:id/sepa-mandate/archiv', (req, res) => {
 // SEPA-Mandat als PDF herunterladen
 router.get('/:id/sepa-mandate/download', async (req, res) => {
   const { id } = req.params;
-  const { mandate_id, dojo_id } = req.query;
+  const { mandate_id } = req.query;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
   try {
     let query;
@@ -231,9 +242,9 @@ router.get('/:id/sepa-mandate/download', async (req, res) => {
       whereConditions = ['sm.mandat_id = ?', 'sm.mitglied_id = ?'];
       queryParams = [mandate_id, id];
 
-      if (dojo_id && dojo_id !== 'all') {
+      if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
       }
 
       query = `
@@ -249,9 +260,9 @@ router.get('/:id/sepa-mandate/download', async (req, res) => {
       whereConditions = ['sm.mitglied_id = ?', "sm.status = 'aktiv'"];
       queryParams = [id];
 
-      if (dojo_id && dojo_id !== 'all') {
+      if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
       }
 
       query = `

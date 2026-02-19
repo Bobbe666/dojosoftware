@@ -1039,6 +1039,24 @@
   margin-bottom: 0.3rem;
 }
 
+.course-name-primary {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.3rem;
+  line-height: 1.2;
+}
+
+.course-style-secondary {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 0.4rem;
+  line-height: 1.2;
+}
+
 .course-details {
   display: flex;
   align-items: center;
