@@ -340,6 +340,19 @@ try {
   });
 }
 
+// 1.0.2 ÖFFENTLICHER STUNDENPLAN (vor Authentifizierung)
+try {
+  const publicStundenplanRoutes = require('./routes/public-stundenplan');
+  app.use('/api/public/stundenplan', publicStundenplanRoutes);
+  logger.success('Route geladen', { path: '/api/public/stundenplan' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'public stundenplan',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // 1.0.3 PROMO / EARLY-BIRD AKTIONEN (PUBLIC)
 try {
   const promoRoutes = require('./routes/promo');

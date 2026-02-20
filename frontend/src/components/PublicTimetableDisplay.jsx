@@ -12,6 +12,7 @@ const PublicTimetableDisplay = () => {
   const [currentView, setCurrentView] = useState(0); // 0 = heute, 1 = nächste Stunde, 2 = Wochenübersicht
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState('');
+  const [error, setError] = useState(null);
 
   const viewNames = ['Heute', 'Nächste Stunde', 'Wochenübersicht'];
   const viewDuration = 10000; // 10 Sekunden pro Ansicht
@@ -26,6 +27,7 @@ const PublicTimetableDisplay = () => {
 
       try {
         setLoading(true);
+        setError(null);
         console.log('📡 Lade Stundenplan für Dojo:', dojoId);
         const response = await axios.get(`/public/stundenplan/${dojoId}`);
         const data = response.data;
@@ -41,6 +43,7 @@ const PublicTimetableDisplay = () => {
       } catch (error) {
         console.error('❌ Fehler beim Laden des Stundenplans:', error);
         console.error('❌ Error Details:', error.response || error.message);
+        setError('⚔️ Der Stundenplan hat gerade einen Sparring-Zweikampf mit dem Server - wir schreiten ein!');
         setTimetableData([]);
       } finally {
         setLoading(false);
@@ -391,10 +394,53 @@ const PublicTimetableDisplay = () => {
         </div>
       )}
 
+      {/* Error Display */}
+      {error && (
+        <div className="error-display" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '4rem 2rem',
+          minHeight: '400px',
+          background: 'rgba(255, 107, 53, 0.1)',
+          border: '3px solid rgba(255, 107, 53, 0.4)',
+          borderRadius: '20px',
+          margin: '2rem',
+          animation: 'fadeIn 0.5s ease-out'
+        }}>
+          <div style={{
+            fontSize: '6rem',
+            marginBottom: '2rem',
+            animation: 'bounce 2s infinite'
+          }}>⚔️</div>
+          <h2 style={{
+            color: '#ff6b35',
+            fontSize: '2rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
+            fontWeight: 'bold'
+          }}>{error}</h2>
+          <p style={{
+            color: '#ccc',
+            fontSize: '1.2rem',
+            marginBottom: '2rem',
+            textAlign: 'center'
+          }}>Der Stundenplan wird automatisch alle 30 Sekunden aktualisiert.</p>
+          <div style={{
+            color: '#999',
+            fontSize: '0.9rem',
+            marginTop: '1rem'
+          }}>🔄 Nächste Aktualisierung läuft...</div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <div className="main-content">
-        {renderCurrentView()}
-      </div>
+      {!error && (
+        <div className="main-content">
+          {renderCurrentView()}
+        </div>
+      )}
     </div>
   );
 };

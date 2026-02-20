@@ -19,7 +19,7 @@ function getClientIP(req) {
 }
 
 /**
- * Pfade die von intensiver Prüfung ausgenommen sind (interne API-Routen)
+ * Pfade die von intensiver Prüfung ausgenommen sind (interne API-Routen + öffentliche Endpunkte)
  */
 const SAFE_PATH_PREFIXES = [
   '/api/lastschriftlauf/',
@@ -27,7 +27,8 @@ const SAFE_PATH_PREFIXES = [
   '/api/beitraege/',
   '/api/notifications/',
   '/api/checkin/',
-  '/api/dashboard/'
+  '/api/dashboard/',
+  '/api/public/'  // Öffentliche Endpunkte (Registrierung, Stundenplan, etc.)
 ];
 
 /**
@@ -40,20 +41,20 @@ const securityMonitorMiddleware = async (req, res, next) => {
   const method = req.method;
 
   try {
-    // 1. Prüfe ob IP blockiert ist
+    // 0. Sichere interne API-Pfade und öffentliche Endpunkte ZUERST überspringen
+    const isSafePath = SAFE_PATH_PREFIXES.some(prefix => path.startsWith(prefix));
+    if (isSafePath) {
+      req.clientIP = ip;
+      return next();
+    }
+
+    // 1. Prüfe ob IP blockiert ist (nur für nicht-sichere Pfade)
     const isBlocked = await securityMonitorService.isIPBlocked(ip);
     if (isBlocked) {
       return res.status(403).json({
         error: 'Zugriff verweigert',
         message: 'Ihre IP-Adresse wurde temporär blockiert'
       });
-    }
-
-    // Sichere interne API-Pfade überspringen (bereits durch Auth geschützt)
-    const isSafePath = SAFE_PATH_PREFIXES.some(prefix => path.startsWith(prefix));
-    if (isSafePath) {
-      req.clientIP = ip;
-      return next();
     }
 
     // 2. Prüfe auf SQL-Injection

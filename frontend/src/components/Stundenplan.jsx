@@ -43,7 +43,7 @@ const Stundenplan = () => {
       setRaeume(raeumeRes.data.data || raeumeRes.data || []);
     } catch (err) {
       console.error("Fehler beim Laden:", err);
-      setError("Fehler beim Laden der Daten");
+      setError("⚔️ Der Stundenplan hat gerade einen Sparring-Zweikampf mit dem Server - wir schreiten ein!");
     } finally {
       setLoading(false);
     }
@@ -250,7 +250,36 @@ const Stundenplan = () => {
   const overlaps = checkForOverlaps(filteredStundenplan);
 
   if (loading) return <div className="stundenplan-container-modern">Lade Stundenplan...</div>;
-  if (error) return <div className="stundenplan-container-modern error">{error}</div>;
+  if (error) return (
+    <div className="stundenplan-container-modern">
+      <div className="error-message-box" style={{
+        padding: '2rem',
+        margin: '2rem',
+        background: 'rgba(255, 107, 53, 0.1)',
+        border: '2px solid rgba(255, 107, 53, 0.3)',
+        borderRadius: '15px',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚔️</div>
+        <h3 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{error}</h3>
+        <button
+          onClick={loadData}
+          style={{
+            padding: '0.75rem 2rem',
+            background: 'linear-gradient(135deg, #ffd700, #ff6b35)',
+            border: 'none',
+            borderRadius: '10px',
+            color: '#1a1a2e',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            marginTop: '1rem'
+          }}
+        >
+          🔄 Nochmal versuchen
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="stundenplan-container-modern">

@@ -12,6 +12,7 @@ const MemberSchedule = () => {
   const [pastSchedule, setPastSchedule] = useState([]); // Vergangene Termine
   const [fullStundenplan, setFullStundenplan] = useState([]); // Kompletter Stundenplan für Kalenderansicht
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' oder 'calendar'
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [memberData, setMemberData] = useState(null);
@@ -78,6 +79,7 @@ const MemberSchedule = () => {
       console.log('Vergangene Termine erstellt:', pastTermine);
     } catch (error) {
       console.error('Fehler beim Laden des Stundenplans:', error);
+      setError('⚔️ Der Stundenplan hat gerade einen Sparring-Zweikampf mit dem Server - wir schreiten ein!');
     } finally {
       setLoading(false);
     }
@@ -220,6 +222,44 @@ const MemberSchedule = () => {
           <div style={{ textAlign: 'center', padding: '3rem', color: '#ffd700' }}>
             <div className="loading-spinner" style={{ margin: '0 auto 1rem', border: '3px solid rgba(255, 215, 0, 0.3)', borderTopColor: '#ffd700', width: '40px', height: '40px' }}></div>
             <p>Lade Termine...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <MemberHeader />
+        <div className="dashboard-content">
+          <div style={{
+            padding: '3rem',
+            margin: '2rem auto',
+            maxWidth: '600px',
+            background: 'rgba(255, 107, 53, 0.1)',
+            border: '2px solid rgba(255, 107, 53, 0.3)',
+            borderRadius: '15px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚔️</div>
+            <h3 style={{ color: '#ff6b35', marginBottom: '1rem', fontSize: '1.3rem' }}>{error}</h3>
+            <button
+              onClick={loadSchedule}
+              style={{
+                padding: '0.75rem 2rem',
+                background: 'linear-gradient(135deg, #ffd700, #ff6b35)',
+                border: 'none',
+                borderRadius: '10px',
+                color: '#1a1a2e',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                marginTop: '1rem',
+                fontSize: '1rem'
+              }}
+            >
+              🔄 Nochmal versuchen
+            </button>
           </div>
         </div>
       </div>
