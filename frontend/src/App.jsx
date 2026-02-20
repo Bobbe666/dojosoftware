@@ -22,6 +22,7 @@ import ApiHealthCheck from "./components/ApiHealthCheck";
 // ============================================================================
 import Login from "./components/Login";
 import MitgliederLogin from "./components/MitgliederLogin";
+import ClubMemberLogin from "./components/ClubMemberLogin";
 import SSOLogin from "./components/SSOLogin";
 import LandingPage from "./pages/LandingPage";
 
@@ -277,9 +278,16 @@ const MemberOnlyRoute = ({ children }) => {
 };
 
 // Root Redirect basierend auf Authentifizierungsstatus
-// Einfache Login-Seite für alle
+// Login Route Handler - Subdomain-basiert
 const LoginRouteHandler = () => {
-  return <Login />;
+  const hostname = window.location.hostname;
+  const parts = hostname.split('.');
+
+  // Wenn Subdomain (z.B. dojo-3.dojo.tda-intl.org) → ClubMemberLogin
+  // Sonst (dojo.tda-intl.org) → Login
+  const hasDojoSubdomain = parts.length >= 3 && parts[1] === 'dojo' && parts[0].startsWith('dojo-');
+
+  return hasDojoSubdomain ? <ClubMemberLogin /> : <Login />;
 };
 
 const RootRedirect = () => {
