@@ -21,6 +21,7 @@ import ApiHealthCheck from "./components/ApiHealthCheck";
 // SOFORT GELADEN - Kritisch für Initial Load
 // ============================================================================
 import Login from "./components/Login";
+import MitgliederLogin from "./components/MitgliederLogin";
 import SSOLogin from "./components/SSOLogin";
 import LandingPage from "./pages/LandingPage";
 
@@ -276,6 +277,11 @@ const MemberOnlyRoute = ({ children }) => {
 };
 
 // Root Redirect basierend auf Authentifizierungsstatus
+// Einfache Login-Seite für alle
+const LoginRouteHandler = () => {
+  return <Login />;
+};
+
 const RootRedirect = () => {
   const { token, user, loading } = useAuth();
 
@@ -307,7 +313,7 @@ const App = () => {
                       <AgbConfirmationWrapper>
               <Routes>
               {/* ======== PUBLIC ROUTES ======== */}
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<LoginRouteHandler />} />
               <Route path="/sso-login" element={<SSOLogin />} />
 
               {/* Public Marketing Pages - Lazy Loaded */}
