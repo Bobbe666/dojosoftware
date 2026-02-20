@@ -180,144 +180,149 @@ const ClubMemberLogin = () => {
   }
 
   const clubName = dojoData?.dojoname || 'Dojo';
-  const clubLogo = dojoData?.logo_url || defaultLogo;
+  const clubLogo = dojoData?.logo_url || '/logo-kampfkunstschule-schreiner.png';
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <div className="japanese-title">Tiger & Dragon Association - International</div>
-          <div className="logo">
-            <img src={clubLogo} alt={clubName} className="logo-image" />
-            <h1 className="title">{clubName}</h1>
-          </div>
-          <p className="club-welcome">Willkommen bei {clubName}</p>
-          <div className="security-badge">
-            <Shield size={16} />
-            <span>Sicher verschlüsselt</span>
+    <div className="login-container club-member-login">
+      {/* Split Layout - Logo links, Login rechts */}
+      <div className="login-split-layout">
+        {/* Linke Seite - Großes Club-Logo */}
+        <div className="login-branding club-branding">
+          <div className="branding-content">
+            <img src={clubLogo} alt={clubName} className="branding-logo club-logo-large" />
+            <h1 className="branding-title">{clubName}</h1>
+            <p className="branding-subtitle">Willkommen bei {clubName}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {/* Email/Username Feld */}
-          <div className="form-group">
-            <label className="form-label">
-              <div className="label-content">
-                {loginType === 'email' ? (
-                  <Mail size={16} className="label-icon" />
-                ) : (
-                  <User size={16} className="label-icon" />
+        {/* Rechte Seite - Login-Formular */}
+        <div className="login-forms-area">
+          <div className="forms-container">
+            <div className="login-card">
+              <div className="login-card-title">
+                <Lock size={16} />
+                <span>Mitglieder-Login</span>
+              </div>
+
+              <form onSubmit={handleSubmit} className="login-form">
+                {/* Email/Username Feld */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <div className="label-content">
+                      {loginType === 'email' ? (
+                        <Mail size={16} className="label-icon" />
+                      ) : (
+                        <User size={16} className="label-icon" />
+                      )}
+                      <span>
+                        {loginType === 'email' ? 'E-Mail' : 'Benutzername'}
+                      </span>
+                    </div>
+                  </label>
+                  <input
+                    type="text"
+                    name="loginField"
+                    value={formData.loginField}
+                    onChange={handleInputChange}
+                    className={`form-input ${loginType === 'email' ? 'input-email' : 'input-username'}`}
+                    placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'ihr-benutzername'}
+                    required
+                    autoComplete="username"
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* Passwort Feld */}
+                <div className="form-group">
+                  <label className="form-label">
+                    <div className="label-content">
+                      <Lock size={16} className="label-icon" />
+                      <span>Passwort</span>
+                    </div>
+                  </label>
+                  <div className="password-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="form-input password-input"
+                      placeholder="Ihr Passwort"
+                      required
+                      autoComplete="current-password"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      disabled={loading}
+                      aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="error-message" role="alert">
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
+                  </div>
                 )}
-                <span>
-                  {loginType === 'email' ? 'E-Mail-Adresse' : 'Benutzername'}
-                </span>
-              </div>
-            </label>
-            <input
-              type="text"
-              name="loginField"
-              value={formData.loginField}
-              onChange={handleInputChange}
-              className={`form-input ${loginType === 'email' ? 'input-email' : 'input-username'}`}
-              placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'ihr-benutzername'}
-              required
-              autoComplete="username"
-              disabled={loading}
-            />
-            <small className="input-hint">
-              <Info size={12} />
-              Sie können sich mit E-Mail oder Benutzername anmelden
-            </small>
-          </div>
 
-          {/* Passwort Feld */}
-          <div className="form-group">
-            <label className="form-label">
-              <div className="label-content">
-                <Lock size={16} className="label-icon" />
-                <span>Passwort</span>
-              </div>
-            </label>
-            <div className="password-wrapper">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="form-input password-input"
-                placeholder="Ihr Passwort"
-                required
-                autoComplete="current-password"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-                disabled={loading}
-                aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+                {/* Success Message */}
+                {successMessage && (
+                  <div className="success-message" role="alert">
+                    <CheckCircle size={16} />
+                    <span>{successMessage}</span>
+                  </div>
+                )}
+
+                {/* Login Button */}
+                <button
+                  type="submit"
+                  className="login-button"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="button-spinner"></div>
+                      <span>Anmelden...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={18} />
+                      <span>Anmelden</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Passwort vergessen Link */}
+                <button
+                  type="button"
+                  className="forgot-password-link"
+                  onClick={() => navigate('/password-reset')}
+                  disabled={loading}
+                >
+                  Passwort vergessen?
+                </button>
+              </form>
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="error-message" role="alert">
-              <AlertCircle size={16} />
-              <span>{error}</span>
+          {/* Footer */}
+          <div className="login-footer">
+            <p className="version-info">
+              DojoSoftware © 2024-2025
+            </p>
+            <div className="security-info">
+              <Shield size={12} />
+              <span>SSL-verschlüsselt | DSGVO-konform</span>
             </div>
-          )}
-
-          {/* Success Message */}
-          {successMessage && (
-            <div className="success-message" role="alert">
-              <CheckCircle size={16} />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          {/* Login Button */}
-          <button
-            type="submit"
-            className="login-button"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <div className="button-spinner"></div>
-                <span>Anmelden...</span>
-              </>
-            ) : (
-              <>
-                <Lock size={18} />
-                <span>Anmelden</span>
-              </>
-            )}
-          </button>
-
-          {/* Passwort vergessen Link */}
-          <button
-            type="button"
-            className="forgot-password-link"
-            onClick={() => navigate('/password-reset')}
-            disabled={loading}
-          >
-            Passwort vergessen?
-          </button>
-        </form>
-
-        {/* Footer */}
-        <div className="login-footer-simple">
-          <div className="security-info">
-            <Shield size={12} />
-            <span>SSL-verschlüsselt | DSGVO-konform</span>
           </div>
-          <p className="version-info">
-            DojoSoftware © 2024-2025
-          </p>
         </div>
       </div>
     </div>
