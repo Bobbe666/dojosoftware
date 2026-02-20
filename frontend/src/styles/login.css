@@ -883,3 +883,38 @@
   outline: 2px solid #ffd700;
   outline-offset: 2px;
 }
+/* ============================================
+   CLUB MEMBER LOGIN - Spezielles Styling
+   ============================================ */
+
+/* Club Logo - Kleiner und zentriert */
+.club-member-login .branding-logo {
+  max-width: 200px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 1.5rem;
+}
+
+.club-member-login .club-logo-large {
+  max-width: 200px;
+  max-height: 200px;
+}
+
+/* Club Branding Area */
+.club-member-login .club-branding .branding-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive - Logo noch kleiner auf Mobile */
+@media (max-width: 768px) {
+  .club-member-login .branding-logo,
+  .club-member-login .club-logo-large {
+    max-width: 150px;
+    max-height: 150px;
+  }
+}
