@@ -3,13 +3,15 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
+import { CURRENT_VERSION } from './SystemChangelog';
 import config from '../config/config.js';
+import kampfkunstschuleLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
 import '../styles/Buttons.css';
 
-const defaultLogo = '/dojo-logo.png';
+const defaultLogo = kampfkunstschuleLogo;
 
 const ClubMemberLogin = () => {
   const [formData, setFormData] = useState({
@@ -180,7 +182,7 @@ const ClubMemberLogin = () => {
   }
 
   const clubName = dojoData?.dojoname || 'Dojo';
-  const clubLogo = dojoData?.logo_url || '/logo-kampfkunstschule-schreiner.png';
+  const clubLogo = dojoData?.logo_url || defaultLogo;
 
   return (
     <div className="login-container club-member-login">
@@ -316,7 +318,7 @@ const ClubMemberLogin = () => {
           {/* Footer */}
           <div className="login-footer">
             <p className="version-info">
-              DojoSoftware © 2024-2025
+              DojoSoftware v{CURRENT_VERSION} | © 2024-{new Date().getFullYear()}
             </p>
             <div className="security-info">
               <Shield size={12} />
